@@ -10,10 +10,9 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "agent",
-	Short: "The open-feature agent, enabling IPC feature flag management",
+	Use:   "flagd",
+	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.",
 	Long:  ``,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
