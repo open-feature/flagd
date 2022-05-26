@@ -22,3 +22,7 @@ jobs:
           echo "Status:    ${{ steps.buildx.outputs.status }}"
           echo "Flags:     ${{ steps.buildx.outputs.flags }}"
           echo "Platforms: ${{ steps.buildx.outputs.platforms }}"
+      -
+        name: Build
+        run: |
+          docker build --platform="linux/amd64" -t flagd:latest . 
