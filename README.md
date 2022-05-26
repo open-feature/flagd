@@ -1,5 +1,5 @@
 # Flagd
-
+![build](https://img.shields.io/github/workflow/status/open-feature/flagd/ci)
 ![goversion](https://img.shields.io/github/go-mod/go-version/open-feature/flagd/main)
 ![version](https://img.shields.io/badge/version-pre--alpha-green)
 ![status](https://img.shields.io/badge/status-not--for--production-red)
