@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -25,7 +24,6 @@ func (h *HttpServiceResponse) GetPayload() string {
 
 func (h *HttpServiceRequest) GetRequestType() SERVICE_REQUEST_TYPE {
 	//TODO
-	log.Println("GetRequestType not implemented")
 	return SERVICE_REQUEST_ALL_FLAGS
 }
 
@@ -46,7 +44,7 @@ func (h *HttpService) Serve(handlerFunc func(IServiceRequest) IServiceResponse) 
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		response := handlerFunc(&HttpServiceRequest{})
-		// THIS IS A TECH DEMO
+		//TODO: Improve this significantly and add guards
 		w.Write([]byte(response.GetPayload()))
 	})
 	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
