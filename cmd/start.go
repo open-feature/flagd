@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	serviceProvider string
-	syncProvider    string
-	uri             string
-	httpServicePort int32
+	serviceProvider   string
+	syncProvider      string
+	uri               string
+	httpServicePort   int32
+	socketServicePath string
 )
 
 func findService(name string) (service.IService, error) {
@@ -28,6 +29,11 @@ func findService(name string) (service.IService, error) {
 		"http": &service.HttpService{
 			HttpServiceConfiguration: &service.HttpServiceConfiguration{
 				Port: int32(httpServicePort),
+			},
+		},
+		"socket": &service.SocketService{
+			SocketServiceConfiguration: &service.SocketServiceConfiguration{
+				SocketPath: socketServicePath,
 			},
 		},
 	}
@@ -98,6 +104,7 @@ var startCmd = &cobra.Command{
 
 func init() {
 	startCmd.Flags().Int32VarP(&httpServicePort, "port", "p", 8080, "Port to listen on")
+	startCmd.Flags().StringVarP(&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
 	startCmd.Flags().StringVarP(&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
