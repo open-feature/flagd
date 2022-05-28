@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -11,7 +12,7 @@ type HttpServiceConfiguration struct {
 }
 
 type HttpServiceRequest struct {
-	// TODO
+	Payload string
 }
 
 type HttpServiceResponse struct {
@@ -43,8 +44,15 @@ func (h *HttpService) Serve(handlerFunc func(IServiceRequest) IServiceResponse) 
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		response := handlerFunc(&HttpServiceRequest{})
-		//TODO: Improve this significantly and add guards
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		response := handlerFunc(&HttpServiceRequest{
+			Payload: string(body),
+		})
+
 		w.Write([]byte(response.GetPayload()))
 	})
 	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
