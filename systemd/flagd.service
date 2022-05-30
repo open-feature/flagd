@@ -1,0 +1,11 @@
+[Unit]
+Description="A generic feature flag daemon"
+
+[Service]
+User=root
+WorkingDirectory=/etc/flagd
+ExecStart=flagd start -f=/etc/flagd/flags.json
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
