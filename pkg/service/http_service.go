@@ -1,41 +1,55 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+
+	gen "github.com/open-feature/flagd/pkg/generated"
 )
 
 type HttpServiceConfiguration struct {
 	Port int32
 }
 
-type HttpServiceRequest struct {
-	Payload string
-}
-
-type HttpServiceResponse struct {
-	rawPayload string
-}
-
-func (h *HttpServiceResponse) GetPayload() string {
-	return h.rawPayload
-}
-
-func (h *HttpServiceRequest) GetRequestType() SERVICE_REQUEST_TYPE {
-	//TODO
-	return SERVICE_REQUEST_ALL_FLAGS
-}
-
-func (h *HttpServiceRequest) GenerateServiceResponse(body string) IServiceResponse {
-	return &HttpServiceResponse{
-		rawPayload: body,
-	}
-}
-
 type HttpService struct {
 	HttpServiceConfiguration *HttpServiceConfiguration
+}
+
+var defaultReason = "DEFAULT"
+
+// implement the generated ServerInterface.
+type Server struct {}
+
+func (s Server) ResolveBoolean(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveBooleanParams) {
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
+		Value: &params.DefaultValue,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveString(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveStringParams) {
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
+		Value: &params.DefaultValue,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveNumber(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveNumberParams) {
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
+		Value: &params.DefaultValue,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveObject(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveObjectParams) {
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
+		Value: &gen.ResolutionDetailsObject_Value{
+			AdditionalProperties: params.DefaultValue.AdditionalProperties,
+		},
+		Reason: &defaultReason,
+	})
 }
 
 func (h *HttpService) Serve(handlerFunc func(IServiceRequest) IServiceResponse) error {
@@ -43,18 +57,7 @@ func (h *HttpService) Serve(handlerFunc func(IServiceRequest) IServiceResponse) 
 		return errors.New("http service configuration has not been initialised")
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		response := handlerFunc(&HttpServiceRequest{
-			Payload: string(body),
-		})
-
-		w.Write([]byte(response.GetPayload()))
-	})
+	http.Handle("/", gen.Handler(Server{}))
 	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
 
 	return nil

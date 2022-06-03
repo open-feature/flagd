@@ -1,3 +1,4 @@
 .DS_Store
 flagd
 .vscode
+pkg/generated/*.gen.*
