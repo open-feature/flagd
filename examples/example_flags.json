@@ -1,6 +1,6 @@
 {
     "newWelcomeMessage": {
-      "state": "disable"
+      "state": "disabled"
     },
     "hexColor": {
       "returnType": "string",
