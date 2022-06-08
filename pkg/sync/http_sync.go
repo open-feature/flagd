@@ -66,10 +66,7 @@ func (fs *HttpSync) Fetch() (string, error) {
 func (fs *HttpSync) Watch(w chan IWatcher) {
 
 	c := cron.New()
-	/*
-		This initial implementation uses a cron to poll the remote endpoint.
-		Whilst not a true watch stream, it will give similar functionality to the fsnotify watcher.
-	*/
+
 	c.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(fs.URI)
 		if err != nil {

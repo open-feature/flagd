@@ -14,14 +14,14 @@ var (
 	syncPayload string
 )
 
-func GetSyncPayload() string {
+func getSyncPayload() string {
 	mu.Lock()
 	s := syncPayload
 	mu.Unlock()
 	return s
 }
 
-func SetSyncPayload(syncr sync.ISync) error {
+func setSyncPayload(syncr sync.ISync) error {
 	msg, err := syncr.Fetch()
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func SetSyncPayload(syncr sync.ISync) error {
 
 func Start(syncr sync.ISync, server service.IService, ctx context.Context) {
 
-	if err := SetSyncPayload(syncr); err != nil {
+	if err := setSyncPayload(syncr); err != nil {
 		log.Error(err)
 	}
 
@@ -51,12 +51,12 @@ func Start(syncr sync.ISync, server service.IService, ctx context.Context) {
 				switch w.GetEvent().EventType {
 				case sync.E_EVENT_TYPE_CREATE:
 					log.Info("New configuration created")
-					if err := SetSyncPayload(syncr); err != nil {
+					if err := setSyncPayload(syncr); err != nil {
 						log.Error(err)
 					}
 				case sync.E_EVENT_TYPE_MODIFY:
 					log.Info("Configuration modified")
-					if err := SetSyncPayload(syncr); err != nil {
+					if err := setSyncPayload(syncr); err != nil {
 						log.Error(err)
 					}
 				case sync.E_EVENT_TYPE_DELETE:
@@ -69,7 +69,7 @@ func Start(syncr sync.ISync, server service.IService, ctx context.Context) {
 	go server.Serve(
 		func(ir service.IServiceRequest) service.IServiceResponse {
 			if ir.GetRequestType() == service.SERVICE_REQUEST_ALL_FLAGS {
-				return ir.GenerateServiceResponse(GetSyncPayload())
+				return ir.GenerateServiceResponse(getSyncPayload())
 			}
 			return nil
 		})
