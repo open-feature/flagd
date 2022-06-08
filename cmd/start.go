@@ -120,6 +120,8 @@ func init() {
 	startCmd.Flags().StringVarP(&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
 	startCmd.Flags().StringVarP(&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
+
+	startCmd.MarkFlagRequired("uri")
 	rootCmd.AddCommand(startCmd)
 
 }
