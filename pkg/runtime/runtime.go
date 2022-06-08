@@ -38,16 +38,16 @@ func Start(syncr sync.ISync, server service.IService, ctx context.Context) {
 		log.Error(err)
 	}
 
-	syncWatcher := make(chan sync.IWatcher)
+	syncNotifier := make(chan sync.INotify)
 
-	go syncr.Watch(syncWatcher)
+	go syncr.Notify(syncNotifier)
 
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case w := <-syncWatcher:
+			case w := <-syncNotifier:
 				switch w.GetEvent().EventType {
 				case sync.E_EVENT_TYPE_CREATE:
 					log.Info("New configuration created")

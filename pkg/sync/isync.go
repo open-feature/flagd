@@ -9,5 +9,5 @@ const (
 
 type ISync interface {
 	Fetch() (string, error)
-	Watch(chan IWatcher)
+	Notify(chan INotify)
 }
