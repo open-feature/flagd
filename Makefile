@@ -2,7 +2,7 @@ IMG=flagd:latest
 PHONY: .docker-build .build .run
 PREFIX=/usr/local
 docker-build:
-	docker buildx build --platform="linux/amd64,linux/arm64" -t ${IMG} .
+	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 build:
 	go build -o flagd
 run:
