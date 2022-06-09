@@ -24,8 +24,8 @@ func (fs *FilePathSync) Fetch() (string, error) {
 	return string(rawFile), nil
 }
 
-func (fs *FilePathSync) Watch(w chan IWatcher) {
-	log.Info("Starting filepath sync watcher")
+func (fs *FilePathSync) Notify(w chan INotify) {
+	log.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -35,12 +35,12 @@ func (fs *FilePathSync) Watch(w chan IWatcher) {
 	done := make(chan bool)
 	go func() {
 		defer close(done)
-		log.Info("Watching filepath: ", fs.URI)
+		log.Info("Notifying filepath: ", fs.URI)
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
-					log.Info("Filepath watcher closed")
+					log.Info("Filepath notifier closed")
 					return
 				}
 				var evtType E_EVENT_TYPE
@@ -52,13 +52,13 @@ func (fs *FilePathSync) Watch(w chan IWatcher) {
 				case fsnotify.Remove:
 					evtType = E_EVENT_TYPE_DELETE
 				}
-				log.Infof("Filepath watcher event: %s %s", event.Name, event.Op.String())
-				w <- &Watcher{
+				log.Infof("Filepath notifier event: %s %s", event.Name, event.Op.String())
+				w <- &Notifier{
 					Event: Event{
 						EventType: evtType,
 					},
 				}
-				log.Info("Filepath watcher event sent")
+				log.Info("Filepath notifier event sent")
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return

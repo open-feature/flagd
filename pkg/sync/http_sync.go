@@ -63,7 +63,7 @@ func (fs *HttpSync) Fetch() (string, error) {
 	return string(body), err
 }
 
-func (fs *HttpSync) Watch(w chan IWatcher) {
+func (fs *HttpSync) Notify(w chan INotify) {
 
 	c := cron.New()
 
@@ -74,14 +74,14 @@ func (fs *HttpSync) Watch(w chan IWatcher) {
 			return
 		}
 		if len(body) == 0 {
-			w <- &Watcher{
+			w <- &Notifier{
 				Event: Event{
 					EventType: E_EVENT_TYPE_DELETE,
 				},
 			}
 		} else {
 			if fs.LastBodySHA == "" {
-				w <- &Watcher{
+				w <- &Notifier{
 					Event: Event{
 						EventType: E_EVENT_TYPE_CREATE,
 					},
@@ -89,9 +89,8 @@ func (fs *HttpSync) Watch(w chan IWatcher) {
 			} else {
 				currentSHA := fs.generateSha(body)
 				if fs.LastBodySHA != currentSHA {
-					log.Infof("Old hash: %s New Hash: %s", fs.LastBodySHA, currentSHA)
-					log.Infof("http watcher event: %s has been modified", fs.URI)
-					w <- &Watcher{
+					log.Infof("http notifier event: %s has been modified", fs.URI)
+					w <- &Notifier{
 						Event: Event{
 							EventType: E_EVENT_TYPE_MODIFY,
 						},

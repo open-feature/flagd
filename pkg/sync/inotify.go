@@ -1,6 +1,6 @@
 package sync
 
-type IWatcher interface {
+type INotify interface {
 	GetEvent() Event
 }
 
@@ -16,10 +16,10 @@ type Event struct {
 	EventType E_EVENT_TYPE
 }
 
-type Watcher struct {
+type Notifier struct {
 	Event Event
 }
 
-func (w *Watcher) GetEvent() Event {
+func (w *Notifier) GetEvent() Event {
 	return w.Event
 }
