@@ -4,8 +4,6 @@ on:
   push:
    tags:
     - "v*.*.*"
-   branches:
-   - feature/releaser
 
 jobs:
   goreleaser:
@@ -22,14 +20,9 @@ jobs:
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest
-          args: --snapshot --rm-dist
+          args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Upload assets
-        uses: actions/upload-artifact@v3
-        with:
-          name: flagd
-          path: dist/*
