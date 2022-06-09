@@ -16,13 +16,6 @@ jobs:
         with:
           fetch-depth: 0
       -
-        name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-      -
         name: Set up Go
         uses: actions/setup-go@v3
       -
@@ -33,4 +26,3 @@ jobs:
           args: --snapshot --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
