@@ -1,0 +1,13 @@
+{
+  "booleanFlags": {
+    "new-welcome-message": {
+      "state": "enabled",
+      "variants": {
+        "enabled": true,
+        "disabled": false
+      },
+      "defaultVariant": "enabled",
+      "rules": []
+    }
+  }
+}

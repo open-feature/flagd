@@ -1,60 +1,110 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+
+	"github.com/open-feature/flagd/pkg/eval"
+	gen "github.com/open-feature/flagd/pkg/generated"
 )
 
 type HttpServiceConfiguration struct {
 	Port int32
 }
 
-type HttpServiceRequest struct {
-	Payload string
-}
-
-type HttpServiceResponse struct {
-	rawPayload string
-}
-
-func (h *HttpServiceResponse) GetPayload() string {
-	return h.rawPayload
-}
-
-func (h *HttpServiceRequest) GetRequestType() SERVICE_REQUEST_TYPE {
-	//TODO
-	return SERVICE_REQUEST_ALL_FLAGS
-}
-
-func (h *HttpServiceRequest) GenerateServiceResponse(body string) IServiceResponse {
-	return &HttpServiceResponse{
-		rawPayload: body,
-	}
-}
-
 type HttpService struct {
 	HttpServiceConfiguration *HttpServiceConfiguration
 }
 
-func (h *HttpService) Serve(handlerFunc func(IServiceRequest) IServiceResponse) error {
+var defaultReason = "DEFAULT"
+var errorReason = "ERROR"
+
+type Server struct {
+	eval eval.IEvaluator
+}
+
+// implement the generated ServerInterface.
+// TODO: might be able to simplify some of this with generics.
+// TODO: add improved, more RESTful error handling
+func (s Server) ResolveBoolean(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveBooleanParams) {
+	result, err := s.eval.ResolveBooleanValue(flagKey, params.DefaultValue)
+	if (err != nil) {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
+			Value: &params.DefaultValue,
+			Reason: &errorReason,
+		})
+		return;
+	}
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
+		Value: &result,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveString(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveStringParams) {
+	result, err := s.eval.ResolveStringValue(flagKey, params.DefaultValue)
+	if (err != nil) {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
+			Value: &params.DefaultValue,
+			Reason: &errorReason,
+		})
+		return;
+	}
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
+		Value: &result,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveNumber(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveNumberParams) {
+	result, err := s.eval.ResolveNumberValue(flagKey, params.DefaultValue)
+	if (err != nil) {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
+			Value: &params.DefaultValue,
+			Reason: &errorReason,
+		})
+		return;
+	}
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
+		Value: &result,
+		Reason: &defaultReason,
+	})
+}
+
+func (s Server) ResolveObject(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveObjectParams) {
+	result, err := s.eval.ResolveObjectValue(flagKey, params.DefaultValue.AdditionalProperties)
+	if (err != nil) {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
+			Value: &gen.ResolutionDetailsObject_Value{
+				AdditionalProperties: params.DefaultValue.AdditionalProperties,
+			},
+			Reason: &defaultReason,
+		})
+		return;
+	}
+	json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
+		Value: &gen.ResolutionDetailsObject_Value{
+			AdditionalProperties: result,
+		},
+		Reason: &defaultReason,
+	})
+}
+
+func (h *HttpService) Serve(eval eval.IEvaluator) error {
 	if h.HttpServiceConfiguration == nil {
 		return errors.New("http service configuration has not been initialised")
 	}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		response := handlerFunc(&HttpServiceRequest{
-			Payload: string(body),
-		})
-
-		w.Write([]byte(response.GetPayload()))
-	})
+	http.Handle("/", gen.Handler(Server{ eval }))
 	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
 
 	return nil

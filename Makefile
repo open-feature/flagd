@@ -1,9 +1,11 @@
 IMG=flagd:latest
 PHONY: .docker-build .build .run
 PREFIX=/usr/local
+generate:
+	${GOPATH}/bin/oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
 docker-build:
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
-build:
+build: generate
 	go build -o flagd
 run:
 	go run main.go start -f examples/example_flags.json

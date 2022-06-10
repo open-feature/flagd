@@ -10,11 +10,20 @@ COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
+# install the oapi-codegen binary
+RUN go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
 
 # Copy the go source
 COPY main.go main.go
 COPY cmd/ cmd/
 COPY pkg/ pkg/
+COPY schemas/ schemas/
+
+# Copy the code generation configs
+COPY config/open_api_gen_config.yml open_api_gen_config.yml
+COPY schemas/openapi/provider.yml provider.yml
+# Generate OpenApi artifacts
+RUN ${GOPATH}/bin/oapi-codegen --config=./open_api_gen_config.yml ./provider.yml
 # Build
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o flagd main.go
 

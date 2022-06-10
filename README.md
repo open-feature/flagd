@@ -1,4 +1,5 @@
 # Flagd
+
 ![build](https://img.shields.io/github/workflow/status/open-feature/flagd/ci)
 ![goversion](https://img.shields.io/github/go-mod/go-version/open-feature/flagd/main)
 ![version](https://img.shields.io/badge/version-pre--alpha-green)
@@ -6,7 +7,7 @@
 
 Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to OpenFeature schema for flag definitions.
 
-<img src="images/of-flagd-0.png" width="560">      
+<img src="images/of-flagd-0.png" width="560">
 
 ## Example usage
 
@@ -17,14 +18,16 @@ make build
 ```
 
 Start the process
+
 ```
 ./flagd start -f examples/example_flags.json --service-provider http --sync-provider filepath
 ```
 
 This now provides an accessible http endpoint for the flags.
+
 ```
 ❯ curl localhost:8080
-{ 
+{
     "newWelcomeMessage": {
       "state": "disabled"
     },
@@ -58,3 +61,7 @@ And result similar to below will be seen
 
 May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 ```
+
+### Running locally
+
+docker run -p 8080:8080 -it flagd-local start --uri ./examples/end_to_end_flags.json

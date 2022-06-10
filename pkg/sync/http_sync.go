@@ -45,15 +45,17 @@ func (fs *HttpSync) fetchBodyFromURL(url string) ([]byte, error) {
 
 	return body, nil
 }
+
 func (fs *HttpSync) generateSha(body []byte) string {
 	hasher := sha1.New()
 	hasher.Write(body)
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 	return sha
 }
+
 func (fs *HttpSync) Fetch() (string, error) {
 	if fs.URI == "" {
-		return "", errors.New("no filepath string set")
+		return "", errors.New("no HTTP URL string set")
 	}
 
 	body, err := fs.fetchBodyFromURL(fs.URI)
@@ -63,7 +65,7 @@ func (fs *HttpSync) Fetch() (string, error) {
 	return string(body), err
 }
 
-func (fs *HttpSync) Notify(w chan INotify) {
+func (fs *HttpSync) Notify(w chan<- INotify) {
 
 	c := cron.New()
 
