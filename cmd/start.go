@@ -139,7 +139,7 @@ func init() {
 	startCmd.Flags().StringVarP(&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
 	startCmd.Flags().StringVarP(&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
-	startCmd.Flags().StringVarP(&evaluator, "evaluator", "e", "json", "Set and evaluator e.g. json")
+startCmd.Flags().StringVarP(&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
 	startCmd.Flags().StringVarP(&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
 	startCmd.Flags().StringVarP(&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
 
