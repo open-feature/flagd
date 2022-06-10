@@ -2,6 +2,7 @@ IMG=flagd:latest
 PHONY: .docker-build .build .run
 PREFIX=/usr/local
 generate:
+	cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
 	${GOPATH}/bin/oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
 docker-build: generate
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
