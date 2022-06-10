@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -100,12 +101,13 @@ func (s Server) ResolveObject(w http.ResponseWriter, r *http.Request, flagKey ge
 	})
 }
 
-func (h *HttpService) Serve(eval eval.IEvaluator) error {
+func (h *HttpService) Serve(eval eval.IEvaluator, ctx context.Context) error {
 	if h.HttpServiceConfiguration == nil {
 		return errors.New("http service configuration has not been initialised")
 	}
 	http.Handle("/", gen.Handler(Server{ eval }))
 	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
 
+	<- ctx.Done()
 	return nil
 }

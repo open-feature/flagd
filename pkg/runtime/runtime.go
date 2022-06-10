@@ -62,5 +62,5 @@ func Start(syncr sync.ISync, server service.IService, evaluator eval.IEvaluator,
 		}
 	}()
 
-	go server.Serve(ev)
+	go server.Serve(ev, ctx)
 }
