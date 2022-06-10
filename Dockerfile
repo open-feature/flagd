@@ -22,6 +22,7 @@ COPY schemas/ schemas/
 # Copy the code generation configs
 COPY config/open_api_gen_config.yml open_api_gen_config.yml
 COPY schemas/openapi/provider.yml provider.yml
+COPY schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
 # Generate OpenApi artifacts
 RUN ${GOPATH}/bin/oapi-codegen --config=./open_api_gen_config.yml ./provider.yml
 # Build
