@@ -24,7 +24,7 @@ func (fs *FilePathSync) Fetch() (string, error) {
 	return string(rawFile), nil
 }
 
-func (fs *FilePathSync) Notify(w chan INotify) {
+func (fs *FilePathSync) Notify(w chan<- INotify) {
 	log.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

@@ -1,0 +1,81 @@
+{
+  "booleanFlags": {
+    "myBoolTest": {
+      "state": "enabled",
+      "variants": {
+        "enabled": true,
+        "disabled": false
+      },
+      "defaultVariant": "enabled",
+      "rules": []
+    }
+  },
+  "stringFlags": {
+    "myStringTest": {
+      "state": "enabled",
+      "variants": {
+        "red": "red",
+        "blue": "blue",
+        "orange": "orange"
+      },
+      "defaultVariant": "red",
+      "rules": []
+    }
+  },
+  "numericFlags": {
+    "myNumericTest": {
+      "state": "enabled",
+      "variants": {
+        "one": 1,
+        "two": 2
+      },
+      "defaultVariant": "one",
+      "rules": []
+    }
+  },
+  "objectFlags": {
+    "myObjectTest": {
+      "state": "enabled",
+      "variants": {
+        "red": {
+          "color": {
+            "hi": 23
+          }
+        },
+        "blue": {
+          "color": "blue"
+        },
+        "orange": {
+          "color": "orange"
+        }
+      },
+      "defaultVariant": "blue",
+      "rules": [
+        {
+          "action": {
+            "variant": "blue"
+          },
+          "condition": [
+            {
+              "context": "email",
+              "op": "ends_with",
+              "value": "@faas.com"
+            }
+          ]
+        },
+        {
+          "action": {
+            "variant": "blue"
+          },
+          "condition": [
+            {
+              "context": "email",
+              "op": "ends_with",
+              "value": "@faas.com"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
