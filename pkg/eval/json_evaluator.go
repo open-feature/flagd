@@ -1,12 +1,16 @@
 package eval
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+//go:embed flagd-definitions.json
+var schema string
 
 type JsonEvaluator struct {
 	state Flags
@@ -21,8 +25,7 @@ func (je *JsonEvaluator) GetState () (string, error) {
 }
 
 func (je *JsonEvaluator) SetState (state string) error {
-	// TODO: use a generator to embed this schema into a string
-	schemaLoader := gojsonschema.NewReferenceLoader("file://./schemas/json-schema/flagd-definitions.json")
+	schemaLoader := gojsonschema.NewStringLoader(schema)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 	if err != nil {
