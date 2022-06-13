@@ -22,7 +22,8 @@ jobs:
         run: |
           export PATH=${PATH}:`go env GOPATH`/bin
           go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
-          make generate
+          cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
+          oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
