@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-go@v3
       - name: Fetch Deps
         run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
           go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
           make generate
       -
