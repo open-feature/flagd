@@ -15,12 +15,13 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - name: Fetch Deps
-        run: |
-          make generate
       -
         name: Set up Go
         uses: actions/setup-go@v3
+      - name: Fetch Deps
+        run: |
+          go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
+          make generate
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
