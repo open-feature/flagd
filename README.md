@@ -11,31 +11,26 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 
 ## Example usage
 
-Build the flagd binary:
+1. Pull `schemas` submodule: `git submodule update --init --recursive`
+1. Build the flagd binary: `make build`
+1. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
 
-```bash
-make build
-```
+Note: you can update the submodule with `git submodule update --recursive --remote`
 
-Start the process
-
-```
-./flagd start -f examples/example_flags.json --service-provider http --sync-provider filepath
-```
-
-This now provides an accessible http endpoint for the flags.
+This now provides an accessible http endpoint for the flags:
 
 ```
-❯ curl localhost:8080
-{
-    "newWelcomeMessage": {
-      "state": "disabled"
-    },
-    "hexColor": {
-      "returnType": "string",
-      "variants": {
-        "red": "CC0000",
-        "green": "00CC00",
+$ curl -X POST localhost:8080/flags/myBoolTest/resolve/boolean?default-value=true
+// {"reason":"DEFAULT","value":true}
+
+$ curl -X POST localhost:8080/flags/myStringTest/resolve/string?default-value=hi
+// {"reason":"DEFAULT","value":"red"}
+
+$ curl -X POST localhost:8080/flags/myNumericTest/resolve/number?default-value=123
+// {"reason":"DEFAULT","value":1}
+
+$ curl -X POST localhost:8080/flags/myObjectTest/resolve/object?default-value=foo,bar
+// {"reason":"DEFAULT","value":{"color":"blue"}}
 ```
 
 ### Installation
