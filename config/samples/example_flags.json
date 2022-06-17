@@ -1,81 +1,40 @@
 {
-  "booleanFlags": {
-    "myBoolTest": {
-      "state": "enabled",
+  "flags": {
+    "myBoolFlag": {
+      "state": "ENABLED",
       "variants": {
-        "enabled": true,
-        "disabled": false
+        "on": true,
+        "off": false
       },
-      "defaultVariant": "enabled",
-      "rules": []
-    }
-  },
-  "stringFlags": {
-    "myStringTest": {
-      "state": "enabled",
+      "defaultVariant": "on"
+    },
+    "myStringFlag": {
+      "state": "ENABLED",
       "variants": {
-        "red": "red",
-        "blue": "blue",
-        "orange": "orange"
+        "key1": "val1",
+        "key2": "val2"
       },
-      "defaultVariant": "red",
-      "rules": []
-    }
-  },
-  "numericFlags": {
-    "myNumericTest": {
-      "state": "enabled",
+      "defaultVariant": "key1"
+    },
+    "myNumberFlag": {
+      "state": "ENABLED",
       "variants": {
         "one": 1,
         "two": 2
       },
-      "defaultVariant": "one",
-      "rules": []
-    }
-  },
-  "objectFlags": {
-    "myObjectTest": {
-      "state": "enabled",
+      "defaultVariant": "one"
+    },
+    "myObjectFlag": {
+      "state": "ENABLED",
       "variants": {
-        "red": {
-          "color": {
-            "hi": 23
-          }
+        "object1": {
+          "key": "val"
         },
-        "blue": {
-          "color": "blue"
-        },
-        "orange": {
-          "color": "orange"
+        "object2": {
+          "key": true
         }
       },
-      "defaultVariant": "blue",
-      "rules": [
-        {
-          "action": {
-            "variant": "blue"
-          },
-          "condition": [
-            {
-              "context": "email",
-              "op": "ends_with",
-              "value": "@faas.com"
-            }
-          ]
-        },
-        {
-          "action": {
-            "variant": "blue"
-          },
-          "condition": [
-            {
-              "context": "email",
-              "op": "ends_with",
-              "value": "@faas.com"
-            }
-          ]
-        }
-      ]
+      "defaultVariant": "object1"
     }
   }
 }
