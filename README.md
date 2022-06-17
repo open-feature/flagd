@@ -20,17 +20,17 @@ Note: you can update the submodule with `git submodule update --recursive --remo
 This now provides an accessible http endpoint for the flags:
 
 ```
-$ curl -X POST localhost:8080/flags/myBoolTest/resolve/boolean?default-value=true
-// {"reason":"DEFAULT","value":true}
+$ curl -X POST localhost:8080/flags/myBoolFlag/resolve/boolean?default-value=true
+// {"reason":"STATIC","value":true}
 
-$ curl -X POST localhost:8080/flags/myStringTest/resolve/string?default-value=hi
-// {"reason":"DEFAULT","value":"red"}
+$ curl -X POST localhost:8080/flags/myStringFlag/resolve/string?default-value=hi
+// {"reason":"STATIC","value":"red"}
 
-$ curl -X POST localhost:8080/flags/myNumericTest/resolve/number?default-value=123
-// {"reason":"DEFAULT","value":1}
+$ curl -X POST localhost:8080/flags/myNumberFlag/resolve/number?default-value=13
+// {"reason":"STATIC","value":1}
 
-$ curl -X POST localhost:8080/flags/myObjectTest/resolve/object?default-value=foo,bar
-// {"reason":"DEFAULT","value":{"color":"blue"}}
+$ curl -X POST localhost:8080/flags/myObjectFlag/resolve/object?default-value=foo,bar
+// {"reason":"STATIC","value":{"color":"blue"}}
 ```
 
 ### Installation
@@ -59,4 +59,4 @@ May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 
 ### Running locally
 
-docker run -p 8080:8080 -it flagd-local start --uri ./examples/end_to_end_flags.json
+docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json
