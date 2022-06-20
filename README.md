@@ -11,11 +11,9 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 
 ## Example usage
 
-1. Pull `schemas` submodule: `git submodule update --init --recursive`
-1. Build the flagd binary: `make build`
-1. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
-
-Note: you can update the submodule with `git submodule update --recursive --remote`
+1. Generate the prerequisites `make generate`
+2. Build the flagd binary: `make build`
+3. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
 
 This now provides an accessible http endpoint for the flags:
 
@@ -57,6 +55,7 @@ And result similar to below will be seen
 May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 ```
 
-### Running locally
+### Running in a constainer
 
-docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json
+1. `IMG=flagd-local make docker-build`
+2. `docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json`

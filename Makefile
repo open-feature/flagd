@@ -1,7 +1,14 @@
 IMG=flagd:latest
 PHONY: .docker-build .build .run
 PREFIX=/usr/local
-generate:
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+        echo "Environment variable $* not set"; \
+        exit 1; \
+    fi
+generate: guard-GOPATH
+	git submodule update --init --recursive
+	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 	cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
 	${GOPATH}/bin/oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
 docker-build: generate
