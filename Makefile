@@ -1,4 +1,4 @@
-IMG=flagd:latest
+IMG ?= flagd:latest
 PHONY: .docker-build .build .run
 PREFIX=/usr/local
 guard-%:
@@ -13,6 +13,8 @@ generate: guard-GOPATH
 	${GOPATH}/bin/oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
 docker-build: generate
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
+docker-push: generate
+	docker buildx build --push --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 build: generate
 	go build -o flagd
 run: generate
