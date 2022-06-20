@@ -1,29 +1,18 @@
 name: ci
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  docker:
+  docker-local:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -46,15 +35,14 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: local/flagd-local:${{ github.event.number }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: dest=/tmp/myimage.tar
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@2a2157eb22c08c9a1fac99263430307b8d1bc7a2
         with:
-          image-ref: ${{ steps.meta.outputs.tags }}
+          input: /tmp/myimage.tar
           format: "template"
           template: "@/contrib/sarif.tpl"
           output: "trivy-results.sarif"
