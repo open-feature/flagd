@@ -1,6 +1,8 @@
 package model
 
-var FlagNotFoundErrorCode = "FLAG_NOT_FOUND"
-var ParseErrorCode = "PARSE_ERROR"
-var TypeMismatchErrorCode = "TYPE_MISMATCH"
-var GeneralErrorCode = "GENERAL"
+const (
+	FlagNotFoundErrorCode = "FLAG_NOT_FOUND"
+	ParseErrorCode        = "PARSE_ERROR"
+	TypeMismatchErrorCode = "TYPE_MISMATCH"
+	GeneralErrorCode      = "GENERAL"
+)
