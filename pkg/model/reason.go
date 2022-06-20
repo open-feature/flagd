@@ -1,9 +1,11 @@
 package model
 
-var TargetingMatchReason = "TARGETING_MATCH"
-var SplitReason = "SPLIT"
-var DisabledReason = "DISABLED"
-var DefaultReason = "DEFAULT"
-var StaticReason = "STATIC"
-var UnknownReason = "UNKNOWN"
-var ErrorReason = "ERROR"
+const (
+	TargetingMatchReason = "TARGETING_MATCH"
+	SplitReason          = "SPLIT"
+	DisabledReason       = "DISABLED"
+	DefaultReason        = "DEFAULT"
+	StaticReason         = "STATIC"
+	UnknownReason        = "UNKNOWN"
+	ErrorReason          = "ERROR"
+)
