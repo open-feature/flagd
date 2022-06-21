@@ -18,16 +18,16 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 This now provides an accessible http endpoint for the flags:
 
 ```
-$ curl -X POST localhost:8080/flags/myBoolFlag/resolve/boolean?default-value=true
+$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean?default-value=true"
 // {"reason":"STATIC","value":true}
 
-$ curl -X POST localhost:8080/flags/myStringFlag/resolve/string?default-value=hi
+$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string?default-value=hi"
 // {"reason":"STATIC","value":"red"}
 
-$ curl -X POST localhost:8080/flags/myNumberFlag/resolve/number?default-value=13
+$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number?default-value=13"
 // {"reason":"STATIC","value":1}
 
-$ curl -X POST localhost:8080/flags/myObjectFlag/resolve/object?default-value=foo,bar
+$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object?default-value=foo,bar"
 // {"reason":"STATIC","value":{"color":"blue"}}
 ```
 
