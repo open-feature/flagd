@@ -54,8 +54,7 @@ func (fs *FilePathSync) Notify(w chan<- INotify) {
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
 					if err != nil {
-						log.Printf("Error restoring watcher: %s\n", err.Error())
-						log.Fatal(err)
+						log.Fatalf("Error restoring watcher: %s, exiting...", err.Error())
 					}
 					evtType = EEventTypeDelete
 				}

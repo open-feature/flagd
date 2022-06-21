@@ -1,5 +1,9 @@
 package eval
 
+import (
+	"encoding/json"
+)
+
 type Flags struct {
 	Flags map[string]Flag `json:"flags"`
 }
@@ -9,4 +13,5 @@ type Flag struct {
 	State          string                 `json:"state"`
 	DefaultVariant string                 `json:"defaultVariant"`
 	Variants       map[string]interface{} `json:"variants"`
+	Targeting      json.RawMessage        `json:"targeting"`
 }

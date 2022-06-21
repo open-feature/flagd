@@ -29,6 +29,10 @@ $ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number?default-value=1
 
 $ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object?default-value=foo,bar"
 // {"reason":"STATIC","value":{"color":"blue"}}
+
+$ curl -X POST localhost:8080/flags/isColorYellow/resolve/boolean?default-value=true \
+-d '{"color": "yellow"}'
+// {"reason":"TARGETING_MATCH","value":true}
 ```
 
 ### Installation
@@ -55,7 +59,7 @@ And result similar to below will be seen
 May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 ```
 
-### Running in a constainer
+### Running in a container
 
 1. `IMG=flagd-local make docker-build`
 2. `docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json`
