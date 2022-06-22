@@ -22,28 +22,28 @@ import (
 var (
 	serviceProvider   string
 	syncProvider      string
-	evaluator      		string
+	evaluator         string
 	uri               string
 	httpServicePort   int32
 	socketServicePath string
 	bearerToken       string
-	remoteSyncURL     string
 )
 
 func findService(name string) (service.IService, error) {
 	registeredServices := map[string]service.IService{
-		"http": &service.HttpService{
-			HttpServiceConfiguration: &service.HttpServiceConfiguration{
-				Port: int32(httpServicePort),
+		"http": &service.HTTPService{
+			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
+				Port: httpServicePort,
 			},
 		},
 	}
-	if v, ok := registeredServices[name]; !ok {
+
+	v, ok := registeredServices[name]
+	if !ok {
 		return nil, errors.New("no service-provider set")
-	} else {
-		log.Debugf("Using %s service-provider\n", name)
-		return v, nil
 	}
+	log.Debugf("Using %s service-provider\n", name)
+	return v, nil
 }
 
 func findSync(name string) (sync.ISync, error) {
@@ -51,7 +51,7 @@ func findSync(name string) (sync.ISync, error) {
 		"filepath": &sync.FilePathSync{
 			URI: uri,
 		},
-		"remote": &sync.HttpSync{
+		"remote": &sync.HTTPSync{
 			URI:         uri,
 			BearerToken: bearerToken,
 			Client: &http.Client{
@@ -59,24 +59,27 @@ func findSync(name string) (sync.ISync, error) {
 			},
 		},
 	}
-	if v, ok := registeredSync[name]; !ok {
+	v, ok := registeredSync[name]
+	if !ok {
 		return nil, errors.New("no sync-provider set")
-	} else {
-		log.Debugf("Using %s sync-provider\n", name)
-		return v, nil
 	}
+
+	log.Debugf("Using %s sync-provider\n", name)
+	return v, nil
 }
 
 func findEvaluator(name string) (eval.IEvaluator, error) {
 	registeredEvaluators := map[string]eval.IEvaluator{
-		"json": &eval.JsonEvaluator{},
+		"json": &eval.JSONEvaluator{},
 	}
-	if v, ok := registeredEvaluators[name]; !ok {
+
+	v, ok := registeredEvaluators[name]
+	if !ok {
 		return nil, errors.New("no evaluator set")
-	} else {
-		log.Debugf("Using %s evaluator\n", name)
-		return v, nil
 	}
+
+	log.Debugf("Using %s evaluator\n", name)
+	return v, nil
 }
 
 // startCmd represents the start command
@@ -85,48 +88,48 @@ var startCmd = &cobra.Command{
 	Short: "Start flagd",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// Configure service-provider impl------------------------------------------
 		var serviceImpl service.IService
-		if foundService, err := findService(serviceProvider); err != nil {
+		foundService, err := findService(serviceProvider)
+		if err != nil {
 			log.Errorf("Unable to find service '%s'", serviceProvider)
 			return
-		} else {
-			serviceImpl = foundService
 		}
+		serviceImpl = foundService
 
 		// Configure sync-provider impl--------------------------------------------
 		var syncImpl sync.ISync
-		if foundSync, err := findSync(syncProvider); err != nil {
+		foundSync, err := findSync(syncProvider)
+		if err != nil {
 			log.Errorf("Unable to find sync '%s'", syncProvider)
 			return
-		} else {
-			syncImpl = foundSync
 		}
+		syncImpl = foundSync
 
 		// Configure evaluator-provider impl------------------------------------------
 		var evalImpl eval.IEvaluator
-		if foundEval, err := findEvaluator(evaluator); err != nil {
+		foundEval, err := findEvaluator(evaluator)
+		if err != nil {
 			log.Errorf("Unable to find evaluator '%s'", evaluator)
 			return
-		} else {
-			evalImpl = foundEval
 		}
+		evalImpl = foundEval
 
 		// Serve ------------------------------------------------------------------
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		errc := make(chan error)
 		go func() {
 			errc <- func() error {
-				c := make(chan os.Signal)
+				c := make(chan os.Signal, 1)
 				signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 				return fmt.Errorf("%s", <-c)
 			}()
 		}()
 
-		go runtime.Start(syncImpl, serviceImpl, evalImpl, ctx)
+		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl)
 
-		err := <-errc
+		err = <-errc
 		if err != nil {
 			cancel()
 			log.Printf(err.Error())
@@ -135,15 +138,21 @@ var startCmd = &cobra.Command{
 }
 
 func init() {
-	startCmd.Flags().Int32VarP(&httpServicePort, "port", "p", 8080, "Port to listen on")
-	startCmd.Flags().StringVarP(&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
-	startCmd.Flags().StringVarP(&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
-	startCmd.Flags().StringVarP(&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
-startCmd.Flags().StringVarP(&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
-	startCmd.Flags().StringVarP(&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
-	startCmd.Flags().StringVarP(&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
+	startCmd.Flags().Int32VarP(
+		&httpServicePort, "port", "p", 8080, "Port to listen on")
+	startCmd.Flags().StringVarP(
+		&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
+	startCmd.Flags().StringVarP(
+		&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
+	startCmd.Flags().StringVarP(
+		&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
+	startCmd.Flags().StringVarP(
+		&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
+	startCmd.Flags().StringVarP(
+		&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
+	startCmd.Flags().StringVarP(
+		&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
 
-	startCmd.MarkFlagRequired("uri")
+	_ = startCmd.MarkFlagRequired("uri")
 	rootCmd.AddCommand(startCmd)
-
 }

@@ -21,13 +21,12 @@ func updateState(syncr sync.ISync) error {
 		return err
 	}
 	mu.Lock()
-	ev.SetState(msg)
+	_ = ev.SetState(msg)
 	mu.Unlock()
 	return nil
 }
 
-func Start(syncr sync.ISync, server service.IService, evaluator eval.IEvaluator, ctx context.Context) {
-
+func Start(ctx context.Context, syncr sync.ISync, server service.IService, evaluator eval.IEvaluator) {
 	ev = evaluator
 
 	if err := updateState(syncr); err != nil {
@@ -45,22 +44,22 @@ func Start(syncr sync.ISync, server service.IService, evaluator eval.IEvaluator,
 				return
 			case w := <-syncNotifier:
 				switch w.GetEvent().EventType {
-				case sync.E_EVENT_TYPE_CREATE:
+				case sync.EEventTypeCreate:
 					log.Info("New configuration created")
 					if err := updateState(syncr); err != nil {
 						log.Error(err)
 					}
-				case sync.E_EVENT_TYPE_MODIFY:
+				case sync.EEventTypeModify:
 					log.Info("Configuration modified")
 					if err := updateState(syncr); err != nil {
 						log.Error(err)
 					}
-				case sync.E_EVENT_TYPE_DELETE:
+				case sync.EEventTypeDelete:
 					log.Info("Configuration deleted")
 				}
 			}
 		}
 	}()
 
-	go server.Serve(ev, ctx)
+	go func() { _ = server.Serve(ctx, ev) }()
 }

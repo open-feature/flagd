@@ -31,3 +31,7 @@ uninstall:
 	systemctl stop flagd
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
+lint:
+	mkdir -p ./bin
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest # Install linters
+	./bin/golangci-lint run --deadline=3m --timeout=3m ./... # Run linters
