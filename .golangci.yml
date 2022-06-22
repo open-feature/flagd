@@ -1,0 +1,51 @@
+run:
+  skip-dirs:
+    - (^|/)bin($|/)
+    - (^|/)examples($|/)
+linters:
+  enable:
+    - asciicheck
+    - bodyclose
+    - dogsled
+    - dupl
+    - funlen
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - revive
+    - gosec
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - prealloc
+    - rowserrcheck
+    - exportloopref
+    - stylecheck
+    - unconvert
+    - unparam
+    - whitespace
+    - gofumpt
+linters-settings:
+  funlen:
+    statements: 50
+  golint:
+    min-confidence: 0.6
+issues:
+  exclude:
+    - pkg/generated
+  exclude-rules:
+    - path: _test.go
+      linters:
+        - funlen
+        - maligned
+        - noctx
+        - scopelint
+        - bodyclose
+        - lll
+        - goconst
+        - gocognit
+        - gocyclo
+        - dupl
+        - staticcheck

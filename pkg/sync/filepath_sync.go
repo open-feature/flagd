@@ -43,21 +43,21 @@ func (fs *FilePathSync) Notify(w chan<- INotify) {
 					log.Info("Filepath notifier closed")
 					return
 				}
-				var evtType E_EVENT_TYPE
+				var evtType EEventType
 				switch event.Op {
 				case fsnotify.Create:
-					evtType = E_EVENT_TYPE_CREATE
+					evtType = EEventTypeCreate
 				case fsnotify.Write:
-					evtType = E_EVENT_TYPE_MODIFY
+					evtType = EEventTypeModify
 				case fsnotify.Remove:
 					// K8s exposes config maps as symlinks.
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
-					if (err != nil) {
-						log.Println("Error restoring watcher: %s", err.Error())
+					if err != nil {
+						log.Printf("Error restoring watcher: %s\n", err.Error())
 						log.Fatal(err)
 					}
-					evtType = E_EVENT_TYPE_DELETE
+					evtType = EEventTypeDelete
 				}
 				log.Infof("Filepath notifier event: %s %s", event.Name, event.Op.String())
 				w <- &Notifier{
@@ -76,7 +76,8 @@ func (fs *FilePathSync) Notify(w chan<- INotify) {
 	}()
 	err = watcher.Add(fs.URI)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	<-done
 }
