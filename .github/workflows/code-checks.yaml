@@ -1,0 +1,24 @@
+name: code-checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Lint:
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/open-feature/flagd
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: '^1.16.0'
+      - run: make generate
+      - run: make lint
