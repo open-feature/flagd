@@ -2,12 +2,12 @@ name: ci
 
 on:
   push:
-   branches:
-   - main
+    branches:
+      - main
   pull_request:
     branches:
-    - main
-   
+      - main
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -50,11 +50,12 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ !(github.event && github.event.pull_request && github.event.pull_request.head.repo.fork) }} # don't push in forks for now: https://github.com/open-feature/flagd/issues/52
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Run Trivy vulnerability scanner
+        if: ${{ !(github.event && github.event.pull_request && github.event.pull_request.head.repo.fork) }} # don't run in forks for now: https://github.com/open-feature/flagd/issues/52
         uses: aquasecurity/trivy-action@2a2157eb22c08c9a1fac99263430307b8d1bc7a2
         with:
           image-ref: ${{ steps.meta.outputs.tags }}
@@ -64,6 +65,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy scan results to GitHub Security tab
+        if: ${{ !(github.event && github.event.pull_request && github.event.pull_request.head.repo.fork) }} # don't run in forks for now: https://github.com/open-feature/flagd/issues/52
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: "trivy-results.sarif"
