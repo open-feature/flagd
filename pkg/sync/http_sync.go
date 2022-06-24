@@ -2,7 +2,8 @@ package sync
 
 import (
 	"bytes"
-	"crypto/sha1"
+	"context"
+	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
@@ -12,16 +13,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type HttpSync struct {
+type HTTPSync struct {
 	URI         string
 	Client      *http.Client
 	BearerToken string
 	LastBodySHA string
 }
 
-func (fs *HttpSync) fetchBodyFromURL(url string) ([]byte, error) {
-
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer(nil))
+func (fs *HTTPSync) fetchBodyFromURL(url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
 		return []byte(""), err
 	}
@@ -34,6 +34,7 @@ func (fs *HttpSync) fetchBodyFromURL(url string) ([]byte, error) {
 	}
 
 	resp, err := fs.Client.Do(req)
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return []byte(""), err
 	}
@@ -46,14 +47,14 @@ func (fs *HttpSync) fetchBodyFromURL(url string) ([]byte, error) {
 	return body, nil
 }
 
-func (fs *HttpSync) generateSha(body []byte) string {
-	hasher := sha1.New()
+func (fs *HTTPSync) generateSha(body []byte) string {
+	hasher := sha1.New() //nolint:gosec
 	hasher.Write(body)
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 	return sha
 }
 
-func (fs *HttpSync) Fetch() (string, error) {
+func (fs *HTTPSync) Fetch() (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no HTTP URL string set")
 	}
@@ -65,11 +66,10 @@ func (fs *HttpSync) Fetch() (string, error) {
 	return string(body), err
 }
 
-func (fs *HttpSync) Notify(w chan<- INotify) {
-
+func (fs *HTTPSync) Notify(w chan<- INotify) {
 	c := cron.New()
 
-	c.AddFunc("*/5 * * * *", func() {
+	_ = c.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(fs.URI)
 		if err != nil {
 			log.Error(err)
@@ -78,14 +78,14 @@ func (fs *HttpSync) Notify(w chan<- INotify) {
 		if len(body) == 0 {
 			w <- &Notifier{
 				Event: Event{
-					EventType: E_EVENT_TYPE_DELETE,
+					EventType: EEventTypeDelete,
 				},
 			}
 		} else {
 			if fs.LastBodySHA == "" {
 				w <- &Notifier{
 					Event: Event{
-						EventType: E_EVENT_TYPE_CREATE,
+						EventType: EEventTypeCreate,
 					},
 				}
 			} else {
@@ -94,7 +94,7 @@ func (fs *HttpSync) Notify(w chan<- INotify) {
 					log.Infof("http notifier event: %s has been modified", fs.URI)
 					w <- &Notifier{
 						Event: Event{
-							EventType: E_EVENT_TYPE_MODIFY,
+							EventType: EEventTypeModify,
 						},
 					}
 				}
@@ -103,5 +103,4 @@ func (fs *HttpSync) Notify(w chan<- INotify) {
 		}
 	})
 	c.Start()
-
 }

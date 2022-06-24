@@ -11,9 +11,10 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "flagd",
-	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.",
-	Long:  ``,
+	Use: "flagd",
+	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. " +
+		"It is designed to conform to Open Feature schema for flag definitions.",
+	Long: ``,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -36,7 +37,6 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agent.yaml)")
-
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -12,12 +12,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type HttpServiceConfiguration struct {
+type HTTPServiceConfiguration struct {
 	Port int32
 }
 
-type HttpService struct {
-	HttpServiceConfiguration *HttpServiceConfiguration
+type HTTPService struct {
+	HTTPServiceConfiguration *HTTPServiceConfiguration
 }
 
 type Server struct {
@@ -26,74 +26,83 @@ type Server struct {
 
 // implement the generated ServerInterface.
 // TODO: might be able to simplify some of this with generics.
-// TODO: add improved, more RESTful error handling, we should inspect the returned ErrorCode and respond with a matching HTTP status code. 
-func (s Server) ResolveBoolean(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveBooleanParams) {
+// TODO: add improved, more RESTful error handling, we should inspect
+// the returned ErrorCode and respond with a matching HTTP status code.
+func (s Server) ResolveBoolean(
+	w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveBooleanParams,
+) {
 	result, reason, err := s.eval.ResolveBooleanValue(flagKey, params.DefaultValue)
-	if (err != nil) {
-		message := err.Error();
+	if err != nil {
+		message := err.Error()
 		log.Error(message)
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
+		_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
 			ErrorCode: &message,
-			Reason: &reason,
+			Reason:    &reason,
 		})
-		return;
+		return
 	}
-	json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
-		Value: result,
+	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
+		Value:  result,
 		Reason: &reason,
 	})
 }
 
-func (s Server) ResolveString(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveStringParams) {
+func (s Server) ResolveString(
+	w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveStringParams,
+) {
 	result, reason, err := s.eval.ResolveStringValue(flagKey, params.DefaultValue)
-	if (err != nil) {
-		message := err.Error();
+	if err != nil {
+		message := err.Error()
 		log.Error(message)
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
+		_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
 			ErrorCode: &message,
-			Reason: &reason,
+			Reason:    &reason,
 		})
-		return;
+		return
 	}
-	json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
-		Value: result,
+	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
+		Value:  result,
 		Reason: &reason,
 	})
 }
 
-func (s Server) ResolveNumber(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveNumberParams) {
+func (s Server) ResolveNumber(
+	w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveNumberParams,
+) {
 	result, reason, err := s.eval.ResolveNumberValue(flagKey, params.DefaultValue)
-	if (err != nil) {
-		message := err.Error();
+	if err != nil {
+		message := err.Error()
 		log.Error(message)
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
+		_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
 			ErrorCode: &message,
-			Reason: &reason,
+			Reason:    &reason,
 		})
-		return;
+		return
 	}
-	json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
-		Value: result,
+	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
+		Value:  result,
 		Reason: &reason,
 	})
 }
 
-func (s Server) ResolveObject(w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveObjectParams) {
+func (s Server) ResolveObject(
+	w http.ResponseWriter, r *http.Request, flagKey gen.FlagKey, params gen.ResolveObjectParams,
+) {
 	result, reason, err := s.eval.ResolveObjectValue(flagKey, params.DefaultValue.AdditionalProperties)
-	if (err != nil) {
-		message := err.Error();
+	if err != nil {
+		message := err.Error()
 		log.Error(message)
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
+		_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
 			ErrorCode: &message,
-			Reason: &reason,
+			Reason:    &reason,
 		})
-		return;
+		return
 	}
-	json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
+	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
 		Value: gen.ResolutionDetailsObject_Value{
 			AdditionalProperties: result,
 		},
@@ -101,13 +110,13 @@ func (s Server) ResolveObject(w http.ResponseWriter, r *http.Request, flagKey ge
 	})
 }
 
-func (h *HttpService) Serve(eval eval.IEvaluator, ctx context.Context) error {
-	if h.HttpServiceConfiguration == nil {
+func (h *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	if h.HTTPServiceConfiguration == nil {
 		return errors.New("http service configuration has not been initialised")
 	}
-	http.Handle("/", gen.Handler(Server{ eval }))
-	http.ListenAndServe(fmt.Sprintf(":%d", h.HttpServiceConfiguration.Port), nil)
+	http.Handle("/", gen.Handler(Server{eval}))
+	_ = http.ListenAndServe(fmt.Sprintf(":%d", h.HTTPServiceConfiguration.Port), nil)
 
-	<- ctx.Done()
+	<-ctx.Done()
 	return nil
 }
