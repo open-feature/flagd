@@ -35,6 +35,30 @@
         }
       },
       "defaultVariant": "object1"
+    },
+    "isColorYellow": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off",
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "color"
+                ]
+              },
+              "yellow"
+            ]
+          },
+          "on",
+          "off"
+        ]
+      }
     }
   }
 }

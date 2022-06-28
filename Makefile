@@ -17,6 +17,8 @@ docker-push: generate
 	docker buildx build --push --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 build: generate
 	go build -o flagd
+test: generate
+	go test -cover ./...
 run: generate
 	go run main.go start -f config/samples/example_flags.json
 install: build
