@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/deepmap/oapi-codegen v1.11.0
-	github.com/diegoholiveira/jsonlogic/v3 v3.2.2
+	github.com/diegoholiveira/jsonlogic/v3 v3.2.3
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/robfig/cron v1.2.0
