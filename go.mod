@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd
 
-go 1.17
+go 1.18
 
 require (
 	github.com/deepmap/oapi-codegen v1.11.0
