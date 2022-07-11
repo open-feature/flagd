@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/work/open-feature/flagd
+      GOBIN: $GOPATH
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -25,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/work/open-feature/flagd
+      GOBIN: $GOPATH
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
