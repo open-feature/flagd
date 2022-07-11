@@ -67,7 +67,8 @@ jobs:
           go-version: '1.18.1' 
       - name: Fetch Deps
         run: |
-          export PATH=${PATH}:`go env GOPATH`/bin
+          export GOBIN=`go env GOPATH`/bin
+          export PATH=${PATH}:$GOBIN
           go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
           cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
           oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
