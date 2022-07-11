@@ -6,7 +6,7 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-generate: guard-GOPATH
+generate: guard-GOPATH guard-GOBIN
 	git submodule update --init --recursive
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 	cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
@@ -21,7 +21,7 @@ test: generate
 	go test -cover ./...
 run: generate
 	go run main.go start -f config/samples/example_flags.json
-install: build
+install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd
 	cp systemd/flags.json /etc/flagd/flags.json
