@@ -416,68 +416,86 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 }
 
-func TestMergeJSON(t *testing.T) {
+func TestMergeFlags(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
-		name  string
-		left  string
-		right string
-		want  string
+		name    string
+		current eval.Flags
+		new     eval.Flags
+		want    eval.Flags
 	}{
 		{
-			name:  "both empty string",
-			left:  ``,
-			right: ``,
-			want:  `{}`,
+			name:    "both nil",
+			current: eval.Flags{Flags: nil},
+			new:     eval.Flags{Flags: nil},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
 		},
 		{
-			name:  "both empty objects",
-			left:  `{}`,
-			right: `{}`,
-			want:  `{}`,
+			name:    "both empty flags",
+			current: eval.Flags{Flags: map[string]eval.Flag{}},
+			new:     eval.Flags{Flags: map[string]eval.Flag{}},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+		},
+
+		{
+			name:    "empty current",
+			current: eval.Flags{Flags: nil},
+			new:     eval.Flags{Flags: map[string]eval.Flag{}},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
 		},
 		{
-			name:  "empty left",
-			left:  ``,
-			right: `{}`,
-			want:  `{}`,
+			name:    "empty new",
+			current: eval.Flags{Flags: map[string]eval.Flag{}},
+			new:     eval.Flags{Flags: nil},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
 		},
 		{
-			name:  "empty right",
-			left:  `{}`,
-			right: ``,
-			want:  `{}`,
+			name: "extra fields on each",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"current": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"new": {DefaultVariant: "on"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"current": {DefaultVariant: "off"},
+				"new":     {DefaultVariant: "on"},
+			}},
 		},
 		{
-			name:  "empty right",
-			left:  `{}`,
-			right: ``,
-			want:  `{}`,
+			name: "ignore override",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"current": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"current": {DefaultVariant: "on"},
+				"new":     {DefaultVariant: "on"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"current": {DefaultVariant: "off"},
+				"new":     {DefaultVariant: "on"},
+			}},
 		},
 		{
-			name:  "extra field on each side",
-			left:  `{"a": "b", "c": "d"}`,
-			right: `{"A": "B", "C": "D"}`,
-			want:  `{"a": "b", "c": "d", "A": "B", "C": "D"}`,
-		},
-		{
-			name:  "ignore override",
-			left:  `{"a": "b"}`,
-			right: `{"a": "c"}`,
-			want:  `{"a": "b"}`,
-		},
-		{
-			name:  "identical",
-			left:  `{"a": "b"}`,
-			right: `{"a": "b"}`,
-			want:  `{"a": "b"}`,
+			name: "identical",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := eval.MergeJSON([]byte(tt.left), []byte(tt.right))
-			require.NoError(t, err)
-			require.JSONEq(t, tt.want, string(got))
+			t.Parallel()
+			got := tt.current.Merge(tt.new)
+			require.Equal(t, got, tt.want)
 		})
 	}
 }
