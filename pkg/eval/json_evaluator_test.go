@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	gen "github.com/open-feature/flagd/pkg/generated"
@@ -412,5 +413,71 @@ func TestResolveObjectValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func TestMergeJSON(t *testing.T) {
+	tests := []struct {
+		name  string
+		left  string
+		right string
+		want  string
+	}{
+		{
+			name:  "both empty string",
+			left:  ``,
+			right: ``,
+			want:  `{}`,
+		},
+		{
+			name:  "both empty objects",
+			left:  `{}`,
+			right: `{}`,
+			want:  `{}`,
+		},
+		{
+			name:  "empty left",
+			left:  ``,
+			right: `{}`,
+			want:  `{}`,
+		},
+		{
+			name:  "empty right",
+			left:  `{}`,
+			right: ``,
+			want:  `{}`,
+		},
+		{
+			name:  "empty right",
+			left:  `{}`,
+			right: ``,
+			want:  `{}`,
+		},
+		{
+			name:  "extra field on each side",
+			left:  `{"a": "b", "c": "d"}`,
+			right: `{"A": "B", "C": "D"}`,
+			want:  `{"a": "b", "c": "d", "A": "B", "C": "D"}`,
+		},
+		{
+			name:  "ignore override",
+			left:  `{"a": "b"}`,
+			right: `{"a": "c"}`,
+			want:  `{"a": "b"}`,
+		},
+		{
+			name:  "identical",
+			left:  `{"a": "b"}`,
+			right: `{"a": "b"}`,
+			want:  `{"a": "b"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := eval.MergeJSON([]byte(tt.left), []byte(tt.right))
+			require.NoError(t, err)
+			require.JSONEq(t, tt.want, string(got))
+		})
 	}
 }

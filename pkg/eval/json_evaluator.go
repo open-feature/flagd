@@ -173,3 +173,34 @@ func (je *JSONEvaluator) evaluateVariant(
 	// if it's not a valid variant, use the default (static) value
 	return je.state.Flags[flagKey].DefaultVariant, model.StaticReason, nil
 }
+
+func MergeJSON(left, right []byte) ([]byte, error) {
+	l := make(map[string]any)
+	r := make(map[string]any)
+
+	if len(left) > 0 {
+		if err := json.Unmarshal(left, &l); err != nil {
+			return nil, fmt.Errorf("invalid left: %w", err)
+		}
+	}
+
+	if len(right) > 0 {
+		if err := json.Unmarshal(right, &r); err != nil {
+			return nil, fmt.Errorf("invalid right: %w", err)
+		}
+	}
+
+	res := make(map[string]any)
+	for k, v := range r {
+		res[k] = v
+	}
+	for k, v := range l {
+		res[k] = v
+	}
+	result, err := json.Marshal(res)
+	if err != nil {
+		return nil, fmt.Errorf("marshal result: %w", err)
+	}
+
+	return result, nil
+}
