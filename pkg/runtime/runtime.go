@@ -26,23 +26,19 @@ func updateState(syncr sync.ISync) error {
 	return nil
 }
 
-func Start(ctx context.Context, syncr sync.ISync, server service.IService, evaluator eval.IEvaluator) {
-	ev = evaluator
-
+func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISync) {
 	if err := updateState(syncr); err != nil {
 		log.Error(err)
 	}
 
-	syncNotifier := make(chan sync.INotify)
-
-	go syncr.Notify(syncNotifier)
+	go syncr.Notify(notifier)
 
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case w := <-syncNotifier:
+			case w := <-notifier:
 				switch w.GetEvent().EventType {
 				case sync.EEventTypeCreate:
 					log.Info("New configuration created")
@@ -60,6 +56,16 @@ func Start(ctx context.Context, syncr sync.ISync, server service.IService, evalu
 			}
 		}
 	}()
+}
+
+func Start(ctx context.Context, syncr []sync.ISync, server service.IService, evaluator eval.IEvaluator) {
+	ev = evaluator
+
+	syncNotifier := make(chan sync.INotify)
+
+	for _, s := range syncr {
+		startSyncer(ctx, syncNotifier, s)
+	}
 
 	go func() { _ = server.Serve(ctx, ev) }()
 }

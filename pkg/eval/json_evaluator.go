@@ -50,7 +50,7 @@ func (je *JSONEvaluator) SetState(state string) error {
 	if err != nil {
 		return fmt.Errorf("unmarshal new state: %w", err)
 	}
-	je.state.Merge(newFlags)
+	je.state = je.state.Merge(newFlags)
 
 	return nil
 }
