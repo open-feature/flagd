@@ -13,17 +13,13 @@ type IEvaluator interface {
 	SetState(state string) error
 	ResolveBooleanValue(
 		flagKey string,
-		defaultValue bool,
 		context *structpb.Struct) (value bool, reason string, err error)
 	ResolveStringValue(
 		flagKey string,
-		defaultValue string,
 		context *structpb.Struct) (value string, reason string, err error)
 	ResolveNumberValue(flagKey string,
-		defaultValue float32,
 		context *structpb.Struct) (value float32, reason string, err error)
 	ResolveObjectValue(
 		flagKey string,
-		defaultValue map[string]interface{},
 		context *structpb.Struct) (value map[string]interface{}, reasons string, err error)
 }

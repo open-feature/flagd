@@ -72,7 +72,7 @@ func (s HTTPService) ResolveBoolean(
 	req *gen.ResolveBooleanRequest,
 ) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
-	result, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
@@ -86,7 +86,7 @@ func (s HTTPService) ResolveString(
 	req *gen.ResolveStringRequest,
 ) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
-	result, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
@@ -100,7 +100,7 @@ func (s HTTPService) ResolveNumber(
 	req *gen.ResolveNumberRequest,
 ) (*gen.ResolveNumberResponse, error) {
 	res := gen.ResolveNumberResponse{}
-	result, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
@@ -114,7 +114,7 @@ func (s HTTPService) ResolveObject(
 	req *gen.ResolveObjectRequest,
 ) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
-	result, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetDefaultValue().AsMap(), req.GetContext())
+	result, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
