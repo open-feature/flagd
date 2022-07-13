@@ -7,6 +7,7 @@ guard-%:
         exit 1; \
     fi
 generate: guard-GOPATH guard-GOBIN
+	export PATH="$(PATH):$(go env GOPATH)/bin"
 	git submodule update --init --recursive
 	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
 	go install github.com/bufbuild/buf/cmd/buf@latest
