@@ -154,10 +154,8 @@ func (je *JSONEvaluator) evaluateVariant(
 
 			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
-		fmt.Println(string(b))
 		var result bytes.Buffer
 		// evaluate json-logic rules to determine the variant
-		fmt.Println(string(targetingBytes), string(b))
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			log.Errorf("Error applying rules %s", err)
