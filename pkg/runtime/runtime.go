@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 	msync "sync"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -29,7 +28,6 @@ func updateState(syncr sync.ISync) error {
 
 func Start(ctx context.Context, syncr sync.ISync, server service.IService, evaluator eval.IEvaluator) {
 	ev = evaluator
-	fmt.Println(ev)
 	if err := updateState(syncr); err != nil {
 		log.Error(err)
 	}

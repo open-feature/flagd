@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -24,8 +25,8 @@ type HTTPServiceConfiguration struct {
 }
 
 type HTTPService struct {
-	ServiceConfiguration *HTTPServiceConfiguration
-	eval                 eval.IEvaluator
+	HTTPServiceConfiguration *HTTPServiceConfiguration
+	eval                     eval.IEvaluator
 	gen.UnimplementedServiceServer
 }
 
@@ -34,11 +35,13 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
 
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithErrorHandler(s.HTTPErrorHandler),
+	)
 	err := gen.RegisterServiceHandlerFromEndpoint(
 		context.Background(),
 		mux,
-		fmt.Sprintf("localhost:%d", s.ServiceConfiguration.Port),
+		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	)
 	if err != nil {
@@ -49,7 +52,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		Handler: mux,
 	}
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.ServiceConfiguration.Port))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,18 +69,58 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	return nil
 }
 
+func (s HTTPService) HTTPErrorHandler(
+	ctx context.Context,
+	m *runtime.ServeMux,
+	ma runtime.Marshaler,
+	w http.ResponseWriter,
+	r *http.Request,
+	err error,
+) {
+	if s, ok := status.FromError(err); ok {
+		code := s.Code()
+		switch {
+		case codes.Unknown == code:
+			w.WriteHeader(http.StatusInternalServerError)
+		case codes.InvalidArgument == code:
+			w.WriteHeader(http.StatusBadRequest)
+		case codes.NotFound == code:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		var res []byte
+		if res, err = json.Marshal(gen.ErrorResponse{
+			ErrorCode: s.Message(),
+		}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Error(err)
+			return
+		}
+		if _, err = w.Write(res); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Error(err)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error(err)
+	}
+}
+
 // TODO: might be able to simplify some of this with generics.
 func (s HTTPService) ResolveBoolean(
 	ctx context.Context,
 	req *gen.ResolveBooleanRequest,
 ) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
-	result, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, variant, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
+	res.Variant = variant
 	return &res, nil
 }
 
@@ -86,12 +129,13 @@ func (s HTTPService) ResolveString(
 	req *gen.ResolveStringRequest,
 ) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
-	result, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, variant, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
+	res.Variant = variant
 	return &res, nil
 }
 
@@ -100,12 +144,13 @@ func (s HTTPService) ResolveNumber(
 	req *gen.ResolveNumberRequest,
 ) (*gen.ResolveNumberResponse, error) {
 	res := gen.ResolveNumberResponse{}
-	result, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
+	result, variant, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
+	res.Variant = variant
 	return &res, nil
 }
 
@@ -114,7 +159,7 @@ func (s HTTPService) ResolveObject(
 	req *gen.ResolveObjectRequest,
 ) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
-	result, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetDefaultValue().AsMap(), req.GetContext())
+	result, variant, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, handleEvaluationError(err, reason)
 	}
@@ -124,6 +169,7 @@ func (s HTTPService) ResolveObject(
 	}
 	res.Reason = reason
 	res.Value = val
+	res.Variant = variant
 	return &res, nil
 }
 
@@ -142,6 +188,7 @@ func handleEvaluationError(err error, reason string) error {
 	return status.Error(statusCode, message)
 }
 
+// TODO: could be replaced with a logging client
 func handleServiceError(err error) {
 	log.Fatal(err)
 }

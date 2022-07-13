@@ -18,20 +18,20 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 This now provides an accessible http endpoint for the flags:
 
 ```
-$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean?default-value=true" -d {}
-// {"reason":"STATIC","value":true}
+$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean" -d {}
+// {"value":true,"reason":"STATIC","variant":"on"}
 
-$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string?default-value=hi" -d {}
-// {"reason":"STATIC","value":"red"}
+$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string" -d {}
+// {"value":"val1","reason":"STATIC","variant":"key1"}
 
-$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number?default-value=13" -d {}
-// {"reason":"STATIC","value":1}
+$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number" -d {}
+// {"value":1,"reason":"STATIC","variant":"one"}
 
-$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object?default-value=foo,bar" -d {}
-// {"reason":"STATIC","value":{"color":"blue"}}
+$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object" -d {}
+// {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
 
-$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean?default-value=true" -d '{"color": "yellow"}'
-// {"reason":"TARGETING_MATCH","value":true}
+$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+// {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 ```
 
 ### Installation

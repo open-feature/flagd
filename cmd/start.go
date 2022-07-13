@@ -32,7 +32,7 @@ var (
 func findService(name string) (service.IService, error) {
 	registeredServices := map[string]service.IService{
 		"http": &service.HTTPService{
-			ServiceConfiguration: &service.HTTPServiceConfiguration{
+			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
 				Port: httpServicePort,
 			},
 		},
@@ -143,7 +143,7 @@ func init() {
 	startCmd.Flags().StringVarP(
 		&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(
-		&serviceProvider, "service-provider", "s", "http-grpc", "Set a serve provider e.g. http-grpc or socket")
+		&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
 	startCmd.Flags().StringVarP(
 		&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(
