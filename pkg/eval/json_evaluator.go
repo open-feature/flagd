@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
-	gen "github.com/open-feature/flagd/pkg/generated"
 	"github.com/open-feature/flagd/pkg/model"
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 //go:embed flagd-definitions.json
@@ -51,7 +51,7 @@ func (je *JSONEvaluator) SetState(state string) error {
 }
 
 // TODO: might be able to simplify some of this with generics.
-func (je *JSONEvaluator) ResolveBooleanValue(flagKey string, defaultValue bool, context gen.Context) (
+func (je *JSONEvaluator) ResolveBooleanValue(flagKey string, defaultValue bool, context *structpb.Struct) (
 	value bool,
 	reason string,
 	err error,
@@ -70,7 +70,7 @@ func (je *JSONEvaluator) ResolveBooleanValue(flagKey string, defaultValue bool, 
 	return val, reason, nil
 }
 
-func (je *JSONEvaluator) ResolveStringValue(flagKey string, defaultValue string, context gen.Context) (
+func (je *JSONEvaluator) ResolveStringValue(flagKey string, defaultValue string, context *structpb.Struct) (
 	value string,
 	reason string,
 	err error,
@@ -89,7 +89,7 @@ func (je *JSONEvaluator) ResolveStringValue(flagKey string, defaultValue string,
 	return val, reason, nil
 }
 
-func (je *JSONEvaluator) ResolveNumberValue(flagKey string, defaultValue float32, context gen.Context) (
+func (je *JSONEvaluator) ResolveNumberValue(flagKey string, defaultValue float32, context *structpb.Struct) (
 	value float32,
 	reason string,
 	err error,
@@ -108,7 +108,7 @@ func (je *JSONEvaluator) ResolveNumberValue(flagKey string, defaultValue float32
 	return float32(val), reason, nil
 }
 
-func (je *JSONEvaluator) ResolveObjectValue(flagKey string, defaultValue map[string]interface{}, context gen.Context) (
+func (je *JSONEvaluator) ResolveObjectValue(flagKey string, defaultValue map[string]interface{}, context *structpb.Struct) (
 	value map[string]interface{},
 	reason string,
 	err error,
@@ -130,7 +130,7 @@ func (je *JSONEvaluator) ResolveObjectValue(flagKey string, defaultValue map[str
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
 func (je *JSONEvaluator) evaluateVariant(
 	flagKey string,
-	context gen.Context,
+	context *structpb.Struct,
 ) (variant string, reason string, err error) {
 	flag, ok := je.state.Flags[flagKey]
 	if !ok {
@@ -147,16 +147,18 @@ func (je *JSONEvaluator) evaluateVariant(
 			log.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
 			return "", model.ErrorReason, err
 		}
-		contextBytes, err := context.MarshalJSON()
+
+		b, err := json.Marshal(context)
 		if err != nil {
-			log.Errorf("Error parsing context %s", err)
-			return "", model.ErrorReason, err
+			log.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
+
+			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
-
+		fmt.Println(string(b))
 		var result bytes.Buffer
-
 		// evaluate json-logic rules to determine the variant
-		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(contextBytes), &result)
+		fmt.Println(string(targetingBytes), string(b))
+		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			log.Errorf("Error applying rules %s", err)
 			return "", model.ErrorReason, err

@@ -6,11 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/pkg/generated"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const InvalidFlags = `{
@@ -264,17 +263,15 @@ func TestResolveBooleanValue(t *testing.T) {
 	tests := []struct {
 		flagKey      string
 		defaultValue bool
-		context      gen.Context
+		context      map[string]interface{}
 		val          bool
 		reason       string
 		errorCode    string
 	}{
-		{StaticBoolFlag, false, gen.Context{}, StaticBoolValue, model.StaticReason, ""},
-		{DynamicBoolFlag, false, gen.Context{AdditionalProperties: map[string]interface{}{
-			ColorProp: ColorValue,
-		}}, StaticBoolValue, model.TargetingMatchReason, ""},
-		{StaticObjectFlag, false, gen.Context{}, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
-		{MissingFlag, false, gen.Context{}, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{StaticBoolFlag, false, nil, StaticBoolValue, model.StaticReason, ""},
+		{DynamicBoolFlag, false, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, false, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, false, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{}
@@ -284,8 +281,10 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, reason, err := evaluator.ResolveBooleanValue(test.flagKey, test.defaultValue, test.context)
-
+		apStruct, err := structpb.NewStruct(test.context)
+		fmt.Println(apStruct)
+		val, reason, err := evaluator.ResolveBooleanValue(test.flagKey, test.defaultValue, apStruct)
+		fmt.Println(val, reason, err)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
@@ -302,17 +301,15 @@ func TestResolveStringValue(t *testing.T) {
 	tests := []struct {
 		flagKey      string
 		defaultValue string
-		context      gen.Context
+		context      map[string]interface{}
 		val          string
 		reason       string
 		errorCode    string
 	}{
-		{StaticStringFlag, "default", gen.Context{}, StaticStringValue, model.StaticReason, ""},
-		{DynamicStringFlag, "default", gen.Context{AdditionalProperties: map[string]interface{}{
-			ColorProp: ColorValue,
-		}}, DynamicStringValue, model.TargetingMatchReason, ""},
-		{StaticObjectFlag, "default", gen.Context{}, "", model.ErrorReason, model.TypeMismatchErrorCode},
-		{MissingFlag, "default", gen.Context{}, "", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{StaticStringFlag, "default", nil, StaticStringValue, model.StaticReason, ""},
+		{DynamicStringFlag, "default", map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, "default", nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, "default", nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{}
@@ -322,7 +319,8 @@ func TestResolveStringValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, reason, err := evaluator.ResolveStringValue(test.flagKey, test.defaultValue, test.context)
+		apStruct, err := structpb.NewStruct(test.context)
+		val, reason, err := evaluator.ResolveStringValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -340,17 +338,15 @@ func TestResolveNumberValue(t *testing.T) {
 	tests := []struct {
 		flagKey      string
 		defaultValue float32
-		context      gen.Context
+		context      map[string]interface{}
 		val          float32
 		reason       string
 		errorCode    string
 	}{
-		{StaticNumberFlag, 13, gen.Context{}, StaticNumberValue, model.StaticReason, ""},
-		{DynamicNumberFlag, 13, gen.Context{AdditionalProperties: map[string]interface{}{
-			ColorProp: ColorValue,
-		}}, DynamicNumberValue, model.TargetingMatchReason, ""},
-		{StaticObjectFlag, 13, gen.Context{}, 13, model.ErrorReason, model.TypeMismatchErrorCode},
-		{MissingFlag, 13, gen.Context{}, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{StaticNumberFlag, 13, nil, StaticNumberValue, model.StaticReason, ""},
+		{DynamicNumberFlag, 13, map[string]interface{}{ColorProp: ColorValue}, DynamicNumberValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, 13, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, 13, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{}
@@ -360,7 +356,8 @@ func TestResolveNumberValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, reason, err := evaluator.ResolveNumberValue(test.flagKey, test.defaultValue, test.context)
+		apStruct, err := structpb.NewStruct(test.context)
+		val, reason, err := evaluator.ResolveNumberValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -378,17 +375,15 @@ func TestResolveObjectValue(t *testing.T) {
 	tests := []struct {
 		flagKey      string
 		defaultValue map[string]interface{}
-		context      gen.Context
+		context      map[string]interface{}
 		val          string
 		reason       string
 		errorCode    string
 	}{
-		{StaticObjectFlag, map[string]interface{}{}, gen.Context{}, StaticObjectValue, model.StaticReason, ""},
-		{DynamicObjectFlag, map[string]interface{}{}, gen.Context{AdditionalProperties: map[string]interface{}{
-			ColorProp: ColorValue,
-		}}, DynamicObjectValue, model.TargetingMatchReason, ""},
-		{StaticBoolFlag, map[string]interface{}{}, gen.Context{}, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
-		{MissingFlag, map[string]interface{}{}, gen.Context{}, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{StaticObjectFlag, map[string]interface{}{}, nil, StaticObjectValue, model.StaticReason, ""},
+		{DynamicObjectFlag, map[string]interface{}{}, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
+		{StaticBoolFlag, map[string]interface{}{}, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, map[string]interface{}{}, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{}
@@ -398,7 +393,8 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, reason, err := evaluator.ResolveObjectValue(test.flagKey, test.defaultValue, test.context)
+		apStruct, err := structpb.NewStruct(test.context)
+		val, reason, err := evaluator.ResolveObjectValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
