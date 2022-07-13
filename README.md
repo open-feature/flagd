@@ -30,7 +30,7 @@ $ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number" -d {}
 $ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object" -d {}
 // {"reason":"STATIC","value":{"key":"val"}}
 
-$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d {"color": "yellow"}
+$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
 // {"reason":"TARGETING_MATCH","value":true}
 ```
 
