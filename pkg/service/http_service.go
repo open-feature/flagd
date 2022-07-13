@@ -142,7 +142,7 @@ func handleEvaluationError(err error, reason string) error {
 	return status.Error(statusCode, message)
 }
 
-// could be replaced with a logging client
+// TODO: could be replaced with a logging client
 func handleServiceError(err error) {
 	log.Fatal(err)
 }

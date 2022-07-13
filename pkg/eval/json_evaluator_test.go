@@ -285,7 +285,6 @@ func TestResolveBooleanValue(t *testing.T) {
 			t.Fatal(err)
 		}
 		val, reason, err := evaluator.ResolveBooleanValue(test.flagKey, apStruct)
-		fmt.Println(val, reason, err)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
