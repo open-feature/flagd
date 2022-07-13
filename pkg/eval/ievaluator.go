@@ -11,9 +11,17 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 type IEvaluator interface {
 	GetState() (string, error)
 	SetState(state string) error
-	ResolveBooleanValue(flagKey string, defaultValue bool, context *structpb.Struct) (value bool, reason string, err error)
-	ResolveStringValue(flagKey string, defaultValue string, context *structpb.Struct) (value string, reason string, err error)
-	ResolveNumberValue(flagKey string, defaultValue float32, context *structpb.Struct) (value float32, reason string, err error)
+	ResolveBooleanValue(
+		flagKey string,
+		defaultValue bool,
+		context *structpb.Struct) (value bool, reason string, err error)
+	ResolveStringValue(
+		flagKey string,
+		defaultValue string,
+		context *structpb.Struct) (value string, reason string, err error)
+	ResolveNumberValue(flagKey string,
+		defaultValue float32,
+		context *structpb.Struct) (value float32, reason string, err error)
 	ResolveObjectValue(
 		flagKey string,
 		defaultValue map[string]interface{},

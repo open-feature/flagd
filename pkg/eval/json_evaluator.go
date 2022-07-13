@@ -108,7 +108,11 @@ func (je *JSONEvaluator) ResolveNumberValue(flagKey string, defaultValue float32
 	return float32(val), reason, nil
 }
 
-func (je *JSONEvaluator) ResolveObjectValue(flagKey string, defaultValue map[string]interface{}, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveObjectValue(
+	flagKey string,
+	defaultValue map[string]interface{},
+	context *structpb.Struct,
+) (
 	value map[string]interface{},
 	reason string,
 	err error,

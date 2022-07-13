@@ -14,6 +14,7 @@ import (
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -34,7 +35,12 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	gen.RegisterServiceServer(grpcServer, s)
 
 	mux := runtime.NewServeMux()
-	err := gen.RegisterServiceHandlerFromEndpoint(context.Background(), mux, fmt.Sprintf("localhost:%d", s.ServiceConfiguration.Port), []grpc.DialOption{grpc.WithInsecure()})
+	err := gen.RegisterServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		fmt.Sprintf("localhost:%d", s.ServiceConfiguration.Port),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,16 +58,19 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	httpL := m.Match(cmux.HTTP1Fast())
 	grpcL := m.Match(cmux.HTTP2())
 
-	go server.Serve(httpL)
-	go grpcServer.Serve(grpcL)
-	go m.Serve()
+	go func() { handleServiceError(server.Serve(httpL)) }()
+	go func() { handleServiceError(grpcServer.Serve(grpcL)) }()
+	go func() { handleServiceError(m.Serve()) }()
 
 	<-ctx.Done()
 	return nil
 }
 
 // TODO: might be able to simplify some of this with generics.
-func (s HTTPService) ResolveBoolean(ctx context.Context, req *gen.ResolveBooleanRequest) (*gen.ResolveBooleanResponse, error) {
+func (s HTTPService) ResolveBoolean(
+	ctx context.Context,
+	req *gen.ResolveBooleanRequest,
+) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
 	result, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -72,7 +81,10 @@ func (s HTTPService) ResolveBoolean(ctx context.Context, req *gen.ResolveBoolean
 	return &res, nil
 }
 
-func (s HTTPService) ResolveString(ctx context.Context, req *gen.ResolveStringRequest) (*gen.ResolveStringResponse, error) {
+func (s HTTPService) ResolveString(
+	ctx context.Context,
+	req *gen.ResolveStringRequest,
+) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
 	result, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -83,7 +95,10 @@ func (s HTTPService) ResolveString(ctx context.Context, req *gen.ResolveStringRe
 	return &res, nil
 }
 
-func (s HTTPService) ResolveNumber(ctx context.Context, req *gen.ResolveNumberRequest) (*gen.ResolveNumberResponse, error) {
+func (s HTTPService) ResolveNumber(
+	ctx context.Context,
+	req *gen.ResolveNumberRequest,
+) (*gen.ResolveNumberResponse, error) {
 	res := gen.ResolveNumberResponse{}
 	result, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -94,7 +109,10 @@ func (s HTTPService) ResolveNumber(ctx context.Context, req *gen.ResolveNumberRe
 	return &res, nil
 }
 
-func (s HTTPService) ResolveObject(ctx context.Context, req *gen.ResolveObjectRequest) (*gen.ResolveObjectResponse, error) {
+func (s HTTPService) ResolveObject(
+	ctx context.Context,
+	req *gen.ResolveObjectRequest,
+) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
 	result, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetDefaultValue().AsMap(), req.GetContext())
 	if err != nil {
@@ -122,4 +140,8 @@ func handleEvaluationError(err error, reason string) error {
 	}
 	log.Error(message)
 	return status.Error(statusCode, message)
+}
+
+func handleServiceError(err error) {
+	log.Fatal(err)
 }

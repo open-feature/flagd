@@ -282,7 +282,9 @@ func TestResolveBooleanValue(t *testing.T) {
 
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
-		fmt.Println(apStruct)
+		if err != nil {
+			t.Fatal(err)
+		}
 		val, reason, err := evaluator.ResolveBooleanValue(test.flagKey, test.defaultValue, apStruct)
 		fmt.Println(val, reason, err)
 		if test.errorCode == "" {
@@ -320,6 +322,9 @@ func TestResolveStringValue(t *testing.T) {
 
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			t.Fatal(err)
+		}
 		val, reason, err := evaluator.ResolveStringValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
@@ -357,6 +362,9 @@ func TestResolveNumberValue(t *testing.T) {
 
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			t.Fatal(err)
+		}
 		val, reason, err := evaluator.ResolveNumberValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
@@ -394,6 +402,9 @@ func TestResolveObjectValue(t *testing.T) {
 
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			t.Fatal(err)
+		}
 		val, reason, err := evaluator.ResolveObjectValue(test.flagKey, test.defaultValue, apStruct)
 
 		if test.errorCode == "" {
