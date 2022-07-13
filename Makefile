@@ -6,7 +6,7 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-generate: guard-GOPATH
+generate: guard-GOPATH guard-GOBIN
 	git submodule update --init --recursive
 	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
 	go install github.com/bufbuild/buf/cmd/buf@latest
