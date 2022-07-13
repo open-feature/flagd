@@ -24,8 +24,8 @@ type HTTPServiceConfiguration struct {
 }
 
 type HTTPService struct {
-	ServiceConfiguration *HTTPServiceConfiguration
-	eval                 eval.IEvaluator
+	HTTPServiceConfiguration *HTTPServiceConfiguration
+	eval                     eval.IEvaluator
 	gen.UnimplementedServiceServer
 }
 
@@ -38,7 +38,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	err := gen.RegisterServiceHandlerFromEndpoint(
 		context.Background(),
 		mux,
-		fmt.Sprintf("localhost:%d", s.ServiceConfiguration.Port),
+		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	)
 	if err != nil {
@@ -49,7 +49,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		Handler: mux,
 	}
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.ServiceConfiguration.Port))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
