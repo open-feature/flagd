@@ -18,17 +18,17 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type ServiceConfiguration struct {
+type HTTPServiceConfiguration struct {
 	Port int32
 }
 
-type Service struct {
-	ServiceConfiguration *ServiceConfiguration
+type HTTPService struct {
+	ServiceConfiguration *HTTPServiceConfiguration
 	eval                 eval.IEvaluator
 	gen.UnimplementedServiceServer
 }
 
-func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
+func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
@@ -61,7 +61,7 @@ func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
 }
 
 // TODO: might be able to simplify some of this with generics.
-func (s Service) ResolveBoolean(ctx context.Context, req *gen.ResolveBooleanRequest) (*gen.ResolveBooleanResponse, error) {
+func (s HTTPService) ResolveBoolean(ctx context.Context, req *gen.ResolveBooleanRequest) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
 	result, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -72,7 +72,7 @@ func (s Service) ResolveBoolean(ctx context.Context, req *gen.ResolveBooleanRequ
 	return &res, nil
 }
 
-func (s Service) ResolveString(ctx context.Context, req *gen.ResolveStringRequest) (*gen.ResolveStringResponse, error) {
+func (s HTTPService) ResolveString(ctx context.Context, req *gen.ResolveStringRequest) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
 	result, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -83,7 +83,7 @@ func (s Service) ResolveString(ctx context.Context, req *gen.ResolveStringReques
 	return &res, nil
 }
 
-func (s Service) ResolveNumber(ctx context.Context, req *gen.ResolveNumberRequest) (*gen.ResolveNumberResponse, error) {
+func (s HTTPService) ResolveNumber(ctx context.Context, req *gen.ResolveNumberRequest) (*gen.ResolveNumberResponse, error) {
 	res := gen.ResolveNumberResponse{}
 	result, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetDefaultValue(), req.GetContext())
 	if err != nil {
@@ -94,7 +94,7 @@ func (s Service) ResolveNumber(ctx context.Context, req *gen.ResolveNumberReques
 	return &res, nil
 }
 
-func (s Service) ResolveObject(ctx context.Context, req *gen.ResolveObjectRequest) (*gen.ResolveObjectResponse, error) {
+func (s HTTPService) ResolveObject(ctx context.Context, req *gen.ResolveObjectRequest) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
 	result, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetDefaultValue().AsMap(), req.GetContext())
 	if err != nil {

@@ -1,5 +1,0 @@
-output: ./pkg/generated/server.gen.go
-package: gen
-generate:
-  chi-server: true
-  models: true
