@@ -18,25 +18,25 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 This now provides an accessible http endpoint for the flags:
 
 ```
-$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean" -d {}
+$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean"
 // {"value":true,"reason":"STATIC","variant":"on"}
 
-$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string" -d {}
+$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string"
 // {"value":"val1","reason":"STATIC","variant":"key1"}
 
-$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number" -d {}
+$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number"
 // {"value":1,"reason":"STATIC","variant":"one"}
 
-$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object" -d {}
+$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object"
 // {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
 
 $ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
 // {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 
-$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/string" -d {}
+$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/string"
 // {"error_code":"TYPE_MISMATCH"}
 
-$ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string" -d {}
+$ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string"
 // {"error_code":"FLAG_NOT_FOUND"}
 ```
 
