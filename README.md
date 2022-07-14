@@ -34,6 +34,14 @@ $ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean?default-value
 // {"reason":"TARGETING_MATCH","value":true}
 ```
 
+## Multiple source example
+Multiple providers can be supplied as the following:
+```
+./flagd start -f config/samples/example_flags.json -f config/samples/example_flags_secondary.json --service-provider http --sync-provider filepath
+```
+In case of collision between flags definition the priority goes to the first given flag (e.g. example_flags > example_flags_secondary).
+
+
 ### Installation
 
 #### Systemd
