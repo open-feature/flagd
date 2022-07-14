@@ -3,3 +3,6 @@ __debug_bin
 flagd
 .vscode
 dist/
+
+# ignore generated code
+pkg/eval/flagd-definitions.json
