@@ -3,6 +3,7 @@ __debug_bin
 flagd
 .vscode
 dist/
+.idea
 
 # ignore generated code
 pkg/generated/*.gen.*

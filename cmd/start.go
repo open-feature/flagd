@@ -23,7 +23,7 @@ var (
 	serviceProvider   string
 	syncProvider      string
 	evaluator         string
-	uri               string
+	uri               []string
 	httpServicePort   int32
 	socketServicePath string
 	bearerToken       string
@@ -46,26 +46,30 @@ func findService(name string) (service.IService, error) {
 	return v, nil
 }
 
-func findSync(name string) (sync.ISync, error) {
-	registeredSync := map[string]sync.ISync{
-		"filepath": &sync.FilePathSync{
-			URI: uri,
-		},
-		"remote": &sync.HTTPSync{
-			URI:         uri,
-			BearerToken: bearerToken,
-			Client: &http.Client{
-				Timeout: time.Second * 10,
+func findSync(name string) ([]sync.ISync, error) {
+	results := make([]sync.ISync, 0, len(uri))
+	for _, u := range uri {
+		registeredSync := map[string]sync.ISync{
+			"filepath": &sync.FilePathSync{
+				URI: u,
 			},
-		},
-	}
-	v, ok := registeredSync[name]
-	if !ok {
-		return nil, errors.New("no sync-provider set")
+			"remote": &sync.HTTPSync{
+				URI:         u,
+				BearerToken: bearerToken,
+				Client: &http.Client{
+					Timeout: time.Second * 10,
+				},
+			},
+		}
+		v, ok := registeredSync[name]
+		if !ok {
+			return nil, errors.New("no sync-provider set")
+		}
+		results = append(results, v)
+		log.Debugf("Using %s sync-provider on %q\n", name, u)
 	}
 
-	log.Debugf("Using %s sync-provider\n", name)
-	return v, nil
+	return results, nil
 }
 
 func findEvaluator(name string) (eval.IEvaluator, error) {
@@ -98,7 +102,7 @@ var startCmd = &cobra.Command{
 		serviceImpl = foundService
 
 		// Configure sync-provider impl--------------------------------------------
-		var syncImpl sync.ISync
+		var syncImpl []sync.ISync
 		foundSync, err := findSync(syncProvider)
 		if err != nil {
 			log.Errorf("Unable to find sync '%s'", syncProvider)
@@ -148,8 +152,10 @@ func init() {
 		&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(
 		&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
-	startCmd.Flags().StringVarP(
-		&uri, "uri", "f", "", "Set a sync provider uri to read data from this can be a filepath or url")
+	startCmd.Flags().StringSliceVarP(
+		&uri, "uri", "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
+			"Using multiple providers is supported where collisions between "+
+			"flags with the same key, the later will be used.")
 	startCmd.Flags().StringVarP(
 		&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
 

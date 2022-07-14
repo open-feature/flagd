@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	gen "github.com/open-feature/flagd/pkg/generated"
@@ -412,5 +413,88 @@ func TestResolveObjectValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func TestMergeFlags(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		current eval.Flags
+		new     eval.Flags
+		want    eval.Flags
+	}{
+		{
+			name:    "both nil",
+			current: eval.Flags{Flags: nil},
+			new:     eval.Flags{Flags: nil},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+		},
+		{
+			name:    "both empty flags",
+			current: eval.Flags{Flags: map[string]eval.Flag{}},
+			new:     eval.Flags{Flags: map[string]eval.Flag{}},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+		},
+		{
+			name:    "empty current",
+			current: eval.Flags{Flags: nil},
+			new:     eval.Flags{Flags: map[string]eval.Flag{}},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+		},
+		{
+			name:    "empty new",
+			current: eval.Flags{Flags: map[string]eval.Flag{}},
+			new:     eval.Flags{Flags: nil},
+			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+		},
+		{
+			name: "extra fields on each",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"waka": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"paka": {DefaultVariant: "on"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"waka": {DefaultVariant: "off"},
+				"paka": {DefaultVariant: "on"},
+			}},
+		},
+		{
+			name: "override",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"waka": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"waka": {DefaultVariant: "on"},
+				"paka": {DefaultVariant: "on"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"waka": {DefaultVariant: "on"},
+				"paka": {DefaultVariant: "on"},
+			}},
+		},
+		{
+			name: "identical",
+			current: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
+			new: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
+			want: eval.Flags{Flags: map[string]eval.Flag{
+				"hello": {DefaultVariant: "off"},
+			}},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.current.Merge(tt.new)
+			require.Equal(t, got, tt.want)
+		})
 	}
 }
