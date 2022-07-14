@@ -32,6 +32,12 @@ $ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object" -d {}
 
 $ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
 // {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
+
+$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/string" -d {}
+// {"error_code":"TYPE_MISMATCH"}
+
+$ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string" -d {}
+// {"error_code":"FLAG_NOT_FOUND"}
 ```
 
 ### Installation
