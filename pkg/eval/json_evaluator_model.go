@@ -10,10 +10,10 @@ type Flags struct {
 
 func (f Flags) Merge(ff Flags) Flags {
 	result := Flags{Flags: make(map[string]Flag)}
-	for k, v := range ff.Flags {
+	for k, v := range f.Flags {
 		result.Flags[k] = v
 	}
-	for k, v := range f.Flags {
+	for k, v := range ff.Flags {
 		result.Flags[k] = v
 	}
 	return result
