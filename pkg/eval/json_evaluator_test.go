@@ -452,28 +452,28 @@ func TestMergeFlags(t *testing.T) {
 		{
 			name: "extra fields on each",
 			current: eval.Flags{Flags: map[string]eval.Flag{
-				"current": {DefaultVariant: "off"},
+				"waka": {DefaultVariant: "off"},
 			}},
 			new: eval.Flags{Flags: map[string]eval.Flag{
-				"new": {DefaultVariant: "on"},
+				"paka": {DefaultVariant: "on"},
 			}},
 			want: eval.Flags{Flags: map[string]eval.Flag{
-				"current": {DefaultVariant: "off"},
-				"new":     {DefaultVariant: "on"},
+				"waka": {DefaultVariant: "off"},
+				"paka": {DefaultVariant: "on"},
 			}},
 		},
 		{
 			name: "ignore override",
 			current: eval.Flags{Flags: map[string]eval.Flag{
-				"current": {DefaultVariant: "off"},
+				"waka": {DefaultVariant: "off"},
 			}},
 			new: eval.Flags{Flags: map[string]eval.Flag{
-				"current": {DefaultVariant: "on"},
-				"new":     {DefaultVariant: "on"},
+				"waka": {DefaultVariant: "on"},
+				"paka": {DefaultVariant: "on"},
 			}},
 			want: eval.Flags{Flags: map[string]eval.Flag{
-				"current": {DefaultVariant: "off"},
-				"new":     {DefaultVariant: "on"},
+				"waka": {DefaultVariant: "off"},
+				"paka": {DefaultVariant: "on"},
 			}},
 		},
 		{
