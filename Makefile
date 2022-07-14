@@ -10,7 +10,7 @@ generate:
 	git submodule update --init --recursive
 	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
 	go get github.com/bufbuild/buf/cmd/buf
-	cd schemas/protobuf && buf generate && cd ../..
+	cd schemas/protobuf && buf generate
 docker-build: generate
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 docker-push: generate

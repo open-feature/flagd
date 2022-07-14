@@ -24,7 +24,7 @@ var (
 	syncProvider      string
 	evaluator         string
 	uri               string
-	httpServicePort   int32
+	servicePort       int32
 	socketServicePath string
 	bearerToken       string
 )
@@ -33,7 +33,13 @@ func findService(name string) (service.IService, error) {
 	registeredServices := map[string]service.IService{
 		"http": &service.HTTPService{
 			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port: httpServicePort,
+				Port: servicePort,
+			},
+			GRPCService: &service.GRPCService{},
+		},
+		"grpc": &service.GRPCService{
+			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
+				Port: servicePort,
 			},
 		},
 	}
@@ -139,7 +145,7 @@ var startCmd = &cobra.Command{
 
 func init() {
 	startCmd.Flags().Int32VarP(
-		&httpServicePort, "port", "p", 8080, "Port to listen on")
+		&servicePort, "port", "p", 8080, "Port to listen on")
 	startCmd.Flags().StringVarP(
 		&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(
