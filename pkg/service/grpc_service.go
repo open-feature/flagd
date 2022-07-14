@@ -119,6 +119,7 @@ func HandleEvaluationError(err error, reason string) error {
 	st := status.New(statusCode, message)
 	stWD, err := st.WithDetails(&gen.ErrorResponse{
 		ErrorCode: message,
+		Reason:    "ERROR",
 	})
 	if err != nil {
 		log.Error(err)
