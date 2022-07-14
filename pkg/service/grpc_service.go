@@ -25,6 +25,10 @@ type GRPCService struct {
 	gen.UnimplementedServiceServer
 }
 
+func (s *GRPCService) SetEval(eval eval.IEvaluator) {
+	s.eval = eval
+}
+
 func (s GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 
@@ -46,7 +50,7 @@ func (s GRPCService) ResolveBoolean(
 	res := gen.ResolveBooleanResponse{}
 	result, variant, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, handleEvaluationError(err, reason)
+		return &res, HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -61,7 +65,7 @@ func (s GRPCService) ResolveString(
 	res := gen.ResolveStringResponse{}
 	result, variant, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, handleEvaluationError(err, reason)
+		return &res, HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -76,7 +80,7 @@ func (s GRPCService) ResolveNumber(
 	res := gen.ResolveNumberResponse{}
 	result, variant, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, handleEvaluationError(err, reason)
+		return &res, HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -91,11 +95,11 @@ func (s GRPCService) ResolveObject(
 	res := gen.ResolveObjectResponse{}
 	result, variant, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, handleEvaluationError(err, reason)
+		return &res, HandleEvaluationError(err, reason)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
-		return &res, handleEvaluationError(err, reason)
+		return &res, HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = val
@@ -103,7 +107,7 @@ func (s GRPCService) ResolveObject(
 	return &res, nil
 }
 
-func handleEvaluationError(err error, reason string) error {
+func HandleEvaluationError(err error, reason string) error {
 	statusCode := codes.Internal
 	message := err.Error()
 	switch message {
