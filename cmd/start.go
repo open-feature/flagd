@@ -156,7 +156,6 @@ func init() {
 		&uri, "uri", "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
 			"Using multiple providers is supported where collisions between "+
 			"flags with the same key, the later will be used.")
-
 	startCmd.Flags().StringVarP(
 		&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
 
