@@ -45,8 +45,13 @@ func (je *JSONEvaluator) SetState(state string) error {
 		return err
 	}
 
-	// this can't fail if the gojsonschema.Validate succeeded
-	_ = json.Unmarshal([]byte(state), &je.state)
+	var newFlags Flags
+	err = json.Unmarshal([]byte(state), &newFlags)
+	if err != nil {
+		return fmt.Errorf("unmarshal new state: %w", err)
+	}
+	je.state = je.state.Merge(newFlags)
+
 	return nil
 }
 

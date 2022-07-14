@@ -40,6 +40,14 @@ $ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string"
 // {"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
 ```
 
+## Multiple source example
+Multiple providers can be supplied as the following:
+```
+./flagd start -f config/samples/example_flags.json -f config/samples/example_flags_secondary.json --service-provider http --sync-provider filepath
+```
+In case of collision between flags definition the priority goes to the later (e.g. example_flags < example_flags_secondary).
+
+
 ### Installation
 
 #### Systemd
