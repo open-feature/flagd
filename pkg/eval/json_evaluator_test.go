@@ -436,7 +436,6 @@ func TestMergeFlags(t *testing.T) {
 			new:     eval.Flags{Flags: map[string]eval.Flag{}},
 			want:    eval.Flags{Flags: map[string]eval.Flag{}},
 		},
-
 		{
 			name:    "empty current",
 			current: eval.Flags{Flags: nil},
