@@ -6,11 +6,11 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-generate: guard-GOPATH guard-GOBIN
+generate:
 	git submodule update --init --recursive
-	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-	cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
-	${GOPATH}/bin/oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
+	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
+	go install github.com/bufbuild/buf/cmd/buf@latest
+	cd schemas/protobuf && buf generate
 docker-build: generate
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 docker-push: generate

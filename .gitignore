@@ -6,5 +6,4 @@ dist/
 .idea
 
 # ignore generated code
-pkg/generated/*.gen.*
 pkg/eval/flagd-definitions.json

@@ -3,14 +3,19 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"net"
 	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/pkg/generated"
-	"github.com/open-feature/flagd/pkg/model"
+	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
 	log "github.com/sirupsen/logrus"
+	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type HTTPServiceConfiguration struct {
@@ -19,153 +24,84 @@ type HTTPServiceConfiguration struct {
 
 type HTTPService struct {
 	HTTPServiceConfiguration *HTTPServiceConfiguration
+	GRPCService              *GRPCService
 }
 
-type Server struct {
-	eval eval.IEvaluator
-}
+func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	s.GRPCService.eval = eval
+	grpcServer := grpc.NewServer()
+	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 
-// implement the generated ServerInterface.
-// TODO: might be able to simplify some of this with generics.
-func (s Server) ResolveBoolean(
-	w http.ResponseWriter,
-	r *http.Request,
-	flagKey gen.FlagKey,
-	params gen.ResolveBooleanParams,
-) {
-	var contextObj gen.Context
-	err := json.NewDecoder(r.Body).Decode(&contextObj)
+	mux := runtime.NewServeMux(
+		runtime.WithErrorHandler(s.HTTPErrorHandler),
+	)
+	err := gen.RegisterServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
 	if err != nil {
-		handleParseError(err, w)
-		return
+		log.Fatal(err)
 	}
 
-	result, reason, err := s.eval.ResolveBooleanValue(flagKey, params.DefaultValue, contextObj)
+	server := http.Server{
+		Handler: mux,
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
-		handleEvaluationError(err, reason, w)
-		return
+		log.Fatal(err)
 	}
-	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsBoolean{
-		Value:  result,
-		Reason: &reason,
-	})
-}
+	m := cmux.New(l)
 
-func (s Server) ResolveString(
-	w http.ResponseWriter,
-	r *http.Request,
-	flagKey gen.FlagKey,
-	params gen.ResolveStringParams,
-) {
-	var contextObj gen.Context
-	err := json.NewDecoder(r.Body).Decode(&contextObj)
-	if err != nil {
-		handleParseError(err, w)
-		return
-	}
+	httpL := m.Match(cmux.HTTP1Fast())
+	grpcL := m.Match(cmux.HTTP2())
 
-	result, reason, err := s.eval.ResolveStringValue(flagKey, params.DefaultValue, contextObj)
-	if err != nil {
-		handleEvaluationError(err, reason, w)
-		return
-	}
-	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsString{
-		Value:  result,
-		Reason: &reason,
-	})
-}
-
-func (s Server) ResolveNumber(
-	w http.ResponseWriter,
-	r *http.Request,
-	flagKey gen.FlagKey,
-	params gen.ResolveNumberParams,
-) {
-	var contextObj gen.Context
-	err := json.NewDecoder(r.Body).Decode(&contextObj)
-	if err != nil {
-		handleParseError(err, w)
-		return
-	}
-
-	result, reason, err := s.eval.ResolveNumberValue(flagKey, params.DefaultValue, contextObj)
-	if err != nil {
-		handleEvaluationError(err, reason, w)
-		return
-	}
-	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsNumber{
-		Value:  result,
-		Reason: &reason,
-	})
-}
-
-func (s Server) ResolveObject(
-	w http.ResponseWriter,
-	r *http.Request,
-	flagKey gen.FlagKey,
-	params gen.ResolveObjectParams,
-) {
-	var contextObj gen.Context
-	err := json.NewDecoder(r.Body).Decode(&contextObj)
-	if err != nil {
-		handleParseError(err, w)
-		return
-	}
-
-	result, reason, err := s.eval.ResolveObjectValue(flagKey, params.DefaultValue.AdditionalProperties, contextObj)
-	if err != nil {
-		handleEvaluationError(err, reason, w)
-		return
-	}
-	_ = json.NewEncoder(w).Encode(gen.ResolutionDetailsObject{
-		Value: gen.ResolutionDetailsObject_Value{
-			AdditionalProperties: result,
-		},
-		Reason: &reason,
-	})
-}
-
-func (h *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	if h.HTTPServiceConfiguration == nil {
-		return errors.New("http service configuration has not been initialised")
-	}
-	http.Handle("/", gen.Handler(Server{eval}))
-	_ = http.ListenAndServe(fmt.Sprintf(":%d", h.HTTPServiceConfiguration.Port), nil)
+	go func() { handleServiceError(server.Serve(httpL)) }()
+	go func() { handleServiceError(grpcServer.Serve(grpcL)) }()
+	go func() { handleServiceError(m.Serve()) }()
 
 	<-ctx.Done()
 	return nil
 }
 
-func handleParseError(err error, w http.ResponseWriter) {
-	log.Errorf("Error parsing context from body: %s", err.Error())
-	reason := model.ErrorReason
-	errorCode := model.ParseErrorCode
-	w.WriteHeader(400)
-	if err = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
-		ErrorCode: &errorCode,
-		Reason:    &reason,
-	}); err != nil {
-		log.Errorf("Error encoding response: %s", err.Error())
+func (s HTTPService) HTTPErrorHandler(
+	ctx context.Context,
+	m *runtime.ServeMux,
+	ma runtime.Marshaler,
+	w http.ResponseWriter,
+	r *http.Request,
+	err error,
+) {
+	st := status.Convert(err)
+	switch {
+	case st.Code() == codes.Unknown:
+		w.WriteHeader(http.StatusInternalServerError)
+	case st.Code() == codes.InvalidArgument:
+		w.WriteHeader(http.StatusBadRequest)
+	case st.Code() == codes.NotFound:
+		w.WriteHeader(http.StatusNotFound)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	details := st.Details()
+	if len(details) != 1 {
+		log.Errorf("malformed error received by error handler, details received: %d - %v", len(details), details)
+		return
+	}
+	var res []byte
+	if res, err = json.Marshal(details[0]); err != nil {
+		log.Error(err)
+		return
+	}
+	if _, err = w.Write(res); err != nil {
+		log.Error(err)
+		return
 	}
 }
 
-// some basic mapping of errors from model to HTTP
-func handleEvaluationError(err error, reason string, w http.ResponseWriter) {
-	// TODO: we should consider creating a custom error that includes a code instead of using the message for this.
-	message := err.Error()
-	switch message {
-	case model.FlagNotFoundErrorCode:
-		w.WriteHeader(404)
-	case model.TypeMismatchErrorCode:
-		w.WriteHeader(400)
-	default:
-		w.WriteHeader(500)
-	}
-	log.Error(message)
-	if err = json.NewEncoder(w).Encode(gen.ResolutionDetailsWithError{
-		ErrorCode: &message,
-		Reason:    &reason,
-	}); err != nil {
-		log.Errorf("Error encoding response: %s", err.Error())
-	}
+// TODO: could be replaced with a logging client
+func handleServiceError(err error) {
+	log.Fatal(err)
 }

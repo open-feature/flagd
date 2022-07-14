@@ -70,7 +70,7 @@ jobs:
           export GOBIN=`go env GOPATH`/bin
           export PATH=${PATH}:$GOBIN
           go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
-          cp schemas/json-schema/flagd-definitions.json pkg/eval/flagd-definitions.json
+          cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
           oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
       -
         name: Run GoReleaser
