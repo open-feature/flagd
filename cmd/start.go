@@ -149,7 +149,7 @@ func init() {
 	startCmd.Flags().StringVarP(
 		&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(
-		&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or socket")
+		&serviceProvider, "service-provider", "s", "http", "Set a serve provider e.g. http or grpc")
 	startCmd.Flags().StringVarP(
 		&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(

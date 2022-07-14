@@ -9,7 +9,7 @@ guard-%:
 generate:
 	git submodule update --init --recursive
 	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
-	go get github.com/bufbuild/buf/cmd/buf
+	go install github.com/bufbuild/buf/cmd/buf@latest
 	cd schemas/protobuf && buf generate
 docker-build: generate
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
