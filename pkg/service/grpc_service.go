@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"net"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
 	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -23,7 +26,16 @@ type GRPCService struct {
 }
 
 func (s GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	return nil
+	s.eval = eval
+
+	grpcServer := grpc.NewServer()
+	gen.RegisterServiceServer(grpcServer, s)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))
+	if err != nil {
+		return err
+	}
+	return grpcServer.Serve(lis)
 }
 
 // TODO: might be able to simplify some of this with generics.
