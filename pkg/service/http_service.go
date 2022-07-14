@@ -87,7 +87,7 @@ func (s HTTPService) HTTPErrorHandler(
 	}
 	details := st.Details()
 	if len(details) != 1 {
-		log.Errorf("malformed error recieved by error handler, details recieved: %d - %v", len(details), details)
+		log.Errorf("malformed error received by error handler, details received: %d - %v", len(details), details)
 		return
 	}
 	var res []byte
