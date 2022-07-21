@@ -1,4 +1,4 @@
-package tests
+package service
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock "github.com/open-feature/flagd/pkg/eval/tests/mocks"
-	"github.com/open-feature/flagd/pkg/service"
 	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -69,7 +68,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveBooleanResponse{},
-			wantErr: service.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -82,8 +81,9 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := service.GRPCService{}
-			s.SetEval(eval)
+			s := GRPCService{
+				eval: eval,
+			}
 			got, err := s.ResolveBoolean(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("GRPCService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
@@ -152,7 +152,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveStringResponse{},
-			wantErr: service.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -165,8 +165,9 @@ func TestGRPCService_ResolveString(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := service.GRPCService{}
-			s.SetEval(eval)
+			s := GRPCService{
+				eval: eval,
+			}
 			got, err := s.ResolveString(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("GRPCService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
@@ -235,7 +236,7 @@ func TestGRPCService_ResolveNumber(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveNumberResponse{},
-			wantErr: service.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -248,8 +249,9 @@ func TestGRPCService_ResolveNumber(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := service.GRPCService{}
-			s.SetEval(eval)
+			s := GRPCService{
+				eval: eval,
+			}
 			got, err := s.ResolveNumber(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
@@ -322,7 +324,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveObjectResponse{},
-			wantErr: service.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -335,8 +337,9 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := service.GRPCService{}
-			s.SetEval(eval)
+			s := GRPCService{
+				eval: eval,
+			}
 
 			if tt.name != "eval returns error" {
 				outParsed, err := structpb.NewStruct(tt.evalFields.result)

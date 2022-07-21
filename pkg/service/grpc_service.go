@@ -25,10 +25,6 @@ type GRPCService struct {
 	gen.UnimplementedServiceServer
 }
 
-func (s *GRPCService) SetEval(eval eval.IEvaluator) {
-	s.eval = eval
-}
-
 func (s GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 
