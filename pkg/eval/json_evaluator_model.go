@@ -19,10 +19,9 @@ func (f Flags) Merge(ff Flags) Flags {
 	return result
 }
 
-// we could make this more type-safe with generics when we upgrade to 1.18.
 type Flag struct {
-	State          string                 `json:"state"`
-	DefaultVariant string                 `json:"defaultVariant"`
-	Variants       map[string]interface{} `json:"variants"`
-	Targeting      json.RawMessage        `json:"targeting"`
+	State          string          `json:"state"`
+	DefaultVariant string          `json:"defaultVariant"`
+	Variants       map[string]any  `json:"variants"`
+	Targeting      json.RawMessage `json:"targeting"`
 }
