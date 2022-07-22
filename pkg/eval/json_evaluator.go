@@ -61,8 +61,8 @@ func resolve[T any](key string, context *structpb.Struct,
 	value T,
 	variant string,
 	reason string,
-	err error) {
-
+	err error,
+) {
 	variant, reason, err = variantEval(key, context)
 	if err != nil {
 		return value, variant, reason, err
