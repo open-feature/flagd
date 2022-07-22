@@ -23,11 +23,11 @@ type JSONEvaluator struct {
 }
 
 func (je *JSONEvaluator) GetState() (string, error) {
-	bytes, err := json.Marshal(&je.state)
+	data, err := json.Marshal(&je.state)
 	if err != nil {
 		return "", err
 	}
-	return string(bytes), nil
+	return string(data), nil
 }
 
 func (je *JSONEvaluator) SetState(state string) error {
@@ -55,25 +55,35 @@ func (je *JSONEvaluator) SetState(state string) error {
 	return nil
 }
 
-// TODO: might be able to simplify some of this with generics.
+func resolve[T any](key string, context *structpb.Struct,
+	variantEval func(string, *structpb.Struct) (string, string, error),
+	variants map[string]any) (
+	value T,
+	variant string,
+	reason string,
+	err error) {
+
+	variant, reason, err = variantEval(key, context)
+	if err != nil {
+		return value, variant, reason, fmt.Errorf("evaluate variant: %w", err)
+	}
+
+	var ok bool
+	value, ok = variants[variant].(T)
+	if !ok {
+		return value, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
+	}
+
+	return value, variant, reason, nil
+}
+
 func (je *JSONEvaluator) ResolveBooleanValue(flagKey string, context *structpb.Struct) (
 	value bool,
 	variant string,
 	reason string,
 	err error,
 ) {
-	variant, reason, err = je.evaluateVariant(flagKey, context)
-	if err != nil {
-		log.Errorf("Error evaluating flag, %s", err.Error())
-		return false, variant, reason, err
-	}
-
-	val, ok := je.state.Flags[flagKey].Variants[variant].(bool)
-	if !ok {
-		log.Errorf("Error converting %s to bool", flagKey)
-		return false, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
-	}
-	return val, variant, reason, nil
+	return resolve[bool](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
 func (je *JSONEvaluator) ResolveStringValue(flagKey string, context *structpb.Struct) (
@@ -82,18 +92,7 @@ func (je *JSONEvaluator) ResolveStringValue(flagKey string, context *structpb.St
 	reason string,
 	err error,
 ) {
-	variant, reason, err = je.evaluateVariant(flagKey, context)
-	if err != nil {
-		log.Errorf("Error evaluating flag, %s", err.Error())
-		return "", variant, reason, err
-	}
-
-	val, ok := je.state.Flags[flagKey].Variants[variant].(string)
-	if !ok {
-		log.Errorf("Error converting %s to string", flagKey)
-		return "", variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
-	}
-	return val, variant, reason, nil
+	return resolve[string](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
 func (je *JSONEvaluator) ResolveNumberValue(flagKey string, context *structpb.Struct) (
@@ -102,38 +101,16 @@ func (je *JSONEvaluator) ResolveNumberValue(flagKey string, context *structpb.St
 	reason string,
 	err error,
 ) {
-	variant, reason, err = je.evaluateVariant(flagKey, context)
-	if err != nil {
-		log.Errorf("Error evaluating flag, %s", err.Error())
-		return 0, variant, reason, err
-	}
-
-	val, ok := je.state.Flags[flagKey].Variants[variant].(float64)
-	if !ok {
-		log.Errorf("Error converting %s to float32", flagKey)
-		return 0, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
-	}
-	return float32(val), variant, reason, nil
+	return resolve[float32](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
 func (je *JSONEvaluator) ResolveObjectValue(flagKey string, context *structpb.Struct) (
-	value map[string]interface{},
+	value map[string]any,
 	variant string,
 	reason string,
 	err error,
 ) {
-	variant, reason, err = je.evaluateVariant(flagKey, context)
-	if err != nil {
-		log.Errorf("Error evaluating flag, %s", err.Error())
-		return nil, variant, reason, err
-	}
-
-	val, ok := je.state.Flags[flagKey].Variants[variant].(map[string]interface{})
-	if !ok {
-		log.Errorf(fmt.Sprintf("Error converting %s to object", flagKey))
-		return nil, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
-	}
-	return val, variant, reason, nil
+	return resolve[map[string]any](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
@@ -153,22 +130,18 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			log.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
-			return "", model.ErrorReason, err
+			return "", model.ErrorReason, fmt.Errorf("parse rules: %w", err)
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			log.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
-
-			return "", model.ErrorReason, errors.New(model.ErrorReason)
+			return "", model.ErrorReason, fmt.Errorf("marshal context: %w", err)
 		}
 		var result bytes.Buffer
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			log.Errorf("Error applying rules %s", err)
-			return "", model.ErrorReason, err
+			return "", model.ErrorReason, fmt.Errorf("apply rules: %w", err)
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
