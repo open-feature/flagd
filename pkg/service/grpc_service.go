@@ -7,7 +7,7 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
-	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
+	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
