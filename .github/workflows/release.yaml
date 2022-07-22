@@ -2,10 +2,10 @@ name: release
 
 on:
   push:
-   branches:
-    - feature/workflows
-   tags:
-    - "v*.*.*"
+    branches:
+      - feature/workflows
+    tags:
+      - "v*.*.*"
 
 env:
   REGISTRY: ghcr.io
@@ -54,26 +54,21 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: true
-      -
-        name: Set up Go
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1' 
-      - name: Fetch Deps
-        run: |
-          export GOBIN=`go env GOPATH`/bin
-          export PATH=${PATH}:$GOBIN
-          go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
-          cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
-          oapi-codegen --config=./config/open_api_gen_config.yml ./schemas/openapi/provider.yml
-      -
-        name: Run GoReleaser
+          go-version: "1.18.1"
+
+      - uses: bufbuild/buf-setup-action@v0.5.0
+        with:
+          version: "1.1.1"
+      - run: make generate
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
           args: release --rm-dist
