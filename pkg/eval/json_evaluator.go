@@ -65,7 +65,7 @@ func resolve[T any](key string, context *structpb.Struct,
 
 	variant, reason, err = variantEval(key, context)
 	if err != nil {
-		return value, variant, reason, fmt.Errorf("evaluate variant: %w", err)
+		return value, variant, reason, err
 	}
 
 	var ok bool
@@ -101,7 +101,10 @@ func (je *JSONEvaluator) ResolveNumberValue(flagKey string, context *structpb.St
 	reason string,
 	err error,
 ) {
-	return resolve[float32](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	var val float64
+	val, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	value = float32(val)
+	return
 }
 
 func (je *JSONEvaluator) ResolveObjectValue(flagKey string, context *structpb.Struct) (
@@ -130,18 +133,22 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			return "", model.ErrorReason, fmt.Errorf("parse rules: %w", err)
+			log.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
+			return "", model.ErrorReason, err
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			return "", model.ErrorReason, fmt.Errorf("marshal context: %w", err)
+			log.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
+
+			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
 		var result bytes.Buffer
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			return "", model.ErrorReason, fmt.Errorf("apply rules: %w", err)
+			log.Errorf("Error applying rules %s", err)
+			return "", model.ErrorReason, err
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
