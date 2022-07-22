@@ -10,7 +10,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
+	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"

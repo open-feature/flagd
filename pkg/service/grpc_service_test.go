@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock "github.com/open-feature/flagd/pkg/eval/tests/mocks"
-	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
+	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
