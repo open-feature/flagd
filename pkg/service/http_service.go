@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
@@ -46,7 +47,8 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	}
 
 	server := http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
