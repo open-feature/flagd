@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/schemas/protobuf/gen/v1"
+	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
@@ -46,7 +47,8 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	}
 
 	server := http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))

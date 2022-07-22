@@ -27,7 +27,7 @@ COPY schemas/ schemas/
 COPY schemas/protobuf schemas/protobuf
 COPY schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
 # Generate http/grpc stubs
-RUN cd schemas/protobuf && ${GOPATH}/bin/buf generate && cd ../..
+RUN cd schemas/protobuf && ${GOPATH}/bin/buf generate --template buf.gen.go-server.yaml && cd ../..
 # Build
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o flagd main.go
 
