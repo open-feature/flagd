@@ -34,10 +34,10 @@ func (fs *HTTPSync) fetchBodyFromURL(url string) ([]byte, error) {
 	}
 
 	resp, err := fs.Client.Do(req)
-	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return []byte(""), err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
