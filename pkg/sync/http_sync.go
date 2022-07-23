@@ -20,8 +20,8 @@ type HTTPSync struct {
 	LastBodySHA string
 }
 
-func (fs *HTTPSync) fetchBodyFromURL(url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(context.Background(), "GET", url, bytes.NewBuffer(nil))
+func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
 		return []byte(""), err
 	}
@@ -54,23 +54,23 @@ func (fs *HTTPSync) generateSha(body []byte) string {
 	return sha
 }
 
-func (fs *HTTPSync) Fetch() (string, error) {
+func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no HTTP URL string set")
 	}
 
-	body, err := fs.fetchBodyFromURL(fs.URI)
+	body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 	if len(body) != 0 {
 		fs.LastBodySHA = fs.generateSha(body)
 	}
 	return string(body), err
 }
 
-func (fs *HTTPSync) Notify(w chan<- INotify) {
+func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 	c := cron.New()
 
 	_ = c.AddFunc("*/5 * * * *", func() {
-		body, err := fs.fetchBodyFromURL(fs.URI)
+		body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 		if err != nil {
 			log.Error(err)
 			return
