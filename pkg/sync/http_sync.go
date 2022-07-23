@@ -60,10 +60,13 @@ func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
 	}
 
 	body, err := fs.fetchBodyFromURL(ctx, fs.URI)
+	if err != nil {
+		return "", err
+	}
 	if len(body) != 0 {
 		fs.LastBodySHA = fs.generateSha(body)
 	}
-	return string(body), err
+	return string(body), nil
 }
 
 func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
