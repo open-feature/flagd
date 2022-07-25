@@ -15,8 +15,8 @@ var (
 	ev eval.IEvaluator
 )
 
-func updateState(syncr sync.ISync) error {
-	msg, err := syncr.Fetch()
+func updateState(ctx context.Context, syncr sync.ISync) error {
+	msg, err := syncr.Fetch(ctx)
 	if err != nil {
 		return err
 	}
@@ -27,11 +27,11 @@ func updateState(syncr sync.ISync) error {
 }
 
 func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISync) {
-	if err := updateState(syncr); err != nil {
+	if err := updateState(ctx, syncr); err != nil {
 		log.Error(err)
 	}
 
-	go syncr.Notify(notifier)
+	go syncr.Notify(ctx, notifier)
 
 	go func() {
 		for {
@@ -42,12 +42,12 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 				switch w.GetEvent().EventType {
 				case sync.EEventTypeCreate:
 					log.Info("New configuration created")
-					if err := updateState(syncr); err != nil {
+					if err := updateState(ctx, syncr); err != nil {
 						log.Error(err)
 					}
 				case sync.EEventTypeModify:
 					log.Info("Configuration modified")
-					if err := updateState(syncr); err != nil {
+					if err := updateState(ctx, syncr); err != nil {
 						log.Error(err)
 					}
 				case sync.EEventTypeDelete:

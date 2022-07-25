@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 
@@ -13,7 +14,7 @@ type FilePathSync struct {
 	URI string
 }
 
-func (fs *FilePathSync) Fetch() (string, error) {
+func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
@@ -24,7 +25,7 @@ func (fs *FilePathSync) Fetch() (string, error) {
 	return string(rawFile), nil
 }
 
-func (fs *FilePathSync) Notify(w chan<- INotify) {
+func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	log.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -70,6 +71,8 @@ func (fs *FilePathSync) Notify(w chan<- INotify) {
 					return
 				}
 				log.Println("error:", err)
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
