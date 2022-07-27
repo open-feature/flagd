@@ -80,15 +80,15 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 		}
 		if len(body) == 0 {
 			w <- &Notifier{
-				Event: Event{
-					EventType: EEventTypeDelete,
+				Event: Event[DefaultEventType]{
+					DefaultEventTypeDelete,
 				},
 			}
 		} else {
 			if fs.LastBodySHA == "" {
 				w <- &Notifier{
-					Event: Event{
-						EventType: EEventTypeCreate,
+					Event: Event[DefaultEventType]{
+						DefaultEventTypeCreate,
 					},
 				}
 			} else {
@@ -96,8 +96,8 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 				if fs.LastBodySHA != currentSHA {
 					log.Infof("http notifier event: %s has been modified", fs.URI)
 					w <- &Notifier{
-						Event: Event{
-							EventType: EEventTypeModify,
+						Event: Event[DefaultEventType]{
+							DefaultEventTypeModify,
 						},
 					}
 				}

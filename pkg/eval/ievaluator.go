@@ -8,9 +8,11 @@ import (
 IEvaluator implementations store the state of the flags,
 do parsing and validation of the flag state and evaluate flags in response to handlers.
 */
+
 type IEvaluator interface {
 	GetState() (string, error)
 	SetState(state string) error
+
 	ResolveBooleanValue(
 		flagKey string,
 		context *structpb.Struct) (value bool, variant string, reason string, err error)

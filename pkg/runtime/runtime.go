@@ -40,17 +40,17 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 				return
 			case w := <-notifier:
 				switch w.GetEvent().EventType {
-				case sync.EEventTypeCreate:
+				case sync.DefaultEventTypeCreate:
 					log.Info("New configuration created")
 					if err := updateState(ctx, syncr); err != nil {
 						log.Error(err)
 					}
-				case sync.EEventTypeModify:
+				case sync.DefaultEventTypeModify:
 					log.Info("Configuration modified")
 					if err := updateState(ctx, syncr); err != nil {
 						log.Error(err)
 					}
-				case sync.EEventTypeDelete:
+				case sync.DefaultEventTypeDelete:
 					log.Info("Configuration deleted")
 				}
 			}
