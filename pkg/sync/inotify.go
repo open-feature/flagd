@@ -1,25 +1,13 @@
 package sync
 
 type INotify interface {
-	GetEvent() Event
-}
-
-type EEventType int32
-
-const (
-	EEventTypeCreate = iota
-	EEventTypeModify = 1
-	EEventTypeDelete = 2
-)
-
-type Event struct {
-	EventType EEventType
+	GetEvent() Event[DefaultEventType]
 }
 
 type Notifier struct {
-	Event Event
+	Event Event[DefaultEventType]
 }
 
-func (w *Notifier) GetEvent() Event {
+func (w *Notifier) GetEvent() Event[DefaultEventType] {
 	return w.Event
 }

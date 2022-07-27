@@ -22,6 +22,10 @@ type JSONEvaluator struct {
 	state Flags
 }
 
+type constraints interface {
+	bool | string | map[string]any | float64
+}
+
 func (je *JSONEvaluator) GetState() (string, error) {
 	data, err := json.Marshal(&je.state)
 	if err != nil {
@@ -55,7 +59,7 @@ func (je *JSONEvaluator) SetState(state string) error {
 	return nil
 }
 
-func resolve[T any](key string, context *structpb.Struct,
+func resolve[T constraints](key string, context *structpb.Struct,
 	variantEval func(string, *structpb.Struct) (string, string, error),
 	variants map[string]any) (
 	value T,

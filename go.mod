@@ -23,7 +23,10 @@ require gopkg.in/yaml.v2 v2.4.0 // indirect
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/deepmap/oapi-codegen v1.11.0 // indirect
+	github.com/go-chi/chi/v5 v5.0.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
