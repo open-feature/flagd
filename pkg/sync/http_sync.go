@@ -9,16 +9,27 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
 )
 
 type HTTPSync struct {
 	URI         string
-	Client      *http.Client
+	Client      HTTPClient
+	Cron        Cron
 	BearerToken string
 	LastBodySHA string
 	Logger      *log.Entry
+}
+
+// HTTPClient defines the behaviour required of a http client
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Cron defines the behaviour required of a cron
+type Cron interface {
+	AddFunc(spec string, cmd func()) error
+	Start()
 }
 
 func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
@@ -70,10 +81,8 @@ func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
-	c := cron.New()
-
-	_ = c.AddFunc("*/5 * * * *", func() {
+func (fs *HTTPSync) Notify(ctx context.Context, ready chan<- struct{}, w chan<- INotify) {
+	_ = fs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 		if err != nil {
 			log.Error(err)
@@ -106,5 +115,6 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 			}
 		}
 	})
-	c.Start()
+	ready <- struct{}{}
+	fs.Cron.Start()
 }

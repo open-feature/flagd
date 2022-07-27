@@ -1,5 +1,5 @@
 IMG ?= flagd:latest
-PHONY: .docker-build .build .run
+PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
@@ -36,3 +36,5 @@ uninstall:
 lint:
 	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m ./... # Run linters
+mockgen:
+	mockgen -source=pkg/sync/http_sync.go -destination=pkg/sync/mock/http.go -package=syncmock

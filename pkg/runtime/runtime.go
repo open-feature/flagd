@@ -35,7 +35,9 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 		logger.Error(err)
 	}
 
-	go syncr.Notify(ctx, notifier)
+	ready := make(chan struct{})
+	go syncr.Notify(ctx, ready, notifier)
+	<-ready
 
 	go func() {
 		for {

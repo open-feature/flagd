@@ -8,5 +8,5 @@ ISync implementations watch for changes in the flag source
 */
 type ISync interface {
 	Fetch(ctx context.Context) (string, error)
-	Notify(ctx context.Context, c chan<- INotify)
+	Notify(ctx context.Context, ready chan<- struct{}, c chan<- INotify)
 }
