@@ -1,7 +1,7 @@
 name: 🐞 Bug
 description: Found a bug? We are sorry about that! Let us know! 🐛
 title: "[BUG] "
-labels: [Bug, Needs Triage]
+labels: [bug, Needs Triage]
 body:
 - type: textarea
   attributes:
