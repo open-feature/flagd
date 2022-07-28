@@ -1,0 +1,11 @@
+name: Documentation
+description: Any documentation related issue/addition.
+title: "[DOC] "
+labels: [documentation, Needs Triage]
+body:
+- type: textarea
+  attributes:
+    label: Change in the documentation
+    description: What should we add/remove/update in the documentation?
+  validations:
+    required: false
