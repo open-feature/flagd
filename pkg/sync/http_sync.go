@@ -18,6 +18,7 @@ type HTTPSync struct {
 	Client      *http.Client
 	BearerToken string
 	LastBodySHA string
+	Logger      *log.Entry
 }
 
 func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
@@ -94,7 +95,7 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 			} else {
 				currentSHA := fs.generateSha(body)
 				if fs.LastBodySHA != currentSHA {
-					log.Infof("http notifier event: %s has been modified", fs.URI)
+					fs.Logger.Infof("http notifier event: %s has been modified", fs.URI)
 					w <- &Notifier{
 						Event: Event[DefaultEventType]{
 							DefaultEventTypeModify,

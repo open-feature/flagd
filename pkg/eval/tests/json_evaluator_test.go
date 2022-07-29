@@ -8,10 +8,16 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+var l = log.WithFields(logrus.Fields{
+	"evaluator": "json",
+})
 
 const InvalidFlags = `{
   "flags": {
@@ -221,7 +227,7 @@ var Flags = fmt.Sprintf(`{
 	ColorValue)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 	err := evaluator.SetState(ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -241,7 +247,7 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 }
 
 func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with an invalid flag definition
 	err := evaluator.SetState(InvalidFlags)
@@ -251,7 +257,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 }
 
 func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with a valid flag definition
 	err := evaluator.SetState(ValidFlags)
@@ -274,7 +280,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 	err := evaluator.SetState(Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -312,7 +318,7 @@ func TestResolveStringValue(t *testing.T) {
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 	err := evaluator.SetState(Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -351,7 +357,7 @@ func TestResolveNumberValue(t *testing.T) {
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 	err := evaluator.SetState(Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -390,7 +396,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{}
+	evaluator := eval.JSONEvaluator{Logger: l}
 	err := evaluator.SetState(Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")

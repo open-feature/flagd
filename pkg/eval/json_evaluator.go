@@ -19,7 +19,8 @@ import (
 var schema string
 
 type JSONEvaluator struct {
-	state Flags
+	state  Flags
+	Logger *log.Entry
 }
 
 type constraints interface {
@@ -45,7 +46,7 @@ func (je *JSONEvaluator) SetState(state string) error {
 		return err
 	} else if !result.Valid() {
 		err := errors.New("invalid JSON file")
-		log.Error(err)
+		je.Logger.Error(err)
 		return err
 	}
 
@@ -137,13 +138,13 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			log.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
+			je.Logger.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
 			return "", model.ErrorReason, err
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			log.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
+			je.Logger.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
 
 			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
@@ -151,7 +152,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			log.Errorf("Error applying rules %s", err)
+			je.Logger.Errorf("Error applying rules %s", err)
 			return "", model.ErrorReason, err
 		}
 		// strip whitespace and quotes from the variant

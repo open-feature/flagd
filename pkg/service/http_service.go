@@ -26,6 +26,7 @@ type HTTPServiceConfiguration struct {
 type HTTPService struct {
 	HTTPServiceConfiguration *HTTPServiceConfiguration
 	GRPCService              *GRPCService
+	Logger                   *log.Entry
 }
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {

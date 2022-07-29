@@ -23,9 +23,10 @@ type GRPCService struct {
 	GRPCServiceConfiguration *GRPCServiceConfiguration
 	eval                     eval.IEvaluator
 	gen.UnimplementedServiceServer
+	Logger *log.Entry
 }
 
-func (s GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 
 	grpcServer := grpc.NewServer()
@@ -39,14 +40,14 @@ func (s GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 }
 
 // TODO: might be able to simplify some of this with generics.
-func (s GRPCService) ResolveBoolean(
+func (s *GRPCService) ResolveBoolean(
 	ctx context.Context,
 	req *gen.ResolveBooleanRequest,
 ) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
 	result, variant, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, HandleEvaluationError(err, reason)
+		return &res, s.HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -54,14 +55,14 @@ func (s GRPCService) ResolveBoolean(
 	return &res, nil
 }
 
-func (s GRPCService) ResolveString(
+func (s *GRPCService) ResolveString(
 	ctx context.Context,
 	req *gen.ResolveStringRequest,
 ) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
 	result, variant, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, HandleEvaluationError(err, reason)
+		return &res, s.HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -69,14 +70,14 @@ func (s GRPCService) ResolveString(
 	return &res, nil
 }
 
-func (s GRPCService) ResolveNumber(
+func (s *GRPCService) ResolveNumber(
 	ctx context.Context,
 	req *gen.ResolveNumberRequest,
 ) (*gen.ResolveNumberResponse, error) {
 	res := gen.ResolveNumberResponse{}
 	result, variant, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, HandleEvaluationError(err, reason)
+		return &res, s.HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = result
@@ -84,18 +85,18 @@ func (s GRPCService) ResolveNumber(
 	return &res, nil
 }
 
-func (s GRPCService) ResolveObject(
+func (s *GRPCService) ResolveObject(
 	ctx context.Context,
 	req *gen.ResolveObjectRequest,
 ) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
 	result, variant, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
-		return &res, HandleEvaluationError(err, reason)
+		return &res, s.HandleEvaluationError(err, reason)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
-		return &res, HandleEvaluationError(err, reason)
+		return &res, s.HandleEvaluationError(err, reason)
 	}
 	res.Reason = reason
 	res.Value = val
@@ -103,7 +104,7 @@ func (s GRPCService) ResolveObject(
 	return &res, nil
 }
 
-func HandleEvaluationError(err error, reason string) error {
+func (s *GRPCService) HandleEvaluationError(err error, reason string) error {
 	statusCode := codes.Internal
 	message := err.Error()
 	switch message {
@@ -118,7 +119,7 @@ func HandleEvaluationError(err error, reason string) error {
 		Reason:    "ERROR",
 	})
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		return st.Err()
 	}
 	return stWD.Err()
