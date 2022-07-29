@@ -37,7 +37,7 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 
 	ready := make(chan struct{})
 	go syncr.Notify(ctx, ready, notifier)
-	<-ready
+	<-ready // signals that the Notify call above is ready to start emitting events on the notifier chan
 
 	go func() {
 		for {

@@ -36,5 +36,7 @@ uninstall:
 lint:
 	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m ./... # Run linters
+
+# generating mocks requires https://github.com/golang/mock to be installed
 mockgen:
 	mockgen -source=pkg/sync/http_sync.go -destination=pkg/sync/mock/http.go -package=syncmock
