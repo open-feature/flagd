@@ -54,6 +54,9 @@ func (je *JSONEvaluator) SetState(state string) error {
 	if err != nil {
 		return fmt.Errorf("unmarshal new state: %w", err)
 	}
+	if err := validateDefaultVariants(newFlags); err != nil {
+		return err
+	}
 	je.state = je.state.Merge(newFlags)
 
 	return nil
@@ -165,4 +168,17 @@ func (je *JSONEvaluator) evaluateVariant(
 
 	// if it's not a valid variant, use the default (static) value
 	return je.state.Flags[flagKey].DefaultVariant, model.StaticReason, nil
+}
+
+// validateDefaultVariants returns an error if any of the default variants aren't valid
+func validateDefaultVariants(flags Flags) error {
+	for name, flag := range flags.Flags {
+		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
+			return fmt.Errorf(
+				"default variant '%s' isn't a valid variant of flag '%s'", flag.DefaultVariant, name,
+			)
+		}
+	}
+
+	return nil
 }
