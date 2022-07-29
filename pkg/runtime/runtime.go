@@ -59,7 +59,8 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 }
 
 func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
-	evaluator eval.IEvaluator, logger *log.Entry) {
+	evaluator eval.IEvaluator, logger *log.Entry,
+) {
 	ev = evaluator
 
 	syncNotifier := make(chan sync.INotify)

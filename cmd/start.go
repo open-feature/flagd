@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -37,7 +36,7 @@ func findService(name string) (service.IService, error) {
 				Port: servicePort,
 			},
 			GRPCService: &service.GRPCService{},
-			Logger: log.WithFields(logrus.Fields{
+			Logger: log.WithFields(log.Fields{
 				"service":   "http",
 				"component": "service",
 			}),
@@ -46,7 +45,7 @@ func findService(name string) (service.IService, error) {
 			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
 				Port: servicePort,
 			},
-			Logger: log.WithFields(logrus.Fields{
+			Logger: log.WithFields(log.Fields{
 				"service":   "grpc",
 				"component": "service",
 			}),
@@ -67,7 +66,7 @@ func findSync(name string) ([]sync.ISync, error) {
 		registeredSync := map[string]sync.ISync{
 			"filepath": &sync.FilePathSync{
 				URI: u,
-				Logger: log.WithFields(logrus.Fields{
+				Logger: log.WithFields(log.Fields{
 					"sync":      "filepath",
 					"component": "sync",
 				}),
@@ -78,7 +77,7 @@ func findSync(name string) ([]sync.ISync, error) {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
-				Logger: log.WithFields(logrus.Fields{
+				Logger: log.WithFields(log.Fields{
 					"sync":      "remote",
 					"component": "sync",
 				}),
@@ -98,7 +97,7 @@ func findSync(name string) ([]sync.ISync, error) {
 func findEvaluator(name string) (eval.IEvaluator, error) {
 	registeredEvaluators := map[string]eval.IEvaluator{
 		"json": &eval.JSONEvaluator{
-			Logger: log.WithFields(logrus.Fields{
+			Logger: log.WithFields(log.Fields{
 				"evaluator": "json",
 				"component": "evaluator",
 			}),
@@ -120,7 +119,6 @@ var startCmd = &cobra.Command{
 	Short: "Start flagd",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// Configure loggers -------------------------------------------------------
 		log.SetFormatter(&log.JSONFormatter{})
 		log.SetOutput(os.Stdout)
@@ -164,7 +162,7 @@ var startCmd = &cobra.Command{
 			}()
 		}()
 
-		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl, log.WithFields(logrus.Fields{
+		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
 			"component": "runtime",
 		}))
 		err = <-errc
