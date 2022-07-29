@@ -8,14 +8,13 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-var l = log.WithFields(logrus.Fields{
+var l = log.WithFields(log.Fields{
 	"evaluator": "json",
 })
 
