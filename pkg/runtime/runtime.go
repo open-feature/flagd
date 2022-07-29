@@ -22,11 +22,11 @@ func updateState(ctx context.Context, syncr sync.ISync) error {
 		return fmt.Errorf("fetch: %w", err)
 	}
 	mu.Lock()
+	defer mu.Unlock()
 	err = ev.SetState(msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
 	}
-	mu.Unlock()
 	return nil
 }
 
