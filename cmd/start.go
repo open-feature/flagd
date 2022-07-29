@@ -100,6 +100,7 @@ func findEvaluator(name string) (eval.IEvaluator, error) {
 		"json": &eval.JSONEvaluator{
 			Logger: log.WithFields(logrus.Fields{
 				"evaluator": "json",
+				"component": "evaluator",
 			}),
 		},
 	}
