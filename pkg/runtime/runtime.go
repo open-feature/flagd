@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	msync "sync"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -18,11 +19,14 @@ var (
 func updateState(ctx context.Context, syncr sync.ISync) error {
 	msg, err := syncr.Fetch(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("fetch: %w", err)
 	}
 	mu.Lock()
-	_ = ev.SetState(msg)
-	mu.Unlock()
+	defer mu.Unlock()
+	err = ev.SetState(msg)
+	if err != nil {
+		return fmt.Errorf("set state: %w", err)
+	}
 	return nil
 }
 

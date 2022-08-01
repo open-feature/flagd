@@ -505,3 +505,65 @@ func TestMergeFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestSetState_DefaultVariantValidation(t *testing.T) {
+	tests := map[string]struct {
+		jsonFlags string
+		valid     bool
+	}{
+		"is valid": {
+			jsonFlags: `
+				{
+				  "flags": {
+					"foo": {
+					  "state": "ENABLED",
+					  "variants": {
+						"on": true,
+						"off": false
+					  },
+					  "defaultVariant": "on"
+					},
+					"bar": {
+					  "state": "ENABLED",
+					  "variants": {
+						"black": "#000000",
+						"white": "#FFFFFF"
+					  },
+					  "defaultVariant": "black"
+					}
+				  }
+			    }
+			`,
+			valid: true,
+		},
+		"is not valid": {
+			jsonFlags: `
+				{
+				  "flags": {
+					"foo": {
+					  "state": "ENABLED",
+					  "variants": {
+						"black": "#000000",
+						"white": "#FFFFFF"
+					  },
+					  "defaultVariant": "yellow"
+					}
+				  }
+			    }
+			`,
+			valid: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			jsonEvaluator := eval.JSONEvaluator{}
+
+			err := jsonEvaluator.SetState(tt.jsonFlags)
+
+			if tt.valid && err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}

@@ -48,9 +48,9 @@ Multiple providers can be supplied as the following:
 In case of collision between flags definition the priority goes to the later (e.g. example_flags < example_flags_secondary).
 
 
-### Installation
+## Installation
 
-#### Systemd
+### Systemd
 
 To install as a systemd service run `sudo make install` this will place the binary by default in `/usr/local/bin`
 
@@ -76,3 +76,65 @@ May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 
 1. `IMG=flagd-local make docker-build`
 2. `docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json`
+
+## Targeting Rules
+
+The `flag` object has a field named `"targeting"`, this can be populated with a [JsonLogic](https://jsonlogic.com/) rule. Any data
+in the body of a flag evaluation call is processed by the JsonLogic rule to determine the result of flag evaluation.
+If this result is `null` or an invalid (undefined) variant then the default variant is returned.
+
+JsonLogic provides a [playground](https://jsonlogic.com/play.html) for evaluating your rules against data.
+
+
+### Example
+
+A flag is defined as such:
+```json
+{
+  "flags": {
+    "isColorYellowFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off",
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "color"
+                ]
+              },
+              "yellow"
+            ]
+          },
+          "on",
+          "off"
+        ]
+      }
+    }
+  }
+}
+```
+
+The rule provided returns `"on"` if `var color == "yellow"` and `"off"` otherwise:
+
+```shell
+$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+```
+returns
+```json
+{"value":true,"reason":"TARGETING_MATCH","variant":"on"}
+```
+
+whereas 
+```shell
+$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "white"}'
+```
+returns
+```json
+{"value":true,"reason":"TARGETING_MATCH","variant":"off"}
+```
