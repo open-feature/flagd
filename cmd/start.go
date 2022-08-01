@@ -36,11 +36,19 @@ func findService(name string) (service.IService, error) {
 				Port: servicePort,
 			},
 			GRPCService: &service.GRPCService{},
+			Logger: log.WithFields(log.Fields{
+				"service":   "http",
+				"component": "service",
+			}),
 		},
 		"grpc": &service.GRPCService{
 			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
 				Port: servicePort,
 			},
+			Logger: log.WithFields(log.Fields{
+				"service":   "grpc",
+				"component": "service",
+			}),
 		},
 	}
 
@@ -58,6 +66,10 @@ func findSync(name string) ([]sync.ISync, error) {
 		registeredSync := map[string]sync.ISync{
 			"filepath": &sync.FilePathSync{
 				URI: u,
+				Logger: log.WithFields(log.Fields{
+					"sync":      "filepath",
+					"component": "sync",
+				}),
 			},
 			"remote": &sync.HTTPSync{
 				URI:         u,
@@ -65,6 +77,10 @@ func findSync(name string) ([]sync.ISync, error) {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
+				Logger: log.WithFields(log.Fields{
+					"sync":      "remote",
+					"component": "sync",
+				}),
 			},
 		}
 		v, ok := registeredSync[name]
@@ -80,7 +96,12 @@ func findSync(name string) ([]sync.ISync, error) {
 
 func findEvaluator(name string) (eval.IEvaluator, error) {
 	registeredEvaluators := map[string]eval.IEvaluator{
-		"json": &eval.JSONEvaluator{},
+		"json": &eval.JSONEvaluator{
+			Logger: log.WithFields(log.Fields{
+				"evaluator": "json",
+				"component": "evaluator",
+			}),
+		},
 	}
 
 	v, ok := registeredEvaluators[name]
@@ -98,6 +119,10 @@ var startCmd = &cobra.Command{
 	Short: "Start flagd",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Configure loggers -------------------------------------------------------
+		log.SetFormatter(&log.JSONFormatter{})
+		log.SetOutput(os.Stdout)
+		log.SetLevel(log.DebugLevel)
 		// Configure service-provider impl------------------------------------------
 		var serviceImpl service.IService
 		foundService, err := findService(serviceProvider)
@@ -137,8 +162,9 @@ var startCmd = &cobra.Command{
 			}()
 		}()
 
-		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl)
-
+		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
+			"component": "runtime",
+		}))
 		err = <-errc
 		if err != nil {
 			cancel()

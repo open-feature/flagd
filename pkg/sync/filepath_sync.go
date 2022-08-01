@@ -11,7 +11,8 @@ import (
 )
 
 type FilePathSync struct {
-	URI string
+	URI    string
+	Logger *log.Entry
 }
 
 func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
@@ -26,7 +27,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
-	log.Info("Starting filepath sync notifier")
+	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -36,12 +37,12 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	done := make(chan bool)
 	go func() {
 		defer close(done)
-		log.Info("Notifying filepath: ", fs.URI)
+		fs.Logger.Info("Notifying filepath: ", fs.URI)
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
-					log.Info("Filepath notifier closed")
+					fs.Logger.Info("Filepath notifier closed")
 					return
 				}
 				var evtType DefaultEventType
@@ -55,22 +56,22 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
 					if err != nil {
-						log.Fatalf("Error restoring watcher: %s, exiting...", err.Error())
+						fs.Logger.Fatalf("Error restoring watcher: %s, exiting...", err.Error())
 					}
 					evtType = DefaultEventTypeDelete
 				}
-				log.Infof("Filepath notifier event: %s %s", event.Name, event.Op.String())
+				fs.Logger.Infof("Filepath notifier event: %s %s", event.Name, event.Op.String())
 				w <- &Notifier{
 					Event: Event[DefaultEventType]{
 						EventType: evtType,
 					},
 				}
-				log.Info("Filepath notifier event sent")
+				fs.Logger.Info("Filepath notifier event sent")
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Println("error:", err)
+				fs.Logger.Println("error:", err)
 			case <-ctx.Done():
 				return
 			}
@@ -78,7 +79,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	}()
 	err = watcher.Add(fs.URI)
 	if err != nil {
-		log.Println(err)
+		fs.Logger.Println(err)
 		return
 	}
 	<-done

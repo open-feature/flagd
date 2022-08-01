@@ -19,6 +19,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 		reason  string
 		err     error
 	}
+	grpcS := GRPCService{}
 	type args struct {
 		ctx context.Context
 		req *gen.ResolveBooleanRequest
@@ -68,7 +69,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveBooleanResponse{},
-			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -107,6 +108,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 		ctx context.Context
 		req *gen.ResolveStringRequest
 	}
+	grpcS := GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
@@ -152,7 +154,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveStringResponse{},
-			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -191,6 +193,7 @@ func TestGRPCService_ResolveNumber(t *testing.T) {
 		ctx context.Context
 		req *gen.ResolveNumberRequest
 	}
+	grpcs := GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
@@ -236,7 +239,7 @@ func TestGRPCService_ResolveNumber(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveNumberResponse{},
-			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: grpcs.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
@@ -275,6 +278,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 		ctx context.Context
 		req *gen.ResolveObjectRequest
 	}
+	grpcs := GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
@@ -324,7 +328,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				},
 			},
 			want:    &gen.ResolveObjectResponse{},
-			wantErr: HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			wantErr: grpcs.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
