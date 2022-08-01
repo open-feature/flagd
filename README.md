@@ -81,7 +81,7 @@ May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 
 The `flag` object has a field named `"targeting"`, this can be populated with a [JsonLogic](https://jsonlogic.com/) rule. Any data
 in the body of a flag evaluation call is processed by the JsonLogic rule to determine the result of flag evaluation.
-If this result is `nil` or an invalid (undefined) variant then the default variant is returned.
+If this result is `null` or an invalid (undefined) variant then the default variant is returned.
 
 JsonLogic provides a [playground](https://jsonlogic.com/play.html) for evaluating your rules against data.
 
