@@ -138,3 +138,9 @@ returns
 ```json
 {"value":true,"reason":"TARGETING_MATCH","variant":"off"}
 ```
+
+### The people who make flagD great 💜
+
+<a href="https://github.com/open-feature/flagd/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=open-feature/flagd" />
+</a>
