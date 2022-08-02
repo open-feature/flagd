@@ -71,7 +71,10 @@ func TestFilePathSync_Notify(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			fpSync := sync.FilePathSync{URI: dirName}
+			fpSync := sync.FilePathSync{
+				URI:    dirName,
+				Logger: log.WithFields(log.Fields{}),
+			}
 			inotifyChan := make(chan sync.INotify)
 
 			go func() {
@@ -112,7 +115,10 @@ func TestFilePathSync_Fetch(t *testing.T) {
 		handleResponse func(t *testing.T, fetched string, err error)
 	}{
 		"success": {
-			fpSync: sync.FilePathSync{URI: fmt.Sprintf("%s/%s", dirName, fetchFileName)},
+			fpSync: sync.FilePathSync{
+				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
+				Logger: log.WithFields(log.Fields{}),
+			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err != nil {
 					t.Error(err)
@@ -124,7 +130,10 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			},
 		},
 		"not found": {
-			fpSync: sync.FilePathSync{URI: fmt.Sprintf("%s/%s", dirName, "not_found")},
+			fpSync: sync.FilePathSync{
+				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
+				Logger: log.WithFields(log.Fields{}),
+			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err == nil {
 					t.Error("expected an error, got nil")
