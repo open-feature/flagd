@@ -35,9 +35,7 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 		logger.Error(err)
 	}
 
-	ready := make(chan struct{})
-	go syncr.Notify(ctx, ready, notifier)
-	<-ready // signals that the Notify call above is ready to start emitting events on the notifier chan
+	go syncr.Notify(ctx, notifier)
 
 	go func() {
 		for {
@@ -58,6 +56,8 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 					}
 				case sync.DefaultEventTypeDelete:
 					logger.Info("Configuration deleted")
+				case sync.DefaultEventTypeReady:
+					logger.Info("Notifier ready")
 				}
 			}
 		}

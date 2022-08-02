@@ -82,5 +82,10 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 		fs.Logger.Println(err)
 		return
 	}
+	w <- &Notifier{
+		Event: Event[DefaultEventType]{
+			DefaultEventTypeReady,
+		},
+	}
 	<-done
 }

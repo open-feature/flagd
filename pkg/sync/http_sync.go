@@ -81,7 +81,7 @@ func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-func (fs *HTTPSync) Notify(ctx context.Context, ready chan<- struct{}, w chan<- INotify) {
+func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 	_ = fs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 		if err != nil {
@@ -115,6 +115,10 @@ func (fs *HTTPSync) Notify(ctx context.Context, ready chan<- struct{}, w chan<- 
 			}
 		}
 	})
-	ready <- struct{}{}
+	w <- &Notifier{
+		Event: Event[DefaultEventType]{
+			DefaultEventTypeReady,
+		},
+	}
 	fs.Cron.Start()
 }

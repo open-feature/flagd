@@ -73,13 +73,15 @@ func TestFilePathSync_Notify(t *testing.T) {
 
 			fpSync := sync.FilePathSync{URI: dirName}
 			inotifyChan := make(chan sync.INotify)
-			ready := make(chan struct{})
 
 			go func() {
-				fpSync.Notify(ctx, ready, inotifyChan)
+				fpSync.Notify(ctx, inotifyChan)
 			}()
 
-			<-ready
+			w := <-inotifyChan // first emitted event by Notify is to signal readiness
+			if w.GetEvent().EventType != sync.DefaultEventTypeReady {
+				t.Errorf("expected event type to be %d, got %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
+			}
 
 			tt.triggerEvent(t)
 
