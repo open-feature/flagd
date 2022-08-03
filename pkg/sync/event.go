@@ -6,6 +6,7 @@ const (
 	DefaultEventTypeCreate = iota
 	DefaultEventTypeModify = 1
 	DefaultEventTypeDelete = 2
+	DefaultEventTypeReady  = 3
 )
 
 // Event is a struct that represents a single event.

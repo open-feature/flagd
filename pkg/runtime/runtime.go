@@ -56,6 +56,8 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 					}
 				case sync.DefaultEventTypeDelete:
 					logger.Info("Configuration deleted")
+				case sync.DefaultEventTypeReady:
+					logger.Info("Notifier ready")
 				}
 			}
 		}

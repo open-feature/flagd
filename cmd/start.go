@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/robfig/cron"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -81,6 +83,7 @@ func findSync(name string) ([]sync.ISync, error) {
 					"sync":      "remote",
 					"component": "sync",
 				}),
+				Cron: cron.New(),
 			},
 		}
 		v, ok := registeredSync[name]
