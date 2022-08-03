@@ -21,6 +21,8 @@ test: generate
 	go test -cover ./...
 run: generate
 	go run main.go start -f config/samples/example_flags.json
+run-ssl: generate local-certs
+	go run main.go start -f config/samples/example_flags.json -c openfeature.crt -k openfeature.key
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd
@@ -40,3 +42,7 @@ install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
 mockgen: install-mockgen
 	mockgen -source=pkg/sync/http_sync.go -destination=pkg/sync/mock/http.go -package=syncmock
+local-certs:
+	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+  -keyout openfeature.key -out openfeature.crt -subj "/CN=openfeature" \
+  -addext "subjectAltName=DNS:openfeature.dev,DNS:www.openfeature.dev"

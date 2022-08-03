@@ -1,3 +1,4 @@
+openfeature*
 __debug_bin
 .DS_Store
 flagd
@@ -7,3 +8,5 @@ dist/
 
 # ignore generated code
 pkg/eval/flagd-definitions.json
+*.crt
+*.key

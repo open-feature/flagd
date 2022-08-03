@@ -16,7 +16,9 @@ import (
 )
 
 type GRPCServiceConfiguration struct {
-	Port int32
+	Port           int32
+	ServerKeyPath  string
+	ServerCertPath string
 }
 
 type GRPCService struct {
@@ -29,7 +31,17 @@ type GRPCService struct {
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 
-	grpcServer := grpc.NewServer()
+	var grpcServer *grpc.Server
+	if s.GRPCServiceConfiguration.ServerCertPath != "" && s.GRPCServiceConfiguration.ServerKeyPath != "" {
+		tlsCreds, err := loadTLSCredentials(s.GRPCServiceConfiguration.ServerCertPath,
+			s.GRPCServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			return err
+		}
+		grpcServer = grpc.NewServer(grpc.Creds(tlsCreds))
+	} else {
+		grpcServer = grpc.NewServer()
+	}
 	gen.RegisterServiceServer(grpcServer, s)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))

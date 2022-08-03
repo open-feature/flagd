@@ -20,7 +20,9 @@ import (
 )
 
 type HTTPServiceConfiguration struct {
-	Port int32
+	Port           int32
+	ServerKeyPath  string
+	ServerCertPath string
 }
 
 type HTTPService struct {
@@ -31,7 +33,17 @@ type HTTPService struct {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.eval = eval
-	grpcServer := grpc.NewServer()
+	var grpcServer *grpc.Server
+	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
+		tlsCreds, err := loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
+			s.HTTPServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			return err
+		}
+		grpcServer = grpc.NewServer(grpc.Creds(tlsCreds))
+	} else {
+		grpcServer = grpc.NewServer()
+	}
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 
 	mux := runtime.NewServeMux(
