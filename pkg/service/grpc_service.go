@@ -26,8 +26,8 @@ type GRPCService struct {
 	Logger *log.Entry
 }
 
-func (s *GRPCService) Serve(ctx context.Context, Eval eval.IEvaluator) error {
-	s.Eval = Eval
+func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	s.Eval = eval
 
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
