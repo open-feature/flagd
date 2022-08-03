@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock "github.com/open-feature/flagd/pkg/eval/tests/mocks"
-	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
+	service "github.com/open-feature/flagd/pkg/service"
+	gen "github.com/open-feature/flagd/schemas/proto/go-server/schema/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -19,7 +19,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 		reason  string
 		err     error
 	}
-	grpcS := GRPCService{}
+	grpcS := service.GRPCService{}
 	type args struct {
 		ctx context.Context
 		req *gen.ResolveBooleanRequest
@@ -75,15 +75,15 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			eval := mock.NewMockIEvaluator(ctrl)
+			eval := NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveBooleanValue(tt.args.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := GRPCService{
-				eval: eval,
+			s := service.GRPCService{
+				Eval: eval,
 			}
 			got, err := s.ResolveBoolean(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -108,7 +108,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 		ctx context.Context
 		req *gen.ResolveStringRequest
 	}
-	grpcS := GRPCService{}
+	grpcS := service.GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
@@ -160,15 +160,15 @@ func TestGRPCService_ResolveString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			eval := mock.NewMockIEvaluator(ctrl)
+			eval := NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveStringValue(tt.args.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := GRPCService{
-				eval: eval,
+			s := service.GRPCService{
+				Eval: eval,
 			}
 			got, err := s.ResolveString(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -182,42 +182,42 @@ func TestGRPCService_ResolveString(t *testing.T) {
 	}
 }
 
-func TestGRPCService_ResolveNumber(t *testing.T) {
+func TestGRPCService_ResolveFloat(t *testing.T) {
 	type evalFields struct {
-		result  float32
+		result  float64
 		variant string
 		reason  string
 		err     error
 	}
 	type args struct {
 		ctx context.Context
-		req *gen.ResolveNumberRequest
+		req *gen.ResolveFloatRequest
 	}
-	grpcs := GRPCService{}
+	grpcs := service.GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
 		args       args
-		want       *gen.ResolveNumberResponse
+		want       *gen.ResolveFloatResponse
 		wantErr    error
 	}{
 		{
 			name: "happy path",
 			evalFields: evalFields{
-				result:  float32(32),
+				result:  float64(32),
 				variant: "on",
 				reason:  "STATIC",
 				err:     nil,
 			},
 			args: args{
 				context.Background(),
-				&gen.ResolveNumberRequest{
+				&gen.ResolveFloatRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveNumberResponse{
-				Value:   float32(32),
+			want: &gen.ResolveFloatResponse{
+				Value:   float64(32),
 				Reason:  "STATIC",
 				Variant: "on",
 			},
@@ -226,36 +226,121 @@ func TestGRPCService_ResolveNumber(t *testing.T) {
 		{
 			name: "eval returns error",
 			evalFields: evalFields{
-				result:  float32(32),
+				result:  float64(32),
 				variant: ":(",
 				reason:  "ERROR",
 				err:     errors.New("eval interface error"),
 			},
 			args: args{
 				context.Background(),
-				&gen.ResolveNumberRequest{
+				&gen.ResolveFloatRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveNumberResponse{},
+			want:    &gen.ResolveFloatResponse{},
 			wantErr: grpcs.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveNumberValue(tt.args.req.FlagKey, gomock.Any()).Return(
+			eval := NewMockIEvaluator(ctrl)
+			eval.EXPECT().ResolveFloatValue(tt.args.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := GRPCService{
-				eval: eval,
+			s := service.GRPCService{
+				Eval: eval,
 			}
-			got, err := s.ResolveNumber(tt.args.ctx, tt.args.req)
+			got, err := s.ResolveFloat(tt.args.ctx, tt.args.req)
+			if (err != nil) && !errors.Is(err, tt.wantErr) {
+				t.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GRPCService.ResolveNumber() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGRPCService_ResolveInt(t *testing.T) {
+	type evalFields struct {
+		result  int64
+		variant string
+		reason  string
+		err     error
+	}
+	type args struct {
+		ctx context.Context
+		req *gen.ResolveIntRequest
+	}
+	grpcs := service.GRPCService{}
+	tests := []struct {
+		name       string
+		evalFields evalFields
+		args       args
+		want       *gen.ResolveIntResponse
+		wantErr    error
+	}{
+		{
+			name: "happy path",
+			evalFields: evalFields{
+				result:  int64(32),
+				variant: "on",
+				reason:  "STATIC",
+				err:     nil,
+			},
+			args: args{
+				context.Background(),
+				&gen.ResolveIntRequest{
+					FlagKey: "int",
+					Context: &structpb.Struct{},
+				},
+			},
+			want: &gen.ResolveIntResponse{
+				Value:   int64(32),
+				Reason:  "STATIC",
+				Variant: "on",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "eval returns error",
+			evalFields: evalFields{
+				result:  int64(32),
+				variant: ":(",
+				reason:  "ERROR",
+				err:     errors.New("eval interface error"),
+			},
+			args: args{
+				context.Background(),
+				&gen.ResolveIntRequest{
+					FlagKey: "bool",
+					Context: &structpb.Struct{},
+				},
+			},
+			want:    &gen.ResolveIntResponse{},
+			wantErr: grpcs.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			eval := NewMockIEvaluator(ctrl)
+			eval.EXPECT().ResolveIntValue(tt.args.req.FlagKey, gomock.Any()).Return(
+				tt.evalFields.result,
+				tt.evalFields.variant,
+				tt.evalFields.reason,
+				tt.evalFields.err,
+			).AnyTimes()
+			s := service.GRPCService{
+				Eval: eval,
+			}
+			got, err := s.ResolveInt(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -278,7 +363,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 		ctx context.Context
 		req *gen.ResolveObjectRequest
 	}
-	grpcs := GRPCService{}
+	grpcs := service.GRPCService{}
 	tests := []struct {
 		name       string
 		evalFields evalFields
@@ -334,15 +419,15 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			eval := mock.NewMockIEvaluator(ctrl)
+			eval := NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveObjectValue(tt.args.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			s := GRPCService{
-				eval: eval,
+			s := service.GRPCService{
+				Eval: eval,
 			}
 
 			if tt.name != "eval returns error" {
