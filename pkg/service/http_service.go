@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -21,8 +22,8 @@ import (
 
 type HTTPServiceConfiguration struct {
 	Port           int32
-	ServerKeyPath  string
 	ServerCertPath string
+	ServerKeyPath  string
 }
 
 type HTTPService struct {
@@ -31,50 +32,67 @@ type HTTPService struct {
 	Logger                   *log.Entry
 }
 
+func (s *HTTPService) ServeHTTPS() {
+
+}
+
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.eval = eval
-	var grpcServer *grpc.Server
-	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
-		tlsCreds, err := loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
-			s.HTTPServiceConfiguration.ServerKeyPath)
-		if err != nil {
-			return err
-		}
-		grpcServer = grpc.NewServer(grpc.Creds(tlsCreds))
-	} else {
-		grpcServer = grpc.NewServer()
-	}
-	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 
+	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
+	// GRPC Setup
+	grpcServer := grpc.NewServer()
+	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 	err := gen.RegisterServiceHandlerFromEndpoint(
 		context.Background(),
 		mux,
 		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
+		// TODO: Add TLS here when we have a certificate
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	server := http.Server{
-		Handler:           mux,
-		ReadHeaderTimeout: 60 * time.Second,
-	}
-
+	// Net listener
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Multiplexer listeners
 	m := cmux.New(l)
-
 	httpL := m.Match(cmux.HTTP1Fast())
+
+	var server http.Server
+	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
+		creds, err := tls.LoadX509KeyPair(s.HTTPServiceConfiguration.ServerCertPath, s.HTTPServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			return err
+		}
+		server = http.Server{
+			Handler:           mux,
+			ReadHeaderTimeout: 60 * time.Second,
+			TLSConfig: &tls.Config{
+				Certificates: []tls.Certificate{creds},
+				NextProtos:   []string{"h2"},
+			},
+		}
+
+	} else {
+		server = http.Server{
+			Handler:           mux,
+			ReadHeaderTimeout: 60 * time.Second,
+		}
+	}
+
+	httpsL := m.Match(cmux.Any())
 	grpcL := m.Match(cmux.HTTP2())
 
-	go func() { handleServiceError(server.Serve(httpL)) }()
-	go func() { handleServiceError(grpcServer.Serve(grpcL)) }()
+	go func() { handleServiceError(server.Serve(httpL)) }()     // HTTP
+	go func() { handleServiceError(server.Serve(httpsL)) }()    // HTTP
+	go func() { handleServiceError(grpcServer.Serve(grpcL)) }() // GRPC
 	go func() { handleServiceError(m.Serve()) }()
 
 	<-ctx.Done()
@@ -102,6 +120,7 @@ func (s HTTPService) HTTPErrorHandler(
 	}
 	details := st.Details()
 	if len(details) != 1 {
+		log.Error(err)
 		log.Errorf("malformed error received by error handler, details received: %d - %v", len(details), details)
 		return
 	}
