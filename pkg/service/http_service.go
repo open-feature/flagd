@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -72,7 +71,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		}
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(tlsCreds))
 	} else {
-		dialOpts = append(dialOpts, insecure.NewCredentials())
+		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
 	// GRPC Setup
 	grpcServer := grpc.NewServer()
