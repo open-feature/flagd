@@ -63,7 +63,6 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	}
 	// Multiplexer listeners
 	m := cmux.New(l)
-	httpL := m.Match(cmux.HTTP1Fast())
 
 	var server http.Server
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
@@ -87,6 +86,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		}
 	}
 
+	httpL := m.Match(cmux.HTTP1Fast())
 	httpsL := m.Match(cmux.Any())
 	grpcL := m.Match(cmux.HTTP2())
 
