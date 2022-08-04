@@ -122,7 +122,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 
 	go func() { handleServiceError(httpServer.Serve(httpl)) }() // HTTP
 
-	go func() { handleServiceError(httpServer.Serve(httpsl)) }() // HTTP
+	go func() { handleServiceError(httpServer.Serve(httpsl)) }() // HTTPS
 
 	go func() { handleServiceError(grpcServer.Serve(gorpcl)) }() // GRPC
 	go func() { handleServiceError(tlsm.Serve()) }()
