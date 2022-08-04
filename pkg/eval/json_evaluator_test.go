@@ -50,16 +50,20 @@ const (
 	StaticBoolValue            = true
 	StaticStringFlag           = "staticStringFlag"
 	StaticStringValue          = "#CC0000"
-	StaticNumberFlag           = "staticNumberFlag"
-	StaticNumberValue  float32 = 1
+	StaticFloatFlag            = "staticFoatFlag"
+	StaticFloatValue   float64 = 1
+	StaticIntFlag              = "staticIntFlag"
+	StaticIntValue     int64   = 1
 	StaticObjectFlag           = "staticObjectFlag"
 	StaticObjectValue          = `{"abc": 123}`
 	DynamicBoolFlag            = "targetingBoolFlag"
 	DynamicBoolValue           = true
 	DynamicStringFlag          = "targetingStringFlag"
 	DynamicStringValue         = "my-string"
-	DynamicNumberFlag          = "targetingNumberFlag"
-	DynamicNumberValue float32 = 100
+	DynamicFloatFlag           = "targetingFloatFlag"
+	DynamicFloatValue  float64 = 100
+	DynamicIntFlag             = "targetingNumberFlag"
+	DynamicIntValue    int64   = 100
 	DynamicObjectFlag          = "targetingObjectFlag"
 	DynamicObjectValue         = `{ "key": true }`
 	ColorProp                  = "color"
@@ -92,6 +96,14 @@ var Flags = fmt.Sprintf(`{
       },
       "defaultVariant": "one"
     },
+	"%s": {
+		"state": "ENABLED",
+		"variants": {
+		  "one": %d,
+		  "two": 2
+		},
+		"defaultVariant": "one"
+	  },
 		"%s": {
       "state": "ENABLED",
       "variants": {
@@ -174,6 +186,30 @@ var Flags = fmt.Sprintf(`{
         ]
       }
     },
+	"%s": {
+		"state": "ENABLED",
+		"variants": {
+		  "number1": %d,
+		  "number2": 200
+		},
+		"defaultVariant": "number2",
+			  "targeting": {
+		  "if": [
+			{
+			  "==": [
+				{
+				  "var": [
+					"%s"
+				  ]
+				},
+				"%s"
+			  ]
+			},
+			"number1",
+			null
+		  ]
+		}
+	  },
 		"%s": {
       "state": "ENABLED",
       "variants": {
@@ -204,8 +240,10 @@ var Flags = fmt.Sprintf(`{
 	StaticBoolValue,
 	StaticStringFlag,
 	StaticStringValue,
-	StaticNumberFlag,
-	StaticNumberValue,
+	StaticFloatFlag,
+	StaticFloatValue,
+	StaticIntFlag,
+	StaticIntValue,
 	StaticObjectFlag,
 	StaticObjectValue,
 	DynamicBoolFlag,
@@ -216,8 +254,12 @@ var Flags = fmt.Sprintf(`{
 	DynamicStringValue,
 	ColorProp,
 	ColorValue,
-	DynamicNumberFlag,
-	DynamicNumberValue,
+	DynamicFloatFlag,
+	DynamicFloatValue,
+	ColorProp,
+	ColorValue,
+	DynamicIntFlag,
+	DynamicIntValue,
 	ColorProp,
 	ColorValue,
 	DynamicObjectFlag,
@@ -342,16 +384,16 @@ func TestResolveStringValue(t *testing.T) {
 	}
 }
 
-func TestResolveNumberValue(t *testing.T) {
+func TestResolveFloatValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
 		context   map[string]interface{}
-		val       float32
+		val       float64
 		reason    string
 		errorCode string
 	}{
-		{StaticNumberFlag, nil, StaticNumberValue, model.StaticReason, ""},
-		{DynamicNumberFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicNumberValue, model.TargetingMatchReason, ""},
+		{StaticFloatFlag, nil, StaticFloatValue, model.StaticReason, ""},
+		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
 	}
@@ -367,7 +409,46 @@ func TestResolveNumberValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveNumberValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+
+		if test.errorCode == "" {
+			if assert.NoError(t, err) {
+				assert.Equal(t, test.val, val)
+				assert.Equal(t, test.reason, reason)
+			}
+		} else {
+			assert.Equal(t, model.ErrorReason, reason)
+			assert.EqualError(t, err, test.errorCode)
+		}
+	}
+}
+
+func TestResolveIntValue(t *testing.T) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       int64
+		reason    string
+		errorCode string
+	}{
+		{StaticIntFlag, nil, StaticIntValue, model.StaticReason, ""},
+		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: l}
+	err := evaluator.SetState(Flags)
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			t.Fatal(err)
+		}
+		val, _, reason, err := evaluator.ResolveIntValue(test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {

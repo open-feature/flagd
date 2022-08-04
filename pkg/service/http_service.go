@@ -10,7 +10,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
+	gen "github.com/open-feature/flagd/schemas/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
@@ -30,7 +30,7 @@ type HTTPService struct {
 }
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	s.GRPCService.eval = eval
+	s.GRPCService.Eval = eval
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 

@@ -24,8 +24,11 @@ $ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean"
 $ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string"
 // {"value":"val1","reason":"STATIC","variant":"key1"}
 
-$ curl -X POST "localhost:8080/flags/myNumberFlag/resolve/number"
-// {"value":1,"reason":"STATIC","variant":"one"}
+$ curl -X POST "localhost:8080/flags/myIntFlag/resolve/int"
+// {"value":"1","reason":"STATIC","variant":"one"}
+
+$ curl -X POST "localhost:8080/flags/myFloatFlag/resolve/float"
+// {"value":1.23,"reason":"STATIC","variant":"one"}
 
 $ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object"
 // {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}

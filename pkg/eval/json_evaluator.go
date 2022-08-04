@@ -103,15 +103,25 @@ func (je *JSONEvaluator) ResolveStringValue(flagKey string, context *structpb.St
 	return resolve[string](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
-func (je *JSONEvaluator) ResolveNumberValue(flagKey string, context *structpb.Struct) (
-	value float32,
+func (je *JSONEvaluator) ResolveFloatValue(flagKey string, context *structpb.Struct) (
+	value float64,
+	variant string,
+	reason string,
+	err error,
+) {
+	value, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	return
+}
+
+func (je *JSONEvaluator) ResolveIntValue(flagKey string, context *structpb.Struct) (
+	value int64,
 	variant string,
 	reason string,
 	err error,
 ) {
 	var val float64
 	val, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
-	value = float32(val)
+	value = int64(val)
 	return
 }
 

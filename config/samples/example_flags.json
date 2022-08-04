@@ -16,7 +16,15 @@
       },
       "defaultVariant": "key1"
     },
-    "myNumberFlag": {
+    "myFloatFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "one": 1.23,
+        "two": 2.34
+      },
+      "defaultVariant": "one"
+    },
+    "myIntFlag": {
       "state": "ENABLED",
       "variants": {
         "one": 1,
