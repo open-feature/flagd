@@ -61,6 +61,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
 	var tlsCreds credentials.TransportCredentials
+	var dialOpts []grpc.DialOption
 	var err error
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
 		tlsCreds, err = loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
@@ -68,6 +69,9 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		if err != nil {
 			return err
 		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(tlsCreds))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
 	// GRPC Setup
 	grpcServer := grpc.NewServer()
@@ -77,7 +81,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		mux,
 		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		// TODO: Add TLS here when we have a certificate
-		[]grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)},
+		dialOpts,
 	)
 	if err != nil {
 		log.Fatal(err)
