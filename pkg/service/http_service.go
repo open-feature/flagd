@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -36,6 +37,22 @@ func (s *HTTPService) ServeHTTPS() {
 
 }
 
+func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
+	// Load certificates.
+	certificate, err := tls.LoadX509KeyPair(s.HTTPServiceConfiguration.ServerCertPath,
+		s.HTTPServiceConfiguration.ServerKeyPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{certificate},
+		Rand:         rand.Reader,
+	}
+
+	tlsl := tls.NewListener(l, config)
+	return tlsl
+}
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.eval = eval
 
@@ -43,15 +60,24 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
+	var tlsCreds credentials.TransportCredentials
+	var err error
+	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
+		tlsCreds, err = loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
+			s.HTTPServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			return err
+		}
+	}
 	// GRPC Setup
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
-	err := gen.RegisterServiceHandlerFromEndpoint(
+	err = gen.RegisterServiceHandlerFromEndpoint(
 		context.Background(),
 		mux,
 		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		// TODO: Add TLS here when we have a certificate
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		[]grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -61,40 +87,31 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Multiplexer listeners
-	m := cmux.New(l)
 
-	var server http.Server
-	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
-		creds, err := tls.LoadX509KeyPair(s.HTTPServiceConfiguration.ServerCertPath, s.HTTPServiceConfiguration.ServerKeyPath)
-		if err != nil {
-			return err
-		}
-		server = http.Server{
-			Handler:           mux,
-			ReadHeaderTimeout: 60 * time.Second,
-			TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{creds},
-				NextProtos:   []string{"h2"},
-			},
-		}
-
-	} else {
-		server = http.Server{
-			Handler:           mux,
-			ReadHeaderTimeout: 60 * time.Second,
-		}
+	server := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
-	httpL := m.Match(cmux.HTTP1Fast())
-	httpsL := m.Match(cmux.Any())
-	grpcL := m.Match(cmux.HTTP2())
+	tcpm := cmux.New(l)
+	// We first match on HTTP 1.1 methods.
+	httpl := tcpm.Match(cmux.HTTP1Fast())
 
-	go func() { handleServiceError(server.Serve(httpL)) }()     // HTTP
-	go func() { handleServiceError(server.Serve(httpsL)) }()    // HTTP
-	go func() { handleServiceError(grpcServer.Serve(grpcL)) }() // GRPC
-	go func() { handleServiceError(m.Serve()) }()
+	// If not matched, we assume that its TLS.
+	tlsl := tcpm.Match(cmux.Any())
+	tlsl = s.tlsListener(tlsl)
 
+	// Now, we build another mux recursively to match HTTPS and GoRPC.
+	// You can use the same trick for SSH.
+	tlsm := cmux.New(tlsl)
+	httpsl := tlsm.Match(cmux.HTTP1Fast())
+	gorpcl := tlsm.Match(cmux.Any())
+
+	go func() { handleServiceError(server.Serve(httpl)) }()      // HTTP
+	go func() { handleServiceError(server.Serve(httpsl)) }()     // HTTP
+	go func() { handleServiceError(grpcServer.Serve(gorpcl)) }() // GRPC
+	go func() { handleServiceError(tlsm.Serve()) }()
+	go func() { handleServiceError(tcpm.Serve()) }()
 	<-ctx.Done()
 	return nil
 }
