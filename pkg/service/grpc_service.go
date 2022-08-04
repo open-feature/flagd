@@ -33,8 +33,8 @@ type GRPCService struct {
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.eval = eval
 
-	//TODO: Needs TLS implementation
-	var grpcServer = grpc.NewServer()
+	// TODO: Needs TLS implementation
+	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))

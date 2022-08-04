@@ -34,7 +34,6 @@ var (
 )
 
 func findService(name string) (service.IService, error) {
-
 	registeredServices := map[string]service.IService{
 		"http": &service.HTTPService{
 			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{

@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -34,25 +35,25 @@ type HTTPService struct {
 }
 
 func (s *HTTPService) ServeHTTPS() {
-
 }
 
 func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 	// Load certificates.
-	certificate, err := tls.LoadX509KeyPair(s.HTTPServiceConfiguration.ServerCertPath,
+	certificate, err := loadTLSCertificate(s.HTTPServiceConfiguration.ServerCertPath,
 		s.HTTPServiceConfiguration.ServerKeyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	config := &tls.Config{
-		Certificates: []tls.Certificate{certificate},
+		Certificates: []tls.Certificate{*certificate},
 		Rand:         rand.Reader,
 	}
 
 	tlsl := tls.NewListener(l, config)
 	return tlsl
 }
+
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.eval = eval
 
@@ -71,7 +72,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		}
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(tlsCreds))
 	} else {
-		dialOpts = append(dialOpts, grpc.WithInsecure())
+		dialOpts = append(dialOpts, insecure.NewCredentials())
 	}
 	// GRPC Setup
 	grpcServer := grpc.NewServer()

@@ -5,7 +5,7 @@ flagd
 .vscode
 dist/
 .idea
-
+*.pem
 # ignore generated code
 pkg/eval/flagd-definitions.json
 *.crt
