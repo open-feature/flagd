@@ -47,6 +47,7 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 	config := &tls.Config{
 		Certificates: []tls.Certificate{*certificate},
 		Rand:         rand.Reader,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	tlsl := tls.NewListener(l, config)
@@ -55,7 +56,6 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.eval = eval
-
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
@@ -96,15 +96,12 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		Handler:           mux,
 		ReadHeaderTimeout: 60 * time.Second,
 	}
-
 	tcpm := cmux.New(l)
 	// We first match on HTTP 1.1 methods.
 	httpl := tcpm.Match(cmux.HTTP1Fast())
-
 	// If not matched, we assume that its TLS.
 	tlsl := tcpm.Match(cmux.Any())
 	tlsl = s.tlsListener(tlsl)
-
 	// Now, we build another mux recursively to match HTTPS and GoRPC.
 	// You can use the same trick for SSH.
 	tlsm := cmux.New(tlsl)

@@ -28,6 +28,7 @@ func loadTLSCertificate(certPath, keyPath string) (*tls.Certificate, error) {
 	config := &tls.Config{
 		Certificates: []tls.Certificate{certificate},
 		Rand:         rand.Reader,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return &config.Certificates[0], nil
