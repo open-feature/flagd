@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -20,7 +21,9 @@ import (
 )
 
 type HTTPServiceConfiguration struct {
-	Port int32
+	Port           int32
+	ServerCertPath string
+	ServerKeyPath  string
 }
 
 type HTTPService struct {
@@ -29,42 +32,92 @@ type HTTPService struct {
 	Logger                   *log.Entry
 }
 
-func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	s.GRPCService.Eval = eval
-	grpcServer := grpc.NewServer()
-	gen.RegisterServiceServer(grpcServer, s.GRPCService)
-
-	mux := runtime.NewServeMux(
-		runtime.WithErrorHandler(s.HTTPErrorHandler),
-	)
-	err := gen.RegisterServiceHandlerFromEndpoint(
-		context.Background(),
-		mux,
-		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
-	)
+func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
+	// Load TLS config
+	config, err := loadTLSConfig(s.HTTPServiceConfiguration.ServerCertPath,
+		s.HTTPServiceConfiguration.ServerKeyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server := http.Server{
+	tlsl := tls.NewListener(l, config)
+	return tlsl
+}
+
+func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
+	var dialOpts []grpc.DialOption
+	var err error
+	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
+		tlsCreds, err := loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
+			s.HTTPServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(tlsCreds))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+	grpcServer := grpc.NewServer()
+	gen.RegisterServiceServer(grpcServer, s.GRPCService)
+	err = gen.RegisterServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
+		dialOpts,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return grpcServer
+}
+
+func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
+	server := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 60 * time.Second,
 	}
 
+	return server
+}
+
+func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	s.GRPCService.Eval = eval
+	// Mux Setup
+	mux := runtime.NewServeMux(
+		runtime.WithErrorHandler(s.HTTPErrorHandler),
+	)
+
+	// GRPC Setup
+	grpcServer := s.ServerGRPC(mux)
+	// HTTP Setup
+	httpServer := s.ServeHTTP(mux)
+	// Net listener
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
-	m := cmux.New(l)
 
-	httpL := m.Match(cmux.HTTP1Fast())
-	grpcL := m.Match(cmux.HTTP2())
+	tcpm := cmux.New(l)
+	// We first match on HTTP 1.1 methods.
+	httpl := tcpm.Match(cmux.HTTP1Fast())
+	// If not matched, we assume that its TLS.
+	tlsl := tcpm.Match(cmux.Any())
+	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
+		tlsl = s.tlsListener(tlsl)
+	}
+	// Now, we build another mux recursively to match HTTPS and GoRPC.
+	// You can use the same trick for SSH.
+	tlsm := cmux.New(tlsl)
+	httpsl := tlsm.Match(cmux.HTTP1Fast())
+	gorpcl := tlsm.Match(cmux.Any())
 
-	go func() { handleServiceError(server.Serve(httpL)) }()
-	go func() { handleServiceError(grpcServer.Serve(grpcL)) }()
-	go func() { handleServiceError(m.Serve()) }()
+	go func() { handleServiceError(httpServer.Serve(httpl)) }() // HTTP
 
+	go func() { handleServiceError(httpServer.Serve(httpsl)) }() // HTTPS
+
+	go func() { handleServiceError(grpcServer.Serve(gorpcl)) }() // GRPC
+	go func() { handleServiceError(tlsm.Serve()) }()
+	go func() { handleServiceError(tcpm.Serve()) }()
 	<-ctx.Done()
 	return nil
 }
@@ -90,6 +143,7 @@ func (s HTTPService) HTTPErrorHandler(
 	}
 	details := st.Details()
 	if len(details) != 1 {
+		log.Error(err)
 		log.Errorf("malformed error received by error handler, details received: %d - %v", len(details), details)
 		return
 	}
