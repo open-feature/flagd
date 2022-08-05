@@ -15,7 +15,7 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 2. Build the flagd binary: `make build`
 3. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
 
-This now provides an accessible http endpoint for the flags:
+This now provides an accessible http or [https](./https) endpoint for the flags:
 
 ```
 $ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean"
@@ -41,6 +41,19 @@ $ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/string"
 
 $ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string"
 // {"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
+```
+
+### https
+
+When it is desired to use TLS for increased security, flagD can be started with the following cert and key information.
+
+`flagd start --server-cert-path ./example-cert.pem --server-key-path ./example-key.pem`
+
+This enables you to use an upgraded connection for the previous example requests, such as the following:
+
+```
+$ curl -X POST "https://localhost:8080/flags/myBoolFlag/resolve/boolean"
+// {"value":true,"reason":"STATIC","variant":"on"}
 ```
 
 ## Multiple source example
