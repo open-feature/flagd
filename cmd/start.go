@@ -196,7 +196,7 @@ func init() {
 	startCmd.Flags().StringVarP(
 		&serverCertPath, "server-cert-path", "c", "", "Server side tls certificate path")
 	startCmd.Flags().StringVarP(
-		&serverKeyPath, "server-key-path", "k", "", "server side tls key path")
+		&serverKeyPath, "server-key-path", "k", "", "Server side tls key path")
 	startCmd.Flags().StringSliceVarP(
 		&uri, "uri", "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
 			"Using multiple providers is supported where collisions between "+
