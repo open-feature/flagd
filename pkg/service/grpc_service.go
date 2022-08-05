@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -32,8 +33,18 @@ type GRPCService struct {
 // GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	// TODO: Needs TLS implementation: https://github.com/open-feature/flagd/issues/103
-	grpcServer := grpc.NewServer()
+
+	// TLS
+	var serverOpts []grpc.ServerOption
+	if s.GRPCServiceConfiguration.ServerCertPath != "" && s.GRPCServiceConfiguration.ServerKeyPath != "" {
+		config, err := loadTLSConfig(s.GRPCServiceConfiguration.ServerCertPath, s.GRPCServiceConfiguration.ServerKeyPath)
+		if err != nil {
+			return err
+		}
+		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(config)))
+	}
+
+	grpcServer := grpc.NewServer(serverOpts...)
 	gen.RegisterServiceServer(grpcServer, s)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))
