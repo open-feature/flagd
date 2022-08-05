@@ -7,7 +7,7 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
-	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
+	gen "github.com/open-feature/flagd/schemas/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,15 +23,15 @@ type GRPCServiceConfiguration struct {
 
 type GRPCService struct {
 	GRPCServiceConfiguration *GRPCServiceConfiguration
-	eval                     eval.IEvaluator
+	Eval                     eval.IEvaluator
 	gen.UnimplementedServiceServer
 	Logger *log.Entry
 }
 
-// Serve allows for the use of GRPC only without HTTPP, where as HTTP service enables both
-// GRPC and http
-func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	s.eval = eval
+// Serve allows for the use of GRPC only without HTTP, where as HTTP service enables both
+// GRPC and HTTP
+func (s *GRPCService) Serve(ctx context.Context, Eval eval.IEvaluator) error {
+	s.Eval = Eval
 
 	// TODO: Needs TLS implementation
 	grpcServer := grpc.NewServer()
@@ -50,7 +50,7 @@ func (s *GRPCService) ResolveBoolean(
 	req *gen.ResolveBooleanRequest,
 ) (*gen.ResolveBooleanResponse, error) {
 	res := gen.ResolveBooleanResponse{}
-	result, variant, reason, err := s.eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
+	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, s.HandleEvaluationError(err, reason)
 	}
@@ -65,7 +65,7 @@ func (s *GRPCService) ResolveString(
 	req *gen.ResolveStringRequest,
 ) (*gen.ResolveStringResponse, error) {
 	res := gen.ResolveStringResponse{}
-	result, variant, reason, err := s.eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
+	result, variant, reason, err := s.Eval.ResolveStringValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, s.HandleEvaluationError(err, reason)
 	}
@@ -75,12 +75,27 @@ func (s *GRPCService) ResolveString(
 	return &res, nil
 }
 
-func (s *GRPCService) ResolveNumber(
+func (s *GRPCService) ResolveInt(
 	ctx context.Context,
-	req *gen.ResolveNumberRequest,
-) (*gen.ResolveNumberResponse, error) {
-	res := gen.ResolveNumberResponse{}
-	result, variant, reason, err := s.eval.ResolveNumberValue(req.GetFlagKey(), req.GetContext())
+	req *gen.ResolveIntRequest,
+) (*gen.ResolveIntResponse, error) {
+	res := gen.ResolveIntResponse{}
+	result, variant, reason, err := s.Eval.ResolveIntValue(req.GetFlagKey(), req.GetContext())
+	if err != nil {
+		return &res, s.HandleEvaluationError(err, reason)
+	}
+	res.Reason = reason
+	res.Value = result
+	res.Variant = variant
+	return &res, nil
+}
+
+func (s *GRPCService) ResolveFloat(
+	ctx context.Context,
+	req *gen.ResolveFloatRequest,
+) (*gen.ResolveFloatResponse, error) {
+	res := gen.ResolveFloatResponse{}
+	result, variant, reason, err := s.Eval.ResolveFloatValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, s.HandleEvaluationError(err, reason)
 	}
@@ -95,7 +110,7 @@ func (s *GRPCService) ResolveObject(
 	req *gen.ResolveObjectRequest,
 ) (*gen.ResolveObjectResponse, error) {
 	res := gen.ResolveObjectResponse{}
-	result, variant, reason, err := s.eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
+	result, variant, reason, err := s.Eval.ResolveObjectValue(req.GetFlagKey(), req.GetContext())
 	if err != nil {
 		return &res, s.HandleEvaluationError(err, reason)
 	}

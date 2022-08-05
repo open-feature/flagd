@@ -51,7 +51,7 @@ const (
 	StaticStringFlag           = "staticStringFlag"
 	StaticStringValue          = "#CC0000"
 	StaticNumberFlag           = "staticNumberFlag"
-	StaticNumberValue  float32 = 1
+	StaticNumberValue  float64 = 1
 	StaticObjectFlag           = "staticObjectFlag"
 	StaticObjectValue          = `{"abc": 123}`
 	DynamicBoolFlag            = "targetingBoolFlag"
@@ -59,7 +59,7 @@ const (
 	DynamicStringFlag          = "targetingStringFlag"
 	DynamicStringValue         = "my-string"
 	DynamicNumberFlag          = "targetingNumberFlag"
-	DynamicNumberValue float32 = 100
+	DynamicNumberValue float64 = 100
 	DynamicObjectFlag          = "targetingObjectFlag"
 	DynamicObjectValue         = `{ "key": true }`
 	ColorProp                  = "color"
@@ -346,7 +346,7 @@ func TestResolveNumberValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
 		context   map[string]interface{}
-		val       float32
+		val       float64
 		reason    string
 		errorCode string
 	}{
@@ -367,7 +367,7 @@ func TestResolveNumberValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveNumberValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {

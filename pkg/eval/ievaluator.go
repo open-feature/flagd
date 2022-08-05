@@ -19,8 +19,10 @@ type IEvaluator interface {
 	ResolveStringValue(
 		flagKey string,
 		context *structpb.Struct) (value string, variant string, reason string, err error)
-	ResolveNumberValue(flagKey string,
-		context *structpb.Struct) (value float32, variant string, reason string, err error)
+	ResolveIntValue(flagKey string,
+		context *structpb.Struct) (value int64, variant string, reason string, err error)
+	ResolveFloatValue(flagKey string,
+		context *structpb.Struct) (value float64, variant string, reason string, err error)
 	ResolveObjectValue(
 		flagKey string,
 		context *structpb.Struct) (value map[string]any, variant string, reasons string, err error)

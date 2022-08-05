@@ -12,7 +12,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/open-feature/flagd/pkg/eval"
-	gen "github.com/open-feature/flagd/schemas/protobuf/proto/go-server/schema/v1"
+	gen "github.com/open-feature/flagd/schemas/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
@@ -31,9 +31,6 @@ type HTTPService struct {
 	HTTPServiceConfiguration *HTTPServiceConfiguration
 	GRPCService              *GRPCService
 	Logger                   *log.Entry
-}
-
-func (s *HTTPService) ServeHTTPS() {
 }
 
 func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
@@ -90,7 +87,7 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 	return server
 }
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	s.GRPCService.eval = eval
+	s.GRPCService.Eval = eval
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
