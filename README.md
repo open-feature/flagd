@@ -15,7 +15,7 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 2. Build the flagd binary: `make build`
 3. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
 
-This now provides an accessible http or [https](./https) endpoint for the flags:
+This now provides an accessible http or [https](#https) endpoint for the flags:
 
 ```
 $ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean"
