@@ -67,6 +67,30 @@
           "off"
         ]
       }
+    },
+    "fibAlgo": {
+      "variants": {
+        "recursive": "recursive",
+        "memo": "memo",
+        "loop": "loop",
+        "binet": "binet"
+      },
+      "defaultVariant": "recursive",
+      "state": "ENABLED",
+      "targeting": {
+        "if": [
+          {
+            "evaluator": "emailWithFaas"
+          }, "binet", null
+        ]
+      }
+    }
+  },
+  "evaluators": {
+    "emailWithFaas": {
+          "in": ["@faas.com", {
+            "var": ["email"]
+          }]
     }
   }
 }

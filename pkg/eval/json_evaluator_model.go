@@ -8,6 +8,10 @@ type Flags struct {
 	Flags map[string]Flag `json:"flags"`
 }
 
+type Evaluators struct {
+	Evaluators map[string]json.RawMessage `json:"evaluators"`
+}
+
 func (f Flags) Merge(ff Flags) Flags {
 	result := Flags{Flags: make(map[string]Flag)}
 	for k, v := range f.Flags {
