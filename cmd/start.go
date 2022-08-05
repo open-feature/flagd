@@ -29,13 +29,17 @@ var (
 	servicePort       int32
 	socketServicePath string
 	bearerToken       string
+	serverCertPath    string
+	serverKeyPath     string
 )
 
 func findService(name string) (service.IService, error) {
 	registeredServices := map[string]service.IService{
 		"http": &service.HTTPService{
 			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port: servicePort,
+				Port:           servicePort,
+				ServerKeyPath:  serverKeyPath,
+				ServerCertPath: serverCertPath,
 			},
 			GRPCService: &service.GRPCService{},
 			Logger: log.WithFields(log.Fields{
@@ -45,7 +49,9 @@ func findService(name string) (service.IService, error) {
 		},
 		"grpc": &service.GRPCService{
 			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
-				Port: servicePort,
+				Port:           servicePort,
+				ServerKeyPath:  serverKeyPath,
+				ServerCertPath: serverCertPath,
 			},
 			Logger: log.WithFields(log.Fields{
 				"service":   "grpc",
@@ -187,6 +193,10 @@ func init() {
 		&syncProvider, "sync-provider", "y", "filepath", "Set a sync provider e.g. filepath or remote")
 	startCmd.Flags().StringVarP(
 		&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
+	startCmd.Flags().StringVarP(
+		&serverCertPath, "server-cert-path", "c", "", "Server side tls certificate path")
+	startCmd.Flags().StringVarP(
+		&serverKeyPath, "server-key-path", "k", "", "Server side tls key path")
 	startCmd.Flags().StringSliceVarP(
 		&uri, "uri", "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
 			"Using multiple providers is supported where collisions between "+

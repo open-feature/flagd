@@ -16,7 +16,9 @@ import (
 )
 
 type GRPCServiceConfiguration struct {
-	Port int32
+	Port           int32
+	ServerKeyPath  string
+	ServerCertPath string
 }
 
 type GRPCService struct {
@@ -26,9 +28,11 @@ type GRPCService struct {
 	Logger *log.Entry
 }
 
+// Serve allows for the use of GRPC only without HTTP, where as HTTP service enables both
+// GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-
+	// TODO: Needs TLS implementation: https://github.com/open-feature/flagd/issues/103
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
 
