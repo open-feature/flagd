@@ -32,7 +32,7 @@ type GRPCService struct {
 // GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	// TODO: Needs TLS implementation
+	// TODO: Needs TLS implementation: https://github.com/open-feature/flagd/issues/103
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s)
 
