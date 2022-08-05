@@ -28,6 +28,8 @@ type GRPCService struct {
 	Logger *log.Entry
 }
 
+// Serve allows for the use of GRPC only without HTTP, where as HTTP service enables both
+// GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
 	// TODO: Needs TLS implementation
