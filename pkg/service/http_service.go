@@ -52,7 +52,6 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 }
 
 func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
-
 	var dialOpts []grpc.DialOption
 	var err error
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
@@ -78,6 +77,7 @@ func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
 	}
 	return grpcServer
 }
+
 func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 	server := &http.Server{
 		Handler:           mux,
@@ -86,6 +86,7 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 
 	return server
 }
+
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.Eval = eval
 	// Mux Setup
