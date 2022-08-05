@@ -17,7 +17,7 @@ func loadTLSCredentials(serverCertPath string, serverKeyPath string) (credential
 	return creds, nil
 }
 
-func loadTLSCertificate(certPath, keyPath string) (*tls.Certificate, error) {
+func loadTLSConfig(certPath, keyPath string) (*tls.Config, error) {
 	certificate, err := tls.LoadX509KeyPair(certPath,
 		keyPath)
 	if err != nil {
@@ -30,5 +30,5 @@ func loadTLSCertificate(certPath, keyPath string) (*tls.Certificate, error) {
 		MinVersion:   tls.VersionTLS12,
 	}
 
-	return &config.Certificates[0], nil
+	return config, nil
 }

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -34,17 +33,11 @@ type HTTPService struct {
 }
 
 func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
-	// Load certificates.
-	certificate, err := loadTLSCertificate(s.HTTPServiceConfiguration.ServerCertPath,
+	// Load TLS config
+	config, err := loadTLSConfig(s.HTTPServiceConfiguration.ServerCertPath,
 		s.HTTPServiceConfiguration.ServerKeyPath)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	config := &tls.Config{
-		Certificates: []tls.Certificate{*certificate},
-		Rand:         rand.Reader,
-		MinVersion:   tls.VersionTLS12,
 	}
 
 	tlsl := tls.NewListener(l, config)
