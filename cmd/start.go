@@ -194,7 +194,7 @@ func init() {
 	startCmd.Flags().StringVarP(
 		&evaluator, "evaluator", "e", "json", "Set an evaluator e.g. json")
 	startCmd.Flags().StringVarP(
-		&serverCertPath, "server-cert-path", "c", "", "server side tls certificate path")
+		&serverCertPath, "server-cert-path", "c", "", "Server side tls certificate path")
 	startCmd.Flags().StringVarP(
 		&serverKeyPath, "server-key-path", "k", "", "server side tls key path")
 	startCmd.Flags().StringSliceVarP(
