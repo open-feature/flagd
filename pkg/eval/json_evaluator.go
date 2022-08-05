@@ -109,9 +109,7 @@ func (je *JSONEvaluator) ResolveFloatValue(flagKey string, context *structpb.Str
 	reason string,
 	err error,
 ) {
-	var val float64
-	val, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
-	value = float64(val)
+	value, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 	return
 }
 
