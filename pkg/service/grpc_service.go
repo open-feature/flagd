@@ -7,8 +7,8 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
-	gen "github.com/open-feature/flagd/schemas/proto/go-server/schema/v1"
 	log "github.com/sirupsen/logrus"
+	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
