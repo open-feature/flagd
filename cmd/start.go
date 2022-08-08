@@ -184,7 +184,7 @@ var startCmd = &cobra.Command{
 
 func init() {
 	startCmd.Flags().Int32VarP(
-		&servicePort, "port", "p", 8080, "Port to listen on")
+		&servicePort, "port", "p", 8013, "Port to listen on")
 	startCmd.Flags().StringVarP(
 		&socketServicePath, "socketpath", "d", "/tmp/flagd.sock", "flagd socket path")
 	startCmd.Flags().StringVarP(
