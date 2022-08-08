@@ -1,0 +1,40 @@
+{
+  "flags": {
+    "myBoolFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
+    },
+    "myStringFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "key1": "val1",
+        "key2": "val2"
+      },
+      "defaultVariant": "key1"
+    },
+    "myNumberFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "one": 1,
+        "two": 2
+      },
+      "defaultVariant": "two"
+    },
+    "myObjectFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "object1": {
+          "key": "val"
+        },
+        "object2": {
+          "key": true
+        }
+      },
+      "defaultVariant": "object1"
+    }
+  }
+}

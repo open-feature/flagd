@@ -2,7 +2,7 @@ module github.com/open-feature/flagd
 
 go 1.18
 
-replace github.com/open-feature/schemas => ./schemas
+replace github.com/open-feature/schemas => ./schemas-temporary
 
 require (
 	github.com/deepmap/oapi-codegen v1.11.0

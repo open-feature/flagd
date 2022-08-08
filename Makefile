@@ -6,18 +6,15 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-generate:
-	git submodule update --init --recursive
-	cp schemas/json/flagd-definitions.json pkg/eval/flagd-definitions.json
-docker-build: generate
+docker-build:
 	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
-docker-push: generate
+docker-push:
 	docker buildx build --push --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
-build: generate
+build:
 	go build -o flagd
-test: generate
+test:
 	go test -cover ./...
-run: generate
+run:
 	go run main.go start -f config/samples/example_flags.json
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
