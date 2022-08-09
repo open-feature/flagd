@@ -1,4 +1,0 @@
-[submodule "schemas"]
-	path = schemas
-	url = https://github.com/open-feature/schemas
-	branch = main
