@@ -2,7 +2,6 @@ package eval
 
 import (
 	"bytes"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,13 +9,11 @@ import (
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/pkg/model"
+	schema "github.com/open-feature/schemas/json"
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-//go:embed flagd-definitions.json
-var schema string
 
 type JSONEvaluator struct {
 	state  Flags
@@ -36,7 +33,7 @@ func (je *JSONEvaluator) GetState() (string, error) {
 }
 
 func (je *JSONEvaluator) SetState(state string) error {
-	schemaLoader := gojsonschema.NewStringLoader(schema)
+	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 
