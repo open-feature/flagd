@@ -1,18 +1,28 @@
-name: release
-
 on:
   push:
     branches:
-      - feature/workflows
-    tags:
-      - "v*.*.*"
+      - main
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
+name: Run Release Please
 jobs:
-  docker:
+  release-please:
     runs-on: ubuntu-latest
+    # Release-please creates a PR that tracks all changes
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          command: manifest
+          token: ${{secrets.GITHUB_TOKEN}}
+          default-branch: main
+
+  container-release:
+    runs-on: ubuntu-latest
+    if: ${{ steps.release.outputs.releases_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -53,22 +63,26 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: | 
+          build-args: |
             VERSION=${{ steps.meta.outputs.tags }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
-  goreleaser:
+
+  go-release:
     runs-on: ubuntu-latest
+    if: ${{ steps.release.outputs.releases_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: true
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: "1.18.1"
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
