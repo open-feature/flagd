@@ -34,7 +34,7 @@ func (je *JSONEvaluator) GetState() (string, error) {
 }
 
 func (je *JSONEvaluator) SetState(state string) error {
-	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdSchema)
+	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 

@@ -2,8 +2,6 @@ module github.com/open-feature/flagd
 
 go 1.18
 
-replace github.com/open-feature/schemas => ./schemas-temporary
-
 require (
 	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.3
@@ -11,7 +9,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang/mock v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.1
-	github.com/open-feature/schemas v0.0.0-00010101000000-000000000000
+	github.com/open-feature/schemas v0.0.0-20220809125026-ba7ea0aa4841
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/soheilhy/cmux v0.1.5
