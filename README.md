@@ -18,28 +18,28 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 This now provides an accessible http or [https](#https) endpoint for the flags:
 
 ```
-$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/boolean"
+$ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
 // {"value":true,"reason":"STATIC","variant":"on"}
 
-$ curl -X POST "localhost:8080/flags/myStringFlag/resolve/string"
+$ curl -X POST "localhost:8013/flags/myStringFlag/resolve/string"
 // {"value":"val1","reason":"STATIC","variant":"key1"}
 
-$ curl -X POST "localhost:8080/flags/myIntFlag/resolve/int"
+$ curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
 // {"value":"1","reason":"STATIC","variant":"one"}
 
-$ curl -X POST "localhost:8080/flags/myFloatFlag/resolve/float"
+$ curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
 // {"value":1.23,"reason":"STATIC","variant":"one"}
 
-$ curl -X POST "localhost:8080/flags/myObjectFlag/resolve/object"
+$ curl -X POST "localhost:8013/flags/myObjectFlag/resolve/object"
 // {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
 
-$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+$ curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
 // {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 
-$ curl -X POST "localhost:8080/flags/myBoolFlag/resolve/string"
+$ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/string"
 // {"error_code":"TYPE_MISMATCH","reason":"ERROR"}
 
-$ curl -X POST "localhost:8080/flags/aMissingFlag/resolve/string"
+$ curl -X POST "localhost:8013/flags/aMissingFlag/resolve/string"
 // {"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
 ```
 
@@ -52,7 +52,7 @@ When it is desired to use TLS for increased security, flagD can be started with 
 This enables you to use an upgraded connection for the previous example requests, such as the following:
 
 ```
-$ curl -X POST "https://localhost:8080/flags/myBoolFlag/resolve/boolean"
+$ curl -X POST "https://localhost:8013/flags/myBoolFlag/resolve/boolean"
 // {"value":true,"reason":"STATIC","variant":"on"}
 ```
 
@@ -91,7 +91,7 @@ May 30 12:19:55 foo systemd[1]: Started "A generic feature flag daemon".
 ### Running in a container
 
 1. `IMG=flagd-local make docker-build`
-2. `docker run -p 8080:8080 -it flagd-local start --uri ./examples/example_flags.json`
+2. `docker run -p 8013:8013 -it flagd-local start --uri ./examples/example_flags.json`
 
 ## Targeting Rules
 
@@ -139,7 +139,7 @@ A flag is defined as such:
 The rule provided returns `"on"` if `var color == "yellow"` and `"off"` otherwise:
 
 ```shell
-$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+$ curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
 ```
 returns
 ```json
@@ -148,7 +148,7 @@ returns
 
 whereas 
 ```shell
-$ curl -X POST "localhost:8080/flags/isColorYellow/resolve/boolean" -d '{"color": "white"}'
+$ curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "white"}'
 ```
 returns
 ```json
