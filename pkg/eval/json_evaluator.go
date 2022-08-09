@@ -21,8 +21,6 @@ type JSONEvaluator struct {
 	Logger *log.Entry
 }
 
-const evaluator = "evaluator"
-
 type constraints interface {
 	bool | string | map[string]any | float64
 }
@@ -206,7 +204,7 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 
 	for evalName, evalRaw := range evaluators.Evaluators {
 		// replace any occurrences of "evaluator": "evalName"
-		regex, err := regexp.Compile(fmt.Sprintf(`"%s":(\s)*"%s"`, evaluator, evalName))
+		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"#/\$evaluators/%s"`, evalName))
 		if err != nil {
 			return "", fmt.Errorf("compile regex: %w", err)
 		}

@@ -9,7 +9,7 @@ type Flags struct {
 }
 
 type Evaluators struct {
-	Evaluators map[string]json.RawMessage `json:"evaluators"`
+	Evaluators map[string]json.RawMessage `json:"$evaluators"`
 }
 
 func (f Flags) Merge(ff Flags) Flags {

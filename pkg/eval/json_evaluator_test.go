@@ -672,13 +672,13 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"evaluator": "emailWithFaas"
+								"$ref": "#/$evaluators/emailWithFaas"
 							  }, "binet", null
 							]
 						  }
     					}
 					},
-					"evaluators": {
+					"$evaluators": {
 						"emailWithFaas": {
 							  "in": ["@faas.com", {
 								"var": ["email"]
@@ -729,13 +729,13 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"evaluator": "emailWithFaas"
+								"$ref": "#/$evaluators/emailWithFaas"
 							  }, "binet", null
 							]
 						  }
     					}
 					},
-					"evaluators": {
+					"$evaluators": {
 						"emailWithFaas": "foo"
   					}
 				}
@@ -758,13 +758,13 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"evaluator": "emailWithFaas"
+								"$ref": "#/$evaluators/emailWithFaas"
 							  }, "binet", null
 							]
 						  }
     					}
 					},
-					"evaluators": {
+					"$evaluators": {
 						"emailWithFaas": ""
   					}
 				}

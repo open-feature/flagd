@@ -80,13 +80,13 @@
       "targeting": {
         "if": [
           {
-            "evaluator": "emailWithFaas"
+            "$ref": "#/$evaluators/emailWithFaas"
           }, "binet", null
         ]
       }
     }
   },
-  "evaluators": {
+  "$evaluators": {
     "emailWithFaas": {
           "in": ["@faas.com", {
             "var": ["email"]
