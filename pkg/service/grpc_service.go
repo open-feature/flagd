@@ -51,7 +51,11 @@ func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	if err != nil {
 		return err
 	}
-	return grpcServer.Serve(lis)
+
+	go func() { grpcServer.Serve(lis) }()
+	<-ctx.Done()
+	grpcServer.GracefulStop()
+	return nil
 }
 
 // TODO: might be able to simplify some of this with generics.
