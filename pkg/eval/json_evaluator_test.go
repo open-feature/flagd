@@ -672,7 +672,7 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"$ref": "#/$evaluators/emailWithFaas"
+								"$ref": "emailWithFaas"
 							  }, "binet", null
 							]
 						  }
@@ -729,7 +729,7 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"$ref": "#/$evaluators/emailWithFaas"
+								"$ref": "emailWithFaas"
 							  }, "binet", null
 							]
 						  }
@@ -758,7 +758,7 @@ func TestState_Evaluator(t *testing.T) {
 						  "targeting": {
 							"if": [
 							  {
-								"$ref": "#/$evaluators/emailWithFaas"
+								"$ref": "emailWithFaas"
 							  }, "binet", null
 							]
 						  }

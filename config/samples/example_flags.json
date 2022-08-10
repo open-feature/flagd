@@ -80,7 +80,7 @@
       "targeting": {
         "if": [
           {
-            "$ref": "#/$evaluators/emailWithFaas"
+            "$ref": "emailWithFaas"
           }, "binet", null
         ]
       }

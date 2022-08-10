@@ -204,7 +204,7 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 
 	for evalName, evalRaw := range evaluators.Evaluators {
 		// replace any occurrences of "evaluator": "evalName"
-		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"#/\$evaluators/%s"`, evalName))
+		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"%s"`, evalName))
 		if err != nil {
 			return "", fmt.Errorf("compile regex: %w", err)
 		}
