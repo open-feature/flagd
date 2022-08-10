@@ -39,29 +39,28 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 
 	go func() {
 		for {
-			select {
-			case <-ctx.Done():
-				return
-			case w := <-notifier:
-				switch w.GetEvent().EventType {
-				case sync.DefaultEventTypeCreate:
-					logger.Info("New configuration created")
-					if err := updateState(ctx, syncr); err != nil {
-						log.Error(err)
-					}
-				case sync.DefaultEventTypeModify:
-					logger.Info("Configuration modified")
-					if err := updateState(ctx, syncr); err != nil {
-						log.Error(err)
-					}
-				case sync.DefaultEventTypeDelete:
-					logger.Info("Configuration deleted")
-				case sync.DefaultEventTypeReady:
-					logger.Info("Notifier ready")
+			w := <-notifier
+			switch w.GetEvent().EventType {
+			case sync.DefaultEventTypeCreate:
+				logger.Info("New configuration created")
+				if err := updateState(ctx, syncr); err != nil {
+					log.Error(err)
 				}
+			case sync.DefaultEventTypeModify:
+				logger.Info("Configuration modified")
+				if err := updateState(ctx, syncr); err != nil {
+					log.Error(err)
+				}
+			case sync.DefaultEventTypeDelete:
+				logger.Info("Configuration deleted")
+			case sync.DefaultEventTypeReady:
+				logger.Info("Notifier ready")
 			}
 		}
 	}()
+
+	<-ctx.Done()
+	return
 }
 
 func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
