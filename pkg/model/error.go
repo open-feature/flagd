@@ -5,4 +5,5 @@ const (
 	ParseErrorCode        = "PARSE_ERROR"
 	TypeMismatchErrorCode = "TYPE_MISMATCH"
 	GeneralErrorCode      = "GENERAL"
+	FlagDisabledErrorCode = "FLAG_DISABLED"
 )

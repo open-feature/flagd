@@ -69,6 +69,7 @@ const (
 	DynamicObjectValue         = `{ "key": true }`
 	ColorProp                  = "color"
 	ColorValue                 = "yellow"
+	DisabledFlag               = "disabledFlag"
 )
 
 var Flags = fmt.Sprintf(`{
@@ -234,6 +235,14 @@ var Flags = fmt.Sprintf(`{
           null
         ]
       }
+    },
+	"%s": {
+      "state": "DISABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
     }
   }
 }`,
@@ -266,7 +275,8 @@ var Flags = fmt.Sprintf(`{
 	DynamicObjectFlag,
 	DynamicObjectValue,
 	ColorProp,
-	ColorValue)
+	ColorValue,
+	DisabledFlag)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -320,6 +330,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -358,6 +369,7 @@ func TestResolveStringValue(t *testing.T) {
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -397,6 +409,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -436,6 +449,7 @@ func TestResolveIntValue(t *testing.T) {
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -475,6 +489,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}

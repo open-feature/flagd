@@ -25,6 +25,10 @@ type constraints interface {
 	bool | string | map[string]any | float64
 }
 
+const (
+	Disabled = "DISABLED"
+)
+
 func (je *JSONEvaluator) GetState() (string, error) {
 	data, err := json.Marshal(&je.state)
 	if err != nil {
@@ -145,6 +149,10 @@ func (je *JSONEvaluator) evaluateVariant(
 	if !ok {
 		// flag not found
 		return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
+	}
+
+	if flag.State == Disabled {
+		return "", model.ErrorReason, errors.New(model.FlagDisabledErrorCode)
 	}
 
 	// get the targeting logic, if any
