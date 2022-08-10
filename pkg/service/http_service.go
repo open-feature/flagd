@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -82,6 +83,9 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.Eval = eval
+
+	g, gCtx := errgroup.WithContext(ctx)
+
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
@@ -111,15 +115,23 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	httpsl := tlsm.Match(cmux.HTTP1Fast())
 	gorpcl := tlsm.Match(cmux.Any())
 
-	go func() { handleServiceError(httpServer.Serve(httpl)) }() // HTTP
+	g.Go(func() error {
+		return httpServer.Serve(httpl) // HTTP
+	})
+	g.Go(func() error {
+		return httpServer.Serve(httpsl) // HTTPS
+	})
+	g.Go(func() error {
+		return grpcServer.Serve(gorpcl) // GRPC
+	})
+	// excluded from error group, the shutdowns for these are handled via the http / grpc servers
+	go func() { tlsm.Serve() }()
+	go func() { tcpm.Serve() }()
 
-	go func() { handleServiceError(httpServer.Serve(httpsl)) }() // HTTPS
-
-	go func() { handleServiceError(grpcServer.Serve(gorpcl)) }() // GRPC
-	go func() { handleServiceError(tlsm.Serve()) }()
-	go func() { handleServiceError(tcpm.Serve()) }()
-	<-ctx.Done()
-	return nil
+	<-gCtx.Done()
+	grpcServer.GracefulStop()
+	httpServer.Shutdown(context.Background())
+	return g.Wait()
 }
 
 func (s HTTPService) HTTPErrorHandler(
