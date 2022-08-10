@@ -45,7 +45,7 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 	return tlsl
 }
 
-func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
+func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *grpc.Server {
 	var dialOpts []grpc.DialOption
 	var err error
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
@@ -61,7 +61,7 @@ func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 	err = gen.RegisterServiceHandlerFromEndpoint(
-		context.Background(),
+		ctx,
 		mux,
 		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		dialOpts,
@@ -92,7 +92,7 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	)
 
 	// GRPC Setup
-	grpcServer := s.ServerGRPC(mux)
+	grpcServer := s.ServerGRPC(ctx, mux)
 	// HTTP Setup
 	httpServer := s.ServeHTTP(mux)
 	// Net listener
@@ -125,13 +125,21 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		return grpcServer.Serve(gorpcl) // GRPC
 	})
 	// excluded from error group, the shutdowns for these are handled via the http / grpc servers
-	go func() { tlsm.Serve() }()
-	go func() { tcpm.Serve() }()
+	g.Go(func() error {
+		return tlsm.Serve() // GRPC
+	})
+	g.Go(func() error {
+		return tcpm.Serve() // GRPC
+	})
 
 	<-gCtx.Done()
 	grpcServer.GracefulStop()
 	httpServer.Shutdown(context.Background())
-	return g.Wait()
+	err = g.Wait()
+	if err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
 
 func (s HTTPService) HTTPErrorHandler(
