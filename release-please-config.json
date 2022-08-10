@@ -2,7 +2,7 @@
   "bootstrap-sha": "46af25f837ba56458bfd06338ac654320298c8dd",
   "packages": {
     ".": {
-      "releaseType": "go",
+      "release-type": "go",
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true
