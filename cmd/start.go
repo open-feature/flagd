@@ -164,12 +164,15 @@ var startCmd = &cobra.Command{
 		defer cancel()
 		g, gCtx := errgroup.WithContext(ctx)
 		g.Go(func() error {
-			return runtime.Start(gCtx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
+			runtime.Start(gCtx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
 				"component": "runtime",
 			}))
+			return nil
 		})
 		if err := g.Wait(); err != nil {
 			log.Printf("exit reason: %s \n", err)
+		} else {
+			log.Println("server shutdown")
 		}
 	},
 }
