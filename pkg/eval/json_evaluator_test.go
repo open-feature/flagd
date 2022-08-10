@@ -3,6 +3,7 @@ package eval_test
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -659,6 +660,166 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 
 			if tt.valid && err != nil {
 				t.Error(err)
+			}
+		})
+	}
+}
+
+func TestState_Evaluator(t *testing.T) {
+	tests := map[string]struct {
+		inputState          string
+		expectedOutputState string
+		expectedError       bool
+	}{
+		"success": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": {
+							  "in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+						}
+  					}
+				}
+			`,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					}
+				}
+			`,
+		},
+		"invalid evaluator json": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": "foo"
+  					}
+				}
+			`,
+			expectedError: true,
+		},
+		"empty evaluator": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": ""
+  					}
+				}
+			`,
+			expectedError: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			jsonEvaluator := eval.JSONEvaluator{}
+
+			err := jsonEvaluator.SetState(tt.inputState)
+			if err != nil {
+				if !tt.expectedError {
+					t.Error(err)
+				}
+				return
+			} else if tt.expectedError {
+				t.Error("expected error, got nil")
+				return
+			}
+
+			got, err := jsonEvaluator.GetState()
+			if err != nil {
+				t.Error(err)
+			}
+
+			var expectedOutputJSON map[string]interface{}
+			if err := json.Unmarshal([]byte(tt.expectedOutputState), &expectedOutputJSON); err != nil {
+				t.Fatal(err)
+			}
+
+			var gotOutputJSON map[string]interface{}
+			if err := json.Unmarshal([]byte(got), &gotOutputJSON); err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(expectedOutputJSON, gotOutputJSON) {
+				t.Errorf("expected state: %v\n got state: %v", expectedOutputJSON, gotOutputJSON)
 			}
 		})
 	}
