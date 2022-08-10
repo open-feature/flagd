@@ -1,6 +1,6 @@
 # flagD
 
-<img src="images/icon.png" width="150px"/>
+<img src="images/icon.png" width="75"/>
 
 ![build](https://img.shields.io/github/workflow/status/open-feature/flagd/ci)
 ![goversion](https://img.shields.io/github/go-mod/go-version/open-feature/flagd/main)
