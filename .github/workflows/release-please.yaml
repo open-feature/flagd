@@ -6,6 +6,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_GO_VERSION: 1.18
 
 name: Run Release Please
 jobs:
@@ -21,6 +22,7 @@ jobs:
           default-branch: main
 
   container-release:
+    needs: release-please
     runs-on: ubuntu-latest
     if: ${{ steps.release.outputs.releases_created }}
     steps:
@@ -69,6 +71,7 @@ jobs:
             DATE=${{ steps.date.outputs.date }}
 
   go-release:
+    needs: release-please
     runs-on: ubuntu-latest
     if: ${{ steps.release.outputs.releases_created }}
     steps:
@@ -81,7 +84,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.18.1"
+          go-version: ${{ env.DEFAULT_GO_VERSION }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
