@@ -66,7 +66,7 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 
 func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
 	evaluator eval.IEvaluator, logger *log.Entry,
-) {
+) error {
 	ev = evaluator
 
 	syncNotifier := make(chan sync.INotify)
@@ -75,5 +75,5 @@ func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
 		startSyncer(ctx, syncNotifier, s, logger)
 	}
 
-	go func() { _ = server.Serve(ctx, ev) }()
+	return server.Serve(ctx, ev)
 }
