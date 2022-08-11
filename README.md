@@ -18,17 +18,19 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 This now provides an accessible http or [https](#https) endpoint for the flags:
 
 ```
+$ curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
+// {"value":1.23,"reason":"STATIC","variant":"one"}
+
+$ curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
+// {"value":"1","reason":"STATIC","variant":"one"}
+```
+[Why is this `int` response a `string`?](https://github.com/james-milligan/flagd/blob/doc-update/docs/http_server.md)
+```
 $ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
 // {"value":true,"reason":"STATIC","variant":"on"}
 
 $ curl -X POST "localhost:8013/flags/myStringFlag/resolve/string"
 // {"value":"val1","reason":"STATIC","variant":"key1"}
-
-$ curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
-// {"value":"1","reason":"STATIC","variant":"one"}
-
-$ curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
-// {"value":1.23,"reason":"STATIC","variant":"one"}
 
 $ curl -X POST "localhost:8013/flags/myObjectFlag/resolve/object"
 // {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
