@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
@@ -23,6 +24,10 @@ type JSONEvaluator struct {
 type constraints interface {
 	bool | string | map[string]any | float64
 }
+
+const (
+	Disabled = "DISABLED"
+)
 
 func (je *JSONEvaluator) GetState() (string, error) {
 	data, err := json.Marshal(&je.state)
@@ -43,8 +48,12 @@ func (je *JSONEvaluator) SetState(state string) error {
 		return err
 	} else if !result.Valid() {
 		err := errors.New("invalid JSON file")
-		je.Logger.Error(err)
 		return err
+	}
+
+	state, err = je.transposeEvaluators(state)
+	if err != nil {
+		return fmt.Errorf("transpose evaluators: %w", err)
 	}
 
 	var newFlags Flags
@@ -142,6 +151,10 @@ func (je *JSONEvaluator) evaluateVariant(
 		return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
 	}
 
+	if flag.State == Disabled {
+		return "", model.ErrorReason, errors.New(model.FlagDisabledErrorCode)
+	}
+
 	// get the targeting logic, if any
 	targeting := flag.Targeting
 
@@ -189,4 +202,34 @@ func validateDefaultVariants(flags Flags) error {
 	}
 
 	return nil
+}
+
+func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
+	var evaluators Evaluators
+	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
+		return "", fmt.Errorf("unmarshal: %w", err)
+	}
+
+	for evalName, evalRaw := range evaluators.Evaluators {
+		// replace any occurrences of "evaluator": "evalName"
+		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"%s"`, evalName))
+		if err != nil {
+			return "", fmt.Errorf("compile regex: %w", err)
+		}
+
+		marshalledEval, err := evalRaw.MarshalJSON()
+		if err != nil {
+			return "", fmt.Errorf("marshal evaluator: %w", err)
+		}
+
+		evalValue := string(marshalledEval)
+		if len(evalValue) < 3 {
+			return "", errors.New("evaluator object is empty")
+		}
+		evalValue = evalValue[1 : len(evalValue)-2] // remove first { and last }
+
+		state = regex.ReplaceAllString(state, evalValue)
+	}
+
+	return state, nil
 }
