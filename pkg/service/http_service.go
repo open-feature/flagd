@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -44,7 +45,7 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 	return tlsl
 }
 
-func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
+func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *grpc.Server {
 	var dialOpts []grpc.DialOption
 	var err error
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
@@ -60,7 +61,7 @@ func (s *HTTPService) ServerGRPC(mux *runtime.ServeMux) *grpc.Server {
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 	err = gen.RegisterServiceHandlerFromEndpoint(
-		context.Background(),
+		ctx,
 		mux,
 		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
 		dialOpts,
@@ -82,13 +83,16 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.Eval = eval
+
+	g, gCtx := errgroup.WithContext(ctx)
+
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
 
 	// GRPC Setup
-	grpcServer := s.ServerGRPC(mux)
+	grpcServer := s.ServerGRPC(ctx, mux)
 	// HTTP Setup
 	httpServer := s.ServeHTTP(mux)
 	// Net listener
@@ -111,14 +115,31 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	httpsl := tlsm.Match(cmux.HTTP1Fast())
 	gorpcl := tlsm.Match(cmux.Any())
 
-	go func() { handleServiceError(httpServer.Serve(httpl)) }() // HTTP
+	g.Go(func() error {
+		return httpServer.Serve(httpl) // HTTP
+	})
+	g.Go(func() error {
+		return httpServer.Serve(httpsl) // HTTPS
+	})
+	g.Go(func() error {
+		return grpcServer.Serve(gorpcl) // GRPC
+	})
+	g.Go(func() error {
+		return tlsm.Serve() // GRPC
+	})
+	g.Go(func() error {
+		return tcpm.Serve() // GRPC
+	})
 
-	go func() { handleServiceError(httpServer.Serve(httpsl)) }() // HTTPS
-
-	go func() { handleServiceError(grpcServer.Serve(gorpcl)) }() // GRPC
-	go func() { handleServiceError(tlsm.Serve()) }()
-	go func() { handleServiceError(tcpm.Serve()) }()
-	<-ctx.Done()
+	<-gCtx.Done()
+	grpcServer.GracefulStop()
+	if err = httpServer.Shutdown(context.Background()); err != nil {
+		return err
+	}
+	err = g.Wait()
+	if err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+		return err
+	}
 	return nil
 }
 
@@ -156,9 +177,4 @@ func (s HTTPService) HTTPErrorHandler(
 		log.Error(err)
 		return
 	}
-}
-
-// TODO: could be replaced with a logging client
-func handleServiceError(err error) {
-	log.Fatal(err)
 }

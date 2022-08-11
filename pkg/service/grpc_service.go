@@ -9,6 +9,7 @@ import (
 	"github.com/open-feature/flagd/pkg/model"
 	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -32,6 +33,7 @@ type GRPCService struct {
 // Serve allows for the use of GRPC only without HTTP, where as HTTP service enables both
 // GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	g, gCtx := errgroup.WithContext(ctx)
 	s.Eval = eval
 
 	// TLS
@@ -51,7 +53,13 @@ func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	if err != nil {
 		return err
 	}
-	return grpcServer.Serve(lis)
+
+	g.Go(func() error {
+		return grpcServer.Serve(lis)
+	})
+	<-gCtx.Done()
+	grpcServer.GracefulStop()
+	return nil
 }
 
 // TODO: might be able to simplify some of this with generics.

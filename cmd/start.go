@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
+	"golang.org/x/sync/errgroup"
 
 	log "github.com/sirupsen/logrus"
 
@@ -160,24 +160,16 @@ var startCmd = &cobra.Command{
 		evalImpl = foundEval
 
 		// Serve ------------------------------------------------------------------
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
-		errc := make(chan error)
-		go func() {
-			errc <- func() error {
-				c := make(chan os.Signal, 1)
-				signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-				return fmt.Errorf("%s", <-c)
-			}()
-		}()
-
-		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
+		g, gCtx := errgroup.WithContext(ctx)
+		runtime.Start(gCtx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
 			"component": "runtime",
 		}))
-		err = <-errc
-		if err != nil {
-			cancel()
-			log.Printf(err.Error())
+		if err := g.Wait(); err != nil {
+			log.Printf("exit reason: %s \n", err)
+		} else {
+			log.Println("server shutdown")
 		}
 	},
 }
