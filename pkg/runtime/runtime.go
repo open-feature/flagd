@@ -60,7 +60,6 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 	}()
 
 	<-ctx.Done()
-
 }
 
 func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
