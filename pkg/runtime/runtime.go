@@ -39,27 +39,29 @@ func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISy
 
 	go func() {
 		for {
-			w := <-notifier
-			switch w.GetEvent().EventType {
-			case sync.DefaultEventTypeCreate:
-				logger.Info("New configuration created")
-				if err := updateState(ctx, syncr); err != nil {
-					log.Error(err)
+			select {
+			case <-ctx.Done():
+				return
+			case w := <-notifier:
+				switch w.GetEvent().EventType {
+				case sync.DefaultEventTypeCreate:
+					logger.Info("New configuration created")
+					if err := updateState(ctx, syncr); err != nil {
+						log.Error(err)
+					}
+				case sync.DefaultEventTypeModify:
+					logger.Info("Configuration modified")
+					if err := updateState(ctx, syncr); err != nil {
+						log.Error(err)
+					}
+				case sync.DefaultEventTypeDelete:
+					logger.Info("Configuration deleted")
+				case sync.DefaultEventTypeReady:
+					logger.Info("Notifier ready")
 				}
-			case sync.DefaultEventTypeModify:
-				logger.Info("Configuration modified")
-				if err := updateState(ctx, syncr); err != nil {
-					log.Error(err)
-				}
-			case sync.DefaultEventTypeDelete:
-				logger.Info("Configuration deleted")
-			case sync.DefaultEventTypeReady:
-				logger.Info("Notifier ready")
 			}
 		}
 	}()
-
-	<-ctx.Done()
 }
 
 func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
@@ -70,8 +72,9 @@ func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
 	syncNotifier := make(chan sync.INotify)
 
 	for _, s := range syncr {
-		go startSyncer(ctx, syncNotifier, s, logger)
+		startSyncer(ctx, syncNotifier, s, logger)
 	}
-	go func() { _ = server.Serve(ctx, evaluator) }()
+
+	go func() { _ = server.Serve(ctx, ev) }()
 	<-ctx.Done()
 }
