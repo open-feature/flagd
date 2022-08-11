@@ -163,12 +163,9 @@ var startCmd = &cobra.Command{
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
 		g, gCtx := errgroup.WithContext(ctx)
-		g.Go(func() error {
-			runtime.Start(gCtx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
-				"component": "runtime",
-			}))
-			return nil
-		})
+		runtime.Start(gCtx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
+			"component": "runtime",
+		}))
 		if err := g.Wait(); err != nil {
 			log.Printf("exit reason: %s \n", err)
 		} else {
