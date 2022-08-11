@@ -24,7 +24,7 @@ $ curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
 $ curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
 // {"value":"1","reason":"STATIC","variant":"one"}
 ```
-[Why is this `int` response a `string`?](https://github.com/open-feature/flagd/blob/doc-update/docs/http_server.md)
+[Why is this `int` response a `string`?](./docs/http_int_response.md)
 ```
 $ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
 // {"value":true,"reason":"STATIC","variant":"on"}
