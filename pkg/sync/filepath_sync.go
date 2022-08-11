@@ -3,7 +3,7 @@ package sync
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -19,7 +19,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
-	rawFile, err := ioutil.ReadFile(fs.URI)
+	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
 		return "", err
 	}

@@ -134,7 +134,9 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 
 	<-gCtx.Done()
 	grpcServer.GracefulStop()
-	httpServer.Shutdown(context.Background())
+	if err = httpServer.Shutdown(context.Background()); err != nil {
+		return err
+	}
 	err = g.Wait()
 	if err != grpc.ErrServerStopped && err != http.ErrServerClosed {
 		return err
@@ -176,9 +178,4 @@ func (s HTTPService) HTTPErrorHandler(
 		log.Error(err)
 		return
 	}
-}
-
-// TODO: could be replaced with a logging client
-func handleServiceError(err error) {
-	log.Fatal(err)
 }
