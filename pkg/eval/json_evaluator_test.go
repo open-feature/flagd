@@ -3,6 +3,7 @@ package eval_test
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -68,6 +69,7 @@ const (
 	DynamicObjectValue         = `{ "key": true }`
 	ColorProp                  = "color"
 	ColorValue                 = "yellow"
+	DisabledFlag               = "disabledFlag"
 )
 
 var Flags = fmt.Sprintf(`{
@@ -233,6 +235,14 @@ var Flags = fmt.Sprintf(`{
           null
         ]
       }
+    },
+	"%s": {
+      "state": "DISABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
     }
   }
 }`,
@@ -265,7 +275,8 @@ var Flags = fmt.Sprintf(`{
 	DynamicObjectFlag,
 	DynamicObjectValue,
 	ColorProp,
-	ColorValue)
+	ColorValue,
+	DisabledFlag)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -319,6 +330,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -357,6 +369,7 @@ func TestResolveStringValue(t *testing.T) {
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -396,6 +409,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -435,6 +449,7 @@ func TestResolveIntValue(t *testing.T) {
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -474,6 +489,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
@@ -644,6 +660,166 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 
 			if tt.valid && err != nil {
 				t.Error(err)
+			}
+		})
+	}
+}
+
+func TestState_Evaluator(t *testing.T) {
+	tests := map[string]struct {
+		inputState          string
+		expectedOutputState string
+		expectedError       bool
+	}{
+		"success": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": {
+							  "in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+						}
+  					}
+				}
+			`,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					}
+				}
+			`,
+		},
+		"invalid evaluator json": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": "foo"
+  					}
+				}
+			`,
+			expectedError: true,
+		},
+		"empty evaluator": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": ""
+  					}
+				}
+			`,
+			expectedError: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			jsonEvaluator := eval.JSONEvaluator{}
+
+			err := jsonEvaluator.SetState(tt.inputState)
+			if err != nil {
+				if !tt.expectedError {
+					t.Error(err)
+				}
+				return
+			} else if tt.expectedError {
+				t.Error("expected error, got nil")
+				return
+			}
+
+			got, err := jsonEvaluator.GetState()
+			if err != nil {
+				t.Error(err)
+			}
+
+			var expectedOutputJSON map[string]interface{}
+			if err := json.Unmarshal([]byte(tt.expectedOutputState), &expectedOutputJSON); err != nil {
+				t.Fatal(err)
+			}
+
+			var gotOutputJSON map[string]interface{}
+			if err := json.Unmarshal([]byte(got), &gotOutputJSON); err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(expectedOutputJSON, gotOutputJSON) {
+				t.Errorf("expected state: %v\n got state: %v", expectedOutputJSON, gotOutputJSON)
 			}
 		})
 	}
