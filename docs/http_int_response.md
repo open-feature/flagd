@@ -1,4 +1,4 @@
-# HTTP(S) Service
+# HTTP(S) Service Integer Response Behavior
 
 
 Why is my `int` response a `string`?
