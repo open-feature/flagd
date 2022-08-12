@@ -58,26 +58,35 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, fmt.Errorf("var %s isn't of type string", bucketBy)
 	}
 
+	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return valueToDistribute, feDistributions, nil
+}
+
+func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalEvaluationDistribution, error) {
 	sumOfPercentages := 0
 	var feDistributions []fractionalEvaluationDistribution
-	for i := 1; i < len(valuesArray); i++ {
-		distributionArray, ok := valuesArray[i].([]interface{})
+	for i := 1; i < len(values); i++ {
+		distributionArray, ok := values[i].([]interface{})
 		if !ok {
-			return "", nil, errors.New("distribution elements aren't of type []interface{}")
+			return nil, errors.New("distribution elements aren't of type []interface{}")
 		}
 
 		if len(distributionArray) != 2 {
-			return "", nil, errors.New("distribution element isn't length 2")
+			return nil, errors.New("distribution element isn't length 2")
 		}
 
 		variant, ok := distributionArray[0].(string)
 		if !ok {
-			return "", nil, errors.New("first element of distribution element isn't string")
+			return nil, errors.New("first element of distribution element isn't string")
 		}
 
 		percentage, ok := distributionArray[1].(float64)
 		if !ok {
-			return "", nil, errors.New("second element of distribution element isn't float")
+			return nil, errors.New("second element of distribution element isn't float")
 		}
 
 		sumOfPercentages += int(percentage)
@@ -89,10 +98,10 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 	}
 
 	if sumOfPercentages != 100 {
-		return "", nil, fmt.Errorf("percentages must sum to 100, got %d", sumOfPercentages)
+		return nil, fmt.Errorf("percentages must sum to 100, got %d", sumOfPercentages)
 	}
 
-	return valueToDistribute, feDistributions, nil
+	return feDistributions, nil
 }
 
 func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
