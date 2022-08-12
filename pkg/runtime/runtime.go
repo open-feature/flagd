@@ -12,7 +12,7 @@ import (
 )
 
 type Runtime struct {
-	config       RuntimeConfig
+	config       Config
 	Service      service.IService
 	SyncImpl     []sync.ISync
 	syncNotifier chan sync.INotify
@@ -21,7 +21,7 @@ type Runtime struct {
 	Logger       *log.Entry
 }
 
-type RuntimeConfig struct {
+type Config struct {
 	ServiceProvider   string
 	ServicePort       int32
 	ServiceSocketPath string
@@ -29,7 +29,7 @@ type RuntimeConfig struct {
 	ServiceKeyPath    string
 
 	SyncProvider    string
-	SyncUri         []string
+	SyncURI         []string
 	SyncBearerToken string
 
 	Evaluator string

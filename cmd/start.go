@@ -59,7 +59,7 @@ var startCmd = &cobra.Command{
 		log.SetLevel(log.DebugLevel)
 
 		// Build Runtime -----------------------------------------------------------
-		rt, err := runtime.RuntimeFromConfig(runtime.RuntimeConfig{
+		rt, err := runtime.FromConfig(runtime.Config{
 			ServiceProvider:   serviceProvider,
 			ServicePort:       servicePort,
 			ServiceSocketPath: socketServicePath,
@@ -67,12 +67,11 @@ var startCmd = &cobra.Command{
 			ServiceKeyPath:    serverKeyPath,
 
 			SyncProvider:    syncProvider,
-			SyncUri:         uri,
+			SyncURI:         uri,
 			SyncBearerToken: bearerToken,
 
 			Evaluator: evaluator,
 		})
-
 		if err != nil {
 			log.Error(err)
 		}

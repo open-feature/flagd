@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func RuntimeFromConfig(config RuntimeConfig) (*Runtime, error) {
+func FromConfig(config Config) (*Runtime, error) {
 	rt := Runtime{
 		config: config,
 		Logger: log.WithFields(log.Fields{
@@ -84,14 +84,14 @@ func (r *Runtime) setEvaluatorFromConfig() error {
 }
 
 func (r *Runtime) setSyncImplFromConfig() error {
-	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncUri))
+	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
 	syncLogger := log.WithFields(log.Fields{
 		"sync":      "filepath",
 		"component": "sync",
 	})
 	switch r.config.SyncProvider {
 	case "filepath":
-		for _, u := range r.config.SyncUri {
+		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
 				URI:    u,
 				Logger: syncLogger,
@@ -99,7 +99,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
 	case "remote":
-		for _, u := range r.config.SyncUri {
+		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
 				URI:         u,
 				BearerToken: r.config.SyncBearerToken,
