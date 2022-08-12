@@ -139,12 +139,12 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 			case sync.DefaultEventTypeCreate:
 				r.Logger.Info("New configuration created")
 				if err := r.updateState(ctx, syncr); err != nil {
-					return err
+					log.Error(err)
 				}
 			case sync.DefaultEventTypeModify:
 				r.Logger.Info("Configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
-					return err
+					log.Error(err)
 				}
 			case sync.DefaultEventTypeDelete:
 				r.Logger.Info("Configuration deleted")
