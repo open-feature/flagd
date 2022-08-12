@@ -37,7 +37,7 @@ type RuntimeConfig struct {
 
 func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 	if err := r.updateState(ctx, syncr); err != nil {
-		r.Logger.Error(err)
+		return err
 	}
 
 	go syncr.Notify(ctx, r.syncNotifier)
