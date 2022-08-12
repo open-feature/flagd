@@ -16,32 +16,107 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 3. Start the process: `./flagd start -f config/samples/example_flags.json --service-provider http --sync-provider filepath`
 
 This now provides an accessible http or [https](#https) endpoint for the flags:
+### Resolve a boolean value
 
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
 ```
-$ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
-// {"value":true,"reason":"STATIC","variant":"on"}
-
-$ curl -X POST "localhost:8013/flags/myStringFlag/resolve/string"
-// {"value":"val1","reason":"STATIC","variant":"key1"}
-
-$ curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
-// {"value":"1","reason":"STATIC","variant":"one"}
-
-$ curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
-// {"value":1.23,"reason":"STATIC","variant":"one"}
-
-$ curl -X POST "localhost:8013/flags/myObjectFlag/resolve/object"
-// {"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
-
-$ curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
-// {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
-
-$ curl -X POST "localhost:8013/flags/myBoolFlag/resolve/string"
-// {"error_code":"TYPE_MISMATCH","reason":"ERROR"}
-
-$ curl -X POST "localhost:8013/flags/aMissingFlag/resolve/string"
-// {"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
+Result:
+```sh
+{"value":true,"reason":"STATIC","variant":"on"}
 ```
+<br />
+
+### Resolve a string value
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myStringFlag/resolve/string"
+```
+Result:
+```sh
+{"value":"val1","reason":"STATIC","variant":"key1"}
+```
+<br />
+
+### Resolve a integer value
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
+```
+Result:
+```sh
+{"value":"1","reason":"STATIC","variant":"one"}
+```
+[Why is this `int` response a `string`?](./docs/http_int_response.md)
+<br />
+<br />
+
+### Resolve a float value
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
+```
+Result:
+```sh
+{"value":1.23,"reason":"STATIC","variant":"one"}
+```
+<br />
+
+### Resolve an object value
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myObjectFlag/resolve/object"
+```
+Result:
+```sh
+{"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
+```
+<br />
+
+### Resolve a boolean value with evaluation context
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+```
+Result:
+```sh
+{"value":true,"reason":"TARGETING_MATCH","variant":"on"}
+```
+<br />
+
+### Return value type mismatch error
+
+A type mismatch error is returned when the resolved value of a flag does not match the type requested. In the example below, the resolved value of `myBoolFlag` is a `boolean` but the request expects a `string` to be returned.
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/myBoolFlag/resolve/string"
+```
+Result:
+```sh
+{"error_code":"TYPE_MISMATCH","reason":"ERROR"}
+```
+<br />
+
+### Return flag not found error
+
+The flag not found error is returned when flag key in the request doesn't match any configured flags.
+
+Command:
+```sh
+curl -X POST "localhost:8013/flags/aMissingFlag/resolve/string"
+```
+Result:
+```sh
+{"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
+```
+
 
 ### https
 
