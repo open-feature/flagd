@@ -2,7 +2,9 @@ package sync_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -155,6 +157,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 }
 
 func BenchmarkFilePathSync_Fetch(b *testing.B) {
+	log.SetOutput(ioutil.Discard)
 	tests := map[string]struct {
 		fpSync         sync.FilePathSync
 		handleResponse func(b *testing.B, fetched string, err error)
@@ -221,10 +224,12 @@ func cleanupFilePath() {
 }
 
 func setupFilePathFetch(t *testing.T) {
-	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
-		t.Fatal(err)
+	if _, err := os.Stat(dirName); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(dirName, os.ModePerm)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
-
 	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, fetchFileName)); err != nil {
 		t.Fatal(err)
 	}

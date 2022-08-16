@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -788,12 +787,10 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 			}
 			got, err := s.ResolveObject(tt.args.ctx, tt.args.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				fmt.Println("wah")
 				t.Errorf("GRPCService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got.Value.AsMap(), tt.want.Value.AsMap()) {
-				fmt.Println("woh")
 				t.Errorf("GRPCService.ResolveObject() = %v, want %v", got, tt.want)
 			}
 		})
@@ -883,7 +880,6 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 			}
 			tt.want.Value = outParsed
 		}
-		fmt.Println(tt.want.Value)
 		b.Run(tt.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveObject(tt.args.ctx, tt.args.req)
