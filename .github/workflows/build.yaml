@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  publish-benchmark:
+  publish:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -21,7 +21,8 @@ jobs:
       with:
         PRUNE_COUNT: 30
         GO_TEST_FLAGS: -cpu 1,2
-        PUBLISH: false
+        PUBLISH: true
+        PUBLISH_BRANCH: gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
