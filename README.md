@@ -5,7 +5,7 @@
 ![version](https://img.shields.io/badge/version-pre--alpha-green)
 ![status](https://img.shields.io/badge/status-not--for--production-red)
 
-Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform with the OpenFeature specification.
+Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification.
 
 ## Install
 
