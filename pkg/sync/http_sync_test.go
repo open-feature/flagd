@@ -115,6 +115,104 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	}
 }
 
+func BenchmarkHTTPSync_Fetch(b *testing.B) {
+	tests := map[string]struct {
+		setup          func(b *testing.B, client *syncmock.MockHTTPClient)
+		uri            string
+		bearerToken    string
+		lastBodySHA    string
+		handleResponse func(*testing.B, sync.HTTPSync, string, error)
+	}{
+		"success": {
+			setup: func(b *testing.B, client *syncmock.MockHTTPClient) {
+				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader("test response")),
+				}, nil).AnyTimes()
+			},
+			uri: "http://localhost",
+			handleResponse: func(b *testing.B, _ sync.HTTPSync, fetched string, err error) {
+				if err != nil {
+					b.Fatalf("fetch: %v", err)
+				}
+				expected := "test response"
+				if fetched != expected {
+					b.Errorf("expected fetched to be '%s', got '%s'", expected, fetched)
+				}
+			},
+		},
+		"return an error if no uri": {
+			setup: func(b *testing.B, client *syncmock.MockHTTPClient) {},
+			handleResponse: func(b *testing.B, _ sync.HTTPSync, fetched string, err error) {
+				if err == nil {
+					b.Error("expected err, got nil")
+				}
+			},
+		},
+		"update last body sha": {
+			setup: func(b *testing.B, client *syncmock.MockHTTPClient) {
+				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader("test response")),
+				}, nil).AnyTimes()
+			},
+			uri:         "http://localhost",
+			lastBodySHA: "",
+			handleResponse: func(b *testing.B, httpSync sync.HTTPSync, _ string, err error) {
+				if err != nil {
+					b.Fatalf("fetch: %v", err)
+				}
+
+				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
+				if httpSync.LastBodySHA != expectedLastBodySHA {
+					b.Errorf(
+						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+					)
+				}
+			},
+		},
+		"authorization header": {
+			setup: func(b *testing.B, client *syncmock.MockHTTPClient) {
+				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader("test response")),
+				}, nil).AnyTimes()
+			},
+			uri:         "http://localhost",
+			lastBodySHA: "",
+			handleResponse: func(b *testing.B, httpSync sync.HTTPSync, _ string, err error) {
+				if err != nil {
+					b.Fatalf("fetch: %v", err)
+				}
+
+				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
+				if httpSync.LastBodySHA != expectedLastBodySHA {
+					b.Errorf(
+						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+					)
+				}
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ctrl := gomock.NewController(b)
+				mockClient := syncmock.NewMockHTTPClient(ctrl)
+
+				httpSync := sync.HTTPSync{
+					URI:         tt.uri,
+					Client:      mockClient,
+					BearerToken: tt.bearerToken,
+					LastBodySHA: tt.lastBodySHA,
+					Logger:      log.WithFields(log.Fields{}),
+				}
+				tt.setup(b, mockClient)
+				fetched, err := httpSync.Fetch(context.Background())
+				tt.handleResponse(b, httpSync, fetched, err)
+			}
+		})
+	}
+}
+
 func TestHTTPSync_Notify(t *testing.T) {
 	ctrl := gomock.NewController(t)
 

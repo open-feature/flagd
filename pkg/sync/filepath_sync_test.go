@@ -154,6 +154,52 @@ func TestFilePathSync_Fetch(t *testing.T) {
 	}
 }
 
+func BenchmarkFilePathSync_Fetch(b *testing.B) {
+	tests := map[string]struct {
+		fpSync         sync.FilePathSync
+		handleResponse func(b *testing.B, fetched string, err error)
+	}{
+		"success": {
+			fpSync: sync.FilePathSync{
+				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
+				Logger: log.WithFields(log.Fields{}),
+			},
+			handleResponse: func(b *testing.B, fetched string, err error) {
+				if err != nil {
+					b.Error(err)
+				}
+
+				if fetched != fetchFileContents {
+					b.Errorf("expected fetched to be '%s', got '%s'", fetchFileContents, fetched)
+				}
+			},
+		},
+		"not found": {
+			fpSync: sync.FilePathSync{
+				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
+				Logger: log.WithFields(log.Fields{}),
+			},
+			handleResponse: func(b *testing.B, fetched string, err error) {
+				if err == nil {
+					b.Error("expected an error, got nil")
+				}
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		b.Run(name, func(b *testing.B) {
+			setupFilePathFetchBenchmark(b)
+			defer b.Cleanup(cleanupFilePath)
+			for i := 0; i < b.N; i++ {
+				fetched, err := tt.fpSync.Fetch(context.Background())
+				tt.handleResponse(b, fetched, err)
+			}
+		})
+
+	}
+}
+
 func setupFilePathNotify(t *testing.T) {
 	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
 		t.Fatal(err)
@@ -196,5 +242,30 @@ func setupFilePathFetch(t *testing.T) {
 	_, err = file.WriteAt([]byte(fetchFileContents), 0)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func setupFilePathFetchBenchmark(b *testing.B) {
+	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
+		b.Fatal(err)
+	}
+
+	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, fetchFileName)); err != nil {
+		b.Fatal(err)
+	}
+
+	file, err := os.OpenFile(fmt.Sprintf("%s/%s", dirName, fetchFileName), os.O_RDWR, 0o644)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Fatalf("close file: %v", err)
+		}
+	}(file)
+
+	_, err = file.WriteAt([]byte(fetchFileContents), 0)
+	if err != nil {
+		b.Fatal(err)
 	}
 }

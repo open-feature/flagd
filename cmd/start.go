@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 
 	"github.com/open-feature/flagd/pkg/runtime"
@@ -76,6 +77,6 @@ var startCmd = &cobra.Command{
 			log.Error(err)
 		}
 
-		rt.Start()
+		rt.Start(context.Background())
 	},
 }

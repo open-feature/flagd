@@ -9,7 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (r *Runtime) Start() {
+func (r *Runtime) Start(ctx context.Context) {
 	if r.Service == nil {
 		r.Logger.Error("no Service set")
 		return
@@ -23,7 +23,7 @@ func (r *Runtime) Start() {
 		return
 	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	g, gCtx := errgroup.WithContext(ctx)
 
