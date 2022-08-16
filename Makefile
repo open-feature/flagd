@@ -1,15 +1,16 @@
 IMG ?= flagd:latest
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
+VERSION=0.0.8
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
 docker-build:
-	docker buildx build --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
+	docker buildx build --build-arg=VERSION=$(VERSION) --build-arg=COMMIT=$(git rev-parse --short HEAD) --build-arg DATE="$(date +%Y%m%d)" --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 docker-push:
-	docker buildx build --push --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
+	docker buildx build --push --build-arg=VERSION=$(VERSION) --build-arg=COMMIT=$(git rev-parse --short HEAD) --build-arg DATE="$(date +%Y%m%d)" --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} .
 build:
 	go build -o flagd
 test:
