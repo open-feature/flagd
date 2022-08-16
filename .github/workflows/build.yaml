@@ -21,8 +21,7 @@ jobs:
       with:
         PRUNE_COUNT: 30
         GO_TEST_FLAGS: -cpu 1,2
-        PUBLISH: true
-        PUBLISH_BRANCH: gh-pages
+        PUBLISH: false
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
@@ -92,3 +91,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: "trivy-results.sarif"
+
