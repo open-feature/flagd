@@ -24,7 +24,7 @@ jobs:
         PUBLISH: true
         PUBLISH_BRANCH: gh-pages
       env:
-        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest
