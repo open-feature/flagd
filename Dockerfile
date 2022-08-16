@@ -4,6 +4,9 @@ FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS builder
 WORKDIR /workspace
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION
+ARG COMMIT
+ARG DATE
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -17,7 +20,7 @@ COPY cmd/ cmd/
 COPY pkg/ pkg/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o flagd main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
