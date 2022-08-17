@@ -18,6 +18,8 @@ Flagd is a simple command line tool for fetching and evaluating feature flags fo
 
 1. `docker pull ghcr.io/open-feature/flagd:latest`
 
+> NOTE: It is possible to run flagD as a systemd service. Installation instructions can be found [here](./docs/systemd-service.md).
+
 ## Example usage
 
 1. Download sample flag configurations: `curl https://raw.githubusercontent.com/open-feature/flagd/main/config/samples/example_flags.json -o example_flags.json`
