@@ -179,6 +179,10 @@ func setupFilePathFetch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, fetchFileName)); err != nil {
+		t.Fatal(err)
+	}
+
 	file, err := os.OpenFile(fmt.Sprintf("%s/%s", dirName, fetchFileName), os.O_RDWR, 0o644)
 	if err != nil {
 		t.Fatal(err)
