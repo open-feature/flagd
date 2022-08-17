@@ -33,8 +33,14 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
-	ctx, cancel := context.WithCancel(ctx)
 
+	err = watcher.Add(fs.URI)
+	if err != nil {
+		fs.Logger.Println(err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		defer cancel()
 		fs.Logger.Info("Notifying filepath: ", fs.URI)
@@ -75,11 +81,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 			}
 		}
 	}()
-	err = watcher.Add(fs.URI)
-	if err != nil {
-		fs.Logger.Println(err)
-		return
-	}
+
 	w <- &Notifier{Event: Event[DefaultEventType]{DefaultEventTypeReady}} // signal readiness to the caller
 	<-ctx.Done()
 }
