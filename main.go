@@ -1,7 +1,15 @@
 package main
 
-import "github.com/open-feature/flagd/cmd"
+import (
+	"github.com/open-feature/flagd/cmd"
+)
+
+var (
+	version = "dev"
+	commit  = "HEAD"
+	date    = "unknown"
+)
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(version, commit, date)
 }

@@ -40,7 +40,9 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@master
-
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Build
         uses: docker/build-push-action@v2
         with:
@@ -51,6 +53,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: | 
+            VERSION=${{ steps.meta.outputs.tags }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ steps.date.outputs.date }}
   goreleaser:
     runs-on: ubuntu-latest
     steps:
