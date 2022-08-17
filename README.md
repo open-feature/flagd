@@ -28,7 +28,7 @@ Flagd is a simple command line tool for fetching and evaluating feature flags fo
    - Docker: `docker run -p 8013:8013 -v $(pwd)/:/etc/flagd/ -it ghcr.io/open-feature/flagd:latest start --uri /etc/flagd/example_flags.json`
 1. Changes made in `example_flags.json` will immediately take affect. Go ahead, give a shot!
 
-This now provides an accessible http or [https](#https) endpoint for flag evaluation.
+This now provides an accessible http or [https](#https) endpoint for flag evaluation. A complete list of supported configuration options can be seen [here](./docs/configuration.md).
 
 ### Resolve a boolean value
 
