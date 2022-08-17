@@ -1,10 +1,6 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-
 	"github.com/open-feature/flagd/cmd"
 )
 
@@ -15,12 +11,5 @@ var (
 )
 
 func main() {
-	showVersion := flag.Bool("version", false, "show version")
-	flag.Parse()
-	if *showVersion {
-		fmt.Printf("flagd %s (%s) built at %s\n", version, commit, date)
-		os.Exit(0)
-	} else {
-		cmd.Execute()
-	}
+	cmd.Execute(version, commit, date)
 }
