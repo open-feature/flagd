@@ -14,7 +14,7 @@ func (r *Runtime) Start() {
 		r.Logger.Error("no Service set")
 		return
 	}
-	if r.SyncImpl == nil || len(r.SyncImpl) == 0 {
+	if len(r.SyncImpl) == 0 {
 		r.Logger.Error("no SyncImplementation set")
 		return
 	}
