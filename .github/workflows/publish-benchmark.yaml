@@ -2,7 +2,7 @@ name: Trigger Site Rebuild on a CRON Schedule
 
 on:
   schedule:
-    # Runs "at minute 55 past every hour" (see https://crontab.guru)
+  # runs at 02:00 every day, UTC
     - cron: '0 2 * * *'
 jobs:
   benchmark:
@@ -25,7 +25,3 @@ jobs:
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
-          # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: '120%'
-          comment-on-alert: true
-          fail-on-alert: false
