@@ -141,6 +141,8 @@ In case of collision between flags definition the priority goes to the later (e.
 
 ## Installation
 
+### [Configuration](./docs/configuration.md)
+
 ### Systemd
 
 To install as a systemd service run `sudo make install` this will place the binary by default in `/usr/local/bin`
