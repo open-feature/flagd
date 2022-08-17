@@ -44,7 +44,6 @@ func init() {
 		&bearerToken, "bearer-token", "b", "", "Set a bearer token to use for remote sync")
 
 	_ = startCmd.MarkFlagRequired("uri")
-	rootCmd.AddCommand(startCmd)
 }
 
 // startCmd represents the start command

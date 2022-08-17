@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -140,7 +139,6 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	}
 	err = g.Wait()
 	if err != nil && !errors.Is(err, grpc.ErrServerStopped) && !errors.Is(err, http.ErrServerClosed) {
-		fmt.Println(reflect.TypeOf(err))
 		return err
 	}
 	return nil
