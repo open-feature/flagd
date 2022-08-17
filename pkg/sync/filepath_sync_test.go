@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -153,53 +152,6 @@ func TestFilePathSync_Fetch(t *testing.T) {
 
 			tt.handleResponse(t, fetched, err)
 		})
-	}
-}
-
-func BenchmarkFilePathSync_Fetch(b *testing.B) {
-	log.SetOutput(ioutil.Discard)
-	tests := map[string]struct {
-		fpSync         sync.FilePathSync
-		handleResponse func(b *testing.B, fetched string, err error)
-	}{
-		"success": {
-			fpSync: sync.FilePathSync{
-				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
-				Logger: log.WithFields(log.Fields{}),
-			},
-			handleResponse: func(b *testing.B, fetched string, err error) {
-				if err != nil {
-					b.Error(err)
-				}
-
-				if fetched != fetchFileContents {
-					b.Errorf("expected fetched to be '%s', got '%s'", fetchFileContents, fetched)
-				}
-			},
-		},
-		"not found": {
-			fpSync: sync.FilePathSync{
-				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
-				Logger: log.WithFields(log.Fields{}),
-			},
-			handleResponse: func(b *testing.B, fetched string, err error) {
-				if err == nil {
-					b.Error("expected an error, got nil")
-				}
-			},
-		},
-	}
-
-	for name, tt := range tests {
-		b.Run(name, func(b *testing.B) {
-			setupFilePathFetchBenchmark(b)
-			defer b.Cleanup(cleanupFilePath)
-			for i := 0; i < b.N; i++ {
-				fetched, err := tt.fpSync.Fetch(context.Background())
-				tt.handleResponse(b, fetched, err)
-			}
-		})
-
 	}
 }
 
