@@ -18,6 +18,7 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -f, --uri strings               Set a sync provider uri to read data from this can be a filepath or url. Using multiple providers is supported where collisions between flags with the same key, the later will be used.
 ```
 
-Environment variable keys are uppercased and all `-` are replaced with `_`.
+Environment variable keys are uppercased, prefixed with `FLAGD_` and all `-` are replaced with `_`. For example,
+`sync-provider` in environment variable form is `FLAGD_SYNC_PROVIDER`.
 
 Config file expects the keys to have the exact naming as the flags.
