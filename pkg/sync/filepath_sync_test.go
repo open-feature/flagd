@@ -201,28 +201,3 @@ func setupFilePathFetch(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-func setupFilePathFetchBenchmark(b *testing.B) {
-	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
-		b.Fatal(err)
-	}
-
-	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, fetchFileName)); err != nil {
-		b.Fatal(err)
-	}
-
-	file, err := os.OpenFile(fmt.Sprintf("%s/%s", dirName, fetchFileName), os.O_RDWR, 0o644)
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer func(file *os.File) {
-		if err := file.Close(); err != nil {
-			log.Fatalf("close file: %v", err)
-		}
-	}(file)
-
-	_, err = file.WriteAt([]byte(fetchFileContents), 0)
-	if err != nil {
-		b.Fatal(err)
-	}
-}
