@@ -30,7 +30,7 @@ jobs:
           tool: 'go'
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: false
+          auto-push: true
           # Show alert with commit comment on detecting possible performance regression
           alert-threshold: '120%'
           comment-on-alert: true
