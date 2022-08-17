@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -63,7 +65,7 @@ func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *gr
 	err = gen.RegisterServiceHandlerFromEndpoint(
 		ctx,
 		mux,
-		fmt.Sprintf("localhost:%d", s.HTTPServiceConfiguration.Port),
+		net.JoinHostPort("localhost", fmt.Sprintf("%d", s.HTTPServiceConfiguration.Port)),
 		dialOpts,
 	)
 	if err != nil {
@@ -137,7 +139,8 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		return err
 	}
 	err = g.Wait()
-	if err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, grpc.ErrServerStopped) && !errors.Is(err, http.ErrServerClosed) {
+		fmt.Println(reflect.TypeOf(err))
 		return err
 	}
 	return nil
