@@ -3,7 +3,7 @@ package sync
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -19,7 +19,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
-	rawFile, err := ioutil.ReadFile(fs.URI)
+	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
 		return "", err
 	}
@@ -34,9 +34,15 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	}
 	defer watcher.Close()
 
-	done := make(chan bool)
+	err = watcher.Add(fs.URI)
+	if err != nil {
+		fs.Logger.Println(err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
 	go func() {
-		defer close(done)
+		defer cancel()
 		fs.Logger.Info("Notifying filepath: ", fs.URI)
 		for {
 			select {
@@ -56,7 +62,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
 					if err != nil {
-						fs.Logger.Fatalf("Error restoring watcher: %s, exiting...", err.Error())
+						fs.Logger.Errorf("Error restoring watcher, file may have been deleted: %s", err.Error())
 					}
 					evtType = DefaultEventTypeDelete
 				}
@@ -72,16 +78,10 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					return
 				}
 				fs.Logger.Println("error:", err)
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
-	err = watcher.Add(fs.URI)
-	if err != nil {
-		fs.Logger.Println(err)
-		return
-	}
+
 	w <- &Notifier{Event: Event[DefaultEventType]{DefaultEventTypeReady}} // signal readiness to the caller
-	<-done
+	<-ctx.Done()
 }
