@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 	"strings"
+
 	"github.com/open-feature/flagd/pkg/runtime"
-	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,158 +21,6 @@ const (
 	uriFlagName             = "uri"
 	bearerTokenFlagName     = "bearer-token"
 )
-
-	serverCertPath := viper.GetString(serverCertPathFlagName)
-	serverKeyPath := viper.GetString(serverKeyPathFlagName)
-				Port:           viper.GetInt32(portFlagName),
-				ServerKeyPath:  serverKeyPath,
-				ServerCertPath: serverCertPath,
-			},
-			GRPCService: &service.GRPCService{},
-			Logger: log.WithFields(log.Fields{
-				"service":   "http",
-				"component": "service",
-			}),
-		},
-		"grpc": &service.GRPCService{
-			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
-				Port:           viper.GetInt32(portFlagName),
-				ServerKeyPath:  serverKeyPath,
-				ServerCertPath: serverCertPath,
-			},
-			Logger: log.WithFields(log.Fields{
-				"service":   "grpc",
-				"component": "service",
-			}),
-		},
-	}
-
-	v, ok := registeredServices[name]
-	if !ok {
-		return nil, errors.New("no service-provider set")
-	}
-	log.Debugf("Using %s service-provider\n", name)
-	return v, nil
-}
-
-func findSync(name string) ([]sync.ISync, error) {
-	uri := viper.GetStringSlice(uriFlagName)
-	bearerToken := viper.GetString(bearerTokenFlagName)
-	results := make([]sync.ISync, 0, len(uri))
-	for _, u := range uri {
-		registeredSync := map[string]sync.ISync{
-			"filepath": &sync.FilePathSync{
-				URI: u,
-				Logger: log.WithFields(log.Fields{
-					"sync":      "filepath",
-					"component": "sync",
-				}),
-			},
-			"remote": &sync.HTTPSync{
-				URI:         u,
-				BearerToken: bearerToken,
-				Client: &http.Client{
-					Timeout: time.Second * 10,
-				},
-				Logger: log.WithFields(log.Fields{
-					"sync":      "remote",
-					"component": "sync",
-				}),
-				Cron: cron.New(),
-			},
-		}
-		v, ok := registeredSync[name]
-		if !ok {
-			return nil, errors.New("no sync-provider set")
-		}
-		results = append(results, v)
-		log.Debugf("Using %s sync-provider on %q\n", name, u)
-	}
-
-	return results, nil
-}
-
-func findEvaluator(name string) (eval.IEvaluator, error) {
-	registeredEvaluators := map[string]eval.IEvaluator{
-		"json": &eval.JSONEvaluator{
-			Logger: log.WithFields(log.Fields{
-				"evaluator": "json",
-				"component": "evaluator",
-			}),
-		},
-	}
-
-	v, ok := registeredEvaluators[name]
-	if !ok {
-		return nil, errors.New("no evaluator set")
-	}
-
-	log.Debugf("Using %s evaluator\n", name)
-	return v, nil
-}
-
-// startCmd represents the start command
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start flagd",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Configure loggers -------------------------------------------------------
-		log.SetFormatter(&log.JSONFormatter{})
-		log.SetOutput(os.Stdout)
-		log.SetLevel(log.DebugLevel)
-		// Configure service-provider impl------------------------------------------
-		var serviceImpl service.IService
-		serviceProvider := viper.GetString(serviceProviderFlagName)
-		foundService, err := findService(serviceProvider)
-		if err != nil {
-			log.Errorf("Unable to find service '%s'", serviceProvider)
-			return
-		}
-		serviceImpl = foundService
-
-		// Configure sync-provider impl--------------------------------------------
-		var syncImpl []sync.ISync
-		syncProvider := viper.GetString(syncProviderFlagName)
-		foundSync, err := findSync(syncProvider)
-		if err != nil {
-			log.Errorf("Unable to find sync '%s'", syncProvider)
-			return
-		}
-		syncImpl = foundSync
-
-		// Configure evaluator-provider impl------------------------------------------
-		var evalImpl eval.IEvaluator
-		evaluator := viper.GetString(evaluatorFlagName)
-		foundEval, err := findEvaluator(evaluator)
-		if err != nil {
-			log.Errorf("Unable to find evaluator '%s'", evaluator)
-			return
-		}
-		evalImpl = foundEval
-
-		// Serve ------------------------------------------------------------------
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		errc := make(chan error)
-		go func() {
-			errc <- func() error {
-				c := make(chan os.Signal, 1)
-				signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-				return fmt.Errorf("%s", <-c)
-			}()
-		}()
-
-		go runtime.Start(ctx, syncImpl, serviceImpl, evalImpl, log.WithFields(log.Fields{
-			"component": "runtime",
-		}))
-		err = <-errc
-		if err != nil {
-			cancel()
-			log.Printf(err.Error())
-		}
-	},
-}
 
 func init() {
 	flags := startCmd.Flags()
@@ -223,17 +71,17 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(runtime.Config{
-			ServiceProvider:   serviceProvider,
-			ServicePort:       servicePort,
-			ServiceSocketPath: socketServicePath,
-			ServiceCertPath:   serverCertPath,
-			ServiceKeyPath:    serverKeyPath,
+			ServiceProvider:   viper.GetString(serviceProviderFlagName),
+			ServicePort:       viper.GetInt32(portFlagName),
+			ServiceSocketPath: viper.GetString(socketPathFlagName),
+			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 
-			SyncProvider:    syncProvider,
-			SyncURI:         uri,
-			SyncBearerToken: bearerToken,
+			SyncProvider:    viper.GetString(syncProviderFlagName),
+			SyncURI:         viper.GetStringSlice(uriFlagName),
+			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 
-			Evaluator: evaluator,
+			Evaluator: viper.GetString(evaluatorFlagName),
 		})
 		if err != nil {
 			log.Error(err)
