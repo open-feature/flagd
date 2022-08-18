@@ -8,7 +8,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	Version string
+	Commit  string
+	Date    string
+)
 
 var rootCmd = &cobra.Command{
 	Use: "flagd",
@@ -22,8 +27,11 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(version string, commit string, date string) {
 	rootCmd.AddCommand(startCmd)
+	Version = version
+	Commit = commit
+	Date = date
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
