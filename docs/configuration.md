@@ -12,6 +12,7 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -p, --port int32                Port to listen on (default 8013)
   -c, --server-cert-path string   Server side tls certificate path
   -k, --server-key-path string    Server side tls key path
+  -d, --socket-path string        Socket path for use with the gRPC provider
   -s, --service-provider string   Set a service provider e.g. http or grpc (default "http")
   -d, --socketpath string         flagd socket path (default "/tmp/flagd.sock")
   -y, --sync-provider string      Set a sync provider e.g. filepath or remote (default "filepath")

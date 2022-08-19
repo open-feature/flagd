@@ -18,9 +18,10 @@ import (
 )
 
 type GRPCServiceConfiguration struct {
-	Port           int32
-	ServerKeyPath  string
-	ServerCertPath string
+	Port             int32
+	ServerKeyPath    string
+	ServerCertPath   string
+	ServerSocketPath string
 }
 
 type GRPCService struct {
@@ -33,6 +34,8 @@ type GRPCService struct {
 // Serve allows for the use of GRPC only without HTTP, where as HTTP service enables both
 // GRPC and HTTP
 func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+	var lis net.Listener
+	var err error
 	g, gCtx := errgroup.WithContext(ctx)
 	s.Eval = eval
 
@@ -49,9 +52,16 @@ func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	grpcServer := grpc.NewServer(serverOpts...)
 	gen.RegisterServiceServer(grpcServer, s)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))
-	if err != nil {
-		return err
+	if s.GRPCServiceConfiguration.ServerSocketPath != "" {
+		lis, err = net.Listen("unix", s.GRPCServiceConfiguration.ServerSocketPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		lis, err = net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))
+		if err != nil {
+			return err
+		}
 	}
 
 	g.Go(func() error {

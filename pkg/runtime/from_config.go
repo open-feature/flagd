@@ -51,9 +51,10 @@ func (r *Runtime) setServiceFromConfig() error {
 	case "grpc":
 		r.Service = &service.GRPCService{
 			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
-				Port:           r.config.ServicePort,
-				ServerKeyPath:  r.config.ServiceKeyPath,
-				ServerCertPath: r.config.ServiceCertPath,
+				Port:             r.config.ServicePort,
+				ServerKeyPath:    r.config.ServiceKeyPath,
+				ServerCertPath:   r.config.ServiceCertPath,
+				ServerSocketPath: r.config.ServiceSocketPath,
 			},
 			Logger: log.WithFields(log.Fields{
 				"service":   "grpc",
