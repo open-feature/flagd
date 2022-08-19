@@ -6,7 +6,7 @@ import (
 	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -51,7 +51,7 @@ func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, e
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []byte(""), err
 	}

@@ -1,7 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -18,8 +14,4 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("flagd %s (%s) built at %s\n", Version, Commit, Date)
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
 }

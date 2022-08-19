@@ -11,69 +11,72 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	mu msync.Mutex
-	ev eval.IEvaluator
-)
+type Runtime struct {
+	config       Config
+	Service      service.IService
+	SyncImpl     []sync.ISync
+	syncNotifier chan sync.INotify
+	mu           msync.Mutex
+	Evaluator    eval.IEvaluator
+	Logger       *log.Entry
+}
 
-func updateState(ctx context.Context, syncr sync.ISync) error {
+type Config struct {
+	ServiceProvider   string
+	ServicePort       int32
+	ServiceSocketPath string
+	ServiceCertPath   string
+	ServiceKeyPath    string
+
+	SyncProvider    string
+	SyncURI         []string
+	SyncBearerToken string
+
+	Evaluator string
+}
+
+func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
+	if err := r.updateState(ctx, syncr); err != nil {
+		return err
+	}
+
+	go syncr.Notify(ctx, r.syncNotifier)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case w := <-r.syncNotifier:
+			switch w.GetEvent().EventType {
+			case sync.DefaultEventTypeCreate:
+				r.Logger.Info("New configuration created")
+				if err := r.updateState(ctx, syncr); err != nil {
+					log.Error(err)
+				}
+			case sync.DefaultEventTypeModify:
+				r.Logger.Info("Configuration modified")
+				if err := r.updateState(ctx, syncr); err != nil {
+					log.Error(err)
+				}
+			case sync.DefaultEventTypeDelete:
+				r.Logger.Info("Configuration deleted")
+			case sync.DefaultEventTypeReady:
+				r.Logger.Info("Notifier ready")
+			}
+		}
+	}
+}
+
+func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	msg, err := syncr.Fetch(ctx)
 	if err != nil {
 		return fmt.Errorf("fetch: %w", err)
 	}
-	mu.Lock()
-	defer mu.Unlock()
-	err = ev.SetState(msg)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	err = r.Evaluator.SetState(msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
 	}
 	return nil
-}
-
-func startSyncer(ctx context.Context, notifier chan sync.INotify, syncr sync.ISync, logger *log.Entry) {
-	if err := updateState(ctx, syncr); err != nil {
-		logger.Error(err)
-	}
-
-	go syncr.Notify(ctx, notifier)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case w := <-notifier:
-				switch w.GetEvent().EventType {
-				case sync.DefaultEventTypeCreate:
-					logger.Info("New configuration created")
-					if err := updateState(ctx, syncr); err != nil {
-						log.Error(err)
-					}
-				case sync.DefaultEventTypeModify:
-					logger.Info("Configuration modified")
-					if err := updateState(ctx, syncr); err != nil {
-						log.Error(err)
-					}
-				case sync.DefaultEventTypeDelete:
-					logger.Info("Configuration deleted")
-				case sync.DefaultEventTypeReady:
-					logger.Info("Notifier ready")
-				}
-			}
-		}
-	}()
-}
-
-func Start(ctx context.Context, syncr []sync.ISync, server service.IService,
-	evaluator eval.IEvaluator, logger *log.Entry,
-) {
-	ev = evaluator
-
-	syncNotifier := make(chan sync.INotify)
-
-	for _, s := range syncr {
-		startSyncer(ctx, syncNotifier, s, logger)
-	}
-
-	go func() { _ = server.Serve(ctx, ev) }()
 }
