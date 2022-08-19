@@ -54,14 +54,11 @@ func (s *GRPCService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 
 	if s.GRPCServiceConfiguration.ServerSocketPath != "" {
 		lis, err = net.Listen("unix", s.GRPCServiceConfiguration.ServerSocketPath)
-		if err != nil {
-			return err
-		}
 	} else {
 		lis, err = net.Listen("tcp", fmt.Sprintf(":%d", s.GRPCServiceConfiguration.Port))
-		if err != nil {
-			return err
-		}
+	}
+	if err != nil {
+		return err
 	}
 
 	g.Go(func() error {
