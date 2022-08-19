@@ -2,7 +2,7 @@ name: 'Trigger Site Rebuild on a CRON Schedule'
 
 on:
   schedule:
-  # runs at 02:00 every day, UTC
+  # runs at 02:00 every day, UTC 
     - cron: '0 2 * * *'
 
 jobs:
