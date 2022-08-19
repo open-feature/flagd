@@ -31,7 +31,7 @@ func init() {
 
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "flagd socket path, only available when using the gRPC service provider")
-	flags.StringP(serviceProviderFlagName, "s", "http", "Set a service provider e.g. http or gRPC")
+	flags.StringP(serviceProviderFlagName, "s", "http", "Set a service provider e.g. http or grpc")
 	flags.StringP(
 		syncProviderFlagName, "y", "filepath", "Set a sync provider e.g. filepath or remote",
 	)
