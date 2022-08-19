@@ -14,7 +14,7 @@ var versionCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		details, ok := debug.ReadBuildInfo()
-		if ok && details.Main.Version == "(devel)" {
+		if ok && details.Main.Version != "(devel)" {
 			Version = details.Main.Version
 			for _, i := range details.Settings {
 				if i.Key == "vcs.time" {
