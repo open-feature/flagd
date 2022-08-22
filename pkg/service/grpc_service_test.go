@@ -3,14 +3,107 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	service "github.com/open-feature/flagd/pkg/service"
+	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+func TestGRPCService_UnixConnection(t *testing.T) {
+	type evalFields struct {
+		result  bool
+		variant string
+		reason  string
+		err     error
+	}
+
+	tests := []struct {
+		name       string
+		socketPath string
+		evalFields evalFields
+		req        *gen.ResolveBooleanRequest
+		want       *gen.ResolveBooleanResponse
+		wantErr    error
+	}{
+		{
+			name:       "happy path",
+			socketPath: "/tmp/flagd.sock",
+			evalFields: evalFields{
+				result:  true,
+				variant: "on",
+				reason:  "STATIC",
+				err:     nil,
+			},
+			req: &gen.ResolveBooleanRequest{
+				FlagKey: "bool",
+				Context: &structpb.Struct{},
+			},
+			want: &gen.ResolveBooleanResponse{
+				Value:   true,
+				Reason:  "STATIC",
+				Variant: "on",
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			eval := NewMockIEvaluator(ctrl)
+			eval.EXPECT().ResolveBooleanValue(tt.req.FlagKey, gomock.Any()).Return(
+				tt.evalFields.result,
+				tt.evalFields.variant,
+				tt.evalFields.reason,
+				tt.evalFields.err,
+			).AnyTimes()
+			service := service.GRPCService{
+				GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
+					ServerSocketPath: tt.socketPath,
+				},
+			}
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+
+			go func() { _ = service.Serve(ctx, eval) }()
+
+			conn, err := grpc.Dial(
+				fmt.Sprintf("passthrough:///unix://%s", tt.socketPath),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithBlock(),
+			)
+			if err != nil {
+				log.Errorf("grpc - fail to dial: %v", err)
+				return
+			}
+			client := gen.NewServiceClient(
+				conn,
+			)
+			res, err := client.ResolveBoolean(ctx, tt.req)
+			if (err != nil) && !errors.Is(err, tt.wantErr) {
+				t.Errorf("GRPCService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(res.Reason, tt.want.Reason) {
+				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+			}
+			if !reflect.DeepEqual(res.Value, tt.want.Value) {
+				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+			}
+			if !reflect.DeepEqual(res.Variant, tt.want.Variant) {
+				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+			}
+		})
+	}
+}
 
 func TestGRPCService_ResolveBoolean(t *testing.T) {
 	type evalFields struct {
