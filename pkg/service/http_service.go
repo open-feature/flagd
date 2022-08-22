@@ -65,8 +65,8 @@ func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *gr
 	// handle unix socket
 	if s.HTTPServiceConfiguration.ServerSocketPath != "" {
 		address = s.HTTPServiceConfiguration.ServerSocketPath
-		dialOpts = append(dialOpts, grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-			return net.DialTimeout("unix", addr, timeout)
+		dialOpts = append(dialOpts, grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return net.Dial("unix", addr)
 		}))
 	} else {
 		address = net.JoinHostPort("localhost", fmt.Sprintf("%d", s.HTTPServiceConfiguration.Port))
