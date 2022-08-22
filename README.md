@@ -1,6 +1,4 @@
-# flagD
-
-<img src="images/flagD.png" width="150px;" >
+<img src="images/flagD.png" width="350px;" >
 
 
 ![build](https://img.shields.io/github/workflow/status/open-feature/flagd/ci)
