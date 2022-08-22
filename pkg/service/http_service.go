@@ -23,9 +23,10 @@ import (
 )
 
 type HTTPServiceConfiguration struct {
-	Port           int32
-	ServerCertPath string
-	ServerKeyPath  string
+	Port             int32
+	ServerCertPath   string
+	ServerKeyPath    string
+	ServerSocketPath string
 }
 
 type HTTPService struct {
@@ -47,8 +48,10 @@ func (s *HTTPService) tlsListener(l net.Listener) net.Listener {
 }
 
 func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *grpc.Server {
+	var address string
 	var dialOpts []grpc.DialOption
 	var err error
+	// handle cert
 	if s.HTTPServiceConfiguration.ServerCertPath != "" && s.HTTPServiceConfiguration.ServerKeyPath != "" {
 		tlsCreds, err := loadTLSCredentials(s.HTTPServiceConfiguration.ServerCertPath,
 			s.HTTPServiceConfiguration.ServerKeyPath)
@@ -59,12 +62,21 @@ func (s *HTTPService) ServerGRPC(ctx context.Context, mux *runtime.ServeMux) *gr
 	} else {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
+	// handle unix socket
+	if s.HTTPServiceConfiguration.ServerSocketPath != "" {
+		address = s.HTTPServiceConfiguration.ServerSocketPath
+		dialOpts = append(dialOpts, grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return net.Dial("unix", addr)
+		}))
+	} else {
+		address = net.JoinHostPort("localhost", fmt.Sprintf("%d", s.HTTPServiceConfiguration.Port))
+	}
 	grpcServer := grpc.NewServer()
 	gen.RegisterServiceServer(grpcServer, s.GRPCService)
 	err = gen.RegisterServiceHandlerFromEndpoint(
 		ctx,
 		mux,
-		net.JoinHostPort("localhost", fmt.Sprintf("%d", s.HTTPServiceConfiguration.Port)),
+		address,
 		dialOpts,
 	)
 	if err != nil {
@@ -84,14 +96,11 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.Eval = eval
-
 	g, gCtx := errgroup.WithContext(ctx)
-
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
-
 	// GRPC Setup
 	grpcServer := s.ServerGRPC(ctx, mux)
 	// HTTP Setup
@@ -99,9 +108,8 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	// Net listener
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-
 	tcpm := cmux.New(l)
 	// We first match on HTTP 1.1 methods.
 	httpl := tcpm.Match(cmux.HTTP1Fast())
@@ -111,11 +119,17 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		tlsl = s.tlsListener(tlsl)
 	}
 	// Now, we build another mux recursively to match HTTPS and GoRPC.
-	// You can use the same trick for SSH.
 	tlsm := cmux.New(tlsl)
 	httpsl := tlsm.Match(cmux.HTTP1Fast())
-	gorpcl := tlsm.Match(cmux.Any())
-
+	var gorpcl net.Listener
+	if s.HTTPServiceConfiguration.ServerSocketPath != "" {
+		gorpcl, err = net.Listen("unix", s.HTTPServiceConfiguration.ServerSocketPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		gorpcl = tlsm.Match(cmux.Any())
+	}
 	g.Go(func() error {
 		return httpServer.Serve(httpl) // HTTP
 	})
@@ -126,12 +140,11 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		return grpcServer.Serve(gorpcl) // GRPC
 	})
 	g.Go(func() error {
-		return tlsm.Serve() // GRPC
+		return tlsm.Serve()
 	})
 	g.Go(func() error {
-		return tcpm.Serve() // GRPC
+		return tcpm.Serve()
 	})
-
 	<-gCtx.Done()
 	grpcServer.GracefulStop()
 	if err = httpServer.Shutdown(context.Background()); err != nil {
