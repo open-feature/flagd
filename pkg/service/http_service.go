@@ -96,14 +96,11 @@ func (s *HTTPService) ServeHTTP(mux *runtime.ServeMux) *http.Server {
 
 func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.GRPCService.Eval = eval
-
 	g, gCtx := errgroup.WithContext(ctx)
-
 	// Mux Setup
 	mux := runtime.NewServeMux(
 		runtime.WithErrorHandler(s.HTTPErrorHandler),
 	)
-
 	// GRPC Setup
 	grpcServer := s.ServerGRPC(ctx, mux)
 	// HTTP Setup
@@ -111,9 +108,8 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	// Net listener
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.HTTPServiceConfiguration.Port))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-
 	tcpm := cmux.New(l)
 	// We first match on HTTP 1.1 methods.
 	httpl := tcpm.Match(cmux.HTTP1Fast())
@@ -123,20 +119,17 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		tlsl = s.tlsListener(tlsl)
 	}
 	// Now, we build another mux recursively to match HTTPS and GoRPC.
-	// You can use the same trick for SSH.
 	tlsm := cmux.New(tlsl)
 	httpsl := tlsm.Match(cmux.HTTP1Fast())
-	// If a socket path has been provided, create a new listener for the grpc service to listen on
 	var gorpcl net.Listener
 	if s.HTTPServiceConfiguration.ServerSocketPath != "" {
 		gorpcl, err = net.Listen("unix", s.HTTPServiceConfiguration.ServerSocketPath)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	} else {
 		gorpcl = tlsm.Match(cmux.Any())
 	}
-
 	g.Go(func() error {
 		return httpServer.Serve(httpl) // HTTP
 	})
@@ -147,12 +140,11 @@ func (s *HTTPService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		return grpcServer.Serve(gorpcl) // GRPC
 	})
 	g.Go(func() error {
-		return tlsm.Serve() // GRPC
+		return tlsm.Serve()
 	})
 	g.Go(func() error {
-		return tcpm.Serve() // GRPC
+		return tcpm.Serve()
 	})
-
 	<-gCtx.Done()
 	grpcServer.GracefulStop()
 	if err = httpServer.Shutdown(context.Background()); err != nil {
