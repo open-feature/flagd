@@ -13,15 +13,17 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of FlagD",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		details, ok := debug.ReadBuildInfo()
-		if ok && details.Main.Version != "(devel)" {
-			Version = details.Main.Version
-			for _, i := range details.Settings {
-				if i.Key == "vcs.time" {
-					Date = i.Value
-				}
-				if i.Key == "vcs.revision" {
-					Commit = i.Value
+		if Version == "dev" {
+			details, ok := debug.ReadBuildInfo()
+			if ok && details.Main.Version != "" && details.Main.Version != "(devel)" {
+				Version = details.Main.Version
+				for _, i := range details.Settings {
+					if i.Key == "vcs.time" {
+						Date = i.Value
+					}
+					if i.Key == "vcs.revision" {
+						Commit = i.Value
+					}
 				}
 			}
 		}
