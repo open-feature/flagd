@@ -1,7 +1,7 @@
 ### Fractional Evaluation
 
 The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on
-the defined distribution of each variant (as a percentage). This works by hashing ([murmur3](https://en.wikipedia.org/wiki/MurmurHash))
+the defined distribution of each variant (as a percentage). This works by hashing ([xxHash](https://cyan4973.github.io/xxHash/))
 the given data point, converting it into an int in the range [0, 99]. Whichever range this int falls in decides which variant
 is selected. As hashing is deterministic we can be sure to get the same result every time for the same data point.
 
