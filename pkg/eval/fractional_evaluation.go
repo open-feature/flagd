@@ -7,7 +7,7 @@ import (
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	log "github.com/sirupsen/logrus"
-	"github.com/spaolacci/murmur3"
+	"github.com/zeebo/xxh3"
 )
 
 func init() {
@@ -105,7 +105,7 @@ func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalE
 }
 
 func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
-	hashValue := murmur3.Sum64([]byte(value))
+	hashValue := xxh3.HashString(value)
 
 	hashRatio := float64(hashValue) / math.Pow(2, 64) // divide the hash value by the largest possible value, integer 2^64
 
