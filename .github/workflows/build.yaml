@@ -32,7 +32,7 @@ jobs:
            github-token: ${{ secrets.GITHUB_TOKEN }}
            auto-push: false
            # Show alert with commit comment on detecting possible performance regression
-           alert-threshold: '105%'
+           alert-threshold: '130%'
            comment-on-alert: true
            fail-on-alert: false
 
