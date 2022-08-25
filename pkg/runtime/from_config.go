@@ -38,9 +38,10 @@ func (r *Runtime) setServiceFromConfig() error {
 	case "http":
 		r.Service = &service.HTTPService{
 			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port:           r.config.ServicePort,
-				ServerKeyPath:  r.config.ServiceKeyPath,
-				ServerCertPath: r.config.ServiceCertPath,
+				Port:             r.config.ServicePort,
+				ServerKeyPath:    r.config.ServiceKeyPath,
+				ServerCertPath:   r.config.ServiceCertPath,
+				ServerSocketPath: r.config.ServiceSocketPath,
 			},
 			GRPCService: &service.GRPCService{},
 			Logger: log.WithFields(log.Fields{
