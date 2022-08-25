@@ -87,19 +87,26 @@ func (r *Runtime) setEvaluatorFromConfig() error {
 
 func (r *Runtime) setSyncImplFromConfig() error {
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
-	syncLogger := log.WithFields(log.Fields{
-		"sync":      "filepath",
-		"component": "sync",
-	})
 	switch r.config.SyncProvider {
 	case "filepath":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
-				URI:    u,
-				Logger: syncLogger,
+				URI: u,
+				Logger: log.WithFields(log.Fields{
+					"sync":      "filepath",
+					"component": "sync",
+				}),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
+	case "kubernetes":
+		r.SyncImpl = append(r.SyncImpl, &sync.KubernetesSync{
+			Logger: log.WithFields(log.Fields{
+				"sync":      "kubernetes",
+				"component": "sync",
+			}),
+		})
+		log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider)
 	case "remote":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
@@ -108,8 +115,11 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
-				Logger: syncLogger,
-				Cron:   cron.New(),
+				Logger: log.WithFields(log.Fields{
+					"sync":      "remote",
+					"component": "sync",
+				}),
+				Cron: cron.New(),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
