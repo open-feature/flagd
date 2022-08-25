@@ -38,10 +38,9 @@ func (r *Runtime) setServiceFromConfig() error {
 	case "http":
 		r.Service = &service.HTTPService{
 			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
+				Port:           r.config.ServicePort,
+				ServerKeyPath:  r.config.ServiceKeyPath,
+				ServerCertPath: r.config.ServiceCertPath,
 			},
 			GRPCService: &service.GRPCService{},
 			Logger: log.WithFields(log.Fields{
@@ -87,16 +86,15 @@ func (r *Runtime) setEvaluatorFromConfig() error {
 
 func (r *Runtime) setSyncImplFromConfig() error {
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
-	syncLogger := log.WithFields(log.Fields{
-		"sync":      "filepath",
-		"component": "sync",
-	})
 	switch r.config.SyncProvider {
 	case "filepath":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
-				URI:    u,
-				Logger: syncLogger,
+				URI: u,
+				Logger: log.WithFields(log.Fields{
+					"sync":      "filepath",
+					"component": "sync",
+				}),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
@@ -108,8 +106,11 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
-				Logger: syncLogger,
-				Cron:   cron.New(),
+				Logger: log.WithFields(log.Fields{
+					"sync":      "remote",
+					"component": "sync",
+				}),
+				Cron: cron.New(),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
