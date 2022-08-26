@@ -9,6 +9,7 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
 )
@@ -100,7 +101,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
 	case "kubernetes":
-		r.SyncImpl = append(r.SyncImpl, &sync.KubernetesSync{
+		r.SyncImpl = append(r.SyncImpl, &kubernetes.KubernetesSync{
 			Logger: log.WithFields(log.Fields{
 				"sync":      "kubernetes",
 				"component": "sync",
