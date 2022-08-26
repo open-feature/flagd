@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -44,7 +45,17 @@ func (k *KubernetesSync) WatchResources(clientSet FFCInterface) cache.Store {
 		},
 		&v1alpha1.FeatureFlagConfiguration{},
 		1*time.Minute,
-		cache.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				fmt.Printf("service added: %s \n", obj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				fmt.Printf("service deleted: %s \n", obj)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				fmt.Printf("service changed \n")
+			},
+		},
 	)
 
 	go projectController.Run(wait.NeverStop)
@@ -93,8 +104,10 @@ func (k *KubernetesSync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		panic(err)
 	}
 
-	fstore := k.WatchResources(clientSet)
+	go k.WatchResources(clientSet)
 
-	fstore.List()
+	for {
+		time.Sleep(1 * time.Second)
+	}
 
 }
