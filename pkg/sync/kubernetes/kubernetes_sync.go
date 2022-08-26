@@ -84,7 +84,6 @@ func (c *FFCClient) FeatureFlagConfigurations(namespace string) FeatureFlagConfi
 }
 
 func (k *KubernetesSync) Fetch(ctx context.Context) (string, error) {
-
 	return "{}", nil
 }
 
@@ -109,5 +108,4 @@ func (k *KubernetesSync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	for {
 		time.Sleep(1 * time.Second)
 	}
-
 }

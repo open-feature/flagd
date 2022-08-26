@@ -56,7 +56,6 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
-
 }
 
 // startCmd represents the start command
