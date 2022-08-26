@@ -107,7 +107,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				"component": "sync",
 			}),
 		})
-		log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider)
+		log.Debugf("Using %s sync-provider\n", r.config.SyncProvider)
 	case "remote":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
