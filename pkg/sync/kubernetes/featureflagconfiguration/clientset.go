@@ -65,10 +65,12 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 	_, ffConfigController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-				return clientSet.FeatureFlagConfigurations(ns).List(lo)
+				res, err := clientSet.FeatureFlagConfigurations(ns).List(lo)
+				return res, err
 			},
 			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
-				return clientSet.FeatureFlagConfigurations(ns).Watch(lo)
+				wiface, err := clientSet.FeatureFlagConfigurations(ns).Watch(lo)
+				return wiface, err
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},

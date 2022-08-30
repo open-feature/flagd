@@ -31,7 +31,7 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
-	config, err := k.client.FeatureFlagConfigurations("*").
+	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs["featureflagconfigurationnamespace"]).
 		Get(k.ProviderArgs["featureflagconfiguration"], metav1.GetOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "FeatureFlagConfiguration",
