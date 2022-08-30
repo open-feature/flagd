@@ -33,5 +33,5 @@ The Kubernetes provider allows flagD to connect to a Kubernetes cluster and eval
 To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
 
 ```shell
-flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=featureflagconfigurationnamespace=default
+flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=namespace=default
 ```

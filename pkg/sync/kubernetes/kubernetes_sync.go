@@ -26,12 +26,17 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
+	if k.ProviderArgs["namespace"] == "" {
+		k.Logger.Info("No target feature flag namespace set")
+		return "{}", nil
+	}
+
 	if k.client == nil {
 		k.Logger.Warn("Client not initialised")
 		return "{}", nil
 	}
 
-	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs["featureflagconfigurationnamespace"]).
+	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs["namespace"]).
 		Get(k.ProviderArgs["featureflagconfiguration"], metav1.GetOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "FeatureFlagConfiguration",
@@ -50,6 +55,10 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Info("No target feature flag configuration set")
 		return
 	}
+	if k.ProviderArgs["namespace"] == "" {
+		k.Logger.Info("No target feature flag configuration namespace set")
+		return
+	}
 	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
 	kubeconfig := os.Getenv("KUBECONFIG")
 
@@ -57,15 +66,14 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		k.Logger.Panic(err.Error())
-		os.Exit(1)
 	}
 	k.client, err = featureflagconfiguration.NewForConfig(config)
 	if err != nil {
-		panic(err)
+		k.Logger.Panic(err.Error())
 	}
 
 	if err := ffv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		panic(err)
+		k.Logger.Panic(err.Error())
 	}
 
 	go featureflagconfiguration.WatchResources(k.client, controllerClient.ObjectKey{

@@ -1,6 +1,7 @@
 package featureflagconfiguration
 
 import (
+	"errors"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
@@ -92,6 +93,9 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 }
 
 func NewForConfig(c *rest.Config) (*FFCClient, error) {
+	if c == nil {
+		return nil, errors.New("rest config is nil")
+	}
 	config := *c
 	config.ContentConfig.GroupVersion = &schema.
 		GroupVersion{

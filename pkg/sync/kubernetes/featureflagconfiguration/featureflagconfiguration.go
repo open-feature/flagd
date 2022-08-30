@@ -10,6 +10,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	featureFlagConfigurationName = "featureflagconfigurations"
+)
+
 type Interface interface {
 	List(opts metav1.ListOptions) (*v1alpha1.FeatureFlagConfigurationList, error)
 	Get(name string, options metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error)
@@ -26,7 +30,7 @@ func (c *FeatureFlagClient) List(opts metav1.ListOptions) (*v1alpha1.FeatureFlag
 	result := v1alpha1.FeatureFlagConfigurationList{}
 	err := c.restClient.
 		Get().
-		Resource("featureflagconfigurations").
+		Resource(featureFlagConfigurationName).
 		Do(context.Background()).
 		Into(&result)
 
@@ -38,7 +42,7 @@ func (c *FeatureFlagClient) Get(name string, opts metav1.GetOptions) (*v1alpha1.
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
-		Resource("featureflagconfigurations").
+		Resource(featureFlagConfigurationName).
 		Name(name).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Do(context.Background()).
@@ -54,7 +58,7 @@ func (c *FeatureFlagClient) Create(project *v1alpha1.FeatureFlagConfiguration) (
 	err := c.restClient.
 		Post().
 		Namespace(c.ns).
-		Resource("featureflagconfigurations").
+		Resource(featureFlagConfigurationName).
 		Body(project).
 		Do(context.Background()).
 		Into(&result)
@@ -67,7 +71,7 @@ func (c *FeatureFlagClient) Watch(opts metav1.ListOptions) (watch.Interface, err
 	return c.restClient.
 		Get().
 		Namespace(c.ns).
-		Resource("featureflagconfigurations").
+		Resource(featureFlagConfigurationName).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch(context.Background())
 }
