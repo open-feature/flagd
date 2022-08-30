@@ -1,4 +1,4 @@
-package kubernetes
+package featureflagconfiguration
 
 import (
 	"context"
@@ -27,9 +27,7 @@ func (c *FeatureFlagClient) List(opts metav1.ListOptions) (*v1alpha1.FeatureFlag
 	result := v1alpha1.FeatureFlagConfigurationList{}
 	err := c.restClient.
 		Get().
-		Namespace(c.ns).
 		Resource("featureflagconfigurations").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Do(context.Background()).
 		Into(&result)
 
