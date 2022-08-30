@@ -252,16 +252,7 @@ returns
 { "value": true, "reason": "TARGETING_MATCH", "variant": "off" }
 ```
 
-### Customising sync providers
-
-Custom sync providers can be used to provide flag evaluation logic.
-The Kubernetes provider allows flagD to connect to a Kubernetes cluster and evaluate flags against a specified FeatureFlagConfiguration resource as defined within the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1alpha1/featureflagconfiguration_types.go) spec.
-
-To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
-
-```shell
-flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=featureflagconfigurationnamespace=default
-```
+### [Customisation of sync providers](./docs/configuration.md)
 
 ### [Reusable targeting rules](./docs/reusable_targeting_rules.md)
 
