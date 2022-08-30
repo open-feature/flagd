@@ -15,7 +15,6 @@ type Interface interface {
 	Get(name string, options metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error)
 	Create(*v1alpha1.FeatureFlagConfiguration) (*v1alpha1.FeatureFlagConfiguration, error)
 	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	// ...
 }
 
 type FeatureFlagClient struct {
