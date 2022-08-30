@@ -28,9 +28,10 @@ type Config struct {
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
-	SyncProvider    string
-	SyncURI         []string
-	SyncBearerToken string
+	SyncProvider     string
+	SyncProviderArgs map[string]string
+	SyncURI          []string
+	SyncBearerToken  string
 
 	Evaluator string
 }

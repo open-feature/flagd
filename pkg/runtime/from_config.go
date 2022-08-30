@@ -97,6 +97,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "filepath",
 					"component": "sync",
 				}),
+				SyncProviderArgs: r.config.SyncProviderArgs,
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
@@ -106,6 +107,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				"sync":      "kubernetes",
 				"component": "sync",
 			}),
+			SyncProviderArgs: r.config.SyncProviderArgs,
 		})
 		log.Debugf("Using %s sync-provider\n", r.config.SyncProvider)
 	case "remote":
@@ -120,7 +122,8 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "remote",
 					"component": "sync",
 				}),
-				Cron: cron.New(),
+				SyncProviderArgs: r.config.SyncProviderArgs,
+				Cron:             cron.New(),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
