@@ -36,7 +36,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	}
 }
 
-func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+func updateFuncHandler(oldObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
 	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
@@ -85,7 +85,7 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 				// This indicates a change to the custom resource
 				// Typically this could be anything from a status field to a spec field
 				// It is important to now assertain if it is an actual flag configuration change
-				updateFuncHandler(oldObj, newObj, object, c)
+				updateFuncHandler(oldObj, object, c)
 			},
 		},
 	)
