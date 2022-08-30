@@ -7,7 +7,7 @@ ISync implementations watch for changes in the flag source
 (HTTP backend, local file, s3 bucket), and fetch the latest values.
 */
 
-type SyncProviderArgs map[string]string
+type ProviderArgs map[string]string
 
 type ISync interface {
 	Fetch(ctx context.Context) (string, error)

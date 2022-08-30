@@ -11,19 +11,19 @@ import (
 )
 
 const (
-	portFlagName             = "port"
-	serviceProviderFlagName  = "service-provider"
-	socketPathFlagName       = "socket-path"
-	syncProviderFlagName     = "sync-provider"
-	syncProviderArgsFlagName = "sync-provider-args"
-	evaluatorFlagName        = "evaluator"
-	serverCertPathFlagName   = "server-cert-path"
-	serverKeyPathFlagName    = "server-key-path"
-	uriFlagName              = "uri"
-	bearerTokenFlagName      = "bearer-token"
+	portFlagName            = "port"
+	serviceProviderFlagName = "service-provider"
+	socketPathFlagName      = "socket-path"
+	syncProviderFlagName    = "sync-provider"
+	ProviderArgsFlagName    = "sync-provider-args"
+	evaluatorFlagName       = "evaluator"
+	serverCertPathFlagName  = "server-cert-path"
+	serverKeyPathFlagName   = "server-key-path"
+	uriFlagName             = "uri"
+	bearerTokenFlagName     = "bearer-token"
 )
 
-var syncProviderArgs map[string]string
+var ProviderArgs map[string]string
 
 func init() {
 	flags := startCmd.Flags()
@@ -43,7 +43,8 @@ func init() {
 	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
-	flags.StringToStringVarP(&syncProviderArgs, syncProviderArgsFlagName, "a", nil, "Sync provider arguments as key values separated by =")
+	flags.StringToStringVarP(&ProviderArgs, ProviderArgsFlagName,
+		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
 			"Using multiple providers is supported where collisions between "+
@@ -81,10 +82,10 @@ var startCmd = &cobra.Command{
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 
-			SyncProvider:     viper.GetString(syncProviderFlagName),
-			SyncProviderArgs: syncProviderArgs,
-			SyncURI:          viper.GetStringSlice(uriFlagName),
-			SyncBearerToken:  viper.GetString(bearerTokenFlagName),
+			SyncProvider:    viper.GetString(syncProviderFlagName),
+			ProviderArgs:    ProviderArgs,
+			SyncURI:         viper.GetStringSlice(uriFlagName),
+			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 
 			Evaluator: viper.GetString(evaluatorFlagName),
 		})

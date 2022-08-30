@@ -16,11 +16,45 @@ import (
 )
 
 type FFCInterface interface {
-	FeatureFlagConfigurations(namespace string) FeatureFlagConfigurationInterface
+	FeatureFlagConfigurations(namespace string) Interface
 }
 
 type FFCClient struct {
 	restClient rest.Interface
+}
+
+func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeCreate,
+			},
+		}
+	}
+}
+
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).
+			Spec.FeatureFlagSpec != newObj.(*ffv1alpha1.FeatureFlagConfiguration).
+			Spec.FeatureFlagSpec {
+			c <- &sync.Notifier{
+				Event: sync.Event[sync.DefaultEventType]{
+					EventType: sync.DefaultEventTypeModify,
+				},
+			}
+		}
+	}
+}
+
+func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeDelete,
+			},
+		}
+	}
 }
 
 func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sync.INotify) {
@@ -41,38 +75,16 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
-					c <- &sync.Notifier{
-						Event: sync.Event[sync.DefaultEventType]{
-							sync.DefaultEventTypeCreate,
-						},
-					}
-				}
+				createFuncHandler(obj, object, c)
 			},
 			DeleteFunc: func(obj interface{}) {
-				if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
-					c <- &sync.Notifier{
-						Event: sync.Event[sync.DefaultEventType]{
-							sync.DefaultEventTypeDelete,
-						},
-					}
-				}
+				deleteFuncHandler(obj, object, c)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// This indicates a change to the custom resource
 				// Typically this could be anything from a status field to a spec field
 				// It is important to now assertain if it is an actual flag configuration change
-				if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
-					// Filtered on target resource
-					if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Spec.FeatureFlagSpec != newObj.(*ffv1alpha1.FeatureFlagConfiguration).Spec.FeatureFlagSpec {
-						// Filtered on feature flag spec
-						c <- &sync.Notifier{
-							Event: sync.Event[sync.DefaultEventType]{
-								sync.DefaultEventTypeModify,
-							},
-						}
-					}
-				}
+				updateFuncHandler(oldObj, newObj, object, c)
 			},
 		},
 	)
@@ -81,7 +93,11 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 
 func NewForConfig(c *rest.Config) (*FFCClient, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: ffv1alpha1.GroupVersion.Group, Version: ffv1alpha1.GroupVersion.Version}
+	config.ContentConfig.GroupVersion = &schema.
+		GroupVersion{
+		Group:   ffv1alpha1.GroupVersion.Group,
+		Version: ffv1alpha1.GroupVersion.Version,
+	}
 	config.APIPath = "/apis"
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
@@ -93,7 +109,7 @@ func NewForConfig(c *rest.Config) (*FFCClient, error) {
 	return &FFCClient{restClient: client}, nil
 }
 
-func (c *FFCClient) FeatureFlagConfigurations(namespace string) FeatureFlagConfigurationInterface {
+func (c *FFCClient) FeatureFlagConfigurations(namespace string) Interface {
 	return &FeatureFlagClient{
 		restClient: c.restClient,
 		ns:         namespace,

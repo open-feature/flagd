@@ -14,14 +14,14 @@ import (
 	controllerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type KubernetesSync struct {
-	Logger           *log.Entry
-	SyncProviderArgs sync.SyncProviderArgs
-	client           *featureflagconfiguration.FFCClient
+type Sync struct {
+	Logger       *log.Entry
+	ProviderArgs sync.ProviderArgs
+	client       *featureflagconfiguration.FFCClient
 }
 
-func (k *KubernetesSync) Fetch(ctx context.Context) (string, error) {
-	if k.SyncProviderArgs["featureflagconfiguration"] == "" {
+func (k *Sync) Fetch(ctx context.Context) (string, error) {
+	if k.ProviderArgs["featureflagconfiguration"] == "" {
 		k.Logger.Info("No target feature flag configuration set")
 		return "{}", nil
 	}
@@ -31,12 +31,13 @@ func (k *KubernetesSync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
-	config, err := k.client.FeatureFlagConfigurations("*").Get(k.SyncProviderArgs["featureflagconfiguration"], metav1.GetOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "FeatureFlagConfiguration",
-			APIVersion: "featureflag.open-feature.io/v1alpha1",
-		},
-	})
+	config, err := k.client.FeatureFlagConfigurations("*").
+		Get(k.ProviderArgs["featureflagconfiguration"], metav1.GetOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "FeatureFlagConfiguration",
+				APIVersion: "featureflag.open-feature.io/v1alpha1",
+			},
+		})
 	if err != nil {
 		return "{}", err
 	}
@@ -44,12 +45,12 @@ func (k *KubernetesSync) Fetch(ctx context.Context) (string, error) {
 	return config.Spec.FeatureFlagSpec, nil
 }
 
-func (k *KubernetesSync) Notify(ctx context.Context, c chan<- sync.INotify) {
-	if k.SyncProviderArgs["featureflagconfiguration"] == "" {
+func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
+	if k.ProviderArgs["featureflagconfiguration"] == "" {
 		k.Logger.Info("No target feature flag configuration set")
 		return
 	}
-	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.SyncProviderArgs["featureflagconfiguration"])
+	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
 	kubeconfig := os.Getenv("KUBECONFIG")
 
 	// Create the client configuration
@@ -68,6 +69,6 @@ func (k *KubernetesSync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}
 
 	go featureflagconfiguration.WatchResources(k.client, controllerClient.ObjectKey{
-		Name: k.SyncProviderArgs["featureflagconfiguration"],
+		Name: k.ProviderArgs["featureflagconfiguration"],
 	}, c)
 }

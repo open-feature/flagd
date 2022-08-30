@@ -97,17 +97,17 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "filepath",
 					"component": "sync",
 				}),
-				SyncProviderArgs: r.config.SyncProviderArgs,
+				ProviderArgs: r.config.ProviderArgs,
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
 	case "kubernetes":
-		r.SyncImpl = append(r.SyncImpl, &kubernetes.KubernetesSync{
+		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
 			Logger: log.WithFields(log.Fields{
 				"sync":      "kubernetes",
 				"component": "sync",
 			}),
-			SyncProviderArgs: r.config.SyncProviderArgs,
+			ProviderArgs: r.config.ProviderArgs,
 		})
 		log.Debugf("Using %s sync-provider\n", r.config.SyncProvider)
 	case "remote":
@@ -122,8 +122,8 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "remote",
 					"component": "sync",
 				}),
-				SyncProviderArgs: r.config.SyncProviderArgs,
-				Cron:             cron.New(),
+				ProviderArgs: r.config.ProviderArgs,
+				Cron:         cron.New(),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}

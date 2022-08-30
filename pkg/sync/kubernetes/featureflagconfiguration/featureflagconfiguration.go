@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type FeatureFlagConfigurationInterface interface {
+type Interface interface {
 	List(opts metav1.ListOptions) (*v1alpha1.FeatureFlagConfigurationList, error)
 	Get(name string, options metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error)
 	Create(*v1alpha1.FeatureFlagConfiguration) (*v1alpha1.FeatureFlagConfiguration, error)
@@ -48,7 +48,9 @@ func (c *FeatureFlagClient) Get(name string, opts metav1.GetOptions) (*v1alpha1.
 	return &result, err
 }
 
-func (c *FeatureFlagClient) Create(project *v1alpha1.FeatureFlagConfiguration) (*v1alpha1.FeatureFlagConfiguration, error) {
+func (c *FeatureFlagClient) Create(project *v1alpha1.FeatureFlagConfiguration) (*v1alpha1.
+	FeatureFlagConfiguration, error,
+) {
 	result := v1alpha1.FeatureFlagConfiguration{}
 	err := c.restClient.
 		Post().
