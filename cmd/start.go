@@ -23,9 +23,7 @@ const (
 	bearerTokenFlagName      = "bearer-token"
 )
 
-var (
-	syncProviderArgs map[string]string
-)
+var syncProviderArgs map[string]string
 
 func init() {
 	flags := startCmd.Flags()
