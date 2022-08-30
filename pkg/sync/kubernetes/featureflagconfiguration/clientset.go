@@ -1,6 +1,8 @@
 package featureflagconfiguration
 
 import (
+	"time"
+
 	"github.com/open-feature/flagd/pkg/sync"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,14 +37,10 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
 	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
-		if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).
-			Spec.FeatureFlagSpec != newObj.(*ffv1alpha1.FeatureFlagConfiguration).
-			Spec.FeatureFlagSpec {
-			c <- &sync.Notifier{
-				Event: sync.Event[sync.DefaultEventType]{
-					EventType: sync.DefaultEventTypeModify,
-				},
-			}
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeModify,
+			},
 		}
 	}
 }
@@ -74,7 +72,7 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},
-		0,
+		time.Second*5,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				createFuncHandler(obj, object, c)
