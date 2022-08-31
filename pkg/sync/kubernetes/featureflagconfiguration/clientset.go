@@ -1,7 +1,6 @@
 package featureflagconfiguration
 
 import (
-	"errors"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
@@ -94,11 +93,7 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 	go ffConfigController.Run(wait.NeverStop)
 }
 
-func NewForConfig(c *rest.Config) (*FFCClient, error) {
-	if c == nil {
-		return nil, errors.New("rest config is nil")
-	}
-	config := *c
+func NewForConfig(config *rest.Config) (*FFCClient, error) {
 	config.ContentConfig.GroupVersion = &schema.
 		GroupVersion{
 		Group:   ffv1alpha1.GroupVersion.Group,
@@ -107,7 +102,7 @@ func NewForConfig(c *rest.Config) (*FFCClient, error) {
 	config.APIPath = "/apis"
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	client, err := rest.RESTClientFor(&config)
+	client, err := rest.RESTClientFor(config)
 	if err != nil {
 		return nil, err
 	}
