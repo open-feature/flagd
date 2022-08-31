@@ -35,3 +35,10 @@ To use an existing FeatureFlagConfiguration custom resource, start flagD with th
 ```shell
 flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=namespace=default
 ```
+
+An additional optional flag `refreshtime` can be applied to shorten the cache refresh when using the Kubernetes provider ( The default is 5s ). As an example: 
+
+```shell
+flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=namespace=default
+--sync-provider-args=refreshtime=1s
+```

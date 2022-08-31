@@ -18,8 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var refreshTime = time.Second * 5
-
 type FFCInterface interface {
 	FeatureFlagConfigurations(namespace string) Interface
 }
@@ -58,7 +56,9 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	}
 }
 
-func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sync.INotify) {
+func WatchResources(clientSet FFCInterface, refreshTime time.Duration,
+	object client.ObjectKey, c chan<- sync.INotify,
+) {
 	ns := "*"
 	if object.Namespace != "" {
 		ns = object.Namespace
