@@ -29,7 +29,7 @@ type Config struct {
 	ServiceKeyPath    string
 
 	SyncProvider    string
-	ProviderArgs    map[string]string
+	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
 	SyncBearerToken string
 

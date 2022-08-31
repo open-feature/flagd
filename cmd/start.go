@@ -15,7 +15,7 @@ const (
 	serviceProviderFlagName = "service-provider"
 	socketPathFlagName      = "socket-path"
 	syncProviderFlagName    = "sync-provider"
-	ProviderArgsFlagName    = "sync-provider-args"
+	providerArgsFlagName    = "sync-provider-args"
 	evaluatorFlagName       = "evaluator"
 	serverCertPathFlagName  = "server-cert-path"
 	serverKeyPathFlagName   = "server-key-path"
@@ -43,7 +43,7 @@ func init() {
 	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
-	flags.StringToStringP(ProviderArgsFlagName,
+	flags.StringToStringP(providerArgsFlagName,
 		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
@@ -56,7 +56,7 @@ func init() {
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(serviceProviderFlagName, flags.Lookup(serviceProviderFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
-	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
@@ -87,7 +87,7 @@ var startCmd = &cobra.Command{
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 
 			SyncProvider:    viper.GetString(syncProviderFlagName),
-			ProviderArgs:    viper.GetStringMapString(syncProviderFlagName),
+			ProviderArgs:    viper.GetStringMapString(providerArgsFlagName),
 			SyncURI:         viper.GetStringSlice(uriFlagName),
 			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 
