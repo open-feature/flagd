@@ -18,6 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var (
+	refreshTime = time.Second * 5
+)
+
 type FFCInterface interface {
 	FeatureFlagConfigurations(namespace string) Interface
 }
@@ -73,7 +77,7 @@ func WatchResources(clientSet FFCInterface, object client.ObjectKey, c chan<- sy
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},
-		time.Second*5,
+		refreshTime,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				createFuncHandler(obj, object, c)
