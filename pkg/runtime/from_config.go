@@ -121,6 +121,7 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				Logger: log.WithFields(log.Fields{
 					"sync":      "remote",
 					"component": "sync",
+				}),
 				ProviderArgs: r.config.ProviderArgs,
 				Cron:         cron.New(),
 			})
