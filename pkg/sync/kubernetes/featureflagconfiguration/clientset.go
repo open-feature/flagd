@@ -18,9 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	refreshTime = time.Second * 5
-)
+var refreshTime = time.Second * 5
 
 type FFCInterface interface {
 	FeatureFlagConfigurations(namespace string) Interface
