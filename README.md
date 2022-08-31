@@ -252,7 +252,7 @@ returns
 { "value": true, "reason": "TARGETING_MATCH", "variant": "off" }
 ```
 
-### [Customisation of sync providers](./docs/configuration.md)
+### [Customization of sync providers](./docs/configuration.md)
 
 ### [Reusable targeting rules](./docs/reusable_targeting_rules.md)
 
