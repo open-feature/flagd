@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661914640045,
+  "lastUpdate": 1662000727294,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -738,6 +738,88 @@ window.BENCHMARK_DATA = {
             "value": 6638,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "177416 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "17ef4c69bbe1b4b4acb43481d0461ecead57bbb2",
+          "message": "fix: bug in the logger setup (#156)\n\nSigned-off-by: Alex Jones <alexsimonjones@gmail.com>\r\n\r\nSigned-off-by: Alex Jones <alexsimonjones@gmail.com>",
+          "timestamp": "2022-08-25T16:28:13Z",
+          "url": "https://github.com/open-feature/flagd/commit/17ef4c69bbe1b4b4acb43481d0461ecead57bbb2"
+        },
+        "date": 1662000726486,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2208,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "519520 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6436,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "179425 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2225,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "520490 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6503,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "178956 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2218,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "523653 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6597,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "181119 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 6706,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "159484 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2222,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "523438 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3532,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "341924 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6245,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "186378 times\n2 procs"
           }
         ]
       }
