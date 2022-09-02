@@ -28,6 +28,9 @@ Config file expects the keys to have the exact naming as the flags.
 ### Customising sync providers
 
 Custom sync providers can be used to provide flag evaluation logic.
+
+#### Kubernetes provider 
+
 The Kubernetes provider allows flagD to connect to a Kubernetes cluster and evaluate flags against a specified FeatureFlagConfiguration resource as defined within the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1alpha1/featureflagconfiguration_types.go) spec.
 
 To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
