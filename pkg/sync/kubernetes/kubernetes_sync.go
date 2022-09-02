@@ -17,6 +17,11 @@ import (
 
 var refreshTime = time.Second * 5
 
+const (
+	featureFlagConfigurationName = "featureflagconfiguration"
+	featureFlagNamespaceName     = "namespace"
+)
+
 type Sync struct {
 	Logger       *log.Entry
 	ProviderArgs sync.ProviderArgs
@@ -24,12 +29,12 @@ type Sync struct {
 }
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
-	if k.ProviderArgs["featureflagconfiguration"] == "" {
+	if k.ProviderArgs[featureFlagConfigurationName] == "" {
 		k.Logger.Info("No target feature flag configuration set")
 		return "{}", nil
 	}
 
-	if k.ProviderArgs["namespace"] == "" {
+	if k.ProviderArgs[featureFlagNamespaceName] == "" {
 		k.Logger.Info("No target feature flag namespace set")
 		return "{}", nil
 	}
@@ -39,8 +44,8 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
-	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs["namespace"]).
-		Get(k.ProviderArgs["featureflagconfiguration"], metav1.GetOptions{
+	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs[featureFlagNamespaceName]).
+		Get(k.ProviderArgs[featureFlagConfigurationName], metav1.GetOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "FeatureFlagConfiguration",
 				APIVersion: "featureflag.open-feature.io/v1alpha1",
@@ -54,11 +59,11 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 }
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
-	if k.ProviderArgs["featureflagconfiguration"] == "" {
+	if k.ProviderArgs[featureFlagConfigurationName] == "" {
 		k.Logger.Info("No target feature flag configuration set")
 		return
 	}
-	if k.ProviderArgs["namespace"] == "" {
+	if k.ProviderArgs[featureFlagNamespaceName] == "" {
 		k.Logger.Info("No target feature flag configuration namespace set")
 		return
 	}
@@ -88,7 +93,10 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Panic(err.Error())
 	}
 
-	go featureflagconfiguration.WatchResources(k.client, refreshTime, controllerClient.ObjectKey{
-		Name: k.ProviderArgs["featureflagconfiguration"],
+	go featureflagconfiguration.WatchResources(*k.Logger.WithFields(log.Fields{
+		"sync":      "kubernetes",
+		"component": "watchresources",
+	}), k.client, refreshTime, controllerClient.ObjectKey{
+		Name: k.ProviderArgs[featureFlagConfigurationName],
 	}, c)
 }

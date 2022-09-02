@@ -2,10 +2,12 @@ package featureflagconfiguration
 
 import (
 	"errors"
+	"reflect"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +28,10 @@ type FFCClient struct {
 	restClient rest.Interface
 }
 
-func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("object is not a FeatureFlagConfiguration")
+	}
 	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
@@ -34,6 +39,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 			},
 		}
 	}
+	return nil
 }
 
 func updateFuncHandler(oldObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
@@ -56,7 +62,7 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	}
 }
 
-func WatchResources(clientSet FFCInterface, refreshTime time.Duration,
+func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Duration,
 	object client.ObjectKey, c chan<- sync.INotify,
 ) {
 	ns := "*"
@@ -66,19 +72,19 @@ func WatchResources(clientSet FFCInterface, refreshTime time.Duration,
 	_, ffConfigController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-				res, err := clientSet.FeatureFlagConfigurations(ns).List(lo)
-				return res, err
+				return clientSet.FeatureFlagConfigurations(ns).List(lo)
 			},
 			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
-				wiface, err := clientSet.FeatureFlagConfigurations(ns).Watch(lo)
-				return wiface, err
+				return clientSet.FeatureFlagConfigurations(ns).Watch(lo)
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},
 		refreshTime,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				createFuncHandler(obj, object, c)
+				if err := createFuncHandler(obj, object, c); err != nil {
+					l.Warn(err.Error())
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				deleteFuncHandler(obj, object, c)
