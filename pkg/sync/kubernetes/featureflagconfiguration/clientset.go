@@ -42,17 +42,29 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	return nil
 }
 
-func updateFuncHandler(oldObj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("old object is not a FeatureFlagConfiguration")
+	}
+	if reflect.TypeOf(newObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("new object is not a FeatureFlagConfiguration")
+	}
 	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		//Only update if there is an actual featureFlagSpec change
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
 				EventType: sync.DefaultEventTypeModify,
 			},
 		}
+
 	}
+	return nil
 }
 
-func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) {
+func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("object is not a FeatureFlagConfiguration")
+	}
 	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
@@ -60,6 +72,7 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 			},
 		}
 	}
+	return nil
 }
 
 func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Duration,
@@ -87,13 +100,17 @@ func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Durati
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				deleteFuncHandler(obj, object, c)
+				if err := deleteFuncHandler(obj, object, c); err != nil {
+					l.Warn(err.Error())
+				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// This indicates a change to the custom resource
 				// Typically this could be anything from a status field to a spec field
 				// It is important to now assertain if it is an actual flag configuration change
-				updateFuncHandler(oldObj, object, c)
+				if err := updateFuncHandler(oldObj, newObj, object, c); err != nil {
+					l.Warn(err.Error())
+				}
 			},
 		},
 	)
