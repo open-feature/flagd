@@ -106,8 +106,6 @@ func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Durati
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// This indicates a change to the custom resource
-				// Typically this could be anything from a status field to a spec field
-				// It is important to now assertain if it is an actual flag configuration change
 				if err := updateFuncHandler(oldObj, newObj, object, c); err != nil {
 					l.Warn(err.Error())
 				}
