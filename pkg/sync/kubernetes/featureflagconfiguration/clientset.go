@@ -50,13 +50,12 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 		return errors.New("new object is not a FeatureFlagConfiguration")
 	}
 	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
-		//Only update if there is an actual featureFlagSpec change
+		// Only update if there is an actual featureFlagSpec change
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
 				EventType: sync.DefaultEventTypeModify,
 			},
 		}
-
 	}
 	return nil
 }
