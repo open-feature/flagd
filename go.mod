@@ -3,6 +3,7 @@ module github.com/open-feature/flagd
 go 1.18
 
 require (
+	github.com/bufbuild/connect-go v0.4.0
 	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.3
 	github.com/dimiro1/banner v1.1.0
@@ -20,7 +21,9 @@ require (
 	github.com/stretchr/testify v1.7.4
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
+	go.buf.build/bufbuild/connect-go/open-feature/flagd v1.7.2
 	go.buf.build/open-feature/flagd-server/open-feature/flagd v1.1.2
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.1
@@ -51,7 +54,6 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220728213248-dd149ef739b9 // indirect

@@ -62,6 +62,8 @@ func (r *Runtime) setServiceFromConfig() error {
 				"component": "service",
 			}),
 		}
+	case "connect":
+		r.Service = &service.ConnectService{}
 	default:
 		return errors.New("no service-provider set")
 	}
