@@ -93,11 +93,11 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Panic(err.Error())
 	}
 
-	go featureflagconfiguration.WatchResources(*k.Logger.WithFields(log.Fields{
+	go featureflagconfiguration.WatchResources(ctx, *k.Logger.WithFields(log.Fields{
 		"sync":      "kubernetes",
 		"component": "watchresources",
 	}), k.client, refreshTime, controllerClient.ObjectKey{
 		Name: k.ProviderArgs[featureFlagConfigurationName],
-	}, c, ctx)
+	}, c)
 
 }
