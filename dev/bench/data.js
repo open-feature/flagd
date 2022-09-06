@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662346504971,
+  "lastUpdate": 1662432986888,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -1148,6 +1148,88 @@ window.BENCHMARK_DATA = {
             "value": 7170,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "817736 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c977eb74020aafada587473db72c12356abc373c",
+          "message": "ci: Increased benchmark test duration from 1s to 5s (#158)\n\nSigned-off-by: James-Milligan <james@omnant.co.uk>\r\nCo-authored-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-09-01T12:48:10Z",
+          "url": "https://github.com/open-feature/flagd/commit/c977eb74020aafada587473db72c12356abc373c"
+        },
+        "date": 1662432986422,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2574,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2337337 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6625,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "811669 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2382,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2518514 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6772,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "811916 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6736,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "949441 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2518,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2655914 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2493,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2531041 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 7442,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "736524 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3828,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1555594 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6959,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "807177 times\n2 procs"
           }
         ]
       }
