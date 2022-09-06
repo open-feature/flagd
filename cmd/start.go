@@ -15,6 +15,7 @@ const (
 	serviceProviderFlagName = "service-provider"
 	socketPathFlagName      = "socket-path"
 	syncProviderFlagName    = "sync-provider"
+	providerArgsFlagName    = "sync-provider-args"
 	evaluatorFlagName       = "evaluator"
 	serverCertPathFlagName  = "server-cert-path"
 	serverKeyPathFlagName   = "server-key-path"
@@ -40,6 +41,8 @@ func init() {
 	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
+	flags.StringToStringP(providerArgsFlagName,
+		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
 			"Using multiple providers is supported where collisions between "+
@@ -51,13 +54,12 @@ func init() {
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(serviceProviderFlagName, flags.Lookup(serviceProviderFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
-
-	_ = startCmd.MarkFlagRequired("uri")
 }
 
 // startCmd represents the start command
@@ -69,8 +71,11 @@ var startCmd = &cobra.Command{
 		// Configure loggers -------------------------------------------------------
 		log.SetFormatter(&log.JSONFormatter{})
 		log.SetOutput(os.Stdout)
-		log.SetLevel(log.DebugLevel)
-
+		if Debug {
+			log.SetLevel(log.DebugLevel)
+		} else {
+			log.SetLevel(log.InfoLevel)
+		}
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(runtime.Config{
 			ServiceProvider:   viper.GetString(serviceProviderFlagName),
@@ -80,6 +85,7 @@ var startCmd = &cobra.Command{
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 
 			SyncProvider:    viper.GetString(syncProviderFlagName),
+			ProviderArgs:    viper.GetStringMapString(providerArgsFlagName),
 			SyncURI:         viper.GetStringSlice(uriFlagName),
 			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 

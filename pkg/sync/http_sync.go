@@ -13,12 +13,13 @@ import (
 )
 
 type HTTPSync struct {
-	URI         string
-	Client      HTTPClient
-	Cron        Cron
-	BearerToken string
-	LastBodySHA string
-	Logger      *log.Entry
+	URI          string
+	Client       HTTPClient
+	Cron         Cron
+	BearerToken  string
+	LastBodySHA  string
+	Logger       *log.Entry
+	ProviderArgs ProviderArgs
 }
 
 // HTTPClient defines the behaviour required of a http client

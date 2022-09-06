@@ -9,6 +9,7 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
 )
@@ -96,9 +97,19 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "filepath",
 					"component": "sync",
 				}),
+				ProviderArgs: r.config.ProviderArgs,
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
+	case "kubernetes":
+		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
+			Logger: log.WithFields(log.Fields{
+				"sync":      "kubernetes",
+				"component": "sync",
+			}),
+			ProviderArgs: r.config.ProviderArgs,
+		})
+		log.Debugf("Using %s sync-provider\n", r.config.SyncProvider)
 	case "remote":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
@@ -111,7 +122,8 @@ func (r *Runtime) setSyncImplFromConfig() error {
 					"sync":      "remote",
 					"component": "sync",
 				}),
-				Cron: cron.New(),
+				ProviderArgs: r.config.ProviderArgs,
+				Cron:         cron.New(),
 			})
 			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
 		}
