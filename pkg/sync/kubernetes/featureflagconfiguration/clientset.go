@@ -1,6 +1,7 @@
 package featureflagconfiguration
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -75,8 +75,7 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 }
 
 func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Duration,
-	object client.ObjectKey, c chan<- sync.INotify,
-) {
+	object client.ObjectKey, c chan<- sync.INotify, ctx context.Context) {
 	ns := "*"
 	if object.Namespace != "" {
 		ns = object.Namespace
@@ -111,7 +110,7 @@ func WatchResources(l log.Entry, clientSet FFCInterface, refreshTime time.Durati
 			},
 		},
 	)
-	go ffConfigController.Run(wait.NeverStop)
+	go ffConfigController.Run(ctx.Done())
 }
 
 func NewForConfig(config *rest.Config) (*FFCClient, error) {

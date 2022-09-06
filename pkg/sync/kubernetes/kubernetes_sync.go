@@ -98,5 +98,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		"component": "watchresources",
 	}), k.client, refreshTime, controllerClient.ObjectKey{
 		Name: k.ProviderArgs[featureFlagConfigurationName],
-	}, c)
+	}, c, ctx)
+
 }
