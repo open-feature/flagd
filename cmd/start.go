@@ -23,8 +23,6 @@ const (
 	bearerTokenFlagName     = "bearer-token"
 )
 
-var ProviderArgs map[string]string
-
 func init() {
 	flags := startCmd.Flags()
 
