@@ -75,7 +75,8 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 }
 
 func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, refreshTime time.Duration,
-	object client.ObjectKey, c chan<- sync.INotify) {
+	object client.ObjectKey, c chan<- sync.INotify,
+) {
 	ns := "*"
 	if object.Namespace != "" {
 		ns = object.Namespace

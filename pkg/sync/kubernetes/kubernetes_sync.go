@@ -99,5 +99,4 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}), k.client, refreshTime, controllerClient.ObjectKey{
 		Name: k.ProviderArgs[featureFlagConfigurationName],
 	}, c)
-
 }
