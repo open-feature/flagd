@@ -14,6 +14,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12
 	github.com/open-feature/schemas v0.0.0-20220809125026-ba7ea0aa4841
 	github.com/robfig/cron v1.2.0
+	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.4.0

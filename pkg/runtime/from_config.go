@@ -63,7 +63,14 @@ func (r *Runtime) setServiceFromConfig() error {
 			}),
 		}
 	case "connect":
-		r.Service = &service.ConnectService{}
+		r.Service = &service.Service{
+			ServiceConfiguration: &service.ServiceConfiguration{
+				Port:             r.config.ServicePort,
+				ServerKeyPath:    r.config.ServiceKeyPath,
+				ServerCertPath:   r.config.ServiceCertPath,
+				ServerSocketPath: r.config.ServiceSocketPath,
+			},
+		}
 	default:
 		return errors.New("no service-provider set")
 	}
