@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662519534867,
+  "lastUpdate": 1662605799537,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -1312,6 +1312,88 @@ window.BENCHMARK_DATA = {
             "value": 4121,
             "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
             "extra": "1466067 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c4e030ed651ab800aa56a555471da5913eb95259",
+          "message": "feat: kubernetes sync (#157)\n\nhttps://github.com/open-feature/research/pull/31\r\n<img width=\"1512\" alt=\"Screenshot 2022-08-30 at 15 54 16\" src=\"https://user-images.githubusercontent.com/1235925/187469966-d3c137bd-1f1b-4ee7-9512-848951ec780b.png\">\r\n\r\nSigned-off-by: James-Milligan <james@omnant.co.uk>\r\nSigned-off-by: Alex Jones <alexsimonjones@gmail.com>\r\nSigned-off-by: Alex Jones <alex.jones@canonical.com>\r\nCo-authored-by: James Milligan <75740990+james-milligan@users.noreply.github.com>\r\nCo-authored-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-09-06T12:45:19Z",
+          "url": "https://github.com/open-feature/flagd/commit/c4e030ed651ab800aa56a555471da5913eb95259"
+        },
+        "date": 1662605798983,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6225,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "933054 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2158,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2797638 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2157,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2789206 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6262,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "933214 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2147,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2788762 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6231,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "922950 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2135,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2806914 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 6253,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "902455 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3329,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1808128 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6026,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "973653 times\n2 procs"
           }
         ]
       }
