@@ -35,33 +35,6 @@ func FromConfig(config Config) (*Runtime, error) {
 
 func (r *Runtime) setServiceFromConfig() error {
 	switch r.config.ServiceProvider {
-	case "http":
-		r.Service = &service.HTTPService{
-			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
-			},
-			GRPCService: &service.GRPCService{},
-			Logger: log.WithFields(log.Fields{
-				"service":   "http",
-				"component": "service",
-			}),
-		}
-	case "grpc":
-		r.Service = &service.GRPCService{
-			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
-			},
-			Logger: log.WithFields(log.Fields{
-				"service":   "grpc",
-				"component": "service",
-			}),
-		}
 	case "connect":
 		r.Service = &service.Service{
 			ServiceConfiguration: &service.ServiceConfiguration{

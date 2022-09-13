@@ -16,9 +16,10 @@ type Runtime struct {
 	Service      service.IService
 	SyncImpl     []sync.ISync
 	syncNotifier chan sync.INotify
-	mu           msync.Mutex
-	Evaluator    eval.IEvaluator
-	Logger       *log.Entry
+
+	mu        msync.Mutex
+	Evaluator eval.IEvaluator
+	Logger    *log.Entry
 }
 
 type Config struct {
@@ -58,6 +59,7 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
+				r.Service.Notify()
 			case sync.DefaultEventTypeDelete:
 				r.Logger.Info("Configuration deleted")
 			case sync.DefaultEventTypeReady:

@@ -6,8 +6,8 @@
         "on": true,
         "off": false
       },
-      "defaultVariant": "on"
-    },
+      "defaultVariant": "on" 
+    }, 
     "myStringFlag": {
       "state": "ENABLED",
       "variants": {
@@ -23,51 +23,36 @@
         "two": 2.34
       },
       "defaultVariant": "one"
-    },
+    }, 
     "myIntFlag": {
       "state": "ENABLED",
-      "variants": {
+      "variants": { 
         "one": 1,
         "two": 2
       },
       "defaultVariant": "one"
     },
-    "myObjectFlag": {
+    "myObjectFlag": { 
       "state": "ENABLED",
       "variants": {
         "object1": {
-          "key": "val"
+          "key": "vadwdwl"
         },
         "object2": {
           "key": true
         }
       },
-      "defaultVariant": "object1"
-    },
-    "isColorYellow": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
+      "defaultVariant": "object1"  
+    },  
+    "isColorYellow": { 
+      "state": "ENABLED",  
+      "variants": { 
+        "yellow": "#FFFF00",  
+        "not-yellow": "#5522fa"  
       },
-      "defaultVariant": "off",
-      "targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "color"
-                ]
-              },
-              "yellow"
-            ]
-          },
-          "on",
-          "off"
-        ]
-      }
-    },
+      "defaultVariant": "yellow",
+      "targeting": {}  
+    },  
     "fibAlgo": {
       "variants": {
         "recursive": "recursive",

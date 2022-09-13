@@ -13,4 +13,5 @@ IService implementations define handlers for a particular transport, which call 
 */
 type IService interface {
 	Serve(ctx context.Context, eval eval.IEvaluator) error
+	Notify()
 }
