@@ -59,7 +59,7 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
-				r.Service.Notify()
+				r.Service.Notify(service.CONFIGURATION_CHANGE)
 			case sync.DefaultEventTypeDelete:
 				r.Logger.Info("Configuration deleted")
 			case sync.DefaultEventTypeReady:

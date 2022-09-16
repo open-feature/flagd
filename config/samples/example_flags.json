@@ -36,7 +36,7 @@
       "state": "ENABLED",
       "variants": {
         "object1": {
-          "key": "vadwdwl"
+          "key": false
         },
         "object2": {
           "key": true

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -14,21 +13,18 @@ import (
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	schemaV1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1"
+	schemav1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1"
 	schemaConnectV1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type Service struct {
 	Eval                 eval.IEvaluator
 	ServiceConfiguration *ServiceConfiguration
-	subs                 map[interface{}]chan int
-	mx                   *sync.Mutex
-}
-
-type sub struct {
-	send chan int
+	subs                 map[interface{}]chan NotificationType
 }
 
 type ServiceConfiguration struct {
@@ -42,8 +38,7 @@ func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	var address string
 	var handler http.Handler
 	tls := false
-	s.mx = &sync.Mutex{}
-	s.subs = map[interface{}]chan int{}
+	s.subs = make(map[interface{}]chan NotificationType)
 	s.Eval = eval
 	mux := http.NewServeMux()
 	// sockets
@@ -95,6 +90,32 @@ func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	return <-errChan
 }
 
+func (s *Service) EventStream(
+	ctx context.Context,
+	req *connect.Request[emptypb.Empty],
+	stream *connect.ServerStream[schemav1.EventStreamResponse],
+) error {
+	s.subs[req] = make(chan NotificationType, 1)
+	defer func() {
+		delete(s.subs, req)
+	}()
+	s.subs[req] <- PROVIDER_READY
+	for {
+		select {
+		case notification := <-s.subs[req]:
+			err := stream.Send(&schemav1.EventStreamResponse{
+				Type: fmt.Sprintf("%s", notification),
+			})
+			if err != nil {
+				log.Error(err)
+			}
+		case <-ctx.Done():
+			log.Info("client connection closed")
+			return nil
+		}
+	}
+}
+
 func (s *Service) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
@@ -111,49 +132,9 @@ func (s *Service) ResolveBoolean(
 	return res, nil
 }
 
-func (s *Service) Notify() {
-	s.mx.Lock()
-	for _, sub := range s.subs {
-		sub <- 1
-	}
-	s.mx.Unlock()
-}
-
-func (s *Service) StreamBoolean(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveBooleanRequest],
-	stream *connect.ServerStream[schemaV1.ResolveBooleanResponse],
-) error {
-	res := &schemaV1.ResolveBooleanResponse{}
-	send := make(chan int, 1)
-	s.mx.Lock()
-	s.subs[req] = send
-	s.mx.Unlock()
-	defer func() {
-		s.mx.Lock()
-		delete(s.subs, req)
-		s.mx.Unlock()
-	}()
-
-	send <- 1
-	for {
-		select {
-		case <-send:
-
-			value, variant, reason, _ := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
-			if res.Value != value || res.Variant != variant || res.Reason != reason {
-				res.Reason = reason
-				res.Value = value
-				res.Variant = variant
-				err := stream.Send(res)
-				if err != nil {
-					log.Error(err)
-				}
-			}
-		case <-ctx.Done():
-			log.Info("client connection closed")
-			return nil
-		}
+func (s *Service) Notify(n NotificationType) {
+	for _, send := range s.subs {
+		send <- n
 	}
 }
 
@@ -173,47 +154,6 @@ func (s *Service) ResolveString(
 	return res, nil
 }
 
-func (s *Service) StreamString(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveStringRequest],
-	stream *connect.ServerStream[schemaV1.ResolveStringResponse],
-) error {
-	res := &schemaV1.ResolveStringResponse{}
-	send := make(chan int, 1)
-	s.mx.Lock()
-	s.subs[req] = send
-	s.mx.Unlock()
-	defer func() {
-		s.mx.Lock()
-		delete(s.subs, req)
-		s.mx.Unlock()
-	}()
-
-	send <- 1
-	for {
-		select {
-		case <-send:
-			value, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
-			if err != nil {
-				log.Error(err)
-				return err
-			}
-			if res.Value != value || res.Variant != variant || res.Reason != reason {
-				res.Reason = reason
-				res.Value = value
-				res.Variant = variant
-				err := stream.Send(res)
-				if err != nil {
-					return err
-				}
-			}
-		case <-ctx.Done():
-			log.Info("client connection closed")
-			return nil
-		}
-	}
-}
-
 func (s *Service) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
@@ -230,14 +170,6 @@ func (s *Service) ResolveInt(
 	return res, nil
 }
 
-func (s *Service) StreamInt(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveIntRequest],
-	stream *connect.ServerStream[schemaV1.ResolveIntResponse],
-) error {
-	return nil
-}
-
 func (s *Service) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
@@ -252,14 +184,6 @@ func (s *Service) ResolveFloat(
 	res.Msg.Value = result
 	res.Msg.Variant = variant
 	return res, nil
-}
-
-func (s *Service) StreamFloat(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveFloatRequest],
-	stream *connect.ServerStream[schemaV1.ResolveFloatResponse],
-) error {
-	return nil
 }
 
 func (s *Service) ResolveObject(
@@ -280,14 +204,6 @@ func (s *Service) ResolveObject(
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil
-}
-
-func (s *Service) StreamObject(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveObjectRequest],
-	stream *connect.ServerStream[schemaV1.ResolveObjectResponse],
-) error {
-	return nil
 }
 
 func newCORS() *cors.Cors {
