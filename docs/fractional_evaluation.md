@@ -45,9 +45,9 @@ Flags defined as such:
 will return variant `red` 50% of the time, `blue` 20% of the time & `green` 30% of the time.
 
 ```shell
-$ curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"email": "foo@bar.com"}' -H "Content-Type: application/json"
+$ curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d ''{"flagKey":"myFloatFlag","context":{"email": "foo@bar.com"}}'' -H "Content-Type: application/json"
 {"value":"#0000FF","reason":"TARGETING_MATCH","variant":"blue"}%
 
-$ curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"email": "foo@test.com"}' -H "Content-Type: application/json"
+$ curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d ''{"flagKey":"myFloatFlag","context":{"email": "foo@test.com"}}'' -H "Content-Type: application/json"
 {"value":"#00FF00","reason":"TARGETING_MATCH","variant":"green"}%
 ```
