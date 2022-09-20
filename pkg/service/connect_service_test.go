@@ -361,24 +361,6 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveStringEvalFields{
-				result:  "true",
-				variant: ":(",
-				reason:  model.ErrorReason,
-			},
-			functionArgs: resolveStringFunctionArgs{
-				context.Background(),
-				&gen.ResolveStringRequest{
-					FlagKey: "string",
-					Context: &structpb.Struct{},
-				},
-			},
-			want: &gen.ResolveStringResponse{
-				Reason: model.ErrorReason,
-			},
-			wantErr: errors.New("eval interface error"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -511,24 +493,6 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveFloatEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  model.ErrorReason,
-			},
-			functionArgs: resolveFloatFunctionArgs{
-				context.Background(),
-				&gen.ResolveFloatRequest{
-					FlagKey: "float",
-					Context: &structpb.Struct{},
-				},
-			},
-			want: &gen.ResolveFloatResponse{
-				Reason: model.ErrorReason,
-			},
-			wantErr: errors.New("eval interface error"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -660,24 +624,6 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 				Variant: "on",
 			},
 			wantErr: nil,
-		},
-		"eval returns error": {
-			evalFields: resolveIntEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  model.ErrorReason,
-			},
-			functionArgs: resolveIntFunctionArgs{
-				context.Background(),
-				&gen.ResolveIntRequest{
-					FlagKey: "int",
-					Context: &structpb.Struct{},
-				},
-			},
-			want: &gen.ResolveIntResponse{
-				Reason: model.ErrorReason,
-			},
-			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -824,26 +770,6 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 				Variant: "on",
 			},
 			wantErr: nil,
-		},
-		"eval returns error": {
-			evalFields: resolveObjectEvalFields{
-				result: map[string]interface{}{
-					"food": "bars",
-				},
-				variant: ":(",
-				reason:  model.ErrorReason,
-			},
-			functionArgs: resolveObjectFunctionArgs{
-				context.Background(),
-				&gen.ResolveObjectRequest{
-					FlagKey: "object",
-					Context: &structpb.Struct{},
-				},
-			},
-			want: &gen.ResolveObjectResponse{
-				Reason: model.ErrorReason,
-			},
-			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
