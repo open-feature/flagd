@@ -202,7 +202,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			context:         &structpb.Struct{},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.StaticReason,
+			expectedReason:  model.DefaultReason,
 		},
 		"fallback to default variant if invalid variant as result of fractional evaluation": {
 			flags: Flags{
@@ -236,7 +236,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			}},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.StaticReason,
+			expectedReason:  model.DefaultReason,
 		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
@@ -274,7 +274,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			}},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.StaticReason,
+			expectedReason:  model.DefaultReason,
 		},
 	}
 
