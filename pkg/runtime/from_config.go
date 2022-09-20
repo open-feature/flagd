@@ -24,58 +24,22 @@ func FromConfig(config Config) (*Runtime, error) {
 	if err := rt.setEvaluatorFromConfig(); err != nil {
 		return nil, err
 	}
-	if err := rt.setServiceFromConfig(); err != nil {
-		return nil, err
-	}
 	if err := rt.setSyncImplFromConfig(); err != nil {
 		return nil, err
 	}
+	rt.setService()
 	return &rt, nil
 }
 
-func (r *Runtime) setServiceFromConfig() error {
-	switch r.config.ServiceProvider {
-	case "http":
-		r.Service = &service.HTTPService{
-			HTTPServiceConfiguration: &service.HTTPServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
-			},
-			GRPCService: &service.GRPCService{},
-			Logger: log.WithFields(log.Fields{
-				"service":   "http",
-				"component": "service",
-			}),
-		}
-	case "grpc":
-		r.Service = &service.GRPCService{
-			GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
-			},
-			Logger: log.WithFields(log.Fields{
-				"service":   "grpc",
-				"component": "service",
-			}),
-		}
-	case "connect":
-		r.Service = &service.Service{
-			ServiceConfiguration: &service.ServiceConfiguration{
-				Port:             r.config.ServicePort,
-				ServerKeyPath:    r.config.ServiceKeyPath,
-				ServerCertPath:   r.config.ServiceCertPath,
-				ServerSocketPath: r.config.ServiceSocketPath,
-			},
-		}
-	default:
-		return errors.New("no service-provider set")
+func (r *Runtime) setService() {
+	r.Service = &service.ConnectService{
+		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
+			Port:             r.config.ServicePort,
+			ServerKeyPath:    r.config.ServiceKeyPath,
+			ServerCertPath:   r.config.ServiceCertPath,
+			ServerSocketPath: r.config.ServiceSocketPath,
+		},
 	}
-	log.Debugf("Using %s service-provider\n", r.config.ServiceProvider)
-	return nil
 }
 
 func (r *Runtime) setEvaluatorFromConfig() error {

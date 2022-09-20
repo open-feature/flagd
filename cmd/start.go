@@ -11,15 +11,14 @@ import (
 )
 
 const (
-	portFlagName            = "port"
-	serviceProviderFlagName = "service-provider"
-	socketPathFlagName      = "socket-path"
-	syncProviderFlagName    = "sync-provider"
-	evaluatorFlagName       = "evaluator"
-	serverCertPathFlagName  = "server-cert-path"
-	serverKeyPathFlagName   = "server-key-path"
-	uriFlagName             = "uri"
-	bearerTokenFlagName     = "bearer-token"
+	portFlagName           = "port"
+	socketPathFlagName     = "socket-path"
+	syncProviderFlagName   = "sync-provider"
+	evaluatorFlagName      = "evaluator"
+	serverCertPathFlagName = "server-cert-path"
+	serverKeyPathFlagName  = "server-key-path"
+	uriFlagName            = "uri"
+	bearerTokenFlagName    = "bearer-token"
 )
 
 func init() {
@@ -33,7 +32,6 @@ func init() {
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(serviceProviderFlagName, "s", "http", "Set a service provider e.g. http or grpc")
 	flags.StringP(
 		syncProviderFlagName, "y", "filepath", "Set a sync provider e.g. filepath or remote",
 	)
@@ -49,7 +47,6 @@ func init() {
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
-	_ = viper.BindPFlag(serviceProviderFlagName, flags.Lookup(serviceProviderFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
@@ -73,7 +70,6 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(runtime.Config{
-			ServiceProvider:   viper.GetString(serviceProviderFlagName),
 			ServicePort:       viper.GetInt32(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),

@@ -6,48 +6,55 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	schemaV1 "go.buf.build/bufbuild/connect-go/open-feature/flagd/schema/v1"
-	schemaConnectV1 "go.buf.build/bufbuild/connect-go/open-feature/flagd/schema/v1/schemav1connect"
+	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
+	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type Service struct {
-	Eval                 eval.IEvaluator
-	ServiceConfiguration *ServiceConfiguration
+type ConnectService struct {
+	Eval                        eval.IEvaluator
+	ConnectServiceConfiguration *ConnectServiceConfiguration
 }
 
-type ServiceConfiguration struct {
+type ConnectServiceConfiguration struct {
 	Port             int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
 }
 
-func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	var address string
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	var handler http.Handler
+	var lis net.Listener
+	var err error
+
 	tls := false
 
 	s.Eval = eval
 	mux := http.NewServeMux()
 	// sockets
-	if s.ServiceConfiguration.ServerSocketPath != "" {
-		address = s.ServiceConfiguration.ServerSocketPath
+
+	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
+		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
 	} else {
-		address = net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ServiceConfiguration.Port))
+		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
+		lis, err = net.Listen("tcp", address)
+	}
+	if err != nil {
+		return err
 	}
 	// TLS
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
-	if s.ServiceConfiguration.ServerCertPath != "" && s.ServiceConfiguration.ServerKeyPath != "" {
+
+	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		tls = true
 		handler = newCORS().Handler(mux)
 	} else {
@@ -57,23 +64,22 @@ func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
 		)
 	}
 
-	srv := &http.Server{
-		Addr:              address,
-		Handler:           handler,
-		ReadHeaderTimeout: time.Second,
-		ReadTimeout:       5 * time.Minute,
-		WriteTimeout:      5 * time.Minute,
-		MaxHeaderBytes:    8 * 1024, // 8KiB
-	}
-
 	errChan := make(chan error, 1)
 	go func() {
 		if tls {
-			if err := srv.ListenAndServeTLS(s.ServiceConfiguration.ServerCertPath, s.ServiceConfiguration.ServerKeyPath); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			if err := http.ServeTLS(
+				lis,
+				handler,
+				s.ConnectServiceConfiguration.ServerCertPath,
+				s.ConnectServiceConfiguration.ServerKeyPath,
+			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		} else {
-			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			if err := http.Serve(
+				lis,
+				handler,
+			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		}
@@ -81,13 +87,13 @@ func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	}()
 
 	<-ctx.Done()
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := lis.Close(); err != nil {
 		return err
 	}
 	return <-errChan
 }
 
-func (s *Service) ResolveBoolean(
+func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
@@ -103,7 +109,7 @@ func (s *Service) ResolveBoolean(
 	return res, nil
 }
 
-func (s *Service) ResolveString(
+func (s *ConnectService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
@@ -119,7 +125,7 @@ func (s *Service) ResolveString(
 	return res, nil
 }
 
-func (s *Service) ResolveInt(
+func (s *ConnectService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
@@ -135,7 +141,7 @@ func (s *Service) ResolveInt(
 	return res, nil
 }
 
-func (s *Service) ResolveFloat(
+func (s *ConnectService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
@@ -151,7 +157,7 @@ func (s *Service) ResolveFloat(
 	return res, nil
 }
 
-func (s *Service) ResolveObject(
+func (s *ConnectService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
@@ -172,7 +178,7 @@ func (s *Service) ResolveObject(
 }
 
 func newCORS() *cors.Cors {
-	// To let web developers play with the demo service from browsers, we need a
+	// To let web developers play with the demo ConnectService from browsers, we need a
 	// very permissive CORS setup.
 	return cors.New(cors.Options{
 		AllowedMethods: []string{
