@@ -10,6 +10,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
+	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
 	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
@@ -148,7 +149,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -157,7 +158,9 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveBooleanResponse{},
+			want: &gen.ResolveBooleanResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -212,7 +215,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -221,7 +224,9 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveBooleanResponse{},
+			want: &gen.ResolveBooleanResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -294,7 +299,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -303,7 +308,9 @@ func TestConnectService_ResolveString(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveStringResponse{},
+			want: &gen.ResolveStringResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -358,7 +365,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -367,7 +374,9 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveStringResponse{},
+			want: &gen.ResolveStringResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -440,7 +449,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -449,7 +458,9 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveFloatResponse{},
+			want: &gen.ResolveFloatResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -504,7 +515,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -513,7 +524,9 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveFloatResponse{},
+			want: &gen.ResolveFloatResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -586,7 +599,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -595,7 +608,9 @@ func TestConnectService_ResolveInt(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveIntResponse{},
+			want: &gen.ResolveIntResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -650,7 +665,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -659,7 +674,9 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveIntResponse{},
+			want: &gen.ResolveIntResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -736,7 +753,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 					"food": "bars",
 				},
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -745,7 +762,9 @@ func TestConnectService_ResolveObject(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveObjectResponse{},
+			want: &gen.ResolveObjectResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}
@@ -812,7 +831,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 					"food": "bars",
 				},
 				variant: ":(",
-				reason:  "ERROR",
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -821,7 +840,9 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveObjectResponse{},
+			want: &gen.ResolveObjectResponse{
+				Reason: model.ErrorReason,
+			},
 			wantErr: errors.New("eval interface error"),
 		},
 	}

@@ -36,13 +36,13 @@ This now provides an accessible http or [https](#https) endpoint for flag evalua
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myBoolFlag/resolve/boolean"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
 
 ```sh
-{"value":true,"reason":"STATIC","variant":"on"}
+{"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 ```
 
 <br />
@@ -52,7 +52,7 @@ Result:
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myStringFlag/resolve/string"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -68,7 +68,7 @@ Result:
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -86,7 +86,7 @@ Result:
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myFloatFlag/resolve/float"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveFloat" -d '{"flagKey":"myFloatFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -102,7 +102,7 @@ Result:
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myObjectFlag/resolve/object"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveObject" -d '{"flagKey":"myObjectFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -118,7 +118,7 @@ Result:
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"isColorYellow","context":{"color":"yellow"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -136,13 +136,13 @@ A type mismatch error is returned when the resolved value of a flag does not mat
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/myBoolFlag/resolve/string"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
 
 ```sh
-{"error_code":"TYPE_MISMATCH","reason":"ERROR"}
+{"code":"invalid_argument","message":"TYPE_MISMATCH"}
 ```
 
 <br />
@@ -154,13 +154,13 @@ The flag not found error is returned when flag key in the request doesn't match 
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flags/aMissingFlag/resolve/string"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"aMissingFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
 
 ```sh
-{"error_code":"FLAG_NOT_FOUND","reason":"ERROR"}
+{"code":"not_found","message":"FLAG_NOT_FOUND"}
 ```
 
 ### https
@@ -243,7 +243,7 @@ returns
 whereas
 
 ```shell
-curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "white"}'
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"isColorYellow","context":{"color":"white"}}' -H "Content-Type: application/json"
 ```
 
 returns

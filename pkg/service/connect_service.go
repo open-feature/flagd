@@ -9,6 +9,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/model"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
@@ -39,8 +40,8 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 
 	s.Eval = eval
 	mux := http.NewServeMux()
-	// sockets
 
+	// sockets
 	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
 		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
 	} else {
@@ -51,6 +52,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 		return err
 	}
 	// TLS
+
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
 
@@ -101,7 +103,8 @@ func (s *ConnectService) ResolveBoolean(
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -117,7 +120,8 @@ func (s *ConnectService) ResolveString(
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -133,7 +137,8 @@ func (s *ConnectService) ResolveInt(
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -149,7 +154,8 @@ func (s *ConnectService) ResolveFloat(
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -165,7 +171,8 @@ func (s *ConnectService) ResolveObject(
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
@@ -209,4 +216,16 @@ func newCORS() *cors.Cors {
 			"Grpc-Status-Details-Bin",
 		},
 	})
+}
+
+func errFormat(err error) error {
+	switch err.Error() {
+	case model.FlagNotFoundErrorCode:
+		return connect.NewError(connect.CodeNotFound, err)
+	case model.TypeMismatchErrorCode:
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	case model.ParseErrorCode:
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return err
 }
