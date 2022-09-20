@@ -28,6 +28,7 @@ type Config struct {
 	ServiceKeyPath    string
 
 	SyncProvider    string
+	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
 	SyncBearerToken string
 
@@ -48,19 +49,19 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 		case w := <-r.syncNotifier:
 			switch w.GetEvent().EventType {
 			case sync.DefaultEventTypeCreate:
-				r.Logger.Info("New configuration created")
+				r.Logger.Debug("New configuration created")
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
 			case sync.DefaultEventTypeModify:
-				r.Logger.Info("Configuration modified")
+				r.Logger.Debug("Configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
 			case sync.DefaultEventTypeDelete:
-				r.Logger.Info("Configuration deleted")
+				r.Logger.Debug("Configuration deleted")
 			case sync.DefaultEventTypeReady:
-				r.Logger.Info("Notifier ready")
+				r.Logger.Debug("Notifier ready")
 			}
 		}
 	}

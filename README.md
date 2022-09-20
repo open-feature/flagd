@@ -252,6 +252,8 @@ returns
 { "value": true, "reason": "TARGETING_MATCH", "variant": "off" }
 ```
 
+### [Customization of sync providers](./docs/configuration.md)
+
 ### [Reusable targeting rules](./docs/reusable_targeting_rules.md)
 
 ### [Fractional Evaluation](./docs/fractional_evaluation.md)
@@ -261,3 +263,4 @@ returns
 <a href="https://github.com/open-feature/flagd/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=open-feature/flagd" />
 </a>
+

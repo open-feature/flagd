@@ -11,8 +11,9 @@ import (
 )
 
 type FilePathSync struct {
-	URI    string
-	Logger *log.Entry
+	URI          string
+	Logger       *log.Entry
+	ProviderArgs ProviderArgs
 }
 
 func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
