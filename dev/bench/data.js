@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663556352151,
+  "lastUpdate": 1663642595396,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2296,6 +2296,88 @@ window.BENCHMARK_DATA = {
             "value": 6109,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "935787 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Skye Gill",
+            "username": "skyerus",
+            "email": "gill.skye95@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "82278c7cf08cc6b50f49ab500caf6f9003fc0823",
+          "message": "fix: upgrade package containing vulnerability (#162)\n\nSigned-off-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2022-09-16T16:56:08Z",
+          "url": "https://github.com/open-feature/flagd/commit/82278c7cf08cc6b50f49ab500caf6f9003fc0823"
+        },
+        "date": 1663642594588,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2244,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2675833 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6517,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "902511 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2245,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2681205 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6548,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "889508 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6473,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "888000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2229,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2688283 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2222,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2697272 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 6473,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "900650 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3554,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1678803 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6328,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "926689 times\n2 procs"
           }
         ]
       }
