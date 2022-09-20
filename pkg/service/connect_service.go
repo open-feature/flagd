@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
@@ -35,9 +36,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 	var handler http.Handler
 	var lis net.Listener
 	var err error
-
 	tls := false
-
 	s.Eval = eval
 	mux := http.NewServeMux()
 
@@ -51,11 +50,9 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 	if err != nil {
 		return err
 	}
-	// TLS
-
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
-
+	// TLS
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		tls = true
 		handler = newCORS().Handler(mux)
@@ -65,29 +62,31 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 			&http2.Server{},
 		)
 	}
-
+	srv := http.Server{
+		ReadTimeout:       2 * time.Second,
+		WriteTimeout:      4 * time.Second,
+		ReadHeaderTimeout: time.Second,
+		Handler:           handler,
+	}
 	errChan := make(chan error, 1)
 	go func() {
 		if tls {
-			if err := http.ServeTLS(
+			if err := srv.ServeTLS(
 				lis,
-				handler,
 				s.ConnectServiceConfiguration.ServerCertPath,
 				s.ConnectServiceConfiguration.ServerKeyPath,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		} else {
-			if err := http.Serve(
+			if err := srv.Serve(
 				lis,
-				handler,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		}
 		close(errChan)
 	}()
-
 	<-ctx.Done()
 	if err := lis.Close(); err != nil {
 		return err
