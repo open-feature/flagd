@@ -3,7 +3,7 @@ name: build
 on:
   push:
    branches:
-    - feature/workflows
+    - release-please--branches--main
     - main
   pull_request:
     branches:
