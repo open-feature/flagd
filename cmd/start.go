@@ -14,7 +14,7 @@ const (
 	portFlagName           = "port"
 	socketPathFlagName     = "socket-path"
 	syncProviderFlagName   = "sync-provider"
-	providerArgsFlagName    = "sync-provider-args"
+	providerArgsFlagName   = "sync-provider-args"
 	evaluatorFlagName      = "evaluator"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
