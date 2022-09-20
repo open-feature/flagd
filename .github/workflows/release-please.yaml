@@ -1,18 +1,33 @@
-name: release
-
 on:
   push:
     branches:
-      - feature/workflows
-    tags:
-      - "v*.*.*"
+      - main
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_GO_VERSION: 1.18
+
+name: Run Release Please
 jobs:
-  docker:
+  release-please:
     runs-on: ubuntu-latest
+    # Release-please creates a PR that tracks all changes
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          command: manifest
+          token: ${{secrets.GITHUB_TOKEN}}
+          default-branch: main
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      release_tag_name: ${{ steps.release.outputs.tag_name }}
+
+  container-release:
+    needs: release-please
+    runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -51,24 +66,28 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: | 
+          build-args: |
             VERSION=${{ steps.meta.outputs.tags }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
-  goreleaser:
+
+  go-release:
+    needs: release-please
     runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          submodules: true
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.18.1"
+          go-version: ${{ env.DEFAULT_GO_VERSION }}
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
