@@ -39,6 +39,7 @@ func (r *Runtime) setService() {
 			ServerKeyPath:    r.config.ServiceKeyPath,
 			ServerCertPath:   r.config.ServiceCertPath,
 			ServerSocketPath: r.config.ServiceSocketPath,
+			CORS:             r.config.CORS,
 		},
 	}
 }

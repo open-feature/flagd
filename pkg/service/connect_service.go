@@ -23,6 +23,8 @@ import (
 type ConnectService struct {
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
+	handler                     http.Handler
+	tls                         bool
 }
 
 type ConnectServiceConfiguration struct {
@@ -30,38 +32,22 @@ type ConnectServiceConfiguration struct {
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
+	CORS             bool
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	var handler http.Handler
-	var lis net.Listener
-	var err error
-	tls := false
 	s.Eval = eval
 	mux := http.NewServeMux()
 
-	// sockets
-	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
-		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
-	} else {
-		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
-		lis, err = net.Listen("tcp", address)
-	}
+	lis, err := s.buildListener()
 	if err != nil {
 		return err
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
-	mux.Handle(path, handler)
-	// TLS
-	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		tls = true
-		handler = newCORS().Handler(mux)
-	} else {
-		handler = h2c.NewHandler(
-			newCORS().Handler(mux),
-			&http2.Server{},
-		)
-	}
+	s.handler = handler
+	mux.Handle(path, s.handler)
+	s.buildHandler(mux)
+
 	srv := http.Server{
 		ReadTimeout:       2 * time.Second,
 		WriteTimeout:      4 * time.Second,
@@ -70,7 +56,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 	}
 	errChan := make(chan error, 1)
 	go func() {
-		if tls {
+		if s.tls {
 			if err := srv.ServeTLS(
 				lis,
 				s.ConnectServiceConfiguration.ServerCertPath,
@@ -92,6 +78,38 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 		return err
 	}
 	return <-errChan
+}
+
+func (s *ConnectService) buildHandler(mux *http.ServeMux) {
+	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
+		s.tls = true
+		if s.ConnectServiceConfiguration.CORS {
+			s.handler = newCORS().Handler(mux)
+		} else {
+			s.handler = mux
+		}
+	} else {
+		if s.ConnectServiceConfiguration.CORS {
+			s.handler = h2c.NewHandler(
+				newCORS().Handler(mux),
+				&http2.Server{},
+			)
+		} else {
+			h2c.NewHandler(
+				newCORS().Handler(mux),
+				&http2.Server{},
+			)
+		}
+	}
+}
+
+func (s *ConnectService) buildListener() (net.Listener, error) {
+	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
+		return net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	} else {
+		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
+		return net.Listen("tcp", address)
+	}
 }
 
 func (s *ConnectService) ResolveBoolean(
@@ -184,8 +202,6 @@ func (s *ConnectService) ResolveObject(
 }
 
 func newCORS() *cors.Cors {
-	// To let web developers play with the demo ConnectService from browsers, we need a
-	// very permissive CORS setup.
 	return cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,

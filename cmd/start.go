@@ -20,6 +20,7 @@ const (
 	serverKeyPathFlagName  = "server-key-path"
 	uriFlagName            = "uri"
 	bearerTokenFlagName    = "bearer-token"
+	corsFlagName           = "cors"
 )
 
 func init() {
@@ -47,6 +48,7 @@ func init() {
 			"flags with the same key, the later will be used.")
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+	flags.BoolP(corsFlagName, "C", false, "Set CORS enable all headers on responses")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
@@ -57,6 +59,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
+	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 }
 
 // startCmd represents the start command
@@ -86,6 +89,8 @@ var startCmd = &cobra.Command{
 			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 
 			Evaluator: viper.GetString(evaluatorFlagName),
+
+			CORS: viper.GetBool(corsFlagName),
 		})
 		if err != nil {
 			log.Error(err)
