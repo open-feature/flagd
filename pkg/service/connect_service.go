@@ -214,7 +214,7 @@ func newCORS() *cors.Cors {
 			"Grpc-Status",
 			"Grpc-Status-Details-Bin",
 		},
-	}) // add interace type name + comment to say why its liek that
+	})
 }
 
 func errFormat(err error) error {
