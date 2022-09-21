@@ -42,7 +42,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"m
 Result:
 
 ```sh
-{"value":true,"reason":"TARGETING_MATCH","variant":"on"}
+{"value":true,"reason":"STATIC","variant":"on"}
 ```
 
 <br />
