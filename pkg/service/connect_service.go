@@ -106,10 +106,9 @@ func (s *ConnectService) buildHandler(mux *http.ServeMux) {
 func (s *ConnectService) buildListener() (net.Listener, error) {
 	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
 		return net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
-	} else {
-		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
-		return net.Listen("tcp", address)
 	}
+	address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
+	return net.Listen("tcp", address)
 }
 
 func (s *ConnectService) ResolveBoolean(
