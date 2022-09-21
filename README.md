@@ -172,7 +172,7 @@ When it is desired to use TLS for increased security, flagD can be started with 
 This enables you to use an upgraded connection for the previous example requests, such as the following:
 
 ```
-curl -X POST "https://localhost:8013/flags/myBoolFlag/resolve/boolean"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json"
 // {"value":true,"reason":"STATIC","variant":"on"}
 ```
 
@@ -231,7 +231,7 @@ A flag is defined as such:
 The rule provided returns `"on"` if `var color == "yellow"` and `"off"` otherwise:
 
 ```shell
-curl -X POST "localhost:8013/flags/isColorYellow/resolve/boolean" -d '{"color": "yellow"}'
+curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"isColorYellow","context":{"color":"yellow"}}' -H "Content-Type: application/json"
 ```
 
 returns
