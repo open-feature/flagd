@@ -42,7 +42,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	return nil
 }
 
-func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, c chan<- sync.INotify) error {
 	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("old object is not a FeatureFlagConfiguration")
 	}
@@ -107,7 +107,7 @@ func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, re
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// This indicates a change to the custom resource
-				if err := updateFuncHandler(oldObj, newObj, object, c); err != nil {
+				if err := updateFuncHandler(oldObj, newObj, c); err != nil {
 					l.Warn(err.Error())
 				}
 			},
