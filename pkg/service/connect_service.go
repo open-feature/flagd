@@ -214,7 +214,7 @@ func newCORS() *cors.Cors {
 			"Grpc-Status",
 			"Grpc-Status-Details-Bin",
 		},
-	})
+	}) // add interace type name + comment to say why its liek that
 }
 
 func errFormat(err error) error {
@@ -223,6 +223,8 @@ func errFormat(err error) error {
 		return connect.NewError(connect.CodeNotFound, err)
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, err)
+	case model.DisabledReason:
+		return connect.NewError(connect.CodeUnavailable, err)
 	case model.ParseErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
