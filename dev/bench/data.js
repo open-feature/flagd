@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663642595396,
+  "lastUpdate": 1663729191182,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2378,6 +2378,88 @@ window.BENCHMARK_DATA = {
             "value": 6328,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "926689 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Michael Beemer",
+            "username": "beeme1mr",
+            "email": "beeme1mr@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "939b51308b89b3ed2ac057f6f7b1aac2537d56b4",
+          "message": "ci: configure release please (#126)\n\n## Overview\r\n\r\nThis PR enables [Release\r\nPlease](https://github.com/googleapis/release-please) for managing\r\nautomated release PRs. It works by looking at the git history of the\r\nmain branch and automatically creating/updating a release PR.\r\nConventional commit messages are used to determine the next release\r\nversion. This repo has been configured to valid PR titles and use them\r\nas the commit message.\r\n\r\nThe flow has been tested end-to-end in a fork. You can see an example\r\nRelease Please release PR\r\n[here](https://github.com/beeme1mr/flagd/pull/7). Once approved and\r\nmerged, it triggers the release action. That can be seen\r\n[here](https://github.com/beeme1mr/flagd/actions/runs/2835311002). The\r\naction publishes the [flagD\r\ncontainer](https://github.com/beeme1mr/flagd/pkgs/container/flagd/34510492?tag=v0.1.5)\r\nand updates the [GitHub\r\nrelease](https://github.com/beeme1mr/flagd/releases/tag/v0.1.5) to\r\ninclude the binaries.\r\n\r\n## Noteworthy configurations\r\n\r\n- Release Please has been configured to **NOT** bump the major version\r\non a breaking changes until we've release a 1.0 version. The setting can\r\nbe seen\r\n[here](https://github.com/open-feature/flagd/blob/54b42caf7153133dc682c5ee91d69be5bdec218f/release-please-config.json#L7).\r\n- Goreleaser is still used but only runs after a Release Please PR has\r\nbeen merged. The setting can be seen\r\n[here](https://github.com/open-feature/flagd/blob/54b42caf7153133dc682c5ee91d69be5bdec218f/.github/workflows/release-please.yaml#L75).\r\n- Image tags had to be set manually because the action was no longer\r\ntriggered by a git tag. The setting can be seen\r\n[here](https://github.com/open-feature/flagd/blob/54b42caf7153133dc682c5ee91d69be5bdec218f/.github/workflows/release-please.yaml#L67-L69).\r\n\r\nSigned-off-by: Michael Beemer <michael.beemer@dynatrace.com>",
+          "timestamp": "2022-09-20T13:01:44Z",
+          "url": "https://github.com/open-feature/flagd/commit/939b51308b89b3ed2ac057f6f7b1aac2537d56b4"
+        },
+        "date": 1663729189448,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2449,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2434614 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 8100,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "707430 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2487,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2369137 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 7804,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "720141 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 7815,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "660956 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2484,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2350742 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 8134,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "724789 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2574,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2359147 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3894,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1554757 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 7854,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "719996 times\n2 procs"
           }
         ]
       }
