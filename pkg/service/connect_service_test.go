@@ -211,24 +211,6 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveBooleanEvalFields{
-				result:  true,
-				variant: ":(",
-				reason:  model.ErrorReason,
-			},
-			functionArgs: resolveBooleanFunctionArgs{
-				context.Background(),
-				&gen.ResolveBooleanRequest{
-					FlagKey: "bool",
-					Context: &structpb.Struct{},
-				},
-			},
-			want: &gen.ResolveBooleanResponse{
-				Reason: model.ErrorReason,
-			},
-			wantErr: errors.New("eval interface error"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
