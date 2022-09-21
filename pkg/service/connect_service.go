@@ -242,7 +242,7 @@ func errFormat(err error) error {
 	case model.DisabledReason:
 		return connect.NewError(connect.CodeUnavailable, err)
 	case model.ParseErrorCode:
-		return connect.NewError(connect.CodeInvalidArgument, err)
+		return connect.NewError(connect.CodeDataLoss, err)
 	}
 	return err
 }
