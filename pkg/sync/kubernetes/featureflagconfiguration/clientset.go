@@ -49,7 +49,9 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	if reflect.TypeOf(newObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("new object is not a FeatureFlagConfiguration")
 	}
-	if oldObj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+	oldObjConfig := oldObj.(*ffv1alpha1.FeatureFlagConfiguration)
+	newObjConfig := newObj.(*ffv1alpha1.FeatureFlagConfiguration)
+	if oldObjConfig.Generation != newObjConfig.Generation { // generation difference indicates a change
 		// Only update if there is an actual featureFlagSpec change
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
