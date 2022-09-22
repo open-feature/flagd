@@ -57,7 +57,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			evalFields: evalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			req: &gen.ResolveBooleanRequest{
@@ -66,7 +66,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -130,7 +130,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -141,7 +141,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -196,7 +196,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -207,7 +207,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -262,7 +262,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -273,7 +273,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 			},
 			want: &gen.ResolveStringResponse{
 				Value:   "true",
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -328,7 +328,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -339,7 +339,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			},
 			want: &gen.ResolveStringResponse{
 				Value:   "true",
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -394,7 +394,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -405,7 +405,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			},
 			want: &gen.ResolveFloatResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -460,7 +460,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -471,7 +471,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			},
 			want: &gen.ResolveFloatResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -526,7 +526,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -537,7 +537,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			},
 			want: &gen.ResolveIntResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -592,7 +592,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -603,7 +603,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			},
 			want: &gen.ResolveIntResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -660,7 +660,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 					"food": "bars",
 				},
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -671,7 +671,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			},
 			want: &gen.ResolveObjectResponse{
 				Value:   nil,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -738,7 +738,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 					"food": "bars",
 				},
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -749,7 +749,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 			},
 			want: &gen.ResolveObjectResponse{
 				Value:   nil,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,

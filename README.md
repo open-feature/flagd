@@ -42,7 +42,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"m
 Result:
 
 ```sh
-{"value":true,"reason":"STATIC","variant":"on"}
+{"value":true,"reason":"DEFAULT","variant":"on"}
 ```
 
 <br />
@@ -58,7 +58,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"my
 Result:
 
 ```sh
-{"value":"val1","reason":"STATIC","variant":"key1"}
+{"value":"val1","reason":"DEFAULT","variant":"key1"}
 ```
 
 <br />
@@ -74,7 +74,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveInt" -d '{"flagKey":"myInt
 Result:
 
 ```sh
-{"value":"1","reason":"STATIC","variant":"one"}
+{"value":"1","reason":"DEFAULT","variant":"one"}
 ```
 
 [Why is this `int` response a `string`?](./docs/http_int_response.md)
@@ -92,7 +92,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveFloat" -d '{"flagKey":"myF
 Result:
 
 ```sh
-{"value":1.23,"reason":"STATIC","variant":"one"}
+{"value":1.23,"reason":"DEFAULT","variant":"one"}
 ```
 
 <br />
@@ -108,7 +108,7 @@ curl -X POST "localhost:8013/schema.v1.Service/ResolveObject" -d '{"flagKey":"my
 Result:
 
 ```sh
-{"value":{"key":"val"},"reason":"STATIC","variant":"object1"}
+{"value":{"key":"val"},"reason":"DEFAULT","variant":"object1"}
 ```
 
 <br />
@@ -173,7 +173,7 @@ This enables you to use an upgraded connection for the previous example requests
 
 ```
 curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json"
-// {"value":true,"reason":"STATIC","variant":"on"}
+// {"value":true,"reason":"DEFAULT","variant":"on"}
 ```
 
 ## Multiple source example
