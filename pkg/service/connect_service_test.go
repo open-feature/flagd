@@ -96,6 +96,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				fmt.Sprintf("unix://%s", tt.socketPath),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 				grpc.WithBlock(),
+				grpc.WithTimeout(2*time.Second),
 			)
 			if err != nil {
 				log.Errorf("grpc - fail to dial: %v", err)

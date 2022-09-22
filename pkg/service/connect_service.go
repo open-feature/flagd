@@ -23,8 +23,8 @@ import (
 type ConnectService struct {
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
-	handler                     http.Handler
 	tls                         bool
+	server                      http.Server
 }
 
 type ConnectServiceConfiguration struct {
@@ -37,60 +37,65 @@ type ConnectServiceConfiguration struct {
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	mux := http.NewServeMux()
 
-	lis, err := s.buildListener()
+	lis, err := s.setupServer()
 	if err != nil {
 		return err
 	}
-	path, handler := schemaConnectV1.NewServiceHandler(s)
-	s.handler = handler
-	mux.Handle(path, s.handler)
-	s.buildHandler(mux)
 
-	srv := http.Server{
-		ReadTimeout:       2 * time.Second,
-		WriteTimeout:      4 * time.Second,
-		ReadHeaderTimeout: time.Second,
-		Handler:           handler,
-	}
 	errChan := make(chan error, 1)
 	go func() {
 		if s.tls {
-			if err := srv.ServeTLS(
+			if err := s.server.ServeTLS(
 				lis,
 				s.ConnectServiceConfiguration.ServerCertPath,
 				s.ConnectServiceConfiguration.ServerKeyPath,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
+			fmt.Println("shutdown")
 		} else {
-			if err := srv.Serve(
+			if err := s.server.Serve(
 				lis,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
+			fmt.Println("shutdown")
 		}
 		close(errChan)
 	}()
 	<-ctx.Done()
-	if err := lis.Close(); err != nil {
+	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
 	return <-errChan
 }
 
-func (s *ConnectService) buildHandler(mux *http.ServeMux) {
+func (s *ConnectService) setupServer() (net.Listener, error) {
+	var lis net.Listener
+	var err error
+	mux := http.NewServeMux()
+	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
+		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	} else {
+		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
+		lis, err = net.Listen("tcp", address)
+	}
+	if err != nil {
+		return nil, err
+	}
+	path, handler := schemaConnectV1.NewServiceHandler(s)
+	mux.Handle(path, handler)
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		s.tls = true
 		if s.ConnectServiceConfiguration.CORS {
-			s.handler = newCORS().Handler(mux)
+			handler = newCORS().Handler(mux)
 		} else {
-			s.handler = mux
+			handler = mux
 		}
 	} else {
 		if s.ConnectServiceConfiguration.CORS {
-			s.handler = h2c.NewHandler(
+			handler = h2c.NewHandler(
 				newCORS().Handler(mux),
 				&http2.Server{},
 			)
@@ -101,14 +106,13 @@ func (s *ConnectService) buildHandler(mux *http.ServeMux) {
 			)
 		}
 	}
-}
-
-func (s *ConnectService) buildListener() (net.Listener, error) {
-	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
-		return net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	s.server = http.Server{
+		ReadTimeout:       2 * time.Second,
+		WriteTimeout:      4 * time.Second,
+		ReadHeaderTimeout: time.Second,
+		Handler:           handler,
 	}
-	address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
-	return net.Listen("tcp", address)
+	return lis, nil
 }
 
 func (s *ConnectService) ResolveBoolean(
