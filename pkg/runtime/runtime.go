@@ -33,7 +33,7 @@ type Config struct {
 	SyncBearerToken string
 
 	Evaluator string
-	CORS      bool
+	CORS      []string
 }
 
 func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {

@@ -20,6 +20,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const ErrorPrefix = "FlagdError:"
+
 type ConnectService struct {
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
@@ -32,7 +34,7 @@ type ConnectServiceConfiguration struct {
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
-	CORS             bool
+	CORS             []string
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
@@ -53,14 +55,12 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
-			fmt.Println("shutdown")
 		} else {
 			if err := s.server.Serve(
 				lis,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
-			fmt.Println("shutdown")
 		}
 		close(errChan)
 	}()
@@ -88,23 +88,12 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	mux.Handle(path, handler)
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		s.tls = true
-		if s.ConnectServiceConfiguration.CORS {
-			handler = newCORS().Handler(mux)
-		} else {
-			handler = mux
-		}
+		handler = s.newCORS().Handler(mux)
 	} else {
-		if s.ConnectServiceConfiguration.CORS {
-			handler = h2c.NewHandler(
-				newCORS().Handler(mux),
-				&http2.Server{},
-			)
-		} else {
-			h2c.NewHandler(
-				newCORS().Handler(mux),
-				&http2.Server{},
-			)
-		}
+		handler = h2c.NewHandler(
+			s.newCORS().Handler(mux),
+			&http2.Server{},
+		)
 	}
 	s.server = http.Server{
 		ReadTimeout:       2 * time.Second,
@@ -204,7 +193,7 @@ func (s *ConnectService) ResolveObject(
 	return res, nil
 }
 
-func newCORS() *cors.Cors {
+func (s *ConnectService) newCORS() *cors.Cors {
 	return cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,
@@ -214,10 +203,7 @@ func newCORS() *cors.Cors {
 			http.MethodPatch,
 			http.MethodDelete,
 		},
-		AllowOriginFunc: func(origin string) bool {
-			// Allow all origins, which effectively disables CORS.
-			return true
-		},
+		AllowedOrigins: s.ConnectServiceConfiguration.CORS,
 		AllowedHeaders: []string{"*"},
 		ExposedHeaders: []string{
 			// Content-Type is in the default safelist.
@@ -239,13 +225,14 @@ func newCORS() *cors.Cors {
 func errFormat(err error) error {
 	switch err.Error() {
 	case model.FlagNotFoundErrorCode:
-		return connect.NewError(connect.CodeNotFound, err)
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.TypeMismatchErrorCode:
-		return connect.NewError(connect.CodeInvalidArgument, err)
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.DisabledReason:
-		return connect.NewError(connect.CodeUnavailable, err)
+		return connect.NewError(connect.CodeUnavailable, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.ParseErrorCode:
-		return connect.NewError(connect.CodeDataLoss, err)
+		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	}
+
 	return err
 }
