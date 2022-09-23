@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
 	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
@@ -56,7 +57,7 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 			evalFields: evalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			req: &gen.ResolveBooleanRequest{
@@ -65,7 +66,7 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -130,7 +131,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
@@ -142,7 +143,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -197,7 +198,7 @@ func BenchmarkGRPCService_ResolveBoolean(b *testing.B) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
@@ -209,7 +210,7 @@ func BenchmarkGRPCService_ResolveBoolean(b *testing.B) {
 			},
 			want: &gen.ResolveBooleanResponse{
 				Value:   true,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -283,7 +284,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveStringFunctionArgs{
@@ -295,7 +296,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 			},
 			want: &gen.ResolveStringResponse{
 				Value:   "true",
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -350,7 +351,7 @@ func BenchmarkGRPCService_ResolveString(b *testing.B) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveStringFunctionArgs{
@@ -362,7 +363,7 @@ func BenchmarkGRPCService_ResolveString(b *testing.B) {
 			},
 			want: &gen.ResolveStringResponse{
 				Value:   "true",
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -436,7 +437,7 @@ func TestGRPCService_ResolveFloat(t *testing.T) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveFloatFunctionArgs{
@@ -448,7 +449,7 @@ func TestGRPCService_ResolveFloat(t *testing.T) {
 			},
 			want: &gen.ResolveFloatResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -503,7 +504,7 @@ func BenchmarkGRPCService_ResolveFloat(b *testing.B) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveFloatFunctionArgs{
@@ -515,7 +516,7 @@ func BenchmarkGRPCService_ResolveFloat(b *testing.B) {
 			},
 			want: &gen.ResolveFloatResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -589,7 +590,7 @@ func TestGRPCService_ResolveInt(t *testing.T) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveIntFunctionArgs{
@@ -601,7 +602,7 @@ func TestGRPCService_ResolveInt(t *testing.T) {
 			},
 			want: &gen.ResolveIntResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -656,7 +657,7 @@ func BenchmarkGRPCService_ResolveInt(b *testing.B) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveIntFunctionArgs{
@@ -668,7 +669,7 @@ func BenchmarkGRPCService_ResolveInt(b *testing.B) {
 			},
 			want: &gen.ResolveIntResponse{
 				Value:   12,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -744,7 +745,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 					"food": "bars",
 				},
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveObjectFunctionArgs{
@@ -756,7 +757,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 			},
 			want: &gen.ResolveObjectResponse{
 				Value:   nil,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,
@@ -823,7 +824,7 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 					"food": "bars",
 				},
 				variant: "on",
-				reason:  "STATIC",
+				reason:  model.DefaultReason,
 				err:     nil,
 			},
 			functionArgs: resolveObjectFunctionArgs{
@@ -835,7 +836,7 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 			},
 			want: &gen.ResolveObjectResponse{
 				Value:   nil,
-				Reason:  "STATIC",
+				Reason:  model.DefaultReason,
 				Variant: "on",
 			},
 			wantErr: nil,

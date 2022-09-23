@@ -187,8 +187,8 @@ func (je *JSONEvaluator) evaluateVariant(
 		return variant, model.TargetingMatchReason, nil
 	}
 
-	// if it's not a valid variant, use the default (static) value
-	return je.state.Flags[flagKey].DefaultVariant, model.StaticReason, nil
+	// if it's not a valid variant, use the default value
+	return je.state.Flags[flagKey].DefaultVariant, model.DefaultReason, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
