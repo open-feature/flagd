@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663815296095,
+  "lastUpdate": 1663901967835,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2542,6 +2542,88 @@ window.BENCHMARK_DATA = {
             "value": 6074,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "961561 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b655e8848472679355b200f19f44b6dc55d0f0ed",
+          "message": "refactor: Static reason type removal (#165)\n\nSigned-off-by: James-Milligan <james@omnant.co.uk>",
+          "timestamp": "2022-09-22T13:28:53Z",
+          "url": "https://github.com/open-feature/flagd/commit/b655e8848472679355b200f19f44b6dc55d0f0ed"
+        },
+        "date": 1663901967005,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2219,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2674090 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6441,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "898041 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2221,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2686087 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6478,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "899281 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2214,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2698960 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6423,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "898406 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2216,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2707280 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 6415,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "899488 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3485,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1720825 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6213,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "934908 times\n2 procs"
           }
         ]
       }
