@@ -4,7 +4,7 @@
 Why is my `int` response a `string`?
 Command:
 ```sh
-curl -X POST "localhost:8013/flags/myIntFlag/resolve/int"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 Result:
 ```sh
@@ -14,7 +14,7 @@ When interacting directly with the flagD http(s) api and requesting an `int` the
 <br />
 Command:
 ```sh
-curl -X POST "localhost:8013/flags/myIntFlag/resolve/float"
+curl -X POST "localhost:8013/schema.v1.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 Result:
 ```sh

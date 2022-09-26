@@ -3,25 +3,26 @@ module github.com/open-feature/flagd
 go 1.18
 
 require (
+	github.com/bufbuild/connect-go v0.4.0
 	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.3
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang/mock v1.6.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.1
 	github.com/mattn/go-colorable v0.1.12
 	github.com/open-feature/open-feature-operator v0.0.10-0.20220826061622-a6421d66936a
 	github.com/open-feature/schemas v0.0.0-20220809125333-185e3bd77775
 	github.com/robfig/cron v1.2.0
+	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
-	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.4
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
-	go.buf.build/open-feature/flagd-server/open-feature/flagd v1.1.2
+	go.buf.build/open-feature/flagd-connect/open-feature/flagd v1.1.3
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.1
@@ -73,7 +74,6 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect

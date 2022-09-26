@@ -22,7 +22,6 @@ type Runtime struct {
 }
 
 type Config struct {
-	ServiceProvider   string
 	ServicePort       int32
 	ServiceSocketPath string
 	ServiceCertPath   string
@@ -34,6 +33,7 @@ type Config struct {
 	SyncBearerToken string
 
 	Evaluator string
+	CORS      []string
 }
 
 func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {

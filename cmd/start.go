@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	portFlagName            = "port"
-	serviceProviderFlagName = "service-provider"
-	socketPathFlagName      = "socket-path"
-	syncProviderFlagName    = "sync-provider"
-	providerArgsFlagName    = "sync-provider-args"
-	evaluatorFlagName       = "evaluator"
-	serverCertPathFlagName  = "server-cert-path"
-	serverKeyPathFlagName   = "server-key-path"
-	uriFlagName             = "uri"
-	bearerTokenFlagName     = "bearer-token"
+	portFlagName           = "port"
+	socketPathFlagName     = "socket-path"
+	syncProviderFlagName   = "sync-provider"
+	providerArgsFlagName   = "sync-provider-args"
+	evaluatorFlagName      = "evaluator"
+	serverCertPathFlagName = "server-cert-path"
+	serverKeyPathFlagName  = "server-key-path"
+	uriFlagName            = "uri"
+	bearerTokenFlagName    = "bearer-token"
+	corsFlagName           = "cors-origin"
 )
 
 func init() {
@@ -34,7 +34,6 @@ func init() {
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(serviceProviderFlagName, "s", "http", "Set a service provider e.g. http or grpc")
 	flags.StringP(
 		syncProviderFlagName, "y", "filepath", "Set a sync provider e.g. filepath or remote",
 	)
@@ -49,10 +48,10 @@ func init() {
 			"flags with the same key, the later will be used.")
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
-	_ = viper.BindPFlag(serviceProviderFlagName, flags.Lookup(serviceProviderFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
@@ -60,6 +59,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
+	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 }
 
 // startCmd represents the start command
@@ -78,7 +78,6 @@ var startCmd = &cobra.Command{
 		}
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(runtime.Config{
-			ServiceProvider:   viper.GetString(serviceProviderFlagName),
 			ServicePort:       viper.GetInt32(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
@@ -90,6 +89,8 @@ var startCmd = &cobra.Command{
 			SyncBearerToken: viper.GetString(bearerTokenFlagName),
 
 			Evaluator: viper.GetString(evaluatorFlagName),
+
+			CORS: viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {
 			log.Error(err)

@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
 	log "github.com/sirupsen/logrus"
-	gen "go.buf.build/open-feature/flagd-server/open-feature/flagd/schema/v1"
+	gen "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -32,10 +33,9 @@ type resolveBooleanEvalFields struct {
 	result  bool
 	variant string
 	reason  string
-	err     error
 }
 
-func TestGRPCService_UnixConnection(t *testing.T) {
+func TestConnectService_UnixConnection(t *testing.T) {
 	type evalFields struct {
 		result  bool
 		variant string
@@ -61,7 +61,7 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 				err:     nil,
 			},
 			req: &gen.ResolveBooleanRequest{
-				FlagKey: "bool",
+				FlagKey: "myBoolFlag",
 				Context: &structpb.Struct{},
 			},
 			want: &gen.ResolveBooleanResponse{
@@ -82,8 +82,8 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			service := service.GRPCService{
-				GRPCServiceConfiguration: &service.GRPCServiceConfiguration{
+			service := service.ConnectService{
+				ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 					ServerSocketPath: tt.socketPath,
 				},
 			}
@@ -92,11 +92,11 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 			defer cancel()
 
 			go func() { _ = service.Serve(ctx, eval) }()
-
 			conn, err := grpc.Dial(
-				fmt.Sprintf("passthrough:///unix://%s", tt.socketPath),
+				fmt.Sprintf("unix://%s", tt.socketPath),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 				grpc.WithBlock(),
+				grpc.WithTimeout(2*time.Second),
 			)
 			if err != nil {
 				log.Errorf("grpc - fail to dial: %v", err)
@@ -107,32 +107,30 @@ func TestGRPCService_UnixConnection(t *testing.T) {
 			)
 			res, err := client.ResolveBoolean(ctx, tt.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(res.Reason, tt.want.Reason) {
-				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
 			}
 			if !reflect.DeepEqual(res.Value, tt.want.Value) {
-				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
 			}
 			if !reflect.DeepEqual(res.Variant, tt.want.Variant) {
-				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
 			}
 		})
 	}
 }
 
-func TestGRPCService_ResolveBoolean(t *testing.T) {
+func TestConnectService_ResolveBoolean(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveBooleanArgs{
 		"happy path": {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -152,8 +150,7 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -162,8 +159,10 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveBooleanResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			want: &gen.ResolveBooleanResponse{
+				Reason: model.ErrorReason,
+			},
+			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -173,33 +172,31 @@ func TestGRPCService_ResolveBoolean(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.err,
+				tt.wantErr,
 			).AnyTimes()
-			s := service.GRPCService{
+			s := service.ConnectService{
 				Eval: eval,
 			}
-			got, err := s.ResolveBoolean(tt.functionArgs.ctx, tt.functionArgs.req)
-			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
+			if err != nil && !errors.Is(err, tt.wantErr) {
+				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GRPCService.ResolveBoolean() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Msg, tt.want) {
+				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGRPCService_ResolveBoolean(b *testing.B) {
+func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveBooleanArgs{
 		"happy path": {
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -215,23 +212,6 @@ func BenchmarkGRPCService_ResolveBoolean(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveBooleanEvalFields{
-				result:  true,
-				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
-			},
-			functionArgs: resolveBooleanFunctionArgs{
-				context.Background(),
-				&gen.ResolveBooleanRequest{
-					FlagKey: "bool",
-					Context: &structpb.Struct{},
-				},
-			},
-			want:    &gen.ResolveBooleanResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -239,20 +219,20 @@ func BenchmarkGRPCService_ResolveBoolean(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
-			tt.evalFields.err,
+			tt.wantErr,
 		).AnyTimes()
-		s := service.GRPCService{
+		s := service.ConnectService{
 			Eval: eval,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got, err := s.ResolveBoolean(tt.functionArgs.ctx, tt.functionArgs.req)
+				got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("GRPCService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					b.Errorf("GRPCService.ResolveBoolean() = %v, want %v", got, tt.want)
+				if !reflect.DeepEqual(got.Msg, tt.want) {
+					b.Errorf("ConnectService.ResolveBoolean() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -273,19 +253,16 @@ type resolveStringEvalFields struct {
 	result  string
 	variant string
 	reason  string
-	err     error
 }
 
-func TestGRPCService_ResolveString(t *testing.T) {
+func TestConnectService_ResolveString(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveStringArgs{
 		"happy path": {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -305,8 +282,7 @@ func TestGRPCService_ResolveString(t *testing.T) {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -315,8 +291,10 @@ func TestGRPCService_ResolveString(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveStringResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			want: &gen.ResolveStringResponse{
+				Reason: model.ErrorReason,
+			},
+			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -326,33 +304,31 @@ func TestGRPCService_ResolveString(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.err,
+				tt.wantErr,
 			)
-			s := service.GRPCService{
+			s := service.ConnectService{
 				Eval: eval,
 			}
-			got, err := s.ResolveString(tt.functionArgs.ctx, tt.functionArgs.req)
+			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GRPCService.ResolveString() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Msg, tt.want) {
+				t.Errorf("ConnectService.ResolveString() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGRPCService_ResolveString(b *testing.B) {
+func BenchmarkConnectService_ResolveString(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveStringArgs{
 		"happy path": {
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -368,23 +344,6 @@ func BenchmarkGRPCService_ResolveString(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveStringEvalFields{
-				result:  "true",
-				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
-			},
-			functionArgs: resolveStringFunctionArgs{
-				context.Background(),
-				&gen.ResolveStringRequest{
-					FlagKey: "string",
-					Context: &structpb.Struct{},
-				},
-			},
-			want:    &gen.ResolveStringResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -392,20 +351,20 @@ func BenchmarkGRPCService_ResolveString(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
-			tt.evalFields.err,
+			tt.wantErr,
 		).AnyTimes()
-		s := service.GRPCService{
+		s := service.ConnectService{
 			Eval: eval,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got, err := s.ResolveString(tt.functionArgs.ctx, tt.functionArgs.req)
+				got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("GRPCService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					b.Errorf("GRPCService.ResolveString() = %v, want %v", got, tt.want)
+				if !reflect.DeepEqual(got.Msg, tt.want) {
+					b.Errorf("ConnectService.ResolveString() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -426,19 +385,16 @@ type resolveFloatEvalFields struct {
 	result  float64
 	variant string
 	reason  string
-	err     error
 }
 
-func TestGRPCService_ResolveFloat(t *testing.T) {
+func TestConnectService_ResolveFloat(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveFloatArgs{
 		"happy path": {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -458,8 +414,7 @@ func TestGRPCService_ResolveFloat(t *testing.T) {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -468,8 +423,10 @@ func TestGRPCService_ResolveFloat(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveFloatResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			want: &gen.ResolveFloatResponse{
+				Reason: model.ErrorReason,
+			},
+			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -479,33 +436,31 @@ func TestGRPCService_ResolveFloat(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.err,
+				tt.wantErr,
 			).AnyTimes()
-			s := service.GRPCService{
+			s := service.ConnectService{
 				Eval: eval,
 			}
-			got, err := s.ResolveFloat(tt.functionArgs.ctx, tt.functionArgs.req)
+			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GRPCService.ResolveNumber() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Msg, tt.want) {
+				t.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGRPCService_ResolveFloat(b *testing.B) {
+func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveFloatArgs{
 		"happy path": {
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -521,23 +476,6 @@ func BenchmarkGRPCService_ResolveFloat(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveFloatEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
-			},
-			functionArgs: resolveFloatFunctionArgs{
-				context.Background(),
-				&gen.ResolveFloatRequest{
-					FlagKey: "float",
-					Context: &structpb.Struct{},
-				},
-			},
-			want:    &gen.ResolveFloatResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -545,20 +483,20 @@ func BenchmarkGRPCService_ResolveFloat(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
-			tt.evalFields.err,
+			tt.wantErr,
 		).AnyTimes()
-		s := service.GRPCService{
+		s := service.ConnectService{
 			Eval: eval,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got, err := s.ResolveFloat(tt.functionArgs.ctx, tt.functionArgs.req)
+				got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					b.Errorf("GRPCService.ResolveNumber() = %v, want %v", got, tt.want)
+				if !reflect.DeepEqual(got.Msg, tt.want) {
+					b.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -579,19 +517,16 @@ type resolveIntEvalFields struct {
 	result  int64
 	variant string
 	reason  string
-	err     error
 }
 
-func TestGRPCService_ResolveInt(t *testing.T) {
+func TestConnectService_ResolveInt(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveIntArgs{
 		"happy path": {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -611,8 +546,7 @@ func TestGRPCService_ResolveInt(t *testing.T) {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -621,8 +555,10 @@ func TestGRPCService_ResolveInt(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveIntResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			want: &gen.ResolveIntResponse{
+				Reason: model.ErrorReason,
+			},
+			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -632,33 +568,31 @@ func TestGRPCService_ResolveInt(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.err,
+				tt.wantErr,
 			).AnyTimes()
-			s := service.GRPCService{
+			s := service.ConnectService{
 				Eval: eval,
 			}
-			got, err := s.ResolveInt(tt.functionArgs.ctx, tt.functionArgs.req)
+			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GRPCService.ResolveNumber() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Msg, tt.want) {
+				t.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGRPCService_ResolveInt(b *testing.B) {
+func BenchmarkConnectService_ResolveInt(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveIntArgs{
 		"happy path": {
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -674,23 +608,6 @@ func BenchmarkGRPCService_ResolveInt(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveIntEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
-			},
-			functionArgs: resolveIntFunctionArgs{
-				context.Background(),
-				&gen.ResolveIntRequest{
-					FlagKey: "int",
-					Context: &structpb.Struct{},
-				},
-			},
-			want:    &gen.ResolveIntResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -698,20 +615,20 @@ func BenchmarkGRPCService_ResolveInt(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
-			tt.evalFields.err,
+			tt.wantErr,
 		).AnyTimes()
-		s := service.GRPCService{
+		s := service.ConnectService{
 			Eval: eval,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got, err := s.ResolveInt(tt.functionArgs.ctx, tt.functionArgs.req)
+				got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("GRPCService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					b.Errorf("GRPCService.ResolveNumber() = %v, want %v", got, tt.want)
+				if !reflect.DeepEqual(got.Msg, tt.want) {
+					b.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -732,12 +649,10 @@ type resolveObjectEvalFields struct {
 	result  map[string]interface{}
 	variant string
 	reason  string
-	err     error
 }
 
-func TestGRPCService_ResolveObject(t *testing.T) {
+func TestConnectService_ResolveObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveObjectArgs{
 		"happy path": {
 			evalFields: resolveObjectEvalFields{
@@ -746,7 +661,6 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				},
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -768,8 +682,7 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 					"food": "bars",
 				},
 				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
+				reason:  model.ErrorReason,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -778,8 +691,10 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 					Context: &structpb.Struct{},
 				},
 			},
-			want:    &gen.ResolveObjectResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
+			want: &gen.ResolveObjectResponse{
+				Reason: model.ErrorReason,
+			},
+			wantErr: errors.New("eval interface error"),
 		},
 	}
 	for name, tt := range tests {
@@ -789,9 +704,9 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.err,
+				tt.wantErr,
 			).AnyTimes()
-			s := service.GRPCService{
+			s := service.ConnectService{
 				Eval: eval,
 			}
 
@@ -802,21 +717,20 @@ func TestGRPCService_ResolveObject(t *testing.T) {
 				}
 				tt.want.Value = outParsed
 			}
-			got, err := s.ResolveObject(tt.functionArgs.ctx, tt.functionArgs.req)
+			got, err := s.ResolveObject(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GRPCService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Value.AsMap(), tt.want.Value.AsMap()) {
-				t.Errorf("GRPCService.ResolveObject() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Msg.Value.AsMap(), tt.want.Value.AsMap()) {
+				t.Errorf("ConnectService.ResolveObject() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGRPCService_ResolveObject(b *testing.B) {
+func BenchmarkConnectService_ResolveObject(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	grpcS := service.GRPCService{}
 	tests := map[string]resolveObjectArgs{
 		"happy path": {
 			evalFields: resolveObjectEvalFields{
@@ -825,7 +739,6 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 				},
 				variant: "on",
 				reason:  model.DefaultReason,
-				err:     nil,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -841,25 +754,6 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 			},
 			wantErr: nil,
 		},
-		"eval returns error": {
-			evalFields: resolveObjectEvalFields{
-				result: map[string]interface{}{
-					"food": "bars",
-				},
-				variant: ":(",
-				reason:  "ERROR",
-				err:     errors.New("eval interface error"),
-			},
-			functionArgs: resolveObjectFunctionArgs{
-				context.Background(),
-				&gen.ResolveObjectRequest{
-					FlagKey: "object",
-					Context: &structpb.Struct{},
-				},
-			},
-			want:    &gen.ResolveObjectResponse{},
-			wantErr: grpcS.HandleEvaluationError(errors.New("eval interface error"), "ERROR"),
-		},
 	}
 	for name, tt := range tests {
 		eval := NewMockIEvaluator(ctrl)
@@ -867,9 +761,9 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
-			tt.evalFields.err,
+			tt.wantErr,
 		).AnyTimes()
-		s := service.GRPCService{
+		s := service.ConnectService{
 			Eval: eval,
 		}
 		if name != "eval returns error" {
@@ -881,13 +775,13 @@ func BenchmarkGRPCService_ResolveObject(b *testing.B) {
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got, err := s.ResolveObject(tt.functionArgs.ctx, tt.functionArgs.req)
+				got, err := s.ResolveObject(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("GRPCService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got.Value.AsMap(), tt.want.Value.AsMap()) {
-					b.Errorf("GRPCService.ResolveObject() = %v, want %v", got, tt.want)
+				if !reflect.DeepEqual(got.Msg.Value.AsMap(), tt.want.Value.AsMap()) {
+					b.Errorf("ConnectService.ResolveObject() = %v, want %v", got, tt.want)
 				}
 			}
 		})
