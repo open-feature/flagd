@@ -94,8 +94,12 @@ var startCmd = &cobra.Command{
 		})
 		if err != nil {
 			log.Error(err)
+			os.Exit(1)
 		}
 
-		rt.Start()
+		if err := rt.Start(); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
 	},
 }

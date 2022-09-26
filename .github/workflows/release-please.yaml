@@ -32,7 +32,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
@@ -71,7 +71,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ steps.meta.outputs.tags }}
+            VERSION=${{ needs.release-please.outputs.release_tag_name }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
 
@@ -82,6 +82,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Set up Go
         uses: actions/setup-go@v3

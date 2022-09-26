@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,18 +10,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (r *Runtime) Start() {
+func (r *Runtime) Start() error {
 	if r.Service == nil {
-		r.Logger.Error("no Service set")
-		return
+		return errors.New("no Service set")
 	}
 	if len(r.SyncImpl) == 0 {
-		r.Logger.Error("no SyncImplementation set")
-		return
+		return errors.New("no SyncImplementation set")
 	}
 	if r.Evaluator == nil {
-		r.Logger.Error("no Evaluator set")
-		return
+		return errors.New("no Evaluator set")
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -40,6 +38,7 @@ func (r *Runtime) Start() {
 
 	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
-		r.Logger.Error(err)
+		return err
 	}
+	return nil
 }
