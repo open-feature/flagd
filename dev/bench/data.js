@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664074653828,
+  "lastUpdate": 1664161071042,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2788,6 +2788,88 @@ window.BENCHMARK_DATA = {
             "value": 7301,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "708987 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Michael Beemer",
+            "username": "beeme1mr",
+            "email": "beeme1mr@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "50fe46fbbf120a0657c1df35b370cdc9051d0f31",
+          "message": "fix: checkout release tag before running container and binary releases (#171)\n\nSigned-off-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-09-23T21:10:35Z",
+          "url": "https://github.com/open-feature/flagd/commit/50fe46fbbf120a0657c1df35b370cdc9051d0f31"
+        },
+        "date": 1664161070597,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/happy_path",
+            "value": 2210,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2714486 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveBoolean/eval_returns_error",
+            "value": 6467,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "901596 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/happy_path",
+            "value": 2218,
+            "unit": "ns/op\t     256 B/op\t       5 allocs/op",
+            "extra": "2708448 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveString/eval_returns_error",
+            "value": 6493,
+            "unit": "ns/op\t    1208 B/op\t      37 allocs/op",
+            "extra": "901402 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/happy_path",
+            "value": 2209,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2714107 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveFloat/eval_returns_error",
+            "value": 6408,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "906096 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/happy_path",
+            "value": 2210,
+            "unit": "ns/op\t     240 B/op\t       5 allocs/op",
+            "extra": "2705410 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveInt/eval_returns_error",
+            "value": 6413,
+            "unit": "ns/op\t    1192 B/op\t      37 allocs/op",
+            "extra": "904173 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/happy_path",
+            "value": 3503,
+            "unit": "ns/op\t    1400 B/op\t      20 allocs/op",
+            "extra": "1715283 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGRPCService_ResolveObject/eval_returns_error",
+            "value": 6221,
+            "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
+            "extra": "941340 times\n2 procs"
           }
         ]
       }
