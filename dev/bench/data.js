@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664161071042,
+  "lastUpdate": 1664247259996,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2870,6 +2870,58 @@ window.BENCHMARK_DATA = {
             "value": 6221,
             "unit": "ns/op\t    1288 B/op\t      39 allocs/op",
             "extra": "941340 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "41898282+github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c624173bf39c53061435ff5614fc67235bdd3f38",
+          "message": "chore(main): release 0.2.0 (#172)\n\n:robot: I have created a release *beep* *boop*\r\n---\r\n\r\n\r\n##\r\n[0.2.0](https://github.com/open-feature/flagd/compare/v0.1.1...v0.2.0)\r\n(2022-09-26)\r\n\r\n\r\n### ⚠ BREAKING CHANGES\r\n\r\n* Updated service to use connect (#163)\r\n\r\n### Features\r\n\r\n* Updated service to use connect\r\n([#163](https://github.com/open-feature/flagd/issues/163))\r\n([828d5c4](https://github.com/open-feature/flagd/commit/828d5c4c11157f5b7a77f5041806ba2523186764))\r\n\r\n\r\n### Bug Fixes\r\n\r\n* checkout release tag before running container and binary releases\r\n([#171](https://github.com/open-feature/flagd/issues/171))\r\n([50fe46f](https://github.com/open-feature/flagd/commit/50fe46fbbf120a0657c1df35b370cdc9051d0f31))\r\n\r\n---\r\nThis PR was generated with [Release\r\nPlease](https://github.com/googleapis/release-please). See\r\n[documentation](https://github.com/googleapis/release-please#release-please).\r\n\r\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2022-09-26T13:29:13Z",
+          "url": "https://github.com/open-feature/flagd/commit/c624173bf39c53061435ff5614fc67235bdd3f38"
+        },
+        "date": 1664247259227,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2228,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2704087 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2225,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2708293 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2196,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2716617 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2224,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2693439 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3394,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1766638 times\n2 procs"
           }
         ]
       }
