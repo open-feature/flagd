@@ -2,7 +2,7 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting the gh-pages branch
   push:
     branches: ["gh-pages"]
 
@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: gh-pages
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact
