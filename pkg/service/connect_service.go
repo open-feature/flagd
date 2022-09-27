@@ -78,7 +78,7 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
 		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
 	} else {
-		address := net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ConnectServiceConfiguration.Port))
+		address := fmt.Sprintf(":%d", s.ConnectServiceConfiguration.Port)
 		lis, err = net.Listen("tcp", address)
 	}
 	if err != nil {
