@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
@@ -42,7 +41,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	return nil
 }
 
-func updateFuncHandler(oldObj interface{}, newObj interface{}, c chan<- sync.INotify) error {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
 	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("old object is not a FeatureFlagConfiguration")
 	}
@@ -51,7 +50,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, c chan<- sync.INo
 	}
 	oldObjConfig := oldObj.(*ffv1alpha1.FeatureFlagConfiguration)
 	newObjConfig := newObj.(*ffv1alpha1.FeatureFlagConfiguration)
-	if oldObjConfig.Generation != newObjConfig.Generation { // generation difference indicates a change
+	if object.Name == newObjConfig.Name && oldObjConfig.ResourceVersion != newObjConfig.ResourceVersion {
 		// Only update if there is an actual featureFlagSpec change
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
@@ -76,7 +75,7 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	return nil
 }
 
-func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, refreshTime time.Duration,
+func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface,
 	object client.ObjectKey, c chan<- sync.INotify,
 ) {
 	ns := "*"
@@ -93,7 +92,7 @@ func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, re
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},
-		refreshTime,
+		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if err := createFuncHandler(obj, object, c); err != nil {
@@ -107,7 +106,7 @@ func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, re
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// This indicates a change to the custom resource
-				if err := updateFuncHandler(oldObj, newObj, c); err != nil {
+				if err := updateFuncHandler(oldObj, newObj, object, c); err != nil {
 					l.Warn(err.Error())
 				}
 			},

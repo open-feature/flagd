@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/kubernetes/featureflagconfiguration"
@@ -14,8 +13,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	controllerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var refreshTime = time.Second * 5
 
 const (
 	featureFlagConfigurationName = "featureflagconfiguration"
@@ -80,14 +77,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Panic(err.Error())
 	}
 
-	if k.ProviderArgs["refreshtime"] != "" {
-		hr, err := time.ParseDuration(k.ProviderArgs["refreshtime"])
-		if err != nil {
-			k.Logger.Panic(err.Error())
-		}
-		refreshTime = hr
-	}
-
 	k.client, err = featureflagconfiguration.NewForConfig(config)
 	if err != nil {
 		k.Logger.Panic(err.Error())
@@ -100,7 +89,8 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	go featureflagconfiguration.WatchResources(ctx, *k.Logger.WithFields(log.Fields{
 		"sync":      "kubernetes",
 		"component": "watchresources",
-	}), k.client, refreshTime, controllerClient.ObjectKey{
-		Name: k.ProviderArgs[featureFlagConfigurationName],
+	}), k.client, controllerClient.ObjectKey{
+		Name:      k.ProviderArgs[featureFlagConfigurationName],
+		Namespace: k.ProviderArgs[featureFlagNamespaceName],
 	}, c)
 }
