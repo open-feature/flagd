@@ -13,10 +13,11 @@ import (
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
-	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
+	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1"
+	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -27,6 +28,7 @@ type ConnectService struct {
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	tls                         bool
 	server                      http.Server
+	subs                        map[interface{}]chan NotificationType
 }
 
 type ConnectServiceConfiguration struct {
@@ -39,7 +41,7 @@ type ConnectServiceConfiguration struct {
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-
+	s.subs = make(map[interface{}]chan NotificationType)
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
@@ -96,12 +98,42 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 		)
 	}
 	s.server = http.Server{
-		ReadTimeout:       2 * time.Second,
-		WriteTimeout:      4 * time.Second,
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
 	return lis, nil
+}
+
+func (s *ConnectService) Notify(n NotificationType) {
+	for _, send := range s.subs {
+		send <- n
+	}
+}
+
+func (s *ConnectService) EventStream(
+	ctx context.Context,
+	req *connect.Request[emptypb.Empty],
+	stream *connect.ServerStream[schemaV1.EventStreamResponse],
+) error {
+	s.subs[req] = make(chan NotificationType, 1)
+	defer func() {
+		delete(s.subs, req)
+	}()
+	s.subs[req] <- ProviderReady
+	for {
+		select {
+		case notification := <-s.subs[req]:
+			err := stream.Send(&schemaV1.EventStreamResponse{
+				Type: string(notification),
+			})
+			if err != nil {
+				log.Error(err)
+			}
+		case <-ctx.Done():
+			log.Info("client connection closed")
+			return nil
+		}
+	}
 }
 
 func (s *ConnectService) ResolveBoolean(
