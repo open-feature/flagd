@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664333782913,
+  "lastUpdate": 1664420212753,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -2974,6 +2974,58 @@ window.BENCHMARK_DATA = {
             "value": 4416,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1367581 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Michael Beemer",
+            "username": "beeme1mr",
+            "email": "beeme1mr@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e13caeaf02e384c3a904d0daad4b0aa951be54c3",
+          "message": "ci: avoid running performance tests on forks (#173)\n\nSigned-off-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-09-27T18:14:26Z",
+          "url": "https://github.com/open-feature/flagd/commit/e13caeaf02e384c3a904d0daad4b0aa951be54c3"
+        },
+        "date": 1664420212035,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2310,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2603721 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2329,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2546043 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2306,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2597313 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2315,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2592352 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3615,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1666321 times\n2 procs"
           }
         ]
       }
