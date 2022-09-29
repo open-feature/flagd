@@ -20,7 +20,7 @@ const (
 	featureFlagNamespaceName     = "namespace"
 )
 
-var resyncPeriod time.Duration = 0
+var resyncPeriod time.Duration // default of 0
 
 type Sync struct {
 	Logger       *log.Entry
