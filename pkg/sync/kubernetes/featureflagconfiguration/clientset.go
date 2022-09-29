@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
@@ -75,7 +76,12 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	return nil
 }
 
-func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface,
+// WatchResources watches FeatureFlagConfigurations resources under the given namespace with the given name
+//
+// - resyncPeriod if non-zero, will re-list the resources this often (you will get OnUpdate
+//   calls, even if nothing changed). Otherwise, re-list will be delayed as long as possible
+//   (until the upstream source closes the watch or times out, or you stop the controller).
+func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface, resyncPeriod time.Duration,
 	object client.ObjectKey, c chan<- sync.INotify,
 ) {
 	ns := "*"
@@ -92,7 +98,7 @@ func WatchResources(ctx context.Context, l log.Entry, clientSet FFCInterface,
 			},
 		},
 		&ffv1alpha1.FeatureFlagConfiguration{},
-		0,
+		resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if err := createFuncHandler(obj, object, c); err != nil {

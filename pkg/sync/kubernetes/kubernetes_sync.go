@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/kubernetes/featureflagconfiguration"
@@ -18,6 +19,8 @@ const (
 	featureFlagConfigurationName = "featureflagconfiguration"
 	featureFlagNamespaceName     = "namespace"
 )
+
+var resyncPeriod time.Duration = 0
 
 type Sync struct {
 	Logger       *log.Entry
@@ -77,6 +80,14 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Panic(err.Error())
 	}
 
+	if k.ProviderArgs["resyncperiod"] != "" {
+		hr, err := time.ParseDuration(k.ProviderArgs["resyncperiod"])
+		if err != nil {
+			k.Logger.Panic(err.Error())
+		}
+		resyncPeriod = hr
+	}
+
 	k.client, err = featureflagconfiguration.NewForConfig(config)
 	if err != nil {
 		k.Logger.Panic(err.Error())
@@ -89,7 +100,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	go featureflagconfiguration.WatchResources(ctx, *k.Logger.WithFields(log.Fields{
 		"sync":      "kubernetes",
 		"component": "watchresources",
-	}), k.client, controllerClient.ObjectKey{
+	}), k.client, resyncPeriod, controllerClient.ObjectKey{
 		Name:      k.ProviderArgs[featureFlagConfigurationName],
 		Namespace: k.ProviderArgs[featureFlagNamespaceName],
 	}, c)
