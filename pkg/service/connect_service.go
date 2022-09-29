@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -29,6 +30,7 @@ type ConnectService struct {
 	tls                         bool
 	server                      http.Server
 	subs                        map[interface{}]chan NotificationType
+	mu                          sync.Mutex
 }
 
 type ConnectServiceConfiguration struct {
@@ -105,9 +107,11 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 }
 
 func (s *ConnectService) Notify(n NotificationType) {
+	s.mu.Lock()
 	for _, send := range s.subs {
 		send <- n
 	}
+	s.mu.Unlock()
 }
 
 func (s *ConnectService) EventStream(
@@ -117,7 +121,9 @@ func (s *ConnectService) EventStream(
 ) error {
 	s.subs[req] = make(chan NotificationType, 1)
 	defer func() {
+		s.mu.Lock()
 		delete(s.subs, req)
+		s.mu.Lock()
 	}()
 	s.subs[req] <- ProviderReady
 	for {
