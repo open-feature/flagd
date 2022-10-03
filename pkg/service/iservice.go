@@ -9,8 +9,8 @@ import (
 type NotificationType string
 
 const (
-	CONFIGURATION_CHANGE NotificationType = "configuration_change"
-	PROVIDER_READY       NotificationType = "provider_ready"
+	ConfigurationChange NotificationType = "configuration_change"
+	ProviderReady       NotificationType = "provider_ready"
 )
 
 type IServiceConfiguration interface{}

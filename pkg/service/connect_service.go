@@ -117,12 +117,12 @@ func (s *ConnectService) EventStream(
 		delete(s.subs, req)
 		s.mu.Lock()
 	}()
-	s.subs[req] <- PROVIDER_READY
+	s.subs[req] <- ProviderReady
 	for {
 		select {
 		case notification := <-s.subs[req]:
 			err := stream.Send(&schemaV1.EventStreamResponse{
-				Type: fmt.Sprintf("%s", notification),
+				Type: string(notification),
 			})
 			if err != nil {
 				log.Error(err)
