@@ -10,7 +10,7 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(state string) error
+	SetState(source string, state string) error
 
 	ResolveBooleanValue(
 		flagKey string,

@@ -16,6 +16,10 @@ type FilePathSync struct {
 	ProviderArgs ProviderArgs
 }
 
+func (fs *FilePathSync) Source() string {
+	return fs.URI
+}
+
 func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")

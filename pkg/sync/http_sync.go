@@ -33,6 +33,10 @@ type Cron interface {
 	Start()
 }
 
+func (fs *HTTPSync) Source() string {
+	return fs.URI
+}
+
 func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
