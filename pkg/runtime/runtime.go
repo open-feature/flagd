@@ -23,17 +23,18 @@ type Runtime struct {
 }
 
 type Config struct {
-	ServiceProvider   string
 	ServicePort       int32
 	ServiceSocketPath string
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
 	SyncProvider    string
+	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
 	SyncBearerToken string
 
 	Evaluator string
+	CORS      []string
 }
 
 func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
@@ -50,20 +51,20 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 		case w := <-r.syncNotifier:
 			switch w.GetEvent().EventType {
 			case sync.DefaultEventTypeCreate:
-				r.Logger.Info("New configuration created")
+				r.Logger.Debug("New configuration created")
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
 			case sync.DefaultEventTypeModify:
-				r.Logger.Info("Configuration modified")
+				r.Logger.Debug("Configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
 				r.Service.Notify(service.CONFIGURATION_CHANGE)
 			case sync.DefaultEventTypeDelete:
-				r.Logger.Info("Configuration deleted")
+				r.Logger.Debug("Configuration deleted")
 			case sync.DefaultEventTypeReady:
-				r.Logger.Info("Notifier ready")
+				r.Logger.Debug("Notifier ready")
 			}
 		}
 	}
@@ -76,7 +77,7 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	err = r.Evaluator.SetState(msg)
+	err = r.Evaluator.SetState(syncr.Source(), msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
 	}

@@ -6,104 +6,122 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/model"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	schemaV1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1"
-	schemav1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1"
-	schemaConnectV1 "go.buf.build/bufbuild/connect-go/james-milligan/flagd/schema/v1/schemav1connect"
+	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1"
+	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type Service struct {
-	Eval                 eval.IEvaluator
-	ServiceConfiguration *ServiceConfiguration
-	subs                 map[interface{}]chan NotificationType
+const ErrorPrefix = "FlagdError:"
+
+type ConnectService struct {
+	Eval                        eval.IEvaluator
+	subs                        map[interface{}]chan NotificationType
+	ConnectServiceConfiguration *ConnectServiceConfiguration
+	tls                         bool
+	server                      http.Server
+	mu                          sync.Mutex
 }
 
-type ServiceConfiguration struct {
+type ConnectServiceConfiguration struct {
 	Port             int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
+	CORS             []string
 }
 
-func (s *Service) Serve(ctx context.Context, eval eval.IEvaluator) error {
-	var address string
-	var handler http.Handler
-	tls := false
-	s.subs = make(map[interface{}]chan NotificationType)
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	mux := http.NewServeMux()
-	// sockets
-	if s.ServiceConfiguration.ServerSocketPath != "" {
-		address = s.ServiceConfiguration.ServerSocketPath
-	} else {
-		address = net.JoinHostPort("localhost", fmt.Sprintf("%d", s.ServiceConfiguration.Port))
-	}
-	// TLS
-	path, handler := schemaConnectV1.NewServiceHandler(s)
-	mux.Handle(path, handler)
-	if s.ServiceConfiguration.ServerCertPath != "" && s.ServiceConfiguration.ServerKeyPath != "" {
-		tls = true
-		handler = newCORS().Handler(mux)
-	} else {
-		handler = h2c.NewHandler(
-			newCORS().Handler(mux),
-			&http2.Server{},
-		)
-	}
-
-	srv := &http.Server{
-		Addr:              address,
-		Handler:           handler,
-		ReadHeaderTimeout: time.Second,
-		ReadTimeout:       5 * time.Minute,
-		WriteTimeout:      5 * time.Minute,
-		MaxHeaderBytes:    8 * 1024, // 8KiB
+	s.subs = make(map[interface{}]chan NotificationType)
+	lis, err := s.setupServer()
+	if err != nil {
+		return err
 	}
 
 	errChan := make(chan error, 1)
 	go func() {
-		if tls {
-			if err := srv.ListenAndServeTLS(s.ServiceConfiguration.ServerCertPath, s.ServiceConfiguration.ServerKeyPath); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if s.tls {
+			if err := s.server.ServeTLS(
+				lis,
+				s.ConnectServiceConfiguration.ServerCertPath,
+				s.ConnectServiceConfiguration.ServerKeyPath,
+			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		} else {
-			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			if err := s.server.Serve(
+				lis,
+			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
 		}
 		close(errChan)
 	}()
-
 	<-ctx.Done()
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
 	return <-errChan
 }
 
-func (s *Service) EventStream(
+func (s *ConnectService) setupServer() (net.Listener, error) {
+	var lis net.Listener
+	var err error
+	mux := http.NewServeMux()
+	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
+		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	} else {
+		address := fmt.Sprintf(":%d", s.ConnectServiceConfiguration.Port)
+		lis, err = net.Listen("tcp", address)
+	}
+	if err != nil {
+		return nil, err
+	}
+	path, handler := schemaConnectV1.NewServiceHandler(s)
+	mux.Handle(path, handler)
+	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
+		s.tls = true
+		handler = s.newCORS().Handler(mux)
+	} else {
+		handler = h2c.NewHandler(
+			s.newCORS().Handler(mux),
+			&http2.Server{},
+		)
+	}
+	s.server = http.Server{
+		ReadHeaderTimeout: time.Second,
+		Handler:           handler,
+	}
+	return lis, nil
+}
+
+func (s *ConnectService) EventStream(
 	ctx context.Context,
 	req *connect.Request[emptypb.Empty],
-	stream *connect.ServerStream[schemav1.EventStreamResponse],
+	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
 	s.subs[req] = make(chan NotificationType, 1)
 	defer func() {
+		s.mu.Lock()
 		delete(s.subs, req)
+		s.mu.Lock()
 	}()
 	s.subs[req] <- PROVIDER_READY
 	for {
 		select {
 		case notification := <-s.subs[req]:
-			err := stream.Send(&schemav1.EventStreamResponse{
+			err := stream.Send(&schemaV1.EventStreamResponse{
 				Type: fmt.Sprintf("%s", notification),
 			})
 			if err != nil {
@@ -116,7 +134,15 @@ func (s *Service) EventStream(
 	}
 }
 
-func (s *Service) ResolveBoolean(
+func (s *ConnectService) Notify(n NotificationType) {
+	s.mu.Lock()
+	for _, send := range s.subs {
+		send <- n
+	}
+	s.mu.Unlock()
+}
+
+func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
@@ -124,7 +150,8 @@ func (s *Service) ResolveBoolean(
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -132,13 +159,7 @@ func (s *Service) ResolveBoolean(
 	return res, nil
 }
 
-func (s *Service) Notify(n NotificationType) {
-	for _, send := range s.subs {
-		send <- n
-	}
-}
-
-func (s *Service) ResolveString(
+func (s *ConnectService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
@@ -146,7 +167,8 @@ func (s *Service) ResolveString(
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -154,7 +176,7 @@ func (s *Service) ResolveString(
 	return res, nil
 }
 
-func (s *Service) ResolveInt(
+func (s *ConnectService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
@@ -162,7 +184,8 @@ func (s *Service) ResolveInt(
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -170,7 +193,7 @@ func (s *Service) ResolveInt(
 	return res, nil
 }
 
-func (s *Service) ResolveFloat(
+func (s *ConnectService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
@@ -178,7 +201,8 @@ func (s *Service) ResolveFloat(
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -186,7 +210,7 @@ func (s *Service) ResolveFloat(
 	return res, nil
 }
 
-func (s *Service) ResolveObject(
+func (s *ConnectService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
@@ -194,7 +218,8 @@ func (s *Service) ResolveObject(
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
 		log.Error(err)
-		return res, err
+		res.Msg.Reason = model.ErrorReason
+		return res, errFormat(err)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
@@ -206,9 +231,7 @@ func (s *Service) ResolveObject(
 	return res, nil
 }
 
-func newCORS() *cors.Cors {
-	// To let web developers play with the demo service from browsers, we need a
-	// very permissive CORS setup.
+func (s *ConnectService) newCORS() *cors.Cors {
 	return cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,
@@ -218,10 +241,7 @@ func newCORS() *cors.Cors {
 			http.MethodPatch,
 			http.MethodDelete,
 		},
-		AllowOriginFunc: func(origin string) bool {
-			// Allow all origins, which effectively disables CORS.
-			return true
-		},
+		AllowedOrigins: s.ConnectServiceConfiguration.CORS,
 		AllowedHeaders: []string{"*"},
 		ExposedHeaders: []string{
 			// Content-Type is in the default safelist.
@@ -238,4 +258,19 @@ func newCORS() *cors.Cors {
 			"Grpc-Status-Details-Bin",
 		},
 	})
+}
+
+func errFormat(err error) error {
+	switch err.Error() {
+	case model.FlagNotFoundErrorCode:
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+	case model.TypeMismatchErrorCode:
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+	case model.DisabledReason:
+		return connect.NewError(connect.CodeUnavailable, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+	case model.ParseErrorCode:
+		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+	}
+
+	return err
 }

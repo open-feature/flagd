@@ -1,20 +1,21 @@
-name: 'Trigger Site Rebuild on a CRON Schedule'
+name: "Trigger Site Rebuild on a CRON Schedule"
 
 on:
   schedule:
-  # runs at 02:00 every day, UTC 
-    - cron: '0 2 * * *'
+    # runs at 02:00 every day, UTC
+    - cron: "0 2 * * *"
 
 jobs:
   benchmark-publish:
-    name: Run Benchmark 
+    name: Run Benchmark
+    if: github.repository == 'open-feature/flagd'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
         uses: actions/setup-go@v1
         with:
-          go-version: '1.18.1' 
+          go-version: "1.18.1"
       - name: Run benchmark
         run: go test -bench . -benchtime=5s -benchmem ./... | tee output.txt
 
@@ -22,7 +23,7 @@ jobs:
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Go Benchmark
-          tool: 'go'
+          tool: "go"
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true

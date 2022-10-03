@@ -280,7 +280,7 @@ var Flags = fmt.Sprintf(`{
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(ValidFlags)
+	err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -302,7 +302,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with an invalid flag definition
-	err := evaluator.SetState(InvalidFlags)
+	err := evaluator.SetState("", InvalidFlags)
 	if err == nil {
 		t.Fatalf("Expected error")
 	}
@@ -312,7 +312,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with a valid flag definition
-	err := evaluator.SetState(ValidFlags)
+	err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -326,7 +326,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticBoolFlag, nil, StaticBoolValue, model.StaticReason, ""},
+		{StaticBoolFlag, nil, StaticBoolValue, model.DefaultReason, ""},
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -334,7 +334,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(Flags)
+	err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -365,7 +365,7 @@ func TestResolveStringValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticStringFlag, nil, StaticStringValue, model.StaticReason, ""},
+		{StaticStringFlag, nil, StaticStringValue, model.DefaultReason, ""},
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -373,7 +373,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(Flags)
+	err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -405,7 +405,7 @@ func TestResolveFloatValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticFloatFlag, nil, StaticFloatValue, model.StaticReason, ""},
+		{StaticFloatFlag, nil, StaticFloatValue, model.DefaultReason, ""},
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -413,7 +413,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(Flags)
+	err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -445,7 +445,7 @@ func TestResolveIntValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticIntFlag, nil, StaticIntValue, model.StaticReason, ""},
+		{StaticIntFlag, nil, StaticIntValue, model.DefaultReason, ""},
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -453,7 +453,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(Flags)
+	err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -485,7 +485,7 @@ func TestResolveObjectValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticObjectFlag, nil, StaticObjectValue, model.StaticReason, ""},
+		{StaticObjectFlag, nil, StaticObjectValue, model.DefaultReason, ""},
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -493,7 +493,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState(Flags)
+	err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -523,10 +523,11 @@ func TestResolveObjectValue(t *testing.T) {
 func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name    string
-		current eval.Flags
-		new     eval.Flags
-		want    eval.Flags
+		name      string
+		current   eval.Flags
+		new       eval.Flags
+		newSource string
+		want      eval.Flags
 	}{
 		{
 			name:    "both nil",
@@ -555,14 +556,26 @@ func TestMergeFlags(t *testing.T) {
 		{
 			name: "extra fields on each",
 			current: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "off"},
+				"waka": {
+					DefaultVariant: "off",
+					Source:         "1",
+				},
 			}},
 			new: eval.Flags{Flags: map[string]eval.Flag{
-				"paka": {DefaultVariant: "on"},
+				"paka": {
+					DefaultVariant: "on",
+				},
 			}},
+			newSource: "2",
 			want: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "off"},
-				"paka": {DefaultVariant: "on"},
+				"waka": {
+					DefaultVariant: "off",
+					Source:         "1",
+				},
+				"paka": {
+					DefaultVariant: "on",
+					Source:         "2",
+				},
 			}},
 		},
 		{
@@ -597,8 +610,8 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := tt.current.Merge(tt.new)
-			require.Equal(t, got, tt.want)
+			got := tt.current.Merge(tt.newSource, tt.new)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -656,7 +669,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			err := jsonEvaluator.SetState(tt.jsonFlags)
+			err := jsonEvaluator.SetState("", tt.jsonFlags)
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -714,6 +727,7 @@ func TestState_Evaluator(t *testing.T) {
 						  },
 						  "defaultVariant": "recursive",
 						  "state": "ENABLED",
+						  "source":"",
 						  "targeting": {
 							"if": [
 							  {
@@ -792,7 +806,7 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			err := jsonEvaluator.SetState(tt.inputState)
+			err := jsonEvaluator.SetState("", tt.inputState)
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)

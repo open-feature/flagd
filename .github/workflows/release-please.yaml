@@ -1,23 +1,38 @@
-name: release
-
 on:
   push:
     branches:
-      - feature/workflows
-    tags:
-      - "v*.*.*"
+      - main
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_GO_VERSION: 1.18
+
+name: Run Release Please
 jobs:
-  docker:
+  release-please:
     runs-on: ubuntu-latest
+    # Release-please creates a PR that tracks all changes
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          command: manifest
+          token: ${{secrets.GITHUB_TOKEN}}
+          default-branch: main
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      release_tag_name: ${{ steps.release.outputs.tag_name }}
+
+  container-release:
+    needs: release-please
+    runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
@@ -51,24 +66,30 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: | 
-            VERSION=${{ steps.meta.outputs.tags }}
+          build-args: |
+            VERSION=${{ needs.release-please.outputs.release_tag_name }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
-  goreleaser:
+
+  go-release:
+    needs: release-please
     runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          submodules: true
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.18.1"
+          go-version: ${{ env.DEFAULT_GO_VERSION }}
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
