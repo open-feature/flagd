@@ -2,8 +2,6 @@ package eval
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 )
 
 type Flags struct {
@@ -27,18 +25,7 @@ func (f Flags) Merge(source string, ff Flags) Flags {
 	}
 	for k, v := range ff.Flags {
 		v.Source = source
-		existing, ok := result.Flags[k]
-		if !ok {
-			// flag has been set as new
-			fmt.Printf("flag value set %s with source %s\n", k, source)
-			result.Flags[k] = v
-		} else {
-			if !reflect.DeepEqual(existing, v) {
-				// flag has been updated
-				fmt.Printf("flag value updated %s with source %s\n", k, source)
-				result.Flags[k] = v
-			}
-		}
+		result.Flags[k] = v
 	}
 	return result
 }
