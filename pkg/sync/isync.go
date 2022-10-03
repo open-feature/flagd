@@ -12,4 +12,5 @@ type ProviderArgs map[string]string
 type ISync interface {
 	Fetch(ctx context.Context) (string, error)
 	Notify(ctx context.Context, c chan<- INotify)
+	Source() string
 }

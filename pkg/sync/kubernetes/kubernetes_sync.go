@@ -28,6 +28,10 @@ type Sync struct {
 	client       *featureflagconfiguration.FFCClient
 }
 
+func (k *Sync) Source() string {
+	return k.ProviderArgs[featureFlagConfigurationName]
+}
+
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
 		k.Logger.Info("No target feature flag configuration set")

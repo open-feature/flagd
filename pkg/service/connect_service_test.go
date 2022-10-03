@@ -10,6 +10,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
+	mock "github.com/open-feature/flagd/pkg/eval/mock"
 	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
 	log "github.com/sirupsen/logrus"
@@ -75,7 +76,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveBooleanValue(tt.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -167,7 +168,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveBooleanValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -214,7 +215,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 		},
 	}
 	for name, tt := range tests {
-		eval := NewMockIEvaluator(ctrl)
+		eval := mock.NewMockIEvaluator(ctrl)
 		eval.EXPECT().ResolveBooleanValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
@@ -299,7 +300,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveStringValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -346,7 +347,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 		},
 	}
 	for name, tt := range tests {
-		eval := NewMockIEvaluator(ctrl)
+		eval := mock.NewMockIEvaluator(ctrl)
 		eval.EXPECT().ResolveStringValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
@@ -431,7 +432,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveFloatValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -478,7 +479,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 		},
 	}
 	for name, tt := range tests {
-		eval := NewMockIEvaluator(ctrl)
+		eval := mock.NewMockIEvaluator(ctrl)
 		eval.EXPECT().ResolveFloatValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
@@ -563,7 +564,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveIntValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -610,7 +611,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 		},
 	}
 	for name, tt := range tests {
-		eval := NewMockIEvaluator(ctrl)
+		eval := mock.NewMockIEvaluator(ctrl)
 		eval.EXPECT().ResolveIntValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
@@ -699,7 +700,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			eval := NewMockIEvaluator(ctrl)
+			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveObjectValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
@@ -756,7 +757,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 		},
 	}
 	for name, tt := range tests {
-		eval := NewMockIEvaluator(ctrl)
+		eval := mock.NewMockIEvaluator(ctrl)
 		eval.EXPECT().ResolveObjectValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,

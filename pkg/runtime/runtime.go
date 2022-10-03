@@ -75,7 +75,7 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	err = r.Evaluator.SetState(msg)
+	err = r.Evaluator.SetState(syncr.Source(), msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
 	}

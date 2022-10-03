@@ -37,7 +37,7 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return string(data), nil
 }
 
-func (je *JSONEvaluator) SetState(state string) error {
+func (je *JSONEvaluator) SetState(source string, state string) error {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
@@ -64,7 +64,8 @@ func (je *JSONEvaluator) SetState(state string) error {
 	if err := validateDefaultVariants(newFlags); err != nil {
 		return err
 	}
-	je.state = je.state.Merge(newFlags)
+
+	je.state = je.state.Merge(source, newFlags)
 
 	return nil
 }
