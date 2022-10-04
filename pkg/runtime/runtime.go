@@ -55,13 +55,11 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
-				r.Service.Notify(service.ConfigurationChange)
 			case sync.DefaultEventTypeModify:
 				r.Logger.Debug("Configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
 					log.Error(err)
 				}
-				r.Service.Notify(service.ConfigurationChange)
 			case sync.DefaultEventTypeDelete:
 				r.Logger.Debug("Configuration deleted")
 			case sync.DefaultEventTypeReady:
@@ -78,9 +76,16 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	err = r.Evaluator.SetState(syncr.Source(), msg)
+	notifications, err := r.Evaluator.SetState(syncr.Source(), msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
+	}
+	for _, n := range notifications {
+		r.Logger.Infof("configuration change: %s %s %s\n", n.Type, n.FlagKey, n.Source)
+		r.Service.Notify(service.Notification{
+			Type: service.ConfigurationChange,
+			Data: n.ToMap(),
+		})
 	}
 	return nil
 }

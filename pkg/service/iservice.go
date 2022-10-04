@@ -13,6 +13,11 @@ const (
 	ProviderReady       NotificationType = "provider_ready"
 )
 
+type Notification struct {
+	Type NotificationType       `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
 type IServiceConfiguration interface{}
 
 /*
@@ -20,5 +25,5 @@ IService implementations define handlers for a particular transport, which call 
 */
 type IService interface {
 	Serve(ctx context.Context, eval eval.IEvaluator) error
-	Notify(n NotificationType)
+	Notify(n Notification)
 }

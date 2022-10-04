@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	eval "github.com/open-feature/flagd/pkg/eval"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -136,12 +135,11 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(flagKey, context interf
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(source, state string) ([]eval.StateChangeNotification, error) {
+func (m *MockIEvaluator) SetState(source, state string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", source, state)
-	ret0, _ := ret[0].([]eval.StateChangeNotification)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetState indicates an expected call of SetState.

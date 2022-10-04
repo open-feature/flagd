@@ -14,8 +14,8 @@ import (
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1"
-	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd-dev/schema/v1/schemav1connect"
+	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
+	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -26,11 +26,12 @@ const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
 	Eval                        eval.IEvaluator
-	subs                        map[interface{}]chan NotificationType
+	subs                        map[interface{}]chan Notification
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	tls                         bool
 	server                      http.Server
 	mu                          sync.Mutex
+	Logger                      *log.Entry
 }
 
 type ConnectServiceConfiguration struct {
@@ -43,7 +44,7 @@ type ConnectServiceConfiguration struct {
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	s.subs = make(map[interface{}]chan NotificationType)
+	s.subs = make(map[interface{}]chan Notification)
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
@@ -111,30 +112,37 @@ func (s *ConnectService) EventStream(
 	req *connect.Request[emptypb.Empty],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
-	s.subs[req] = make(chan NotificationType, 1)
+	s.subs[req] = make(chan Notification, 1)
 	defer func() {
 		s.mu.Lock()
 		delete(s.subs, req)
 		s.mu.Lock()
 	}()
-	s.subs[req] <- ProviderReady
+	s.subs[req] <- Notification{
+		Type: ProviderReady,
+	}
 	for {
 		select {
 		case notification := <-s.subs[req]:
-			err := stream.Send(&schemaV1.EventStreamResponse{
-				Type: string(notification),
+			d, err := structpb.NewStruct(notification.Data)
+			if err != nil {
+				s.Logger.Error(err)
+			}
+			err = stream.Send(&schemaV1.EventStreamResponse{
+				Type: string(notification.Type),
+				Data: d,
 			})
 			if err != nil {
-				log.Error(err)
+				s.Logger.Error(err)
 			}
 		case <-ctx.Done():
-			log.Info("client connection closed")
+			s.Logger.Info("client connection closed")
 			return nil
 		}
 	}
 }
 
-func (s *ConnectService) Notify(n NotificationType) {
+func (s *ConnectService) Notify(n Notification) {
 	s.mu.Lock()
 	for _, send := range s.subs {
 		send <- n

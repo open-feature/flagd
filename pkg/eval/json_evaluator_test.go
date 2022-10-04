@@ -280,7 +280,7 @@ var Flags = fmt.Sprintf(`{
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", ValidFlags)
+	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -302,7 +302,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with an invalid flag definition
-	err := evaluator.SetState("", InvalidFlags)
+	_, err := evaluator.SetState("", InvalidFlags)
 	if err == nil {
 		t.Fatalf("Expected error")
 	}
@@ -312,7 +312,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: l}
 
 	// set state with a valid flag definition
-	err := evaluator.SetState("", ValidFlags)
+	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -334,7 +334,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -373,7 +373,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -413,7 +413,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -453,7 +453,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -493,7 +493,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: l}
-	err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -610,7 +610,7 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := tt.current.Merge(tt.newSource, tt.new)
+			got, _ := tt.current.Merge(tt.newSource, tt.new)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -669,7 +669,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			err := jsonEvaluator.SetState("", tt.jsonFlags)
+			_, err := jsonEvaluator.SetState("", tt.jsonFlags)
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -806,7 +806,7 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			err := jsonEvaluator.SetState("", tt.inputState)
+			_, err := jsonEvaluator.SetState("", tt.inputState)
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
