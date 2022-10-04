@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664765007274,
+  "lastUpdate": 1664851641979,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3234,6 +3234,58 @@ window.BENCHMARK_DATA = {
             "value": 3398,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1768657 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "94d7697d08a07cede4a548ef998792d00f8954a0",
+          "message": "fix: updated merge functionality (#182)\n\nSigned-off-by: James-Milligan <james@omnant.co.uk>\r\n- flag updates are handled on a per source basis, allowing deletions to\r\nbe recognised\r\n- adds the Source method to the sync provider interface, returning a\r\nstring",
+          "timestamp": "2022-10-03T15:20:50Z",
+          "url": "https://github.com/open-feature/flagd/commit/94d7697d08a07cede4a548ef998792d00f8954a0"
+        },
+        "date": 1664851641212,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2263,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2662153 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2277,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2631496 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2258,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2654494 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2264,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2658156 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3456,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1727671 times\n2 procs"
           }
         ]
       }
