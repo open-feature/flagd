@@ -30,7 +30,7 @@ type ConnectService struct {
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	tls                         bool
 	server                      http.Server
-	mu                          sync.Mutex
+	mu                          *sync.Mutex
 	Logger                      *log.Entry
 }
 
@@ -45,6 +45,7 @@ type ConnectServiceConfiguration struct {
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
 	s.subs = make(map[interface{}]chan Notification)
+	s.mu = &sync.Mutex{}
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
