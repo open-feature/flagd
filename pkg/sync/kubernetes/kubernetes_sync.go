@@ -15,12 +15,12 @@ import (
 	controllerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var refreshTime = time.Second * 5
-
 const (
 	featureFlagConfigurationName = "featureflagconfiguration"
 	featureFlagNamespaceName     = "namespace"
 )
+
+var resyncPeriod time.Duration // default of 0
 
 type Sync struct {
 	Logger       *log.Entry
@@ -80,12 +80,12 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Panic(err.Error())
 	}
 
-	if k.ProviderArgs["refreshtime"] != "" {
-		hr, err := time.ParseDuration(k.ProviderArgs["refreshtime"])
+	if k.ProviderArgs["resyncperiod"] != "" {
+		hr, err := time.ParseDuration(k.ProviderArgs["resyncperiod"])
 		if err != nil {
 			k.Logger.Panic(err.Error())
 		}
-		refreshTime = hr
+		resyncPeriod = hr
 	}
 
 	k.client, err = featureflagconfiguration.NewForConfig(config)
@@ -100,7 +100,8 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	go featureflagconfiguration.WatchResources(ctx, *k.Logger.WithFields(log.Fields{
 		"sync":      "kubernetes",
 		"component": "watchresources",
-	}), k.client, refreshTime, controllerClient.ObjectKey{
-		Name: k.ProviderArgs[featureFlagConfigurationName],
+	}), k.client, resyncPeriod, controllerClient.ObjectKey{
+		Name:      k.ProviderArgs[featureFlagConfigurationName],
+		Namespace: k.ProviderArgs[featureFlagNamespaceName],
 	}, c)
 }
