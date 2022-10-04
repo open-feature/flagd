@@ -64,6 +64,7 @@ func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNot
 	if err := validateDefaultVariants(newFlags); err != nil {
 		return nil, err
 	}
+	je.state = je.state.Merge(source, newFlags)
 
 	s, notifications := je.state.Merge(source, newFlags)
 	je.state = s
