@@ -37,7 +37,6 @@ type ConnectService struct {
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	tls                         bool
 	server                      http.Server
-	Logger                      *log.Entry
 }
 
 type ConnectServiceConfiguration struct {
@@ -101,10 +100,9 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	h := std.Handler("", mdlw, mux)
 	// Serve metrics on /metrics
 	go func() {
-		s.Logger.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
-			promhttp.Handler()); err != nil {
-			s.Logger.Panicf("error while serving metrics: %s", err)
+		log.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort), promhttp.Handler()); err != nil {
+			log.Panicf("error while serving metrics: %s", err)
 		}
 	}()
 
@@ -133,7 +131,7 @@ func (s *ConnectService) ResolveBoolean(
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		log.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -150,7 +148,7 @@ func (s *ConnectService) ResolveString(
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		log.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -167,7 +165,7 @@ func (s *ConnectService) ResolveInt(
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		log.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -184,7 +182,7 @@ func (s *ConnectService) ResolveFloat(
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		log.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -201,7 +199,7 @@ func (s *ConnectService) ResolveObject(
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		log.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
