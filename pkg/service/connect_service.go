@@ -26,11 +26,9 @@ import (
 
 const ErrorPrefix = "FlagdError:"
 
-var (
-	mdlw = middleware.New(middleware.Config{
-		Recorder: metrics.NewRecorder(metrics.Config{}),
-	})
-)
+var mdlw = middleware.New(middleware.Config{
+	Recorder: metrics.NewRecorder(metrics.Config{}),
+})
 
 type ConnectService struct {
 	Eval                        eval.IEvaluator
