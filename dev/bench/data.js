@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664851641979,
+  "lastUpdate": 1664938026172,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3286,6 +3286,58 @@ window.BENCHMARK_DATA = {
             "value": 3456,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1727671 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Skye Gill",
+            "username": "skyerus",
+            "email": "gill.skye95@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e2fc7ee2570a119923bf95b40b2046dfa4705f20",
+          "message": "feat: only fire modify event when FeatureFlagConfiguration Generation field has changed (#167)\n\nSigned-off-by: Skye Gill <gill.skye95@gmail.com>\r\n\r\nSigned-off-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2022-10-04T14:44:26Z",
+          "url": "https://github.com/open-feature/flagd/commit/e2fc7ee2570a119923bf95b40b2046dfa4705f20"
+        },
+        "date": 1664938025388,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2249,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2680092 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2244,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2678912 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2208,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2724259 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2207,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2726796 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3443,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1746374 times\n2 procs"
           }
         ]
       }
