@@ -28,12 +28,9 @@ type ConnectService struct {
 	Logger                      *log.Entry
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
-
-	subs   map[interface{}]chan Notification
-	server http.Server
-	mu     *sync.Mutex
+	eventingConfiguration       *eventingConfiguration
+	server                      http.Server
 }
-
 type ConnectServiceConfiguration struct {
 	Port             int32
 	ServerCertPath   string
@@ -42,10 +39,17 @@ type ConnectServiceConfiguration struct {
 	CORS             []string
 }
 
+type eventingConfiguration struct {
+	mu   *sync.Mutex
+	subs map[interface{}]chan Notification
+}
+
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-	s.subs = make(map[interface{}]chan Notification)
-	s.mu = &sync.Mutex{}
+	s.eventingConfiguration = &eventingConfiguration{
+		subs: make(map[interface{}]chan Notification),
+		mu:   &sync.Mutex{},
+	}
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
@@ -112,18 +116,18 @@ func (s *ConnectService) EventStream(
 	req *connect.Request[emptypb.Empty],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
-	s.subs[req] = make(chan Notification, 1)
+	s.eventingConfiguration.subs[req] = make(chan Notification, 1)
 	defer func() {
-		s.mu.Lock()
-		delete(s.subs, req)
-		s.mu.Lock()
+		s.eventingConfiguration.mu.Lock()
+		delete(s.eventingConfiguration.subs, req)
+		s.eventingConfiguration.mu.Lock()
 	}()
-	s.subs[req] <- Notification{
+	s.eventingConfiguration.subs[req] <- Notification{
 		Type: ProviderReady,
 	}
 	for {
 		select {
-		case notification := <-s.subs[req]:
+		case notification := <-s.eventingConfiguration.subs[req]:
 			d, err := structpb.NewStruct(notification.Data)
 			if err != nil {
 				s.Logger.Error(err)
@@ -143,11 +147,11 @@ func (s *ConnectService) EventStream(
 }
 
 func (s *ConnectService) Notify(n Notification) {
-	s.mu.Lock()
-	for _, send := range s.subs {
+	s.eventingConfiguration.mu.Lock()
+	for _, send := range s.eventingConfiguration.subs {
 		send <- n
 	}
-	s.mu.Unlock()
+	s.eventingConfiguration.mu.Unlock()
 }
 
 func (s *ConnectService) ResolveBoolean(
