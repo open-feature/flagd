@@ -25,13 +25,13 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	Eval                        eval.IEvaluator
-	subs                        map[interface{}]chan Notification
-	ConnectServiceConfiguration *ConnectServiceConfiguration
-	tls                         bool
-	server                      http.Server
-	mu                          *sync.Mutex
 	Logger                      *log.Entry
+	Eval                        eval.IEvaluator
+	ConnectServiceConfiguration *ConnectServiceConfiguration
+
+	subs   map[interface{}]chan Notification
+	server http.Server
+	mu     *sync.Mutex
 }
 
 type ConnectServiceConfiguration struct {
@@ -53,7 +53,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 
 	errChan := make(chan error, 1)
 	go func() {
-		if s.tls {
+		if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 			if err := s.server.ServeTLS(
 				lis,
 				s.ConnectServiceConfiguration.ServerCertPath,
@@ -93,7 +93,6 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		s.tls = true
 		handler = s.newCORS().Handler(mux)
 	} else {
 		handler = h2c.NewHandler(
