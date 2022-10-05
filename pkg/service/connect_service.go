@@ -11,8 +11,12 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
+	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
+	"github.com/slok/go-http-metrics/middleware"
+	"github.com/slok/go-http-metrics/middleware/std"
 	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
@@ -22,15 +26,23 @@ import (
 
 const ErrorPrefix = "FlagdError:"
 
+var (
+	mdlw = middleware.New(middleware.Config{
+		Recorder: metrics.NewRecorder(metrics.Config{}),
+	})
+)
+
 type ConnectService struct {
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	tls                         bool
 	server                      http.Server
+	Logger                      *log.Entry
 }
 
 type ConnectServiceConfiguration struct {
 	Port             int32
+	MetricsPort      int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
@@ -86,12 +98,22 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
+	h := std.Handler("", mdlw, mux)
+	// Serve metrics on /metrics
+	go func() {
+		s.Logger.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+			promhttp.Handler()); err != nil {
+			s.Logger.Panicf("error while serving metrics: %s", err)
+		}
+	}()
+
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		s.tls = true
-		handler = s.newCORS().Handler(mux)
+		handler = s.newCORS().Handler(h)
 	} else {
 		handler = h2c.NewHandler(
-			s.newCORS().Handler(mux),
+			s.newCORS().Handler(h),
 			&http2.Server{},
 		)
 	}
@@ -111,7 +133,7 @@ func (s *ConnectService) ResolveBoolean(
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -128,7 +150,7 @@ func (s *ConnectService) ResolveString(
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -145,7 +167,7 @@ func (s *ConnectService) ResolveInt(
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -162,7 +184,7 @@ func (s *ConnectService) ResolveFloat(
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -179,7 +201,7 @@ func (s *ConnectService) ResolveObject(
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}

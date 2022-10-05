@@ -34,8 +34,13 @@ func FromConfig(config Config) (*Runtime, error) {
 
 func (r *Runtime) setService() {
 	r.Service = &service.ConnectService{
+		Logger: log.WithFields(log.Fields{
+			"service":   "connect",
+			"component": "service",
+		}),
 		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 			Port:             r.config.ServicePort,
+			MetricsPort:      r.config.MetricsPort,
 			ServerKeyPath:    r.config.ServiceKeyPath,
 			ServerCertPath:   r.config.ServiceCertPath,
 			ServerSocketPath: r.config.ServiceSocketPath,
