@@ -99,9 +99,22 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	// Serve metrics on /metrics
 	go func() {
 		log.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort), promhttp.Handler()); err != nil {
-			log.Panicf("error while serving metrics: %s", err)
+		server := &http.Server{
+			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+			ReadHeaderTimeout: 3 * time.Second,
 		}
+		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/metrics" {
+				promhttp.Handler().ServeHTTP(w, r)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		})
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
+
 	}()
 
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
