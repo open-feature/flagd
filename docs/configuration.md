@@ -10,6 +10,7 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -e, --evaluator string          Set an evaluator e.g. json (default "json")
   -h, --help                      help for start
   -p, --port int32                Port to listen on (default 8013)
+  -m --metrics-port int32         Port to set up metrics listener on (default 8014)
   -c, --server-cert-path string   Server side tls certificate path
   -k, --server-key-path string    Server side tls key path
   -a, --sync-provider-args        Sync provider arguments as key values separated by =
