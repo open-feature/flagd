@@ -114,7 +114,6 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 		if err != nil {
 			panic(err)
 		}
-
 	}()
 
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
