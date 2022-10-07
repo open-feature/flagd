@@ -120,7 +120,7 @@ func (s *ConnectService) EventStream(
 	defer func() {
 		s.eventingConfiguration.mu.Lock()
 		delete(s.eventingConfiguration.subs, req)
-		s.eventingConfiguration.mu.Lock()
+		s.eventingConfiguration.mu.Unlock()
 	}()
 	s.eventingConfiguration.subs[req] <- Notification{
 		Type: ProviderReady,
