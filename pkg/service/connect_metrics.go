@@ -56,7 +56,8 @@ type metricsRecorder struct {
 }
 
 func (r metricsRecorder) ObserveHTTPRequestDuration(_ context.Context,
-	p HTTPReqProperties, duration time.Duration) {
+	p HTTPReqProperties, duration time.Duration,
+) {
 	r.httpRequestDurHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(duration.Seconds())
 }
 
