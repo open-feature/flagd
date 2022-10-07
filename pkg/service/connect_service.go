@@ -120,13 +120,20 @@ func (s *ConnectService) EventStream(
 	defer func() {
 		s.eventingConfiguration.mu.Lock()
 		delete(s.eventingConfiguration.subs, req)
-		s.eventingConfiguration.mu.Lock()
+		s.eventingConfiguration.mu.Unlock()
 	}()
 	s.eventingConfiguration.subs[req] <- Notification{
 		Type: ProviderReady,
 	}
 	for {
 		select {
+		case <-time.After(20 * time.Second):
+			err := stream.Send(&schemaV1.EventStreamResponse{
+				Type: string(KeepAlive),
+			})
+			if err != nil {
+				s.Logger.Error(err)
+			}
 		case notification := <-s.eventingConfiguration.subs[req]:
 			d, err := structpb.NewStruct(notification.Data)
 			if err != nil {

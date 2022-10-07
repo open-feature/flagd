@@ -11,6 +11,7 @@ type NotificationType string
 const (
 	ConfigurationChange NotificationType = "configuration_change"
 	ProviderReady       NotificationType = "provider_ready"
+	KeepAlive           NotificationType = "keep_alive"
 )
 
 type Notification struct {
