@@ -2,14 +2,6 @@ module github.com/open-feature/flagd
 
 go 1.18
 
-replace (
-	github.com/gin-gonic/gin v1.7.4 => github.com/gin-gonic/gin v1.7.7
-	github.com/urfave/negroni v1.0.0 => github.com/urfave/negroni v1.0.1-0.20200608235619-7de0dfc1ff79
-	// Security fix for CVE-2022-21221
-	github.com/valyala/fasthttp v1.31.0 => github.com/valyala/fasthttp v1.34.0
-
-)
-
 require (
 	github.com/bufbuild/connect-go v0.4.0
 	github.com/deepmap/oapi-codegen v1.11.0
@@ -25,7 +17,6 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
-	github.com/slok/go-http-metrics v0.10.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
