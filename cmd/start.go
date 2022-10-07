@@ -32,7 +32,6 @@ func init() {
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
 	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to serve metrics on")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
-	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to listen on for metrics")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
