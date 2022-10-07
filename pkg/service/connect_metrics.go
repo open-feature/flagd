@@ -49,23 +49,23 @@ type HTTPProperties struct {
 	ID      string
 }
 
-type metricsRecorder struct {
+type MetricsRecorder struct {
 	httpRequestDurHistogram   *prometheus.HistogramVec
 	httpResponseSizeHistogram *prometheus.HistogramVec
 	httpRequestsInflight      *prometheus.GaugeVec
 }
 
-func (r metricsRecorder) ObserveHTTPRequestDuration(_ context.Context,
+func (r MetricsRecorder) ObserveHTTPRequestDuration(_ context.Context,
 	p HTTPReqProperties, duration time.Duration,
 ) {
 	r.httpRequestDurHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(duration.Seconds())
 }
 
-func (r metricsRecorder) ObserveHTTPResponseSize(_ context.Context, p HTTPReqProperties, sizeBytes int64) {
+func (r MetricsRecorder) ObserveHTTPResponseSize(_ context.Context, p HTTPReqProperties, sizeBytes int64) {
 	r.httpResponseSizeHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(float64(sizeBytes))
 }
 
-func (r metricsRecorder) AddInflightRequests(_ context.Context, p HTTPProperties, quantity int) {
+func (r MetricsRecorder) AddInflightRequests(_ context.Context, p HTTPProperties, quantity int) {
 	r.httpRequestsInflight.WithLabelValues(p.Service, p.ID).Add(float64(quantity))
 }
 
@@ -136,10 +136,10 @@ func (c *prometheusConfig) defaults() {
 	}
 }
 
-func NewRecorder(cfg prometheusConfig) *metricsRecorder {
+func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 	cfg.defaults()
 
-	r := &metricsRecorder{
+	r := &MetricsRecorder{
 		httpRequestDurHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: cfg.Prefix,
 			Subsystem: "http",
