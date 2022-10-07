@@ -16,7 +16,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	"github.com/slok/go-http-metrics/middleware"
-	"github.com/slok/go-http-metrics/middleware/std"
 	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
@@ -95,8 +94,11 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
-	h := std.Handler("", mdlw, mux)
-	// Serve metrics on /metrics
+
+	mdlw := New(middlewareConfig{
+		Recorder: NewRecorder(prometheusConfig{}),
+	})
+	h := Handler("", mdlw, mux)
 	go func() {
 		log.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
 		server := &http.Server{
