@@ -112,7 +112,6 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	}()
 
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		s.tls = true
 		handler = s.newCORS().Handler(h)
 	} else {
 		handler = h2c.NewHandler(
