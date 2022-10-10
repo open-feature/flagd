@@ -6,6 +6,19 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 )
 
+type NotificationType string
+
+const (
+	ConfigurationChange NotificationType = "configuration_change"
+	ProviderReady       NotificationType = "provider_ready"
+	KeepAlive           NotificationType = "keep_alive"
+)
+
+type Notification struct {
+	Type NotificationType       `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
 type IServiceConfiguration interface{}
 
 /*
@@ -13,4 +26,5 @@ IService implementations define handlers for a particular transport, which call 
 */
 type IService interface {
 	Serve(ctx context.Context, eval eval.IEvaluator) error
+	Notify(n Notification)
 }

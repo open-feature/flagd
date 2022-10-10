@@ -37,37 +37,36 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return string(data), nil
 }
 
-func (je *JSONEvaluator) SetState(source string, state string) error {
+func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNotification, error) {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 
-	// TODO: we can add validation for all rules by calling jsonlogic.IsValid() on each
-
 	if err != nil {
-		return err
+		return nil, err
 	} else if !result.Valid() {
 		err := errors.New("invalid JSON file")
-		return err
+		return nil, err
 	}
 
 	state, err = je.transposeEvaluators(state)
 	if err != nil {
-		return fmt.Errorf("transpose evaluators: %w", err)
+		return nil, fmt.Errorf("transpose evaluators: %w", err)
 	}
 
 	var newFlags Flags
 	err = json.Unmarshal([]byte(state), &newFlags)
 	if err != nil {
-		return fmt.Errorf("unmarshal new state: %w", err)
+		return nil, fmt.Errorf("unmarshal new state: %w", err)
 	}
 	if err := validateDefaultVariants(newFlags); err != nil {
-		return err
+		return nil, err
 	}
 
-	je.state = je.state.Merge(source, newFlags)
+	s, notifications := je.state.Merge(source, newFlags)
+	je.state = s
 
-	return nil
+	return notifications, nil
 }
 
 func resolve[T constraints](key string, context *structpb.Struct,
