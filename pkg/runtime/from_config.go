@@ -41,6 +41,9 @@ func (r *Runtime) setService() {
 			ServerSocketPath: r.config.ServiceSocketPath,
 			CORS:             r.config.CORS,
 		},
+		Logger: log.WithFields(log.Fields{
+			"component": "service",
+		}),
 	}
 }
 

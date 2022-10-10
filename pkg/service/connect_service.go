@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -17,18 +18,19 @@ import (
 	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
+	Logger                      *log.Entry
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
-	tls                         bool
+	eventingConfiguration       *eventingConfiguration
 	server                      http.Server
 }
-
 type ConnectServiceConfiguration struct {
 	Port             int32
 	ServerCertPath   string
@@ -37,9 +39,17 @@ type ConnectServiceConfiguration struct {
 	CORS             []string
 }
 
+type eventingConfiguration struct {
+	mu   *sync.Mutex
+	subs map[interface{}]chan Notification
+}
+
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
 	s.Eval = eval
-
+	s.eventingConfiguration = &eventingConfiguration{
+		subs: make(map[interface{}]chan Notification),
+		mu:   &sync.Mutex{},
+	}
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
@@ -47,7 +57,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 
 	errChan := make(chan error, 1)
 	go func() {
-		if s.tls {
+		if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 			if err := s.server.ServeTLS(
 				lis,
 				s.ConnectServiceConfiguration.ServerCertPath,
@@ -87,7 +97,6 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		s.tls = true
 		handler = s.newCORS().Handler(mux)
 	} else {
 		handler = h2c.NewHandler(
@@ -96,12 +105,60 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 		)
 	}
 	s.server = http.Server{
-		ReadTimeout:       2 * time.Second,
-		WriteTimeout:      4 * time.Second,
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
 	return lis, nil
+}
+
+func (s *ConnectService) EventStream(
+	ctx context.Context,
+	req *connect.Request[emptypb.Empty],
+	stream *connect.ServerStream[schemaV1.EventStreamResponse],
+) error {
+	s.eventingConfiguration.subs[req] = make(chan Notification, 1)
+	defer func() {
+		s.eventingConfiguration.mu.Lock()
+		delete(s.eventingConfiguration.subs, req)
+		s.eventingConfiguration.mu.Unlock()
+	}()
+	s.eventingConfiguration.subs[req] <- Notification{
+		Type: ProviderReady,
+	}
+	for {
+		select {
+		case <-time.After(20 * time.Second):
+			err := stream.Send(&schemaV1.EventStreamResponse{
+				Type: string(KeepAlive),
+			})
+			if err != nil {
+				s.Logger.Error(err)
+			}
+		case notification := <-s.eventingConfiguration.subs[req]:
+			d, err := structpb.NewStruct(notification.Data)
+			if err != nil {
+				s.Logger.Error(err)
+			}
+			err = stream.Send(&schemaV1.EventStreamResponse{
+				Type: string(notification.Type),
+				Data: d,
+			})
+			if err != nil {
+				s.Logger.Error(err)
+			}
+		case <-ctx.Done():
+			s.Logger.Info("client connection closed")
+			return nil
+		}
+	}
+}
+
+func (s *ConnectService) Notify(n Notification) {
+	s.eventingConfiguration.mu.Lock()
+	for _, send := range s.eventingConfiguration.subs {
+		send <- n
+	}
+	s.eventingConfiguration.mu.Unlock()
 }
 
 func (s *ConnectService) ResolveBoolean(

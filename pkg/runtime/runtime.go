@@ -16,9 +16,10 @@ type Runtime struct {
 	Service      service.IService
 	SyncImpl     []sync.ISync
 	syncNotifier chan sync.INotify
-	mu           msync.Mutex
-	Evaluator    eval.IEvaluator
-	Logger       *log.Entry
+
+	mu        msync.Mutex
+	Evaluator eval.IEvaluator
+	Logger    *log.Entry
 }
 
 type Config struct {
@@ -75,9 +76,16 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	err = r.Evaluator.SetState(syncr.Source(), msg)
+	notifications, err := r.Evaluator.SetState(syncr.Source(), msg)
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
+	}
+	for _, n := range notifications {
+		r.Logger.Infof("configuration change: %s %s %s", n.Type, n.FlagKey, n.Source)
+		r.Service.Notify(service.Notification{
+			Type: service.ConfigurationChange,
+			Data: n.ToMap(),
+		})
 	}
 	return nil
 }
