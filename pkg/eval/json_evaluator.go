@@ -42,8 +42,6 @@ func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNot
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 
-	// TODO: we can add validation for all rules by calling jsonlogic.IsValid() on each
-
 	if err != nil {
 		return nil, err
 	} else if !result.Valid() {
