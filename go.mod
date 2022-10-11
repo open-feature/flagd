@@ -2,8 +2,6 @@ module github.com/open-feature/flagd
 
 go 1.18
 
-replace k8s.io/client-go@v0.25.2 => k8s.io/client-go v0.0.0-20221010195331-f515a4cb9fa9
-
 require (
 	github.com/bufbuild/connect-go v0.5.0
 	github.com/deepmap/oapi-codegen v1.11.0

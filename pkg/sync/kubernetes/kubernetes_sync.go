@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
-	"github.com/open-feature/flagd/pkg/sync/kubernetes/featureflagconfiguration"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/rest"
@@ -32,7 +32,6 @@ var resyncPeriod time.Duration // default of 0
 type Sync struct {
 	Logger       *log.Entry
 	ProviderArgs sync.ProviderArgs
-	client       *featureflagconfiguration.FFCClient
 }
 
 func (k *Sync) Source() string {
@@ -50,23 +49,23 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
-	if k.client == nil {
-		k.Logger.Warn("Client not initialised")
-		return "{}", nil
-	}
+	// if k.client == nil {
+	// 	k.Logger.Warn("Client not initialised")
+	// 	return "{}", nil
+	// }
 
-	config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs[featureFlagNamespaceName]).
-		Get(k.ProviderArgs[featureFlagConfigurationName], metav1.GetOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "FeatureFlagConfiguration",
-				APIVersion: "featureflag.open-feature.io/v1alpha1",
-			},
-		})
-	if err != nil {
-		return "{}", err
-	}
+	// config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs[featureFlagNamespaceName]).
+	// 	Get(k.ProviderArgs[featureFlagConfigurationName], metav1.GetOptions{
+	// 		TypeMeta: metav1.TypeMeta{
+	// 			Kind:       "FeatureFlagConfiguration",
+	// 			APIVersion: "featureflag.open-feature.io/v1alpha1",
+	// 		},
+	// 	})
+	// if err != nil {
+	// 	return "{}", err
+	// }
 
-	return config.Spec.FeatureFlagSpec, nil
+	return "{}", nil
 }
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
@@ -131,10 +130,17 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 }
 
 func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
-	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+
+	var ffObj ffv1alpha1.FeatureFlagConfiguration
+	u := obj.(*unstructured.Unstructured)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	if err != nil {
+		return err
+	}
+	if reflect.TypeOf(ffObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("object is not a FeatureFlagConfiguration")
 	}
-	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+	if ffObj.Name == object.Name {
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
 				EventType: sync.DefaultEventTypeCreate,
@@ -146,15 +152,26 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
 
-	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
-		return errors.New("old object is not a FeatureFlagConfiguration")
+	var ffOldObj ffv1alpha1.FeatureFlagConfiguration
+	u := oldObj.(*unstructured.Unstructured)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffOldObj)
+	if err != nil {
+		return err
 	}
-	if reflect.TypeOf(newObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+	if reflect.TypeOf(ffOldObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("object is not a FeatureFlagConfiguration")
+	}
+	var ffNewObj ffv1alpha1.FeatureFlagConfiguration
+	u = newObj.(*unstructured.Unstructured)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffNewObj)
+	if err != nil {
+		return err
+	}
+	if reflect.TypeOf(newObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("new object is not a FeatureFlagConfiguration")
 	}
-	oldObjConfig := oldObj.(*ffv1alpha1.FeatureFlagConfiguration)
-	newObjConfig := newObj.(*ffv1alpha1.FeatureFlagConfiguration)
-	if object.Name == newObjConfig.Name && oldObjConfig.ResourceVersion != newObjConfig.ResourceVersion {
+
+	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
 		// Only update if there is an actual featureFlagSpec change
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
@@ -166,10 +183,16 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 }
 
 func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
-	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+	var ffObj ffv1alpha1.FeatureFlagConfiguration
+	u := obj.(*unstructured.Unstructured)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	if err != nil {
+		return err
+	}
+	if reflect.TypeOf(ffObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("object is not a FeatureFlagConfiguration")
 	}
-	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+	if ffObj.Name == object.Name {
 		c <- &sync.Notifier{
 			Event: sync.Event[sync.DefaultEventType]{
 				EventType: sync.DefaultEventTypeDelete,
