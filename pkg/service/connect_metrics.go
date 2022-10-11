@@ -171,7 +171,6 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 }
 
 func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
-
 	// If there isn't predefined handler ID we
 	// set that ID as the URL path.
 	hid := handlerID
