@@ -10,14 +10,15 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang/mock v1.6.0
-	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/open-feature-operator v0.1.1
-	github.com/open-feature/schemas v0.0.0-20221004150201-43eb8d8f90e0
+	github.com/mattn/go-colorable v0.1.12
+	github.com/open-feature/open-feature-operator v0.0.10-0.20220826061622-a6421d66936a
+	github.com/open-feature/schemas v0.0.0-20220809125333-185e3bd77775
+	github.com/prometheus/client_golang v1.13.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.8.2
-	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.5.0
-	github.com/spf13/viper v1.13.0
+	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/cobra v1.4.0
+	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
@@ -32,7 +33,9 @@ require (
 )
 
 require (
-	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
@@ -55,6 +58,7 @@ require (
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -65,7 +69,10 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spf13/afero v1.9.2 // indirect
+	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/common v0.37.0 // indirect
+	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

@@ -24,6 +24,7 @@ type Runtime struct {
 
 type Config struct {
 	ServicePort       int32
+	MetricsPort       int32
 	ServiceSocketPath string
 	ServiceCertPath   string
 	ServiceKeyPath    string

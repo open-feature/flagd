@@ -12,6 +12,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
@@ -33,6 +34,7 @@ type ConnectService struct {
 }
 type ConnectServiceConfiguration struct {
 	Port             int32
+	MetricsPort      int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
@@ -96,11 +98,34 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
+	mdlw := New(middlewareConfig{
+		Recorder: NewRecorder(prometheusConfig{}),
+	})
+	h := Handler("", mdlw, mux)
+	go func() {
+		log.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
+		server := &http.Server{
+			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+			ReadHeaderTimeout: 3 * time.Second,
+		}
+		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/metrics" {
+				promhttp.Handler().ServeHTTP(w, r)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		})
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		handler = s.newCORS().Handler(mux)
+		handler = s.newCORS().Handler(h)
 	} else {
 		handler = h2c.NewHandler(
-			s.newCORS().Handler(mux),
+			s.newCORS().Handler(h),
 			&http2.Server{},
 		)
 	}

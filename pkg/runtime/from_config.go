@@ -36,6 +36,7 @@ func (r *Runtime) setService() {
 	r.Service = &service.ConnectService{
 		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 			Port:             r.config.ServicePort,
+			MetricsPort:      r.config.MetricsPort,
 			ServerKeyPath:    r.config.ServiceKeyPath,
 			ServerCertPath:   r.config.ServiceCertPath,
 			ServerSocketPath: r.config.ServiceSocketPath,

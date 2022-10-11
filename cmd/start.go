@@ -12,6 +12,7 @@ import (
 
 const (
 	portFlagName           = "port"
+	metricsPortFlagName    = "metrics-port"
 	socketPathFlagName     = "socket-path"
 	syncProviderFlagName   = "sync-provider"
 	providerArgsFlagName   = "sync-provider-args"
@@ -29,7 +30,7 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider becomes SYNC_PROVIDER
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-
+	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to serve metrics on")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
@@ -51,6 +52,7 @@ func init() {
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
+	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
@@ -79,6 +81,7 @@ var startCmd = &cobra.Command{
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),
+			MetricsPort:       viper.GetInt32(metricsPortFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
