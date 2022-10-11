@@ -132,11 +132,9 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	defer cancel()
 
 	informer.Run(ctx.Done())
-
 }
 
 func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
-
 	var ffObj ffv1alpha1.FeatureFlagConfiguration
 	u := obj.(*unstructured.Unstructured)
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
@@ -157,7 +155,6 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 }
 
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
-
 	var ffOldObj ffv1alpha1.FeatureFlagConfiguration
 	u := oldObj.(*unstructured.Unstructured)
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffOldObj)
