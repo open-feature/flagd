@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665370552207,
+  "lastUpdate": 1665456851173,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3598,6 +3598,58 @@ window.BENCHMARK_DATA = {
             "value": 4267,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1368502 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "3f7fcd2f57318fad4e0bf501f202af990d3c5a79",
+          "message": "feat: Eventing (#187)\n\n- add eventing rpc \r\n- events are emited on successful connection to stream rpc and\r\nconfiguration changes\r\n\r\nSigned-off-by: James-Milligan <james@omnant.co.uk>\r\nCo-authored-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-10-10T14:04:24Z",
+          "url": "https://github.com/open-feature/flagd/commit/3f7fcd2f57318fad4e0bf501f202af990d3c5a79"
+        },
+        "date": 1665456850237,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2239,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2677734 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2261,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2661542 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2241,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2689116 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2247,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2673873 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3419,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1749813 times\n2 procs"
           }
         ]
       }
