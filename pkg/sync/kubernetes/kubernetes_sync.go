@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,6 +33,7 @@ var resyncPeriod time.Duration // default of 0
 type Sync struct {
 	Logger       *log.Entry
 	ProviderArgs sync.ProviderArgs
+	client       client.Client
 }
 
 func (k *Sync) Source() string {
@@ -49,23 +51,18 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return "{}", nil
 	}
 
-	// if k.client == nil {
-	// 	k.Logger.Warn("Client not initialised")
-	// 	return "{}", nil
-	// }
+	if k.client == nil {
+		k.Logger.Warn("Client not initialised")
+		return "{}", nil
+	}
 
-	// config, err := k.client.FeatureFlagConfigurations(k.ProviderArgs[featureFlagNamespaceName]).
-	// 	Get(k.ProviderArgs[featureFlagConfigurationName], metav1.GetOptions{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			Kind:       "FeatureFlagConfiguration",
-	// 			APIVersion: "featureflag.open-feature.io/v1alpha1",
-	// 		},
-	// 	})
-	// if err != nil {
-	// 	return "{}", err
-	// }
+	var ff ffv1alpha1.FeatureFlagConfiguration
+	err := k.client.Get(ctx, client.ObjectKey{
+		Name:      k.ProviderArgs[featureFlagConfigurationName],
+		Namespace: k.ProviderArgs[featureFlagNamespaceName],
+	}, &ff)
 
-	return "{}", nil
+	return ff.Spec.FeatureFlagSpec, err
 }
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
@@ -88,7 +85,16 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		clusterConfig, err = rest.InClusterConfig()
 	}
 	if err != nil {
-		log.Fatalln(err)
+		k.Logger.Fatalln(err)
+	}
+
+	if err := ffv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		k.Logger.Panic(err.Error())
+	}
+
+	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		k.Logger.Fatalln(err)
 	}
 
 	clusterClient, err := dynamic.NewForConfig(clusterConfig)
@@ -167,7 +173,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	if err != nil {
 		return err
 	}
-	if reflect.TypeOf(newObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
+	if reflect.TypeOf(ffNewObj) != reflect.TypeOf(ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("new object is not a FeatureFlagConfiguration")
 	}
 
