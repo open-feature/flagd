@@ -43,6 +43,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 }
 
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+
 	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
 		return errors.New("old object is not a FeatureFlagConfiguration")
 	}
