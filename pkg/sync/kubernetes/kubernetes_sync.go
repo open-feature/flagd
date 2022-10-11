@@ -2,17 +2,24 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"os"
+	"os/signal"
+	"reflect"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/kubernetes/featureflagconfiguration"
 	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	log "github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-	controllerClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -74,34 +81,100 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
 	kubeconfig := os.Getenv("KUBECONFIG")
 
-	// Create the client configuration
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	var clusterConfig *rest.Config
+	var err error
+	if kubeconfig != "" {
+		clusterConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	} else {
+		clusterConfig, err = rest.InClusterConfig()
+	}
 	if err != nil {
-		k.Logger.Panic(err.Error())
+		log.Fatalln(err)
 	}
 
-	if k.ProviderArgs["resyncperiod"] != "" {
-		hr, err := time.ParseDuration(k.ProviderArgs["resyncperiod"])
-		if err != nil {
-			k.Logger.Panic(err.Error())
-		}
-		resyncPeriod = hr
-	}
-
-	k.client, err = featureflagconfiguration.NewForConfig(config)
+	clusterClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
-		k.Logger.Panic(err.Error())
+		log.Fatalln(err)
 	}
 
-	if err := ffv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		k.Logger.Panic(err.Error())
-	}
+	resource := ffv1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient, time.Minute, corev1.NamespaceAll, nil)
+	informer := factory.ForResource(resource).Informer()
 
-	go featureflagconfiguration.WatchResources(ctx, *k.Logger.WithFields(log.Fields{
-		"sync":      "kubernetes",
-		"component": "watchresources",
-	}), k.client, resyncPeriod, controllerClient.ObjectKey{
+	objectKey := client.ObjectKey{
 		Name:      k.ProviderArgs[featureFlagConfigurationName],
 		Namespace: k.ProviderArgs[featureFlagNamespaceName],
-	}, c)
+	}
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			if err := createFuncHandler(obj, objectKey, c); err != nil {
+				k.Logger.Warn(err.Error())
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
+				k.Logger.Warn(err.Error())
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
+				k.Logger.Warn(err.Error())
+			}
+		},
+	})
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	informer.Run(ctx.Done())
+
+}
+
+func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("object is not a FeatureFlagConfiguration")
+	}
+	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeCreate,
+			},
+		}
+	}
+	return nil
+}
+
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+
+	if reflect.TypeOf(oldObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("old object is not a FeatureFlagConfiguration")
+	}
+	if reflect.TypeOf(newObj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("new object is not a FeatureFlagConfiguration")
+	}
+	oldObjConfig := oldObj.(*ffv1alpha1.FeatureFlagConfiguration)
+	newObjConfig := newObj.(*ffv1alpha1.FeatureFlagConfiguration)
+	if object.Name == newObjConfig.Name && oldObjConfig.ResourceVersion != newObjConfig.ResourceVersion {
+		// Only update if there is an actual featureFlagSpec change
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeModify,
+			},
+		}
+	}
+	return nil
+}
+
+func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+	if reflect.TypeOf(obj) != reflect.TypeOf(&ffv1alpha1.FeatureFlagConfiguration{}) {
+		return errors.New("object is not a FeatureFlagConfiguration")
+	}
+	if obj.(*ffv1alpha1.FeatureFlagConfiguration).Name == object.Name {
+		c <- &sync.Notifier{
+			Event: sync.Event[sync.DefaultEventType]{
+				EventType: sync.DefaultEventTypeDelete,
+			},
+		}
+	}
+	return nil
 }
