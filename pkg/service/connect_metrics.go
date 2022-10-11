@@ -2,7 +2,6 @@ package service
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -28,17 +27,16 @@ type HTTPReqProperties struct {
 
 type Recorder interface {
 	// ObserveHTTPRequestDuration measures the duration of an HTTP request.
-	ObserveHTTPRequestDuration(ctx context.Context, props HTTPReqProperties, duration time.Duration)
+	ObserveHTTPRequestDuration(props HTTPReqProperties, duration time.Duration)
 	// ObserveHTTPResponseSize measures the size of an HTTP response in bytes.
-	ObserveHTTPResponseSize(ctx context.Context, props HTTPReqProperties, sizeBytes int64)
+	ObserveHTTPResponseSize(props HTTPReqProperties, sizeBytes int64)
 	// AddInflightRequests increments and decrements the number of inflight request being
 	// processed.
-	AddInflightRequests(ctx context.Context, props HTTPProperties, quantity int)
+	AddInflightRequests(props HTTPProperties, quantity int)
 }
 
 type Reporter interface {
 	Method() string
-	Context() context.Context
 	URLPath() string
 	StatusCode() int
 	BytesWritten() int64
@@ -55,17 +53,16 @@ type MetricsRecorder struct {
 	httpRequestsInflight      *prometheus.GaugeVec
 }
 
-func (r MetricsRecorder) ObserveHTTPRequestDuration(_ context.Context,
-	p HTTPReqProperties, duration time.Duration,
+func (r MetricsRecorder) ObserveHTTPRequestDuration(p HTTPReqProperties, duration time.Duration,
 ) {
 	r.httpRequestDurHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(duration.Seconds())
 }
 
-func (r MetricsRecorder) ObserveHTTPResponseSize(_ context.Context, p HTTPReqProperties, sizeBytes int64) {
+func (r MetricsRecorder) ObserveHTTPResponseSize(p HTTPReqProperties, sizeBytes int64) {
 	r.httpResponseSizeHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(float64(sizeBytes))
 }
 
-func (r MetricsRecorder) AddInflightRequests(_ context.Context, p HTTPProperties, quantity int) {
+func (r MetricsRecorder) AddInflightRequests(p HTTPProperties, quantity int) {
 	r.httpRequestsInflight.WithLabelValues(p.Service, p.ID).Add(float64(quantity))
 }
 
@@ -174,7 +171,6 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 }
 
 func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
-	ctx := reporter.Context()
 
 	// If there isn't predefined handler ID we
 	// set that ID as the URL path.
@@ -204,11 +200,11 @@ func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
 			Method:  reporter.Method(),
 			Code:    code,
 		}
-		m.cfg.Recorder.ObserveHTTPRequestDuration(ctx, props, duration)
+		m.cfg.Recorder.ObserveHTTPRequestDuration(props, duration)
 
 		// Measure size of response if required.
 		if !m.cfg.DisableMeasureSize {
-			m.cfg.Recorder.ObserveHTTPResponseSize(ctx, props, reporter.BytesWritten())
+			m.cfg.Recorder.ObserveHTTPResponseSize(props, reporter.BytesWritten())
 		}
 	}()
 
@@ -246,8 +242,6 @@ type stdReporter struct {
 }
 
 func (s *stdReporter) Method() string { return s.r.Method }
-
-func (s *stdReporter) Context() context.Context { return s.r.Context() }
 
 func (s *stdReporter) URLPath() string { return s.r.URL.Path }
 
