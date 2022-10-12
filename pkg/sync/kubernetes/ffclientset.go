@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
-	ffv1alpha1 "github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -90,8 +89,8 @@ func NewForConfig(config *rest.Config) (*FFCClient, error) {
 	}
 	config.ContentConfig.GroupVersion = &schema.
 		GroupVersion{
-		Group:   ffv1alpha1.GroupVersion.Group,
-		Version: ffv1alpha1.GroupVersion.Version,
+		Group:   v1alpha1.GroupVersion.Group,
+		Version: v1alpha1.GroupVersion.Version,
 	}
 	config.APIPath = "/apis"
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
