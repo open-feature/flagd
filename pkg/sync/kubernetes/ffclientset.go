@@ -44,7 +44,9 @@ func (c *FeatureFlagConfigurationImpl) List(opts metav1.ListOptions) (*v1alpha1.
 	return &result, err
 }
 
-func (c *FeatureFlagConfigurationImpl) Get(name string, opts metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error) {
+func (c *FeatureFlagConfigurationImpl) Get(name string,
+	opts metav1.GetOptions,
+) (*v1alpha1.FeatureFlagConfiguration, error) {
 	result := v1alpha1.FeatureFlagConfiguration{}
 	err := c.restClient.
 		Get().

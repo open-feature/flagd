@@ -97,24 +97,17 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		k.Logger.Panic(err.Error())
 	}
-
 	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		k.Logger.Fatalln(err)
 	}
-
 	clusterClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 	// The created informer will not do resyncs if the given
-	// defaultEventHandlerResyncPeriod is zero.  Otherwise: for each
-	// handler that with a non-zero requested resync period, whether added
-	// before or after the informer starts, the nominal resync period is
-	// the requested resync period rounded up to a multiple of the
-	// informer's resync checking period.
+	// defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
