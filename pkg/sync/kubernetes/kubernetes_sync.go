@@ -26,6 +26,8 @@ const (
 	featureFlagNamespaceName     = "namespace"
 )
 
+var resyncPeriod = 1 * time.Minute
+
 type Sync struct {
 	Logger       *log.Entry
 	ProviderArgs sync.ProviderArgs
@@ -107,8 +109,15 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}
 
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	// The created informer will not do resyncs if the given
+	// defaultEventHandlerResyncPeriod is zero.  Otherwise: for each
+	// handler that with a non-zero requested resync period, whether added
+	// before or after the informer starts, the nominal resync period is
+	// the requested resync period rounded up to a multiple of the
+	// informer's resync checking period.
+	// For more details on resync implications refer to tools/cache/shared_informer.go
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
-		time.Minute, corev1.NamespaceAll, nil)
+		resyncPeriod, corev1.NamespaceAll, nil)
 	informer := factory.ForResource(resource).Informer()
 
 	objectKey := client.ObjectKey{
