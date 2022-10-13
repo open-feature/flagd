@@ -13,20 +13,20 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type KubernetesClientInterface interface {
+type ClientInterface interface {
 	List(opts metav1.ListOptions) (*v1alpha1.FeatureFlagConfigurationList, error)
 	Get(name string, options metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error)
 	Create(*v1alpha1.FeatureFlagConfiguration) (*v1alpha1.FeatureFlagConfiguration, error)
 	Watch(opts metav1.ListOptions) (watch.Interface, error)
 }
 
+type FeatureFlagConfigurationInterface interface {
+	FeatureFlagConfigurations(namespace string) ClientInterface
+}
+
 type FeatureFlagConfigurationImpl struct {
 	restClient rest.Interface
 	ns         string
-}
-
-type FeatureFlagConfigurationInterface interface {
-	FeatureFlagConfigurations(namespace string) KubernetesClientInterface
 }
 
 type FeatureFlagConfigurationRestClient struct {
@@ -105,7 +105,7 @@ func NewForConfig(config *rest.Config) (*FeatureFlagConfigurationRestClient, err
 	return &FeatureFlagConfigurationRestClient{restClient: client}, nil
 }
 
-func (c *FeatureFlagConfigurationRestClient) FeatureFlagConfigurations(namespace string) KubernetesClientInterface {
+func (c *FeatureFlagConfigurationRestClient) FeatureFlagConfigurations(namespace string) ClientInterface {
 	return &FeatureFlagConfigurationImpl{
 		restClient: c.restClient,
 		ns:         namespace,
