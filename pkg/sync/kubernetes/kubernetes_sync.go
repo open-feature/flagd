@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"reflect"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
@@ -194,8 +193,8 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	if err != nil {
 		return err
 	}
-	if reflect.TypeOf(ffObj) != reflect.TypeOf(v1alpha1.FeatureFlagConfiguration{}) {
-		return errors.New("object is not a FeatureFlagConfiguration")
+	if ffObj.APIVersion != v1alpha1.GroupVersion.Version {
+		return errors.New("invalid api version")
 	}
 	if ffObj.Name == object.Name {
 		c <- &sync.Notifier{

@@ -20,20 +20,20 @@ type Interface interface {
 	Watch(opts metav1.ListOptions) (watch.Interface, error)
 }
 
-type FeatureFlagClient struct {
+type FeatureFlagConfigurationImpl struct {
 	restClient rest.Interface
 	ns         string
 }
 
-type FFCInterface interface {
+type FeatureFlagConfigurationInterface interface {
 	FeatureFlagConfigurations(namespace string) Interface
 }
 
-type FFCClient struct {
+type FeatureFlagConfigurationRestClient struct {
 	restClient rest.Interface
 }
 
-func (c *FeatureFlagClient) List(opts metav1.ListOptions) (*v1alpha1.FeatureFlagConfigurationList, error) {
+func (c *FeatureFlagConfigurationImpl) List(opts metav1.ListOptions) (*v1alpha1.FeatureFlagConfigurationList, error) {
 	result := v1alpha1.FeatureFlagConfigurationList{}
 	err := c.restClient.
 		Get().
@@ -44,7 +44,7 @@ func (c *FeatureFlagClient) List(opts metav1.ListOptions) (*v1alpha1.FeatureFlag
 	return &result, err
 }
 
-func (c *FeatureFlagClient) Get(name string, opts metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error) {
+func (c *FeatureFlagConfigurationImpl) Get(name string, opts metav1.GetOptions) (*v1alpha1.FeatureFlagConfiguration, error) {
 	result := v1alpha1.FeatureFlagConfiguration{}
 	err := c.restClient.
 		Get().
@@ -58,7 +58,7 @@ func (c *FeatureFlagClient) Get(name string, opts metav1.GetOptions) (*v1alpha1.
 	return &result, err
 }
 
-func (c *FeatureFlagClient) Create(project *v1alpha1.FeatureFlagConfiguration) (*v1alpha1.
+func (c *FeatureFlagConfigurationImpl) Create(project *v1alpha1.FeatureFlagConfiguration) (*v1alpha1.
 	FeatureFlagConfiguration, error,
 ) {
 	result := v1alpha1.FeatureFlagConfiguration{}
@@ -73,7 +73,7 @@ func (c *FeatureFlagClient) Create(project *v1alpha1.FeatureFlagConfiguration) (
 	return &result, err
 }
 
-func (c *FeatureFlagClient) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *FeatureFlagConfigurationImpl) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.restClient.
 		Get().
@@ -83,7 +83,7 @@ func (c *FeatureFlagClient) Watch(opts metav1.ListOptions) (watch.Interface, err
 		Watch(context.Background())
 }
 
-func NewForConfig(config *rest.Config) (*FFCClient, error) {
+func NewForConfig(config *rest.Config) (*FeatureFlagConfigurationRestClient, error) {
 	if config == nil {
 		return nil, errors.New("rest config is nil")
 	}
@@ -100,11 +100,11 @@ func NewForConfig(config *rest.Config) (*FFCClient, error) {
 		return nil, err
 	}
 
-	return &FFCClient{restClient: client}, nil
+	return &FeatureFlagConfigurationRestClient{restClient: client}, nil
 }
 
-func (c *FFCClient) FeatureFlagConfigurations(namespace string) Interface {
-	return &FeatureFlagClient{
+func (c *FeatureFlagConfigurationRestClient) FeatureFlagConfigurations(namespace string) Interface {
+	return &FeatureFlagConfigurationImpl{
 		restClient: c.restClient,
 		ns:         namespace,
 	}
