@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665543408199,
+  "lastUpdate": 1665629766404,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3702,6 +3702,58 @@ window.BENCHMARK_DATA = {
             "value": 4296,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1404974 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "6b3b6111232c132376511f4d4ea69c414f42d890",
+          "message": "feat: metrics (#188)\n\nThis pull request adds prometheus metrics into the connect service using\r\na custom library ( go-http-metrics)\r\n\r\n( I decided not to go with custom gauges and counters but to use the\r\nhttp-metrics lib )\r\n\r\nAn example of the metrics we are able to leverage through\r\nhttp/https/grpc\r\n\r\n```\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.005\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.01\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.025\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.05\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.1\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.25\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"0.5\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"2.5\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"5\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"10\"} 3\r\nhttp_request_duration_seconds_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"+Inf\"} 3\r\nhttp_request_duration_seconds_sum{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\"} 0.0008348739999999999\r\nhttp_request_duration_seconds_count{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\"} 3\r\n# HELP http_requests_inflight The number of inflight requests being handled at the same time.\r\n# TYPE http_requests_inflight gauge\r\nhttp_requests_inflight{handler=\"/schema.v1.Service/ResolveString\",service=\"\"} 0\r\n# HELP http_response_size_bytes The size of the HTTP responses.\r\n# TYPE http_response_size_bytes histogram\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"100\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1000\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"10000\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"100000\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1e+06\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1e+07\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1e+08\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"1e+09\"} 3\r\nhttp_response_size_bytes_bucket{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\",le=\"+Inf\"} 3\r\nhttp_response_size_bytes_sum{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\"} 162\r\nhttp_response_size_bytes_count{code=\"200\",handler=\"/schema.v1.Service/ResolveString\",method=\"POST\",service=\"\"} 3\r\n```\r\n\r\nThe advantage here is when this is scrapped we can perform some\r\ninteresting queries\r\n\r\n```\r\nsum(\r\n    rate(http_request_duration_seconds_count[30s])\r\n) by (handler)\r\n```\r\n\r\nSigned-off-by: Alex Jones <alexsimonjones@gmail.com>\r\nSigned-off-by: Alex Jones <alex.jones@canonical.com>\r\nCo-authored-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-10-11T11:22:08Z",
+          "url": "https://github.com/open-feature/flagd/commit/6b3b6111232c132376511f4d4ea69c414f42d890"
+        },
+        "date": 1665629764641,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2830,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2225883 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2777,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2151241 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2866,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2138178 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2787,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2116742 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4269,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1391031 times\n2 procs"
           }
         ]
       }
