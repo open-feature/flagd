@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -145,7 +146,7 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	if err != nil {
 		return err
 	}
-	if ffObj.APIVersion != v1alpha1.GroupVersion.Version {
+	if ffObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
 	if ffObj.Name == object.Name {
@@ -165,7 +166,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	if err != nil {
 		return err
 	}
-	if ffOldObj.APIVersion != v1alpha1.GroupVersion.Version {
+	if ffOldObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
 	var ffNewObj v1alpha1.FeatureFlagConfiguration
@@ -174,7 +175,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	if err != nil {
 		return err
 	}
-	if ffNewObj.APIVersion != v1alpha1.GroupVersion.Version {
+	if ffNewObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
 	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
@@ -195,7 +196,7 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 	if err != nil {
 		return err
 	}
-	if ffObj.APIVersion != v1alpha1.GroupVersion.Version {
+	if ffObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
 	if ffObj.Name == object.Name {
