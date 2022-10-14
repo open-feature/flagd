@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665629766404,
+  "lastUpdate": 1665716320726,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3754,6 +3754,58 @@ window.BENCHMARK_DATA = {
             "value": 4269,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1391031 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "41898282+github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ccb629ebd0b4799983558a411cb7f9a4c321748f",
+          "message": "chore(main): release 0.2.3 (#185)\n\n:robot: I have created a release *beep* *boop*\r\n---\r\n\r\n\r\n##\r\n[0.2.3](https://github.com/open-feature/flagd/compare/v0.2.2...v0.2.3)\r\n(2022-10-13)\r\n\r\n\r\n### Features\r\n\r\n* Eventing ([#187](https://github.com/open-feature/flagd/issues/187))\r\n([3f7fcd2](https://github.com/open-feature/flagd/commit/3f7fcd2f57318fad4e0bf501f202af990d3c5a79))\r\n* fixing informer issues\r\n([#191](https://github.com/open-feature/flagd/issues/191))\r\n([837b0c6](https://github.com/open-feature/flagd/commit/837b0c673e7e7d4799f100291ca520d22944f22a))\r\n* only fire modify event when FeatureFlagConfiguration Generation field\r\nhas changed ([#167](https://github.com/open-feature/flagd/issues/167))\r\n([e2fc7ee](https://github.com/open-feature/flagd/commit/e2fc7ee2570a119923bf95b40b2046dfa4705f20))\r\n\r\n---\r\nThis PR was generated with [Release\r\nPlease](https://github.com/googleapis/release-please). See\r\n[documentation](https://github.com/googleapis/release-please#release-please).\r\n\r\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2022-10-13T11:44:19Z",
+          "url": "https://github.com/open-feature/flagd/commit/ccb629ebd0b4799983558a411cb7f9a4c321748f"
+        },
+        "date": 1665716320253,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2362,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2556138 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2319,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2591125 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2334,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2556531 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2327,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2573079 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3555,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1686807 times\n2 procs"
           }
         ]
       }
