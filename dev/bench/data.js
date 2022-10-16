@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665802656419,
+  "lastUpdate": 1665889185892,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -3858,6 +3858,58 @@ window.BENCHMARK_DATA = {
             "value": 4117,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1463990 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "41898282+github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "24c8984bf76e75a6e112eeffa3809eb0e1ee9ce3",
+          "message": "chore(main): release 0.2.4 (#194)\n\n:robot: I have created a release *beep* *boop*\r\n---\r\n\r\n\r\n##\r\n[0.2.4](https://github.com/open-feature/flagd/compare/v0.2.3...v0.2.4)\r\n(2022-10-14)\r\n\r\n\r\n### Bug Fixes\r\n\r\n* ApiVersion check fix\r\n([#193](https://github.com/open-feature/flagd/issues/193))\r\n([3a524d6](https://github.com/open-feature/flagd/commit/3a524d646187355bb224100f436c7b5f35abea3e))\r\n\r\n---\r\nThis PR was generated with [Release\r\nPlease](https://github.com/googleapis/release-please). See\r\n[documentation](https://github.com/googleapis/release-please#release-please).\r\n\r\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2022-10-14T10:29:25Z",
+          "url": "https://github.com/open-feature/flagd/commit/24c8984bf76e75a6e112eeffa3809eb0e1ee9ce3"
+        },
+        "date": 1665889184038,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2750,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2201952 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2727,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2135546 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2708,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2236954 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2729,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2192042 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4137,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1444575 times\n2 procs"
           }
         ]
       }
