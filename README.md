@@ -22,7 +22,7 @@
 - OpenFeature compliant with providers available in many languages.
 - Multiple flag configuration sources including `files`, `http`, and `Kubernetes`.
 - Accessible over gRPC and HTTP.
-- Able to subscribe to real-time flag change events.
+- Supports subscriptions to real-time flag change events.
 - Flexible targeting rules based on [JSON Logic](https://jsonlogic.com/).
 - Lightweight daemon, with an emphasis on performance.
 - Native support for metrics using Prometheus.
