@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7](https://github.com/open-feature/flagd/compare/v0.2.5...v0.2.7) (2022-10-21)
+
+
+### Miscellaneous Chores
+
+* release v0.2.6 ([93cfb78](https://github.com/open-feature/flagd/commit/93cfb78d024b436fa7fb17fd41f74d1508bf8b64))
+* release v0.2.7 ([4a9f6df](https://github.com/open-feature/flagd/commit/4a9f6df4e472229ff805e9d5d3aa581c7c9c0667))
+
 ## [0.2.5](https://github.com/open-feature/flagd/compare/v0.2.4...v0.2.5) (2022-10-20)
 
 
