@@ -31,11 +31,19 @@
 
 Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification. To get started, follow the installation instructions on the [wiki](https://github.com/open-feature/flagd/wiki).
 
-### The people who make flagD great 💜
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to the OpenFeature project.
+
+Our community meetings are held regularly and open to everyone. Check the [OpenFeature community calendar](https://calendar.google.com/calendar/u/0?cid=MHVhN2kxaGl2NWRoMThiMjd0b2FoNjM2NDRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ) for specific dates and for the Zoom meeting links.
+
+Thanks so much to our contributors.
 
 <a href="https://github.com/open-feature/flagd/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=open-feature/flagd" />
 </a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 ## License
 
