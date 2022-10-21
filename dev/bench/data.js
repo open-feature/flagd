@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666234613707,
+  "lastUpdate": 1666320250719,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -4118,6 +4118,58 @@ window.BENCHMARK_DATA = {
             "value": 3548,
             "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
             "extra": "1686514 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "committer": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "id": "4a9f6df4e472229ff805e9d5d3aa581c7c9c0667",
+          "message": "chore: release v0.2.7\n\nRelease-As: v0.2.7",
+          "timestamp": "2022-10-20T09:23:12Z",
+          "url": "https://github.com/open-feature/flagd/commit/4a9f6df4e472229ff805e9d5d3aa581c7c9c0667"
+        },
+        "date": 1666320249796,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2344,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2557436 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2343,
+            "unit": "ns/op\t     280 B/op\t       6 allocs/op",
+            "extra": "2557393 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2328,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2561424 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2327,
+            "unit": "ns/op\t     264 B/op\t       6 allocs/op",
+            "extra": "2586153 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 3562,
+            "unit": "ns/op\t    1424 B/op\t      21 allocs/op",
+            "extra": "1693402 times\n2 procs"
           }
         ]
       }
