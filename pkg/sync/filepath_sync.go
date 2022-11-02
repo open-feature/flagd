@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	jsoniter "github.com/json-iterator/go"
+	"gopkg.in/yaml.v2"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/pkg/logger"
 )
@@ -14,6 +17,9 @@ type FilePathSync struct {
 	URI          string
 	Logger       *logger.Logger
 	ProviderArgs ProviderArgs
+	// FileType indicates the file type e.g., json, yaml/yml etc.,
+	// TODO: limit this to `json` or `yaml only?`
+	FileType string
 }
 
 func (fs *FilePathSync) Source() string {
@@ -28,7 +34,17 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(rawFile), nil
+
+	switch fs.FileType {
+	case "yaml":
+		fallthrough
+	case "yml":
+		return yamlToJson(rawFile)
+	case "json":
+		return string(rawFile), nil
+	default:
+		return "", fmt.Errorf("filepath extension '%v' is not supported", fs.FileType)
+	}
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
@@ -89,4 +105,26 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 
 	w <- &Notifier{Event: Event[DefaultEventType]{DefaultEventTypeReady}} // signal readiness to the caller
 	<-ctx.Done()
+}
+
+// yamlToJson is a generic helper function to convert
+// yaml to json
+func yamlToJson(rawFile []byte) (string, error) {
+	var ms map[string]interface{}
+	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
+		return "", fmt.Errorf("unmarshal yaml: %w", err)
+	}
+
+	// Using jsoniter library here because json.Marshal doesn't understand keys of
+	// interface{} type (it can only understand string keys)
+	// More info:https://stackoverflow.com/q/35377477/6874596
+	var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
+	// Adding spaces here because our evaluator transposer function
+	// doesn't understand json without indentations quite well
+	r, err := jsonit.MarshalIndent(ms, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("convert yaml to json: %w", err)
+	}
+
+	return string(r), err
 }
