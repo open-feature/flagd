@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -40,28 +41,41 @@ func (k *Sync) Source() string {
 }
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
+	state := "{}"
+
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
 		k.Logger.Info("No target feature flag configuration set")
-		return "{}", nil
+		return state, nil
 	}
 
 	if k.ProviderArgs[featureFlagNamespaceName] == "" {
 		k.Logger.Info("No target feature flag namespace set")
-		return "{}", nil
+		return state, nil
 	}
 
 	if k.client == nil {
 		k.Logger.Warn("Client not initialised")
-		return "{}", nil
+		return state, nil
 	}
 
 	var ff v1alpha1.FeatureFlagConfiguration
-	err := k.client.Get(ctx, client.ObjectKey{
+	if err := k.client.Get(ctx, client.ObjectKey{
 		Name:      k.ProviderArgs[featureFlagConfigurationName],
 		Namespace: k.ProviderArgs[featureFlagNamespaceName],
-	}, &ff)
+	}, &ff); err != nil {
+		return state, fmt.Errorf("get: %w", err)
+	}
 
-	return ff.Spec.FeatureFlagSpec, err
+	if ff.Spec.FeatureFlagSpec != nil {
+		stateB, err := json.Marshal(ff.Spec.FeatureFlagSpec)
+		if err != nil {
+			return state, fmt.Errorf("featureflagspec: %w", err)
+		}
+
+		state = string(stateB)
+	}
+
+	return state, nil
 }
 
 func (k *Sync) buildConfiguration() (*rest.Config, error) {
