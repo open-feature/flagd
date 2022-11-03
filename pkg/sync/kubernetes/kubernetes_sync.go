@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -66,16 +65,7 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 		return state, fmt.Errorf("get: %w", err)
 	}
 
-	if ff.Spec.FeatureFlagSpec != nil {
-		stateB, err := json.Marshal(ff.Spec.FeatureFlagSpec)
-		if err != nil {
-			return state, fmt.Errorf("featureflagspec: %w", err)
-		}
-
-		state = string(stateB)
-	}
-
-	return state, nil
+	return ff.Spec.FeatureFlagSpecJSON()
 }
 
 func (k *Sync) buildConfiguration() (*rest.Config, error) {
