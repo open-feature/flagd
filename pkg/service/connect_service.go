@@ -320,7 +320,7 @@ func (s *ConnectService) ResolveObject(
 
 func logContextKeys(context *structpb.Struct) []string {
 	res := []string{}
-	for k, _ := range context.AsMap() {
+	for k := range context.AsMap() {
 		res = append(res, k)
 	}
 	return res
