@@ -82,7 +82,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 				if !ok {
 					return
 				}
-				fs.Logger.Println("error:", err)
+				fs.Logger.Error(err)
 			}
 		}
 	}()

@@ -75,6 +75,7 @@ var startCmd = &cobra.Command{
 		log.SetOutput(os.Stdout)
 		if Debug {
 			log.SetLevel(log.DebugLevel)
+			log.SetReportCaller(true)
 		} else {
 			log.SetLevel(log.InfoLevel)
 		}

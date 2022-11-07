@@ -41,12 +41,12 @@ func (k *Sync) Source() string {
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
-		k.Logger.Info("No target feature flag configuration set")
+		k.Logger.Error("No target feature flag configuration set")
 		return "{}", nil
 	}
 
 	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Info("No target feature flag namespace set")
+		k.Logger.Error("No target feature flag namespace set")
 		return "{}", nil
 	}
 
@@ -82,11 +82,11 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
-		k.Logger.Info("No target feature flag configuration set")
+		k.Logger.Error("No target feature flag configuration set")
 		return
 	}
 	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Info("No target feature flag configuration namespace set")
+		k.Logger.Error("No target feature flag configuration namespace set")
 		return
 	}
 	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
