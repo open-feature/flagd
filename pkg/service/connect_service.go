@@ -189,21 +189,19 @@ func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
+	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
 
-	s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
-	s.Logger.WithField("context", req.Msg.GetContext().Fields).Debugf(
-		"boolean flag value requested for flagKey %s", req.Msg.GetFlagKey(),
-	)
+	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err)
+		logger.Error(err)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 
-	s.Logger.Debugf("flag evaluation response: %t, %s, %s", result, variant, reason)
+	logger.Debugf("flag evaluation response: %t, %s, %s", result, variant, reason)
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -215,7 +213,7 @@ func (s *ConnectService) ResolveString(
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
 	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
-	logger.WithField("context", req.Msg.GetContext()).Debug("string flag value requested")
+	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -237,7 +235,7 @@ func (s *ConnectService) ResolveInt(
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
 	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
-	logger.WithField("context", req.Msg.GetContext()).Debug("int flag value requested")
+	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("int flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -259,7 +257,7 @@ func (s *ConnectService) ResolveFloat(
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
 	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
-	logger.WithField("context", req.Msg.GetContext()).Debug("float flag value requested")
+	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("float flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -281,7 +279,7 @@ func (s *ConnectService) ResolveObject(
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
 	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
-	logger.WithField("context", req.Msg.GetContext()).Debug("object flag value requested")
+	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("object flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -301,6 +299,14 @@ func (s *ConnectService) ResolveObject(
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil
+}
+
+func logContextKeys(context *structpb.Struct) []string {
+	res := []string{}
+	for k, _ := range context.AsMap() {
+		res = append(res, k)
+	}
+	return res
 }
 
 func (s *ConnectService) newCORS() *cors.Cors {
