@@ -189,7 +189,10 @@ func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
-	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
+	logger := s.Logger.WithFields(log.Fields{
+		"flag-key":   req.Msg.GetFlagKey(),
+		"request-id": fmt.Sprintf("%p", req),
+	})
 
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("string flag value requested")
 
@@ -212,7 +215,11 @@ func (s *ConnectService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
-	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
+	logger := s.Logger.WithFields(log.Fields{
+		"flag-key":   req.Msg.GetFlagKey(),
+		"request-id": fmt.Sprintf("%p", req),
+	})
+
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
@@ -234,7 +241,11 @@ func (s *ConnectService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
-	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
+	logger := s.Logger.WithFields(log.Fields{
+		"flag-key":   req.Msg.GetFlagKey(),
+		"request-id": fmt.Sprintf("%p", req),
+	})
+
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("int flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
@@ -256,7 +267,11 @@ func (s *ConnectService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
-	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
+	logger := s.Logger.WithFields(log.Fields{
+		"flag-key":   req.Msg.GetFlagKey(),
+		"request-id": fmt.Sprintf("%p", req),
+	})
+
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("float flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
@@ -278,7 +293,11 @@ func (s *ConnectService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
-	logger := s.Logger.WithField("flag-key", req.Msg.GetFlagKey())
+	logger := s.Logger.WithFields(log.Fields{
+		"flag-key":   req.Msg.GetFlagKey(),
+		"request-id": fmt.Sprintf("%p", req),
+	})
+
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("object flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
