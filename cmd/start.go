@@ -102,7 +102,9 @@ var startCmd = &cobra.Command{
 		}
 
 		if err := rt.Start(); err != nil {
-			log.Error(err)
+			log.WithFields(log.Fields{
+				"component": "start",
+			}).Error(err)
 			os.Exit(1)
 		}
 	},
