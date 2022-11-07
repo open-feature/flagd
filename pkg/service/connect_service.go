@@ -195,7 +195,6 @@ func (s *ConnectService) ResolveBoolean(
 	})
 
 	logger.WithField("context-keys", logContextKeys(req.Msg.GetContext())).Debug("string flag value requested")
-
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
@@ -203,7 +202,6 @@ func (s *ConnectService) ResolveBoolean(
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
-
 	logger.Debugf("flag evaluation response: %t, %s, %s", result, variant, reason)
 	res.Msg.Reason = reason
 	res.Msg.Value = result
@@ -282,7 +280,7 @@ func (s *ConnectService) ResolveFloat(
 		return res, errFormat(err)
 	}
 
-	logger.Debugf("flag evaluation complete: %d, %s, %s", result, variant, reason)
+	logger.Debugf("flag evaluation complete: %64f, %s, %s", result, variant, reason)
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -309,11 +307,11 @@ func (s *ConnectService) ResolveObject(
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
-		logger.Errorf("struct response construction: %w", err)
+		logger.Errorf("struct response construction: %v", err)
 		return res, err
 	}
 
-	logger.Debug("flag evaluation response: %v, %s, %s", result, variant, reason)
+	logger.Debugf("flag evaluation response: %v, %s, %s", result, variant, reason)
 	res.Msg.Reason = reason
 	res.Msg.Value = val
 	res.Msg.Variant = variant
