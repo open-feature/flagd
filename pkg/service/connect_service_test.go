@@ -110,7 +110,6 @@ func TestConnectService_UnixConnection(t *testing.T) {
 
 			res, err := client.ResolveBoolean(ctx, tt.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				fmt.Println("@@@@@@ HERE @@@@@")
 				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(res.Reason, tt.want.Reason) {

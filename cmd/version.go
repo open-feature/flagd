@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"runtime/debug"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +27,6 @@ var versionCmd = &cobra.Command{
 				}
 			}
 		}
-		fmt.Printf("flagd %s (%s) built at %s\n", Version, Commit, Date)
+		log.Printf("flagd %s (%s) built at %s\n", Version, Commit, Date)
 	},
 }
