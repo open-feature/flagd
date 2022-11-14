@@ -6,10 +6,11 @@ import (
 	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type HTTPSync struct {
@@ -18,7 +19,7 @@ type HTTPSync struct {
 	Cron         Cron
 	BearerToken  string
 	LastBodySHA  string
-	Logger       *log.Entry
+	Logger       *zap.Logger
 	ProviderArgs ProviderArgs
 }
 
@@ -90,7 +91,7 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 	_ = fs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 		if err != nil {
-			log.Error(err)
+			fs.Logger.Error(err.Error())
 			return
 		}
 		if len(body) == 0 {
@@ -109,7 +110,7 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 			} else {
 				currentSHA := fs.generateSha(body)
 				if fs.LastBodySHA != currentSHA {
-					fs.Logger.Infof("http notifier event: %s has been modified", fs.URI)
+					fs.Logger.Info(fmt.Sprintf("http notifier event: %s has been modified", fs.URI))
 					w <- &Notifier{
 						Event: Event[DefaultEventType]{
 							DefaultEventTypeModify,

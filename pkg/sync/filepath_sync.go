@@ -3,16 +3,17 @@ package sync
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/fsnotify/fsnotify"
 )
 
 type FilePathSync struct {
 	URI          string
-	Logger       *log.Entry
+	Logger       *zap.Logger
 	ProviderArgs ProviderArgs
 }
 
@@ -35,20 +36,20 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		fs.Logger.Fatal(err.Error())
 	}
 	defer watcher.Close()
 
 	err = watcher.Add(fs.URI)
 	if err != nil {
-		fs.Logger.Println(err)
+		fs.Logger.Error(err.Error())
 		return
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		defer cancel()
-		fs.Logger.Info("Notifying filepath: ", fs.URI)
+		fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -67,11 +68,11 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
 					if err != nil {
-						fs.Logger.Errorf("Error restoring watcher, file may have been deleted: %s", err.Error())
+						fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
 					}
 					evtType = DefaultEventTypeDelete
 				}
-				fs.Logger.Infof("Filepath notifier event: %s %s", event.Name, event.Op.String())
+				fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
 				w <- &Notifier{
 					Event: Event[DefaultEventType]{
 						EventType: evtType,
@@ -82,7 +83,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 				if !ok {
 					return
 				}
-				fs.Logger.Error(err)
+				fs.Logger.Error(err.Error())
 			}
 		}
 	}()

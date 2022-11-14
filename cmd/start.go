@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"os"
+	"log"
 	"strings"
 
 	"github.com/open-feature/flagd/pkg/runtime"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -71,16 +71,29 @@ var startCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------
-		log.SetFormatter(&log.JSONFormatter{})
-		log.SetOutput(os.Stdout)
+		// log.SetFormatter(&log.JSONFormatter{})
+		// log.SetOutput(os.Stdout)
+		// if Debug {
+		// 	log.SetLevel(log.DebugLevel)
+		// 	log.SetReportCaller(true)
+		// } else {
+		// 	log.SetLevel(log.InfoLevel)
+		// }
+		var logger *zap.Logger
+		var err error
 		if Debug {
-			log.SetLevel(log.DebugLevel)
-			log.SetReportCaller(true)
+			logger, err = zap.NewDevelopment()
 		} else {
-			log.SetLevel(log.InfoLevel)
+			logger, err = zap.NewProduction()
 		}
+		if err != nil {
+			log.Fatalf("can't initialize zap logger: %v", err)
+		}
+		defer logger.Sync()
+
+		rtLogger := logger.With(zap.String("component", "start"))
 		// Build Runtime -----------------------------------------------------------
-		rt, err := runtime.FromConfig(runtime.Config{
+		rt, err := runtime.FromConfig(logger, runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
@@ -97,13 +110,11 @@ var startCmd = &cobra.Command{
 			CORS: viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {
-			log.Fatal(err)
+			rtLogger.Fatal(err.Error())
 		}
 
 		if err := rt.Start(); err != nil {
-			log.WithFields(log.Fields{
-				"component": "start",
-			}).Fatal(err)
+			rtLogger.Fatal(err.Error())
 		}
 	},
 }

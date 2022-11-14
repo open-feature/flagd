@@ -9,7 +9,7 @@ import (
 
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +30,7 @@ const (
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
-	Logger       *log.Entry
+	Logger       *zap.Logger
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
 }
@@ -89,22 +89,22 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Error("No target feature flag configuration namespace set")
 		return
 	}
-	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
+	k.Logger.Info(fmt.Sprintf("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"]))
 
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {
-		k.Logger.Errorf("Error building configuration: %s", err)
+		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
 	}
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		k.Logger.Panic(err.Error())
 	}
 	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
-		k.Logger.Fatalln(err)
+		k.Logger.Fatal(err.Error())
 	}
 	clusterClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
-		log.Fatalln(err)
+		k.Logger.Fatal(err.Error())
 	}
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 	// The created informer will not do resyncs if the given

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/open-feature/flagd/pkg/sync"
 
@@ -106,7 +106,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      log.WithFields(log.Fields{}),
+				Logger:      zap.New(nil),
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
@@ -189,7 +189,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 				Client:      mockClient,
 				Cron:        mockCron,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      log.WithFields(log.Fields{}),
+				Logger:      zap.New(nil),
 			}
 
 			go func() {

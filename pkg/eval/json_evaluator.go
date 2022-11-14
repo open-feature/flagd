@@ -11,14 +11,14 @@ import (
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/pkg/model"
 	schema "github.com/open-feature/schemas/json"
-	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type JSONEvaluator struct {
 	state  Flags
-	Logger *log.Entry
+	Logger *zap.Logger
 }
 
 type constraints interface {
@@ -28,6 +28,17 @@ type constraints interface {
 const (
 	Disabled = "DISABLED"
 )
+
+func NewJsonEvaluator(logger *zap.Logger) *JSONEvaluator {
+	ev := JSONEvaluator{
+		Logger: logger.With(
+			zap.String("component", "service"),
+			zap.String("evaluator", "json"),
+		),
+	}
+	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
+	return &ev
+}
 
 func (je *JSONEvaluator) GetState() (string, error) {
 	data, err := json.Marshal(&je.state)
@@ -161,13 +172,13 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			je.Logger.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
+			je.Logger.Error(fmt.Sprintf("Error parsing rules for flag %s, %s", flagKey, err))
 			return "", model.ErrorReason, err
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			je.Logger.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
+			je.Logger.Error(fmt.Sprintf("error parsing context for flag %s, %s, %v", flagKey, err, context))
 
 			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
@@ -175,7 +186,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			je.Logger.Errorf("Error applying rules %s", err)
+			je.Logger.Error(fmt.Sprintf("Error applying rules %s", err))
 			return "", model.ErrorReason, err
 		}
 		// strip whitespace and quotes from the variant

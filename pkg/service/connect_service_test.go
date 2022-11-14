@@ -13,8 +13,8 @@ import (
 	mock "github.com/open-feature/flagd/pkg/eval/mock"
 	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
-	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -87,7 +87,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 					ServerSocketPath: tt.socketPath,
 				},
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -101,7 +101,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				grpc.WithTimeout(2*time.Second),
 			)
 			if err != nil {
-				log.Errorf("grpc - fail to dial: %v", err)
+				t.Errorf("grpc - fail to dial: %v", err)
 				return
 			}
 			client := gen.NewServiceClient(
@@ -178,7 +178,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
@@ -226,7 +226,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: log.WithField("source", "test"),
+			Logger: zap.New(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -312,7 +312,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 			)
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -360,7 +360,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: log.WithField("source", "test"),
+			Logger: zap.New(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -446,7 +446,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -494,7 +494,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: log.WithField("source", "test"),
+			Logger: zap.New(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -580,7 +580,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -628,7 +628,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: log.WithField("source", "test"),
+			Logger: zap.New(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -718,7 +718,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: log.WithField("source", "test"),
+				Logger: zap.New(nil),
 			}
 
 			if name != "eval returns error" {
@@ -776,7 +776,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: log.WithField("source", "test"),
+			Logger: zap.New(nil),
 		}
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)

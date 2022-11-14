@@ -9,15 +9,13 @@ import (
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/model"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-var l = log.WithFields(log.Fields{
-	"evaluator": "json",
-})
+var l = zap.New(nil)
 
 const InvalidFlags = `{
   "flags": {
@@ -833,7 +831,7 @@ func TestState_Evaluator(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(expectedOutputJSON, gotOutputJSON) {
-				t.Errorf("expected state: %v\n got state: %v", expectedOutputJSON, gotOutputJSON)
+				t.Errorf("expected state: %v got state: %v", expectedOutputJSON, gotOutputJSON)
 			}
 		})
 	}

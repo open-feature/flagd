@@ -8,7 +8,7 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type Runtime struct {
@@ -19,7 +19,7 @@ type Runtime struct {
 
 	mu        msync.Mutex
 	Evaluator eval.IEvaluator
-	Logger    *log.Entry
+	Logger    *zap.Logger
 }
 
 type Config struct {
@@ -54,12 +54,12 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 			case sync.DefaultEventTypeCreate:
 				r.Logger.Debug("New configuration created")
 				if err := r.updateState(ctx, syncr); err != nil {
-					log.Error(err)
+					r.Logger.Error(err.Error())
 				}
 			case sync.DefaultEventTypeModify:
 				r.Logger.Debug("Configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
-					log.Error(err)
+					r.Logger.Error(err.Error())
 				}
 			case sync.DefaultEventTypeDelete:
 				r.Logger.Debug("Configuration deleted")
@@ -82,7 +82,7 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 		return fmt.Errorf("set state: %w", err)
 	}
 	for _, n := range notifications {
-		r.Logger.Infof("configuration change: type: %s flagKey: %s source: %s", n.Type, n.FlagKey, n.Source)
+		r.Logger.Info(fmt.Sprintf("configuration change (%s) for flagKey %s (%s)", n.Type, n.FlagKey, n.Source))
 		r.Service.Notify(service.Notification{
 			Type: service.ConfigurationChange,
 			Data: n.ToMap(),

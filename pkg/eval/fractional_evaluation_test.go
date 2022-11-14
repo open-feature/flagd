@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/open-feature/flagd/pkg/model"
+	"go.uber.org/zap"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -280,7 +281,8 @@ func TestFractionalEvaluation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := JSONEvaluator{state: tt.flags}
+			je := NewJsonEvaluator(zap.New(nil))
+			je.state = tt.flags
 
 			value, variant, reason, err := resolve[string](
 				tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
