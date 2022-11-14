@@ -71,14 +71,6 @@ var startCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------
-		// log.SetFormatter(&log.JSONFormatter{})
-		// log.SetOutput(os.Stdout)
-		// if Debug {
-		// 	log.SetLevel(log.DebugLevel)
-		// 	log.SetReportCaller(true)
-		// } else {
-		// 	log.SetLevel(log.InfoLevel)
-		// }
 		var logger *zap.Logger
 		var err error
 		if Debug {
