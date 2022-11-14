@@ -224,9 +224,10 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		logger, _ := zap.NewProduction()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: zap.New(nil),
+			Logger: logger,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -358,9 +359,10 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		logger, _ := zap.NewProduction()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: zap.New(nil),
+			Logger: logger,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -492,9 +494,10 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		logger, _ := zap.NewProduction()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: zap.New(nil),
+			Logger: logger,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -626,9 +629,10 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		logger, _ := zap.NewProduction()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: zap.New(nil),
+			Logger: logger,
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -774,9 +778,10 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		logger, _ := zap.NewProduction()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: zap.New(nil),
+			Logger: logger,
 		}
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)

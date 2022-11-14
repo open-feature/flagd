@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"log"
 	"strings"
+	"syscall"
 
 	"github.com/open-feature/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
@@ -83,7 +85,7 @@ var startCmd = &cobra.Command{
 		}
 		defer func() {
 			err := logger.Sync()
-			if err != nil {
+			if err != nil && !errors.Is(err, syscall.ENOTTY) {
 				log.Fatalf("can't sync zap logger: %v", err)
 			}
 		}()

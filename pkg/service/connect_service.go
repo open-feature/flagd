@@ -193,10 +193,9 @@ func (s *ConnectService) ResolveBoolean(
 	logger := s.Logger.With(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.String("request-id", fmt.Sprintf("%p", req)),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	logger.With(
-		zap.Strings("context-keys", logContextKeys(req.Msg.GetContext())),
-	).Debug("string flag value requested")
+	logger.Debug("boolean flag value requested")
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
@@ -218,10 +217,9 @@ func (s *ConnectService) ResolveString(
 	logger := s.Logger.With(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.String("request-id", fmt.Sprintf("%p", req)),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	logger.With(
-		zap.Strings("context-keys", logContextKeys(req.Msg.GetContext())),
-	).Debug("string flag value requested")
+	logger.Debug("string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -245,10 +243,9 @@ func (s *ConnectService) ResolveInt(
 	logger := s.Logger.With(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.String("request-id", fmt.Sprintf("%p", req)),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	logger.With(
-		zap.Strings("context-keys", logContextKeys(req.Msg.GetContext())),
-	).Debug("int flag value requested")
+	logger.Debug("int flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -272,10 +269,9 @@ func (s *ConnectService) ResolveFloat(
 	logger := s.Logger.With(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.String("request-id", fmt.Sprintf("%p", req)),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	logger.With(
-		zap.Strings("context-keys", logContextKeys(req.Msg.GetContext())),
-	).Debug("float flag value requested")
+	logger.Debug("float flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -299,10 +295,9 @@ func (s *ConnectService) ResolveObject(
 	logger := s.Logger.With(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.String("request-id", fmt.Sprintf("%p", req)),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	logger.With(
-		zap.Strings("context-keys", logContextKeys(req.Msg.GetContext())),
-	).Debug("object flag value requested")
+	logger.Debug("object flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
@@ -324,7 +319,7 @@ func (s *ConnectService) ResolveObject(
 	return res, nil
 }
 
-func logContextKeys(context *structpb.Struct) []string {
+func formatContextKeys(context *structpb.Struct) []string {
 	res := []string{}
 	for k := range context.AsMap() {
 		res = append(res, k)
