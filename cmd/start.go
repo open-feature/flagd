@@ -97,15 +97,13 @@ var startCmd = &cobra.Command{
 			CORS: viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {
-			log.Error(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 
 		if err := rt.Start(); err != nil {
 			log.WithFields(log.Fields{
 				"component": "start",
-			}).Error(err)
-			os.Exit(1)
+			}).Fatal(err)
 		}
 	},
 }
