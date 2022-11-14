@@ -29,7 +29,7 @@ const (
 	Disabled = "DISABLED"
 )
 
-func NewJsonEvaluator(logger *zap.Logger) *JSONEvaluator {
+func NewJSONEvaluator(logger *zap.Logger) *JSONEvaluator {
 	ev := JSONEvaluator{
 		Logger: logger.With(
 			zap.String("component", "service"),

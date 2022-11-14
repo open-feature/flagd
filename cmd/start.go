@@ -89,7 +89,12 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
-		defer logger.Sync()
+		defer func() {
+			err := logger.Sync()
+			if err != nil {
+				log.Fatalf("can't sync zap logger: %v", err)
+			}
+		}()
 
 		rtLogger := logger.With(zap.String("component", "start"))
 		// Build Runtime -----------------------------------------------------------

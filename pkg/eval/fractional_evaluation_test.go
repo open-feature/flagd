@@ -281,7 +281,7 @@ func TestFractionalEvaluation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJsonEvaluator(zap.New(nil))
+			je := NewJSONEvaluator(zap.New(nil))
 			je.state = tt.flags
 
 			value, variant, reason, err := resolve[string](

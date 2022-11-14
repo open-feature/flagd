@@ -47,7 +47,7 @@ func (r *Runtime) setService(logger *zap.Logger) {
 func (r *Runtime) setEvaluatorFromConfig(logger *zap.Logger) error {
 	switch r.config.Evaluator {
 	case "json":
-		r.Evaluator = eval.NewJsonEvaluator(logger)
+		r.Evaluator = eval.NewJSONEvaluator(logger)
 	default:
 		return errors.New("no evaluator set")
 	}
