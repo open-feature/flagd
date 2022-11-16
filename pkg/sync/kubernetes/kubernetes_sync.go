@@ -89,7 +89,11 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Error("No target feature flag configuration namespace set")
 		return
 	}
-	k.Logger.Info(fmt.Sprintf("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"]))
+	k.Logger.Info(
+		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
+			k.ProviderArgs["featureflagconfiguration"],
+		),
+	)
 
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {

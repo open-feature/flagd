@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -71,13 +72,35 @@ var startCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------
-		var logger *zap.Logger
+		var level zapcore.Level
 		var err error
 		if Debug {
-			logger, err = zap.NewDevelopment()
+			level = zapcore.DebugLevel
 		} else {
-			logger, err = zap.NewProduction()
+			level = zapcore.InfoLevel
 		}
+		cfg := zap.Config{
+			Encoding:         "json",
+			Level:            zap.NewAtomicLevelAt(level),
+			OutputPaths:      []string{"stderr"},
+			ErrorOutputPaths: []string{"stderr"},
+			EncoderConfig: zapcore.EncoderConfig{
+				TimeKey:        "ts",
+				LevelKey:       "level",
+				NameKey:        "logger",
+				CallerKey:      "caller",
+				FunctionKey:    zapcore.OmitKey,
+				MessageKey:     "msg",
+				StacktraceKey:  "stacktrace",
+				LineEnding:     zapcore.DefaultLineEnding,
+				EncodeLevel:    zapcore.LowercaseLevelEncoder,
+				EncodeTime:     zapcore.EpochTimeEncoder,
+				EncodeDuration: zapcore.SecondsDurationEncoder,
+				EncodeCaller:   zapcore.ShortCallerEncoder,
+			},
+			DisableCaller: true,
+		}
+		logger, err := cfg.Build()
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
