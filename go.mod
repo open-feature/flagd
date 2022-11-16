@@ -16,6 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.8.2
+	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
