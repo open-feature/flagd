@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"log"
 	"strings"
-	"syscall"
 
 	"github.com/open-feature/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
@@ -83,12 +81,6 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
-		defer func() {
-			err := logger.Sync()
-			if err != nil && !errors.Is(err, syscall.ENOTTY) {
-				log.Fatalf("can't sync zap logger: %v", err)
-			}
-		}()
 
 		rtLogger := logger.With(zap.String("component", "start"))
 		// Build Runtime -----------------------------------------------------------
