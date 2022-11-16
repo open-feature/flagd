@@ -12,11 +12,8 @@ import (
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-var l = zap.New(nil)
 
 const InvalidFlags = `{
   "flags": {

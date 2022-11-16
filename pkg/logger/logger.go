@@ -17,8 +17,8 @@ func (l *Logger) DebugWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Debug(msg string, fields ...zap.Field) {
-	f := append(l.fields, fields...)
-	l.Logger.Debug(msg, f...)
+	fields = append(fields, l.fields...)
+	l.Logger.Debug(msg, fields...)
 }
 
 func (l *Logger) InfoWithID(reqID string, msg string, fields ...zap.Field) {
@@ -26,8 +26,8 @@ func (l *Logger) InfoWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Info(msg string, fields ...zap.Field) {
-	f := append(l.fields, fields...)
-	l.Logger.Info(msg, f...)
+	fields = append(fields, l.fields...)
+	l.Logger.Info(msg, fields...)
 }
 
 func (l *Logger) WarnWithID(reqID string, msg string, fields ...zap.Field) {
@@ -35,8 +35,8 @@ func (l *Logger) WarnWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Warn(msg string, fields ...zap.Field) {
-	f := append(l.fields, fields...)
-	l.Logger.Warn(msg, f...)
+	fields = append(fields, l.fields...)
+	l.Logger.Warn(msg, fields...)
 }
 
 func (l *Logger) ErrorWithID(reqID string, msg string, fields ...zap.Field) {
@@ -44,8 +44,8 @@ func (l *Logger) ErrorWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Error(msg string, fields ...zap.Field) {
-	f := append(l.fields, fields...)
-	l.Logger.Error(msg, f...)
+	fields = append(fields, l.fields...)
+	l.Logger.Error(msg, fields...)
 }
 
 func (l *Logger) FatalWithID(reqID string, msg string, fields ...zap.Field) {
@@ -53,8 +53,8 @@ func (l *Logger) FatalWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Fatal(msg string, fields ...zap.Field) {
-	f := append(l.fields, fields...)
-	l.Logger.Debug(msg, f...)
+	fields = append(fields, l.fields...)
+	l.Logger.Debug(msg, fields...)
 }
 
 func (l *Logger) WriteFields(reqID string, fields ...zap.Field) {
