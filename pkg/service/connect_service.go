@@ -303,7 +303,7 @@ func (s *ConnectService) ResolveObject(
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error())
+		s.Logger.Error(err.Error(), fields...)
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
