@@ -3,8 +3,8 @@ package eval
 import (
 	"testing"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
-	"go.uber.org/zap"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -281,7 +281,7 @@ func TestFractionalEvaluation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(zap.New(nil))
+			je := NewJSONEvaluator(logger.NewLogger(nil))
 			je.state = tt.flags
 
 			value, variant, reason, err := resolve[string](

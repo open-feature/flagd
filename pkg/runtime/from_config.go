@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/kubernetes"
@@ -14,10 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func FromConfig(logger *zap.Logger, config Config) (*Runtime, error) {
+func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	rt := Runtime{
 		config:       config,
-		Logger:       logger.With(zap.String("component", "runtime")),
+		Logger:       logger.WithFields(zap.String("component", "runtime")),
 		syncNotifier: make(chan sync.INotify),
 	}
 	if err := rt.setEvaluatorFromConfig(logger); err != nil {
@@ -30,7 +31,7 @@ func FromConfig(logger *zap.Logger, config Config) (*Runtime, error) {
 	return &rt, nil
 }
 
-func (r *Runtime) setService(logger *zap.Logger) {
+func (r *Runtime) setService(logger *logger.Logger) {
 	r.Service = &service.ConnectService{
 		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 			Port:             r.config.ServicePort,
@@ -40,11 +41,11 @@ func (r *Runtime) setService(logger *zap.Logger) {
 			ServerSocketPath: r.config.ServiceSocketPath,
 			CORS:             r.config.CORS,
 		},
-		Logger: logger.With(zap.String("component", "service")),
+		Logger: logger,
 	}
 }
 
-func (r *Runtime) setEvaluatorFromConfig(logger *zap.Logger) error {
+func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 	switch r.config.Evaluator {
 	case "json":
 		r.Evaluator = eval.NewJSONEvaluator(logger)
@@ -55,15 +56,15 @@ func (r *Runtime) setEvaluatorFromConfig(logger *zap.Logger) error {
 	return nil
 }
 
-func (r *Runtime) setSyncImplFromConfig(logger *zap.Logger) error {
-	rtLogger := logger.With(zap.String("component", "runtime"))
+func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
+	rtLogger := logger.WithFields(zap.String("component", "runtime"))
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
 	switch r.config.SyncProvider {
 	case "filepath":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
 				URI: u,
-				Logger: logger.With(
+				Logger: logger.WithFields(
 					zap.String("component", "service"),
 					zap.String("sync", "filepath"),
 				),
@@ -73,7 +74,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *zap.Logger) error {
 		}
 	case "kubernetes":
 		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
-			Logger: logger.With(
+			Logger: logger.WithFields(
 				zap.String("component", "service"),
 				zap.String("sync", "kubernetes"),
 			),
@@ -88,7 +89,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *zap.Logger) error {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
-				Logger: logger.With(
+				Logger: logger.WithFields(
 					zap.String("component", "service"),
 					zap.String("sync", "remote"),
 				),

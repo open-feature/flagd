@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -98,14 +99,15 @@ var startCmd = &cobra.Command{
 				EncodeDuration: zapcore.SecondsDurationEncoder,
 				EncodeCaller:   zapcore.ShortCallerEncoder,
 			},
-			DisableCaller: true,
+			DisableCaller: false,
 		}
-		logger, err := cfg.Build()
+		l, err := cfg.Build()
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
+		logger := logger.NewLogger(l)
+		rtLogger := logger.WithFields(zap.String("component", "start"))
 
-		rtLogger := logger.With(zap.String("component", "start"))
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),

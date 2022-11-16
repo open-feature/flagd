@@ -10,7 +10,7 @@ import (
 	"io"
 	"net/http"
 
-	"go.uber.org/zap"
+	"github.com/open-feature/flagd/pkg/logger"
 )
 
 type HTTPSync struct {
@@ -19,7 +19,7 @@ type HTTPSync struct {
 	Cron         Cron
 	BearerToken  string
 	LastBodySHA  string
-	Logger       *zap.Logger
+	Logger       *logger.Logger
 	ProviderArgs ProviderArgs
 }
 

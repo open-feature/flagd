@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
-	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +30,7 @@ const (
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
-	Logger       *zap.Logger
+	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
 }
@@ -100,7 +100,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
 	}
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		k.Logger.Panic(err.Error())
+		k.Logger.Fatal(err.Error())
 	}
 	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {

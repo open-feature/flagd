@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"go.uber.org/zap"
-
 	"github.com/fsnotify/fsnotify"
+	"github.com/open-feature/flagd/pkg/logger"
 )
 
 type FilePathSync struct {
 	URI          string
-	Logger       *zap.Logger
+	Logger       *logger.Logger
 	ProviderArgs ProviderArgs
 }
 

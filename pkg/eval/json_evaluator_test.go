@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -277,7 +278,7 @@ var Flags = fmt.Sprintf(`{
 	DisabledFlag)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -297,7 +298,7 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 }
 
 func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 
 	// set state with an invalid flag definition
 	_, err := evaluator.SetState("", InvalidFlags)
@@ -307,7 +308,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 }
 
 func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 
 	// set state with a valid flag definition
 	_, err := evaluator.SetState("", ValidFlags)
@@ -331,7 +332,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -370,7 +371,7 @@ func TestResolveStringValue(t *testing.T) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -410,7 +411,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -450,7 +451,7 @@ func TestResolveIntValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -490,7 +491,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")

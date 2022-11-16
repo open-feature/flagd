@@ -6,9 +6,9 @@ import (
 	msync "sync"
 
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
-	"go.uber.org/zap"
 )
 
 type Runtime struct {
@@ -19,7 +19,7 @@ type Runtime struct {
 
 	mu        msync.Mutex
 	Evaluator eval.IEvaluator
-	Logger    *zap.Logger
+	Logger    *logger.Logger
 }
 
 type Config struct {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
@@ -28,7 +29,7 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	Logger                      *zap.Logger
+	Logger                      *logger.Logger
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	eventingConfiguration       *eventingConfiguration
@@ -191,20 +192,25 @@ func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
-	fields := []zap.Field{
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
 		zap.String("flag-key", req.Msg.GetFlagKey()),
-		zap.String("request-id", xid.New().String()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
-	}
-	s.Logger.Debug("boolean flag value requested", fields...)
+	)
+	s.Logger.WarnWithID(reqID, "test")
+	s.Logger.DebugWithID(reqID, "boolean flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error(), fields...)
+		s.Logger.ErrorWithID(reqID, err.Error())
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
-	s.Logger.Debug(fmt.Sprintf("flag evaluation response: %t, %s, %s", result, variant, reason), fields...)
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %t, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -215,22 +221,24 @@ func (s *ConnectService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
-	fields := []zap.Field{
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
 		zap.String("flag-key", req.Msg.GetFlagKey()),
-		zap.String("request-id", xid.New().String()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
-	}
-	s.Logger.Debug("string flag value requested", fields...)
+	)
+	s.Logger.DebugWithID(reqID, "string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error(), fields...)
+		s.Logger.Error(err.Error())
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 
-	s.Logger.Debug(fmt.Sprintf("flag evaluation response: %s, %s, %s", result, variant, reason), fields...)
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %s, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -241,22 +249,24 @@ func (s *ConnectService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
-	fields := []zap.Field{
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
 		zap.String("flag-key", req.Msg.GetFlagKey()),
-		zap.String("request-id", xid.New().String()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
-	}
-	s.Logger.Debug("int flag value requested", fields...)
+	)
+	s.Logger.DebugWithID(reqID, "int flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error(), fields...)
+		s.Logger.ErrorWithID(reqID, err.Error())
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 
-	s.Logger.Debug(fmt.Sprintf("flag evaluation response: %d, %s, %s", result, variant, reason), fields...)
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %d, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -267,22 +277,24 @@ func (s *ConnectService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
-	fields := []zap.Field{
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
 		zap.String("flag-key", req.Msg.GetFlagKey()),
-		zap.String("request-id", xid.New().String()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
-	}
-	s.Logger.Debug("float flag value requested", fields...)
+	)
+	s.Logger.DebugWithID(reqID, "float flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error(), fields...)
+		s.Logger.ErrorWithID(reqID, err.Error())
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 
-	s.Logger.Debug(fmt.Sprintf("flag evaluation complete: %64f, %s, %s", result, variant, reason), fields...)
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation complete: %64f, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -293,27 +305,29 @@ func (s *ConnectService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
-	fields := []zap.Field{
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
 		zap.String("flag-key", req.Msg.GetFlagKey()),
-		zap.String("request-id", xid.New().String()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
-	}
-	s.Logger.Debug("object flag value requested", fields...)
+	)
+	s.Logger.DebugWithID(reqID, "object flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error(), fields...)
+		s.Logger.ErrorWithID(reqID, err.Error())
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
-		s.Logger.Error(fmt.Sprintf("struct response construction: %v", err), fields...)
+		s.Logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
 		return res, err
 	}
 
-	s.Logger.Debug(fmt.Sprintf("flag evaluation response: %v, %s, %s", result, variant, reason), fields...)
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %v, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = val
 	res.Msg.Variant = variant

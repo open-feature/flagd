@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	schema "github.com/open-feature/schemas/json"
 	"github.com/xeipuuv/gojsonschema"
@@ -18,7 +19,7 @@ import (
 
 type JSONEvaluator struct {
 	state  Flags
-	Logger *zap.Logger
+	Logger *logger.Logger
 }
 
 type constraints interface {
@@ -29,9 +30,9 @@ const (
 	Disabled = "DISABLED"
 )
 
-func NewJSONEvaluator(logger *zap.Logger) *JSONEvaluator {
+func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 	ev := JSONEvaluator{
-		Logger: logger.With(
+		Logger: logger.WithFields(
 			zap.String("component", "service"),
 			zap.String("evaluator", "json"),
 		),
