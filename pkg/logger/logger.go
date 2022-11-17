@@ -88,7 +88,8 @@ func (l *Logger) ClearFields(reqID string) {
 	l.requestFields.Delete(reqID)
 }
 
-// NewLogger returns the logging wrapper for a given *zap.logger, will return a wrapped zap noop logger if none is provided
+// NewLogger returns the logging wrapper for a given *zap.logger,
+// will return a wrapped zap noop logger if none is provided
 func NewLogger(logger *zap.Logger) *Logger {
 	if logger == nil {
 		logger = zap.New(nil)
@@ -100,7 +101,8 @@ func NewLogger(logger *zap.Logger) *Logger {
 }
 
 // WithFields creates a new logging wrapper with a predefined base set of fields.
-// These fields will be added to each request, but the logger will still read/write from the highest level logging wrappers field pool
+// These fields will be added to each request, but the logger will still
+// read/write from the highest level logging wrappers field pool
 func (l *Logger) WithFields(fields ...zap.Field) *Logger {
 	return &Logger{
 		Logger:        l.Logger,

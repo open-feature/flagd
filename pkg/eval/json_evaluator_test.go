@@ -328,7 +328,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
-
+	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
@@ -340,7 +340,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveBooleanValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
@@ -367,7 +367,7 @@ func TestResolveStringValue(t *testing.T) {
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
-
+	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
@@ -379,7 +379,7 @@ func TestResolveStringValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveStringValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -407,7 +407,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
-
+	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
@@ -419,7 +419,7 @@ func TestResolveFloatValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveFloatValue(reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -447,7 +447,7 @@ func TestResolveIntValue(t *testing.T) {
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
-
+	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
@@ -459,7 +459,7 @@ func TestResolveIntValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveIntValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveIntValue(reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -487,7 +487,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
-
+	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
@@ -499,7 +499,7 @@ func TestResolveObjectValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveObjectValue(test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveObjectValue(reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {

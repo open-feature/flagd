@@ -203,9 +203,9 @@ func (s *ConnectService) ResolveBoolean(
 	s.Logger.DebugWithID(reqID, "boolean flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
-	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveBooleanValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.ErrorWithID(reqID, err.Error())
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -231,9 +231,9 @@ func (s *ConnectService) ResolveString(
 	s.Logger.DebugWithID(reqID, "string flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
-	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveStringValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.Error(err.Error())
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -259,9 +259,9 @@ func (s *ConnectService) ResolveInt(
 	s.Logger.DebugWithID(reqID, "int flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
-	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveIntValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.ErrorWithID(reqID, err.Error())
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -287,9 +287,9 @@ func (s *ConnectService) ResolveFloat(
 	s.Logger.DebugWithID(reqID, "float flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
-	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveFloatValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.ErrorWithID(reqID, err.Error())
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
@@ -315,9 +315,9 @@ func (s *ConnectService) ResolveObject(
 	s.Logger.DebugWithID(reqID, "object flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
-	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveObjectValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		s.Logger.ErrorWithID(reqID, err.Error())
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
