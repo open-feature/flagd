@@ -33,7 +33,7 @@ const (
 func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 	ev := JSONEvaluator{
 		Logger: logger.WithFields(
-			zap.String("component", "service"),
+			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
 	}

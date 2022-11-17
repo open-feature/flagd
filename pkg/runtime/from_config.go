@@ -41,7 +41,9 @@ func (r *Runtime) setService(logger *logger.Logger) {
 			ServerSocketPath: r.config.ServiceSocketPath,
 			CORS:             r.config.CORS,
 		},
-		Logger: logger,
+		Logger: logger.WithFields(
+			zap.String("component", "service"),
+		),
 	}
 }
 
@@ -65,7 +67,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
 				URI: u,
 				Logger: logger.WithFields(
-					zap.String("component", "service"),
+					zap.String("component", "sync"),
 					zap.String("sync", "filepath"),
 				),
 				ProviderArgs: r.config.ProviderArgs,
@@ -75,7 +77,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	case "kubernetes":
 		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
 			Logger: logger.WithFields(
-				zap.String("component", "service"),
+				zap.String("component", "sync"),
 				zap.String("sync", "kubernetes"),
 			),
 			ProviderArgs: r.config.ProviderArgs,
@@ -90,7 +92,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 					Timeout: time.Second * 10,
 				},
 				Logger: logger.WithFields(
-					zap.String("component", "service"),
+					zap.String("component", "sync"),
 					zap.String("sync", "remote"),
 				),
 				ProviderArgs: r.config.ProviderArgs,
