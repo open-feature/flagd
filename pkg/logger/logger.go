@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 /*
@@ -120,6 +121,32 @@ func (l *Logger) getFieldsForLog(reqID string) []zap.Field {
 // ClearFields clears all stored fields for a given requestID, important for maintaining performance
 func (l *Logger) ClearFields(reqID string) {
 	l.requestFields.Delete(reqID)
+}
+
+// NewZapLogger creates a *zap.Logger using the base config
+func NewZapLogger(level zapcore.Level) (*zap.Logger, error) {
+	cfg := zap.Config{
+		Encoding:         "json",
+		Level:            zap.NewAtomicLevelAt(level),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:        "ts",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
+			FunctionKey:    zapcore.OmitKey,
+			MessageKey:     "msg",
+			StacktraceKey:  "stacktrace",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeTime:     zapcore.EpochTimeEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		},
+		DisableCaller: false,
+	}
+	return cfg.Build()
 }
 
 // NewLogger returns the logging wrapper for a given *zap.logger,

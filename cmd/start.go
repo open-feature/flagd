@@ -80,28 +80,7 @@ var startCmd = &cobra.Command{
 		} else {
 			level = zapcore.InfoLevel
 		}
-		cfg := zap.Config{
-			Encoding:         "json",
-			Level:            zap.NewAtomicLevelAt(level),
-			OutputPaths:      []string{"stderr"},
-			ErrorOutputPaths: []string{"stderr"},
-			EncoderConfig: zapcore.EncoderConfig{
-				TimeKey:        "ts",
-				LevelKey:       "level",
-				NameKey:        "logger",
-				CallerKey:      "caller",
-				FunctionKey:    zapcore.OmitKey,
-				MessageKey:     "msg",
-				StacktraceKey:  "stacktrace",
-				LineEnding:     zapcore.DefaultLineEnding,
-				EncodeLevel:    zapcore.LowercaseLevelEncoder,
-				EncodeTime:     zapcore.EpochTimeEncoder,
-				EncodeDuration: zapcore.SecondsDurationEncoder,
-				EncodeCaller:   zapcore.ShortCallerEncoder,
-			},
-			DisableCaller: false,
-		}
-		l, err := cfg.Build()
+		l, err := logger.NewZapLogger(level)
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
