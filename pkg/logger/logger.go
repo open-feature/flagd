@@ -43,53 +43,73 @@ type Logger struct {
 }
 
 func (l *Logger) DebugWithID(reqID string, msg string, fields ...zap.Field) {
-	fields = append(fields, l.getFieldsForLog(reqID)...)
-	l.Logger.Debug(msg, fields...)
+	if ce := l.Logger.Check(zap.DebugLevel, msg); ce != nil {
+		fields = append(fields, l.getFieldsForLog(reqID)...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) Debug(msg string, fields ...zap.Field) {
-	fields = append(fields, l.fields...)
-	l.Logger.Debug(msg, fields...)
+	if ce := l.Logger.Check(zap.DebugLevel, msg); ce != nil {
+		fields = append(fields, l.fields...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) InfoWithID(reqID string, msg string, fields ...zap.Field) {
-	fields = append(fields, l.getFieldsForLog(reqID)...)
-	l.Logger.Info(msg, fields...)
+	if ce := l.Logger.Check(zap.InfoLevel, msg); ce != nil {
+		fields = append(fields, l.getFieldsForLog(reqID)...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) Info(msg string, fields ...zap.Field) {
-	fields = append(fields, l.fields...)
-	l.Logger.Info(msg, fields...)
+	if ce := l.Logger.Check(zap.InfoLevel, msg); ce != nil {
+		fields = append(fields, l.fields...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) WarnWithID(reqID string, msg string, fields ...zap.Field) {
-	fields = append(fields, l.getFieldsForLog(reqID)...)
-	l.Logger.Warn(msg, fields...)
+	if ce := l.Logger.Check(zap.WarnLevel, msg); ce != nil {
+		fields = append(fields, l.getFieldsForLog(reqID)...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) Warn(msg string, fields ...zap.Field) {
-	fields = append(fields, l.fields...)
-	l.Logger.Warn(msg, fields...)
+	if ce := l.Logger.Check(zap.WarnLevel, msg); ce != nil {
+		fields = append(fields, l.fields...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) ErrorWithID(reqID string, msg string, fields ...zap.Field) {
-	fields = append(fields, l.getFieldsForLog(reqID)...)
-	l.Logger.Error(msg, fields...)
+	if ce := l.Logger.Check(zap.ErrorLevel, msg); ce != nil {
+		fields = append(fields, l.getFieldsForLog(reqID)...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) Error(msg string, fields ...zap.Field) {
-	fields = append(fields, l.fields...)
-	l.Logger.Error(msg, fields...)
+	if ce := l.Logger.Check(zap.ErrorLevel, msg); ce != nil {
+		fields = append(fields, l.fields...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) FatalWithID(reqID string, msg string, fields ...zap.Field) {
-	fields = append(fields, l.getFieldsForLog(reqID)...)
-	l.Logger.Fatal(msg, fields...)
+	if ce := l.Logger.Check(zap.FatalLevel, msg); ce != nil {
+		fields = append(fields, l.getFieldsForLog(reqID)...)
+		ce.Write(fields...)
+	}
 }
 
 func (l *Logger) Fatal(msg string, fields ...zap.Field) {
-	fields = append(fields, l.fields...)
-	l.Logger.Debug(msg, fields...)
+	if ce := l.Logger.Check(zap.FatalLevel, msg); ce != nil {
+		fields = append(fields, l.fields...)
+		ce.Write(fields...)
+	}
 }
 
 // WriteFields adds field key and value pairs to the highest level Logger, they will be applied to all

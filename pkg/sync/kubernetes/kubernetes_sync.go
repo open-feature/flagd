@@ -94,7 +94,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 			k.ProviderArgs["featureflagconfiguration"],
 		),
 	)
-
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {
 		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
@@ -117,7 +116,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
 	informer := factory.ForResource(resource).Informer()
-
 	objectKey := client.ObjectKey{
 		Name:      k.ProviderArgs[featureFlagConfigurationName],
 		Namespace: k.ProviderArgs[featureFlagNamespaceName],
@@ -142,7 +140,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 			}
 		},
 	})
-
 	informer.Run(ctx.Done())
 }
 
