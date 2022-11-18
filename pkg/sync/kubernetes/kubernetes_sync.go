@@ -124,16 +124,19 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update %s %s", objectKey.Namespace, objectKey.Name))
 			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete %s %s", objectKey.Namespace, objectKey.Name))
 			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
