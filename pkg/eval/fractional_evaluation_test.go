@@ -432,7 +432,6 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 					b.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
 				}
 			}
-
 		})
 	}
 }
