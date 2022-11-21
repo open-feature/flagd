@@ -385,7 +385,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveBooleanValue(test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -469,7 +469,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveStringValue(test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -637,7 +637,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveIntValue(test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -724,7 +724,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveObjectValue(test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
