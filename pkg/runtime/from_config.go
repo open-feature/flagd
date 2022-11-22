@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -13,6 +14,12 @@ import (
 	"github.com/open-feature/flagd/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
+)
+
+const (
+	crdRegex  = "^core.openfeature.dev/"
+	fileRegex = "^file://"
+	urlRegex  = "^https?://"
 )
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
@@ -59,34 +66,44 @@ func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 }
 
 func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
+	regCrd, err := regexp.Compile(crdRegex)
+	if err != nil {
+		return err
+	}
+	regUrl, err := regexp.Compile(urlRegex)
+	if err != nil {
+		return err
+	}
+	regFile, err := regexp.Compile(fileRegex)
+	if err != nil {
+		return err
+	}
 	rtLogger := logger.WithFields(zap.String("component", "runtime"))
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
-	switch r.config.SyncProvider {
-	case "filepath":
-		for _, u := range r.config.SyncURI {
+	for _, uri := range r.config.SyncURI {
+		if regFile.Match([]byte(uri)) {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
-				URI: u,
+				URI: regFile.ReplaceAllString(uri, ""),
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
 					zap.String("sync", "filepath"),
 				),
 				ProviderArgs: r.config.ProviderArgs,
 			})
-			rtLogger.Debug(fmt.Sprintf("Using %s sync-provider on %q", r.config.SyncProvider, u))
-		}
-	case "kubernetes":
-		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
-			Logger: logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "kubernetes"),
-			),
-			ProviderArgs: r.config.ProviderArgs,
-		})
-		rtLogger.Debug(fmt.Sprintf("Using %s sync-provider", r.config.SyncProvider))
-	case "remote":
-		for _, u := range r.config.SyncURI {
+			rtLogger.Debug(fmt.Sprintf("Using filepath sync-provider for %q", uri))
+		} else if regCrd.Match([]byte(uri)) {
+			r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
+				Logger: logger.WithFields(
+					zap.String("component", "sync"),
+					zap.String("sync", "kubernetes"),
+				),
+				URI:          regCrd.ReplaceAllString(uri, ""),
+				ProviderArgs: r.config.ProviderArgs,
+			})
+			rtLogger.Debug(fmt.Sprintf("Using kubernetes sync-provider for %s", uri))
+		} else if regUrl.Match([]byte(uri)) {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
-				URI:         u,
+				URI:         uri,
 				BearerToken: r.config.SyncBearerToken,
 				Client: &http.Client{
 					Timeout: time.Second * 10,
@@ -98,10 +115,10 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				ProviderArgs: r.config.ProviderArgs,
 				Cron:         cron.New(),
 			})
-			rtLogger.Debug(fmt.Sprintf("Using %s sync-provider on %q", r.config.SyncProvider, u))
+			rtLogger.Debug(fmt.Sprintf("Using remote sync-provider for %q", uri))
+		} else {
+			return fmt.Errorf("invalid sync uri argument: %s", uri)
 		}
-	default:
-		return fmt.Errorf("invalid sync provider argument: %s", r.config.SyncProvider)
 	}
 	return nil
 }

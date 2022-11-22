@@ -16,7 +16,6 @@ const (
 	portFlagName           = "port"
 	metricsPortFlagName    = "metrics-port"
 	socketPathFlagName     = "socket-path"
-	syncProviderFlagName   = "sync-provider"
 	providerArgsFlagName   = "sync-provider-args"
 	evaluatorFlagName      = "evaluator"
 	serverCertPathFlagName = "server-cert-path"
@@ -37,9 +36,6 @@ func init() {
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(
-		syncProviderFlagName, "y", "filepath", "Set a sync provider e.g. filepath or remote",
-	)
 	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
@@ -56,7 +52,6 @@ func init() {
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
-	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
@@ -94,15 +89,11 @@ var startCmd = &cobra.Command{
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-
-			SyncProvider:    viper.GetString(syncProviderFlagName),
-			ProviderArgs:    viper.GetStringMapString(providerArgsFlagName),
-			SyncURI:         viper.GetStringSlice(uriFlagName),
-			SyncBearerToken: viper.GetString(bearerTokenFlagName),
-
-			Evaluator: viper.GetString(evaluatorFlagName),
-
-			CORS: viper.GetStringSlice(corsFlagName),
+			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
+			SyncURI:           viper.GetStringSlice(uriFlagName),
+			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
+			Evaluator:         viper.GetString(evaluatorFlagName),
+			CORS:              viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())
