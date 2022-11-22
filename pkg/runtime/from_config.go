@@ -7,32 +7,31 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/service"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-func FromConfig(config Config) (*Runtime, error) {
+func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	rt := Runtime{
-		config: config,
-		Logger: log.WithFields(log.Fields{
-			"component": "runtime",
-		}),
+		config:       config,
+		Logger:       logger.WithFields(zap.String("component", "runtime")),
 		syncNotifier: make(chan sync.INotify),
 	}
-	if err := rt.setEvaluatorFromConfig(); err != nil {
+	if err := rt.setEvaluatorFromConfig(logger); err != nil {
 		return nil, err
 	}
-	if err := rt.setSyncImplFromConfig(); err != nil {
+	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
 	}
-	rt.setService()
+	rt.setService(logger)
 	return &rt, nil
 }
 
-func (r *Runtime) setService() {
+func (r *Runtime) setService(logger *logger.Logger) {
 	r.Service = &service.ConnectService{
 		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 			Port:             r.config.ServicePort,
@@ -42,52 +41,48 @@ func (r *Runtime) setService() {
 			ServerSocketPath: r.config.ServiceSocketPath,
 			CORS:             r.config.CORS,
 		},
-		Logger: log.WithFields(log.Fields{
-			"component": "service",
-		}),
+		Logger: logger.WithFields(
+			zap.String("component", "service"),
+		),
 	}
 }
 
-func (r *Runtime) setEvaluatorFromConfig() error {
+func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 	switch r.config.Evaluator {
 	case "json":
-		r.Evaluator = &eval.JSONEvaluator{
-			Logger: log.WithFields(log.Fields{
-				"evaluator": "json",
-				"component": "evaluator",
-			}),
-		}
+		r.Evaluator = eval.NewJSONEvaluator(logger)
 	default:
 		return errors.New("no evaluator set")
 	}
-	log.Debugf("Using %s evaluator\n", r.config.Evaluator)
+	logger.Debug(fmt.Sprintf("Using %s evaluator", r.config.Evaluator))
 	return nil
 }
 
-func (r *Runtime) setSyncImplFromConfig() error {
+func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
+	rtLogger := logger.WithFields(zap.String("component", "runtime"))
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
 	switch r.config.SyncProvider {
 	case "filepath":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
 				URI: u,
-				Logger: log.WithFields(log.Fields{
-					"sync":      "filepath",
-					"component": "sync",
-				}),
+				Logger: logger.WithFields(
+					zap.String("component", "sync"),
+					zap.String("sync", "filepath"),
+				),
 				ProviderArgs: r.config.ProviderArgs,
 			})
-			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
+			rtLogger.Debug(fmt.Sprintf("Using %s sync-provider on %q", r.config.SyncProvider, u))
 		}
 	case "kubernetes":
 		r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
-			Logger: log.WithFields(log.Fields{
-				"sync":      "kubernetes",
-				"component": "sync",
-			}),
+			Logger: logger.WithFields(
+				zap.String("component", "sync"),
+				zap.String("sync", "kubernetes"),
+			),
 			ProviderArgs: r.config.ProviderArgs,
 		})
-		log.Debugf("Using %s sync-provider\n", r.config.SyncProvider)
+		rtLogger.Debug(fmt.Sprintf("Using %s sync-provider", r.config.SyncProvider))
 	case "remote":
 		for _, u := range r.config.SyncURI {
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
@@ -96,14 +91,14 @@ func (r *Runtime) setSyncImplFromConfig() error {
 				Client: &http.Client{
 					Timeout: time.Second * 10,
 				},
-				Logger: log.WithFields(log.Fields{
-					"sync":      "remote",
-					"component": "sync",
-				}),
+				Logger: logger.WithFields(
+					zap.String("component", "sync"),
+					zap.String("sync", "remote"),
+				),
 				ProviderArgs: r.config.ProviderArgs,
 				Cron:         cron.New(),
 			})
-			log.Debugf("Using %s sync-provider on %q\n", r.config.SyncProvider, u)
+			rtLogger.Debug(fmt.Sprintf("Using %s sync-provider on %q", r.config.SyncProvider, u))
 		}
 	default:
 		return fmt.Errorf("invalid sync provider argument: %s", r.config.SyncProvider)
