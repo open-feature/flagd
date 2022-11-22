@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
-	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +30,7 @@ const (
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
-	Logger       *log.Entry
+	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
 }
@@ -41,12 +41,12 @@ func (k *Sync) Source() string {
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
-		k.Logger.Info("No target feature flag configuration set")
+		k.Logger.Error("No target feature flag configuration set")
 		return "{}", nil
 	}
 
 	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Info("No target feature flag namespace set")
+		k.Logger.Error("No target feature flag namespace set")
 		return "{}", nil
 	}
 
@@ -82,29 +82,32 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	if k.ProviderArgs[featureFlagConfigurationName] == "" {
-		k.Logger.Info("No target feature flag configuration set")
+		k.Logger.Error("No target feature flag configuration set")
 		return
 	}
 	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Info("No target feature flag configuration namespace set")
+		k.Logger.Error("No target feature flag configuration namespace set")
 		return
 	}
-	k.Logger.Infof("Starting kubernetes sync notifier for resource %s", k.ProviderArgs["featureflagconfiguration"])
-
+	k.Logger.Info(
+		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
+			k.ProviderArgs["featureflagconfiguration"],
+		),
+	)
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {
-		k.Logger.Errorf("Error building configuration: %s", err)
+		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
 	}
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		k.Logger.Panic(err.Error())
+		k.Logger.Fatal(err.Error())
 	}
 	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
-		k.Logger.Fatalln(err)
+		k.Logger.Fatal(err.Error())
 	}
 	clusterClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
-		log.Fatalln(err)
+		k.Logger.Fatal(err.Error())
 	}
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 	// The created informer will not do resyncs if the given
@@ -113,29 +116,30 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
 	informer := factory.ForResource(resource).Informer()
-
 	objectKey := client.ObjectKey{
 		Name:      k.ProviderArgs[featureFlagConfigurationName],
 		Namespace: k.ProviderArgs[featureFlagNamespaceName],
 	}
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update %s %s", objectKey.Namespace, objectKey.Name))
 			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete %s %s", objectKey.Namespace, objectKey.Name))
 			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 	})
-
 	informer.Run(ctx.Done())
 }
 

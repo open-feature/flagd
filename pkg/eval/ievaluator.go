@@ -27,16 +27,23 @@ type IEvaluator interface {
 	SetState(source string, state string) ([]StateChangeNotification, error)
 
 	ResolveBooleanValue(
+		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value bool, variant string, reason string, err error)
 	ResolveStringValue(
+		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value string, variant string, reason string, err error)
-	ResolveIntValue(flagKey string,
+	ResolveIntValue(
+		reqID string,
+		flagKey string,
 		context *structpb.Struct) (value int64, variant string, reason string, err error)
-	ResolveFloatValue(flagKey string,
+	ResolveFloatValue(
+		reqID string,
+		flagKey string,
 		context *structpb.Struct) (value float64, variant string, reason string, err error)
 	ResolveObjectValue(
+		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value map[string]any, variant string, reasons string, err error)
 }

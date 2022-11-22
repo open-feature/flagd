@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ func Execute(version string, commit string, date string) {
 	Date = date
 	err := rootCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
