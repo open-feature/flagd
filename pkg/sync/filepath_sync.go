@@ -107,9 +107,9 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	<-ctx.Done()
 }
 
-// yamlToJson is a generic helper function to convert
+// yamlToJSON is a generic helper function to convert
 // yaml to json
-func yamlToJson(rawFile []byte) (string, error) {
+func yamlToJSON(rawFile []byte) (string, error) {
 	var ms map[string]interface{}
 	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
 		return "", fmt.Errorf("unmarshal yaml: %w", err)
