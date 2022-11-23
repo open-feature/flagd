@@ -111,12 +111,15 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 // yaml to json
 func yamlToJSON(rawFile []byte) (string, error) {
 	var ms map[string]interface{}
+	// yaml.Unmarshal unmarshals to map[interface]interface{}
 	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
 		return "", fmt.Errorf("unmarshal yaml: %w", err)
 	}
 
-	// Using jsoniter library here because json.Marshal doesn't understand keys of
-	// interface{} type (it can only understand string keys)
+	// json.Marshal can marshal map[string]interface{} to []byte
+	// but it can't marshal map[interface]interface{} to []byte
+	// We are using jsoniter library here because jsoniter.Marhsal
+	// can convert map[interface]interface{} to []byte
 	// More info:https://stackoverflow.com/q/35377477/6874596
 	var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 	// Adding spaces here because our evaluator transposer function
