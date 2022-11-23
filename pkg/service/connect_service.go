@@ -185,10 +185,10 @@ func (s *ConnectService) EventStream(
 
 func (s *ConnectService) Notify(n Notification) {
 	s.eventingConfiguration.mu.RLock()
+	defer s.eventingConfiguration.mu.RUnlock()
 	for _, send := range s.eventingConfiguration.subs {
 		send <- n
 	}
-	s.eventingConfiguration.mu.RUnlock()
 }
 
 func (s *ConnectService) ResolveBoolean(
