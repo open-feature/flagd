@@ -1,0 +1,16 @@
+{
+  "name": "k6",
+  "version": "0.0.0",
+  "description": "Dummy package for autocompleting k6 scripts.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loadimpact/k6.git"
+  },
+  "author": "Emily Ekberg <emily@loadimpact.com>",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/loadimpact/k6/issues"
+  },
+  "homepage": "https://github.com/loadimpact/k6#readme"
+}
