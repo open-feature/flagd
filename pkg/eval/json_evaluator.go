@@ -202,16 +202,19 @@ func (je *JSONEvaluator) evaluateVariant(
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
+
+		// if this is a valid variant, return it
+		if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
+			return variant, model.TargetingMatchReason, nil
+		}
+
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
+		reason = model.DefaultReason
+	} else {
+		reason = model.StaticReason
 	}
 
-	// if this is a valid variant, return it
-	if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
-		return variant, model.TargetingMatchReason, nil
-	}
-
-	// if it's not a valid variant, use the default value
-	je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
-	return je.state.Flags[flagKey].DefaultVariant, model.DefaultReason, nil
+	return je.state.Flags[flagKey].DefaultVariant, reason, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
