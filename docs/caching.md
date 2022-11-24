@@ -14,9 +14,7 @@ if reason == "STATIC" {
 }
 ```
 
-
-
-#### Busting
+#### Cache invalidation
 
 `flagd` emits events to the server-to-client stream, among these is the `configuration_change` event. The structure of this event is as such:
 
