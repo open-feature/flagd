@@ -29,7 +29,7 @@ func init() {
 	flags := startCmd.Flags()
 
 	// allows environment variables to use _ instead of -
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider becomes SYNC_PROVIDER
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
 	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to serve metrics on")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")

@@ -96,7 +96,6 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Error("No target feature flag configuration set")
 		return
 	}
-
 	ns, name, err := parseURI(k.Source())
 	if err != nil {
 		k.Logger.Error(err.Error())
@@ -123,8 +122,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Fatal(err.Error())
 	}
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
-	// The created informer will not do resyncs if the given
-	// defaultEventHandlerResyncPeriod is zero.
+	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
