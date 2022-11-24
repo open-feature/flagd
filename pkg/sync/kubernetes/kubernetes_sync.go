@@ -68,7 +68,7 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 }
 
 func parseURI(uri string) (string, string, error) {
-	s := strings.Split(uri, ".")
+	s := strings.Split(uri, "/")
 	if len(s) != 2 {
 		return "", "", fmt.Errorf("invalid uri received: %s", uri)
 	}
