@@ -32,7 +32,7 @@ Any URI passed to flagd via the `--uri` flag must follow one of the 3 following 
 | ----------- | ----------- | ----------- |
 | Kubernetes      | `core.openfeature.dev/namespace/name`       | `core.openfeature.dev/default/my-crd`       |
 | Filepath   | `file://path/to/my/flag`        | `file://etc/flagd/my-flags.json`       |
-| Remote   | `http(s)://flag-source-url`        | `https://my-flags.com/flags`       |
+| HTTP   | `http(s)://flag-source-url`        | `https://my-flags.com/flags`       |
 
 
 
