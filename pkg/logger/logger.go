@@ -40,9 +40,13 @@ type Logger struct {
 	requestFields *sync.Map
 	Logger        *zap.Logger
 	fields        []zap.Field
+	noop          bool
 }
 
 func (l *Logger) DebugWithID(reqID string, msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.DebugLevel, msg); ce != nil {
 		fields = append(fields, l.getFieldsForLog(reqID)...)
 		ce.Write(fields...)
@@ -50,6 +54,9 @@ func (l *Logger) DebugWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Debug(msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.DebugLevel, msg); ce != nil {
 		fields = append(fields, l.fields...)
 		ce.Write(fields...)
@@ -57,6 +64,9 @@ func (l *Logger) Debug(msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) InfoWithID(reqID string, msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.InfoLevel, msg); ce != nil {
 		fields = append(fields, l.getFieldsForLog(reqID)...)
 		ce.Write(fields...)
@@ -64,6 +74,9 @@ func (l *Logger) InfoWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Info(msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.InfoLevel, msg); ce != nil {
 		fields = append(fields, l.fields...)
 		ce.Write(fields...)
@@ -71,6 +84,9 @@ func (l *Logger) Info(msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) WarnWithID(reqID string, msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.WarnLevel, msg); ce != nil {
 		fields = append(fields, l.getFieldsForLog(reqID)...)
 		ce.Write(fields...)
@@ -78,6 +94,9 @@ func (l *Logger) WarnWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Warn(msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.WarnLevel, msg); ce != nil {
 		fields = append(fields, l.fields...)
 		ce.Write(fields...)
@@ -85,6 +104,9 @@ func (l *Logger) Warn(msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) ErrorWithID(reqID string, msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.ErrorLevel, msg); ce != nil {
 		fields = append(fields, l.getFieldsForLog(reqID)...)
 		ce.Write(fields...)
@@ -92,6 +114,9 @@ func (l *Logger) ErrorWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Error(msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.ErrorLevel, msg); ce != nil {
 		fields = append(fields, l.fields...)
 		ce.Write(fields...)
@@ -99,6 +124,9 @@ func (l *Logger) Error(msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) FatalWithID(reqID string, msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.FatalLevel, msg); ce != nil {
 		fields = append(fields, l.getFieldsForLog(reqID)...)
 		ce.Write(fields...)
@@ -106,6 +134,9 @@ func (l *Logger) FatalWithID(reqID string, msg string, fields ...zap.Field) {
 }
 
 func (l *Logger) Fatal(msg string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	if ce := l.Logger.Check(zap.FatalLevel, msg); ce != nil {
 		fields = append(fields, l.fields...)
 		ce.Write(fields...)
@@ -115,6 +146,9 @@ func (l *Logger) Fatal(msg string, fields ...zap.Field) {
 // WriteFields adds field key and value pairs to the highest level Logger, they will be applied to all
 // subsequent log calls using the matching requestID
 func (l *Logger) WriteFields(reqID string, fields ...zap.Field) {
+	if l.noop {
+		return
+	}
 	res := append(l.getFields(reqID), fields...)
 	l.requestFields.Store(reqID, res)
 }
@@ -140,6 +174,9 @@ func (l *Logger) getFieldsForLog(reqID string) []zap.Field {
 
 // ClearFields clears all stored fields for a given requestID, important for maintaining performance
 func (l *Logger) ClearFields(reqID string) {
+	if l.noop {
+		return
+	}
 	l.requestFields.Delete(reqID)
 }
 
@@ -170,14 +207,17 @@ func NewZapLogger(level zapcore.Level) (*zap.Logger, error) {
 }
 
 // NewLogger returns the logging wrapper for a given *zap.logger,
-// will return a wrapped zap noop logger if none is provided
+// will return a noop logger if none is provided
 func NewLogger(logger *zap.Logger) *Logger {
+	noop := false
 	if logger == nil {
+		noop = true
 		logger = zap.New(nil)
 	}
 	return &Logger{
 		Logger:        logger.WithOptions(zap.AddCallerSkip(1)),
 		requestFields: &sync.Map{},
+		noop:          noop,
 	}
 }
 
@@ -189,5 +229,6 @@ func (l *Logger) WithFields(fields ...zap.Field) *Logger {
 		Logger:        l.Logger,
 		requestFields: l.requestFields,
 		fields:        fields,
+		noop:          l.noop,
 	}
 }

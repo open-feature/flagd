@@ -13,17 +13,18 @@ import (
 )
 
 const (
-	portFlagName           = "port"
-	metricsPortFlagName    = "metrics-port"
-	socketPathFlagName     = "socket-path"
-	syncProviderFlagName   = "sync-provider"
-	providerArgsFlagName   = "sync-provider-args"
-	evaluatorFlagName      = "evaluator"
-	serverCertPathFlagName = "server-cert-path"
-	serverKeyPathFlagName  = "server-key-path"
-	uriFlagName            = "uri"
-	bearerTokenFlagName    = "bearer-token"
-	corsFlagName           = "cors-origin"
+	portFlagName              = "port"
+	metricsPortFlagName       = "metrics-port"
+	socketPathFlagName        = "socket-path"
+	syncProviderFlagName      = "sync-provider"
+	providerArgsFlagName      = "sync-provider-args"
+	evaluatorFlagName         = "evaluator"
+	serverCertPathFlagName    = "server-cert-path"
+	serverKeyPathFlagName     = "server-key-path"
+	uriFlagName               = "uri"
+	bearerTokenFlagName       = "bearer-token"
+	corsFlagName              = "cors-origin"
+	noopServiceLoggerFlagName = "disable-service-logger"
 )
 
 func init() {
@@ -52,6 +53,7 @@ func init() {
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
+	flags.Bool(noopServiceLoggerFlagName, false, "Disable all logging levels related to flag evaluation requests")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
@@ -64,6 +66,7 @@ func init() {
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
+	_ = viper.BindPFlag(noopServiceLoggerFlagName, flags.Lookup(noopServiceLoggerFlagName))
 }
 
 // startCmd represents the start command
@@ -103,6 +106,8 @@ var startCmd = &cobra.Command{
 			Evaluator: viper.GetString(evaluatorFlagName),
 
 			CORS: viper.GetStringSlice(corsFlagName),
+
+			NoopLogging: viper.GetBool(noopServiceLoggerFlagName),
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

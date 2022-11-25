@@ -36,6 +36,8 @@ type Config struct {
 
 	Evaluator string
 	CORS      []string
+
+	NoopLogging bool
 }
 
 func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
