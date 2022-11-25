@@ -42,9 +42,10 @@ func init() {
 	flags.StringToStringP(providerArgsFlagName,
 		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
-		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from this can be a filepath or url. "+
-			"Using multiple providers is supported where collisions between "+
-			"flags with the same key, the later will be used.")
+		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
+			"url or FeatureFlagConfiguration. Using multiple providers is supported however if"+
+			"flag keys are duplicated across multiple sources it may lead to unexpected behavior ",
+	)
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
