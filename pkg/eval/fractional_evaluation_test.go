@@ -3,6 +3,7 @@ package eval
 import (
 	"testing"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -276,12 +277,14 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.DefaultReason,
 		},
 	}
+	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := JSONEvaluator{state: tt.flags}
+			je := NewJSONEvaluator(logger.NewLogger(nil))
+			je.state = tt.flags
 
 			value, variant, reason, err := resolve[string](
-				tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
+				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
 			)
 
 			if value != tt.expectedValue {

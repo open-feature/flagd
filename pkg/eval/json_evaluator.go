@@ -9,16 +9,17 @@ import (
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	schema "github.com/open-feature/schemas/json"
-	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type JSONEvaluator struct {
 	state  Flags
-	Logger *log.Entry
+	Logger *logger.Logger
 }
 
 type constraints interface {
@@ -28,6 +29,17 @@ type constraints interface {
 const (
 	Disabled = "DISABLED"
 )
+
+func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
+	ev := JSONEvaluator{
+		Logger: logger.WithFields(
+			zap.String("component", "evaluator"),
+			zap.String("evaluator", "json"),
+		),
+	}
+	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
+	return &ev
+}
 
 func (je *JSONEvaluator) GetState() (string, error) {
 	data, err := json.Marshal(&je.state)
@@ -69,15 +81,15 @@ func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNot
 	return notifications, nil
 }
 
-func resolve[T constraints](key string, context *structpb.Struct,
-	variantEval func(string, *structpb.Struct) (string, string, error),
+func resolve[T constraints](reqID string, key string, context *structpb.Struct,
+	variantEval func(string, string, *structpb.Struct) (string, string, error),
 	variants map[string]any) (
 	value T,
 	variant string,
 	reason string,
 	err error,
 ) {
-	variant, reason, err = variantEval(key, context)
+	variant, reason, err = variantEval(reqID, key, context)
 	if err != nil {
 		return value, variant, reason, err
 	}
@@ -91,67 +103,77 @@ func resolve[T constraints](key string, context *structpb.Struct,
 	return value, variant, reason, nil
 }
 
-func (je *JSONEvaluator) ResolveBooleanValue(flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, context *structpb.Struct) (
 	value bool,
 	variant string,
 	reason string,
 	err error,
 ) {
-	return resolve[bool](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", reqID))
+	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
-func (je *JSONEvaluator) ResolveStringValue(flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, context *structpb.Struct) (
 	value string,
 	variant string,
 	reason string,
 	err error,
 ) {
-	return resolve[string](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
+	return resolve[string](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
-func (je *JSONEvaluator) ResolveFloatValue(flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context *structpb.Struct) (
 	value float64,
 	variant string,
 	reason string,
 	err error,
 ) {
-	value, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
+	value, variant, reason, err = resolve[float64](
+		reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 	return
 }
 
-func (je *JSONEvaluator) ResolveIntValue(flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveIntValue(reqID string, flagKey string, context *structpb.Struct) (
 	value int64,
 	variant string,
 	reason string,
 	err error,
 ) {
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	var val float64
-	val, variant, reason, err = resolve[float64](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	val, variant, reason, err = resolve[float64](
+		reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 	value = int64(val)
 	return
 }
 
-func (je *JSONEvaluator) ResolveObjectValue(flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveObjectValue(reqID string, flagKey string, context *structpb.Struct) (
 	value map[string]any,
 	variant string,
 	reason string,
 	err error,
 ) {
-	return resolve[map[string]any](flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
+	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
 func (je *JSONEvaluator) evaluateVariant(
+	reqID string,
 	flagKey string,
 	context *structpb.Struct,
 ) (variant string, reason string, err error) {
 	flag, ok := je.state.Flags[flagKey]
 	if !ok {
 		// flag not found
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found %s", flagKey))
 		return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
 	}
 
 	if flag.State == Disabled {
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled %s", flagKey))
 		return "", model.ErrorReason, errors.New(model.FlagDisabledErrorCode)
 	}
 
@@ -161,13 +183,13 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			je.Logger.Errorf("Error parsing rules for flag %s, %s", flagKey, err)
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag %s, %s", flagKey, err))
 			return "", model.ErrorReason, err
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			je.Logger.Errorf("error parsing context for flag %s, %s, %v", flagKey, err, context)
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag %s, %s, %v", flagKey, err, context))
 
 			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
@@ -175,7 +197,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			je.Logger.Errorf("Error applying rules %s", err)
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error applying rules %s", err))
 			return "", model.ErrorReason, err
 		}
 		// strip whitespace and quotes from the variant
@@ -188,6 +210,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	}
 
 	// if it's not a valid variant, use the default value
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
 	return je.state.Flags[flagKey].DefaultVariant, model.DefaultReason, nil
 }
 

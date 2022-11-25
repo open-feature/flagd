@@ -1,3 +1,4 @@
+//nolint:dupl
 package service
 
 import (
@@ -11,12 +12,14 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/xid"
 	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
+	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -26,7 +29,7 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	Logger                      *log.Entry
+	Logger                      *logger.Logger
 	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
 	eventingConfiguration       *eventingConfiguration
@@ -103,7 +106,7 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	})
 	h := Handler("", mdlw, mux)
 	go func() {
-		log.Printf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort)
+		s.Logger.Info(fmt.Sprintf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort))
 		server := &http.Server{
 			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
 			ReadHeaderTimeout: 3 * time.Second,
@@ -157,22 +160,21 @@ func (s *ConnectService) EventStream(
 				Type: string(KeepAlive),
 			})
 			if err != nil {
-				s.Logger.Error(err)
+				s.Logger.Error(err.Error())
 			}
 		case notification := <-s.eventingConfiguration.subs[req]:
 			d, err := structpb.NewStruct(notification.Data)
 			if err != nil {
-				s.Logger.Error(err)
+				s.Logger.Error(err.Error())
 			}
 			err = stream.Send(&schemaV1.EventStreamResponse{
 				Type: string(notification.Type),
 				Data: d,
 			})
 			if err != nil {
-				s.Logger.Error(err)
+				s.Logger.Error(err.Error())
 			}
 		case <-ctx.Done():
-			s.Logger.Info("client connection closed")
 			return nil
 		}
 	}
@@ -190,13 +192,25 @@ func (s *ConnectService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
+		zap.String("flag-key", req.Msg.GetFlagKey()),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
+	)
+	s.Logger.WarnWithID(reqID, "test")
+	s.Logger.DebugWithID(reqID, "boolean flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
-	result, variant, reason, err := s.Eval.ResolveBooleanValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveBooleanValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %t, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -207,13 +221,24 @@ func (s *ConnectService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
+		zap.String("flag-key", req.Msg.GetFlagKey()),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
+	)
+	s.Logger.DebugWithID(reqID, "string flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
-	result, variant, reason, err := s.Eval.ResolveStringValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveStringValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %s, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -224,13 +249,24 @@ func (s *ConnectService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
+		zap.String("flag-key", req.Msg.GetFlagKey()),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
+	)
+	s.Logger.DebugWithID(reqID, "int flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
-	result, variant, reason, err := s.Eval.ResolveIntValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveIntValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %d, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -241,13 +277,24 @@ func (s *ConnectService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
+		zap.String("flag-key", req.Msg.GetFlagKey()),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
+	)
+	s.Logger.DebugWithID(reqID, "float flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
-	result, variant, reason, err := s.Eval.ResolveFloatValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveFloatValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation complete: %64f, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -258,21 +305,41 @@ func (s *ConnectService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	s.Logger.WriteFields(
+		reqID,
+		zap.String("flag-key", req.Msg.GetFlagKey()),
+		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
+	)
+	s.Logger.DebugWithID(reqID, "object flag value requested")
+
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
-	result, variant, reason, err := s.Eval.ResolveObjectValue(req.Msg.GetFlagKey(), req.Msg.GetContext())
+	result, variant, reason, err := s.Eval.ResolveObjectValue(reqID, req.Msg.GetFlagKey(), req.Msg.GetContext())
 	if err != nil {
-		log.Error(err)
+		s.Logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %s", err.Error()))
 		res.Msg.Reason = model.ErrorReason
 		return res, errFormat(err)
 	}
 	val, err := structpb.NewStruct(result)
 	if err != nil {
+		s.Logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
 		return res, err
 	}
+
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %v, %s, %s", result, variant, reason))
 	res.Msg.Reason = reason
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil
+}
+
+func formatContextKeys(context *structpb.Struct) []string {
+	res := []string{}
+	for k := range context.AsMap() {
+		res = append(res, k)
+	}
+	return res
 }
 
 func (s *ConnectService) newCORS() *cors.Cors {

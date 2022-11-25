@@ -11,9 +11,9 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
 	mock "github.com/open-feature/flagd/pkg/eval/mock"
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
-	log "github.com/sirupsen/logrus"
 	gen "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -77,7 +77,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveBooleanValue(tt.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -87,12 +87,16 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 					ServerSocketPath: tt.socketPath,
 				},
+				Logger: logger.NewLogger(nil),
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
-			go func() { _ = service.Serve(ctx, eval) }()
+			go func() {
+				err := service.Serve(ctx, eval)
+				fmt.Println(err)
+			}()
 			conn, err := grpc.Dial(
 				fmt.Sprintf("unix://%s", tt.socketPath),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -100,16 +104,16 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				grpc.WithTimeout(2*time.Second),
 			)
 			if err != nil {
-				log.Errorf("grpc - fail to dial: %v", err)
+				t.Errorf("grpc - fail to dial: %v", err)
 				return
 			}
 			client := gen.NewServiceClient(
 				conn,
 			)
+
 			res, err := client.ResolveBoolean(ctx, tt.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
-				return
 			}
 			if !reflect.DeepEqual(res.Reason, tt.want.Reason) {
 				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
@@ -169,14 +173,15 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveBooleanValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
 			s := service.ConnectService{
-				Eval: eval,
+				Eval:   eval,
+				Logger: logger.NewLogger(nil),
 			}
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
@@ -216,14 +221,15 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveBooleanValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
 		s := service.ConnectService{
-			Eval: eval,
+			Eval:   eval,
+			Logger: logger.NewLogger(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -301,14 +307,15 @@ func TestConnectService_ResolveString(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveStringValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveStringValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.wantErr,
 			)
 			s := service.ConnectService{
-				Eval: eval,
+				Eval:   eval,
+				Logger: logger.NewLogger(nil),
 			}
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -348,14 +355,16 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveStringValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveStringValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+
 		s := service.ConnectService{
-			Eval: eval,
+			Eval:   eval,
+			Logger: logger.NewLogger(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -433,14 +442,15 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveFloatValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveFloatValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
 			s := service.ConnectService{
-				Eval: eval,
+				Eval:   eval,
+				Logger: logger.NewLogger(nil),
 			}
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -480,14 +490,16 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveFloatValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveFloatValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+
 		s := service.ConnectService{
-			Eval: eval,
+			Eval:   eval,
+			Logger: logger.NewLogger(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -565,14 +577,15 @@ func TestConnectService_ResolveInt(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveIntValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveIntValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
 			s := service.ConnectService{
-				Eval: eval,
+				Eval:   eval,
+				Logger: logger.NewLogger(nil),
 			}
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -612,14 +625,16 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveIntValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveIntValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+
 		s := service.ConnectService{
-			Eval: eval,
+			Eval:   eval,
+			Logger: logger.NewLogger(nil),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -701,14 +716,15 @@ func TestConnectService_ResolveObject(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveObjectValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveObjectValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
 			s := service.ConnectService{
-				Eval: eval,
+				Eval:   eval,
+				Logger: logger.NewLogger(nil),
 			}
 
 			if name != "eval returns error" {
@@ -758,14 +774,16 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveObjectValue(tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveObjectValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+
 		s := service.ConnectService{
-			Eval: eval,
+			Eval:   eval,
+			Logger: logger.NewLogger(nil),
 		}
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)

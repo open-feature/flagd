@@ -1,13 +1,15 @@
 package cmd
 
 import (
-	"os"
+	"log"
 	"strings"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -71,15 +73,22 @@ var startCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------
-		log.SetFormatter(&log.JSONFormatter{})
-		log.SetOutput(os.Stdout)
+		var level zapcore.Level
+		var err error
 		if Debug {
-			log.SetLevel(log.DebugLevel)
+			level = zapcore.DebugLevel
 		} else {
-			log.SetLevel(log.InfoLevel)
+			level = zapcore.InfoLevel
 		}
+		l, err := logger.NewZapLogger(level)
+		if err != nil {
+			log.Fatalf("can't initialize zap logger: %v", err)
+		}
+		logger := logger.NewLogger(l)
+		rtLogger := logger.WithFields(zap.String("component", "start"))
+
 		// Build Runtime -----------------------------------------------------------
-		rt, err := runtime.FromConfig(runtime.Config{
+		rt, err := runtime.FromConfig(logger, runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
@@ -96,13 +105,11 @@ var startCmd = &cobra.Command{
 			CORS: viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {
-			log.Error(err)
-			os.Exit(1)
+			rtLogger.Fatal(err.Error())
 		}
 
 		if err := rt.Start(); err != nil {
-			log.Error(err)
-			os.Exit(1)
+			rtLogger.Fatal(err.Error())
 		}
 	},
 }

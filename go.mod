@@ -16,13 +16,14 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.8.2
-	github.com/sirupsen/logrus v1.8.1
+	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
 	go.buf.build/open-feature/flagd-connect/open-feature/flagd v1.1.4
+	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20221002022538-bcab6841153b
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
 	google.golang.org/grpc v1.49.0
@@ -80,6 +81,8 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
 	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/term v0.0.0-20220919170432-7a66f970e087 // indirect

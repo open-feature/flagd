@@ -3,12 +3,13 @@ package sync_test
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -41,7 +42,7 @@ func TestFilePathSync_Notify(t *testing.T) {
 				}
 				defer func(file *os.File) {
 					if err := file.Close(); err != nil {
-						log.Fatalf("close file: %v", err)
+						t.Errorf("close file: %v", err)
 					}
 				}(file)
 
@@ -73,7 +74,7 @@ func TestFilePathSync_Notify(t *testing.T) {
 
 			fpSync := sync.FilePathSync{
 				URI:    dirName,
-				Logger: log.WithFields(log.Fields{}),
+				Logger: logger.NewLogger(nil),
 			}
 			inotifyChan := make(chan sync.INotify)
 
@@ -117,7 +118,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 		"success": {
 			fpSync: sync.FilePathSync{
 				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
-				Logger: log.WithFields(log.Fields{}),
+				Logger: logger.NewLogger(nil),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err != nil {
@@ -132,7 +133,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 		"not found": {
 			fpSync: sync.FilePathSync{
 				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
-				Logger: log.WithFields(log.Fields{}),
+				Logger: logger.NewLogger(nil),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err == nil {

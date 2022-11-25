@@ -5,24 +5,18 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/diegoholiveira/jsonlogic/v3"
-	log "github.com/sirupsen/logrus"
 	"github.com/zeebo/xxh3"
 )
-
-func init() {
-	jsonlogic.AddOperator("fractionalEvaluation", fractionalEvaluation)
-}
 
 type fractionalEvaluationDistribution struct {
 	variant    string
 	percentage int
 }
 
-func fractionalEvaluation(values, data interface{}) interface{} {
+func (je *JSONEvaluator) fractionalEvaluation(values, data interface{}) interface{} {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
-		log.Errorf("parseFractionalEvaluationData: %v", err)
+		je.Logger.Error(fmt.Sprintf("parseFractionalEvaluationData: %v", err))
 		return nil
 	}
 
