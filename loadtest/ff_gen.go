@@ -9,16 +9,6 @@ import (
 	"time"
 )
 
-type Flags struct {
-	Flags map[string]Flag `json:"flags"`
-}
-
-type Flag struct {
-	State          string         `json:"state"`
-	DefaultVariant string         `json:"defaultVariant"`
-	Variants       map[string]any `json:"variants"`
-}
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -28,7 +18,14 @@ const (
 	STRING = "string"
 )
 
-// Generates random FFs
+/*
+A simple random feature flag generator for testing purposes. Output is saved to "random.json".
+
+Configurable options:
+
+	-c : feature flag count (ex:go run ff_gen.go -c 500)
+	-t : type of feature flag (ex:go run ff_gen.go -t string). Support "boolean" and "string"
+*/
 func main() {
 	// Get flag count
 	var flagCount int
@@ -38,11 +35,10 @@ func main() {
 	var flagType string
 	flag.StringVar(&flagType, "t", BOOL, "Type of flags to generate")
 
-	// Parse cmd params
 	flag.Parse()
 
 	if flagType != STRING && flagType != BOOL {
-		fmt.Printf("Invalid type %s. Falling back to default.", flagType)
+		fmt.Printf("Invalid type %s. Falling back to default %s", flagType, BOOL)
 		flagType = BOOL
 	}
 
@@ -50,9 +46,9 @@ func main() {
 	root.Flags = make(map[string]Flag)
 
 	switch flagType {
-	case "string":
+	case BOOL:
 		root.setStringFlags(flagCount)
-	case "boolean":
+	case STRING:
 		root.setBoolFlags(flagCount)
 	}
 
@@ -62,7 +58,7 @@ func main() {
 		return
 	}
 
-	err = os.WriteFile("./random.json", bytes, 666)
+	err = os.WriteFile("./random.json", bytes, 444)
 	if err != nil {
 		fmt.Printf("File write error: %s ", err.Error())
 		return
@@ -95,6 +91,16 @@ func (f *Flags) setStringFlags(toGen int) {
 			Variants:       variant,
 		}
 	}
+}
+
+type Flags struct {
+	Flags map[string]Flag `json:"flags"`
+}
+
+type Flag struct {
+	State          string         `json:"state"`
+	DefaultVariant string         `json:"defaultVariant"`
+	Variants       map[string]any `json:"variants"`
 }
 
 func randomSelect(chooseFrom ...string) string {

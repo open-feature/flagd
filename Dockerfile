@@ -7,6 +7,7 @@ ARG TARGETARCH
 ARG VERSION
 ARG COMMIT
 ARG DATE
+ARG GOBUILD
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -16,11 +17,16 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
+COPY profiler.go profiler.go
 COPY cmd/ cmd/
 COPY pkg/ pkg/
 
-# Build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go
+# Check and include profiler in the build
+RUN if [ "$GOBUILD" = "profile" ]; then \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go profiler.go ; \
+   else \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go;  \
+    fi
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

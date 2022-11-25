@@ -3,20 +3,17 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 )
 
-// Init PProf server
+/*
+Enable pprof profiler for flagd. Build controlled by the build tag "profile".
+*/
 func init() {
 	// Go routine to server PProf
 	go func() {
-		server := http.Server{Addr: "localhost:6060", Handler: nil}
-		err := server.ListenAndServe()
-
-		if err != nil {
-			fmt.Printf("Server start : %s", err)
-		}
+		server := http.Server{Addr: ":6060", Handler: nil}
+		server.ListenAndServe()
 	}()
 }
