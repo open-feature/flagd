@@ -174,26 +174,26 @@ func TestFractionalEvaluation(t *testing.T) {
 							"yellow": "#FFFF00",
 						},
 						Targeting: []byte(`{
-												"fractionalEvaluation": [
-												  "email",
-												  [
-													"red",
-													25
-												  ],
-												  [
-													"blue",
-													25
-												  ],
-												  [
-													"green",
-													25
-												  ],
-												  [
-													"yellow",
-													25
-												  ]
-												]
-											  }`),
+							"fractionalEvaluation": [
+								"email",
+								[
+								"red",
+								25
+								],
+								[
+								"blue",
+								25
+								],
+								[
+								"green",
+								25
+								],
+								[
+								"yellow",
+								25
+								]
+							]
+							}`),
 					},
 				},
 			},
@@ -216,14 +216,14 @@ func TestFractionalEvaluation(t *testing.T) {
 							"yellow": "#FFFF00",
 						},
 						Targeting: []byte(`{
-												"fractionalEvaluation": [
-												  "email",
-												  [
-													"black",
-													100
-												  ]
-												]
-											  }`),
+							"fractionalEvaluation": [
+								"email",
+								[
+								"black",
+								100
+								]
+							]
+							}`),
 					},
 				},
 			},
@@ -250,18 +250,18 @@ func TestFractionalEvaluation(t *testing.T) {
 							"yellow": "#FFFF00",
 						},
 						Targeting: []byte(`{
-												"fractionalEvaluation": [
-												  "email",
-												  [
-													"red",
-													25
-												  ],
-												  [
-													"blue",
-													25
-												  ]
-												]
-											  }`),
+							"fractionalEvaluation": [
+								"email",
+								[
+								"red",
+								25
+								],
+								[
+								"blue",
+								25
+								]
+							]
+							}`),
 					},
 				},
 			},
@@ -316,35 +316,35 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 					"yellow": "#FFFF00",
 				},
 				Targeting: []byte(`{
-											"if": [
-											  {
-												"in": ["@faas.com", {
-														"var": ["email"]
-													  }]
-											  },
-											  {
-												"fractionalEvaluation": [
-												  "email",
-												  [
-													"red",
-													25
-												  ],
-												  [
-													"blue",
-													25
-												  ],
-												  [
-													"green",
-													25
-												  ],
-												  [
-													"yellow",
-													25
-												  ]
-												]
-											  }, null
-											]
-										  }`),
+					"if": [
+						{
+						"in": ["@faas.com", {
+								"var": ["email"]
+								}]
+						},
+						{
+						"fractionalEvaluation": [
+							"email",
+							[
+							"red",
+							25
+							],
+							[
+							"blue",
+							25
+							],
+							[
+							"green",
+							25
+							],
+							[
+							"yellow",
+							25
+							]
+						]
+						}, null
+					]
+					}`),
 			},
 		},
 	}
