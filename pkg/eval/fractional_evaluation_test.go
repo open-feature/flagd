@@ -410,13 +410,13 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}
-
+	reqID := "test"
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			je := JSONEvaluator{state: tt.flags}
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, err := resolve[string](
-					tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
+					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
 				)
 
 				if value != tt.expectedValue {

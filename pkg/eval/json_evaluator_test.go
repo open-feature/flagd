@@ -368,12 +368,12 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
 	}
-
+	reqID := "test"
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
 		if err != nil {
@@ -381,7 +381,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveBooleanValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -452,12 +452,12 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
 	}
-
+	reqID := "test"
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
 		if err != nil {
@@ -465,7 +465,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveStringValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -536,12 +536,12 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
 	}
-
+	reqID := "test"
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
 		if err != nil {
@@ -549,7 +549,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveFloatValue(reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -620,12 +620,12 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
 	}
-
+	reqID := "test"
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
 		if err != nil {
@@ -633,7 +633,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveIntValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveIntValue(reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -707,12 +707,12 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: l}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
 	}
-
+	reqID := "test"
 	for _, test := range tests {
 		apStruct, err := structpb.NewStruct(test.context)
 		if err != nil {
@@ -720,7 +720,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveObjectValue(test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveObjectValue(reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
