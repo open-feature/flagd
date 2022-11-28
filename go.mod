@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd
 
-go 1.18
+go 1.19
 
 require (
 	github.com/bufbuild/connect-go v0.5.0
