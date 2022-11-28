@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669516344387,
+  "lastUpdate": 1669602678684,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6094,6 +6094,58 @@ window.BENCHMARK_DATA = {
             "value": 6179,
             "unit": "ns/op\t    2400 B/op\t      44 allocs/op",
             "extra": "939331 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alex Jones",
+            "username": "AlexsJones",
+            "email": "alexsimonjones@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c61984448d5cdadec62b5cf6f7e24fc5f75a3738",
+          "message": "feat: snap (#211)\n\nAdding snap configuration and badge\r\n\r\nSigned-off-by: Skye Gill <gill.skye95@gmail.com>\r\nSigned-off-by: Alex <alexsimonjones@gmail.com>\r\nCo-authored-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2022-11-22T21:04:42Z",
+          "url": "https://github.com/open-feature/flagd/commit/c61984448d5cdadec62b5cf6f7e24fc5f75a3738"
+        },
+        "date": 1669602678008,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 5431,
+            "unit": "ns/op\t     968 B/op\t      23 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 5371,
+            "unit": "ns/op\t    1000 B/op\t      24 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 5831,
+            "unit": "ns/op\t    1040 B/op\t      24 allocs/op",
+            "extra": "960351 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 5259,
+            "unit": "ns/op\t     968 B/op\t      23 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 8318,
+            "unit": "ns/op\t    2400 B/op\t      44 allocs/op",
+            "extra": "636141 times\n2 procs"
           }
         ]
       }
