@@ -18,11 +18,11 @@ This image now exposes port `6060` for pprof data.
 
 ### Performance observations
 
-flagd performs well under heavy loads. Consider the following  results,
+flagd performs well under heavy loads. Consider the following results observed against the HTTP API of the flagd,
 
 ![](../images/loadTestResults.png)
 
-flagd is able to serve ~20K requests/second with just 64MB memory and 1 CPU. And the impact of flag type
+flagd is able to serve ~20K HTTP requests/second with just 64MB memory and 1 CPU. And the impact of flag type
 is minimal. There was no memory pressure observed throughout the test runs.
 
 #### Note on observations
