@@ -47,9 +47,9 @@ func main() {
 
 	switch flagType {
 	case BOOL:
-		root.setStringFlags(flagCount)
-	case STRING:
 		root.setBoolFlags(flagCount)
+	case STRING:
+		root.setStringFlags(flagCount)
 	}
 
 	bytes, err := json.Marshal(root)
