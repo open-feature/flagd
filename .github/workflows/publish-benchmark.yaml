@@ -5,6 +5,9 @@ on:
     # runs at 02:00 every day, UTC
     - cron: "0 2 * * *"
 
+env:
+  DEFAULT_GO_VERSION: 1.19.3
+
 jobs:
   benchmark-publish:
     name: Run Benchmark
@@ -15,7 +18,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v1
         with:
-          go-version: "1.19.3"
+          go-version: ${{ env.DEFAULT_GO_VERSION }}
       - name: Run benchmark
         run: go test -bench . -benchtime=5s -benchmem ./... | tee output.txt
 
