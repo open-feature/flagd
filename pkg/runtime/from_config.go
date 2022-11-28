@@ -18,7 +18,7 @@ import (
 
 const (
 	crdRegex  = "^core.openfeature.dev/"
-	fileRegex = "^file://"
+	fileRegex = "^file:"
 	urlRegex  = "^https?://"
 )
 
