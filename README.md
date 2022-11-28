@@ -15,6 +15,9 @@
   <a href="https://github.com/open-feature/flagd/releases">
     <img src="https://img.shields.io/github/release/open-feature/flagd/all.svg">
   </a>
+  <a href="https://snapcraft.io/flagd">
+  <img alt="Get it from the Snap Store" src="https://snapcraft.io/static/images/badges/en/snap-store-black.svg" width=100px;/>
+</a>
 </p>
 
 ## Features
