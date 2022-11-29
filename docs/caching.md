@@ -4,7 +4,7 @@
 
 #### Cacheable flags
 
-`flagd` sets the `reason` of a flag evaluation as `STATIC` when no targeting rules are configured for the flag. A client can safely store the result of a static evaluation in its cache indefinitely (until the configuration of the flag changes, see [busting](#busting)).
+`flagd` sets the `reason` of a flag evaluation as `STATIC` when no targeting rules are configured for the flag. A client can safely store the result of a static evaluation in its cache indefinitely (until the configuration of the flag changes, see [cache invalidation](#cache-invalidation)).
 
 Put simply in pseudocode:
 
