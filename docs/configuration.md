@@ -31,13 +31,8 @@ Any URI passed to flagd via the `--uri` flag must follow one of the 3 following 
 | Sync      | Pattern | Example |
 | ----------- | ----------- | ----------- |
 | Kubernetes      | `core.openfeature.dev/namespace/name`       | `core.openfeature.dev/default/my-crd`       |
-<<<<<<< HEAD
 | Filepath   | `file:path/to/my/flag`        | `file:etc/flagd/my-flags.json`       |
 | Remote   | `http(s)://flag-source-url`        | `https://my-flags.com/flags`       |
-=======
-| Filepath   | `file://path/to/my/flag`        | `file://etc/flagd/my-flags.json`       |
-| HTTP   | `http(s)://flag-source-url`        | `https://my-flags.com/flags`       |
->>>>>>> 3eb9d80a8604ad819c460e05065f989e62fad625
 
 
 
