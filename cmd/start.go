@@ -24,7 +24,7 @@ const (
 	uriFlagName                = "uri"
 	bearerTokenFlagName        = "bearer-token"
 	corsFlagName               = "cors-origin"
-	NoopRequestLoggingFlagName = "disable-request-logging"
+	noopRequestLoggingFlagName = "disable-request-logging"
 )
 
 func init() {
@@ -53,7 +53,7 @@ func init() {
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
-	flags.Bool(NoopRequestLoggingFlagName, false, "Disable all logging levels pertaining to flag evaluation requests")
+	flags.Bool(noopRequestLoggingFlagName, false, "Disable all logging levels pertaining to flag evaluation requests")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
@@ -66,7 +66,7 @@ func init() {
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
-	_ = viper.BindPFlag(NoopRequestLoggingFlagName, flags.Lookup(NoopRequestLoggingFlagName))
+	_ = viper.BindPFlag(noopRequestLoggingFlagName, flags.Lookup(noopRequestLoggingFlagName))
 }
 
 // startCmd represents the start command
@@ -87,7 +87,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
-		logger := logger.NewLogger(l, viper.GetBool(NoopRequestLoggingFlagName))
+		logger := logger.NewLogger(l, viper.GetBool(noopRequestLoggingFlagName))
 		rtLogger := logger.WithFields(zap.String("component", "start"))
 
 		// Build Runtime -----------------------------------------------------------
