@@ -23,6 +23,7 @@ const (
 	uriFlagName            = "uri"
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
+	syncProviderFlagName   = "sync-provider"
 )
 
 func init() {
@@ -49,6 +50,9 @@ func init() {
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
+	flags.StringP(
+		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
+	)
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
@@ -60,6 +64,7 @@ func init() {
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
+	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 }
 
 // startCmd represents the start command
@@ -82,6 +87,11 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l)
 		rtLogger := logger.WithFields(zap.String("component", "start"))
+
+		if viper.GetString(syncProviderFlagName) != "" {
+			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
+		}
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
