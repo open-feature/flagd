@@ -16,12 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	crdRegex  = "^core.openfeature.dev/"
-	fileRegex = "^file:"
-	urlRegex  = "^https?://"
-)
-
 var (
 	regCrd  *regexp.Regexp
 	regURL  *regexp.Regexp
@@ -29,9 +23,9 @@ var (
 )
 
 func init() {
-	regCrd = regexp.MustCompile(crdRegex)
-	regURL = regexp.MustCompile(urlRegex)
-	regFile = regexp.MustCompile(fileRegex)
+	regCrd = regexp.MustCompile("^core.openfeature.dev/")
+	regURL = regexp.MustCompile("^https?://")
+	regFile = regexp.MustCompile("^file:")
 }
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
