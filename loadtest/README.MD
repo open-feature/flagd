@@ -18,7 +18,7 @@ This image now exposes port `6060` for pprof data.
 
 ### Performance observations
 
-flagd performs well under heavy loads. Consider the following results observed against the HTTP API of the flagd,
+flagd performs well under heavy loads. Consider the following results observed against the HTTP API of flagd,
 
 ![](../images/loadTestResults.png)
 
