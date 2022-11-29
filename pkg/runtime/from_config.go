@@ -22,6 +22,18 @@ const (
 	urlRegex  = "^https?://"
 )
 
+var (
+	regCrd  *regexp.Regexp
+	regURL  *regexp.Regexp
+	regFile *regexp.Regexp
+)
+
+func init() {
+	regCrd = regexp.MustCompile(crdRegex)
+	regURL = regexp.MustCompile(urlRegex)
+	regFile = regexp.MustCompile(fileRegex)
+}
+
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	rt := Runtime{
 		config:       config,
@@ -66,10 +78,6 @@ func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 }
 
 func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
-	regCrd := regexp.MustCompile(crdRegex)
-	regURL := regexp.MustCompile(urlRegex)
-	regFile := regexp.MustCompile(fileRegex)
-
 	rtLogger := logger.WithFields(zap.String("component", "runtime"))
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
 	for _, uri := range r.config.SyncURI {
