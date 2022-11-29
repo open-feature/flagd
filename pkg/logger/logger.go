@@ -191,7 +191,7 @@ func NewZapLogger(level zapcore.Level) (*zap.Logger, error) {
 	return cfg.Build()
 }
 
-// NewLogger returns the logging wrapper for a given *zap.logger,
+// NewLogger returns the logging wrapper for a given *zap.logger.
 // Noop logger will bypass the setting of fields, improving performance
 // if no *zap.Logger is nil, a noop logger will be set,
 // and the noopReqIDLogging argument will be overwriten to true
