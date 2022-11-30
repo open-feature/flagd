@@ -9,4 +9,5 @@ const (
 	DefaultReason        = "DEFAULT"
 	UnknownReason        = "UNKNOWN"
 	ErrorReason          = "ERROR"
+	StaticReason         = "STATIC"
 )
