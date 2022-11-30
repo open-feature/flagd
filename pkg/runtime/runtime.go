@@ -29,7 +29,6 @@ type Config struct {
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
-	SyncProvider    string
 	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
 	SyncBearerToken string

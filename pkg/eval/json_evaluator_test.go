@@ -606,7 +606,7 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, _ := tt.current.Merge(tt.newSource, tt.new)
+			got, _ := tt.current.Merge(logger.NewLogger(nil), tt.newSource, tt.new)
 			require.Equal(t, tt.want, got)
 		})
 	}
