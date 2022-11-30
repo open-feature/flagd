@@ -2,12 +2,12 @@ package sync
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
-	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/pkg/logger"
@@ -39,7 +39,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	case "yaml":
 		fallthrough
 	case "yml":
-		return yamlToJson(rawFile)
+		return yamlToJSON(rawFile)
 	case "json":
 		return string(rawFile), nil
 	default:
@@ -116,15 +116,9 @@ func yamlToJSON(rawFile []byte) (string, error) {
 		return "", fmt.Errorf("unmarshal yaml: %w", err)
 	}
 
-	// json.Marshal can marshal map[string]interface{} to []byte
-	// but it can't marshal map[interface]interface{} to []byte
-	// We are using jsoniter library here because jsoniter.Marhsal
-	// can convert map[interface]interface{} to []byte
-	// More info:https://stackoverflow.com/q/35377477/6874596
-	var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 	// Adding spaces here because our evaluator transposer function
 	// doesn't understand json without indentations quite well
-	r, err := jsonit.MarshalIndent(ms, "", "  ")
+	r, err := json.MarshalIndent(ms, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("convert yaml to json: %w", err)
 	}
