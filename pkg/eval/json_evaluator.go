@@ -180,7 +180,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	// get the targeting logic, if any
 	targeting := flag.Targeting
 
-	if targeting != nil {
+	if targeting != nil && string(targeting) != "{}" {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag %s, %s", flagKey, err))
