@@ -322,7 +322,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticBoolFlag, nil, StaticBoolValue, model.DefaultReason, ""},
+		{StaticBoolFlag, nil, StaticBoolValue, model.StaticReason, ""},
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -361,7 +361,7 @@ func TestResolveStringValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticStringFlag, nil, StaticStringValue, model.DefaultReason, ""},
+		{StaticStringFlag, nil, StaticStringValue, model.StaticReason, ""},
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -401,7 +401,7 @@ func TestResolveFloatValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticFloatFlag, nil, StaticFloatValue, model.DefaultReason, ""},
+		{StaticFloatFlag, nil, StaticFloatValue, model.StaticReason, ""},
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -441,7 +441,7 @@ func TestResolveIntValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticIntFlag, nil, StaticIntValue, model.DefaultReason, ""},
+		{StaticIntFlag, nil, StaticIntValue, model.StaticReason, ""},
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -481,7 +481,7 @@ func TestResolveObjectValue(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{StaticObjectFlag, nil, StaticObjectValue, model.DefaultReason, ""},
+		{StaticObjectFlag, nil, StaticObjectValue, model.StaticReason, ""},
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -606,7 +606,7 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, _ := tt.current.Merge(tt.newSource, tt.new)
+			got, _ := tt.current.Merge(logger.NewLogger(nil), tt.newSource, tt.new)
 			require.Equal(t, tt.want, got)
 		})
 	}

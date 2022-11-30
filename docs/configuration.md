@@ -15,15 +15,25 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -k, --server-key-path string    Server side tls key path
   -a, --sync-provider-args        Sync provider arguments as key values separated by =
   -d, --socket-path string        Set the flagd socket path.
-  -y, --sync-provider string      Set a sync provider e.g. filepath or remote (default "filepath")
   -f, --uri strings               Set a sync provider uri to read data from this can be a filepath or url. Using multiple providers is supported where collisions between flags with the same key, the later will be used.
   -C, --cors-origin strings       Set a CORS allow origin header, setting "*" will allow all origins (by default CORS headers are not set)
 ```
 
 Environment variable keys are uppercased, prefixed with `FLAGD_` and all `-` are replaced with `_`. For example,
-`sync-provider` in environment variable form is `FLAGD_SYNC_PROVIDER`.
+`sync-provider-args` in environment variable form is `FLAGD_SYNC_PROVIDER_ARGS`.
 
 Config file expects the keys to have the exact naming as the flags.
+
+### URI patterns
+
+Any URI passed to flagd via the `--uri` flag must follow one of the 3 following patterns to ensure that it is passed to the correct implementation: 
+
+| Sync      | Pattern | Example |
+| ----------- | ----------- | ----------- |
+| Kubernetes      | `core.openfeature.dev/namespace/name`       | `core.openfeature.dev/default/my-crd`       |
+| Filepath   | `file:path/to/my/flag`        | `file:etc/flagd/my-flags.json`       |
+| Remote   | `http(s)://flag-source-url`        | `https://my-flags.com/flags`       |
+
 
 
 ### Customising sync providers
@@ -37,12 +47,11 @@ The Kubernetes provider allows flagD to connect to a Kubernetes cluster and eval
 To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
 
 ```shell
-flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=namespace=default
+flagd start --uri core.openfeature.dev/default.my_example
 ```
 
 An additional optional flag `refreshtime` can be applied to shorten the cache refresh when using the Kubernetes provider ( The default is 5s ). As an example: 
 
 ```shell
-flagd start --sync-provider=kubernetes --sync-provider-args=featureflagconfiguration=my-example --sync-provider-args=namespace=default
---sync-provider-args=refreshtime=1s
+flagd start --uri core.openfeature.dev/default.my_example --sync-provider-args=refreshtime=1s
 ```
