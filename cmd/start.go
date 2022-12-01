@@ -85,7 +85,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
-		logger := logger.NewLogger(l, !Debug)
+		logger := logger.NewLogger(l, Debug)
 		rtLogger := logger.WithFields(zap.String("component", "start"))
 
 		if viper.GetString(syncProviderFlagName) != "" {
