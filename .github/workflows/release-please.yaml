@@ -6,7 +6,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  DEFAULT_GO_VERSION: 1.18
+  DEFAULT_GO_VERSION: 1.19.3
 
 name: Run Release Please
 jobs:
