@@ -281,7 +281,7 @@ func TestFractionalEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(logger.NewLogger(nil))
+			je := NewJSONEvaluator(logger.NewLogger(nil, false))
 			je.state = tt.flags
 
 			value, variant, reason, err := resolve[string](
