@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669862151988,
+  "lastUpdate": 1669948041025,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6302,6 +6302,58 @@ window.BENCHMARK_DATA = {
             "value": 9090,
             "unit": "ns/op\t    2336 B/op\t      44 allocs/op",
             "extra": "622465 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "14474ccf65b9b92213e8c792e94c458022484df4",
+          "message": "feat!: start command flag refactor (#222)\n\nCorresponding OFO changes\r\n[here](https://github.com/open-feature/open-feature-operator/pull/256)\r\n<!-- Please use this template for your pull request. -->\r\n<!-- Please use the sections that you need and delete other sections -->\r\n\r\n## This PR\r\n<!-- add the description of the PR here -->\r\n\r\n- refactors the start command flags to remove `--sync-provider`\r\n- multiple `--uri` flags can be passed indicating the use of different\r\nexisting `sync-provider` types, all of which will work\r\n- uses a prefix on the uri to define the `sync-provider`; `http(s)://`\r\nwill be passed to the http sync, `file://` will be passed to the file\r\npath sync and the Kubernetes sync uses the following pattern\r\n`core.openfeature.dev/{namespace}/{name}`, this will also allow for the\r\nKubernetes sync to watch multiple `FeatureFlagConfigurations` from\r\ndifferent namespaces.\r\n- adds deprecation warning when the `--sync-provider` flag is passed as\r\nan argument\r\n\r\n`./flagd start --uri file://etc/flagd/end-to-end.json --uri\r\ncore.openfeature.dev/test/end-to-end-2`\r\n\r\n### Related Issues\r\n<!-- add here the GitHub issue that this PR resolves if applicable -->\r\n\r\nhttps://github.com/open-feature/open-feature-operator/issues/251\r\n\r\n### Notes\r\n<!-- any additional notes for this PR -->\r\n\r\n### Follow-up Tasks\r\n\r\n### How to test\r\n<!-- if applicable, add testing instructions under this section -->\r\n\r\nSigned-off-by: James Milligan <james@omnant.co.uk>\r\nSigned-off-by: James Milligan <75740990+james-milligan@users.noreply.github.com>\r\nCo-authored-by: Todd Baert <toddbaert@gmail.com>",
+          "timestamp": "2022-11-30T21:03:10Z",
+          "url": "https://github.com/open-feature/flagd/commit/14474ccf65b9b92213e8c792e94c458022484df4"
+        },
+        "date": 1669948040469,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 4310,
+            "unit": "ns/op\t    1032 B/op\t      24 allocs/op",
+            "extra": "1418601 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 4207,
+            "unit": "ns/op\t    1064 B/op\t      25 allocs/op",
+            "extra": "1427154 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 4557,
+            "unit": "ns/op\t    1104 B/op\t      25 allocs/op",
+            "extra": "1314555 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 4199,
+            "unit": "ns/op\t    1032 B/op\t      24 allocs/op",
+            "extra": "1429946 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 6163,
+            "unit": "ns/op\t    2336 B/op\t      44 allocs/op",
+            "extra": "936722 times\n2 procs"
           }
         ]
       }
