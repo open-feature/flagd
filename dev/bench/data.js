@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669948041025,
+  "lastUpdate": 1670034022868,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6354,6 +6354,58 @@ window.BENCHMARK_DATA = {
             "value": 6163,
             "unit": "ns/op\t    2336 B/op\t      44 allocs/op",
             "extra": "936722 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "11954b521cc6197d0dc04b163e66e38d4c288047",
+          "message": "feat: enable request logging via the --debug flag (#226)\n\n<!-- Please use this template for your pull request. -->\r\n<!-- Please use the sections that you need and delete other sections -->\r\n\r\n## This PR\r\n<!-- add the description of the PR here -->\r\n\r\n- The `--debug` flag now also controls the logging for requests, when\r\nset all logging levels are enabled for the `XXXWithID` `logger` methods\r\nand allows the setting of request fields, allowing for improved\r\nperformance when logs are not required.\r\n- `NewLogger` now takes an additional boolean argument to set the\r\ninternal `reqIDLogging` field, this field is also set to false when the\r\n`*zap.Logger` argument is nil\r\n\r\n### Related Issues\r\n<!-- add here the GitHub issue that this PR resolves if applicable -->\r\n\r\n### Notes\r\n<!-- any additional notes for this PR -->\r\n\r\n### Follow-up Tasks\r\n<!-- anything that is related to this PR but not done here should be\r\nnoted under this section -->\r\n<!-- if there is a need for a new issue, please link it here -->\r\nThis flag should be set by default in the operator\r\nhttps://github.com/open-feature/open-feature-operator/pull/260\r\n### How to test\r\n<!-- if applicable, add testing instructions under this section -->\r\n\r\nSigned-off-by: James Milligan <james@omnant.co.uk>\r\nSigned-off-by: James Milligan <75740990+james-milligan@users.noreply.github.com>\r\nCo-authored-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2022-12-02T09:53:25Z",
+          "url": "https://github.com/open-feature/flagd/commit/11954b521cc6197d0dc04b163e66e38d4c288047"
+        },
+        "date": 1670034022305,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 3227,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1866760 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3243,
+            "unit": "ns/op\t     568 B/op\t      15 allocs/op",
+            "extra": "1826382 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3607,
+            "unit": "ns/op\t     608 B/op\t      15 allocs/op",
+            "extra": "1662622 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3230,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1858586 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 5200,
+            "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
+            "extra": "1000000 times\n2 procs"
           }
         ]
       }
