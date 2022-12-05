@@ -20,7 +20,7 @@ func TestFieldStorageAndRetrieval(t *testing.T) {
 		},
 	}
 	for name, test := range tests {
-		l := NewLogger(nil)
+		l := NewLogger(&zap.Logger{}, true)
 		l.WriteFields(name, test.fields...)
 		returnedFields := l.getFields(name)
 		if !reflect.DeepEqual(returnedFields, test.fields) {
@@ -32,7 +32,7 @@ func TestFieldStorageAndRetrieval(t *testing.T) {
 func TestLoggerChildOperation(t *testing.T) {
 	id := "test"
 	// create parent logger
-	p := NewLogger(nil)
+	p := NewLogger(&zap.Logger{}, true)
 	// add field 1
 	field1 := zap.Int("field", 1)
 	p.WriteFields(id, field1)
