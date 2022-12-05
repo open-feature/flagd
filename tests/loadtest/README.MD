@@ -10,9 +10,9 @@ This folder contains resources for flagd load testing.
 It's possible to utilize `profiler.go` included with flagd source to profile flagd during
 load test. Profiling is enabled through [go pprof package](https://pkg.go.dev/net/http/pprof).
 
-To enable pprof profiling, build docker image with build argument `GOBUILD` set to `profile`
+To enable pprof profiling, build a docker image with the `profile.Dockerfile`
 
-ex:- `docker build --build-arg GOBUILD=profile . -t flagdprofile`
+ex:- `docker build . -f ./profile.Dockerfile -t flagdprofile`
 
 This image now exposes port `6060` for pprof data.
 
@@ -27,7 +27,7 @@ This command generates `random.json`in the same directory.
 
 Then, let's start pprof profiler enabled flagd docker container with newly generated feature flags.
 
-`docker run -p 8013:8013 -p 6060:6060 --rm -it -v $(pwd):/etc/flagd flagdprofile start --uri /etc/flagd/random.json`
+`docker run -p 8013:8013 -p 6060:6060 --rm -it -v $(pwd):/etc/flagd flagdprofile start --uri file:./etc/flagd/random.json`
 
 Finally, you can run the K6 test script to load test the flagd container.
 
