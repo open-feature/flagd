@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670207089451,
+  "lastUpdate": 1670293510561,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6510,6 +6510,58 @@ window.BENCHMARK_DATA = {
             "value": 4798,
             "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
             "extra": "1248081 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "41898282+github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "df7c6ee15ab30325b893cdce95e0735d486ebf74",
+          "message": "chore(main): release 0.2.7 (#215)\n\n:robot: I have created a release *beep* *boop*\r\n---\r\n\r\n\r\n##\r\n[0.2.7](https://github.com/open-feature/flagd/compare/v0.2.5...v0.2.7)\r\n(2022-12-02)\r\n\r\n\r\n### ⚠ BREAKING CHANGES\r\n\r\n* start command flag refactor\r\n([#222](https://github.com/open-feature/flagd/issues/222))\r\n\r\n### Features\r\n\r\n* enable request logging via the --debug flag\r\n([#226](https://github.com/open-feature/flagd/issues/226))\r\n([11954b5](https://github.com/open-feature/flagd/commit/11954b521cc6197d0dc04b163e66e38d4c288047))\r\n* Resurrected the STATIC flag reason. Documented the caching strategy.\r\n([#224](https://github.com/open-feature/flagd/issues/224))\r\n([5830592](https://github.com/open-feature/flagd/commit/5830592053c55dc9e55c16854e40c3fc8345d6d1))\r\n* snap ([#211](https://github.com/open-feature/flagd/issues/211))\r\n([c619844](https://github.com/open-feature/flagd/commit/c61984448d5cdadec62b5cf6f7e24fc5f75a3738))\r\n* start command flag refactor\r\n([#222](https://github.com/open-feature/flagd/issues/222))\r\n([14474cc](https://github.com/open-feature/flagd/commit/14474ccf65b9b92213e8c792e94c458022484df4))\r\n\r\n\r\n### Miscellaneous Chores\r\n\r\n* release v0.2.6\r\n([93cfb78](https://github.com/open-feature/flagd/commit/93cfb78d024b436fa7fb17fd41f74d1508bf8b64))\r\n* release v0.2.7\r\n([4a9f6df](https://github.com/open-feature/flagd/commit/4a9f6df4e472229ff805e9d5d3aa581c7c9c0667))\r\n\r\n---\r\nThis PR was generated with [Release\r\nPlease](https://github.com/googleapis/release-please). See\r\n[documentation](https://github.com/googleapis/release-please#release-please).\r\n\r\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2022-12-05T12:47:44Z",
+          "url": "https://github.com/open-feature/flagd/commit/df7c6ee15ab30325b893cdce95e0735d486ebf74"
+        },
+        "date": 1670293510003,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 3057,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1994467 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3040,
+            "unit": "ns/op\t     568 B/op\t      15 allocs/op",
+            "extra": "1967996 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3353,
+            "unit": "ns/op\t     608 B/op\t      15 allocs/op",
+            "extra": "1785908 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3069,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1962642 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4924,
+            "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
+            "extra": "1235658 times\n2 procs"
           }
         ]
       }
