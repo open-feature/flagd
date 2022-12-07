@@ -8,7 +8,7 @@
     curl https://raw.githubusercontent.com/open-feature/flagd/main/config/samples/example_flags.json -o example_flags.json
     ```
 
-1. Run one of the following commands, depending on how [flagd was installed](https://github.com/open-feature/flagd/blob/main/docs/usage/getting_started.md):
+1. Run one of the following commands, depending on how [flagd was installed](../usage/getting_started.md):
    - binary:
 
     ```shell

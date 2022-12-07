@@ -21,7 +21,7 @@ Install via Snapcraft, documentation can be found here: https://snapcraft.io/fla
 
 ### Systemd service
 
-Documentation for installing flagd as a systemd service can be found here: https://github.com/open-feature/flagd/blob/main/docs/other_resources/systemd_service.md
+Documentation for installing flagd as a systemd service can be found [here](../other_resources/systemd_service.md)
 
 ### Open Feature Operator
 The OpenFeature Operator is a Kubernetes native operator that allows you to expose feature flags to your applications. It injects a flagD sidecar into your pod and allows you to poll the flagD server for feature flags in a variety of ways.
