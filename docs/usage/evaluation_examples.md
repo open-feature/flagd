@@ -8,7 +8,7 @@
     curl https://raw.githubusercontent.com/open-feature/flagd/main/config/samples/example_flags.json -o example_flags.json
     ```
 
-1. Run one of the following commands, depending on how [[flagd was installed|Home]]:
+1. Run one of the following commands, depending on how [flagd was installed](https://github.com/open-feature/flagd/blob/main/docs/usage/getting_started.md):
    - binary:
 
     ```shell
@@ -70,8 +70,7 @@ Result:
 ```sh
 {"value":"1","reason":"DEFAULT","variant":"one"}
 ```
-
-[[ Why is this int response a string | HTTP(S)-Service-Integer-Response-Behavior ]]
+[Why is this int response a string](https://github.com/open-feature/flagd/blob/main/docs/help/http_int_response.md)
 <br />
 <br />
 
