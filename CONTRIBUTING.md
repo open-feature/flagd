@@ -9,7 +9,7 @@ Any contributions are expected to include unit tests. These can be validated wit
 
 The go version in the `go.mod` is the currently supported version of go.
 
-The project uses remote buf packages which will require a one-time registry configuration:
+The project uses remote buf packages which will require a one-time registry configuration for local development:
 ```shell
 export GOPRIVATE=buf.build/gen/go
 ```
