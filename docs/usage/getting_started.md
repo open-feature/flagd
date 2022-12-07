@@ -30,6 +30,9 @@ The OpenFeature Operator is a Kubernetes native operator that allows you to expo
 To get started with the operator, view the project here: https://github.com/open-feature/open-feature-operator
 
 ## Next Steps
+
+Use the documentation on the following pages to configure flagd correctly for your implementation, then use it to either evaluate our sample flags, or ones you have defined yourself.
+
 - [Configuring flagd](../configuration/configuration.md)
 - [Evaluating flag values using a flagd provider](../usage/flagd_providers.md)
 - [Evaluating flag values using curl](../usage/evaluation_examples.md)
