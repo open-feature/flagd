@@ -31,9 +31,9 @@ To get started with the operator, view the project here: https://github.com/open
 
 ## Next Steps
 
-Use the documentation on the following pages to configure flagd correctly for your implementation, then use it to either evaluate our sample flags, or ones you have defined yourself.
+The documentation in the following pages will help you to correctly configure your flagd service, as well as create and evaluate your own custom flags, either using curl or one of the OpenFeature language specific providers.
 
 - [Configuring flagd](../configuration/configuration.md)
+- [Creating custom flag definitions](../configuration/flag_configuration.md)
 - [Evaluating flag values using a flagd provider](../usage/flagd_providers.md)
 - [Evaluating flag values using curl](../usage/evaluation_examples.md)
-- [Creating custom flag definitions](../configuration/flag_configuration.md)
