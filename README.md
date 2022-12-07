@@ -32,7 +32,7 @@
 
 ## Get started
 
-Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification. To get started, follow the installation instructions in the [docs](https://github.com/open-feature/open-feature-operator/blob/main/docs/get_started.md).
+Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification. To get started, follow the installation instructions in the [docs](https://github.com/open-feature/open-feature-operator/blob/main/docs/README.md).
 
 ## Contributing
 
