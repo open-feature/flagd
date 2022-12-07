@@ -15,7 +15,7 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -k, --server-key-path string    Server side tls key path
   -a, --sync-provider-args        Sync provider arguments as key values separated by =
   -d, --socket-path string        Set the flagd socket path.
-  -f, --uri strings               Set a sync provider uri to read data from this can be a filepath, url or reference to a kubernetes custom resource. Using multiple providers is supported where collisions between flags with the same key, the later will be used.
+  -f, --uri strings               Set a sync provider uri to read data from this can be a filepath, url or reference to a kubernetes custom resource. Using multiple providers is supported, however if flag keys are duplicated across multiple sources it may lead to unexpected behavior.
   -C, --cors-origin strings       Set a CORS allow origin header, setting "*" will allow all origins (by default CORS headers are not set)
 ```
 
@@ -47,7 +47,7 @@ The Kubernetes provider allows flagD to connect to a Kubernetes cluster and eval
 To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
 
 ```shell
-flagd start --uri core.openfeature.dev/default.my_example
+flagd start --uri core.openfeature.dev/default/my_example
 ```
 
 An additional optional flag `refreshtime` can be applied to shorten the cache refresh when using the Kubernetes provider ( The default is 5s ). As an example: 
