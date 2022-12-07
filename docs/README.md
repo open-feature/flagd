@@ -6,27 +6,27 @@ This directory contains all flagd documentation, see table of contents below:
 
 There are many ways to get started with flagd, the sections below run through some simple deployment options, followed by example evaluation calls made directly to the flagd instance via curl.
 
-- Getting started
-- Evaluation examples 
+- [Getting started](https://github.com/open-feature/flagd/blob/main/docs/usage/getting_started.md)
+- [Evaluation examples](https://github.com/open-feature/flagd/blob/main/docs/usage/evaluation_examples.md)
 
 ## Flag Configuration
 
-Flagd is configured via CLI arguments on startup, these configuration options can be found in the Flagd Configuration section. The remaining sections cover the flag configurations themselves, which are JSON representations of the flag variants and targeting rules.
+Flagd is configured via CLI arguments on startup, these configuration options can be found in the flagd configuration section. The remaining sections cover the flag configurations themselves, which are JSON representations of the flag variants and targeting rules.
 
-- Flagd Configuration
-- Flag configuration 
-- Fractional evaluation
-- Reusable targeting rules
+- [Flagd Configuration](https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md)
+- [Flag configuration](https://github.com/open-feature/flagd/blob/main/docs/configuration/flag_configuration.md)
+- [Fractional evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md)
+- [Reusable targeting rules](https://github.com/open-feature/flagd/blob/main/docs/configuration/reusable_targeting_rules.md)
 
 ## Help
 
 This section documents any behavior of flagd which may seem unexpected, currently covering 2 topics; why the HTTP int response is a string, and why values may be omitted from the evaluation response.
 
-- HTTP int response 
-- Omitted value from evaluation response
+- [HTTP int response](https://github.com/open-feature/flagd/blob/main/docs/help/http_int_response.md)
+- [Omitted value from evaluation response](https://github.com/open-feature/flagd/blob/main/docs/help/omitted_value_from_response.md)
 
 ## Other Resources
-- High level architecture 
-- Caching 
-- Snap
-- Systemd service 
+- [High level architecture](https://github.com/open-feature/flagd/blob/main/docs/other_resources/high_level_architecture.md)
+- [Caching](https://github.com/open-feature/flagd/blob/main/docs/other_resources/caching.md)
+- [Snap](https://github.com/open-feature/flagd/blob/main/docs/other_resources/snap.md)
+- [Systemd service](https://github.com/open-feature/flagd/blob/main/docs/other_resources/systemd_service.md)
