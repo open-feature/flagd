@@ -1,4 +1,4 @@
-### Evaluation Examples Using curl
+# Evaluation Examples Using curl
 
 ## Setup
 

@@ -1,4 +1,4 @@
-### Configuration
+# Configuration
 
 `flagd` supports configuration via config file, environment variables and flags. In cases of conflict, flags have the
 highest priority, followed by environment variables and finally config file.

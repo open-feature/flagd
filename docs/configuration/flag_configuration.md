@@ -1,4 +1,4 @@
-### Flag Configuration
+# Flag Configuration
 
 A flagd configuration is represented as a JSON object. Feature flag configurations can be found under `flags` and each item within `flags` represents a flag key (the unique identifier for a flag) and its corresponding configuration.
 

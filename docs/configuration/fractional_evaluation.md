@@ -1,4 +1,4 @@
-### Fractional Evaluation
+# Fractional Evaluation
 
 The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a percentage). This works by hashing ([xxHash](https://cyan4973.github.io/xxHash/))
