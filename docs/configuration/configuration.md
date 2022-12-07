@@ -49,9 +49,3 @@ To use an existing FeatureFlagConfiguration custom resource, start flagD with th
 ```shell
 flagd start --uri core.openfeature.dev/default/my_example
 ```
-
-An additional optional flag `refreshtime` can be applied to shorten the cache refresh when using the Kubernetes provider ( The default is 5s ). As an example: 
-
-```shell
-flagd start --uri core.openfeature.dev/default.my_example --sync-provider-args=refreshtime=1s
-```
