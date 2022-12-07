@@ -4,9 +4,10 @@ This directory contains all flagd documentation, see table of contents below:
 
 ## Usage
 
-There are many ways to get started with flagd, the sections below run through some simple deployment options, followed by example evaluation calls made directly to the flagd instance via curl.
+There are many ways to get started with flagd, the sections below run through some simple deployment options. Once the flagd service is running flag evaluation requests can either be made via one of the language specific flagd providers, or, directly via curl.
 
 - [Getting started](https://github.com/open-feature/flagd/blob/main/docs/usage/getting_started.md)
+- [Flagd providers](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md)
 - [Evaluation examples](https://github.com/open-feature/flagd/blob/main/docs/usage/evaluation_examples.md)
 
 ## Flag Configuration
