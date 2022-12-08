@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670380188374,
+  "lastUpdate": 1670466397750,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6614,6 +6614,58 @@ window.BENCHMARK_DATA = {
             "value": 6036,
             "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
             "extra": "951963 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Skye Gill",
+            "username": "skyerus",
+            "email": "gill.skye95@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "5bbef9ea4b1960686e58298c2c2e192ca99f072f",
+          "message": "fix: changed eventing configuration mutex to rwmutex and added missing lock (#220)\n\nFixes https://github.com/open-feature/flagd/issues/219",
+          "timestamp": "2022-12-06T15:12:20Z",
+          "url": "https://github.com/open-feature/flagd/commit/5bbef9ea4b1960686e58298c2c2e192ca99f072f"
+        },
+        "date": 1670466396811,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 3053,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1964342 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3085,
+            "unit": "ns/op\t     568 B/op\t      15 allocs/op",
+            "extra": "1903726 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3363,
+            "unit": "ns/op\t     608 B/op\t      15 allocs/op",
+            "extra": "1782285 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3070,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1942149 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4897,
+            "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
+            "extra": "1227698 times\n2 procs"
           }
         ]
       }
