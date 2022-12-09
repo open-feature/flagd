@@ -86,7 +86,7 @@ Example of an invalid configuration:
 
 ### Targeting Rules
 
-`targeting` is an **optional** property. A targeting rule **must** be valid JSON. Flagd uses a modified version of [JSON Logic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules. The output of the targeting rule **must** match the name of one of the variants defined above. If an invalid or null value is is returned by the targeting rule, the `defaultVariant` value is used.
+`targeting` is an **optional** property. A targeting rule **must** be valid JSON. Flagd uses a modified version of [JSON Logic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules. The output of the targeting rule **must** match the name of one of the variants defined above. If an invalid or null value is is returned by the targeting rule, the `defaultVariant` value is used. If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the client side caching of these flag values, this behavior is described [here](../other_resources/caching.md).
 
 The [JSON Logic playground](https://jsonlogic.com/play.html) is a great way to experiment with new targeting rules. The following example shows how a rule could be configured to return `binet` when the email (which comes from evaluation context) contains `@faas.com`. If the email wasn't included in the evaluation context or doesn't contain `@faas.com`, null is returned and the `defaultVariant` is used instead.
 
