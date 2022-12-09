@@ -1,6 +1,6 @@
 # Flagd Providers 
 
-Flagd providers are used for interacting with the flagd service via the Open Feature SDK, they act as the translation layer between the evaluation API and the flag management system in use (in this case flagd). Documentation for each language specific provider can be found below:
+Flagd providers are used for interacting with the flagd service via the OpenFeature SDK, they act as the translation layer between the evaluation API and the flag management system in use (in this case flagd). Documentation for each language specific provider can be found below:
 
 | Language      | Provider |
 | ----------- | ----------- |
