@@ -275,7 +275,7 @@ var Flags = fmt.Sprintf(`{
 	DisabledFlag)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -295,7 +295,7 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 }
 
 func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 
 	// set state with an invalid flag definition
 	_, err := evaluator.SetState("", InvalidFlags)
@@ -305,7 +305,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 }
 
 func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 
 	// set state with a valid flag definition
 	_, err := evaluator.SetState("", ValidFlags)
@@ -329,7 +329,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -412,7 +412,7 @@ func TestResolveStringValue(t *testing.T) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -496,7 +496,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -580,7 +580,7 @@ func TestResolveIntValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -664,7 +664,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		t.Fatalf("Expected no error")
@@ -826,7 +826,7 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, _ := tt.current.Merge(logger.NewLogger(nil), tt.newSource, tt.new)
+			got, _ := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
 			require.Equal(t, tt.want, got)
 		})
 	}
