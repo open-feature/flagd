@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670552789834,
+  "lastUpdate": 1670638989526,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6718,6 +6718,58 @@ window.BENCHMARK_DATA = {
             "value": 5044,
             "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
             "extra": "1000000 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Milligan",
+            "username": "james-milligan",
+            "email": "75740990+james-milligan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d6147490fd939f227025b2875b2a1888b4e4a3fe",
+          "message": "docs: Restructure flagd docs (#231)\n\nCo-authored-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-12-09T18:52:30Z",
+          "url": "https://github.com/open-feature/flagd/commit/d6147490fd939f227025b2875b2a1888b4e4a3fe"
+        },
+        "date": 1670638988949,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2992,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1970922 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3025,
+            "unit": "ns/op\t     568 B/op\t      15 allocs/op",
+            "extra": "1986721 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3291,
+            "unit": "ns/op\t     608 B/op\t      15 allocs/op",
+            "extra": "1814101 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3000,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "2003631 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4815,
+            "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
+            "extra": "1248463 times\n2 procs"
           }
         ]
       }
