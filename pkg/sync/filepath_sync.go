@@ -13,12 +13,6 @@ import (
 	"github.com/open-feature/flagd/pkg/logger"
 )
 
-const (
-	FileTypeYAML = "yaml"
-	FileTypeJSON = "json"
-	FileTypeYML  = "yml"
-)
-
 type FilePathSync struct {
 	URI          string
 	Logger       *logger.Logger
@@ -41,11 +35,11 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	}
 
 	switch fs.FileType {
-	case FileTypeYAML:
+	case "yaml":
 		fallthrough
-	case FileTypeYML:
+	case "yml":
 		return yamlToJSON(rawFile)
-	case FileTypeJSON:
+	case "json":
 		return string(rawFile), nil
 	default:
 		return "", fmt.Errorf("filepath extension '%v' is not supported", fs.FileType)
