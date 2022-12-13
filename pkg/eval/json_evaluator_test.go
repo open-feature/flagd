@@ -368,7 +368,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
@@ -452,7 +452,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
@@ -536,7 +536,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
@@ -620,7 +620,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
@@ -707,7 +707,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil)}
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
 		b.Fatalf("Expected no error")
