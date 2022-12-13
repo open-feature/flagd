@@ -1,4 +1,4 @@
-### Caching
+# Caching
 
 `flagd` has a caching strategy implementable by providers that support server-to-client streaming.
 
