@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670812031710,
+  "lastUpdate": 1670898580080,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -6872,6 +6872,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkConnectService_ResolveObject/happy_path",
             "value": 5837,
+            "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Michael Beemer",
+            "username": "beeme1mr",
+            "email": "beeme1mr@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c2a9ac9c72e775b0da2e055c850d5288b0d2708c",
+          "message": "chore: update architecture doc image path\n\nSigned-off-by: Michael Beemer <beeme1mr@users.noreply.github.com>",
+          "timestamp": "2022-12-12T19:00:19Z",
+          "url": "https://github.com/open-feature/flagd/commit/c2a9ac9c72e775b0da2e055c850d5288b0d2708c"
+        },
+        "date": 1670898578923,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 3238,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1794806 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3321,
+            "unit": "ns/op\t     568 B/op\t      15 allocs/op",
+            "extra": "1778922 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3601,
+            "unit": "ns/op\t     608 B/op\t      15 allocs/op",
+            "extra": "1632300 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3257,
+            "unit": "ns/op\t     536 B/op\t      14 allocs/op",
+            "extra": "1825480 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 5408,
             "unit": "ns/op\t    1840 B/op\t      34 allocs/op",
             "extra": "1000000 times\n2 procs"
           }
