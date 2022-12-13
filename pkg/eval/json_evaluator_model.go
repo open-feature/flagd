@@ -2,7 +2,10 @@ package eval
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
+
+	"github.com/open-feature/flagd/pkg/logger"
 )
 
 type Flags struct {
@@ -13,7 +16,7 @@ type Evaluators struct {
 	Evaluators map[string]json.RawMessage `json:"$evaluators"`
 }
 
-func (f Flags) Merge(source string, ff Flags) (Flags, []StateChangeNotification) {
+func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) (Flags, []StateChangeNotification) {
 	notifications := []StateChangeNotification{}
 	result := Flags{Flags: make(map[string]Flag)}
 	for k, v := range f.Flags {
@@ -40,6 +43,16 @@ func (f Flags) Merge(source string, ff Flags) (Flags, []StateChangeNotification)
 				FlagKey: k,
 			})
 		} else if !reflect.DeepEqual(val, v) {
+			if val.Source != source {
+				logger.Warn(
+					fmt.Sprintf(
+						"key value %s is duplicated across multiple sources this can lead to unexpected behavior: %s, %s",
+						k,
+						val.Source,
+						source,
+					),
+				)
+			}
 			notifications = append(notifications, StateChangeNotification{
 				Type:    NotificationUpdate,
 				Source:  source,

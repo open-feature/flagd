@@ -87,7 +87,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 					ServerSocketPath: tt.socketPath,
 				},
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -181,7 +181,7 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
@@ -229,7 +229,7 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 		).AnyTimes()
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: logger.NewLogger(nil),
+			Logger: logger.NewLogger(nil, false),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -315,7 +315,7 @@ func TestConnectService_ResolveString(t *testing.T) {
 			)
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -364,7 +364,7 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: logger.NewLogger(nil),
+			Logger: logger.NewLogger(nil, false),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -450,7 +450,7 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -499,7 +499,7 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: logger.NewLogger(nil),
+			Logger: logger.NewLogger(nil, false),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -585,7 +585,7 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -634,7 +634,7 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: logger.NewLogger(nil),
+			Logger: logger.NewLogger(nil, false),
 		}
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -724,7 +724,7 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			).AnyTimes()
 			s := service.ConnectService{
 				Eval:   eval,
-				Logger: logger.NewLogger(nil),
+				Logger: logger.NewLogger(nil, false),
 			}
 
 			if name != "eval returns error" {
@@ -783,7 +783,7 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 
 		s := service.ConnectService{
 			Eval:   eval,
-			Logger: logger.NewLogger(nil),
+			Logger: logger.NewLogger(nil, false),
 		}
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)

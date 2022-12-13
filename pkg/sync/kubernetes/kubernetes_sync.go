@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -33,20 +34,22 @@ type Sync struct {
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
+	URI          string
 }
 
 func (k *Sync) Source() string {
-	return k.ProviderArgs[featureFlagConfigurationName]
+	return k.URI
 }
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
-	if k.ProviderArgs[featureFlagConfigurationName] == "" {
+	if k.Source() == "" {
 		k.Logger.Error("No target feature flag configuration set")
 		return "{}", nil
 	}
 
-	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Error("No target feature flag namespace set")
+	ns, name, err := parseURI(k.Source())
+	if err != nil {
+		k.Logger.Error(err.Error())
 		return "{}", nil
 	}
 
@@ -56,12 +59,20 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	}
 
 	var ff v1alpha1.FeatureFlagConfiguration
-	err := k.client.Get(ctx, client.ObjectKey{
-		Name:      k.ProviderArgs[featureFlagConfigurationName],
-		Namespace: k.ProviderArgs[featureFlagNamespaceName],
+	err = k.client.Get(ctx, client.ObjectKey{
+		Name:      name,
+		Namespace: ns,
 	}, &ff)
 
 	return ff.Spec.FeatureFlagSpec, err
+}
+
+func parseURI(uri string) (string, string, error) {
+	s := strings.Split(uri, "/")
+	if len(s) != 2 {
+		return "", "", fmt.Errorf("invalid uri received: %s", uri)
+	}
+	return s[0], s[1], nil
 }
 
 func (k *Sync) buildConfiguration() (*rest.Config, error) {
@@ -81,17 +92,18 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 }
 
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
-	if k.ProviderArgs[featureFlagConfigurationName] == "" {
+	if k.Source() == "" {
 		k.Logger.Error("No target feature flag configuration set")
 		return
 	}
-	if k.ProviderArgs[featureFlagNamespaceName] == "" {
-		k.Logger.Error("No target feature flag configuration namespace set")
+	ns, name, err := parseURI(k.Source())
+	if err != nil {
+		k.Logger.Error(err.Error())
 		return
 	}
 	k.Logger.Info(
 		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
-			k.ProviderArgs["featureflagconfiguration"],
+			k.Source(),
 		),
 	)
 	clusterConfig, err := k.buildConfiguration()
@@ -110,15 +122,14 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		k.Logger.Fatal(err.Error())
 	}
 	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
-	// The created informer will not do resyncs if the given
-	// defaultEventHandlerResyncPeriod is zero.
+	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
 	informer := factory.ForResource(resource).Informer()
 	objectKey := client.ObjectKey{
-		Name:      k.ProviderArgs[featureFlagConfigurationName],
-		Namespace: k.ProviderArgs[featureFlagNamespaceName],
+		Name:      name,
+		Namespace: ns,
 	}
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {

@@ -105,7 +105,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil),
+				Logger:      logger.NewLogger(nil, false),
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
@@ -188,7 +188,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 				Client:      mockClient,
 				Cron:        mockCron,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil),
+				Logger:      logger.NewLogger(nil, false),
 			}
 
 			go func() {

@@ -75,7 +75,7 @@ func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNot
 		return nil, err
 	}
 
-	s, notifications := je.state.Merge(source, newFlags)
+	s, notifications := je.state.Merge(je.Logger, source, newFlags)
 	je.state = s
 
 	return notifications, nil
@@ -180,7 +180,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	// get the targeting logic, if any
 	targeting := flag.Targeting
 
-	if targeting != nil {
+	if targeting != nil && string(targeting) != "{}" {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag %s, %s", flagKey, err))
@@ -202,16 +202,19 @@ func (je *JSONEvaluator) evaluateVariant(
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
+
+		// if this is a valid variant, return it
+		if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
+			return variant, model.TargetingMatchReason, nil
+		}
+
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
+		reason = model.DefaultReason
+	} else {
+		reason = model.StaticReason
 	}
 
-	// if this is a valid variant, return it
-	if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
-		return variant, model.TargetingMatchReason, nil
-	}
-
-	// if it's not a valid variant, use the default value
-	je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
-	return je.state.Flags[flagKey].DefaultVariant, model.DefaultReason, nil
+	return je.state.Flags[flagKey].DefaultVariant, reason, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
