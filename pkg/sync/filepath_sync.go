@@ -34,7 +34,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 		return "", err
 	}
 
-	return string(rawFile), err
+	return string(rawFile), nil
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
