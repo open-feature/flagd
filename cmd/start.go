@@ -45,7 +45,7 @@ func init() {
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
 			"url or FeatureFlagConfiguration. Using multiple providers is supported however if"+
-			"flag keys are duplicated across multiple sources it may lead to unexpected behavior ",
+			" flag keys are duplicated across multiple sources it may lead to unexpected behavior ",
 	)
 	flags.StringP(
 		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
