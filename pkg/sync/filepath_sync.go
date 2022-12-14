@@ -34,16 +34,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 		return "", err
 	}
 
-	switch fs.FileType {
-	case "yaml":
-		fallthrough
-	case "yml":
-		return yamlToJSON(rawFile)
-	case "json":
-		return string(rawFile), nil
-	default:
-		return "", fmt.Errorf("filepath extension '%v' is not supported", fs.FileType)
-	}
+	return string(rawFile), err
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
