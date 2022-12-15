@@ -17,7 +17,7 @@ Supported flags are as follows (result of running `./flagd start --help`):
   -d, --socket-path string                  Flagd socket path. With grpc the service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
   -y, --sync-provider string                DEPRECATED: Set a sync provider e.g. filepath or remote
   -a, --sync-provider-args stringToString   Sync provider arguments as key values separated by = (default [])
-  -f, --uri strings                         Set a sync provider uri to read data from, this can be a filepath,url or FeatureFlagConfiguration. Using multiple providers is supported however ifflag keys are duplicated across multiple sources it may lead to unexpected behavior
+  -f, --uri strings                         Set a sync provider uri to read data from, this can be a filepath, url or FeatureFlagConfiguration. Using multiple providers is supported however if flag keys are duplicated across multiple sources it may lead to unexpected behavior.
 ```
 
 Environment variable keys are uppercased, prefixed with `FLAGD_` and all `-` are replaced with `_`. For example,
