@@ -353,6 +353,50 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 }
 
+func BenchmarkResolveBooleanValue(b *testing.B) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       bool
+		reason    string
+		errorCode string
+	}{
+		{StaticBoolFlag, nil, StaticBoolValue, model.DefaultReason, ""},
+		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		b.Fatalf("Expected no error")
+	}
+	reqID := "test"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
+
+				if test.errorCode == "" {
+					if assert.NoError(b, err) {
+						assert.Equal(b, test.val, val)
+						assert.Equal(b, test.reason, reason)
+					}
+				} else {
+					assert.Equal(b, model.ErrorReason, reason)
+					assert.EqualError(b, err, test.errorCode)
+				}
+			}
+		})
+	}
+}
+
 func TestResolveStringValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
@@ -390,6 +434,50 @@ func TestResolveStringValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func BenchmarkResolveStringValue(b *testing.B) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       string
+		reason    string
+		errorCode string
+	}{
+		{StaticStringFlag, nil, StaticStringValue, model.DefaultReason, ""},
+		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		b.Fatalf("Expected no error")
+	}
+	reqID := "test"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
+
+				if test.errorCode == "" {
+					if assert.NoError(b, err) {
+						assert.Equal(b, test.val, val)
+						assert.Equal(b, test.reason, reason)
+					}
+				} else {
+					assert.Equal(b, model.ErrorReason, reason)
+					assert.EqualError(b, err, test.errorCode)
+				}
+			}
+		})
 	}
 }
 
@@ -433,6 +521,50 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 }
 
+func BenchmarkResolveFloatValue(b *testing.B) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       float64
+		reason    string
+		errorCode string
+	}{
+		{StaticFloatFlag, nil, StaticFloatValue, model.DefaultReason, ""},
+		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		b.Fatalf("Expected no error")
+	}
+	reqID := "test"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val, _, reason, err := evaluator.ResolveFloatValue(reqID, test.flagKey, apStruct)
+
+				if test.errorCode == "" {
+					if assert.NoError(b, err) {
+						assert.Equal(b, test.val, val)
+						assert.Equal(b, test.reason, reason)
+					}
+				} else {
+					assert.Equal(b, model.ErrorReason, reason)
+					assert.EqualError(b, err, test.errorCode)
+				}
+			}
+		})
+	}
+}
+
 func TestResolveIntValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
@@ -470,6 +602,50 @@ func TestResolveIntValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func BenchmarkResolveIntValue(b *testing.B) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       int64
+		reason    string
+		errorCode string
+	}{
+		{StaticIntFlag, nil, StaticIntValue, model.DefaultReason, ""},
+		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
+		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		b.Fatalf("Expected no error")
+	}
+	reqID := "test"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val, _, reason, err := evaluator.ResolveIntValue(reqID, test.flagKey, apStruct)
+
+				if test.errorCode == "" {
+					if assert.NoError(b, err) {
+						assert.Equal(b, test.val, val)
+						assert.Equal(b, test.reason, reason)
+					}
+				} else {
+					assert.Equal(b, model.ErrorReason, reason)
+					assert.EqualError(b, err, test.errorCode)
+				}
+			}
+		})
 	}
 }
 
@@ -513,6 +689,50 @@ func TestResolveObjectValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func BenchmarkResolveObjectValue(b *testing.B) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       string
+		reason    string
+		errorCode string
+	}{
+		{StaticObjectFlag, nil, StaticObjectValue, model.DefaultReason, ""},
+		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
+		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
+		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		b.Fatalf("Expected no error")
+	}
+	reqID := "test"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val, _, reason, err := evaluator.ResolveObjectValue(reqID, test.flagKey, apStruct)
+
+				if test.errorCode == "" {
+					if assert.NoError(b, err) {
+						assert.Equal(b, test.val, val)
+						assert.Equal(b, test.reason, reason)
+					}
+				} else {
+					assert.Equal(b, model.ErrorReason, reason)
+					assert.EqualError(b, err, test.errorCode)
+				}
+			}
+		})
 	}
 }
 
