@@ -1,4 +1,4 @@
-### Snap
+# Snap
 
 flagD can be released on the snapstore as a snap package.
 The homepage for the snap is found [here](https://snapcraft.io/flagd/)
