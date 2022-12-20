@@ -107,7 +107,6 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 	values := []AnyValue{}
 	for flagKey, flag := range je.state.Flags {
 		defaultValue := flag.Variants[flag.DefaultVariant]
-		// it would be lovely if i could refactor this, types cant be inferred TODO: something nicer
 		switch defaultValue.(type) {
 		case bool:
 			value, variant, reason, err := resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
