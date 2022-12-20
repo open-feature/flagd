@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	schemaConnectV1 "buf.build/gen/go/james-milligan/flagd-2/bufbuild/connect-go/schema/v1/schemav1connect"
+	schemaV1 "buf.build/gen/go/james-milligan/flagd-2/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
@@ -17,12 +19,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
-	schemaV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
-	schemaConnectV1 "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1/schemav1connect"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -139,9 +138,64 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	return lis, nil
 }
 
+func (s *ConnectService) ResolveAll(
+	ctx context.Context,
+	req *connect.Request[schemaV1.ResolveAllRequest],
+) (*connect.Response[schemaV1.ResolveAllResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	res := &schemaV1.ResolveAllResponse{
+		Flags: make(map[string]*schemaV1.AnyFlag),
+	}
+	values := s.Eval.ResolveAllValues(reqID, req.Msg.GetContext())
+	for _, value := range values {
+		switch value.Value.(type) {
+		case bool:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_BoolValue{
+					BoolValue: value.Value.(bool),
+				},
+			}
+		case string:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_StringValue{
+					StringValue: value.Value.(string),
+				},
+			}
+		case float64:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_DoubleValue{
+					DoubleValue: value.Value.(float64),
+				},
+			}
+		case map[string]any:
+			val, err := structpb.NewStruct(value.Value.(map[string]any))
+			if err != nil {
+				s.Logger.WarnWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
+				continue
+			}
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_ObjectValue{
+					ObjectValue: val,
+				},
+			}
+		}
+	}
+
+	return connect.NewResponse(res), nil
+}
+
 func (s *ConnectService) EventStream(
 	ctx context.Context,
-	req *connect.Request[emptypb.Empty],
+	req *connect.Request[schemaV1.EventStreamRequest],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
 	requestNotificationChan := make(chan Notification, 1)

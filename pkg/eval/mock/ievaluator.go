@@ -50,6 +50,20 @@ func (mr *MockIEvaluatorMockRecorder) GetState() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockIEvaluator)(nil).GetState))
 }
 
+// ResolveAllValues mocks base method.
+func (m *MockIEvaluator) ResolveAllValues(reqID string, context *structpb.Struct) []eval.AnyValue {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveAllValues", reqID, context)
+	ret0, _ := ret[0].([]eval.AnyValue)
+	return ret0
+}
+
+// ResolveAllValues indicates an expected call of ResolveAllValues.
+func (mr *MockIEvaluatorMockRecorder) ResolveAllValues(reqID, context interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAllValues", reflect.TypeOf((*MockIEvaluator)(nil).ResolveAllValues), reqID, context)
+}
+
 // ResolveBooleanValue mocks base method.
 func (m *MockIEvaluator) ResolveBooleanValue(reqID, flagKey string, context *structpb.Struct) (bool, string, string, error) {
 	m.ctrl.T.Helper()
