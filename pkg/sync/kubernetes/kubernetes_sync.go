@@ -91,6 +91,7 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 	return clusterConfig, nil
 }
 
+//nolint:funlen
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	if k.Source() == "" {
 		k.Logger.Error("No target feature flag configuration set")
@@ -131,7 +132,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		Name:      name,
 		Namespace: ns,
 	}
-	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	if _, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
@@ -150,8 +151,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 				k.Logger.Warn(err.Error())
 			}
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		k.Logger.Fatal(err.Error())
 	}
 	informer.Run(ctx.Done())

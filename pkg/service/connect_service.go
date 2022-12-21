@@ -149,13 +149,13 @@ func (s *ConnectService) ResolveAll(
 	}
 	values := s.Eval.ResolveAllValues(reqID, req.Msg.GetContext())
 	for _, value := range values {
-		switch value.Value.(type) {
+		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
 				Reason:  value.Reason,
 				Variant: value.Variant,
 				Value: &schemaV1.AnyFlag_BoolValue{
-					BoolValue: value.Value.(bool),
+					BoolValue: v,
 				},
 			}
 		case string:
@@ -163,7 +163,7 @@ func (s *ConnectService) ResolveAll(
 				Reason:  value.Reason,
 				Variant: value.Variant,
 				Value: &schemaV1.AnyFlag_StringValue{
-					StringValue: value.Value.(string),
+					StringValue: v,
 				},
 			}
 		case float64:
@@ -171,11 +171,11 @@ func (s *ConnectService) ResolveAll(
 				Reason:  value.Reason,
 				Variant: value.Variant,
 				Value: &schemaV1.AnyFlag_DoubleValue{
-					DoubleValue: value.Value.(float64),
+					DoubleValue: v,
 				},
 			}
 		case map[string]any:
-			val, err := structpb.NewStruct(value.Value.(map[string]any))
+			val, err := structpb.NewStruct(v)
 			if err != nil {
 				s.Logger.WarnWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
 				continue
