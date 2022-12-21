@@ -109,7 +109,13 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, err := resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+			value, variant, reason, err := resolve[bool](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
 			if err != nil {
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
@@ -121,7 +127,13 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				FlagKey: flagKey,
 			})
 		case string:
-			value, variant, reason, err := resolve[string](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+			value, variant, reason, err := resolve[string](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
 			if err != nil {
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
@@ -133,7 +145,13 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				FlagKey: flagKey,
 			})
 		case float64:
-			value, variant, reason, err := resolve[float64](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+			value, variant, reason, err := resolve[float64](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
 			if err != nil {
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
@@ -145,7 +163,13 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				FlagKey: flagKey,
 			})
 		case map[string]any:
-			value, variant, reason, err := resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+			value, variant, reason, err := resolve[map[string]any](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
 			if err != nil {
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
@@ -157,7 +181,6 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				FlagKey: flagKey,
 			})
 		}
-
 	}
 	return values
 }

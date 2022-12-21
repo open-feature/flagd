@@ -131,7 +131,7 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		Name:      name,
 		Namespace: ns,
 	}
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
@@ -151,6 +151,9 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 			}
 		},
 	})
+	if err != nil {
+		k.Logger.Fatal(err.Error())
+	}
 	informer.Run(ctx.Done())
 }
 
