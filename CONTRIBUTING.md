@@ -9,4 +9,9 @@ Any contributions are expected to include unit tests. These can be validated wit
 
 The go version in the `go.mod` is the currently supported version of go.
 
+The project uses remote buf packages, changing the remote generation source will require a one-time registry configuration:
+```shell
+export GOPRIVATE=buf.build/gen/go
+```
+
 Thanks! Issues and pull requests following these guidelines are welcome.
