@@ -120,12 +120,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
 			}
-			values = append(values, AnyValue{
-				Value:   value,
-				Variant: variant,
-				Reason:  reason,
-				FlagKey: flagKey,
-			})
+			values = append(values, NewAnyValue(value, variant, reason, flagKey))
 		case string:
 			value, variant, reason, err := resolve[string](
 				reqID,
@@ -138,12 +133,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
 			}
-			values = append(values, AnyValue{
-				Value:   value,
-				Variant: variant,
-				Reason:  reason,
-				FlagKey: flagKey,
-			})
+			values = append(values, NewAnyValue(value, variant, reason, flagKey))
 		case float64:
 			value, variant, reason, err := resolve[float64](
 				reqID,
@@ -156,12 +146,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
 			}
-			values = append(values, AnyValue{
-				Value:   value,
-				Variant: variant,
-				Reason:  reason,
-				FlagKey: flagKey,
-			})
+			values = append(values, NewAnyValue(value, variant, reason, flagKey))
 		case map[string]any:
 			value, variant, reason, err := resolve[map[string]any](
 				reqID,
@@ -174,12 +159,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 				continue
 			}
-			values = append(values, AnyValue{
-				Value:   value,
-				Variant: variant,
-				Reason:  reason,
-				FlagKey: flagKey,
-			})
+			values = append(values, NewAnyValue(value, variant, reason, flagKey))
 		}
 	}
 	return values

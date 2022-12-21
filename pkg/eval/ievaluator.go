@@ -25,6 +25,15 @@ type AnyValue struct {
 	FlagKey string
 }
 
+func NewAnyValue(value interface{}, variant string, reason string, flagKey string) AnyValue {
+	return AnyValue{
+		Value:   value,
+		Variant: variant,
+		Reason:  reason,
+		FlagKey: flagKey,
+	}
+}
+
 /*
 IEvaluator implementations store the state of the flags,
 do parsing and validation of the flag state and evaluate flags in response to handlers.
