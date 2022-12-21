@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	schemaGrpcV1 "buf.build/gen/go/james-milligan/flagd-2/grpc/go/schema/v1/schemav1grpc"
-	schemaV1 "buf.build/gen/go/james-milligan/flagd-2/protocolbuffers/go/schema/v1"
+	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
 	mock "github.com/open-feature/flagd/pkg/eval/mock"

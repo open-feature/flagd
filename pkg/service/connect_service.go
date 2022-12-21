@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	schemaConnectV1 "buf.build/gen/go/james-milligan/flagd-2/bufbuild/connect-go/schema/v1/schemav1connect"
-	schemaV1 "buf.build/gen/go/james-milligan/flagd-2/protocolbuffers/go/schema/v1"
+	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
