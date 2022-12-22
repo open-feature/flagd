@@ -62,11 +62,7 @@ func (r *Runtime) setService(logger *logger.Logger) {
 
 func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 	switch r.config.Evaluator {
-	case "yaml":
-		fallthrough
-	case "yml":
-		fallthrough
-	case "json":
+	case "yaml", "yml", "json":
 		r.Evaluator = eval.NewJSONEvaluator(logger)
 	default:
 		return errors.New("no evaluator set")

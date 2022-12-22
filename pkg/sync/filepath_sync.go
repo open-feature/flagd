@@ -35,9 +35,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	}
 
 	switch fs.FileType {
-	case "yaml":
-		fallthrough
-	case "yml":
+	case "yaml", "yml":
 		return yamlToJSON(rawFile)
 	case "json":
 		return string(rawFile), nil
