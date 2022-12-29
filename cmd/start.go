@@ -37,7 +37,8 @@ func init() {
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json, yaml/yml. Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
+	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json, yaml/yml."+
+		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringToStringP(providerArgsFlagName,
