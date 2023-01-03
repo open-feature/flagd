@@ -1,3 +1,4 @@
+# Dockerfile with pprof profiler
 # Build the manager binary
 FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS builder
 
@@ -16,11 +17,12 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
+COPY profiler.go profiler.go
 COPY cmd/ cmd/
 COPY pkg/ pkg/
 
-# Build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go
+# Build with profiler
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o flagd main.go profiler.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
+	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
 	mock "github.com/open-feature/flagd/pkg/eval/mock"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
 	service "github.com/open-feature/flagd/pkg/service"
-	gen "go.buf.build/open-feature/flagd-connect/open-feature/flagd/schema/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -23,12 +24,12 @@ import (
 type resolveBooleanArgs struct {
 	evalFields   resolveBooleanEvalFields
 	functionArgs resolveBooleanFunctionArgs
-	want         *gen.ResolveBooleanResponse
+	want         *schemaV1.ResolveBooleanResponse
 	wantErr      error
 }
 type resolveBooleanFunctionArgs struct {
 	ctx context.Context
-	req *gen.ResolveBooleanRequest
+	req *schemaV1.ResolveBooleanRequest
 }
 type resolveBooleanEvalFields struct {
 	result  bool
@@ -48,8 +49,8 @@ func TestConnectService_UnixConnection(t *testing.T) {
 		name       string
 		socketPath string
 		evalFields evalFields
-		req        *gen.ResolveBooleanRequest
-		want       *gen.ResolveBooleanResponse
+		req        *schemaV1.ResolveBooleanRequest
+		want       *schemaV1.ResolveBooleanResponse
 		wantErr    error
 	}{
 		{
@@ -61,11 +62,11 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				reason:  model.DefaultReason,
 				err:     nil,
 			},
-			req: &gen.ResolveBooleanRequest{
+			req: &schemaV1.ResolveBooleanRequest{
 				FlagKey: "myBoolFlag",
 				Context: &structpb.Struct{},
 			},
-			want: &gen.ResolveBooleanResponse{
+			want: &schemaV1.ResolveBooleanResponse{
 				Value:   true,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -107,7 +108,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				t.Errorf("grpc - fail to dial: %v", err)
 				return
 			}
-			client := gen.NewServiceClient(
+			client := schemaGrpcV1.NewServiceClient(
 				conn,
 			)
 
@@ -139,12 +140,12 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
-				&gen.ResolveBooleanRequest{
+				&schemaV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveBooleanResponse{
+			want: &schemaV1.ResolveBooleanResponse{
 				Value:   true,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -159,12 +160,12 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
-				&gen.ResolveBooleanRequest{
+				&schemaV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveBooleanResponse{
+			want: &schemaV1.ResolveBooleanResponse{
 				Reason: model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
@@ -206,12 +207,12 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
-				&gen.ResolveBooleanRequest{
+				&schemaV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveBooleanResponse{
+			want: &schemaV1.ResolveBooleanResponse{
 				Value:   true,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -249,12 +250,12 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 type resolveStringArgs struct {
 	evalFields   resolveStringEvalFields
 	functionArgs resolveStringFunctionArgs
-	want         *gen.ResolveStringResponse
+	want         *schemaV1.ResolveStringResponse
 	wantErr      error
 }
 type resolveStringFunctionArgs struct {
 	ctx context.Context
-	req *gen.ResolveStringRequest
+	req *schemaV1.ResolveStringRequest
 }
 type resolveStringEvalFields struct {
 	result  string
@@ -273,12 +274,12 @@ func TestConnectService_ResolveString(t *testing.T) {
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
-				&gen.ResolveStringRequest{
+				&schemaV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveStringResponse{
+			want: &schemaV1.ResolveStringResponse{
 				Value:   "true",
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -293,12 +294,12 @@ func TestConnectService_ResolveString(t *testing.T) {
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
-				&gen.ResolveStringRequest{
+				&schemaV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveStringResponse{
+			want: &schemaV1.ResolveStringResponse{
 				Reason: model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
@@ -340,12 +341,12 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
-				&gen.ResolveStringRequest{
+				&schemaV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveStringResponse{
+			want: &schemaV1.ResolveStringResponse{
 				Value:   "true",
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -384,12 +385,12 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 type resolveFloatArgs struct {
 	evalFields   resolveFloatEvalFields
 	functionArgs resolveFloatFunctionArgs
-	want         *gen.ResolveFloatResponse
+	want         *schemaV1.ResolveFloatResponse
 	wantErr      error
 }
 type resolveFloatFunctionArgs struct {
 	ctx context.Context
-	req *gen.ResolveFloatRequest
+	req *schemaV1.ResolveFloatRequest
 }
 type resolveFloatEvalFields struct {
 	result  float64
@@ -408,12 +409,12 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
-				&gen.ResolveFloatRequest{
+				&schemaV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveFloatResponse{
+			want: &schemaV1.ResolveFloatResponse{
 				Value:   12,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -428,12 +429,12 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
-				&gen.ResolveFloatRequest{
+				&schemaV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveFloatResponse{
+			want: &schemaV1.ResolveFloatResponse{
 				Reason: model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
@@ -475,12 +476,12 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
-				&gen.ResolveFloatRequest{
+				&schemaV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveFloatResponse{
+			want: &schemaV1.ResolveFloatResponse{
 				Value:   12,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -519,12 +520,12 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 type resolveIntArgs struct {
 	evalFields   resolveIntEvalFields
 	functionArgs resolveIntFunctionArgs
-	want         *gen.ResolveIntResponse
+	want         *schemaV1.ResolveIntResponse
 	wantErr      error
 }
 type resolveIntFunctionArgs struct {
 	ctx context.Context
-	req *gen.ResolveIntRequest
+	req *schemaV1.ResolveIntRequest
 }
 type resolveIntEvalFields struct {
 	result  int64
@@ -543,12 +544,12 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
-				&gen.ResolveIntRequest{
+				&schemaV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveIntResponse{
+			want: &schemaV1.ResolveIntResponse{
 				Value:   12,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -563,12 +564,12 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
-				&gen.ResolveIntRequest{
+				&schemaV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveIntResponse{
+			want: &schemaV1.ResolveIntResponse{
 				Reason: model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
@@ -610,12 +611,12 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
-				&gen.ResolveIntRequest{
+				&schemaV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveIntResponse{
+			want: &schemaV1.ResolveIntResponse{
 				Value:   12,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -654,12 +655,12 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 type resolveObjectArgs struct {
 	evalFields   resolveObjectEvalFields
 	functionArgs resolveObjectFunctionArgs
-	want         *gen.ResolveObjectResponse
+	want         *schemaV1.ResolveObjectResponse
 	wantErr      error
 }
 type resolveObjectFunctionArgs struct {
 	ctx context.Context
-	req *gen.ResolveObjectRequest
+	req *schemaV1.ResolveObjectRequest
 }
 type resolveObjectEvalFields struct {
 	result  map[string]interface{}
@@ -680,12 +681,12 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
-				&gen.ResolveObjectRequest{
+				&schemaV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveObjectResponse{
+			want: &schemaV1.ResolveObjectResponse{
 				Value:   nil,
 				Reason:  model.DefaultReason,
 				Variant: "on",
@@ -702,12 +703,12 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
-				&gen.ResolveObjectRequest{
+				&schemaV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveObjectResponse{
+			want: &schemaV1.ResolveObjectResponse{
 				Reason: model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
@@ -759,12 +760,12 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
-				&gen.ResolveObjectRequest{
+				&schemaV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &gen.ResolveObjectResponse{
+			want: &schemaV1.ResolveObjectResponse{
 				Value:   nil,
 				Reason:  model.DefaultReason,
 				Variant: "on",
