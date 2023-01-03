@@ -739,35 +739,40 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		current   eval.Flags
-		new       eval.Flags
-		newSource string
-		want      eval.Flags
+		name       string
+		current    eval.Flags
+		new        eval.Flags
+		newSource  string
+		want       eval.Flags
+		wantNotifs []eval.StateChangeNotification
 	}{
 		{
-			name:    "both nil",
-			current: eval.Flags{Flags: nil},
-			new:     eval.Flags{Flags: nil},
-			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+			name:       "both nil",
+			current:    eval.Flags{Flags: nil},
+			new:        eval.Flags{Flags: nil},
+			want:       eval.Flags{Flags: map[string]eval.Flag{}},
+			wantNotifs: []eval.StateChangeNotification{},
 		},
 		{
-			name:    "both empty flags",
-			current: eval.Flags{Flags: map[string]eval.Flag{}},
-			new:     eval.Flags{Flags: map[string]eval.Flag{}},
-			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+			name:       "both empty flags",
+			current:    eval.Flags{Flags: map[string]eval.Flag{}},
+			new:        eval.Flags{Flags: map[string]eval.Flag{}},
+			want:       eval.Flags{Flags: map[string]eval.Flag{}},
+			wantNotifs: []eval.StateChangeNotification{},
 		},
 		{
-			name:    "empty current",
-			current: eval.Flags{Flags: nil},
-			new:     eval.Flags{Flags: map[string]eval.Flag{}},
-			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+			name:       "empty current",
+			current:    eval.Flags{Flags: nil},
+			new:        eval.Flags{Flags: map[string]eval.Flag{}},
+			want:       eval.Flags{Flags: map[string]eval.Flag{}},
+			wantNotifs: []eval.StateChangeNotification{},
 		},
 		{
-			name:    "empty new",
-			current: eval.Flags{Flags: map[string]eval.Flag{}},
-			new:     eval.Flags{Flags: nil},
-			want:    eval.Flags{Flags: map[string]eval.Flag{}},
+			name:       "empty new",
+			current:    eval.Flags{Flags: map[string]eval.Flag{}},
+			new:        eval.Flags{Flags: nil},
+			want:       eval.Flags{Flags: map[string]eval.Flag{}},
+			wantNotifs: []eval.StateChangeNotification{},
 		},
 		{
 			name: "extra fields on each",
@@ -793,6 +798,9 @@ func TestMergeFlags(t *testing.T) {
 					Source:         "2",
 				},
 			}},
+			wantNotifs: []eval.StateChangeNotification{
+				{Type: "write", Source: "2", FlagKey: "paka"},
+			},
 		},
 		{
 			name: "override",
@@ -807,6 +815,10 @@ func TestMergeFlags(t *testing.T) {
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
 			}},
+			wantNotifs: []eval.StateChangeNotification{
+				{Type: "update", FlagKey: "waka"},
+				{Type: "write", FlagKey: "paka"},
+			},
 		},
 		{
 			name: "identical",
@@ -819,6 +831,7 @@ func TestMergeFlags(t *testing.T) {
 			want: eval.Flags{Flags: map[string]eval.Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
+			wantNotifs: []eval.StateChangeNotification{},
 		},
 	}
 
@@ -826,8 +839,9 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, _ := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
+			got, gotNotifs := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
 			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.wantNotifs, gotNotifs)
 		})
 	}
 }

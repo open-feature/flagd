@@ -55,3 +55,18 @@ func (s *StateChangeNotification) ToMap() map[string]interface{} {
 		"flagKey": s.FlagKey,
 	}
 }
+
+func StateChangeNotificationsToMap(scns []StateChangeNotification) map[string]interface{} {
+	m := make(map[string]interface{}, len(scns))
+
+	for _, scn := range scns {
+		m[scn.FlagKey] = map[string]interface{}{
+			"type":   string(scn.Type),
+			"source": scn.Source,
+		}
+	}
+
+	return map[string]interface{}{
+		"flags": m,
+	}
+}
