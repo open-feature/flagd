@@ -83,7 +83,9 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 
 	r.Service.Notify(service.Notification{
 		Type: service.ConfigurationChange,
-		Data: eval.StateChangeNotificationsToMap(notifications),
+		Data: map[string]interface{}{
+			"flags": notifications,
+		},
 	})
 	return nil
 }

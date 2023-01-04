@@ -744,35 +744,35 @@ func TestMergeFlags(t *testing.T) {
 		new        eval.Flags
 		newSource  string
 		want       eval.Flags
-		wantNotifs []eval.StateChangeNotification
+		wantNotifs map[string]interface{}
 	}{
 		{
 			name:       "both nil",
 			current:    eval.Flags{Flags: nil},
 			new:        eval.Flags{Flags: nil},
 			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: []eval.StateChangeNotification{},
+			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "both empty flags",
 			current:    eval.Flags{Flags: map[string]eval.Flag{}},
 			new:        eval.Flags{Flags: map[string]eval.Flag{}},
 			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: []eval.StateChangeNotification{},
+			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "empty current",
 			current:    eval.Flags{Flags: nil},
 			new:        eval.Flags{Flags: map[string]eval.Flag{}},
 			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: []eval.StateChangeNotification{},
+			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "empty new",
 			current:    eval.Flags{Flags: map[string]eval.Flag{}},
 			new:        eval.Flags{Flags: nil},
 			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: []eval.StateChangeNotification{},
+			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name: "extra fields on each",
@@ -798,8 +798,8 @@ func TestMergeFlags(t *testing.T) {
 					Source:         "2",
 				},
 			}},
-			wantNotifs: []eval.StateChangeNotification{
-				{Type: "write", Source: "2", FlagKey: "paka"},
+			wantNotifs: map[string]interface{}{
+				"paka": map[string]interface{}{"type": "write", "source": "2"},
 			},
 		},
 		{
@@ -815,9 +815,9 @@ func TestMergeFlags(t *testing.T) {
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
 			}},
-			wantNotifs: []eval.StateChangeNotification{
-				{Type: "update", FlagKey: "waka"},
-				{Type: "write", FlagKey: "paka"},
+			wantNotifs: map[string]interface{}{
+				"waka": map[string]interface{}{"type": "update", "source": ""},
+				"paka": map[string]interface{}{"type": "write", "source": ""},
 			},
 		},
 		{
@@ -831,7 +831,7 @@ func TestMergeFlags(t *testing.T) {
 			want: eval.Flags{Flags: map[string]eval.Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
-			wantNotifs: []eval.StateChangeNotification{},
+			wantNotifs: map[string]interface{}{},
 		},
 	}
 
