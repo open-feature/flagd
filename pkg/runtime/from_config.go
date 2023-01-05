@@ -62,7 +62,7 @@ func (r *Runtime) setService(logger *logger.Logger) {
 
 func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
 	switch r.config.Evaluator {
-	case "json":
+	case "yaml", "yml", "json":
 		r.Evaluator = eval.NewJSONEvaluator(logger)
 	default:
 		return errors.New("no evaluator set")
@@ -84,6 +84,8 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 					zap.String("sync", "filepath"),
 				),
 				ProviderArgs: r.config.ProviderArgs,
+				// evaluator here is file type: `json`, `yaml` etc.,
+				FileType: r.config.Evaluator,
 			})
 			rtLogger.Debug(fmt.Sprintf("Using filepath sync-provider for %q", uri))
 		case regCrd.Match(uriB):
