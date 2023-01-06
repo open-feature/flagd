@@ -80,12 +80,12 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 	if err != nil {
 		return fmt.Errorf("set state: %w", err)
 	}
-	for _, n := range notifications {
-		r.Logger.Info(fmt.Sprintf("configuration change (%s) for flagKey %s (%s)", n.Type, n.FlagKey, n.Source))
-		r.Service.Notify(service.Notification{
-			Type: service.ConfigurationChange,
-			Data: n.ToMap(),
-		})
-	}
+
+	r.Service.Notify(service.Notification{
+		Type: service.ConfigurationChange,
+		Data: map[string]interface{}{
+			"flags": notifications,
+		},
+	})
 	return nil
 }
