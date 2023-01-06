@@ -326,6 +326,9 @@ func TestResolveAllValues(t *testing.T) {
 		{
 			context: map[string]interface{}{},
 		},
+		{
+			context: map[string]interface{}{ColorProp: ColorValue},
+		},
 	}
 	const reqID = "default"
 	for _, test := range tests {
