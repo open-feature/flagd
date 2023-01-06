@@ -177,7 +177,7 @@ func (s *ConnectService) ResolveAll(
 		case map[string]any:
 			val, err := structpb.NewStruct(v)
 			if err != nil {
-				s.Logger.WarnWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
+				s.Logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
 				continue
 			}
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{

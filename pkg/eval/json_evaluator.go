@@ -146,7 +146,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 			)
 		}
 		if err != nil {
-			je.Logger.WarnWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
 			continue
 		}
 		values = append(values, NewAnyValue(value, variant, reason, flagKey))
