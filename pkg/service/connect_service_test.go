@@ -12,6 +12,7 @@ import (
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
+	"github.com/open-feature/flagd/pkg/eval"
 	mock "github.com/open-feature/flagd/pkg/eval/mock"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
@@ -20,22 +21,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-type resolveBooleanArgs struct {
-	evalFields   resolveBooleanEvalFields
-	functionArgs resolveBooleanFunctionArgs
-	want         *schemaV1.ResolveBooleanResponse
-	wantErr      error
-}
-type resolveBooleanFunctionArgs struct {
-	ctx context.Context
-	req *schemaV1.ResolveBooleanRequest
-}
-type resolveBooleanEvalFields struct {
-	result  bool
-	variant string
-	reason  string
-}
 
 func TestConnectService_UnixConnection(t *testing.T) {
 	type evalFields struct {
@@ -127,6 +112,115 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConnectService_ResolveAll(t *testing.T) {
+	tests := map[string]struct {
+		req     *schemaV1.ResolveAllRequest
+		evalRes []eval.AnyValue
+		wantErr error
+		wantRes *schemaV1.ResolveAllResponse
+	}{
+		"happy-path": {
+			req: &schemaV1.ResolveAllRequest{},
+			evalRes: []eval.AnyValue{
+				{
+					Value:   true,
+					Variant: "bool-true",
+					Reason:  "true",
+					FlagKey: "bool",
+				},
+				{
+					Value:   float64(12.12),
+					Variant: "float",
+					Reason:  "float",
+					FlagKey: "float",
+				},
+				{
+					Value:   "hello",
+					Variant: "string",
+					Reason:  "string",
+					FlagKey: "string",
+				},
+			},
+			wantErr: nil,
+			wantRes: &schemaV1.ResolveAllResponse{
+				Flags: map[string]*schemaV1.AnyFlag{
+					"bool": {
+						Value: &schemaV1.AnyFlag_BoolValue{
+							BoolValue: true,
+						},
+						Reason: "STATIC",
+					},
+					"float": {
+						Value: &schemaV1.AnyFlag_DoubleValue{
+							DoubleValue: float64(12.12),
+						},
+						Reason: "STATIC",
+					},
+					"string": {
+						Value: &schemaV1.AnyFlag_StringValue{
+							StringValue: "hello",
+						},
+						Reason: "STATIC",
+					},
+				},
+			},
+		},
+	}
+	ctrl := gomock.NewController(t)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			eval := mock.NewMockIEvaluator(ctrl)
+			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any()).Return(
+				tt.evalRes,
+			).AnyTimes()
+			s := service.ConnectService{
+				Eval:   eval,
+				Logger: logger.NewLogger(nil, false),
+			}
+			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
+			if err != nil && !errors.Is(err, tt.wantErr) {
+				t.Errorf("ConnectService.ResolveAll() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
+				return
+			}
+			for _, flag := range tt.evalRes {
+				switch v := flag.Value.(type) {
+				case bool:
+					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_BoolValue)
+					if v != val.BoolValue {
+						t.Errorf("ConnectService.ResolveAll(), key %s = %v, want %v", flag.FlagKey, val.BoolValue, v)
+					}
+				case string:
+					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_StringValue)
+					if v != val.StringValue {
+						t.Errorf("ConnectService.ResolveAll(), key %s = %s, want %s", flag.FlagKey, val.StringValue, v)
+					}
+				case float64:
+					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_DoubleValue)
+					if v != val.DoubleValue {
+						t.Errorf("ConnectService.ResolveAll(), key %s = %f, want %f", flag.FlagKey, val.DoubleValue, v)
+					}
+				}
+			}
+		})
+	}
+}
+
+type resolveBooleanArgs struct {
+	evalFields   resolveBooleanEvalFields
+	functionArgs resolveBooleanFunctionArgs
+	want         *schemaV1.ResolveBooleanResponse
+	wantErr      error
+}
+type resolveBooleanFunctionArgs struct {
+	ctx context.Context
+	req *schemaV1.ResolveBooleanRequest
+}
+type resolveBooleanEvalFields struct {
+	result  bool
+	variant string
+	reason  string
 }
 
 func TestConnectService_ResolveBoolean(t *testing.T) {
