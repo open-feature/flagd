@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1672885609400,
+  "lastUpdate": 1672972149933,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -10742,6 +10742,172 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkConnectService_ResolveObject/happy_path",
             "value": 5171,
+            "unit": "ns/op\t    1856 B/op\t      34 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Skye Gill",
+            "username": "skyerus",
+            "email": "gill.skye95@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "3f406b53bda8b5beb8b0929da3802a0368c13151",
+          "message": "fix: omitempty targeting field in Flag structure (#247)\n\n## This PR\r\n<!-- add the description of the PR here -->\r\n\r\nAdded omitempty to the json tags of the `targeting` field in the `Flag`\r\nstructure.\r\n\r\n### Related Issues\r\n<!-- add here the GitHub issue that this PR resolves if applicable -->\r\n\r\nFixes #246 \r\n\r\n### Notes\r\n<!-- any additional notes for this PR -->\r\n\r\n### Follow-up Tasks\r\n<!-- anything that is related to this PR but not done here should be\r\nnoted under this section -->\r\n<!-- if there is a need for a new issue, please link it here -->\r\n\r\n### How to test\r\n<!-- if applicable, add testing instructions under this section -->\r\n\r\nSigned-off-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2023-01-05T17:04:45Z",
+          "url": "https://github.com/open-feature/flagd/commit/3f406b53bda8b5beb8b0929da3802a0368c13151"
+        },
+        "date": 1672972148669,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 11944,
+            "unit": "ns/op\t    4801 B/op\t      80 allocs/op",
+            "extra": "492578 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1152,
+            "unit": "ns/op\t      80 B/op\t       4 allocs/op",
+            "extra": "5162617 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1342,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4470399 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1335,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4491115 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 11890,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "500930 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1150,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5234900 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1331,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4484038 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1329,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4523914 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_targetingFloatFlag",
+            "value": 11977,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "491564 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_staticObjectFlag",
+            "value": 1167,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5050341 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_missingFlag",
+            "value": 1325,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4524865 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_disabledFlag",
+            "value": 1322,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4541690 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 11016,
+            "unit": "ns/op\t    4825 B/op\t      80 allocs/op",
+            "extra": "536102 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1149,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5203407 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1327,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4521948 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1320,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4538002 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1179,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5068719 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1328,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4489834 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1335,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4490647 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 3079,
+            "unit": "ns/op\t     552 B/op\t      14 allocs/op",
+            "extra": "1877133 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3107,
+            "unit": "ns/op\t     584 B/op\t      15 allocs/op",
+            "extra": "1932840 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3499,
+            "unit": "ns/op\t     624 B/op\t      15 allocs/op",
+            "extra": "1711819 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 3164,
+            "unit": "ns/op\t     552 B/op\t      14 allocs/op",
+            "extra": "1897273 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 5148,
             "unit": "ns/op\t    1856 B/op\t      34 allocs/op",
             "extra": "1000000 times\n2 procs"
           }
