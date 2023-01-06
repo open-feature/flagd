@@ -49,7 +49,7 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return string(data), nil
 }
 
-func (je *JSONEvaluator) SetState(source string, state string) ([]StateChangeNotification, error) {
+func (je *JSONEvaluator) SetState(source string, state string) (map[string]interface{}, error) {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(state)
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)

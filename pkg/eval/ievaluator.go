@@ -40,7 +40,7 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(source string, state string) ([]StateChangeNotification, error)
+	SetState(source string, state string) (map[string]interface{}, error)
 
 	ResolveBooleanValue(
 		reqID string,
@@ -65,12 +65,4 @@ type IEvaluator interface {
 	ResolveAllValues(
 		reqID string,
 		context *structpb.Struct) (values []AnyValue)
-}
-
-func (s *StateChangeNotification) ToMap() map[string]interface{} {
-	return map[string]interface{}{
-		"type":    string(s.Type),
-		"source":  s.Source,
-		"flagKey": s.FlagKey,
-	}
 }
