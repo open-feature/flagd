@@ -18,13 +18,11 @@ import (
 )
 
 var (
-	regLastCloseBrace  *regexp.Regexp
-	regFirstCloseBrace *regexp.Regexp
+	regBrace *regexp.Regexp
 )
 
 func init() {
-	regLastCloseBrace = regexp.MustCompile("(})$")
-	regFirstCloseBrace = regexp.MustCompile("^{")
+	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
 }
 
 type JSONEvaluator struct {
@@ -262,9 +260,7 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 		if len(evalValue) < 3 {
 			return "", errors.New("evaluator object is empty")
 		}
-
-		evalValue = regFirstCloseBrace.ReplaceAllString(evalValue, "") // remove first {
-		evalValue = regLastCloseBrace.ReplaceAllString(evalValue, "")  // remove last }
+		evalValue = regBrace.ReplaceAllString(evalValue, "")
 		state = regex.ReplaceAllString(state, evalValue)
 	}
 
