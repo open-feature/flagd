@@ -114,7 +114,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			})
 			rtLogger.Debug(fmt.Sprintf("Using remote sync-provider for %q", uri))
 		default:
-			return fmt.Errorf("invalid sync uri argument: %s", uri)
+			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', or 'core.openfeature.dev'", uri)
 		}
 	}
 	return nil
