@@ -17,9 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-var (
-	regBrace *regexp.Regexp
-)
+var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
