@@ -32,25 +32,21 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	}
 	if fs.fileType == "" {
 		uriSplit := strings.Split(fs.URI, ".")
-		switch uriSplit[len(uriSplit)-1] {
-		case "yaml", "yml":
-			fs.fileType = "yaml"
-		case "json":
-			fs.fileType = "json"
-		default:
-			return "", fmt.Errorf("filepath extension '%v' is not supported", uriSplit[len(uriSplit)-1])
-		}
+		fs.fileType = uriSplit[len(uriSplit)-1]
 	}
 	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
 		return "", err
 	}
 
-	if fs.fileType == "yaml" {
+	switch fs.fileType {
+	case "yaml", "yml":
 		return yamlToJSON(rawFile)
+	case "json":
+		return string(rawFile), nil
+	default:
+		return "", fmt.Errorf("filepath extension for URI '%s' is not supported", fs.URI)
 	}
-	return string(rawFile), nil
-
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
