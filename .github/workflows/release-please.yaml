@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: google-github-actions/release-please-action@5c07f8be172b1f6e90f9c35baf8184461b91b85f # v3
         id: release
         with:
           command: manifest
@@ -30,7 +30,7 @@ jobs:
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
 
@@ -59,7 +59,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a # v2
         with:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
@@ -81,17 +81,17 @@ jobs:
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # v3
         with:
           args: release --rm-dist
         env:
