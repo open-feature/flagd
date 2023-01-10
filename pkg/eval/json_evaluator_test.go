@@ -1068,3 +1068,83 @@ func TestState_Evaluator(t *testing.T) {
 		})
 	}
 }
+
+func TestTransposeEvaluators(t *testing.T) {
+	// happy-path evaluator is passed in on all test cases, alongside the variable
+	// state for each test case, all valid json (irrespective of indentation / appended / prepended characters)
+	// should resolve with no errors
+	tests := map[string]struct {
+		state string
+	}{
+		"happy-path": {
+			state: `{
+				"$evaluators": {
+				  "emailWithFaas": {
+					"in": [
+					  "@faas.com",
+					  {
+						"var": [
+						  "email"
+						]
+					  }
+					]
+				  }
+				}
+			}`,
+		},
+		"prepended-characters": {
+			state: `parse-issue{
+				"$evaluators": {
+				  "emailWithFaas": {
+					"in": [
+					  "@faas.com",
+					  {
+						"var": [
+						  "email"
+						]
+					  }
+					]
+				  }
+				}
+			}`,
+		},
+		"appended-characters": {
+			state: `{
+				"$evaluators": {
+				  "emailWithFaas": {
+					"in": [
+					  "@faas.com",
+					  {
+						"var": [
+						  "email"
+						]
+					  }
+					]
+				  }
+				}
+			}parse-issue`,
+		},
+		"odd-indentation": {
+			state: `{"$evaluators": {"emailWithFaas": {"in": ["@faas.com",
+					  {
+						"var": [
+				 "email"
+						]
+			}
+						]
+				}
+			}
+			}`,
+		},
+	}
+	e := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	var evaluators eval.Evaluators
+	err := json.Unmarshal([]byte(tests["happy-path"].state), &evaluators)
+	assert.NoError(t, err)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err = e.TransposeEvaluators(tt.state, evaluators)
+			assert.NoError(t, err)
+		})
+	}
+}

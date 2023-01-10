@@ -67,7 +67,11 @@ func (je *JSONEvaluator) SetState(source string, state string) (map[string]inter
 		return nil, err
 	}
 
-	state, err = je.transposeEvaluators(state)
+	var evaluators Evaluators
+	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
+		return nil, fmt.Errorf("unmarshal: %w", err)
+	}
+	state, err = je.TransposeEvaluators(state, evaluators)
 	if err != nil {
 		return nil, fmt.Errorf("transpose evaluators: %w", err)
 	}
@@ -236,12 +240,7 @@ func validateDefaultVariants(flags Flags) error {
 	return nil
 }
 
-func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
-	var evaluators Evaluators
-	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
-		return "", fmt.Errorf("unmarshal: %w", err)
-	}
-
+func (je *JSONEvaluator) TransposeEvaluators(state string, evaluators Evaluators) (string, error) {
 	for evalName, evalRaw := range evaluators.Evaluators {
 		// replace any occurrences of "evaluator": "evalName"
 		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"%s"`, evalName))
