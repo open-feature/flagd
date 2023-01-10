@@ -14,10 +14,10 @@ import (
 
 const (
 	dirName           = "test"
-	createFileName    = "to_create"
-	modifyFileName    = "to_modify"
-	deleteFileName    = "to_delete"
-	fetchFileName     = "to_fetch"
+	createFileName    = "to_create.json"
+	modifyFileName    = "to_modify.json"
+	deleteFileName    = "to_delete.json"
+	fetchFileName     = "to_fetch.json"
 	fetchFileContents = "fetch me"
 )
 
@@ -117,9 +117,8 @@ func TestFilePathSync_Fetch(t *testing.T) {
 	}{
 		"success": {
 			fpSync: sync.FilePathSync{
-				URI:      fmt.Sprintf("%s/%s", dirName, fetchFileName),
-				Logger:   logger.NewLogger(nil, false),
-				FileType: "json", // this is the default
+				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
+				Logger: logger.NewLogger(nil, false),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err != nil {
@@ -133,9 +132,8 @@ func TestFilePathSync_Fetch(t *testing.T) {
 		},
 		"not found": {
 			fpSync: sync.FilePathSync{
-				URI:      fmt.Sprintf("%s/%s", dirName, "not_found"),
-				Logger:   logger.NewLogger(nil, false),
-				FileType: "json",
+				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
+				Logger: logger.NewLogger(nil, false),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err == nil {

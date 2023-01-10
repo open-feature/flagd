@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -18,7 +19,7 @@ type FilePathSync struct {
 	Logger       *logger.Logger
 	ProviderArgs ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	FileType string
+	fileType string
 }
 
 func (fs *FilePathSync) Source() string {
@@ -29,19 +30,27 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
+	if fs.fileType == "" {
+		uriSplit := strings.Split(fs.URI, ".")
+		switch uriSplit[len(uriSplit)-1] {
+		case "yaml", "yml":
+			fs.fileType = "yaml"
+		case "json":
+			fs.fileType = "json"
+		default:
+			return "", fmt.Errorf("filepath extension '%v' is not supported", uriSplit[len(uriSplit)-1])
+		}
+	}
 	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
 		return "", err
 	}
 
-	switch fs.FileType {
-	case "yaml", "yml":
+	if fs.fileType == "yaml" {
 		return yamlToJSON(rawFile)
-	case "json":
-		return string(rawFile), nil
-	default:
-		return "", fmt.Errorf("filepath extension '%v' is not supported", fs.FileType)
 	}
+	return string(rawFile), nil
+
 }
 
 func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
