@@ -16,7 +16,7 @@ require (
 	github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron v1.2.0
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.8.3
 	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
