@@ -11,7 +11,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
-	github.com/mattn/go-colorable v0.1.12
+	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/open-feature-operator v0.2.20
 	github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813
 	github.com/prometheus/client_golang v1.14.0
