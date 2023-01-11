@@ -7,13 +7,11 @@ require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221205151127-0e915b34a38d.4
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20221205151127-0e915b34a38d.4
 	github.com/bufbuild/connect-go v1.3.1
-	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.6
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang/mock v1.6.0
-	github.com/mattn/go-colorable v0.1.12
+	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/open-feature-operator v0.2.20
 	github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813
 	github.com/prometheus/client_golang v1.14.0
@@ -78,6 +76,7 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
