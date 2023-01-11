@@ -20,7 +20,7 @@ require (
 	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
 	go.uber.org/zap v1.24.0
