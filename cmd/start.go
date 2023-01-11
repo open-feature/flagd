@@ -37,7 +37,7 @@ func init() {
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(evaluatorFlagName, "e", "json", "Set an evaluator e.g. json, yaml/yml."+
+	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: Set an evaluator e.g. json, yaml/yml."+
 		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
@@ -95,6 +95,11 @@ var startCmd = &cobra.Command{
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
 
+		if viper.GetString(evaluatorFlagName) != "" {
+			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),
@@ -105,7 +110,6 @@ var startCmd = &cobra.Command{
 			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
 			SyncURI:           viper.GetStringSlice(uriFlagName),
 			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
-			Evaluator:         viper.GetString(evaluatorFlagName),
 			CORS:              viper.GetStringSlice(corsFlagName),
 		})
 		if err != nil {

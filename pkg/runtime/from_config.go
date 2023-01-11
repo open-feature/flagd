@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -33,9 +32,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		config:       config,
 		Logger:       logger.WithFields(zap.String("component", "runtime")),
 		syncNotifier: make(chan sync.INotify),
-	}
-	if err := rt.setEvaluatorFromConfig(logger); err != nil {
-		return nil, err
+		Evaluator:    eval.NewJSONEvaluator(logger),
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
@@ -58,17 +55,6 @@ func (r *Runtime) setService(logger *logger.Logger) {
 			zap.String("component", "service"),
 		),
 	}
-}
-
-func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
-	switch r.config.Evaluator {
-	case "yaml", "yml", "json":
-		r.Evaluator = eval.NewJSONEvaluator(logger)
-	default:
-		return errors.New("no evaluator set")
-	}
-	logger.Debug(fmt.Sprintf("Using %s evaluator", r.config.Evaluator))
-	return nil
 }
 
 func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
