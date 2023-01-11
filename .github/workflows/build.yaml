@@ -18,9 +18,9 @@ jobs:
      name: Run Benchmark
      runs-on: ubuntu-latest
      steps:
-       - uses: actions/checkout@v2
+       - uses: actions/checkout@dc323e67f16fb5f7663d20ff7941f27f5809e9b6 # v2
        - name: Setup go
-         uses: actions/setup-go@v1
+         uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
          with:
            go-version: ${{ env.GO_VERSION }}
        - name: Run benchmark
@@ -46,9 +46,9 @@ jobs:
       GOBIN: /home/runner/work/open-feature/flagd/bin
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@dc323e67f16fb5f7663d20ff7941f27f5809e9b6 # v2
       - name: Setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make lint
@@ -60,9 +60,9 @@ jobs:
       GOBIN: /home/runner/work/open-feature/flagd/bin
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@dc323e67f16fb5f7663d20ff7941f27f5809e9b6 # v2
       - name: Setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make test
@@ -72,7 +72,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
         with:
           submodules: recursive
 
@@ -86,7 +86,7 @@ jobs:
         uses: docker/setup-buildx-action@master
 
       - name: Build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a # v2
         with:
           context: .
           file: ./build.Dockerfile
@@ -103,6 +103,6 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@959cbb7472c4d4ad70cdfe6f4976053fe48ab394 # v2
         with:
           sarif_file: "trivy-results.sarif"
