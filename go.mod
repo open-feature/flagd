@@ -25,7 +25,7 @@ require (
 	github.com/zeebo/xxh3 v1.0.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.2.0
-	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
+	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v3 v3.0.1
