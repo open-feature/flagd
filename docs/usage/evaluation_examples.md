@@ -155,3 +155,17 @@ Result:
 ```sh
 {"code":"not_found","message":"FLAG_NOT_FOUND"}
 ```
+
+### Resolve all values
+
+Command:
+
+```sh
+curl -X POST "localhost:8013/schema.v1.Service/ResolveAll" -d '{"context":{}}' -H "Content-Type: application/json"
+```
+
+Result:
+
+```sh
+{"flags":{"fibAlgo":{"reason":"DEFAULT", "variant":"recursive", "stringValue":"recursive"}, "headerColor":{"reason":"DEFAULT", "variant":"red", "stringValue":"#FF0000"}, "isColorYellow":{"reason":"TARGETING_MATCH", "variant":"off", "boolValue":false}, "myBoolFlag":{"reason":"STATIC", "variant":"on", "boolValue":true}, "myFloatFlag":{"reason":"STATIC", "variant":"one", "doubleValue":1.23}, "myIntFlag":{"reason":"STATIC", "variant":"one", "doubleValue":1}, "myObjectFlag":{"reason":"STATIC", "variant":"object1", "objectValue":{"key":"val"}}, "myStringFlag":{"reason":"STATIC", "variant":"key1", "stringValue":"val1"}}}
+```

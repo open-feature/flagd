@@ -12,6 +12,28 @@ const (
 	NotificationUpdate StateChangeNotificationType = "update"
 )
 
+type StateChangeNotification struct {
+	Type    StateChangeNotificationType `json:"type"`
+	Source  string                      `json:"source"`
+	FlagKey string                      `json:"flagKey"`
+}
+
+type AnyValue struct {
+	Value   interface{}
+	Variant string
+	Reason  string
+	FlagKey string
+}
+
+func NewAnyValue(value interface{}, variant string, reason string, flagKey string) AnyValue {
+	return AnyValue{
+		Value:   value,
+		Variant: variant,
+		Reason:  reason,
+		FlagKey: flagKey,
+	}
+}
+
 /*
 IEvaluator implementations store the state of the flags,
 do parsing and validation of the flag state and evaluate flags in response to handlers.
@@ -39,5 +61,8 @@ type IEvaluator interface {
 	ResolveObjectValue(
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value map[string]any, variant string, reasons string, err error)
+		context *structpb.Struct) (value map[string]any, variant string, reason string, err error)
+	ResolveAllValues(
+		reqID string,
+		context *structpb.Struct) (values []AnyValue)
 }

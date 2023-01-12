@@ -314,6 +314,52 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	}
 }
 
+func TestResolveAllValues(t *testing.T) {
+	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	_, err := evaluator.SetState("", Flags)
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+	tests := []struct {
+		context map[string]interface{}
+	}{
+		{
+			context: map[string]interface{}{},
+		},
+		{
+			context: map[string]interface{}{ColorProp: ColorValue},
+		},
+	}
+	const reqID = "default"
+	for _, test := range tests {
+		apStruct, err := structpb.NewStruct(test.context)
+		if err != nil {
+			t.Fatal(err)
+		}
+		vals := evaluator.ResolveAllValues(reqID, apStruct)
+		for _, val := range vals {
+			switch vT := val.Value.(type) {
+			case bool:
+				v, _, reason, _ := evaluator.ResolveBooleanValue(reqID, val.FlagKey, apStruct)
+				assert.Equal(t, v, vT)
+				assert.Equal(t, val.Reason, reason)
+			case string:
+				v, _, reason, _ := evaluator.ResolveStringValue(reqID, val.FlagKey, apStruct)
+				assert.Equal(t, v, vT)
+				assert.Equal(t, val.Reason, reason)
+			case float64:
+				v, _, reason, _ := evaluator.ResolveFloatValue(reqID, val.FlagKey, apStruct)
+				assert.Equal(t, v, vT)
+				assert.Equal(t, val.Reason, reason)
+			case interface{}:
+				v, _, reason, _ := evaluator.ResolveObjectValue(reqID, val.FlagKey, apStruct)
+				assert.Equal(t, v, vT)
+				assert.Equal(t, val.Reason, reason)
+			}
+		}
+	}
+}
+
 func TestResolveBooleanValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string

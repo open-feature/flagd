@@ -138,6 +138,61 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	return lis, nil
 }
 
+func (s *ConnectService) ResolveAll(
+	ctx context.Context,
+	req *connect.Request[schemaV1.ResolveAllRequest],
+) (*connect.Response[schemaV1.ResolveAllResponse], error) {
+	reqID := xid.New().String()
+	defer s.Logger.ClearFields(reqID)
+	res := &schemaV1.ResolveAllResponse{
+		Flags: make(map[string]*schemaV1.AnyFlag),
+	}
+	values := s.Eval.ResolveAllValues(reqID, req.Msg.GetContext())
+	for _, value := range values {
+		switch v := value.Value.(type) {
+		case bool:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_BoolValue{
+					BoolValue: v,
+				},
+			}
+		case string:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_StringValue{
+					StringValue: v,
+				},
+			}
+		case float64:
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_DoubleValue{
+					DoubleValue: v,
+				},
+			}
+		case map[string]any:
+			val, err := structpb.NewStruct(v)
+			if err != nil {
+				s.Logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
+				continue
+			}
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason:  value.Reason,
+				Variant: value.Variant,
+				Value: &schemaV1.AnyFlag_ObjectValue{
+					ObjectValue: val,
+				},
+			}
+		}
+	}
+
+	return connect.NewResponse(res), nil
+}
+
 func (s *ConnectService) EventStream(
 	ctx context.Context,
 	req *connect.Request[schemaV1.EventStreamRequest],

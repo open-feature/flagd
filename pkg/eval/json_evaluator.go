@@ -109,6 +109,57 @@ func resolve[T constraints](reqID string, key string, context *structpb.Struct,
 	return value, variant, reason, nil
 }
 
+func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct) []AnyValue {
+	values := []AnyValue{}
+	var value interface{}
+	var variant string
+	var reason string
+	var err error
+	for flagKey, flag := range je.state.Flags {
+		defaultValue := flag.Variants[flag.DefaultVariant]
+		switch defaultValue.(type) {
+		case bool:
+			value, variant, reason, err = resolve[bool](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
+		case string:
+			value, variant, reason, err = resolve[string](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
+		case float64:
+			value, variant, reason, err = resolve[float64](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
+		case map[string]any:
+			value, variant, reason, err = resolve[map[string]any](
+				reqID,
+				flagKey,
+				context,
+				je.evaluateVariant,
+				je.state.Flags[flagKey].Variants,
+			)
+		}
+		if err != nil {
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
+			continue
+		}
+		values = append(values, NewAnyValue(value, variant, reason, flagKey))
+	}
+	return values
+}
+
 func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, context *structpb.Struct) (
 	value bool,
 	variant string,
