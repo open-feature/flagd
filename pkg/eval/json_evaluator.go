@@ -17,6 +17,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+var regBrace *regexp.Regexp
+
+func init() {
+	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
+}
+
 type JSONEvaluator struct {
 	state  Flags
 	Logger *logger.Logger
@@ -303,8 +309,7 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 		if len(evalValue) < 3 {
 			return "", errors.New("evaluator object is empty")
 		}
-		evalValue = evalValue[1 : len(evalValue)-2] // remove first { and last }
-
+		evalValue = regBrace.ReplaceAllString(evalValue, "")
 		state = regex.ReplaceAllString(state, evalValue)
 	}
 
