@@ -18,7 +18,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.8.3
 	github.com/rs/xid v1.4.0
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.1
 	github.com/xeipuuv/gojsonschema v1.2.0
