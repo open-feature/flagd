@@ -972,6 +972,64 @@ func TestState_Evaluator(t *testing.T) {
 				}
 			`,
 		},
+		"no-indentation": {
+			inputState: `
+				{
+				"flags": {
+				"fibAlgo": {
+				"variants": {
+				"recursive": "recursive",
+				"memo": "memo",
+				"loop": "loop",
+				"binet": "binet"
+				},
+				"defaultVariant": "recursive",
+				"state": "ENABLED",
+				"targeting": {
+				"if": [
+				{
+				"$ref": "emailWithFaas"
+				}, "binet", null
+				]
+				}
+				}
+				},
+				"$evaluators": {
+				"emailWithFaas": {
+				"in": ["@faas.com", {
+				"var": ["email"]
+				}]
+				}
+				}
+				}
+			`,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "source":"",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					}
+				}
+			`,
+		},
 		"invalid evaluator json": {
 			inputState: `
 				{

@@ -118,9 +118,7 @@ func yamlToJSON(rawFile []byte) (string, error) {
 		return "", fmt.Errorf("unmarshal yaml: %w", err)
 	}
 
-	// Adding spaces here because our evaluator transposer function
-	// doesn't understand json without indentations quite well
-	r, err := json.MarshalIndent(ms, "", "  ")
+	r, err := json.Marshal(ms)
 	if err != nil {
 		return "", fmt.Errorf("convert yaml to json: %w", err)
 	}
