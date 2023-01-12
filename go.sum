@@ -295,6 +295,8 @@ github.com/open-feature/open-feature-operator v0.2.23 h1:Ao3f1MuCJEgjUnikzFO8ZTl
 github.com/open-feature/open-feature-operator v0.2.23/go.mod h1:4kH4QBUEmN/fFOk+aw9F4J/RbsRJcd3y2OlebUWTSlc=
 github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813 h1:jcf+dYt/EL5kMYrftpzdk4t6iscQKzVo8IIvAkAV+MI=
 github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
+github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
+github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pelletier/go-toml/v2 v2.0.5 h1:ipoSadvV8oGUjnUbMub59IDPPwfxF694nG/jwbMiyQg=
