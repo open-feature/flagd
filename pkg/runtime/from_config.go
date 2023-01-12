@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -33,9 +32,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		config:       config,
 		Logger:       logger.WithFields(zap.String("component", "runtime")),
 		syncNotifier: make(chan sync.INotify),
-	}
-	if err := rt.setEvaluatorFromConfig(logger); err != nil {
-		return nil, err
+		Evaluator:    eval.NewJSONEvaluator(logger),
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
@@ -60,17 +57,6 @@ func (r *Runtime) setService(logger *logger.Logger) {
 	}
 }
 
-func (r *Runtime) setEvaluatorFromConfig(logger *logger.Logger) error {
-	switch r.config.Evaluator {
-	case "yaml", "yml", "json":
-		r.Evaluator = eval.NewJSONEvaluator(logger)
-	default:
-		return errors.New("no evaluator set")
-	}
-	logger.Debug(fmt.Sprintf("Using %s evaluator", r.config.Evaluator))
-	return nil
-}
-
 func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	rtLogger := logger.WithFields(zap.String("component", "runtime"))
 	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
@@ -84,8 +70,6 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 					zap.String("sync", "filepath"),
 				),
 				ProviderArgs: r.config.ProviderArgs,
-				// evaluator here is file type: `json`, `yaml` etc.,
-				FileType: r.config.Evaluator,
 			})
 			rtLogger.Debug(fmt.Sprintf("Using filepath sync-provider for %q", uri))
 		case regCrd.Match(uriB):

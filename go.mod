@@ -6,7 +6,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.3.1-20221205151127-0e915b34a38d.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221205151127-0e915b34a38d.4
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20221205151127-0e915b34a38d.4
-	github.com/bufbuild/connect-go v1.3.1
+	github.com/bufbuild/connect-go v1.4.1
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.6
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
@@ -16,11 +16,11 @@ require (
 	github.com/open-feature/schemas v0.0.0-20221123004631-302d0fa1f813
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron v1.2.0
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.8.3
 	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
 	go.uber.org/zap v1.24.0
