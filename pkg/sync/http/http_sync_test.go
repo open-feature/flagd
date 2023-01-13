@@ -1,4 +1,4 @@
-package sync_test
+package http
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/open-feature/flagd/pkg/sync"
 
 	"github.com/golang/mock/gomock"
-	syncmock "github.com/open-feature/flagd/pkg/sync/mock"
+	syncmock "github.com/open-feature/flagd/pkg/sync/http/mock"
 )
 
 func TestHTTPSync_Fetch(t *testing.T) {
@@ -23,7 +23,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		uri            string
 		bearerToken    string
 		lastBodySHA    string
-		handleResponse func(*testing.T, sync.HTTPSync, string, error)
+		handleResponse func(*testing.T, HTTPSync, string, error)
 	}{
 		"success": {
 			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {
@@ -32,7 +32,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}, nil)
 			},
 			uri: "http://localhost",
-			handleResponse: func(t *testing.T, _ sync.HTTPSync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ HTTPSync, fetched string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -44,7 +44,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		},
 		"return an error if no uri": {
 			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {},
-			handleResponse: func(t *testing.T, _ sync.HTTPSync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ HTTPSync, fetched string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}
@@ -58,7 +58,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:         "http://localhost",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync sync.HTTPSync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync HTTPSync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -79,7 +79,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:         "http://localhost",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync sync.HTTPSync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync HTTPSync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -100,7 +100,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 			tt.setup(t, mockClient)
 
-			httpSync := sync.HTTPSync{
+			httpSync := HTTPSync{
 				URI:         tt.uri,
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
@@ -183,7 +183,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 			inotifyChan := make(chan sync.INotify)
 			tt.setup(t, mockCron, mockClient)
 
-			httpSync := sync.HTTPSync{
+			httpSync := HTTPSync{
 				URI:         tt.uri,
 				Client:      mockClient,
 				Cron:        mockCron,

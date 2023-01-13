@@ -1,4 +1,4 @@
-package sync_test
+package file
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func TestFilePathSync_Notify(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			fpSync := sync.FilePathSync{
+			fpSync := Sync{
 				URI:    dirName,
 				Logger: logger.NewLogger(nil, false),
 			}
@@ -112,11 +112,11 @@ func TestFilePathSync_Notify(t *testing.T) {
 
 func TestFilePathSync_Fetch(t *testing.T) {
 	tests := map[string]struct {
-		fpSync         sync.FilePathSync
+		fpSync         Sync
 		handleResponse func(t *testing.T, fetched string, err error)
 	}{
 		"success": {
-			fpSync: sync.FilePathSync{
+			fpSync: Sync{
 				URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
 				Logger: logger.NewLogger(nil, false),
 			},
@@ -131,7 +131,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			},
 		},
 		"not found": {
-			fpSync: sync.FilePathSync{
+			fpSync: Sync{
 				URI:    fmt.Sprintf("%s/%s", dirName, "not_found"),
 				Logger: logger.NewLogger(nil, false),
 			},

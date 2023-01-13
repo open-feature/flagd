@@ -1,4 +1,4 @@
-package sync
+package http
 
 import (
 	"bytes"
@@ -7,20 +7,21 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/pkg/sync"
 	"io"
 	"net/http"
 
 	"github.com/open-feature/flagd/pkg/logger"
 )
 
-type HTTPSync struct {
+type Sync struct {
 	URI          string
 	Client       HTTPClient
 	Cron         Cron
 	BearerToken  string
 	LastBodySHA  string
 	Logger       *logger.Logger
-	ProviderArgs ProviderArgs
+	ProviderArgs sync.ProviderArgs
 }
 
 // HTTPClient defines the behaviour required of a http client
@@ -34,11 +35,11 @@ type Cron interface {
 	Start()
 }
 
-func (fs *HTTPSync) Source() string {
+func (fs *Sync) Source() string {
 	return fs.URI
 }
 
-func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
+func (fs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
 		return []byte(""), err
@@ -65,14 +66,14 @@ func (fs *HTTPSync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, e
 	return body, nil
 }
 
-func (fs *HTTPSync) generateSha(body []byte) string {
+func (fs *Sync) generateSha(body []byte) string {
 	hasher := sha1.New() //nolint:gosec
 	hasher.Write(body)
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 	return sha
 }
 
-func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
+func (fs *Sync) Fetch(ctx context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no HTTP URL string set")
 	}
@@ -87,7 +88,7 @@ func (fs *HTTPSync) Fetch(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
+func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 	_ = fs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := fs.fetchBodyFromURL(ctx, fs.URI)
 		if err != nil {
@@ -95,25 +96,25 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 			return
 		}
 		if len(body) == 0 {
-			w <- &Notifier{
-				Event: Event[DefaultEventType]{
-					DefaultEventTypeDelete,
+			w <- &sync.Notifier{
+				Event: sync.Event[sync.DefaultEventType]{
+					sync.DefaultEventTypeDelete,
 				},
 			}
 		} else {
 			if fs.LastBodySHA == "" {
-				w <- &Notifier{
-					Event: Event[DefaultEventType]{
-						DefaultEventTypeCreate,
+				w <- &sync.Notifier{
+					Event: sync.Event[sync.DefaultEventType]{
+						sync.DefaultEventTypeCreate,
 					},
 				}
 			} else {
 				currentSHA := fs.generateSha(body)
 				if fs.LastBodySHA != currentSHA {
 					fs.Logger.Info(fmt.Sprintf("http notifier event: %s has been modified", fs.URI))
-					w <- &Notifier{
-						Event: Event[DefaultEventType]{
-							DefaultEventTypeModify,
+					w <- &sync.Notifier{
+						Event: sync.Event[sync.DefaultEventType]{
+							sync.DefaultEventTypeModify,
 						},
 					}
 				}
@@ -121,9 +122,9 @@ func (fs *HTTPSync) Notify(ctx context.Context, w chan<- INotify) {
 			}
 		}
 	})
-	w <- &Notifier{
-		Event: Event[DefaultEventType]{
-			DefaultEventTypeReady,
+	w <- &sync.Notifier{
+		Event: sync.Event[sync.DefaultEventType]{
+			sync.DefaultEventTypeReady,
 		},
 	}
 	fs.Cron.Start()

@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/open-feature/flagd/pkg/sync/file"
+	httpSync "github.com/open-feature/flagd/pkg/sync/http"
 	"net/http"
 	"regexp"
 	"time"
@@ -63,7 +65,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	for _, uri := range r.config.SyncURI {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &sync.FilePathSync{
+			r.SyncImpl = append(r.SyncImpl, &file.Sync{
 				URI: regFile.ReplaceAllString(uri, ""),
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
@@ -83,7 +85,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			})
 			rtLogger.Debug(fmt.Sprintf("Using kubernetes sync-provider for %s", uri))
 		case regURL.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
+			r.SyncImpl = append(r.SyncImpl, &httpSync.Sync{
 				URI:         uri,
 				BearerToken: r.config.SyncBearerToken,
 				Client: &http.Client{
