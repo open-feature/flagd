@@ -23,11 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	featureFlagConfigurationName = "featureflagconfiguration"
-	featureFlagNamespaceName     = "namespace"
-)
-
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
