@@ -64,50 +64,49 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		defer cancel()
-		fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					fs.Logger.Info("Filepath notifier closed")
-					return
-				}
-				var evtType sync.DefaultEventType
-				switch event.Op {
-				case fsnotify.Create:
-					evtType = sync.DefaultEventTypeCreate
-				case fsnotify.Write:
-					evtType = sync.DefaultEventTypeModify
-				case fsnotify.Remove:
-					// K8s exposes config maps as symlinks.
-					// Updates cause a remove event, we need to re-add the watcher in this case.
-					err = watcher.Add(fs.URI)
-					if err != nil {
-						fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
-					}
-					evtType = sync.DefaultEventTypeDelete
-				}
-				fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
-				w <- &sync.Notifier{
-					Event: sync.Event[sync.DefaultEventType]{
-						EventType: evtType,
-					},
-				}
-				fs.Logger.Info("Filepath notifier event sent")
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				fs.Logger.Error(err.Error())
-			}
-		}
-	}()
-
 	w <- &sync.Notifier{Event: sync.Event[sync.DefaultEventType]{sync.DefaultEventTypeReady}} // signal readiness to the caller
-	<-ctx.Done()
+
+	fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
+
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				fs.Logger.Info("Filepath notifier closed")
+				return
+			}
+			var evtType sync.DefaultEventType
+			switch event.Op {
+			case fsnotify.Create:
+				evtType = sync.DefaultEventTypeCreate
+			case fsnotify.Write:
+				evtType = sync.DefaultEventTypeModify
+			case fsnotify.Remove:
+				// K8s exposes config maps as symlinks.
+				// Updates cause a remove event, we need to re-add the watcher in this case.
+				err = watcher.Add(fs.URI)
+				if err != nil {
+					fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
+				}
+				evtType = sync.DefaultEventTypeDelete
+			}
+			fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
+			w <- &sync.Notifier{
+				Event: sync.Event[sync.DefaultEventType]{
+					EventType: evtType,
+				},
+			}
+			fs.Logger.Info("Filepath notifier event sent")
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			fs.Logger.Error(err.Error())
+		case <-ctx.Done():
+			fs.Logger.Debug("exiting file watcher")
+			return
+		}
+	}
 }
 
 // yamlToJSON is a generic helper function to convert
