@@ -8,6 +8,10 @@ There are many ways to get started with flagd. Choose the method that best serve
 
 1. `docker pull ghcr.io/open-feature/flagd:latest`
 
+### Homebrew 🍺
+
+1. `brew install flagd`
+
 ### Go binary
 
 1. Install Go 1.18 or above
