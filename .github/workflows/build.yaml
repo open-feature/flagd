@@ -20,7 +20,7 @@ jobs:
      steps:
        - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
        - name: Setup go
-         uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
+         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
          with:
            go-version: ${{ env.GO_VERSION }}
        - name: Run benchmark
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
       - name: Setup go
-        uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make lint
@@ -62,7 +62,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
       - name: Setup go
-        uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make test
