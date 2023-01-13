@@ -1,10 +1,11 @@
-package sync
+package file
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/pkg/sync"
 	"os"
 	"strings"
 
@@ -14,19 +15,19 @@ import (
 	"github.com/open-feature/flagd/pkg/logger"
 )
 
-type FilePathSync struct {
+type Sync struct {
 	URI          string
 	Logger       *logger.Logger
-	ProviderArgs ProviderArgs
+	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
 	fileType string
 }
 
-func (fs *FilePathSync) Source() string {
+func (fs *Sync) Source() string {
 	return fs.URI
 }
 
-func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
+func (fs *Sync) Fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
@@ -49,7 +50,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	}
 }
 
-func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
+func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -74,12 +75,12 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					fs.Logger.Info("Filepath notifier closed")
 					return
 				}
-				var evtType DefaultEventType
+				var evtType sync.DefaultEventType
 				switch event.Op {
 				case fsnotify.Create:
-					evtType = DefaultEventTypeCreate
+					evtType = sync.DefaultEventTypeCreate
 				case fsnotify.Write:
-					evtType = DefaultEventTypeModify
+					evtType = sync.DefaultEventTypeModify
 				case fsnotify.Remove:
 					// K8s exposes config maps as symlinks.
 					// Updates cause a remove event, we need to re-add the watcher in this case.
@@ -87,11 +88,11 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					if err != nil {
 						fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
 					}
-					evtType = DefaultEventTypeDelete
+					evtType = sync.DefaultEventTypeDelete
 				}
 				fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
-				w <- &Notifier{
-					Event: Event[DefaultEventType]{
+				w <- &sync.Notifier{
+					Event: sync.Event[sync.DefaultEventType]{
 						EventType: evtType,
 					},
 				}
@@ -105,7 +106,7 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 		}
 	}()
 
-	w <- &Notifier{Event: Event[DefaultEventType]{DefaultEventTypeReady}} // signal readiness to the caller
+	w <- &sync.Notifier{Event: sync.Event[sync.DefaultEventType]{sync.DefaultEventTypeReady}} // signal readiness to the caller
 	<-ctx.Done()
 }
 
