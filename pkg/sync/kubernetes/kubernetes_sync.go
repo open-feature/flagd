@@ -149,6 +149,13 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}); err != nil {
 		k.Logger.Fatal(err.Error())
 	}
+
+	c <- &sync.Notifier{
+		Event: sync.Event[sync.DefaultEventType]{
+			EventType: sync.DefaultEventTypeReady,
+		},
+	}
+
 	informer.Run(ctx.Done())
 }
 

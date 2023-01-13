@@ -23,7 +23,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		uri            string
 		bearerToken    string
 		lastBodySHA    string
-		handleResponse func(*testing.T, HTTPSync, string, error)
+		handleResponse func(*testing.T, Sync, string, error)
 	}{
 		"success": {
 			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {
@@ -32,7 +32,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}, nil)
 			},
 			uri: "http://localhost",
-			handleResponse: func(t *testing.T, _ HTTPSync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -44,7 +44,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		},
 		"return an error if no uri": {
 			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {},
-			handleResponse: func(t *testing.T, _ HTTPSync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}
@@ -58,7 +58,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:         "http://localhost",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync HTTPSync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -79,7 +79,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:         "http://localhost",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync HTTPSync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -100,7 +100,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 			tt.setup(t, mockClient)
 
-			httpSync := HTTPSync{
+			httpSync := Sync{
 				URI:         tt.uri,
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
@@ -131,6 +131,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 					return nil
 				})
 				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
+				cron.EXPECT().Stop().AnyTimes()
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -146,6 +147,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 					return nil
 				})
 				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
+				cron.EXPECT().Stop().AnyTimes()
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("foo")),
 				}, nil)
@@ -162,6 +164,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 					return nil
 				})
 				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
+				cron.EXPECT().Stop().AnyTimes()
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("")),
 				}, nil)
@@ -183,7 +186,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 			inotifyChan := make(chan sync.INotify)
 			tt.setup(t, mockCron, mockClient)
 
-			httpSync := HTTPSync{
+			httpSync := Sync{
 				URI:         tt.uri,
 				Client:      mockClient,
 				Cron:        mockCron,

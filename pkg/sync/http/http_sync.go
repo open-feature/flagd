@@ -33,6 +33,7 @@ type HTTPClient interface {
 type Cron interface {
 	AddFunc(spec string, cmd func()) error
 	Start()
+	Stop()
 }
 
 func (fs *Sync) Source() string {
@@ -127,5 +128,8 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 			sync.DefaultEventTypeReady,
 		},
 	}
+	
 	fs.Cron.Start()
+	<-ctx.Done()
+	fs.Cron.Stop()
 }
