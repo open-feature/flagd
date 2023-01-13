@@ -7,7 +7,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221226184428-0dc62ff103b8.4
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20221226184428-0dc62ff103b8.4
 	github.com/bufbuild/connect-go v1.4.1
-	github.com/diegoholiveira/jsonlogic/v3 v3.2.6
+	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
