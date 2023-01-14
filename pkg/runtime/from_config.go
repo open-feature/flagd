@@ -2,11 +2,12 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/open-feature/flagd/pkg/sync/file"
-	httpSync "github.com/open-feature/flagd/pkg/sync/http"
 	"net/http"
 	"regexp"
 	"time"
+
+	"github.com/open-feature/flagd/pkg/sync/file"
+	httpSync "github.com/open-feature/flagd/pkg/sync/http"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
