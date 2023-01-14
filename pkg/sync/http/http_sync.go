@@ -7,16 +7,17 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/pkg/sync"
 	"io"
 	"net/http"
+
+	"github.com/open-feature/flagd/pkg/sync"
 
 	"github.com/open-feature/flagd/pkg/logger"
 )
 
 type Sync struct {
 	URI          string
-	Client       HTTPClient
+	Client       Client
 	Cron         Cron
 	BearerToken  string
 	LastBodySHA  string
@@ -24,8 +25,8 @@ type Sync struct {
 	ProviderArgs sync.ProviderArgs
 }
 
-// HTTPClient defines the behaviour required of a http client
-type HTTPClient interface {
+// Client defines the behaviour required of a http client
+type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -99,14 +100,14 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 		if len(body) == 0 {
 			w <- &sync.Notifier{
 				Event: sync.Event[sync.DefaultEventType]{
-					sync.DefaultEventTypeDelete,
+					EventType: sync.DefaultEventTypeDelete,
 				},
 			}
 		} else {
 			if fs.LastBodySHA == "" {
 				w <- &sync.Notifier{
 					Event: sync.Event[sync.DefaultEventType]{
-						sync.DefaultEventTypeCreate,
+						EventType: sync.DefaultEventTypeCreate,
 					},
 				}
 			} else {
@@ -115,7 +116,7 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 					fs.Logger.Info(fmt.Sprintf("http notifier event: %s has been modified", fs.URI))
 					w <- &sync.Notifier{
 						Event: sync.Event[sync.DefaultEventType]{
-							sync.DefaultEventTypeModify,
+							EventType: sync.DefaultEventTypeModify,
 						},
 					}
 				}
@@ -125,10 +126,10 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 	})
 	w <- &sync.Notifier{
 		Event: sync.Event[sync.DefaultEventType]{
-			sync.DefaultEventTypeReady,
+			EventType: sync.DefaultEventTypeReady,
 		},
 	}
-	
+
 	fs.Cron.Start()
 	<-ctx.Done()
 	fs.Cron.Stop()

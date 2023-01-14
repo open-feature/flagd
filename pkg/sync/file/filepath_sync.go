@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/pkg/sync"
 	"os"
 	"strings"
+
+	"github.com/open-feature/flagd/pkg/sync"
 
 	"gopkg.in/yaml.v3"
 
@@ -50,6 +51,7 @@ func (fs *Sync) Fetch(_ context.Context) (string, error) {
 	}
 }
 
+//nolint:funlen
 func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
@@ -64,7 +66,12 @@ func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
 		return
 	}
 
-	w <- &sync.Notifier{Event: sync.Event[sync.DefaultEventType]{sync.DefaultEventTypeReady}} // signal readiness to the caller
+	// signal readiness to the caller
+	w <- &sync.Notifier{
+		Event: sync.Event[sync.DefaultEventType]{
+			EventType: sync.DefaultEventTypeReady,
+		},
+	}
 
 	fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
 
