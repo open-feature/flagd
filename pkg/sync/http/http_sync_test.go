@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/sync"
 
 	"github.com/golang/mock/gomock"
+	"github.com/open-feature/flagd/pkg/logger"
 	syncmock "github.com/open-feature/flagd/pkg/sync/http/mock"
 )
 
@@ -110,116 +107,6 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 			fetched, err := httpSync.Fetch(context.Background())
 			tt.handleResponse(t, httpSync, fetched, err)
-		})
-	}
-}
-
-func TestHTTPSync_Notify(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	tests := map[string]struct {
-		setup             func(t *testing.T, cron *syncmock.MockCron, client *syncmock.MockHTTPClient)
-		uri               string
-		lastBodySHA       string
-		expectedEventType sync.DefaultEventType
-	}{
-		"create event": {
-			setup: func(t *testing.T, cron *syncmock.MockCron, client *syncmock.MockHTTPClient) {
-				var cronFunc func()
-				cron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, f func()) error {
-					cronFunc = f
-					return nil
-				})
-				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
-				cron.EXPECT().Stop().AnyTimes()
-				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Body: io.NopCloser(strings.NewReader("test response")),
-				}, nil)
-			},
-			uri:               "http://localhost",
-			expectedEventType: sync.DefaultEventTypeCreate,
-		},
-		"modify event": {
-			setup: func(t *testing.T, cron *syncmock.MockCron, client *syncmock.MockHTTPClient) {
-				var cronFunc func()
-				cron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, f func()) error {
-					cronFunc = f
-					return nil
-				})
-				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
-				cron.EXPECT().Stop().AnyTimes()
-				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Body: io.NopCloser(strings.NewReader("foo")),
-				}, nil)
-			},
-			uri:               "http://localhost",
-			expectedEventType: sync.DefaultEventTypeModify,
-			lastBodySHA:       "fUH6MbDL8tR0nCiC4bag0Rf_6is=",
-		},
-		"delete event": {
-			setup: func(t *testing.T, cron *syncmock.MockCron, client *syncmock.MockHTTPClient) {
-				var cronFunc func()
-				cron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, f func()) error {
-					cronFunc = f
-					return nil
-				})
-				cron.EXPECT().Start().DoAndReturn(func() { cronFunc() })
-				cron.EXPECT().Stop().AnyTimes()
-				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Body: io.NopCloser(strings.NewReader("")),
-				}, nil)
-			},
-			uri:               "http://localhost",
-			expectedEventType: sync.DefaultEventTypeDelete,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			// prevent deadlock with a timeout if expected event doesn't arrive
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			mockCron := syncmock.NewMockCron(ctrl)
-			mockClient := syncmock.NewMockHTTPClient(ctrl)
-
-			inotifyChan := make(chan sync.INotify)
-			tt.setup(t, mockCron, mockClient)
-
-			httpSync := Sync{
-				URI:         tt.uri,
-				Client:      mockClient,
-				Cron:        mockCron,
-				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil, false),
-			}
-
-			go func() {
-				httpSync.Notify(ctx, inotifyChan)
-			}()
-
-			w := <-inotifyChan // first emitted event by Notify is to signal readiness
-			if w.GetEvent().EventType != sync.DefaultEventTypeReady {
-				t.Errorf("expected event type to be %d, got %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
-			}
-
-			for {
-				select {
-				case event, ok := <-inotifyChan:
-					if !ok {
-						t.Fatal("inotify chan closed")
-					}
-					if event.GetEvent().EventType != tt.expectedEventType {
-						t.Errorf(
-							"expected event of type %d, got %d", tt.expectedEventType, event.GetEvent().EventType,
-						)
-					}
-					return
-				case <-ctx.Done():
-					t.Error("context timed out")
-					return
-				}
-			}
 		})
 	}
 }

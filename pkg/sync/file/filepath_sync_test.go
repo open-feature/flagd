@@ -6,10 +6,8 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/sync"
 )
 
 const (
@@ -20,95 +18,6 @@ const (
 	fetchFileName     = "to_fetch.json"
 	fetchFileContents = "fetch me"
 )
-
-func TestFilePathSync_Notify(t *testing.T) {
-	tests := map[string]struct {
-		triggerEvent      func(t *testing.T)
-		expectedEventType sync.DefaultEventType
-	}{
-		"create event": {
-			triggerEvent: func(t *testing.T) {
-				if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, createFileName)); err != nil {
-					t.Fatal(err)
-				}
-			},
-			expectedEventType: sync.DefaultEventTypeCreate,
-		},
-		"modify event": {
-			triggerEvent: func(t *testing.T) {
-				file, err := os.OpenFile(fmt.Sprintf("%s/%s", dirName, modifyFileName), os.O_RDWR, 0o644)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer func(file *os.File) {
-					if err := file.Close(); err != nil {
-						t.Errorf("close file: %v", err)
-					}
-				}(file)
-
-				_, err = file.WriteAt([]byte("foo"), 0)
-				if err != nil {
-					t.Fatal(err)
-				}
-			},
-			expectedEventType: sync.DefaultEventTypeModify,
-		},
-		"delete event": {
-			triggerEvent: func(t *testing.T) {
-				if err := os.Remove(fmt.Sprintf("%s/%s", dirName, deleteFileName)); err != nil {
-					t.Fatal(err)
-				}
-			},
-			expectedEventType: sync.DefaultEventTypeDelete,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			setupFilePathNotify(t)
-			defer t.Cleanup(cleanupFilePath)
-
-			// prevent deadlock with a timeout if expected event doesn't arrive
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			fpSync := Sync{
-				URI:    dirName,
-				Logger: logger.NewLogger(nil, false),
-			}
-			inotifyChan := make(chan sync.INotify)
-
-			go func() {
-				fpSync.Notify(ctx, inotifyChan)
-			}()
-
-			w := <-inotifyChan // first emitted event by Notify is to signal readiness
-			if w.GetEvent().EventType != sync.DefaultEventTypeReady {
-				t.Errorf("expected event type to be %d, got %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
-			}
-
-			tt.triggerEvent(t)
-
-			for {
-				select {
-				case event, ok := <-inotifyChan:
-					if !ok {
-						t.Fatal("inotify chan closed")
-					}
-					if event.GetEvent().EventType != tt.expectedEventType {
-						t.Errorf(
-							"expected event of type %d, got %d", tt.expectedEventType, event.GetEvent().EventType,
-						)
-					}
-					return
-				case <-ctx.Done():
-					t.Error("context timed out")
-					return
-				}
-			}
-		})
-	}
-}
 
 func TestFilePathSync_Fetch(t *testing.T) {
 	tests := map[string]struct {
@@ -148,24 +57,10 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			setupFilePathFetch(t)
 			defer t.Cleanup(cleanupFilePath)
 
-			fetched, err := tt.fpSync.Fetch(context.Background())
+			data, err := tt.fpSync.fetch(context.Background())
 
-			tt.handleResponse(t, fetched, err)
+			tt.handleResponse(t, data, err)
 		})
-	}
-}
-
-func setupFilePathNotify(t *testing.T) {
-	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, modifyFileName)); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, deleteFileName)); err != nil {
-		t.Fatal(err)
 	}
 }
 

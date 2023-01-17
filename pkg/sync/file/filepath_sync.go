@@ -24,11 +24,82 @@ type Sync struct {
 	fileType string
 }
 
-func (fs *Sync) Source() string {
-	return fs.URI
+//nolint:funlen
+func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	fs.Logger.Info("Starting filepath sync notifier")
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fs.Logger.Fatal(err.Error())
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(fs.URI)
+	if err != nil {
+		fs.Logger.Error(err.Error())
+		return err
+	}
+
+	// file watcher is ready(and stable), fetch and emit the initial results
+	fetch, err := fs.fetch(ctx)
+	if err != nil {
+		fs.Logger.Error(err.Error())
+		return err
+	}
+
+	dataSync <- sync.DataSync{FlagData: fetch, Source: fs.URI}
+
+	fs.Logger.Info(fmt.Sprintf("Watching filepath: %s", fs.URI))
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				fs.Logger.Info("Filepath notifier closed")
+				return errors.New("filepath notifier closed")
+			}
+
+			switch event.Op {
+			case fsnotify.Create:
+				fs.Logger.Debug("New configuration created")
+				msg, err := fs.fetch(ctx)
+				if err != nil {
+					fs.Logger.Error(err.Error())
+				}
+				dataSync <- sync.DataSync{
+					FlagData: msg,
+					Source:   fs.URI,
+				}
+			case fsnotify.Write:
+				fs.Logger.Debug("Configuration modified")
+				msg, err := fs.fetch(ctx)
+				if err != nil {
+					fs.Logger.Error(err.Error())
+				}
+				dataSync <- sync.DataSync{
+					FlagData: msg,
+					Source:   fs.URI,
+				}
+			case fsnotify.Remove:
+				// K8s exposes config maps as symlinks.
+				// Updates cause a remove event, we need to re-add the watcher in this case.
+				err = watcher.Add(fs.URI)
+				if err != nil {
+					fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
+				}
+			}
+			fs.Logger.Info(fmt.Sprintf("Filepath event: %s %s", event.Name, event.Op.String()))
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return errors.New("watcher error")
+			}
+			fs.Logger.Error(err.Error())
+		case <-ctx.Done():
+			fs.Logger.Debug("exiting file watcher")
+			return nil
+		}
+	}
 }
 
-func (fs *Sync) Fetch(_ context.Context) (string, error) {
+func (fs *Sync) fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
@@ -48,71 +119,6 @@ func (fs *Sync) Fetch(_ context.Context) (string, error) {
 		return string(rawFile), nil
 	default:
 		return "", fmt.Errorf("filepath extension for URI '%s' is not supported", fs.URI)
-	}
-}
-
-//nolint:funlen
-func (fs *Sync) Notify(ctx context.Context, w chan<- sync.INotify) {
-	fs.Logger.Info("Starting filepath sync notifier")
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		fs.Logger.Fatal(err.Error())
-	}
-	defer watcher.Close()
-
-	err = watcher.Add(fs.URI)
-	if err != nil {
-		fs.Logger.Error(err.Error())
-		return
-	}
-
-	// signal readiness to the caller
-	w <- &sync.Notifier{
-		Event: sync.Event[sync.DefaultEventType]{
-			EventType: sync.DefaultEventTypeReady,
-		},
-	}
-
-	fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
-
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				fs.Logger.Info("Filepath notifier closed")
-				return
-			}
-			var evtType sync.DefaultEventType
-			switch event.Op {
-			case fsnotify.Create:
-				evtType = sync.DefaultEventTypeCreate
-			case fsnotify.Write:
-				evtType = sync.DefaultEventTypeModify
-			case fsnotify.Remove:
-				// K8s exposes config maps as symlinks.
-				// Updates cause a remove event, we need to re-add the watcher in this case.
-				err = watcher.Add(fs.URI)
-				if err != nil {
-					fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
-				}
-				evtType = sync.DefaultEventTypeDelete
-			}
-			fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
-			w <- &sync.Notifier{
-				Event: sync.Event[sync.DefaultEventType]{
-					EventType: evtType,
-				},
-			}
-			fs.Logger.Info("Filepath notifier event sent")
-		case err, ok := <-watcher.Errors:
-			if !ok {
-				return
-			}
-			fs.Logger.Error(err.Error())
-		case <-ctx.Done():
-			fs.Logger.Debug("exiting file watcher")
-			return
-		}
 	}
 }
 
