@@ -32,10 +32,9 @@ func init() {
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	rt := Runtime{
-		config:       config,
-		Logger:       logger.WithFields(zap.String("component", "runtime")),
-		syncNotifier: make(chan sync.INotify),
-		Evaluator:    eval.NewJSONEvaluator(logger),
+		config:    config,
+		Logger:    logger.WithFields(zap.String("component", "runtime")),
+		Evaluator: eval.NewJSONEvaluator(logger),
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
