@@ -7,17 +7,45 @@ import (
 	"os"
 	"testing"
 
+	"github.com/open-feature/flagd/pkg/sync"
+
 	"github.com/open-feature/flagd/pkg/logger"
 )
 
 const (
 	dirName           = "test"
-	createFileName    = "to_create.json"
-	modifyFileName    = "to_modify.json"
-	deleteFileName    = "to_delete.json"
 	fetchFileName     = "to_fetch.json"
 	fetchFileContents = "fetch me"
 )
+
+func TestSimpleSync(t *testing.T) {
+	t.Run("SimpleSync", func(t *testing.T) {
+		handler := Sync{
+			URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
+			Logger: logger.NewLogger(nil, false),
+		}
+
+		defer t.Cleanup(cleanupFilePath)
+		setupFilePathFetch(t)
+
+		ctx := context.Background()
+		dataSyncChan := make(chan sync.DataSync)
+
+		go func() {
+			err := handler.Sync(ctx, dataSyncChan)
+			if err != nil {
+				log.Fatalf("Error start sync: %s", err.Error())
+				return
+			}
+		}()
+
+		data := <-dataSyncChan
+
+		if data.FlagData != fetchFileContents {
+			t.Errorf("Expected content %s, but received content %s", fetchFileContents, data.FlagData)
+		}
+	})
+}
 
 func TestFilePathSync_Fetch(t *testing.T) {
 	tests := map[string]struct {

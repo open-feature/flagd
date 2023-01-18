@@ -36,7 +36,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := k.fetch(ctx)
 	if err != nil {
-		k.Logger.Error(err.Error())
+		k.Logger.Error(fmt.Sprintf("Error with the initial fetch: %s", err.Error()))
 		return err
 	}
 
@@ -56,24 +56,20 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				k.Logger.Debug("New configuration created")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(err.Error())
+					k.Logger.Error(fmt.Sprintf("Error fetching after Create notification: %s", err.Error()))
 					continue
 				}
-				dataSync <- sync.DataSync{
-					FlagData: msg,
-					Source:   k.URI,
-				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
 			case DefaultEventTypeModify:
 				k.Logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(err.Error())
+					k.Logger.Error(fmt.Sprintf("Error fetching after Write notification: %s", err.Error()))
 					continue
 				}
-				dataSync <- sync.DataSync{
-					FlagData: msg,
-					Source:   k.URI,
-				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
 			case DefaultEventTypeDelete:
 				k.Logger.Debug("Configuration deleted")
 			case DefaultEventTypeReady:

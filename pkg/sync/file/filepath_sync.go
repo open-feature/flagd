@@ -29,20 +29,21 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		fs.Logger.Fatal(err.Error())
+		fs.Logger.Error(fmt.Sprintf("Error initializig file watcher: %s", err.Error()))
+		return err
 	}
 	defer watcher.Close()
 
 	err = watcher.Add(fs.URI)
 	if err != nil {
-		fs.Logger.Error(err.Error())
+		fs.Logger.Error(fmt.Sprintf("Error registering the file URI: %s", err.Error()))
 		return err
 	}
 
 	// file watcher is ready(and stable), fetch and emit the initial results
 	fetch, err := fs.fetch(ctx)
 	if err != nil {
-		fs.Logger.Error(err.Error())
+		fs.Logger.Error(fmt.Sprintf("Error with initial fetch: %s", err.Error()))
 		return err
 	}
 
@@ -57,27 +58,27 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				return errors.New("filepath notifier closed")
 			}
 
+			fs.Logger.Info(fmt.Sprintf("Filepath event: %s %s", event.Name, event.Op.String()))
+
 			switch event.Op {
 			case fsnotify.Create:
 				fs.Logger.Debug("New configuration created")
 				msg, err := fs.fetch(ctx)
 				if err != nil {
-					fs.Logger.Error(err.Error())
+					fs.Logger.Error(fmt.Sprintf("Error fetching after Create notification: %s", err.Error()))
+					continue
 				}
-				dataSync <- sync.DataSync{
-					FlagData: msg,
-					Source:   fs.URI,
-				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
 			case fsnotify.Write:
 				fs.Logger.Debug("Configuration modified")
 				msg, err := fs.fetch(ctx)
 				if err != nil {
-					fs.Logger.Error(err.Error())
+					fs.Logger.Error(fmt.Sprintf("Error fetching after Write notification: %s", err.Error()))
+					continue
 				}
-				dataSync <- sync.DataSync{
-					FlagData: msg,
-					Source:   fs.URI,
-				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
 			case fsnotify.Remove:
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
@@ -86,14 +87,14 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
 				}
 			}
-			fs.Logger.Info(fmt.Sprintf("Filepath event: %s %s", event.Name, event.Op.String()))
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return errors.New("watcher error")
 			}
+
 			fs.Logger.Error(err.Error())
 		case <-ctx.Done():
-			fs.Logger.Debug("exiting file watcher")
+			fs.Logger.Debug("Exiting file watcher")
 			return nil
 		}
 	}

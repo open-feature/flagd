@@ -6,6 +6,7 @@ import (
 	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -40,7 +41,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := hs.Fetch(ctx)
 	if err != nil {
-		hs.Logger.Error(err.Error())
+		hs.Logger.Error(fmt.Sprintf("Error with the initial fetch: %s", err.Error()))
 		return err
 	}
 
@@ -52,6 +53,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			hs.Logger.Error(err.Error())
 			return
 		}
+
 		if len(body) == 0 {
 			hs.Logger.Debug("Configuration deleted")
 		} else {
@@ -59,11 +61,9 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				hs.Logger.Debug("New configuration created")
 				msg, err := hs.Fetch(ctx)
 				if err != nil {
-					hs.Logger.Error(err.Error())
-				}
-				dataSync <- sync.DataSync{
-					FlagData: msg,
-					Source:   hs.URI,
+					hs.Logger.Error(fmt.Sprintf("Error fetching: %s", err.Error()))
+				} else {
+					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
 				}
 			} else {
 				currentSHA := hs.generateSha(body)
@@ -71,13 +71,12 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					hs.Logger.Debug("Configuration modified")
 					msg, err := hs.Fetch(ctx)
 					if err != nil {
-						hs.Logger.Error(err.Error())
-					}
-					dataSync <- sync.DataSync{
-						FlagData: msg,
-						Source:   hs.URI,
+						hs.Logger.Error(fmt.Sprintf("Error fetching: %s", err.Error()))
+					} else {
+						dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
 					}
 				}
+
 				hs.LastBodySHA = currentSHA
 			}
 		}
@@ -93,7 +92,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
-		return []byte(""), err
+		return nil, err
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -105,13 +104,18 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	resp, err := hs.Client.Do(req)
 	if err != nil {
-		return []byte(""), err
+		return nil, err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			hs.Logger.Debug(fmt.Sprintf("Error closing the response body: %s", err.Error()))
+		}
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []byte(""), err
+		return nil, err
 	}
 
 	return body, nil
