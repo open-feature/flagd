@@ -3,12 +3,13 @@ package runtime
 import (
 	"context"
 	"errors"
-	"github.com/open-feature/flagd/pkg/sync/grpc"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	msync "sync"
 	"syscall"
+
+	"github.com/open-feature/flagd/pkg/sync/grpc"
+	"go.uber.org/zap"
 
 	"golang.org/x/sync/errgroup"
 
@@ -71,7 +72,7 @@ func (r *Runtime) Start() error {
 		}
 	})
 
-	// todo - get from configurations
+	// todo - get this from configurations
 	r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
 		URI: "localhost:8090",
 		Key: "local",

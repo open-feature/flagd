@@ -1,15 +1,18 @@
 package grpc
 
 import (
-	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/servicev1grpc"
-	v1 "buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go/sync/v1"
 	"context"
 	"fmt"
+	"io"
+
+	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/servicev1grpc"
+	v1 "buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go/sync/v1"
+
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"io"
 )
 
 type Sync struct {
@@ -19,7 +22,6 @@ type Sync struct {
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-
 	// todo - Add certificates and/or tokens
 	dial, err := grpc.Dial("localhost:8090", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -29,51 +31,49 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	client := servicev1grpc.NewFlagServiceClient(dial)
 
-	stream, err := client.SyncFlags(context.Background(), &v1.SyncFlagsRequest{
-		// todo - key from configurations
-		Key: "test",
-	})
-
+	stream, err := client.SyncFlags(context.Background(), &v1.SyncFlagsRequest{Key: g.Key})
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
 		return err
 	}
 
+	group, localContext := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		return g.streamHandler(stream, dataSync)
+	})
+
+	<-localContext.Done()
+
+	err = group.Wait()
+	if err == io.EOF {
+		// todo - we can retry connection if this happens
+		g.Logger.Info("Stream closed by the server. Exiting without retry attempts.")
+		return err
+	}
+
+	return err
+}
+
+func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
 	for {
 		data, err := stream.Recv()
-
-		if err == io.EOF {
-			g.Logger.Error("Server streaming ended")
-			// todo - attempt reconnection rather than returning error
-			return err
-		}
-
 		if err != nil {
-			g.Logger.Warn(fmt.Sprintf("Error with stream response: %s. Continuing receiver", err.Error()))
-			continue
+			g.Logger.Warn(fmt.Sprintf("Error with stream response: %s", err.Error()))
+			return err
 		}
 
 		switch data.State {
 		case v1.SyncState_SYNC_STATE_ALL:
-			// todo - feed data sync to store
-			continue
-		case v1.SyncState_SYNC_STATE_ADD:
-			// todo - feed data sync to store
-			continue
-		case v1.SyncState_SYNC_STATE_UPDATE:
-			// todo - feed data sync to store
-			continue
-		case v1.SyncState_SYNC_STATE_DELETE:
-			// todo - feed data sync to store
-			continue
-		case v1.SyncState_SYNC_STATE_CLEAN:
-			// todo - feed data sync to store
+			dataSync <- sync.DataSync{
+				FlagData: data.Flags,
+				Source:   g.URI,
+			}
 			continue
 		case v1.SyncState_SYNC_STATE_PING:
-			g.Logger.Debug("Received server ping")
-		case v1.SyncState_SYNC_STATE_UNSPECIFIED:
+			g.Logger.Info("Received server ping")
 		default:
-			g.Logger.Debug(fmt.Sprintf("Receivied unknown state: %d", data.State))
+			g.Logger.Info(fmt.Sprintf("Receivied unknown state: %s", data.State.String()))
 		}
 	}
 }
