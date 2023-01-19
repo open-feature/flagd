@@ -73,7 +73,7 @@ func (r *Runtime) Start() error {
 	for _, s := range r.SyncImpl {
 		p := s
 		g.Go(func() error {
-			return p.Sync(ctx, dataSync)
+			return p.Sync(gCtx, dataSync)
 		})
 	}
 
