@@ -41,7 +41,6 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := hs.Fetch(ctx)
 	if err != nil {
-		hs.Logger.Error(fmt.Sprintf("Error with the initial fetch: %s", err.Error()))
 		return err
 	}
 

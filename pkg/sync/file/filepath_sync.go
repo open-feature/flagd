@@ -29,21 +29,18 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fs.Logger.Info("Starting filepath sync notifier")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		fs.Logger.Error(fmt.Sprintf("Error initializig file watcher: %s", err.Error()))
 		return err
 	}
 	defer watcher.Close()
 
 	err = watcher.Add(fs.URI)
 	if err != nil {
-		fs.Logger.Error(fmt.Sprintf("Error registering the file URI: %s", err.Error()))
 		return err
 	}
 
 	// file watcher is ready(and stable), fetch and emit the initial results
 	fetch, err := fs.fetch(ctx)
 	if err != nil {
-		fs.Logger.Error(fmt.Sprintf("Error with initial fetch: %s", err.Error()))
 		return err
 	}
 
