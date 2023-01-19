@@ -1,5 +1,13 @@
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/grpc/go v1.2.0-20220906183531-bc28b723cd77.4/go.mod h1:hAKk3I2AivrJgMLXjDGrfzRx2NVWQgEPNfr4Co9DLX4=
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.28.1-20220906183531-bc28b723cd77.4/go.mod h1:92ejKVTiuvnKoAtRlpJpIxKfloI935DDqhs0NCRx+KM=
+buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230119181610-da48a2cc4899.4 h1:4+OZYN1CckvE3FUhICkwKce4CqNrqSF+3lj/qg7jBcA=
+buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230119181610-da48a2cc4899.4/go.mod h1:VqApiuUWBR0OgYXV2WANGNl1cziMLk/IFuJtcEcBNzQ=
+buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230119185434-46a532929237.4 h1:IQNSC6162WjVcAaanl6ltVbuWEKO81Q+Rb0RvKbCJK0=
+buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230119185434-46a532929237.4/go.mod h1:7KypYDNBNnwCC/OHyBLpFRnURona7bfsFlOSnj6YJso=
+buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230119181610-da48a2cc4899.4 h1:KoZHvPNbsieBV2wJHv1sI6Hld9Cnx2u0KkY0cfVWj0k=
+buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230119181610-da48a2cc4899.4/go.mod h1:jpjQMBqnFcgHMK99ylFu+PhUhA1KD6AC1QSz27yC/1U=
+buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230119185434-46a532929237.4 h1:jO34xg8ujvGDu80W5I+U/U1jQHx4LTdcpW1OTPbdJcw=
+buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230119185434-46a532929237.4/go.mod h1:jpjQMBqnFcgHMK99ylFu+PhUhA1KD6AC1QSz27yC/1U=
 buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1 h1:KoSPqmHyi3x27tPFLQ994CJjG4qc59v+0gbxY9+VXso=
 buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1/go.mod h1:68WGv4z/jXuTS3G7FEFQTEw4wiMmulBSX6BlSFX2Xc8=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221226184428-0dc62ff103b8.4 h1:9ioWUVmnURL+TX4qVjyzzE3o9Z2ACDGidqtu9dkjmdY=

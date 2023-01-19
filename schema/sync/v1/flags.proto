@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package sync.service.v1;
+
+// todo - packaging to flagd
+option go_package = "sync/service/v1";
+
+
+/*
+SyncFlagsRequest convey a key that identifies the flagd instance, enabling Sync provider to filter
+specific flags for a specific flagd deployment.
+*/
+message SyncFlagsRequest {
+  string key = 1;
+}
+
+//SyncState convey the state of the payload
+enum SyncState{
+  // Value is ignored by the listening flagd
+  SYNC_STATE_UNSPECIFIED = 0;
+
+  // All the flags matching the request. This is the default response and other states can be ignored
+  // by the implementation. Flagd internally replace all existing flags for this response state.
+  SYNC_STATE_ALL = 1;
+
+  // Convey an addition of a flag. Flagd internally handles this by combining new flags with existing ones
+  SYNC_STATE_ADD = 2;
+
+  // Convey an update of a flag. Flagd internally try to update if the updated flag already exist OR if it is not,
+  // then it will get added
+  SYNC_STATE_UPDATE = 3;
+
+  // Convey a deletion of a flag. Flagd internally removes the flag
+  SYNC_STATE_DELETE = 4;
+
+  // Convey a clean of all flags. Flagd internally removes all flags for this sync provider
+  SYNC_STATE_CLEAN = 5;
+
+  // Optional server ping to check client connectivity. Handling is ignored by flagd and is to merely support live check
+  SYNC_STATE_PING = 6;
+}
+
+// SyncFlagsResponse is the response contains flags and state
+message SyncFlagsResponse {
+  // flagd feature flag configuration
+  string flags = 1;
+  // State conveying the operation to be performed by flagd. See descriptions of state for an explanation of values
+  SyncState state = 2;
+}
+
+// FlagService implements a server streaming to provide realtime flag configurations
+service FlagService {
+  rpc SyncFlags(SyncFlagsRequest) returns (stream SyncFlagsResponse) {};
+}

@@ -3,6 +3,8 @@ package runtime
 import (
 	"context"
 	"errors"
+	"github.com/open-feature/flagd/pkg/sync/grpc"
+	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	msync "sync"
@@ -67,6 +69,16 @@ func (r *Runtime) Start() error {
 				return nil
 			}
 		}
+	})
+
+	// todo - get from configurations
+	r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
+		URI: "localhost:8090",
+		Key: "local",
+		Logger: r.Logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "grpc"),
+		),
 	})
 
 	// Start sync providers
