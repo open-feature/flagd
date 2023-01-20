@@ -44,6 +44,9 @@ func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
+		state: Flags{
+			Flags: map[string]Flag{},
+		},
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 	return &ev
@@ -64,10 +67,7 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 		return nil, err
 	}
 
-	s, notifications := je.state.Merge(je.Logger, payload.Source, newFlags)
-	je.state = s
-
-	return notifications, nil
+	return je.state.Merge(je.Logger, payload.Source, newFlags), nil
 }
 
 func resolve[T constraints](reqID string, key string, context *structpb.Struct,
