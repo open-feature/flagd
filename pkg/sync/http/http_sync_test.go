@@ -17,45 +17,42 @@ import (
 
 func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	resp := "test response"
 
-	t.Run("SimpleSync", func(t *testing.T) {
-		resp := "test response"
-
-		mockCron := syncmock.NewMockCron(ctrl)
-		mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
-			return nil
-		})
-		mockCron.EXPECT().Start().Times(1)
-
-		mockClient := syncmock.NewMockHTTPClient(ctrl)
-		mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{Body: io.NopCloser(strings.NewReader(resp))}, nil)
-
-		httpSync := Sync{
-			URI:         "http://localhost",
-			Client:      mockClient,
-			Cron:        mockCron,
-			BearerToken: "",
-			LastBodySHA: "",
-			Logger:      logger.NewLogger(nil, false),
-		}
-
-		ctx := context.Background()
-		dataSyncChan := make(chan sync.DataSync)
-
-		go func() {
-			err := httpSync.Sync(ctx, dataSyncChan)
-			if err != nil {
-				log.Fatalf("Error start sync: %s", err.Error())
-				return
-			}
-		}()
-
-		data := <-dataSyncChan
-
-		if data.FlagData != resp {
-			t.Errorf("Expected content %s, but received content %s", resp, data.FlagData)
-		}
+	mockCron := syncmock.NewMockCron(ctrl)
+	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
+		return nil
 	})
+	mockCron.EXPECT().Start().Times(1)
+
+	mockClient := syncmock.NewMockHTTPClient(ctrl)
+	mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{Body: io.NopCloser(strings.NewReader(resp))}, nil)
+
+	httpSync := Sync{
+		URI:         "http://localhost",
+		Client:      mockClient,
+		Cron:        mockCron,
+		BearerToken: "",
+		LastBodySHA: "",
+		Logger:      logger.NewLogger(nil, false),
+	}
+
+	ctx := context.Background()
+	dataSyncChan := make(chan sync.DataSync)
+
+	go func() {
+		err := httpSync.Sync(ctx, dataSyncChan)
+		if err != nil {
+			log.Fatalf("Error start sync: %s", err.Error())
+			return
+		}
+	}()
+
+	data := <-dataSyncChan
+
+	if data.FlagData != resp {
+		t.Errorf("Expected content %s, but received content %s", resp, data.FlagData)
+	}
 }
 
 func TestHTTPSync_Fetch(t *testing.T) {

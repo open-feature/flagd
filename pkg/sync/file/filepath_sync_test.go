@@ -19,32 +19,30 @@ const (
 )
 
 func TestSimpleSync(t *testing.T) {
-	t.Run("SimpleSync", func(t *testing.T) {
-		handler := Sync{
-			URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
-			Logger: logger.NewLogger(nil, false),
+	handler := Sync{
+		URI:    fmt.Sprintf("%s/%s", dirName, fetchFileName),
+		Logger: logger.NewLogger(nil, false),
+	}
+
+	defer t.Cleanup(cleanupFilePath)
+	setupFilePathFetch(t)
+
+	ctx := context.Background()
+	dataSyncChan := make(chan sync.DataSync)
+
+	go func() {
+		err := handler.Sync(ctx, dataSyncChan)
+		if err != nil {
+			log.Fatalf("Error start sync: %s", err.Error())
+			return
 		}
+	}()
 
-		defer t.Cleanup(cleanupFilePath)
-		setupFilePathFetch(t)
+	data := <-dataSyncChan
 
-		ctx := context.Background()
-		dataSyncChan := make(chan sync.DataSync)
-
-		go func() {
-			err := handler.Sync(ctx, dataSyncChan)
-			if err != nil {
-				log.Fatalf("Error start sync: %s", err.Error())
-				return
-			}
-		}()
-
-		data := <-dataSyncChan
-
-		if data.FlagData != fetchFileContents {
-			t.Errorf("Expected content %s, but received content %s", fetchFileContents, data.FlagData)
-		}
-	})
+	if data.FlagData != fetchFileContents {
+		t.Errorf("Expected content %s, but received content %s", fetchFileContents, data.FlagData)
+	}
 }
 
 func TestFilePathSync_Fetch(t *testing.T) {
