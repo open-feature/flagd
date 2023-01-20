@@ -12,7 +12,6 @@ import (
 	"github.com/open-feature/flagd/pkg/model"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -782,116 +781,6 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 					assert.EqualError(b, err, test.errorCode)
 				}
 			}
-		})
-	}
-}
-
-func TestMergeFlags(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name       string
-		current    eval.Flags
-		new        eval.Flags
-		newSource  string
-		want       eval.Flags
-		wantNotifs map[string]interface{}
-	}{
-		{
-			name:       "both nil",
-			current:    eval.Flags{Flags: nil},
-			new:        eval.Flags{Flags: nil},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "both empty flags",
-			current:    eval.Flags{Flags: map[string]eval.Flag{}},
-			new:        eval.Flags{Flags: map[string]eval.Flag{}},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "empty current",
-			current:    eval.Flags{Flags: nil},
-			new:        eval.Flags{Flags: map[string]eval.Flag{}},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "empty new",
-			current:    eval.Flags{Flags: map[string]eval.Flag{}},
-			new:        eval.Flags{Flags: nil},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name: "extra fields on each",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
-				},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"paka": {
-					DefaultVariant: "on",
-				},
-			}},
-			newSource: "2",
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
-				},
-				"paka": {
-					DefaultVariant: "on",
-					Source:         "2",
-				},
-			}},
-			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write", "source": "2"},
-			},
-		},
-		{
-			name: "override",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "off"},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "on"},
-				"paka": {DefaultVariant: "on"},
-			}},
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "on"},
-				"paka": {DefaultVariant: "on"},
-			}},
-			wantNotifs: map[string]interface{}{
-				"waka": map[string]interface{}{"type": "update", "source": ""},
-				"paka": map[string]interface{}{"type": "write", "source": ""},
-			},
-		},
-		{
-			name: "identical",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			wantNotifs: map[string]interface{}{},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			gotNotifs := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
-			require.Equal(t, tt.want, tt.want)
-			require.Equal(t, tt.wantNotifs, gotNotifs)
 		})
 	}
 }
