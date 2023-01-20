@@ -2,13 +2,26 @@ package sync
 
 import "context"
 
+type ProviderArgs map[string]string
+
+type Type int
+
+// Type of the sync operation
+const (
+	// ALL - All flags of sync provider. This is the default if unset due to primitive default
+	ALL Type = iota
+	// ADD - Additional flags from sync provider
+	ADD
+	// UPDATE - Update for flag(s) previously provided
+	UPDATE
+	// DELETE - Delete for flag(s) previously provided
+	DELETE
+)
+
 /*
 ISync implementations watch for changes in the flag sources (HTTP backend, local file, K8s CRDs ...),fetch the latest
 value and communicate to the Runtime with DataSync channel
 */
-
-type ProviderArgs map[string]string
-
 type ISync interface {
 	// Sync is the contract between Runtime and sync implementation.
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
@@ -19,4 +32,5 @@ type ISync interface {
 type DataSync struct {
 	FlagData string
 	Source   string
+	Type
 }

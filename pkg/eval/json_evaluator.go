@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/open-feature/flagd/pkg/sync"
+
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
@@ -55,33 +57,14 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return string(data), nil
 }
 
-func (je *JSONEvaluator) SetState(source string, state string) (map[string]interface{}, error) {
-	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
-	flagStringLoader := gojsonschema.NewStringLoader(state)
-	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
-
-	if err != nil {
-		return nil, err
-	} else if !result.Valid() {
-		err := errors.New("invalid JSON file")
-		return nil, err
-	}
-
-	state, err = je.transposeEvaluators(state)
-	if err != nil {
-		return nil, fmt.Errorf("transpose evaluators: %w", err)
-	}
-
+func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
 	var newFlags Flags
-	err = json.Unmarshal([]byte(state), &newFlags)
+	err := je.configToFlags(payload.FlagData, &newFlags)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal new state: %w", err)
-	}
-	if err := validateDefaultVariants(newFlags); err != nil {
 		return nil, err
 	}
 
-	s, notifications := je.state.Merge(je.Logger, source, newFlags)
+	s, notifications := je.state.Merge(je.Logger, payload.Source, newFlags)
 	je.state = s
 
 	return notifications, nil
@@ -274,8 +257,37 @@ func (je *JSONEvaluator) evaluateVariant(
 	return je.state.Flags[flagKey].DefaultVariant, reason, nil
 }
 
+// configToFlags convert string configurations to flags and store them to pointer newFLags
+func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
+	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
+	flagStringLoader := gojsonschema.NewStringLoader(config)
+	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
+
+	if err != nil {
+		return err
+	} else if !result.Valid() {
+		err := errors.New("invalid JSON file")
+		return err
+	}
+
+	transposedConfig, err := je.transposeEvaluators(config)
+	if err != nil {
+		return fmt.Errorf("transpose evaluators: %w", err)
+	}
+
+	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
+	if err != nil {
+		return fmt.Errorf("unmarshal new state: %w", err)
+	}
+	if err := validateDefaultVariants(newFlags); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // validateDefaultVariants returns an error if any of the default variants aren't valid
-func validateDefaultVariants(flags Flags) error {
+func validateDefaultVariants(flags *Flags) error {
 	for name, flag := range flags.Flags {
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(

@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/open-feature/flagd/pkg/sync"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -40,7 +41,7 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(source string, state string) (map[string]interface{}, error)
+	SetState(payload sync.DataSync) (map[string]interface{}, error)
 
 	ResolveBooleanValue(
 		reqID string,

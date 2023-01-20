@@ -10,6 +10,7 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -276,7 +277,7 @@ var Flags = fmt.Sprintf(`{
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", ValidFlags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -298,7 +299,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 
 	// set state with an invalid flag definition
-	_, err := evaluator.SetState("", InvalidFlags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -308,7 +309,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 
 	// set state with a valid flag definition
-	_, err := evaluator.SetState("", ValidFlags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -316,7 +317,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 
 func TestResolveAllValues(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -376,7 +377,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -415,7 +416,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -459,7 +460,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -499,7 +500,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -543,7 +544,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -583,7 +584,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -627,7 +628,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -667,7 +668,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -711,7 +712,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -754,7 +755,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -948,7 +949,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			_, err := jsonEvaluator.SetState("", tt.jsonFlags)
+			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags})
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -1143,7 +1144,7 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.JSONEvaluator{}
 
-			_, err := jsonEvaluator.SetState("", tt.inputState)
+			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
