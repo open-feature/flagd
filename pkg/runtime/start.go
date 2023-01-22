@@ -12,13 +12,13 @@ import (
 
 func (r *Runtime) Start() error {
 	if r.Service == nil {
-		return errors.New("no Service set")
+		return errors.New("no service set")
 	}
 	if len(r.SyncImpl) == 0 {
-		return errors.New("no SyncImplementation set")
+		return errors.New("no sync implementation set")
 	}
 	if r.Evaluator == nil {
-		return errors.New("no Evaluator set")
+		return errors.New("no evaluator set")
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -19,8 +19,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use: "flagd",
-	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. " +
-		"It is designed to conform to Open Feature schema for flag definitions.",
+	Short: "flagd is a simple command line tool for fetching and presenting feature flags to services" +
+		"it is designed to conform to open feature schema for flag definitions",
 	Long: ``,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -71,6 +71,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		fmt.Fprintln(os.Stderr, "using config file:", viper.ConfigFileUsed())
 	}
 }

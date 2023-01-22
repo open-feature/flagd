@@ -50,19 +50,19 @@ func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
 		case w := <-r.syncNotifier:
 			switch w.GetEvent().EventType {
 			case sync.DefaultEventTypeCreate:
-				r.Logger.Debug("New configuration created")
+				r.Logger.Debug("new configuration created")
 				if err := r.updateState(ctx, syncr); err != nil {
 					r.Logger.Error(err.Error())
 				}
 			case sync.DefaultEventTypeModify:
-				r.Logger.Debug("Configuration modified")
+				r.Logger.Debug("configuration modified")
 				if err := r.updateState(ctx, syncr); err != nil {
 					r.Logger.Error(err.Error())
 				}
 			case sync.DefaultEventTypeDelete:
-				r.Logger.Debug("Configuration deleted")
+				r.Logger.Debug("configuration deleted")
 			case sync.DefaultEventTypeReady:
-				r.Logger.Debug("Notifier ready")
+				r.Logger.Debug("notifier ready")
 			}
 		}
 	}

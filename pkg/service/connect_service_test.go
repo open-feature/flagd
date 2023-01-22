@@ -99,16 +99,16 @@ func TestConnectService_UnixConnection(t *testing.T) {
 
 			res, err := client.ResolveBoolean(ctx, tt.req)
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveBoolean() error: %v, wantErr: %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(res.Reason, tt.want.Reason) {
-				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean(): %v, want: %v", res, tt.want)
 			}
 			if !reflect.DeepEqual(res.Value, tt.want.Value) {
-				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean(): %v, want: %v", res, tt.want)
 			}
 			if !reflect.DeepEqual(res.Variant, tt.want.Variant) {
-				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", res, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean(): %v, want: %v", res, tt.want)
 			}
 		})
 	}
@@ -181,7 +181,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 			}
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveAll() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
+				t.Errorf("ConnectService.ResolveAll() error: %v, wantErr: %v", err.Error(), tt.wantErr.Error())
 				return
 			}
 			for _, flag := range tt.evalRes {
@@ -189,17 +189,17 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				case bool:
 					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_BoolValue)
 					if v != val.BoolValue {
-						t.Errorf("ConnectService.ResolveAll(), key %s = %v, want %v", flag.FlagKey, val.BoolValue, v)
+						t.Errorf("ConnectService.ResolveAll(), key: %s = %v, want: %v", flag.FlagKey, val.BoolValue, v)
 					}
 				case string:
 					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_StringValue)
 					if v != val.StringValue {
-						t.Errorf("ConnectService.ResolveAll(), key %s = %s, want %s", flag.FlagKey, val.StringValue, v)
+						t.Errorf("ConnectService.ResolveAll(), key: %s = %s, want: %s", flag.FlagKey, val.StringValue, v)
 					}
 				case float64:
 					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_DoubleValue)
 					if v != val.DoubleValue {
-						t.Errorf("ConnectService.ResolveAll(), key %s = %f, want %f", flag.FlagKey, val.DoubleValue, v)
+						t.Errorf("ConnectService.ResolveAll(), key: %s = %f, want: %f", flag.FlagKey, val.DoubleValue, v)
 					}
 				}
 			}
@@ -280,11 +280,11 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 			}
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
+				t.Errorf("ConnectService.ResolveBoolean() error: %v, wantErr: %v", err.Error(), tt.wantErr.Error())
 				return
 			}
 			if !reflect.DeepEqual(got.Msg, tt.want) {
-				t.Errorf("ConnectService.ResolveBoolean() = %v, want %v", got, tt.want)
+				t.Errorf("ConnectService.ResolveBoolean(): %v, want: %v", got, tt.want)
 			}
 		})
 	}
@@ -330,11 +330,11 @@ func BenchmarkConnectService_ResolveBoolean(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("ConnectService.ResolveBoolean() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveBoolean() error: %v, wantErr: %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got.Msg, tt.want) {
-					b.Errorf("ConnectService.ResolveBoolean() = %v, want %v", got, tt.want)
+					b.Errorf("ConnectService.ResolveBoolean(): %v, want: %v", got, tt.want)
 				}
 			}
 		})
@@ -414,11 +414,11 @@ func TestConnectService_ResolveString(t *testing.T) {
 			}
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveString() error: %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got.Msg, tt.want) {
-				t.Errorf("ConnectService.ResolveString() = %v, want %v", got, tt.want)
+				t.Errorf("ConnectService.ResolveString(): %v, want: %v", got, tt.want)
 			}
 		})
 	}
@@ -465,11 +465,11 @@ func BenchmarkConnectService_ResolveString(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("ConnectService.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveString() error: %v, wantErr: %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got.Msg, tt.want) {
-					b.Errorf("ConnectService.ResolveString() = %v, want %v", got, tt.want)
+					b.Errorf("ConnectService.ResolveString(): %v, want: %v", got, tt.want)
 				}
 			}
 		})
@@ -549,11 +549,11 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 			}
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveNumber() error: %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got.Msg, tt.want) {
-				t.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
+				t.Errorf("ConnectService.ResolveNumber(): %v, want: %v", got, tt.want)
 			}
 		})
 	}
@@ -600,11 +600,11 @@ func BenchmarkConnectService_ResolveFloat(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveNumber() error: %v, wantErr: %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got.Msg, tt.want) {
-					b.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
+					b.Errorf("ConnectService.ResolveNumber(): %v, want: %v", got, tt.want)
 				}
 			}
 		})
@@ -684,11 +684,11 @@ func TestConnectService_ResolveInt(t *testing.T) {
 			}
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveNumber() error: %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got.Msg, tt.want) {
-				t.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
+				t.Errorf("ConnectService.ResolveNumber(): %v, want: %v", got, tt.want)
 			}
 		})
 	}
@@ -735,11 +735,11 @@ func BenchmarkConnectService_ResolveInt(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("ConnectService.ResolveNumber() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveNumber() error: %v, wantErr: %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got.Msg, tt.want) {
-					b.Errorf("ConnectService.ResolveNumber() = %v, want %v", got, tt.want)
+					b.Errorf("ConnectService.ResolveNumber(): %v, want: %v", got, tt.want)
 				}
 			}
 		})
@@ -831,11 +831,11 @@ func TestConnectService_ResolveObject(t *testing.T) {
 			}
 			got, err := s.ResolveObject(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ConnectService.ResolveObject() error: %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got.Msg.Value.AsMap(), tt.want.Value.AsMap()) {
-				t.Errorf("ConnectService.ResolveObject() = %v, want %v", got, tt.want)
+				t.Errorf("ConnectService.ResolveObject(): %v, want: %v", got, tt.want)
 			}
 		})
 	}
@@ -891,11 +891,11 @@ func BenchmarkConnectService_ResolveObject(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				got, err := s.ResolveObject(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 				if (err != nil) && !errors.Is(err, tt.wantErr) {
-					b.Errorf("ConnectService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
+					b.Errorf("ConnectService.ResolveObject() error: %v, wantErr: %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got.Msg.Value.AsMap(), tt.want.Value.AsMap()) {
-					b.Errorf("ConnectService.ResolveObject() = %v, want %v", got, tt.want)
+					b.Errorf("ConnectService.ResolveObject(): %v, want: %v", got, tt.want)
 				}
 			}
 		})

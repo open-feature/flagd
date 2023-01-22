@@ -6,16 +6,16 @@ highest priority, followed by environment variables and finally config file.
 Supported flags are as follows (result of running `./flagd start --help`):
 
 ```
-  -b, --bearer-token string                 Set a bearer token to use for remote sync
+  -b, --bearer-token string                 set a bearer token to use for remote sync
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -h, --help                                help for start
-  -m, --metrics-port int32                  Port to serve metrics on (default 8014)
-  -p, --port int32                          Port to listen on (default 8013)
-  -c, --server-cert-path string             Server side tls certificate path
-  -k, --server-key-path string              Server side tls key path
-  -d, --socket-path string                  Flagd socket path. With grpc the service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
-  -a, --sync-provider-args stringToString   Sync provider arguments as key values separated by = (default [])
-  -f, --uri .yaml/.yml/.json                Set a sync provider uri to read data from, this can be a filepath,url or FeatureFlagConfiguration. Using multiple providers is supported however if flag keys are duplicated across multiple sources it may lead to unexpected behavior. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
+  -m, --metrics-port int32                  port to serve metrics on (default 8014)
+  -p, --port int32                          port to listen on (default 8013)
+  -c, --server-cert-path string             server side tls certificate path
+  -k, --server-key-path string              server side tls key path
+  -d, --socket-path string                  flagd socket path. With grpc the service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
+  -a, --sync-provider-args stringToString   sync provider arguments as key values separated by = (default [])
+  -f, --uri .yaml/.yml/.json                set a sync provider uri to read data from, this can be a filepath,url or FeatureFlagConfiguration. Using multiple providers is supported however if flag keys are duplicated across multiple sources it may lead to unexpected behavior. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml. Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
   -y, --sync-provider string                DEPRECATED: Set a sync provider e.g. filepath or remote
 ```

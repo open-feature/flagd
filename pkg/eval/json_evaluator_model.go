@@ -44,7 +44,7 @@ func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) (Flags, map
 			if val.Source != source {
 				logger.Warn(
 					fmt.Sprintf(
-						"key value %s is duplicated across multiple sources this can lead to unexpected behavior: %s, %s",
+						"key value: %s is duplicated across multiple sources this can lead to unexpected behavior: %s, %s",
 						k,
 						val.Source,
 						source,

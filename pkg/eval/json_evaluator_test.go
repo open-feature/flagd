@@ -278,19 +278,19 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	// get the state
 	state, err := evaluator.GetState()
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	// validate it contains the flag
-	wants := "validFlag"
+	wants := "valid flag"
 	if !strings.Contains(state, wants) {
-		t.Fatalf("Expected %s to contain %s", state, wants)
+		t.Fatalf("expected: %s to contain: %s", state, wants)
 	}
 }
 
@@ -300,7 +300,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	// set state with an invalid flag definition
 	_, err := evaluator.SetState("", InvalidFlags)
 	if err == nil {
-		t.Fatalf("Expected error")
+		t.Fatalf("expected error")
 	}
 }
 
@@ -310,7 +310,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	// set state with a valid flag definition
 	_, err := evaluator.SetState("", ValidFlags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 }
 
@@ -318,7 +318,7 @@ func TestResolveAllValues(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 	tests := []struct {
 		context map[string]interface{}
@@ -378,7 +378,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	for _, test := range tests {
@@ -417,7 +417,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		b.Fatalf("Expected no error")
+		b.Fatalf("expected no error")
 	}
 	reqID := "test"
 	for _, test := range tests {
@@ -425,7 +425,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+		b.Run(fmt.Sprintf("test: %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
 
@@ -461,7 +461,7 @@ func TestResolveStringValue(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	for _, test := range tests {
@@ -501,7 +501,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		b.Fatalf("Expected no error")
+		b.Fatalf("expected no error")
 	}
 	reqID := "test"
 	for _, test := range tests {
@@ -509,7 +509,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
+		b.Run(fmt.Sprintf("test: %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
 
@@ -545,7 +545,7 @@ func TestResolveFloatValue(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	for _, test := range tests {
@@ -585,7 +585,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		b.Fatalf("Expected no error")
+		b.Fatalf("expected no error")
 	}
 	reqID := "test"
 	for _, test := range tests {
@@ -629,7 +629,7 @@ func TestResolveIntValue(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	for _, test := range tests {
@@ -669,7 +669,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		b.Fatalf("Expected no error")
+		b.Fatalf("expected no error")
 	}
 	reqID := "test"
 	for _, test := range tests {
@@ -713,7 +713,7 @@ func TestResolveObjectValue(t *testing.T) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		t.Fatalf("Expected no error")
+		t.Fatalf("expected no error")
 	}
 
 	for _, test := range tests {
@@ -756,7 +756,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
 	_, err := evaluator.SetState("", Flags)
 	if err != nil {
-		b.Fatalf("Expected no error")
+		b.Fatalf("expected no error")
 	}
 	reqID := "test"
 	for _, test := range tests {

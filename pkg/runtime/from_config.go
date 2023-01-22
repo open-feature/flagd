@@ -71,7 +71,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				),
 				ProviderArgs: r.config.ProviderArgs,
 			})
-			rtLogger.Debug(fmt.Sprintf("Using filepath sync-provider for %q", uri))
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
 		case regCrd.Match(uriB):
 			r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
 				Logger: logger.WithFields(
@@ -81,7 +81,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				URI:          regCrd.ReplaceAllString(uri, ""),
 				ProviderArgs: r.config.ProviderArgs,
 			})
-			rtLogger.Debug(fmt.Sprintf("Using kubernetes sync-provider for %s", uri))
+			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))
 		case regURL.Match(uriB):
 			r.SyncImpl = append(r.SyncImpl, &sync.HTTPSync{
 				URI:         uri,
@@ -96,7 +96,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				ProviderArgs: r.config.ProviderArgs,
 				Cron:         cron.New(),
 			})
-			rtLogger.Debug(fmt.Sprintf("Using remote sync-provider for %q", uri))
+			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
 		default:
 			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', or 'core.openfeature.dev'",
 				uri)

@@ -16,7 +16,7 @@ type fractionalEvaluationDistribution struct {
 func (je *JSONEvaluator) fractionalEvaluation(values, data interface{}) interface{} {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("parseFractionalEvaluationData: %v", err))
+		je.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
 	}
 
@@ -49,7 +49,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 
 	valueToDistribute, ok := v.(string)
 	if !ok {
-		return "", nil, fmt.Errorf("var %s isn't of type string", bucketBy)
+		return "", nil, fmt.Errorf("var: %s isn't of type string", bucketBy)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
@@ -92,7 +92,7 @@ func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalE
 	}
 
 	if sumOfPercentages != 100 {
-		return nil, fmt.Errorf("percentages must sum to 100, got %d", sumOfPercentages)
+		return nil, fmt.Errorf("percentages must sum to 100, got: %d", sumOfPercentages)
 	}
 
 	return feDistributions, nil

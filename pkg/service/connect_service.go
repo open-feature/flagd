@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-const ErrorPrefix = "FlagdError:"
+const ErrorPrefix = "flagd error:"
 
 type ConnectService struct {
 	Logger                      *logger.Logger
@@ -105,7 +105,7 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	})
 	h := Handler("", mdlw, mux)
 	go func() {
-		s.Logger.Info(fmt.Sprintf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+		s.Logger.Info(fmt.Sprintf("metrics listening at: %d", s.ConnectServiceConfiguration.MetricsPort))
 		server := &http.Server{
 			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
 			ReadHeaderTimeout: 3 * time.Second,

@@ -152,7 +152,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 			)
 		}
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Bulk evaluation: key %s returned error %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key %s returned error: %s", flagKey, err.Error()))
 			continue
 		}
 		values = append(values, NewAnyValue(value, variant, reason, flagKey))
@@ -225,12 +225,12 @@ func (je *JSONEvaluator) evaluateVariant(
 	flag, ok := je.state.Flags[flagKey]
 	if !ok {
 		// flag not found
-		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found %s", flagKey))
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
 		return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
 	}
 
 	if flag.State == Disabled {
-		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled %s", flagKey))
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
 		return "", model.ErrorReason, errors.New(model.FlagDisabledErrorCode)
 	}
 
@@ -240,13 +240,13 @@ func (je *JSONEvaluator) evaluateVariant(
 	if targeting != nil && string(targeting) != "{}" {
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag %s, %s", flagKey, err))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing rules for flag: %s, %s", flagKey, err))
 			return "", model.ErrorReason, err
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag %s, %s, %v", flagKey, err, context))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, context))
 
 			return "", model.ErrorReason, errors.New(model.ErrorReason)
 		}
@@ -254,7 +254,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error applying rules %s", err))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))
 			return "", model.ErrorReason, err
 		}
 		// strip whitespace and quotes from the variant
@@ -265,7 +265,7 @@ func (je *JSONEvaluator) evaluateVariant(
 			return variant, model.TargetingMatchReason, nil
 		}
 
-		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey %s, variant is not valid", flagKey))
+		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey: %s, variant is not valid", flagKey))
 		reason = model.DefaultReason
 	} else {
 		reason = model.StaticReason
@@ -279,7 +279,7 @@ func validateDefaultVariants(flags Flags) error {
 	for name, flag := range flags.Flags {
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
-				"default variant '%s' isn't a valid variant of flag '%s'", flag.DefaultVariant, name,
+				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
 			)
 		}
 	}

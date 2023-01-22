@@ -45,7 +45,7 @@ func (fs *FilePathSync) Fetch(_ context.Context) (string, error) {
 	case "json":
 		return string(rawFile), nil
 	default:
-		return "", fmt.Errorf("filepath extension for URI '%s' is not supported", fs.URI)
+		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
 	}
 }
 
@@ -66,12 +66,12 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		defer cancel()
-		fs.Logger.Info(fmt.Sprintf("Notifying filepath: %s", fs.URI))
+		fs.Logger.Info(fmt.Sprintf("notifying filepath: %s", fs.URI))
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
-					fs.Logger.Info("Filepath notifier closed")
+					fs.Logger.Info("filepath notifier closed")
 					return
 				}
 				var evtType DefaultEventType
@@ -85,17 +85,17 @@ func (fs *FilePathSync) Notify(ctx context.Context, w chan<- INotify) {
 					// Updates cause a remove event, we need to re-add the watcher in this case.
 					err = watcher.Add(fs.URI)
 					if err != nil {
-						fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
+						fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
 					}
 					evtType = DefaultEventTypeDelete
 				}
-				fs.Logger.Info(fmt.Sprintf("Filepath notifier event: %s %s", event.Name, event.Op.String()))
+				fs.Logger.Info(fmt.Sprintf("filepath notifier event: %s, %s", event.Name, event.Op.String()))
 				w <- &Notifier{
 					Event: Event[DefaultEventType]{
 						EventType: evtType,
 					},
 				}
-				fs.Logger.Info("Filepath notifier event sent")
+				fs.Logger.Info("filepath notifier event sent")
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return

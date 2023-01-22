@@ -288,19 +288,19 @@ func TestFractionalEvaluation(t *testing.T) {
 			)
 
 			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
+				t.Errorf("expected value:'%s', got: '%s'", tt.expectedValue, value)
 			}
 
 			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
+				t.Errorf("expected variant: '%s', got: '%s'", tt.expectedVariant, variant)
 			}
 
 			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
+				t.Errorf("expected reason: '%s', got: '%s'", tt.expectedReason, reason)
 			}
 
 			if err != tt.expectedError {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
+				t.Errorf("expected err: '%v', got: '%v'", tt.expectedError, err)
 			}
 		})
 	}
@@ -420,19 +420,19 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 				)
 
 				if value != tt.expectedValue {
-					b.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
+					b.Errorf("expected value: '%s', got: '%s'", tt.expectedValue, value)
 				}
 
 				if variant != tt.expectedVariant {
-					b.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
+					b.Errorf("expected variant: '%s', got: '%s'", tt.expectedVariant, variant)
 				}
 
 				if reason != tt.expectedReason {
-					b.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
+					b.Errorf("expected reason: '%s', got: '%s'", tt.expectedReason, reason)
 				}
 
 				if err != tt.expectedError {
-					b.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
+					b.Errorf("expected err: '%v', got: '%v'", tt.expectedError, err)
 				}
 			}
 		})
