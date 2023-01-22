@@ -91,7 +91,7 @@ type Middleware struct {
 
 func (c *middlewareConfig) defaults() {
 	if c.Recorder == nil {
-		panic("Recorder is required")
+		panic("recorder is required")
 	}
 }
 
@@ -141,7 +141,7 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 			Namespace: cfg.Prefix,
 			Subsystem: "http",
 			Name:      "request_duration_seconds",
-			Help:      "The latency of the HTTP requests.",
+			Help:      "the latency of the HTTP requests",
 			Buckets:   cfg.DurationBuckets,
 		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel, cfg.MethodLabel, cfg.StatusCodeLabel}),
 
@@ -149,7 +149,7 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 			Namespace: cfg.Prefix,
 			Subsystem: "http",
 			Name:      "response_size_bytes",
-			Help:      "The size of the HTTP responses.",
+			Help:      "the size of the HTTP responses",
 			Buckets:   cfg.SizeBuckets,
 		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel, cfg.MethodLabel, cfg.StatusCodeLabel}),
 
@@ -157,7 +157,7 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 			Namespace: cfg.Prefix,
 			Subsystem: "http",
 			Name:      "requests_inflight",
-			Help:      "The number of inflight requests being handled at the same time.",
+			Help:      "the number of inflight requests being handled at the same time",
 		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel}),
 	}
 

@@ -84,7 +84,7 @@ func TestFilePathSync_Notify(t *testing.T) {
 
 			w := <-inotifyChan // first emitted event by Notify is to signal readiness
 			if w.GetEvent().EventType != sync.DefaultEventTypeReady {
-				t.Errorf("expected event type to be %d, got %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
+				t.Errorf("expected event type to be: %d, got: %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
 			}
 
 			tt.triggerEvent(t)
@@ -97,7 +97,7 @@ func TestFilePathSync_Notify(t *testing.T) {
 					}
 					if event.GetEvent().EventType != tt.expectedEventType {
 						t.Errorf(
-							"expected event of type %d, got %d", tt.expectedEventType, event.GetEvent().EventType,
+							"expected event of type: %d, got: %d", tt.expectedEventType, event.GetEvent().EventType,
 						)
 					}
 					return
@@ -126,7 +126,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 				}
 
 				if fetched != fetchFileContents {
-					t.Errorf("expected fetched to be '%s', got '%s'", fetchFileContents, fetched)
+					t.Errorf("expected fetched to be: '%s', got: '%s'", fetchFileContents, fetched)
 				}
 			},
 		},

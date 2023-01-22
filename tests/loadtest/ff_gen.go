@@ -29,16 +29,16 @@ Configurable options:
 func main() {
 	// Get flag count
 	var flagCount int
-	flag.IntVar(&flagCount, "c", 100, "Number of flags to generate")
+	flag.IntVar(&flagCount, "c", 100, "number of flags to generate")
 
 	// Get flag type : Boolean, String
 	var flagType string
-	flag.StringVar(&flagType, "t", BOOL, "Type of flags to generate")
+	flag.StringVar(&flagType, "t", BOOL, "type of flags to generate")
 
 	flag.Parse()
 
 	if flagType != STRING && flagType != BOOL {
-		fmt.Printf("Invalid type %s. Falling back to default %s", flagType, BOOL)
+		fmt.Printf("invalid type: %s, falling back to default: %s", flagType, BOOL)
 		flagType = BOOL
 	}
 
@@ -54,13 +54,13 @@ func main() {
 
 	bytes, err := json.Marshal(root)
 	if err != nil {
-		fmt.Printf("Json error: %s ", err.Error())
+		fmt.Printf("json error: %s ", err.Error())
 		return
 	}
 
 	err = os.WriteFile("./random.json", bytes, 444)
 	if err != nil {
-		fmt.Printf("File write error: %s ", err.Error())
+		fmt.Printf("file write error: %s ", err.Error())
 		return
 	}
 }

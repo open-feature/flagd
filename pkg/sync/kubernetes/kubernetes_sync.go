@@ -43,7 +43,7 @@ func (k *Sync) Source() string {
 
 func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	if k.Source() == "" {
-		k.Logger.Error("No target feature flag configuration set")
+		k.Logger.Error("no target feature flag configuration set")
 		return "{}", nil
 	}
 
@@ -54,7 +54,7 @@ func (k *Sync) Fetch(ctx context.Context) (string, error) {
 	}
 
 	if k.client == nil {
-		k.Logger.Warn("Client not initialised")
+		k.Logger.Warn("client not initialised")
 		return "{}", nil
 	}
 
@@ -94,7 +94,7 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 //nolint:funlen
 func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	if k.Source() == "" {
-		k.Logger.Error("No target feature flag configuration set")
+		k.Logger.Error("no target feature flag configuration set")
 		return
 	}
 	ns, name, err := parseURI(k.Source())
@@ -103,13 +103,13 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 		return
 	}
 	k.Logger.Info(
-		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
+		fmt.Sprintf("starting kubernetes sync notifier for resource: %s",
 			k.Source(),
 		),
 	)
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {
-		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
+		k.Logger.Error(fmt.Sprintf("error building configuration: %s", err))
 	}
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		k.Logger.Fatal(err.Error())
@@ -134,19 +134,19 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}
 	if _, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s, %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update %s, %s", objectKey.Namespace, objectKey.Name))
 			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete %s, %s", objectKey.Namespace, objectKey.Name))
 			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}

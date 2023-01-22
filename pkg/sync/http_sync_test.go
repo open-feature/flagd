@@ -38,7 +38,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 				expected := "test response"
 				if fetched != expected {
-					t.Errorf("expected fetched to be '%s', got '%s'", expected, fetched)
+					t.Errorf("expected fetched to be: '%s', got: '%s'", expected, fetched)
 				}
 			},
 		},
@@ -66,7 +66,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
 					)
 				}
 			},
@@ -87,7 +87,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
 					)
 				}
 			},
@@ -197,7 +197,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 
 			w := <-inotifyChan // first emitted event by Notify is to signal readiness
 			if w.GetEvent().EventType != sync.DefaultEventTypeReady {
-				t.Errorf("expected event type to be %d, got %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
+				t.Errorf("expected event type to be: %d, got: %d", sync.DefaultEventTypeReady, w.GetEvent().EventType)
 			}
 
 			for {
@@ -208,7 +208,7 @@ func TestHTTPSync_Notify(t *testing.T) {
 					}
 					if event.GetEvent().EventType != tt.expectedEventType {
 						t.Errorf(
-							"expected event of type %d, got %d", tt.expectedEventType, event.GetEvent().EventType,
+							"expected event of type: %d, got: %d", tt.expectedEventType, event.GetEvent().EventType,
 						)
 					}
 					return

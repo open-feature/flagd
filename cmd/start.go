@@ -32,28 +32,28 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to serve metrics on")
-	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
-	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
-		"With grpc the service will become available on this address. "+
-		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: Set an evaluator e.g. json, yaml/yml."+
-		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
-	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
-	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
+	flags.Int32P(metricsPortFlagName, "m", 8014, "port to serve metrics on")
+	flags.Int32P(portFlagName, "p", 8013, "port to listen on")
+	flags.StringP(socketPathFlagName, "d", "", "flagd socket path"+
+		"with grpc the service will become available on this address"+
+		"with http(s) the grpc-gateway proxy will use this address internally")
+	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: set an evaluator e.g. json, yaml/yml"+
+		"please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
+	flags.StringP(serverCertPathFlagName, "c", "", "server side tls certificate path")
+	flags.StringP(serverKeyPathFlagName, "k", "", "server side tls key path")
 	flags.StringToStringP(providerArgsFlagName,
-		"a", nil, "Sync provider arguments as key values separated by =")
+		"a", nil, "sync provider arguments as key values separated by =")
 	flags.StringSliceP(
-		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
-			"url or FeatureFlagConfiguration. Using multiple providers is supported however if"+
+		uriFlagName, "f", []string{}, "set a sync provider uri to read data from, this can be a filepath,"+
+			"url or feature flag configuration. Using multiple providers is supported however if"+
 			" flag keys are duplicated across multiple sources it may lead to unexpected behavior. "+
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
 	flags.StringP(
-		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+		bearerTokenFlagName, "b", "", "set a bearer token to use for remote sync")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
-		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
+		syncProviderFlagName, "y", "", "DEPRECATED: set a sync provider e.g. filepath or remote",
 	)
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
@@ -91,12 +91,12 @@ var startCmd = &cobra.Command{
 		rtLogger := logger.WithFields(zap.String("component", "start"))
 
 		if viper.GetString(syncProviderFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
+			rtLogger.Warn("DEPRECATED: the --sync-provider flag has been deprecated " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
 
 		if viper.GetString(evaluatorFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
+			rtLogger.Warn("DEPRECATED: the --evaluator flag has been deprecated " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
 
