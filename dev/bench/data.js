@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674267939934,
+  "lastUpdate": 1674354558949,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -13400,6 +13400,172 @@ window.BENCHMARK_DATA = {
             "value": 4833,
             "unit": "ns/op\t    1856 B/op\t      34 allocs/op",
             "extra": "1228743 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d43220b2be58e4bce05050c5d1b36788289ae7cc",
+          "message": "fix(deps): update module github.com/spf13/viper to v1.15.0 (#296)\n\n[![Mend\nRenovate](https://app.renovatebot.com/images/banner.svg)](https://renovatebot.com)\n\nThis PR contains the following updates:\n\n| Package | Type | Update | Change |\n|---|---|---|---|\n| [github.com/spf13/viper](https://togithub.com/spf13/viper) | require |\nminor | `v1.14.0` -> `v1.15.0` |\n\n---\n\n### Release Notes\n\n<details>\n<summary>spf13/viper</summary>\n\n### [`v1.15.0`](https://togithub.com/spf13/viper/releases/tag/v1.15.0)\n\n[Compare\nSource](https://togithub.com/spf13/viper/compare/v1.14.0...v1.15.0)\n\n<!-- Release notes generated using configuration in .github/release.yml\nat v1.15.0 -->\n\n#### What's Changed\n\n##### Exciting New Features 🎉\n\n- feat: add multiple endpoints support for remote by\n[@&#8203;mozartz](https://togithub.com/mozartz) in\n[https://github.com/spf13/viper/pull/1464](https://togithub.com/spf13/viper/pull/1464)\n\n##### Enhancements 🚀\n\n- Add DocBlock to WatchConfig by\n[@&#8203;glebik000](https://togithub.com/glebik000) in\n[https://github.com/spf13/viper/pull/1467](https://togithub.com/spf13/viper/pull/1467)\n\n##### Breaking Changes 🛠\n\n- Drop YAML v2 and TOML v1 by\n[@&#8203;sagikazarmark](https://togithub.com/sagikazarmark) in\n[https://github.com/spf13/viper/pull/1493](https://togithub.com/spf13/viper/pull/1493)\n- Drop support for Go 1.16 by\n[@&#8203;sagikazarmark](https://togithub.com/sagikazarmark) in\n[https://github.com/spf13/viper/pull/1494](https://togithub.com/spf13/viper/pull/1494)\n\n##### Dependency Updates ⬆️\n\n- build(deps): bump github.com/spf13/afero from 1.9.2 to 1.9.3 by\n[@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1465](https://togithub.com/spf13/viper/pull/1465)\n- build(deps): bump github.com/magiconair/properties from 1.8.6 to 1.8.7\nby [@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1475](https://togithub.com/spf13/viper/pull/1475)\n- build(deps): bump github.com/pelletier/go-toml/v2 from 2.0.5 to 2.0.6\nby [@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1466](https://togithub.com/spf13/viper/pull/1466)\n- build(deps): bump mheap/github-action-required-labels from 2 to 3 by\n[@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1482](https://togithub.com/spf13/viper/pull/1482)\n- build(deps): bump github.com/subosito/gotenv from 1.4.1 to 1.4.2 by\n[@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1488](https://togithub.com/spf13/viper/pull/1488)\n- build(deps): bump github.com/sagikazarmark/crypt from 0.8.0 to 0.9.0\nby [@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/spf13/viper/pull/1490](https://togithub.com/spf13/viper/pull/1490)\n\n#### New Contributors\n\n- [@&#8203;choar816](https://togithub.com/choar816) made their first\ncontribution in\n[https://github.com/spf13/viper/pull/1481](https://togithub.com/spf13/viper/pull/1481)\n- [@&#8203;lol768](https://togithub.com/lol768) made their first\ncontribution in\n[https://github.com/spf13/viper/pull/1485](https://togithub.com/spf13/viper/pull/1485)\n- [@&#8203;mozartz](https://togithub.com/mozartz) made their first\ncontribution in\n[https://github.com/spf13/viper/pull/1464](https://togithub.com/spf13/viper/pull/1464)\n- [@&#8203;glebik000](https://togithub.com/glebik000) made their first\ncontribution in\n[https://github.com/spf13/viper/pull/1467](https://togithub.com/spf13/viper/pull/1467)\n\n**Full Changelog**:\nhttps://github.com/spf13/viper/compare/v1.14.0...v1.15.0\n\n</details>\n\n---\n\n### Configuration\n\n📅 **Schedule**: Branch creation - At any time (no schedule defined),\nAutomerge - At any time (no schedule defined).\n\n🚦 **Automerge**: Enabled.\n\n♻ **Rebasing**: Whenever PR becomes conflicted, or you tick the\nrebase/retry checkbox.\n\n🔕 **Ignore**: Close this PR and you won't be reminded about this update\nagain.\n\n---\n\n- [ ] <!-- rebase-check -->If you want to rebase/retry this PR, check\nthis box\n\n---\n\nThis PR has been generated by [Mend\nRenovate](https://www.mend.io/free-developer-tools/renovate/). View\nrepository job log\n[here](https://app.renovatebot.com/dashboard#github/open-feature/flagd).\n\n<!--renovate-debug:eyJjcmVhdGVkSW5WZXIiOiIzNC4xMDUuNCIsInVwZGF0ZWRJblZlciI6IjM0LjEwNS40In0=-->\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2023-01-19T23:38:52Z",
+          "url": "https://github.com/open-feature/flagd/commit/d43220b2be58e4bce05050c5d1b36788289ae7cc"
+        },
+        "date": 1674354557909,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 11897,
+            "unit": "ns/op\t    4801 B/op\t      80 allocs/op",
+            "extra": "519381 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1126,
+            "unit": "ns/op\t      80 B/op\t       4 allocs/op",
+            "extra": "5270036 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1300,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4697457 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1279,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4611854 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 11533,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "527804 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1143,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5222395 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1285,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4547773 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1296,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4598200 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_targetingFloatFlag",
+            "value": 11757,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "489448 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_staticObjectFlag",
+            "value": 1108,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5286402 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_missingFlag",
+            "value": 1309,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4605921 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test_disabledFlag",
+            "value": 1285,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4549810 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 10733,
+            "unit": "ns/op\t    4825 B/op\t      80 allocs/op",
+            "extra": "547563 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1110,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5256022 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1295,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4374900 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1310,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4826788 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1140,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "5245912 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1284,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4570132 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1315,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4617166 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2990,
+            "unit": "ns/op\t     552 B/op\t      14 allocs/op",
+            "extra": "1997703 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 3009,
+            "unit": "ns/op\t     584 B/op\t      15 allocs/op",
+            "extra": "2115198 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 3219,
+            "unit": "ns/op\t     624 B/op\t      15 allocs/op",
+            "extra": "1835155 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2944,
+            "unit": "ns/op\t     552 B/op\t      14 allocs/op",
+            "extra": "2048020 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4837,
+            "unit": "ns/op\t    1856 B/op\t      34 allocs/op",
+            "extra": "1262277 times\n2 procs"
           }
         ]
       }
