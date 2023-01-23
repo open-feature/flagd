@@ -1,4 +1,4 @@
-package sync
+package kubernetes
 
 type DefaultEventType int32
 

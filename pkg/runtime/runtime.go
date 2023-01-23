@@ -2,8 +2,13 @@ package runtime
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"os"
+	"os/signal"
 	msync "sync"
+	"syscall"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
@@ -12,10 +17,9 @@ import (
 )
 
 type Runtime struct {
-	config       Config
-	Service      service.IService
-	SyncImpl     []sync.ISync
-	syncNotifier chan sync.INotify
+	config   Config
+	Service  service.IService
+	SyncImpl []sync.ISync
 
 	mu        msync.Mutex
 	Evaluator eval.IEvaluator
@@ -36,48 +40,63 @@ type Config struct {
 	CORS []string
 }
 
-func (r *Runtime) startSyncer(ctx context.Context, syncr sync.ISync) error {
-	if err := r.updateState(ctx, syncr); err != nil {
-		return err
+func (r *Runtime) Start() error {
+	if r.Service == nil {
+		return errors.New("no Service set")
+	}
+	if len(r.SyncImpl) == 0 {
+		return errors.New("no SyncImplementation set")
+	}
+	if r.Evaluator == nil {
+		return errors.New("no Evaluator set")
 	}
 
-	go syncr.Notify(ctx, r.syncNotifier)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case w := <-r.syncNotifier:
-			switch w.GetEvent().EventType {
-			case sync.DefaultEventTypeCreate:
-				r.Logger.Debug("New configuration created")
-				if err := r.updateState(ctx, syncr); err != nil {
-					r.Logger.Error(err.Error())
-				}
-			case sync.DefaultEventTypeModify:
-				r.Logger.Debug("Configuration modified")
-				if err := r.updateState(ctx, syncr); err != nil {
-					r.Logger.Error(err.Error())
-				}
-			case sync.DefaultEventTypeDelete:
-				r.Logger.Debug("Configuration deleted")
-			case sync.DefaultEventTypeReady:
-				r.Logger.Debug("Notifier ready")
+	g, gCtx := errgroup.WithContext(ctx)
+	dataSync := make(chan sync.DataSync)
+
+	// Initialize DataSync channel watcher
+	g.Go(func() error {
+		for {
+			select {
+			case data := <-dataSync:
+				r.updateWithNotify(data)
+			case <-gCtx.Done():
+				return nil
 			}
 		}
+	})
+
+	// Start sync providers
+	for _, s := range r.SyncImpl {
+		p := s
+		g.Go(func() error {
+			return p.Sync(gCtx, dataSync)
+		})
 	}
+
+	g.Go(func() error {
+		return r.Service.Serve(gCtx, r.Evaluator)
+	})
+
+	<-gCtx.Done()
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
-	msg, err := syncr.Fetch(ctx)
-	if err != nil {
-		return fmt.Errorf("fetch: %w", err)
-	}
+// updateWithNotify helps to update state and notify listeners
+func (r *Runtime) updateWithNotify(data sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	notifications, err := r.Evaluator.SetState(syncr.Source(), msg)
+
+	notifications, err := r.Evaluator.SetState(data.Source, data.FlagData)
 	if err != nil {
-		return fmt.Errorf("set state: %w", err)
+		r.Logger.Error(err.Error())
+		return
 	}
 
 	r.Service.Notify(service.Notification{
@@ -86,5 +105,4 @@ func (r *Runtime) updateState(ctx context.Context, syncr sync.ISync) error {
 			"flags": notifications,
 		},
 	})
-	return nil
 }
