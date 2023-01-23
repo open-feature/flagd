@@ -33,11 +33,8 @@ enum SyncState{
   // Convey a deletion of a flag. Flagd internally removes the flag
   SYNC_STATE_DELETE = 4;
 
-  // Convey a clean of all flags. Flagd internally removes all flags for this sync provider
-  SYNC_STATE_CLEAN = 5;
-
   // Optional server ping to check client connectivity. Handling is ignored by flagd and is to merely support live check
-  SYNC_STATE_PING = 6;
+  SYNC_STATE_PING = 5;
 }
 
 // SyncFlagsResponse is the response contains flags and state

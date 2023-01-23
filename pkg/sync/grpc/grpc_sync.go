@@ -68,12 +68,42 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
 				Source:   g.URI,
+				Type:     sync.ALL,
 			}
+
+			g.Logger.Debug("received full configuration payload")
+			continue
+		case v1.SyncState_SYNC_STATE_ADD:
+			dataSync <- sync.DataSync{
+				FlagData: data.Flags,
+				Source:   g.URI,
+				Type:     sync.ADD,
+			}
+
+			g.Logger.Debug("received an add payload")
+			continue
+		case v1.SyncState_SYNC_STATE_UPDATE:
+			dataSync <- sync.DataSync{
+				FlagData: data.Flags,
+				Source:   g.URI,
+				Type:     sync.UPDATE,
+			}
+
+			g.Logger.Debug("received an update payload")
+			continue
+		case v1.SyncState_SYNC_STATE_DELETE:
+			dataSync <- sync.DataSync{
+				FlagData: data.Flags,
+				Source:   g.URI,
+				Type:     sync.DELETE,
+			}
+
+			g.Logger.Debug("received a delete payload")
 			continue
 		case v1.SyncState_SYNC_STATE_PING:
-			g.Logger.Info("Received server ping")
+			g.Logger.Debug("received server ping")
 		default:
-			g.Logger.Info(fmt.Sprintf("Receivied unknown state: %s", data.State.String()))
+			g.Logger.Warn(fmt.Sprintf("receivied unknown state: %s", data.State.String()))
 		}
 	}
 }
