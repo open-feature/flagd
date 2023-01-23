@@ -37,3 +37,5 @@ install-mockgen:
 mockgen: install-mockgen
 	mockgen -source=pkg/sync/http_sync.go -destination=pkg/sync/mock/http.go -package=syncmock
 	mockgen -source=pkg/eval/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
+generate-docs:
+	go run ./cmd/doc/main.go
