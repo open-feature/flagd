@@ -21,7 +21,8 @@ var rootCmd = &cobra.Command{
 	Use: "flagd",
 	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. " +
 		"It is designed to conform to Open Feature schema for flag definitions.",
-	Long: ``,
+	Long:              ``,
+	DisableAutoGenTag: true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
