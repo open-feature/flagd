@@ -44,7 +44,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: fs.URI}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: fs.URI, Type: sync.ALL}
 
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
@@ -92,7 +92,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, data
 		fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: sync.ALL}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
