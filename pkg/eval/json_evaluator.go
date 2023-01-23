@@ -67,7 +67,18 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 		return nil, err
 	}
 
-	return je.state.Merge(je.Logger, payload.Source, newFlags), nil
+	switch payload.Type {
+	case sync.ALL:
+		return je.state.Merge(je.Logger, payload.Source, newFlags), nil
+	case sync.ADD:
+		return je.state.Add(je.Logger, payload.Source, newFlags), nil
+	case sync.UPDATE:
+		return je.state.Update(je.Logger, payload.Source, newFlags), nil
+	case sync.DELETE:
+		return je.state.Delete(je.Logger, payload.Source, newFlags), nil
+	default:
+		return nil, fmt.Errorf("unsupported sync type: %d", payload.Type)
+	}
 }
 
 func resolve[T constraints](reqID string, key string, context *structpb.Struct,
