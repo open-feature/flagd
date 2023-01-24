@@ -8,9 +8,6 @@ import (
 	msync "sync"
 	"syscall"
 
-	"github.com/open-feature/flagd/pkg/sync/grpc"
-	"go.uber.org/zap"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -38,6 +35,7 @@ type Config struct {
 
 	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
+	RemoteSyncType  string
 	SyncBearerToken string
 
 	CORS []string
@@ -70,16 +68,6 @@ func (r *Runtime) Start() error {
 				return nil
 			}
 		}
-	})
-
-	// todo - get this from configurations
-	r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-		URI: "localhost:8090",
-		Key: "local",
-		Logger: r.Logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "grpc"),
-		),
 	})
 
 	// Start sync providers

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/servicev1grpc"
 	v1 "buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go/sync/v1"
@@ -15,15 +16,18 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// Prefix for GRPC URL inputs. GRPC does not define a prefix through standard. This prefix helps to differentiate
+// remote URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
+const Prefix = "grpc://"
+
 type Sync struct {
-	URI    string
+	Target string
 	Key    string
 	Logger *logger.Logger
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	// todo - Add certificates and/or tokens
-	dial, err := grpc.Dial("localhost:8090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	dial, err := grpc.Dial(g.Target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("Error establishing connection: %s", err.Error()))
 		return err
@@ -47,7 +51,6 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	err = group.Wait()
 	if err == io.EOF {
-		// todo - we can retry connection if this happens
 		g.Logger.Info("Stream closed by the server. Exiting without retry attempts.")
 		return err
 	}
@@ -67,7 +70,7 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 		case v1.SyncState_SYNC_STATE_ALL:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
-				Source:   g.URI,
+				Source:   g.Target,
 				Type:     sync.ALL,
 			}
 
@@ -76,7 +79,7 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 		case v1.SyncState_SYNC_STATE_ADD:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
-				Source:   g.URI,
+				Source:   g.Target,
 				Type:     sync.ADD,
 			}
 
@@ -85,7 +88,7 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 		case v1.SyncState_SYNC_STATE_UPDATE:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
-				Source:   g.URI,
+				Source:   g.Target,
 				Type:     sync.UPDATE,
 			}
 
@@ -94,7 +97,7 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 		case v1.SyncState_SYNC_STATE_DELETE:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
-				Source:   g.URI,
+				Source:   g.Target,
 				Type:     sync.DELETE,
 			}
 
@@ -106,4 +109,16 @@ func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, d
 			g.Logger.Warn(fmt.Sprintf("receivied unknown state: %s", data.State.String()))
 		}
 	}
+}
+
+// URLToGRPCTarget is a helper to derive GRPC target from a provided URL
+// For example, function returns the target localhost:9090 for the input grpc://localhost:9090
+func URLToGRPCTarget(url string) string {
+	index := strings.Split(url, Prefix)
+
+	if len(index) == 2 {
+		return index[1]
+	}
+
+	return index[0]
 }

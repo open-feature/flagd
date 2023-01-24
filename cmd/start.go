@@ -46,7 +46,7 @@ func init() {
 		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
-			"url or FeatureFlagConfiguration. Using multiple providers is supported however if"+
+			"url (http and grpc) or FeatureFlagConfiguration. Using multiple providers is supported however if"+
 			" flag keys are duplicated across multiple sources it may lead to unexpected behavior. "+
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
