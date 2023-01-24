@@ -268,7 +268,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	return je.state.Flags[flagKey].DefaultVariant, reason, nil
 }
 
-// configToFlags convert string configurations to flags and store them to pointer newFLags
+// configToFlags convert string configurations to flags and store them to pointer newFlags
 func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(config)
