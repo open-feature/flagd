@@ -18,4 +18,4 @@ and finally run
 make integration-test
 ```
 
-Note: Testing against the flagd binary directly (rather than the docker image) introduces test flakiness.
+Note: Testing against the flagd binary directly (rather than the docker image) is [currently](https://github.com/open-feature/flagd/issues/313) unstable (dependent on host's OS).
