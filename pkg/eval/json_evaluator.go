@@ -283,12 +283,12 @@ func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 
 	transposedConfig, err := je.transposeEvaluators(config)
 	if err != nil {
-		return fmt.Errorf("transpose evaluators: %w", err)
+		return fmt.Errorf("error transposing evaluators: %w", err)
 	}
 
 	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
 	if err != nil {
-		return fmt.Errorf("unmarshal new state: %w", err)
+		return fmt.Errorf("error unmarshalling provided configurations: %w", err)
 	}
 	if err := validateDefaultVariants(newFlags); err != nil {
 		return err
