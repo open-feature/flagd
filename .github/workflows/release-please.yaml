@@ -110,5 +110,4 @@ jobs:
 
             Created by https://github.com/mislav/bump-homebrew-formula-action
         env:
-          # FIXME: needs a PAT for this
-          COMMITTER_TOKEN: ${{ secrets.UPLOAD_GITHUB_TOKEN }}
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
