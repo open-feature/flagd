@@ -114,6 +114,14 @@ jobs:
           outputs: type=docker,dest=${{ github.workspace }}/flagd-local.tar
           tags: flagd-local:test
 
+      - name: Run flagd image
+        run: |
+          docker load --input ${{ github.workspace }}/flagd-local.tar
+          docker run -d -p 8013:8013 -v ${{ github.workspace }}/test-harness/testing-flags.json:/testing-flags.json flagd-local:test
+
+      - name: Integration tests
+        run: make integration-test
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
