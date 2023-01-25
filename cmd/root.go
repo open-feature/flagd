@@ -21,7 +21,8 @@ var rootCmd = &cobra.Command{
 	Use: "flagd",
 	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. " +
 		"It is designed to conform to Open Feature schema for flag definitions.",
-	Long: ``,
+	Long:              ``,
+	DisableAutoGenTag: true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -30,8 +31,6 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(version string, commit string, date string) {
-	rootCmd.AddCommand(startCmd)
-	rootCmd.AddCommand(versionCmd)
 	Version = version
 	Commit = commit
 	Date = date
@@ -49,6 +48,8 @@ func init() {
 	// will be global for your application.
 	rootCmd.PersistentFlags().BoolVarP(&Debug, "debug", "x", false, "verbose logging")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agent.yaml)")
+	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(versionCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

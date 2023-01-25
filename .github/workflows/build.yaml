@@ -53,6 +53,20 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - run: make lint
 
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
+      - name: Setup go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: make generate-docs
+      - name: Check no diff
+        run: |
+          if [ ! -z "$(git status --porcelain)" ]; then echo "Doc generation produced diff. Run 'make generate-docs' and commit results."; exit 1; fi
+
   test:
     runs-on: ubuntu-latest
     env:
