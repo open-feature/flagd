@@ -12,7 +12,7 @@
    - binary:
 
     ```shell
-    flagd start -f file:example_flags.json
+    flagd start --uri file:example_flags.json
     ```
 
    - Docker:
