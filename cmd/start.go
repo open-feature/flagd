@@ -24,6 +24,7 @@ const (
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
 	syncProviderFlagName   = "sync-provider"
+	prettyLogFlagName      = "prettylogger"
 )
 
 func init() {
@@ -55,6 +56,8 @@ func init() {
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
+	flags.StringP(prettyLogFlagName, "z", "console", "Set a logger with console default "+
+		"can be changed to json format if required.")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
@@ -67,6 +70,7 @@ func init() {
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(prettyLogFlagName, flags.Lookup(prettyLogFlagName))
 }
 
 // startCmd represents the start command
@@ -83,7 +87,7 @@ var startCmd = &cobra.Command{
 		} else {
 			level = zapcore.InfoLevel
 		}
-		l, err := logger.NewZapLogger(level)
+		l, err := logger.NewZapLogger(level, viper.GetString(prettyLogFlagName))
 		if err != nil {
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
@@ -99,7 +103,6 @@ var startCmd = &cobra.Command{
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
-
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			ServicePort:       viper.GetInt32(portFlagName),
