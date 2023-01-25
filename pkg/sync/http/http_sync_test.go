@@ -51,7 +51,7 @@ func TestSimpleSync(t *testing.T) {
 	data := <-dataSyncChan
 
 	if data.FlagData != resp {
-		t.Errorf("Expected content %s, but received content %s", resp, data.FlagData)
+		t.Errorf("expected content: %s, but received content: %s", resp, data.FlagData)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 				expected := "test response"
 				if fetched != expected {
-					t.Errorf("expected fetched to be '%s', got '%s'", expected, fetched)
+					t.Errorf("expected fetched to be: '%s', got: '%s'", expected, fetched)
 				}
 			},
 		},
@@ -106,7 +106,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
 					)
 				}
 			},
@@ -127,7 +127,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be '%s', got '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
 					)
 				}
 			},
