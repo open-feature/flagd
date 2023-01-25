@@ -95,7 +95,7 @@ var startCmd = &cobra.Command{
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
 
-		if viper.GetString(evaluatorFlagName) != "" {
+		if viper.GetString(evaluatorFlagName) != "json" {
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
 		}
