@@ -1,4 +1,4 @@
-package sync
+package kubernetes
 
 type INotify interface {
 	GetEvent() Event[DefaultEventType]

@@ -23,11 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	featureFlagConfigurationName = "featureflagconfiguration"
-	featureFlagNamespaceName     = "namespace"
-)
-
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
@@ -37,17 +32,60 @@ type Sync struct {
 	URI          string
 }
 
-func (k *Sync) Source() string {
-	return k.URI
+func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	// Initial fetch
+	fetch, err := k.fetch(ctx)
+	if err != nil {
+		k.Logger.Error(fmt.Sprintf("Error with the initial fetch: %s", err.Error()))
+		return err
+	}
+
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+
+	notifies := make(chan INotify)
+
+	go k.notify(ctx, notifies)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case w := <-notifies:
+			switch w.GetEvent().EventType {
+			case DefaultEventTypeCreate:
+				k.Logger.Debug("New configuration created")
+				msg, err := k.fetch(ctx)
+				if err != nil {
+					k.Logger.Error(fmt.Sprintf("Error fetching after Create notification: %s", err.Error()))
+					continue
+				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+			case DefaultEventTypeModify:
+				k.Logger.Debug("Configuration modified")
+				msg, err := k.fetch(ctx)
+				if err != nil {
+					k.Logger.Error(fmt.Sprintf("Error fetching after Write notification: %s", err.Error()))
+					continue
+				}
+
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+			case DefaultEventTypeDelete:
+				k.Logger.Debug("Configuration deleted")
+			case DefaultEventTypeReady:
+				k.Logger.Debug("Notifier ready")
+			}
+		}
+	}
 }
 
-func (k *Sync) Fetch(ctx context.Context) (string, error) {
-	if k.Source() == "" {
+func (k *Sync) fetch(ctx context.Context) (string, error) {
+	if k.URI == "" {
 		k.Logger.Error("No target feature flag configuration set")
 		return "{}", nil
 	}
 
-	ns, name, err := parseURI(k.Source())
+	ns, name, err := parseURI(k.URI)
 	if err != nil {
 		k.Logger.Error(err.Error())
 		return "{}", nil
@@ -92,19 +130,19 @@ func (k *Sync) buildConfiguration() (*rest.Config, error) {
 }
 
 //nolint:funlen
-func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
-	if k.Source() == "" {
+func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
+	if k.URI == "" {
 		k.Logger.Error("No target feature flag configuration set")
 		return
 	}
-	ns, name, err := parseURI(k.Source())
+	ns, name, err := parseURI(k.URI)
 	if err != nil {
 		k.Logger.Error(err.Error())
 		return
 	}
 	k.Logger.Info(
 		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
-			k.Source(),
+			k.URI,
 		),
 	)
 	clusterConfig, err := k.buildConfiguration()
@@ -154,10 +192,17 @@ func (k *Sync) Notify(ctx context.Context, c chan<- sync.INotify) {
 	}); err != nil {
 		k.Logger.Fatal(err.Error())
 	}
+
+	c <- &Notifier{
+		Event: Event[DefaultEventType]{
+			EventType: DefaultEventTypeReady,
+		},
+	}
+
 	informer.Run(ctx.Done())
 }
 
-func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
 	var ffObj v1alpha1.FeatureFlagConfiguration
 	u := obj.(*unstructured.Unstructured)
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
@@ -168,16 +213,16 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 		return errors.New("invalid api version")
 	}
 	if ffObj.Name == object.Name {
-		c <- &sync.Notifier{
-			Event: sync.Event[sync.DefaultEventType]{
-				EventType: sync.DefaultEventTypeCreate,
+		c <- &Notifier{
+			Event: Event[DefaultEventType]{
+				EventType: DefaultEventTypeCreate,
 			},
 		}
 	}
 	return nil
 }
 
-func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- INotify) error {
 	var ffOldObj v1alpha1.FeatureFlagConfiguration
 	u := oldObj.(*unstructured.Unstructured)
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffOldObj)
@@ -198,16 +243,16 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	}
 	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
 		// Only update if there is an actual featureFlagSpec change
-		c <- &sync.Notifier{
-			Event: sync.Event[sync.DefaultEventType]{
-				EventType: sync.DefaultEventTypeModify,
+		c <- &Notifier{
+			Event: Event[DefaultEventType]{
+				EventType: DefaultEventTypeModify,
 			},
 		}
 	}
 	return nil
 }
 
-func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.INotify) error {
+func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
 	var ffObj v1alpha1.FeatureFlagConfiguration
 	u := obj.(*unstructured.Unstructured)
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
@@ -218,9 +263,9 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- sync.I
 		return errors.New("invalid api version")
 	}
 	if ffObj.Name == object.Name {
-		c <- &sync.Notifier{
-			Event: sync.Event[sync.DefaultEventType]{
-				EventType: sync.DefaultEventTypeDelete,
+		c <- &Notifier{
+			Event: Event[DefaultEventType]{
+				EventType: DefaultEventTypeDelete,
 			},
 		}
 	}

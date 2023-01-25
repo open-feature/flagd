@@ -47,7 +47,7 @@ const (
 	StaticBoolValue            = true
 	StaticStringFlag           = "staticStringFlag"
 	StaticStringValue          = "#CC0000"
-	StaticFloatFlag            = "staticFoatFlag"
+	StaticFloatFlag            = "staticFloatFlag"
 	StaticFloatValue   float64 = 1
 	StaticIntFlag              = "staticIntFlag"
 	StaticIntValue     int64   = 1
@@ -407,7 +407,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		reason    string
 		errorCode string
 	}{
-		{StaticBoolFlag, nil, StaticBoolValue, model.DefaultReason, ""},
+		{StaticBoolFlag, nil, StaticBoolValue, model.StaticReason, ""},
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -491,7 +491,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		reason    string
 		errorCode string
 	}{
-		{StaticStringFlag, nil, StaticStringValue, model.DefaultReason, ""},
+		{StaticStringFlag, nil, StaticStringValue, model.StaticReason, ""},
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -575,7 +575,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		reason    string
 		errorCode string
 	}{
-		{StaticFloatFlag, nil, StaticFloatValue, model.DefaultReason, ""},
+		{StaticFloatFlag, nil, StaticFloatValue, model.StaticReason, ""},
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -659,7 +659,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		reason    string
 		errorCode string
 	}{
-		{StaticIntFlag, nil, StaticIntValue, model.DefaultReason, ""},
+		{StaticIntFlag, nil, StaticIntValue, model.StaticReason, ""},
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -746,7 +746,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		reason    string
 		errorCode string
 	}{
-		{StaticObjectFlag, nil, StaticObjectValue, model.DefaultReason, ""},
+		{StaticObjectFlag, nil, StaticObjectValue, model.StaticReason, ""},
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
@@ -770,8 +770,11 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
-						assert.Equal(b, test.val, val)
-						assert.Equal(b, test.reason, reason)
+						marshalled, err := json.Marshal(val)
+						if assert.NoError(b, err) {
+							assert.JSONEq(b, test.val, string(marshalled))
+							assert.Equal(b, test.reason, reason)
+						}
 					}
 				} else {
 					assert.Equal(b, model.ErrorReason, reason)
