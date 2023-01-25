@@ -6,7 +6,7 @@ highest priority, followed by environment variables and finally config file.
 Supported flags are as follows (result of running `./flagd start --help`):
 
 ```
-  -b, --bearer-token string                 set a bearer token to use for remote sync
+  -b, --bearer-token string                 Set a bearer token to use for remote sync
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -h, --help                                help for start
   -m, --metrics-port int32                  port to serve metrics on (default 8014)

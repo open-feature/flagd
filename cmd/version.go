@@ -10,7 +10,7 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "print the version number of flagd",
+	Short: "Print the version number of FlagD",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if Version == "dev" {

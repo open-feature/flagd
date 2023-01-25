@@ -19,7 +19,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use: "flagd",
-	Short: "flagd is a simple command line tool for fetching and presenting feature flags to services" +
+	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services" +
 		"it is designed to conform to open feature schema for flag definitions",
 	Long: ``,
 	// Uncomment the following line if your bare application

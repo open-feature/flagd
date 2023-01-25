@@ -141,7 +141,7 @@ func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
 			Namespace: cfg.Prefix,
 			Subsystem: "http",
 			Name:      "request_duration_seconds",
-			Help:      "the latency of the HTTP requests",
+			Help:      "The latency of the HTTP requests.",
 			Buckets:   cfg.DurationBuckets,
 		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel, cfg.MethodLabel, cfg.StatusCodeLabel}),
 

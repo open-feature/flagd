@@ -39,8 +39,8 @@ func init() {
 		"with http(s) the grpc-gateway proxy will use this address internally")
 	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: set an evaluator e.g. json, yaml/yml"+
 		"please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
-	flags.StringP(serverCertPathFlagName, "c", "", "server side tls certificate path")
-	flags.StringP(serverKeyPathFlagName, "k", "", "server side tls key path")
+	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
+	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringToStringP(providerArgsFlagName,
 		"a", nil, "sync provider arguments as key values separated by =")
 	flags.StringSliceP(
