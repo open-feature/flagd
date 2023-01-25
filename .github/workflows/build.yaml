@@ -2,12 +2,18 @@ name: build
 
 on:
   push:
-   branches:
-    - feature/workflows
-    - main
+    branches:
+      - feature/workflows
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
 
 env:
   GO_VERSION: 1.19.3
