@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/open-feature/flagd/pkg/sync"
@@ -272,23 +273,22 @@ func (je *JSONEvaluator) evaluateVariant(
 func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(config)
-	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 
+	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 	if err != nil {
 		return err
 	} else if !result.Valid() {
-		err := errors.New("invalid JSON file")
-		return err
+		return fmt.Errorf("JSON schema validation failed: %s", buildErrorString(result.Errors()))
 	}
 
 	transposedConfig, err := je.transposeEvaluators(config)
 	if err != nil {
-		return fmt.Errorf("error transposing evaluators: %w", err)
+		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
 	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
 	if err != nil {
-		return fmt.Errorf("error unmarshalling provided configurations: %w", err)
+		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
 	if err := validateDefaultVariants(newFlags); err != nil {
 		return err
@@ -337,4 +337,19 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 	}
 
 	return state, nil
+}
+
+// buildErrorString efficiently converts json schema errors to a formatted string, usable for logging
+func buildErrorString(errors []gojsonschema.ResultError) string {
+	var builder strings.Builder
+
+	for i, err := range errors {
+		builder.WriteByte(' ')
+		builder.WriteString(strconv.Itoa(i + 1))
+		builder.WriteByte(':')
+		builder.WriteString(err.String())
+		builder.WriteByte(' ')
+	}
+
+	return builder.String()
 }
