@@ -37,8 +37,7 @@ type Config struct {
 	SyncURI         []string
 	SyncBearerToken string
 
-	CORS      []string
-	PrettyLog string
+	CORS []string
 }
 
 func (r *Runtime) Start() error {

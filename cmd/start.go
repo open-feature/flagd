@@ -24,7 +24,7 @@ const (
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
 	syncProviderFlagName   = "sync-provider"
-	prettyLogFlagName      = "prettylogger"
+	prettyLogFlagName      = "log-format"
 )
 
 func init() {
@@ -56,8 +56,7 @@ func init() {
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
-	flags.StringP(prettyLogFlagName, "z", "console", "Set a logger with console default "+
-		"can be changed to json format if required.")
+	flags.StringP(prettyLogFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
