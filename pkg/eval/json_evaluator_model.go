@@ -24,7 +24,7 @@ type Flags struct {
 	Flags map[string]Flag `json:"flags"`
 }
 
-// Add new flags from source
+// Add new flags from source. The implementation is not thread safe
 func (f Flags) Add(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
@@ -51,7 +51,7 @@ func (f Flags) Add(logger *logger.Logger, source string, ff Flags) map[string]in
 	return notifications
 }
 
-// Update existing flags from source
+// Update existing flags from source. The implementation is not thread safe
 func (f Flags) Update(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
@@ -84,7 +84,7 @@ func (f Flags) Update(logger *logger.Logger, source string, ff Flags) map[string
 	return notifications
 }
 
-// Delete matching flags from source
+// Delete matching flags from source. The implementation is not thread safe
 func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
@@ -107,7 +107,7 @@ func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string
 	return notifications
 }
 
-// Merge provided flags from source with currently stored flags.
+// Merge provided flags from source with currently stored flags. The implementation is not thread safe
 func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
