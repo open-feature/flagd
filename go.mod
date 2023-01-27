@@ -12,7 +12,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/open-feature-operator v0.2.25
+	github.com/open-feature/open-feature-operator v0.2.26
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron v1.2.0
