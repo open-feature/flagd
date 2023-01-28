@@ -58,25 +58,13 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			fs.Logger.Info(fmt.Sprintf("Filepath event: %s %s", event.Name, event.Op.String()))
 
 			switch event.Op {
-			case fsnotify.Create:
-				fs.Logger.Debug("New configuration created")
-				msg, err := fs.fetch(ctx)
-				if err != nil {
-					fs.Logger.Error(fmt.Sprintf("Error fetching after Create notification: %s", err.Error()))
-					continue
-				}
-
-				dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
-			case fsnotify.Write:
-				fs.Logger.Debug("Configuration modified")
-				msg, err := fs.fetch(ctx)
-				if err != nil {
-					fs.Logger.Error(fmt.Sprintf("Error fetching after Write notification: %s", err.Error()))
-					continue
-				}
-
-				dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
+			case fsnotify.Create, fsnotify.Write:
+				fs.sendDataSync(ctx, event, dataSync)
 			case fsnotify.Remove:
+				// Counterintuively, remove events are the only meanful ones seen in K8s.
+				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
+				fs.sendDataSync(ctx, event, dataSync)
+
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				err = watcher.Add(fs.URI)
@@ -95,6 +83,16 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 	}
+}
+
+func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, dataSync chan<- sync.DataSync) {
+	fs.Logger.Debug(fmt.Sprintf("Configuration %s: %s", fs.URI, eventType.Op.String()))
+	msg, err := fs.fetch(ctx)
+	if err != nil {
+		fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
+	}
+
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
