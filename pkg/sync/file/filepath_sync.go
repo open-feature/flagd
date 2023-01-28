@@ -61,6 +61,8 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case fsnotify.Create, fsnotify.Write:
 				fs.sendDataSync(ctx, event, dataSync)
 			case fsnotify.Remove:
+				// Counterintuively, remove events are the only meanful ones seen in K8s.
+				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, event, dataSync)
 
 				// K8s exposes config maps as symlinks.
