@@ -106,6 +106,7 @@ jobs:
       - uses: mislav/bump-homebrew-formula-action@v2
         with:
           formula-name: flagd
+          tag-name: ${{ needs.release-please.outputs.release_tag_name }}
           commit-message: |
             {{formulaName}} {{version}}
 
