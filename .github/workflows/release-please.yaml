@@ -99,6 +99,7 @@ jobs:
 
   homebrew:
     name: Bump homebrew-core formula
+    needs: release-please
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
