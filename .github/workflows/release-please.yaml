@@ -107,6 +107,7 @@ jobs:
         with:
           formula-name: flagd
           tag-name: ${{ needs.release-please.outputs.release_tag_name }}
+          download-url: https://github.com/${{ github.repository }}.git
           commit-message: |
             {{formulaName}} {{version}}
 
