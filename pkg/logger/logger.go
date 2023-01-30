@@ -188,9 +188,6 @@ func NewZapLogger(level zapcore.Level, logFormat string) (*zap.Logger, error) {
 		},
 		DisableCaller: false,
 	}
-	if cfg.Encoding == "" {
-		cfg.Encoding = "console"
-	}
 	return cfg.Build()
 }
 

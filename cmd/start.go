@@ -95,12 +95,12 @@ var startCmd = &cobra.Command{
 
 		if viper.GetString(syncProviderFlagName) != "" {
 			rtLogger.Warn("DEPRECATED: the --sync-provider flag has been deprecated " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
-		if viper.GetString(evaluatorFlagName) != "" {
+		if viper.GetString(evaluatorFlagName) != "json" {
 			rtLogger.Warn("DEPRECATED: the --evaluator flag has been deprecated " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration.md")
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
