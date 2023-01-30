@@ -7,6 +7,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DEFAULT_GO_VERSION: 1.19.3
+  PUBLIC_KEY_FILE: publicKey.pub
 
 name: Run Release Please
 jobs:
@@ -79,15 +80,19 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: "v2.8.1"
 
-      - name: Sign image with a key
+      - name: Sign the image
         run: |
-          cosign sign --key env://COSIGN_PRIVATE_KEY  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
+          cosign sign --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
+          cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
         env:
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
+
+      - name: Bundle release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.PUBLIC_KEY_FILE }}
 
       - name: SBOM for latest image
         uses: anchore/sbom-action@06e109483e6aa305a2b2395eabae554e51530e1d # v0
