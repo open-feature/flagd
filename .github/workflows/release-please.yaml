@@ -91,7 +91,7 @@ jobs:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # v3
+        uses: goreleaser/goreleaser-action@9754a253a8673b0ea869c2e863b4e975497efd0c # v4
         with:
           args: release --rm-dist
         env:
@@ -99,12 +99,14 @@ jobs:
 
   homebrew:
     name: Bump homebrew-core formula
+    needs: release-please
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - uses: mislav/bump-homebrew-formula-action@v2
         with:
           formula-name: flagd
+          tag-name: ${{ needs.release-please.outputs.release_tag_name }}
           commit-message: |
             {{formulaName}} {{version}}
 
