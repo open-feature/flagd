@@ -16,7 +16,7 @@ build:
 test:
 	go test -cover ./...
 run:
-	go run main.go start -f file:config/samples/example_flags.json
+	go run main.go start -f file:config/samples/example_flags.flagd.json
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd
