@@ -27,6 +27,6 @@ var versionCmd = &cobra.Command{
 				}
 			}
 		}
-		fmt.Printf("flagd %s (%s) built at %s\n", Version, Commit, Date)
+		fmt.Printf("flagd: %s (%s), built at: %s\n", Version, Commit, Date)
 	},
 }

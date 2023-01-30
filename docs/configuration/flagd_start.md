@@ -13,6 +13,7 @@ flagd start [flags]
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
   -h, --help                                help for start
+  -z, --log-format string                   Set the logging format, e.g. console or json  (default "console")
   -m, --metrics-port int32                  Port to serve metrics on (default 8014)
   -p, --port int32                          Port to listen on (default 8013)
   -c, --server-cert-path string             Server side tls certificate path

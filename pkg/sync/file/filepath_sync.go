@@ -46,16 +46,16 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	dataSync <- sync.DataSync{FlagData: fetch, Source: fs.URI}
 
-	fs.Logger.Info(fmt.Sprintf("Watching filepath: %s", fs.URI))
+	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				fs.Logger.Info("Filepath notifier closed")
+				fs.Logger.Info("filepath notifier closed")
 				return errors.New("filepath notifier closed")
 			}
 
-			fs.Logger.Info(fmt.Sprintf("Filepath event: %s %s", event.Name, event.Op.String()))
+			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
 
 			switch event.Op {
 			case fsnotify.Create, fsnotify.Write:
@@ -69,7 +69,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				err = watcher.Add(fs.URI)
 				if err != nil {
-					fs.Logger.Error(fmt.Sprintf("Error restoring watcher, file may have been deleted: %s", err.Error()))
+					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
 				}
 			}
 		case err, ok := <-watcher.Errors:
@@ -79,7 +79,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			fs.Logger.Error(err.Error())
 		case <-ctx.Done():
-			fs.Logger.Debug("Exiting file watcher")
+			fs.Logger.Debug("exiting file watcher")
 			return nil
 		}
 	}
@@ -114,7 +114,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	case "json":
 		return string(rawFile), nil
 	default:
-		return "", fmt.Errorf("filepath extension for URI '%s' is not supported", fs.URI)
+		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
 	}
 }
 

@@ -36,7 +36,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := k.fetch(ctx)
 	if err != nil {
-		k.Logger.Error(fmt.Sprintf("Error with the initial fetch: %s", err.Error()))
+		k.Logger.Error(fmt.Sprintf("error with the initial fetch: %s", err.Error()))
 		return err
 	}
 
@@ -53,10 +53,10 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		case w := <-notifies:
 			switch w.GetEvent().EventType {
 			case DefaultEventTypeCreate:
-				k.Logger.Debug("New configuration created")
+				k.Logger.Debug("new configuration created")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(fmt.Sprintf("Error fetching after Create notification: %s", err.Error()))
+					k.Logger.Error(fmt.Sprintf("error fetching after create notification: %s", err.Error()))
 					continue
 				}
 
@@ -65,15 +65,15 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				k.Logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(fmt.Sprintf("Error fetching after Write notification: %s", err.Error()))
+					k.Logger.Error(fmt.Sprintf("error fetching after write notification: %s", err.Error()))
 					continue
 				}
 
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
 			case DefaultEventTypeDelete:
-				k.Logger.Debug("Configuration deleted")
+				k.Logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
-				k.Logger.Debug("Notifier ready")
+				k.Logger.Debug("notifier ready")
 			}
 		}
 	}
@@ -81,7 +81,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 func (k *Sync) fetch(ctx context.Context) (string, error) {
 	if k.URI == "" {
-		k.Logger.Error("No target feature flag configuration set")
+		k.Logger.Error("no target feature flag configuration set")
 		return "{}", nil
 	}
 
@@ -92,7 +92,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	}
 
 	if k.client == nil {
-		k.Logger.Warn("Client not initialised")
+		k.Logger.Warn("client not initialised")
 		return "{}", nil
 	}
 
@@ -141,13 +141,13 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 		return
 	}
 	k.Logger.Info(
-		fmt.Sprintf("Starting kubernetes sync notifier for resource %s",
+		fmt.Sprintf("starting kubernetes sync notifier for resource: %s",
 			k.URI,
 		),
 	)
 	clusterConfig, err := k.buildConfiguration()
 	if err != nil {
-		k.Logger.Error(fmt.Sprintf("Error building configuration: %s", err))
+		k.Logger.Error(fmt.Sprintf("error building configuration: %s", err))
 	}
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		k.Logger.Fatal(err.Error())
@@ -172,19 +172,19 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	}
 	if _, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete %s %s", objectKey.Namespace, objectKey.Name))
+			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}

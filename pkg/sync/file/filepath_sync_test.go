@@ -41,7 +41,7 @@ func TestSimpleSync(t *testing.T) {
 	data := <-dataSyncChan
 
 	if data.FlagData != fetchFileContents {
-		t.Errorf("Expected content %s, but received content %s", fetchFileContents, data.FlagData)
+		t.Errorf("expected content: %s, but received content: %s", fetchFileContents, data.FlagData)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 				}
 
 				if fetched != fetchFileContents {
-					t.Errorf("expected fetched to be '%s', got '%s'", fetchFileContents, fetched)
+					t.Errorf("expected fetched to be: '%s', got: '%s'", fetchFileContents, fetched)
 				}
 			},
 		},

@@ -54,23 +54,23 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		}
 
 		if len(body) == 0 {
-			hs.Logger.Debug("Configuration deleted")
+			hs.Logger.Debug("configuration deleted")
 		} else {
 			if hs.LastBodySHA == "" {
-				hs.Logger.Debug("New configuration created")
+				hs.Logger.Debug("new configuration created")
 				msg, err := hs.Fetch(ctx)
 				if err != nil {
-					hs.Logger.Error(fmt.Sprintf("Error fetching: %s", err.Error()))
+					hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 				} else {
 					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
 				}
 			} else {
 				currentSHA := hs.generateSha(body)
 				if hs.LastBodySHA != currentSHA {
-					hs.Logger.Debug("Configuration modified")
+					hs.Logger.Debug("configuration modified")
 					msg, err := hs.Fetch(ctx)
 					if err != nil {
-						hs.Logger.Error(fmt.Sprintf("Error fetching: %s", err.Error()))
+						hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 					} else {
 						dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
 					}
@@ -108,7 +108,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			hs.Logger.Debug(fmt.Sprintf("Error closing the response body: %s", err.Error()))
+			hs.Logger.Debug(fmt.Sprintf("error closing the response body: %s", err.Error()))
 		}
 	}()
 
