@@ -1,10 +1,10 @@
 [Unit]
-Description="A generic feature flag daemon"
+Description="A feature flag daemon with a Unix philosophy"
 
 [Service]
 User=root
 WorkingDirectory=/etc/flagd
-ExecStart=flagd start -f=/etc/flagd/flags.json
+ExecStart=flagd start --uri file:flags.json
 Restart=always
 
 [Install]
