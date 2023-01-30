@@ -10,8 +10,8 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -275,8 +275,8 @@ var Flags = fmt.Sprintf(`{
 	DisabledFlag)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", ValidFlags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -295,28 +295,28 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 }
 
 func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
 
 	// set state with an invalid flag definition
-	_, err := evaluator.SetState("", InvalidFlags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 }
 
 func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
 
 	// set state with a valid flag definition
-	_, err := evaluator.SetState("", ValidFlags)
+	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
 }
 
 func TestResolveAllValues(t *testing.T) {
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -375,8 +375,8 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -414,8 +414,8 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -458,8 +458,8 @@ func TestResolveStringValue(t *testing.T) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -498,8 +498,8 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -542,8 +542,8 @@ func TestResolveFloatValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -582,8 +582,8 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -626,8 +626,8 @@ func TestResolveIntValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -666,8 +666,8 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -710,8 +710,8 @@ func TestResolveObjectValue(t *testing.T) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -753,8 +753,8 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := eval.JSONEvaluator{Logger: logger.NewLogger(nil, false)}
-	_, err := evaluator.SetState("", Flags)
+	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -781,116 +781,6 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 					assert.EqualError(b, err, test.errorCode)
 				}
 			}
-		})
-	}
-}
-
-func TestMergeFlags(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name       string
-		current    eval.Flags
-		new        eval.Flags
-		newSource  string
-		want       eval.Flags
-		wantNotifs map[string]interface{}
-	}{
-		{
-			name:       "both nil",
-			current:    eval.Flags{Flags: nil},
-			new:        eval.Flags{Flags: nil},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "both empty flags",
-			current:    eval.Flags{Flags: map[string]eval.Flag{}},
-			new:        eval.Flags{Flags: map[string]eval.Flag{}},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "empty current",
-			current:    eval.Flags{Flags: nil},
-			new:        eval.Flags{Flags: map[string]eval.Flag{}},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name:       "empty new",
-			current:    eval.Flags{Flags: map[string]eval.Flag{}},
-			new:        eval.Flags{Flags: nil},
-			want:       eval.Flags{Flags: map[string]eval.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name: "extra fields on each",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
-				},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"paka": {
-					DefaultVariant: "on",
-				},
-			}},
-			newSource: "2",
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
-				},
-				"paka": {
-					DefaultVariant: "on",
-					Source:         "2",
-				},
-			}},
-			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write", "source": "2"},
-			},
-		},
-		{
-			name: "override",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "off"},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "on"},
-				"paka": {DefaultVariant: "on"},
-			}},
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"waka": {DefaultVariant: "on"},
-				"paka": {DefaultVariant: "on"},
-			}},
-			wantNotifs: map[string]interface{}{
-				"waka": map[string]interface{}{"type": "update", "source": ""},
-				"paka": map[string]interface{}{"type": "write", "source": ""},
-			},
-		},
-		{
-			name: "identical",
-			current: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			new: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			want: eval.Flags{Flags: map[string]eval.Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			wantNotifs: map[string]interface{}{},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			got, gotNotifs := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
-			require.Equal(t, tt.want, got)
-			require.Equal(t, tt.wantNotifs, gotNotifs)
 		})
 	}
 }
@@ -946,9 +836,9 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			jsonEvaluator := eval.JSONEvaluator{}
+			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
 
-			_, err := jsonEvaluator.SetState("", tt.jsonFlags)
+			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags})
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -1141,9 +1031,9 @@ func TestState_Evaluator(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			jsonEvaluator := eval.JSONEvaluator{}
+			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
 
-			_, err := jsonEvaluator.SetState("", tt.inputState)
+			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)

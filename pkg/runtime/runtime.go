@@ -89,11 +89,11 @@ func (r *Runtime) Start() error {
 }
 
 // updateWithNotify helps to update state and notify listeners
-func (r *Runtime) updateWithNotify(data sync.DataSync) {
+func (r *Runtime) updateWithNotify(payload sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	notifications, err := r.Evaluator.SetState(data.Source, data.FlagData)
+	notifications, err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(err.Error())
 		return

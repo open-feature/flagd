@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/open-feature/flagd/pkg/sync"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/pkg/logger"
@@ -42,6 +45,9 @@ func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
+		state: Flags{
+			Flags: map[string]Flag{},
+		},
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 	return &ev
@@ -55,36 +61,25 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return string(data), nil
 }
 
-func (je *JSONEvaluator) SetState(source string, state string) (map[string]interface{}, error) {
-	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
-	flagStringLoader := gojsonschema.NewStringLoader(state)
-	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
-
-	if err != nil {
-		return nil, err
-	} else if !result.Valid() {
-		err := errors.New("invalid JSON file")
-		return nil, err
-	}
-
-	state, err = je.transposeEvaluators(state)
-	if err != nil {
-		return nil, fmt.Errorf("transpose evaluators: %w", err)
-	}
-
+func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
 	var newFlags Flags
-	err = json.Unmarshal([]byte(state), &newFlags)
+	err := je.configToFlags(payload.FlagData, &newFlags)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal new state: %w", err)
-	}
-	if err := validateDefaultVariants(newFlags); err != nil {
 		return nil, err
 	}
 
-	s, notifications := je.state.Merge(je.Logger, source, newFlags)
-	je.state = s
-
-	return notifications, nil
+	switch payload.Type {
+	case sync.ALL:
+		return je.state.Merge(je.Logger, payload.Source, newFlags), nil
+	case sync.ADD:
+		return je.state.Add(je.Logger, payload.Source, newFlags), nil
+	case sync.UPDATE:
+		return je.state.Update(je.Logger, payload.Source, newFlags), nil
+	case sync.DELETE:
+		return je.state.Delete(je.Logger, payload.Source, newFlags), nil
+	default:
+		return nil, fmt.Errorf("unsupported sync type: %d", payload.Type)
+	}
 }
 
 func resolve[T constraints](reqID string, key string, context *structpb.Struct,
@@ -274,8 +269,36 @@ func (je *JSONEvaluator) evaluateVariant(
 	return je.state.Flags[flagKey].DefaultVariant, reason, nil
 }
 
+// configToFlags convert string configurations to flags and store them to pointer newFlags
+func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
+	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
+	flagStringLoader := gojsonschema.NewStringLoader(config)
+
+	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
+	if err != nil {
+		return err
+	} else if !result.Valid() {
+		return fmt.Errorf("JSON schema validation failed: %s", buildErrorString(result.Errors()))
+	}
+
+	transposedConfig, err := je.transposeEvaluators(config)
+	if err != nil {
+		return fmt.Errorf("transposing evaluators: %w", err)
+	}
+
+	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
+	if err != nil {
+		return fmt.Errorf("unmarshalling provided configurations: %w", err)
+	}
+	if err := validateDefaultVariants(newFlags); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // validateDefaultVariants returns an error if any of the default variants aren't valid
-func validateDefaultVariants(flags Flags) error {
+func validateDefaultVariants(flags *Flags) error {
 	for name, flag := range flags.Flags {
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
@@ -314,4 +337,19 @@ func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
 	}
 
 	return state, nil
+}
+
+// buildErrorString efficiently converts json schema errors to a formatted string, usable for logging
+func buildErrorString(errors []gojsonschema.ResultError) string {
+	var builder strings.Builder
+
+	for i, err := range errors {
+		builder.WriteByte(' ')
+		builder.WriteString(strconv.Itoa(i + 1))
+		builder.WriteByte(':')
+		builder.WriteString(err.String())
+		builder.WriteByte(' ')
+	}
+
+	return builder.String()
 }

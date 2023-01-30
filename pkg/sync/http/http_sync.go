@@ -44,7 +44,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI, Type: sync.ALL}
 
 	_ = hs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
@@ -62,7 +62,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				if err != nil {
 					hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 				} else {
-					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
+					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
 				}
 			} else {
 				currentSHA := hs.generateSha(body)
@@ -72,7 +72,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					if err != nil {
 						hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 					} else {
-						dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
+						dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
 					}
 				}
 
