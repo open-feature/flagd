@@ -91,7 +91,7 @@ type Middleware struct {
 
 func (c *middlewareConfig) defaults() {
 	if c.Recorder == nil {
-		panic("Recorder is required")
+		panic("recorder is required")
 	}
 }
 

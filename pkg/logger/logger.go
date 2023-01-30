@@ -166,9 +166,9 @@ func (l *Logger) ClearFields(reqID string) {
 }
 
 // NewZapLogger creates a *zap.Logger using the base config
-func NewZapLogger(level zapcore.Level) (*zap.Logger, error) {
+func NewZapLogger(level zapcore.Level, logFormat string) (*zap.Logger, error) {
 	cfg := zap.Config{
-		Encoding:         "json",
+		Encoding:         logFormat,
 		Level:            zap.NewAtomicLevelAt(level),
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
