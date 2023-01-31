@@ -78,7 +78,7 @@ jobs:
             DATE=${{ steps.date.outputs.date }}
 
       - name: SBOM for latest image
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@06e109483e6aa305a2b2395eabae554e51530e1d # v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
           artifact-name: ${{ format('{0}-{1}-sbom.spdx',env.IMAGE_NAME, needs.release-please.outputs.release_tag_name) }}
@@ -98,7 +98,7 @@ jobs:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
 
       - name: Set up syft
-        uses: anchore/sbom-action/download-syft@v0
+        uses: anchore/sbom-action/download-syft@06e109483e6aa305a2b2395eabae554e51530e1d # v0
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4
