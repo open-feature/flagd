@@ -11,31 +11,31 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockHTTPClient is a mock of HTTPClient interface.
-type MockHTTPClient struct {
+// MockClient is a mock of Client interface.
+type MockClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockHTTPClientMockRecorder
+	recorder *MockClientMockRecorder
 }
 
-// MockHTTPClientMockRecorder is the mock recorder for MockHTTPClient.
-type MockHTTPClientMockRecorder struct {
-	mock *MockHTTPClient
+// MockClientMockRecorder is the mock recorder for MockClient.
+type MockClientMockRecorder struct {
+	mock *MockClient
 }
 
-// NewMockHTTPClient creates a new mock instance.
-func NewMockHTTPClient(ctrl *gomock.Controller) *MockHTTPClient {
-	mock := &MockHTTPClient{ctrl: ctrl}
-	mock.recorder = &MockHTTPClientMockRecorder{mock}
+// NewMockClient creates a new mock instance.
+func NewMockClient(ctrl *gomock.Controller) *MockClient {
+	mock := &MockClient{ctrl: ctrl}
+	mock.recorder = &MockClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockHTTPClient) EXPECT() *MockHTTPClientMockRecorder {
+func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
 // Do mocks base method.
-func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Do", req)
 	ret0, _ := ret[0].(*http.Response)
@@ -44,9 +44,9 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 // Do indicates an expected call of Do.
-func (mr *MockHTTPClientMockRecorder) Do(req interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) Do(req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockHTTPClient)(nil).Do), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockClient)(nil).Do), req)
 }
 
 // MockCron is a mock of Cron interface.
