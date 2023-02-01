@@ -83,6 +83,20 @@ func TestSimpleSync(t *testing.T) {
 				},
 			},
 		},
+		"empty-file-use-default": {
+			manipulationFuncs: []func(t *testing.T){
+				func(t *testing.T) {
+					writeToFile(t, fetchDirName, fetchFileName, "")
+				},
+			},
+			expectedDataSync: []sync.DataSync{
+				{
+					FlagData: DefaultState,
+					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Type:     sync.ALL,
+				},
+			},
+		},
 	}
 
 	handler := Sync{
