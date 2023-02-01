@@ -24,7 +24,7 @@ type Sync struct {
 	fileType string
 }
 
-// default state is used to prevent EOF errors when handling filepath delete events
+// default state is used to prevent EOF errors when handling filepath delete events + empty files
 const DefaultState = "{}"
 
 //nolint:funlen
@@ -41,13 +41,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	// file watcher is ready(and stable), fetch and emit the initial results
-	fetch, err := fs.fetch(ctx)
-	if err != nil {
-		return err
-	}
-
-	dataSync <- sync.DataSync{FlagData: fetch, Source: fs.URI, Type: sync.ALL}
+	fs.sendDataSync(ctx, sync.ALL, dataSync)
 
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
@@ -62,7 +56,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			switch event.Op {
 			case fsnotify.Create, fsnotify.Write:
-				fs.sendDataSync(ctx, event, sync.ALL, dataSync)
+				fs.sendDataSync(ctx, sync.ALL, dataSync)
 			case fsnotify.Remove:
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
@@ -70,13 +64,13 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
-					fs.sendDataSync(ctx, event, sync.DELETE, dataSync)
+					fs.sendDataSync(ctx, sync.DELETE, dataSync)
 					continue
 				}
 
 				// Counterintuively, remove events are the only meanful ones seen in K8s.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
-				fs.sendDataSync(ctx, event, sync.ALL, dataSync)
+				fs.sendDataSync(ctx, sync.ALL, dataSync)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -91,15 +85,19 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, syncType sync.Type, dataSync chan<- sync.DataSync) {
-	fs.Logger.Debug(fmt.Sprintf("Configuration %s: %s, sync event type %s", fs.URI, eventType.Op.String(), syncType.String()))
+func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync chan<- sync.DataSync) {
+	fs.Logger.Debug(fmt.Sprintf("Configuration %s:  %s", fs.URI, syncType.String()))
 
-	var err error
 	var msg = DefaultState
 	if syncType != sync.DELETE {
-		msg, err = fs.fetch(ctx)
+		m, err := fs.fetch(ctx)
 		if err != nil {
-			fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
+			fs.Logger.Error(fmt.Sprintf("Error fetching %s: %s", fs.URI, err.Error()))
+		}
+		if m == "" {
+			fs.Logger.Warn(fmt.Sprintf("file %s is empty", fs.URI))
+		} else {
+			msg = m
 		}
 	}
 
@@ -108,7 +106,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, sync
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
-		return DefaultState, errors.New("no filepath string set")
+		return "", errors.New("no filepath string set")
 	}
 	if fs.fileType == "" {
 		uriSplit := strings.Split(fs.URI, ".")
@@ -116,7 +114,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	}
 	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
-		return DefaultState, err
+		return "", err
 	}
 
 	switch fs.fileType {
@@ -125,7 +123,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	case "json":
 		return string(rawFile), nil
 	default:
-		return DefaultState, fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
+		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
 	}
 }
 

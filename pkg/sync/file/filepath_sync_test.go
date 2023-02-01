@@ -112,7 +112,6 @@ func TestSimpleSync(t *testing.T) {
 				manipulation(t)
 				select {
 				case data := <-dataSyncChan:
-					fmt.Println(data)
 					if data.FlagData != syncEvent.FlagData {
 						t.Errorf("expected content: %s, but received content: %s", syncEvent.FlagData, data.FlagData)
 					}
