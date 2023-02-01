@@ -24,6 +24,9 @@ type Sync struct {
 	fileType string
 }
 
+// default state is used to prevent EOF errors when handling filepath delete events
+const DefaultState = "{}"
+
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fs.Logger.Info("Starting filepath sync notifier")
@@ -90,15 +93,14 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, syncType sync.Type, dataSync chan<- sync.DataSync) {
 	fs.Logger.Debug(fmt.Sprintf("Configuration %s: %s, sync event type %s", fs.URI, eventType.Op.String(), syncType.String()))
-	var msg string
+
 	var err error
+	var msg = DefaultState
 	if syncType != sync.DELETE {
 		msg, err = fs.fetch(ctx)
 		if err != nil {
 			fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
 		}
-	} else {
-		msg = "{}"
 	}
 
 	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}

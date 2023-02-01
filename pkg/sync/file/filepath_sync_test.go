@@ -77,7 +77,7 @@ func TestSimpleSync(t *testing.T) {
 					Type:     sync.ALL,
 				},
 				{
-					FlagData: "",
+					FlagData: DefaultState,
 					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Type:     sync.DELETE,
 				},
