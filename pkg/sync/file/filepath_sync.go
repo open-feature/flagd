@@ -57,10 +57,9 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
 
-			switch event.Op {
-			case fsnotify.Create, fsnotify.Write:
+			if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 				fs.sendDataSync(ctx, event, dataSync)
-			case fsnotify.Remove:
+			} else if event.Has(fsnotify.Remove) {
 				// Counterintuively, remove events are the only meanful ones seen in K8s.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, event, dataSync)
