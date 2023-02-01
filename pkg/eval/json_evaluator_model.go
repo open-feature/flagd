@@ -85,8 +85,22 @@ func (f Flags) Update(logger *logger.Logger, source string, ff Flags) map[string
 }
 
 // Delete matching flags from source. The implementation is not thread safe
+// If ff is nil, or, ff.Flags is of length 0, all flags from the given source are deleted
 func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
+
+	if ff.Flags == nil || len(ff.Flags) == 0 {
+		for k, flag := range f.Flags {
+			if flag.Source == source {
+				notifications[k] = map[string]interface{}{
+					"type":   string(NotificationDelete),
+					"source": source,
+				}
+				delete(f.Flags, k)
+			}
+		}
+		return notifications
+	}
 
 	for k := range ff.Flags {
 		if _, ok := f.Flags[k]; ok {
@@ -98,7 +112,7 @@ func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string
 			delete(f.Flags, k)
 		} else {
 			logger.Warn(
-				fmt.Sprintf("failed to remove flag, flag with key %s from source %s does not exisit.",
+				fmt.Sprintf("failed to remove flag, flag with key %s from source %s does not exist.",
 					k,
 					source))
 		}

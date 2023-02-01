@@ -59,18 +59,21 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			switch event.Op {
 			case fsnotify.Create, fsnotify.Write:
-				fs.sendDataSync(ctx, event, dataSync)
+				fs.sendDataSync(ctx, event, sync.ALL, dataSync)
 			case fsnotify.Remove:
-				// Counterintuively, remove events are the only meanful ones seen in K8s.
-				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
-				fs.sendDataSync(ctx, event, dataSync)
-
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				err = watcher.Add(fs.URI)
 				if err != nil {
+					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
+					fs.sendDataSync(ctx, event, sync.DELETE, dataSync)
+					continue
 				}
+
+				// Counterintuively, remove events are the only meanful ones seen in K8s.
+				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
+				fs.sendDataSync(ctx, event, sync.ALL, dataSync)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -85,14 +88,20 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, dataSync chan<- sync.DataSync) {
-	fs.Logger.Debug(fmt.Sprintf("Configuration %s: %s", fs.URI, eventType.Op.String()))
-	msg, err := fs.fetch(ctx)
-	if err != nil {
-		fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
+func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, syncType sync.Type, dataSync chan<- sync.DataSync) {
+	fs.Logger.Debug(fmt.Sprintf("Configuration %s: %s, sync event type %s", fs.URI, eventType.Op.String(), syncType.String()))
+	var msg string
+	var err error
+	if syncType != sync.DELETE {
+		msg, err = fs.fetch(ctx)
+		if err != nil {
+			fs.Logger.Error(fmt.Sprintf("Error fetching after %s notification: %s", eventType.Op.String(), err.Error()))
+		}
+	} else {
+		msg = "{}"
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {

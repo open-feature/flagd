@@ -79,7 +79,7 @@ func TestSimpleSync(t *testing.T) {
 				{
 					FlagData: "",
 					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-					Type:     sync.ALL,
+					Type:     sync.DELETE,
 				},
 			},
 		},
@@ -184,7 +184,7 @@ func cleanupFilePath() {
 }
 
 func deleteFile(t *testing.T, dirName string, fileName string) {
-	if err := os.Remove(fmt.Sprintf(fmt.Sprintf("%s/%s", dirName, fileName))); err != nil {
+	if err := os.Remove(fmt.Sprintf("%s/%s", dirName, fileName)); err != nil {
 		t.Fatal(err)
 	}
 }

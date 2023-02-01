@@ -1,6 +1,8 @@
 package sync
 
-import "context"
+import (
+	"context"
+)
 
 type ProviderArgs map[string]string
 
@@ -9,7 +11,7 @@ type Type int
 // Type of the sync operation
 const (
 	// ALL - All flags of sync provider. This is the default if unset due to primitive default
-	ALL Type = iota
+	ALL Type = iota - 1
 	// ADD - Additional flags from sync provider
 	ADD
 	// UPDATE - Update for flag(s) previously provided
@@ -17,6 +19,21 @@ const (
 	// DELETE - Delete for flag(s) previously provided
 	DELETE
 )
+
+func (t Type) String() string {
+	switch t {
+	case ALL:
+		return "ALL"
+	case ADD:
+		return "ADD"
+	case UPDATE:
+		return "UPDATE"
+	case DELETE:
+		return "DELETE"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 /*
 ISync implementations watch for changes in the flag sources (HTTP backend, local file, K8s CRDs ...),fetch the latest
