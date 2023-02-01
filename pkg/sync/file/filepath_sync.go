@@ -108,7 +108,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, eventType fsnotify.Event, sync
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
-		return "", errors.New("no filepath string set")
+		return DefaultState, errors.New("no filepath string set")
 	}
 	if fs.fileType == "" {
 		uriSplit := strings.Split(fs.URI, ".")
@@ -116,7 +116,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	}
 	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
-		return "", err
+		return DefaultState, err
 	}
 
 	switch fs.fileType {
@@ -125,7 +125,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	case "json":
 		return string(rawFile), nil
 	default:
-		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
+		return DefaultState, fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
 	}
 }
 
