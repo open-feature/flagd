@@ -25,7 +25,7 @@ func TestSimpleSync(t *testing.T) {
 	})
 	mockCron.EXPECT().Start().Times(1)
 
-	mockClient := syncmock.NewMockHTTPClient(ctrl)
+	mockClient := syncmock.NewMockClient(ctrl)
 	mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{Body: io.NopCloser(strings.NewReader(resp))}, nil)
 
 	httpSync := Sync{
@@ -59,14 +59,14 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	tests := map[string]struct {
-		setup          func(t *testing.T, client *syncmock.MockHTTPClient)
+		setup          func(t *testing.T, client *syncmock.MockClient)
 		uri            string
 		bearerToken    string
 		lastBodySHA    string
 		handleResponse func(*testing.T, Sync, string, error)
 	}{
 		"success": {
-			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -83,7 +83,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 		},
 		"return an error if no uri": {
-			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {},
+			setup: func(t *testing.T, client *syncmock.MockClient) {},
 			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
@@ -91,7 +91,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 		},
 		"update last body sha": {
-			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -112,7 +112,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 		},
 		"authorization header": {
-			setup: func(t *testing.T, client *syncmock.MockHTTPClient) {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -136,7 +136,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			mockClient := syncmock.NewMockHTTPClient(ctrl)
+			mockClient := syncmock.NewMockClient(ctrl)
 
 			tt.setup(t, mockClient)
 
