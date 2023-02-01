@@ -368,6 +368,7 @@ func (s *ConnectService) ResolveFloat(
 		variant,
 		reason,
 	))
+	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
 	return res, nil
