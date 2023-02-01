@@ -57,6 +57,8 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
 
+                        // event.Op is bitmask and some systems may send multiple operations at once
+                        // event.Has(...) checks that the bitmask contains the particular event (among others)
 			if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 				fs.sendDataSync(ctx, event, dataSync)
 			} else if event.Has(fsnotify.Remove) {
