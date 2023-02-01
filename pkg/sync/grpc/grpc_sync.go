@@ -6,7 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/servicev1grpc"
+	// todo - from schema push
+	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go/sync/v1"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -33,7 +34,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	client := servicev1grpc.NewFlagServiceClient(dial)
+	client := syncv1grpc.NewFlagServiceClient(dial)
 
 	stream, err := client.SyncFlags(context.Background(), &v1.SyncFlagsRequest{Key: g.Key})
 	if err != nil {
@@ -58,7 +59,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	return err
 }
 
-func (g *Sync) streamHandler(stream servicev1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
 	for {
 		data, err := stream.Recv()
 		if err != nil {

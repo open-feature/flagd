@@ -1,9 +1,0 @@
-version: v1
-# todo - packaging to flagd
-name: buf.build/kavindudodan/flagd
-breaking:
-  use:
-    - FILE
-lint:
-  use:
-    - DEFAULT
