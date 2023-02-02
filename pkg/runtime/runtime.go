@@ -55,7 +55,7 @@ func (r *Runtime) Start() error {
 	defer cancel()
 
 	g, gCtx := errgroup.WithContext(ctx)
-	dataSync := make(chan sync.DataSync)
+	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 
 	// Initialize DataSync channel watcher
 	g.Go(func() error {
