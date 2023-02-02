@@ -346,6 +346,7 @@ func TestFlags_Update(t *testing.T) {
 func TestFlags_Delete(t *testing.T) {
 	mockLogger := logger.NewLogger(nil, false)
 	mockSource := "source"
+	mockSource2 := "source2"
 
 	tests := []struct {
 		name                     string
@@ -360,6 +361,7 @@ func TestFlags_Delete(t *testing.T) {
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
+					"C": {Source: mockSource2},
 				},
 			},
 			deleteRequest: Flags{
@@ -370,6 +372,7 @@ func TestFlags_Delete(t *testing.T) {
 			expectedState: Flags{
 				Flags: map[string]Flag{
 					"B": {Source: mockSource},
+					"C": {Source: mockSource2},
 				},
 			},
 			expectedNotificationKeys: []string{"A"},
@@ -380,20 +383,41 @@ func TestFlags_Delete(t *testing.T) {
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
+					"C": {Source: mockSource2},
 				},
 			},
 			deleteRequest: Flags{
 				Flags: map[string]Flag{
-					"C": {Source: mockSource},
+					"D	": {Source: mockSource},
 				},
 			},
 			expectedState: Flags{
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
+					"C": {Source: mockSource2},
 				},
 			},
 			expectedNotificationKeys: []string{},
+		},
+		{
+			name: "Remove all",
+			storedState: Flags{
+				Flags: map[string]Flag{
+					"A": {Source: mockSource},
+					"B": {Source: mockSource},
+					"C": {Source: mockSource2},
+				},
+			},
+			deleteRequest: Flags{
+				Flags: map[string]Flag{},
+			},
+			expectedState: Flags{
+				Flags: map[string]Flag{
+					"C": {Source: mockSource2},
+				},
+			},
+			expectedNotificationKeys: []string{"A", "B"},
 		},
 	}
 	for _, tt := range tests {
