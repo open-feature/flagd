@@ -40,11 +40,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	if err != nil {
 		return err
 	}
-	info, err := os.Stat(fs.URI)
-	if err != nil {
-		fs.Logger.Error(fmt.Sprintf("error fetching file info: %s %s", fs.URI, err.Error()))
-	}
-	fmt.Println(info)
+
 	fs.sendDataSync(ctx, sync.ALL, dataSync)
 
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
