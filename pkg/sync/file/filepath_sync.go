@@ -73,7 +73,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
 			case event.Has(fsnotify.Chmod):
 				// on linux the REMOVE event will not fire until all file descriptors are closed, this cannot happen
-				// whilst we are watching the file, os.Stat is used here to infer deletion
+				// while the file is being watched, os.Stat is used here to infer deletion
 				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
 					fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
 					fs.sendDataSync(ctx, sync.DELETE, dataSync)
