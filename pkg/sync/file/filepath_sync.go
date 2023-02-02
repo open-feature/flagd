@@ -40,7 +40,11 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	if err != nil {
 		return err
 	}
-
+	info, err := os.Stat(fs.URI)
+	if err != nil {
+		fs.Logger.Error(fmt.Sprintf("error fetching file info: %s %s", fs.URI, err.Error()))
+	}
+	fmt.Println(info)
 	fs.sendDataSync(ctx, sync.ALL, dataSync)
 
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
@@ -71,6 +75,13 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
+			} else if event.Has(fsnotify.Chmod) {
+				// on linux the REMOVE event will not fire until all file descriptors are closed, this cannot happen
+				// whilst we are watching the file, os.Stat is used here to infer deletion
+				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
+					fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
+					fs.sendDataSync(ctx, sync.DELETE, dataSync)
+				}
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
