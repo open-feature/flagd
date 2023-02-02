@@ -161,7 +161,7 @@ func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, conte
 	reason string,
 	err error,
 ) {
-	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", reqID))
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
 
