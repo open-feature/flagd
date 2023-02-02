@@ -71,7 +71,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					continue
 				}
 
-				// Counterintuively, remove events are the only meanful ones seen in K8s.
+				// Counterintuitively, remove events are the only meaningful ones seen in K8s.
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
