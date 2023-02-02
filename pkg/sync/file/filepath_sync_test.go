@@ -136,7 +136,7 @@ func TestSimpleSync(t *testing.T) {
 						t.Errorf("expected type: %b, but received type: %b", syncEvent.Type, data.Type)
 					}
 				case <-time.After(10 * time.Second):
-					t.Errorf("event not found, timeout out after 3 seconds")
+					t.Errorf("event not found, timeout out after 10 seconds")
 				}
 			}
 		})
