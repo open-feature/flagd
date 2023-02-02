@@ -54,10 +54,9 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
 
-			switch event.Op {
-			case fsnotify.Create, fsnotify.Write:
+			if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
-			case fsnotify.Remove:
+			} else if event.Has(fsnotify.Remove) {
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				err = watcher.Add(fs.URI)
@@ -69,6 +68,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				}
 
 				// Counterintuively, remove events are the only meanful ones seen in K8s.
+				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
 			}
