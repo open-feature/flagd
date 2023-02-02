@@ -20,7 +20,6 @@ const (
 )
 
 func TestSimpleSync(t *testing.T) {
-
 	tests := map[string]struct {
 		manipulationFuncs []func(t *testing.T)
 		expectedDataSync  []sync.DataSync
@@ -28,7 +27,7 @@ func TestSimpleSync(t *testing.T) {
 		"simple-read": {
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchDirName, fetchFileName, fetchFileContents)
+					writeToFile(t, fetchFileContents)
 				},
 			},
 			expectedDataSync: []sync.DataSync{
@@ -42,10 +41,10 @@ func TestSimpleSync(t *testing.T) {
 		"update-event": {
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchDirName, fetchFileName, fetchFileContents)
+					writeToFile(t, fetchFileContents)
 				},
 				func(t *testing.T) {
-					writeToFile(t, fetchDirName, fetchFileName, "new content")
+					writeToFile(t, "new content")
 				},
 			},
 			expectedDataSync: []sync.DataSync{
@@ -64,7 +63,7 @@ func TestSimpleSync(t *testing.T) {
 		"delete-event": {
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchDirName, fetchFileName, fetchFileContents)
+					writeToFile(t, fetchFileContents)
 				},
 				func(t *testing.T) {
 					deleteFile(t, fetchDirName, fetchFileName)
@@ -86,7 +85,7 @@ func TestSimpleSync(t *testing.T) {
 		"empty-file-use-default": {
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchDirName, fetchFileName, "")
+					writeToFile(t, "")
 				},
 			},
 			expectedDataSync: []sync.DataSync{
@@ -180,7 +179,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			setupDir(t, fetchDirName)
 			createFile(t, fetchDirName, fetchFileName)
-			writeToFile(t, fetchDirName, fetchFileName, fetchFileContents)
+			writeToFile(t, fetchFileContents)
 			defer t.Cleanup(cleanupFilePath)
 
 			data, err := tt.fpSync.fetch(context.Background())
@@ -214,8 +213,8 @@ func createFile(t *testing.T, dirName string, fileName string) {
 	}
 }
 
-func writeToFile(t *testing.T, dirName string, fileName string, fileContents string) {
-	file, err := os.OpenFile(fmt.Sprintf("%s/%s", dirName, fileName), os.O_RDWR, 0o644)
+func writeToFile(t *testing.T, fileContents string) {
+	file, err := os.OpenFile(fmt.Sprintf("%s/%s", fetchDirName, fetchFileName), os.O_RDWR, 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -57,10 +57,10 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			}
 
 			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
-
-			if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
+			switch {
+			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
-			} else if event.Has(fsnotify.Remove) {
+			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				err = watcher.Add(fs.URI)
@@ -75,7 +75,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
 				fs.sendDataSync(ctx, sync.ALL, dataSync)
-			} else if event.Has(fsnotify.Chmod) {
+			case event.Has(fsnotify.Chmod):
 				// on linux the REMOVE event will not fire until all file descriptors are closed, this cannot happen
 				// whilst we are watching the file, os.Stat is used here to infer deletion
 				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
@@ -83,6 +83,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					fs.sendDataSync(ctx, sync.DELETE, dataSync)
 				}
 			}
+
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return errors.New("watcher error")
@@ -99,7 +100,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync chan<- sync.DataSync) {
 	fs.Logger.Debug(fmt.Sprintf("Configuration %s:  %s", fs.URI, syncType.String()))
 
-	var msg = DefaultState
+	msg := DefaultState
 	if syncType != sync.DELETE {
 		m, err := fs.fetch(ctx)
 		if err != nil {
