@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	mxSync "sync"
 
 	"github.com/open-feature/flagd/pkg/sync"
 
@@ -47,6 +48,7 @@ func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 		),
 		state: Flags{
 			Flags: map[string]Flag{},
+			mx:    &mxSync.RWMutex{},
 		},
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
@@ -110,6 +112,8 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 	var variant string
 	var reason string
 	var err error
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	for flagKey, flag := range je.state.Flags {
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
@@ -161,6 +165,8 @@ func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, conte
 	reason string,
 	err error,
 ) {
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
@@ -171,6 +177,8 @@ func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, contex
 	reason string,
 	err error,
 ) {
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
 	return resolve[string](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
@@ -181,6 +189,8 @@ func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context
 	reason string,
 	err error,
 ) {
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
 	value, variant, reason, err = resolve[float64](
 		reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
@@ -193,6 +203,8 @@ func (je *JSONEvaluator) ResolveIntValue(reqID string, flagKey string, context *
 	reason string,
 	err error,
 ) {
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	var val float64
 	val, variant, reason, err = resolve[float64](
@@ -207,6 +219,8 @@ func (je *JSONEvaluator) ResolveObjectValue(reqID string, flagKey string, contex
 	reason string,
 	err error,
 ) {
+	je.state.mx.RLock()
+	defer je.state.mx.RUnlock()
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
 }
@@ -256,7 +270,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
 
 		// if this is a valid variant, return it
-		if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
+		if _, ok := flag.Variants[variant]; ok {
 			return variant, model.TargetingMatchReason, nil
 		}
 
@@ -266,7 +280,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		reason = model.StaticReason
 	}
 
-	return je.state.Flags[flagKey].DefaultVariant, reason, nil
+	return flag.DefaultVariant, reason, nil
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
