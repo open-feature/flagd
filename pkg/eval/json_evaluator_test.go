@@ -1084,7 +1084,6 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
 				evaluator.ResolveAllValues("", nil)
 				return nil
-
 			},
 		},
 		"Delete_ResolveAllValues": {

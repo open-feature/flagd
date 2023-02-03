@@ -62,11 +62,13 @@ func TestMergeFlags(t *testing.T) {
 			name: "extra fields on each",
 			current: Flags{
 				mx: &sync.RWMutex{},
-				Flags: map[string]Flag{"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
+				Flags: map[string]Flag{
+					"waka": {
+						DefaultVariant: "off",
+						Source:         "1",
+					},
 				},
-				}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"paka": {
 					DefaultVariant: "on",
@@ -91,7 +93,8 @@ func TestMergeFlags(t *testing.T) {
 			name: "override",
 			current: Flags{
 				mx:    &sync.RWMutex{},
-				Flags: map[string]Flag{"waka": {DefaultVariant: "off"}}},
+				Flags: map[string]Flag{"waka": {DefaultVariant: "off"}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
@@ -109,7 +112,8 @@ func TestMergeFlags(t *testing.T) {
 			name: "identical",
 			current: Flags{
 				mx:    &sync.RWMutex{},
-				Flags: map[string]Flag{"hello": {DefaultVariant: "off"}}},
+				Flags: map[string]Flag{"hello": {DefaultVariant: "off"}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
