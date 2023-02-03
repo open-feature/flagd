@@ -34,32 +34,37 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	client := syncv1grpc.NewFlagServiceClient(dial)
+	return g.streamListener(ctx, dial, dataSync)
+}
 
-	stream, err := client.SyncFlags(context.Background(), &v1.SyncFlagsRequest{Key: g.Key})
-	if err != nil {
-		g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
-		return err
-	}
-
+// streamListener performs the grpc listening on provided client connection and push updates through dataSync channel
+func (g *Sync) streamListener(ctx context.Context, dial *grpc.ClientConn, dataSync chan<- sync.DataSync) error {
 	group, localContext := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		return g.streamHandler(stream, dataSync)
+		serviceClient := syncv1grpc.NewFlagServiceClient(dial)
+
+		syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{Key: g.Key})
+		if err != nil {
+			g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
+			return err
+		}
+
+		return g.handleFlagSync(syncClient, dataSync)
 	})
 
 	<-localContext.Done()
 
-	err = group.Wait()
+	err := group.Wait()
 	if err == io.EOF {
-		g.Logger.Info("Stream closed by the server. Exiting without retry attempts.")
+		g.Logger.Info("Stream closed by the server")
 		return err
 	}
 
 	return err
 }
 
-func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
 	for {
 		data, err := stream.Recv()
 		if err != nil {
@@ -76,7 +81,6 @@ func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, data
 			}
 
 			g.Logger.Debug("received full configuration payload")
-			continue
 		case v1.SyncState_SYNC_STATE_ADD:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
@@ -85,7 +89,6 @@ func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, data
 			}
 
 			g.Logger.Debug("received an add payload")
-			continue
 		case v1.SyncState_SYNC_STATE_UPDATE:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
@@ -94,7 +97,6 @@ func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, data
 			}
 
 			g.Logger.Debug("received an update payload")
-			continue
 		case v1.SyncState_SYNC_STATE_DELETE:
 			dataSync <- sync.DataSync{
 				FlagData: data.Flags,
@@ -103,7 +105,6 @@ func (g *Sync) streamHandler(stream syncv1grpc.FlagService_SyncFlagsClient, data
 			}
 
 			g.Logger.Debug("received a delete payload")
-			continue
 		case v1.SyncState_SYNC_STATE_PING:
 			g.Logger.Debug("received server ping")
 		default:

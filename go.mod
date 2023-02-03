@@ -3,8 +3,8 @@ module github.com/open-feature/flagd
 go 1.19
 
 require (
-	buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230201231859-0ba584642f5c.4
-	buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230201231859-0ba584642f5c.4
+	buf.build/gen/go/kavindudodan/flagd/grpc/go v1.2.0-20230201234317-013221f6d37a.4
+	buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go v1.28.1-20230201234317-013221f6d37a.4
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221226184428-0dc62ff103b8.4
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20221226184428-0dc62ff103b8.4
