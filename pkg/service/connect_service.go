@@ -267,7 +267,11 @@ func (s *ConnectService) ResolveBoolean(
 		return res, errFormat(err)
 	}
 
-	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %t, %s, %s", result, variant, reason))
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: result: %t, variant: %s, reason: %s",
+		result,
+		variant,
+		reason,
+	))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -295,7 +299,11 @@ func (s *ConnectService) ResolveString(
 		return res, errFormat(err)
 	}
 
-	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %s, %s, %s", result, variant, reason))
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: result: %s, variant: %s, reason: %s",
+		result,
+		variant,
+		reason,
+	))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -323,7 +331,11 @@ func (s *ConnectService) ResolveInt(
 		return res, errFormat(err)
 	}
 
-	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %d, %s, %s", result, variant, reason))
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: result: %d, variant: %s, reason: %s",
+		result,
+		variant,
+		reason,
+	))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -351,7 +363,11 @@ func (s *ConnectService) ResolveFloat(
 		return res, errFormat(err)
 	}
 
-	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation complete: %64f, %s, %s", result, variant, reason))
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: result: %64f, variant: %s, reason: %s",
+		result,
+		variant,
+		reason,
+	))
 	res.Msg.Reason = reason
 	res.Msg.Value = result
 	res.Msg.Variant = variant
@@ -384,8 +400,11 @@ func (s *ConnectService) ResolveObject(
 		return res, err
 	}
 
-	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: %v, %s, %s", result, variant, reason))
-	res.Msg.Reason = reason
+	s.Logger.DebugWithID(reqID, fmt.Sprintf("flag evaluation response: result: %v, variant: %s, reason: %s",
+		result,
+		variant,
+		reason,
+	))
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil
