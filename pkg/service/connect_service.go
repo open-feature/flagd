@@ -405,6 +405,7 @@ func (s *ConnectService) ResolveObject(
 		variant,
 		reason,
 	))
+	res.Msg.Reason = reason
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil
