@@ -76,7 +76,7 @@ func TestSimpleSync(t *testing.T) {
 					Type:     sync.ALL,
 				},
 				{
-					FlagData: DefaultState,
+					FlagData: defaultState,
 					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Type:     sync.DELETE,
 				},
@@ -90,7 +90,7 @@ func TestSimpleSync(t *testing.T) {
 			},
 			expectedDataSync: []sync.DataSync{
 				{
-					FlagData: DefaultState,
+					FlagData: defaultState,
 					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Type:     sync.ALL,
 				},

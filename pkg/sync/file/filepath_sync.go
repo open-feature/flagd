@@ -25,7 +25,7 @@ type Sync struct {
 }
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
-const DefaultState = "{}"
+const defaultState = "{}"
 
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -96,7 +96,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync chan<- sync.DataSync) {
 	fs.Logger.Debug(fmt.Sprintf("Configuration %s:  %s", fs.URI, syncType.String()))
 
-	msg := DefaultState
+	msg := defaultState
 	if syncType != sync.DELETE {
 		m, err := fs.fetch(ctx)
 		if err != nil {
