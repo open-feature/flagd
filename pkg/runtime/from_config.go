@@ -104,7 +104,8 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 		case regGRPC.Match(uriB):
 
 			r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-				Target: grpc.URLToGRPCTarget(uri),
+				Target:     grpc.URLToGRPCTarget(uri),
+				ProviderID: r.config.ProviderIdentifier,
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
 					zap.String("sync", "grpc"),

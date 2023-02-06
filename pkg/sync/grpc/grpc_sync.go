@@ -22,9 +22,9 @@ import (
 const Prefix = "grpc://"
 
 type Sync struct {
-	Target string
-	Key    string
-	Logger *logger.Logger
+	Target     string
+	ProviderID string
+	Logger     *logger.Logger
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -42,9 +42,9 @@ func (g *Sync) streamListener(ctx context.Context, dial *grpc.ClientConn, dataSy
 	group, localContext := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		serviceClient := syncv1grpc.NewFlagServiceClient(dial)
+		serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
 
-		syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{Key: g.Key})
+		syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 		if err != nil {
 			g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
 			return err
@@ -64,7 +64,7 @@ func (g *Sync) streamListener(ctx context.Context, dial *grpc.ClientConn, dataSy
 	return err
 }
 
-func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
 	for {
 		data, err := stream.Recv()
 		if err != nil {
@@ -75,7 +75,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dat
 		switch data.State {
 		case v1.SyncState_SYNC_STATE_ALL:
 			dataSync <- sync.DataSync{
-				FlagData: data.Flags,
+				FlagData: data.FlagConfiguration,
 				Source:   g.Target,
 				Type:     sync.ALL,
 			}
@@ -83,7 +83,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dat
 			g.Logger.Debug("received full configuration payload")
 		case v1.SyncState_SYNC_STATE_ADD:
 			dataSync <- sync.DataSync{
-				FlagData: data.Flags,
+				FlagData: data.FlagConfiguration,
 				Source:   g.Target,
 				Type:     sync.ADD,
 			}
@@ -91,7 +91,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dat
 			g.Logger.Debug("received an add payload")
 		case v1.SyncState_SYNC_STATE_UPDATE:
 			dataSync <- sync.DataSync{
-				FlagData: data.Flags,
+				FlagData: data.FlagConfiguration,
 				Source:   g.Target,
 				Type:     sync.UPDATE,
 			}
@@ -99,7 +99,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagService_SyncFlagsClient, dat
 			g.Logger.Debug("received an update payload")
 		case v1.SyncState_SYNC_STATE_DELETE:
 			dataSync <- sync.DataSync{
-				FlagData: data.Flags,
+				FlagData: data.FlagConfiguration,
 				Source:   g.Target,
 				Type:     sync.DELETE,
 			}

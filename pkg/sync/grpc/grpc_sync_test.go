@@ -52,22 +52,22 @@ func TestUrlToGRPCTarget(t *testing.T) {
 
 func TestSync_BasicFlagSyncStates(t *testing.T) {
 	grpcSyncImpl := Sync{
-		Target: "grpc://test",
-		Key:    "",
-		Logger: logger.NewLogger(nil, false),
+		Target:     "grpc://test",
+		ProviderID: "",
+		Logger:     logger.NewLogger(nil, false),
 	}
 
 	tests := []struct {
 		name   string
-		stream syncv1grpc.FlagService_SyncFlagsClient
+		stream syncv1grpc.FlagSyncService_SyncFlagsClient
 		want   sync.Type
 	}{
 		{
 			name: "State All maps to Sync All",
 			stream: &SimpleRecvMock{
 				mockResponse: v1.SyncFlagsResponse{
-					Flags: "{}",
-					State: v1.SyncState_SYNC_STATE_ALL,
+					FlagConfiguration: "{}",
+					State:             v1.SyncState_SYNC_STATE_ALL,
 				},
 			},
 			want: sync.ALL,
@@ -76,8 +76,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			name: "State Add maps to Sync Add",
 			stream: &SimpleRecvMock{
 				mockResponse: v1.SyncFlagsResponse{
-					Flags: "{}",
-					State: v1.SyncState_SYNC_STATE_ADD,
+					FlagConfiguration: "{}",
+					State:             v1.SyncState_SYNC_STATE_ADD,
 				},
 			},
 			want: sync.ADD,
@@ -86,8 +86,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			name: "State Update maps to Sync Update",
 			stream: &SimpleRecvMock{
 				mockResponse: v1.SyncFlagsResponse{
-					Flags: "{}",
-					State: v1.SyncState_SYNC_STATE_UPDATE,
+					FlagConfiguration: "{}",
+					State:             v1.SyncState_SYNC_STATE_UPDATE,
 				},
 			},
 			want: sync.UPDATE,
@@ -96,8 +96,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			name: "State Delete maps to Sync Delete",
 			stream: &SimpleRecvMock{
 				mockResponse: v1.SyncFlagsResponse{
-					Flags: "{}",
-					State: v1.SyncState_SYNC_STATE_DELETE,
+					FlagConfiguration: "{}",
+					State:             v1.SyncState_SYNC_STATE_DELETE,
 				},
 			},
 			want: sync.DELETE,
@@ -239,9 +239,9 @@ func Test_StreamListener(t *testing.T) {
 		}
 
 		grpcSync := Sync{
-			Target: target,
-			Key:    "",
-			Logger: logger.NewLogger(nil, false),
+			Target:     target,
+			ProviderID: "",
+			Logger:     logger.NewLogger(nil, false),
 		}
 
 		syncChan := make(chan sync.DataSync, 1)
@@ -291,7 +291,7 @@ func (s *SimpleRecvMock) Recv() (*v1.SyncFlagsResponse, error) {
 func serve(bServer *bufferedServer) {
 	server := grpc.NewServer()
 
-	syncv1grpc.RegisterFlagServiceServer(server, bServer)
+	syncv1grpc.RegisterFlagSyncServiceServer(server, bServer)
 
 	if err := server.Serve(bServer.listener); err != nil {
 		log.Fatalf("Server exited with error: %v", err)
@@ -309,11 +309,11 @@ type bufferedServer struct {
 	mockResponses []serverPayload
 }
 
-func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.FlagService_SyncFlagsServer) error {
+func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	for _, response := range b.mockResponses {
 		err := stream.Send(&v1.SyncFlagsResponse{
-			Flags: response.flags,
-			State: response.state,
+			FlagConfiguration: response.flags,
+			State:             response.state,
 		})
 		if err != nil {
 			fmt.Printf("Error with stream: %s", err.Error())
