@@ -92,6 +92,7 @@ jobs:
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
+          tag_name: ${{ needs.release-please.outputs.release_tag_name }}
           files: ${{ env.PUBLIC_KEY_FILE }}
 
       - name: SBOM for latest image
