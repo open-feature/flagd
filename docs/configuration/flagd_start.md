@@ -16,6 +16,7 @@ flagd start [flags]
   -z, --log-format string                   Set the logging format, e.g. console or json  (default "console")
   -m, --metrics-port int32                  Port to serve metrics on (default 8014)
   -p, --port int32                          Port to listen on (default 8013)
+  -i, --provider-id string                  Set the identifier of this flagd runtime
   -c, --server-cert-path string             Server side tls certificate path
   -k, --server-key-path string              Server side tls key path
   -d, --socket-path string                  Flagd socket path. With grpc the service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
