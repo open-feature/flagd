@@ -227,6 +227,12 @@ func Test_StreamListener(t *testing.T) {
 		// start server
 		go serve(&bufServer)
 
+		grpcSync := Sync{
+			Target:     target,
+			ProviderID: "",
+			Logger:     logger.NewLogger(nil, false),
+		}
+
 		// initialize client
 		dial, err := grpc.Dial(target,
 			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
@@ -237,17 +243,17 @@ func Test_StreamListener(t *testing.T) {
 			t.Errorf("Error setting up client connection: %s", err.Error())
 		}
 
-		grpcSync := Sync{
-			Target:     target,
-			ProviderID: "",
-			Logger:     logger.NewLogger(nil, false),
+		serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
+		syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{ProviderId: grpcSync.ProviderID})
+		if err != nil {
+			t.Errorf("Error opening client stream: %s", err.Error())
 		}
 
 		syncChan := make(chan sync.DataSync, 1)
 
 		// listen to stream
 		go func() {
-			err := grpcSync.streamListener(context.Background(), dial, syncChan)
+			err := grpcSync.streamListener(context.Background(), syncClient, syncChan)
 			if err != nil {
 				// must ignore EOF as this is returned for stream end
 				if err != io.EOF {
