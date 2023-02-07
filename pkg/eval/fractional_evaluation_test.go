@@ -1,8 +1,9 @@
 package eval
 
 import (
-	"sync"
 	"testing"
+
+	"github.com/open-feature/flagd/pkg/store"
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/model"
@@ -11,8 +12,7 @@ import (
 
 func TestFractionalEvaluation(t *testing.T) {
 	flags := Flags{
-		mx: &sync.RWMutex{},
-		Flags: map[string]Flag{
+		Flags: map[string]model.Flag{
 			"headerColor": {
 				State:          "ENABLED",
 				DefaultVariant: "red",
@@ -115,8 +115,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"non even split": {
 			flags: Flags{
-				mx: &sync.RWMutex{},
-				Flags: map[string]Flag{
+				Flags: map[string]model.Flag{
 					"headerColor": {
 						State:          "ENABLED",
 						DefaultVariant: "red",
@@ -167,8 +166,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if no email provided": {
 			flags: Flags{
-				mx: &sync.RWMutex{},
-				Flags: map[string]Flag{
+				Flags: map[string]model.Flag{
 					"headerColor": {
 						State:          "ENABLED",
 						DefaultVariant: "red",
@@ -210,8 +208,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if invalid variant as result of fractional evaluation": {
 			flags: Flags{
-				mx: &sync.RWMutex{},
-				Flags: map[string]Flag{
+				Flags: map[string]model.Flag{
 					"headerColor": {
 						State:          "ENABLED",
 						DefaultVariant: "red",
@@ -245,8 +242,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
-				mx: &sync.RWMutex{},
-				Flags: map[string]Flag{
+				Flags: map[string]model.Flag{
 					"headerColor": {
 						State:          "ENABLED",
 						DefaultVariant: "red",
@@ -287,10 +283,10 @@ func TestFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			je := NewJSONEvaluator(logger.NewLogger(nil, false))
-			je.state = tt.flags
+			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](
-				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
+				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
 			)
 
 			if value != tt.expectedValue {
@@ -314,7 +310,7 @@ func TestFractionalEvaluation(t *testing.T) {
 
 func BenchmarkFractionalEvaluation(b *testing.B) {
 	flags := Flags{
-		Flags: map[string]Flag{
+		Flags: map[string]model.Flag{
 			"headerColor": {
 				State:          "ENABLED",
 				DefaultVariant: "red",
@@ -419,10 +415,10 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	reqID := "test"
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
-			je := JSONEvaluator{state: tt.flags}
+			je := JSONEvaluator{store: &store.Flags{Flags: tt.flags.Flags}}
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, err := resolve[string](
-					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.state.Flags[tt.flagKey].Variants,
+					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
 				)
 
 				if value != tt.expectedValue {
