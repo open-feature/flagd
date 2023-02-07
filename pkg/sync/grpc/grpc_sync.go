@@ -6,9 +6,8 @@ import (
 	"io"
 	"strings"
 
-	// todo - from schema push
-	"buf.build/gen/go/kavindudodan/flagd/grpc/go/sync/v1/syncv1grpc"
-	v1 "buf.build/gen/go/kavindudodan/flagd/protocolbuffers/go/sync/v1"
+	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
