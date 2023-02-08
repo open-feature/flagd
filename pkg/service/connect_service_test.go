@@ -260,7 +260,9 @@ func TestConnectService_ResolveBoolean(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveBooleanResponse{
-				Reason: model.ErrorReason,
+				Value:   true,
+				Variant: ":(",
+				Reason:  model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -394,7 +396,9 @@ func TestConnectService_ResolveString(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveStringResponse{
-				Reason: model.ErrorReason,
+				Value:   "true",
+				Variant: ":(",
+				Reason:  model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -529,7 +533,9 @@ func TestConnectService_ResolveFloat(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveFloatResponse{
-				Reason: model.ErrorReason,
+				Value:   12,
+				Variant: ":(",
+				Reason:  model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -664,7 +670,9 @@ func TestConnectService_ResolveInt(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveIntResponse{
-				Reason: model.ErrorReason,
+				Value:   12,
+				Variant: ":(",
+				Reason:  model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -803,7 +811,8 @@ func TestConnectService_ResolveObject(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveObjectResponse{
-				Reason: model.ErrorReason,
+				Variant: ":(",
+				Reason:  model.ErrorReason,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -822,13 +831,11 @@ func TestConnectService_ResolveObject(t *testing.T) {
 				Logger: logger.NewLogger(nil, false),
 			}
 
-			if name != "eval returns error" {
-				outParsed, err := structpb.NewStruct(tt.evalFields.result)
-				if err != nil {
-					t.Error(err)
-				}
-				tt.want.Value = outParsed
+			outParsed, err := structpb.NewStruct(tt.evalFields.result)
+			if err != nil {
+				t.Error(err)
 			}
+			tt.want.Value = outParsed
 			got, err := s.ResolveObject(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("ConnectService.ResolveObject() error = %v, wantErr %v", err, tt.wantErr)
