@@ -78,11 +78,13 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 		}
 		close(errChan)
 	}()
-	<-ctx.Done()
-	if err := s.server.Shutdown(ctx); err != nil {
+
+	select {
+	case err := <-errChan:
 		return err
+	case <-ctx.Done():
+		return s.server.Shutdown(ctx)
 	}
-	return <-errChan
 }
 
 func (s *ConnectService) setupServer() (net.Listener, error) {
