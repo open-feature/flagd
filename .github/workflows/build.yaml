@@ -6,44 +6,43 @@ on:
       - feature/workflows
       - main
     paths-ignore:
-      - 'README.md'
-      - 'docs/**'
+      - "README.md"
+      - "docs/**"
   pull_request:
     branches:
       - main
     paths-ignore:
-      - 'README.md'
-      - 'docs/**'
+      - "README.md"
+      - "docs/**"
 
 env:
   GO_VERSION: 1.19.3
 
 jobs:
-
   benchmark:
-     name: Run Benchmark
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
-       - name: Setup go
-         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
-         with:
-           go-version: ${{ env.GO_VERSION }}
-       - name: Run benchmark
-         run: go test -bench . -benchtime=5s -benchmem ./... | tee output.txt
+    name: Run Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
+      - name: Setup go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run benchmark
+        run: go test -bench . -benchtime=5s -benchmem ./... | tee output.txt
 
-       - name: Store benchmark result
-         uses: benchmark-action/github-action-benchmark@v1
-         with:
-           name: Go Benchmark
-           tool: 'go'
-           output-file-path: output.txt
-           github-token: ${{ secrets.GITHUB_TOKEN }}
-           auto-push: false
-           # Show alert with commit comment on detecting possible performance regression
-           alert-threshold: '130%'
-           comment-on-alert: true
-           fail-on-alert: false
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Go Benchmark
+          tool: "go"
+          output-file-path: output.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          # Show alert with commit comment on detecting possible performance regression
+          alert-threshold: "130%"
+          comment-on-alert: true
+          fail-on-alert: false
 
   lint:
     runs-on: ubuntu-latest
@@ -86,6 +85,8 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70 # v3
 
   docker-local:
     runs-on: ubuntu-latest
