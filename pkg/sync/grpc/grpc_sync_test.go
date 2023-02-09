@@ -116,7 +116,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			data := <-syncChan
 
 			if data.Type != test.want {
-				t.Errorf("Reuturned data sync state = %v, wanted %v", data.Type, test.want)
+				t.Errorf("Returned data sync state = %v, wanted %v", data.Type, test.want)
 			}
 		})
 	}
