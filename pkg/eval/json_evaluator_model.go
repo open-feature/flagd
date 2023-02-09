@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/open-feature/flagd/pkg/logger"
 )
@@ -21,6 +22,7 @@ type Evaluators struct {
 }
 
 type Flags struct {
+	mx    *sync.RWMutex
 	Flags map[string]Flag `json:"flags"`
 }
 
@@ -29,7 +31,10 @@ func (f Flags) Add(logger *logger.Logger, source string, ff Flags) map[string]in
 	notifications := map[string]interface{}{}
 
 	for k, newFlag := range ff.Flags {
-		if storedFlag, ok := f.Flags[k]; ok && storedFlag.Source != source {
+		f.mx.RLock()
+		storedFlag, ok := f.Flags[k]
+		f.mx.RUnlock()
+		if ok && storedFlag.Source != source {
 			logger.Warn(fmt.Sprintf(
 				"flag with key %s from source %s already exist, overriding this with flag from source %s",
 				k,
@@ -45,7 +50,9 @@ func (f Flags) Add(logger *logger.Logger, source string, ff Flags) map[string]in
 
 		// Store the new version of the flag
 		newFlag.Source = source
+		f.mx.Lock()
 		f.Flags[k] = newFlag
+		f.mx.Unlock()
 	}
 
 	return notifications
@@ -56,14 +63,18 @@ func (f Flags) Update(logger *logger.Logger, source string, ff Flags) map[string
 	notifications := map[string]interface{}{}
 
 	for k, flag := range ff.Flags {
-		if storedFlag, ok := f.Flags[k]; !ok {
+		f.mx.RLock()
+		storedFlag, ok := f.Flags[k]
+		f.mx.RUnlock()
+		if !ok {
 			logger.Warn(
-				fmt.Sprintf("failed to update the flag, flag with key %s from source %s does not exisit.",
+				fmt.Sprintf("failed to update the flag, flag with key %s from source %s does not exist.",
 					k,
 					source))
 
 			continue
-		} else if storedFlag.Source != source {
+		}
+		if storedFlag.Source != source {
 			logger.Warn(fmt.Sprintf(
 				"flag with key %s from source %s already exist, overriding this with flag from source %s",
 				k,
@@ -78,7 +89,9 @@ func (f Flags) Update(logger *logger.Logger, source string, ff Flags) map[string
 		}
 
 		flag.Source = source
+		f.mx.Lock()
 		f.Flags[k] = flag
+		f.mx.Unlock()
 	}
 
 	return notifications
@@ -103,13 +116,18 @@ func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string
 	}
 
 	for k := range ff.Flags {
-		if _, ok := f.Flags[k]; ok {
+		f.mx.RLock()
+		_, ok := f.Flags[k]
+		f.mx.RUnlock()
+		if ok {
 			notifications[k] = map[string]interface{}{
 				"type":   string(NotificationDelete),
 				"source": source,
 			}
 
+			f.mx.Lock()
 			delete(f.Flags, k)
+			f.mx.Unlock()
 		} else {
 			logger.Warn(
 				fmt.Sprintf("failed to remove flag, flag with key %s from source %s does not exist.",
@@ -125,6 +143,7 @@ func (f Flags) Delete(logger *logger.Logger, source string, ff Flags) map[string
 func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
+	f.mx.Lock()
 	for k, v := range f.Flags {
 		if v.Source == source {
 			if _, ok := ff.Flags[k]; !ok {
@@ -138,11 +157,14 @@ func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) map[string]
 			}
 		}
 	}
+	f.mx.Unlock()
 
 	for k, newFlag := range ff.Flags {
 		newFlag.Source = source
 
+		f.mx.RLock()
 		storedFlag, ok := f.Flags[k]
+		f.mx.RUnlock()
 		if !ok {
 			notifications[k] = map[string]interface{}{
 				"type":   string(NotificationCreate),
@@ -165,8 +187,10 @@ func (f Flags) Merge(logger *logger.Logger, source string, ff Flags) map[string]
 			}
 		}
 
+		f.mx.Lock()
 		// Store the new version of the flag
 		f.Flags[k] = newFlag
+		f.mx.Unlock()
 	}
 
 	return notifications

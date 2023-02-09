@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -18,41 +19,56 @@ func TestMergeFlags(t *testing.T) {
 		wantNotifs map[string]interface{}
 	}{
 		{
-			name:       "both nil",
-			current:    Flags{Flags: nil},
+			name: "both nil",
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: nil,
+			},
 			new:        Flags{Flags: nil},
 			want:       Flags{Flags: map[string]Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "both empty flags",
-			current:    Flags{Flags: map[string]Flag{}},
+			name: "both empty flags",
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: map[string]Flag{},
+			},
 			new:        Flags{Flags: map[string]Flag{}},
 			want:       Flags{Flags: map[string]Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "empty current",
-			current:    Flags{Flags: nil},
+			name: "empty current",
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: nil,
+			},
 			new:        Flags{Flags: map[string]Flag{}},
 			want:       Flags{Flags: map[string]Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "empty new",
-			current:    Flags{Flags: map[string]Flag{}},
+			name: "empty new",
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: map[string]Flag{},
+			},
 			new:        Flags{Flags: nil},
 			want:       Flags{Flags: map[string]Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name: "extra fields on each",
-			current: Flags{Flags: map[string]Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
+			current: Flags{
+				mx: &sync.RWMutex{},
+				Flags: map[string]Flag{
+					"waka": {
+						DefaultVariant: "off",
+						Source:         "1",
+					},
 				},
-			}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"paka": {
 					DefaultVariant: "on",
@@ -75,9 +91,10 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "override",
-			current: Flags{Flags: map[string]Flag{
-				"waka": {DefaultVariant: "off"},
-			}},
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: map[string]Flag{"waka": {DefaultVariant: "off"}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
@@ -93,9 +110,10 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "identical",
-			current: Flags{Flags: map[string]Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
+			current: Flags{
+				mx:    &sync.RWMutex{},
+				Flags: map[string]Flag{"hello": {DefaultVariant: "off"}},
+			},
 			new: Flags{Flags: map[string]Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
@@ -137,6 +155,7 @@ func TestFlags_Add(t *testing.T) {
 		{
 			name: "Add success",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 				},
@@ -150,6 +169,7 @@ func TestFlags_Add(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -160,6 +180,7 @@ func TestFlags_Add(t *testing.T) {
 		{
 			name: "Add multiple success",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 				},
@@ -174,6 +195,7 @@ func TestFlags_Add(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -185,6 +207,7 @@ func TestFlags_Add(t *testing.T) {
 		{
 			name: "Add success - conflict and override",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 				},
@@ -198,6 +221,7 @@ func TestFlags_Add(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockOverrideSource},
 				},
@@ -239,6 +263,7 @@ func TestFlags_Update(t *testing.T) {
 		{
 			name: "Update success",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
@@ -252,6 +277,7 @@ func TestFlags_Update(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 				},
@@ -261,6 +287,7 @@ func TestFlags_Update(t *testing.T) {
 		{
 			name: "Update multiple success",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 					"B": {Source: mockSource, DefaultVariant: "True"},
@@ -276,6 +303,7 @@ func TestFlags_Update(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 					"B": {Source: mockSource, DefaultVariant: "False"},
@@ -286,6 +314,7 @@ func TestFlags_Update(t *testing.T) {
 		{
 			name: "Update success - conflict and override",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
@@ -299,6 +328,7 @@ func TestFlags_Update(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockOverrideSource, DefaultVariant: "True"},
 				},
@@ -308,6 +338,7 @@ func TestFlags_Update(t *testing.T) {
 		{
 			name: "Update fail",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 				},
@@ -321,6 +352,7 @@ func TestFlags_Update(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 				},
@@ -358,6 +390,7 @@ func TestFlags_Delete(t *testing.T) {
 		{
 			name: "Remove success",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -370,6 +403,7 @@ func TestFlags_Delete(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
@@ -380,6 +414,7 @@ func TestFlags_Delete(t *testing.T) {
 		{
 			name: "Nothing to remove",
 			storedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -392,6 +427,7 @@ func TestFlags_Delete(t *testing.T) {
 				},
 			},
 			expectedState: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},

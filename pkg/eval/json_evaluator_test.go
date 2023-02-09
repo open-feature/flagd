@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
@@ -1061,6 +1062,134 @@ func TestState_Evaluator(t *testing.T) {
 
 			if !reflect.DeepEqual(expectedOutputJSON, gotOutputJSON) {
 				t.Errorf("expected state: %v got state: %v", expectedOutputJSON, gotOutputJSON)
+			}
+		})
+	}
+}
+
+func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
+	tests := map[string]struct {
+		dataSyncType   sync.Type
+		flagResolution func(evaluator *eval.JSONEvaluator) error
+	}{
+		"Add_ResolveAllValues": {
+			dataSyncType: sync.ADD,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				evaluator.ResolveAllValues("", nil)
+				return nil
+			},
+		},
+		"Update_ResolveAllValues": {
+			dataSyncType: sync.UPDATE,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				evaluator.ResolveAllValues("", nil)
+				return nil
+			},
+		},
+		"Delete_ResolveAllValues": {
+			dataSyncType: sync.DELETE,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				evaluator.ResolveAllValues("", nil)
+				return nil
+			},
+		},
+		"Add_ResolveBooleanValue": {
+			dataSyncType: sync.ADD,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				_, _, _, err := evaluator.ResolveBooleanValue("", StaticBoolFlag, nil)
+				return err
+			},
+		},
+		"Update_ResolveStringValue": {
+			dataSyncType: sync.UPDATE,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				_, _, _, err := evaluator.ResolveBooleanValue("", StaticStringValue, nil)
+				return err
+			},
+		},
+		"Delete_ResolveIntValue": {
+			dataSyncType: sync.DELETE,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				_, _, _, err := evaluator.ResolveIntValue("", StaticIntFlag, nil)
+				return err
+			},
+		},
+		"Add_ResolveFloatValue": {
+			dataSyncType: sync.ADD,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				_, _, _, err := evaluator.ResolveFloatValue("", StaticFloatFlag, nil)
+				return err
+			},
+		},
+		"Update_ResolveObjectValue": {
+			dataSyncType: sync.UPDATE,
+			flagResolution: func(evaluator *eval.JSONEvaluator) error {
+				_, _, _, err := evaluator.ResolveObjectValue("", StaticObjectFlag, nil)
+				return err
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
+
+			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: sync.ADD})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			errChan := make(chan error)
+
+			timeoutDur := 25 * time.Millisecond
+
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						errChan <- fmt.Errorf("%v", r)
+					}
+				}()
+				timeout := time.After(timeoutDur)
+
+				for {
+					select {
+					case <-timeout:
+						errChan <- nil
+						return
+					default:
+						_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: tt.dataSyncType})
+						if err != nil {
+							errChan <- err
+							return
+						}
+					}
+				}
+			}()
+
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						errChan <- fmt.Errorf("%v", r)
+					}
+				}()
+				timeout := time.After(timeoutDur)
+
+				for {
+					select {
+					case <-timeout:
+						errChan <- nil
+						return
+					default:
+						_ = tt.flagResolution(jsonEvaluator)
+					}
+				}
+			}()
+
+			for i := 0; i < 2; i++ {
+				err := <-errChan
+				if err != nil {
+					t.Error(err)
+				}
 			}
 		})
 	}

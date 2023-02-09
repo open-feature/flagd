@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -10,6 +11,7 @@ import (
 
 func TestFractionalEvaluation(t *testing.T) {
 	flags := Flags{
+		mx: &sync.RWMutex{},
 		Flags: map[string]Flag{
 			"headerColor": {
 				State:          "ENABLED",
@@ -113,6 +115,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"non even split": {
 			flags: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"headerColor": {
 						State:          "ENABLED",
@@ -164,6 +167,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if no email provided": {
 			flags: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"headerColor": {
 						State:          "ENABLED",
@@ -206,6 +210,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if invalid variant as result of fractional evaluation": {
 			flags: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"headerColor": {
 						State:          "ENABLED",
@@ -240,6 +245,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
+				mx: &sync.RWMutex{},
 				Flags: map[string]Flag{
 					"headerColor": {
 						State:          "ENABLED",
