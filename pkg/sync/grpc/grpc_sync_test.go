@@ -270,7 +270,7 @@ func Test_StreamListener(t *testing.T) {
 			}
 
 			if expected.FlagData != out.FlagData {
-				t.Errorf("Reuturned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
+				t.Errorf("Returned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
 			}
 		}
 
