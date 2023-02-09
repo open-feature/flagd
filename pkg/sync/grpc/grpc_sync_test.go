@@ -266,7 +266,7 @@ func Test_StreamListener(t *testing.T) {
 			out := <-syncChan
 
 			if expected.Type != out.Type {
-				t.Errorf("Reuturned sync type = %v, wanted %v", out.Type, expected.Type)
+				t.Errorf("Returned sync type = %v, wanted %v", out.Type, expected.Type)
 			}
 
 			if expected.FlagData != out.FlagData {
