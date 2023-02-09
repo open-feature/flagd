@@ -245,14 +245,6 @@ func (s *ConnectService) Notify(n Notification) {
 	}
 }
 
-type response[T constraints] interface {
-	SetResult(value T, variant, reason string) error
-}
-
-type constraints interface {
-	bool | string | map[string]any | float64 | int64
-}
-
 func resolve[T constraints](
 	logger *logger.Logger,
 	resolver func(reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),

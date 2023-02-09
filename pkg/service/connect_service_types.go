@@ -8,6 +8,14 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type response[T constraints] interface {
+	SetResult(value T, variant, reason string) error
+}
+
+type constraints interface {
+	bool | string | map[string]any | float64 | int64
+}
+
 type booleanResponse struct {
 	*connect.Response[schemaV1.ResolveBooleanResponse]
 }
