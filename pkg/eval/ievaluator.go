@@ -5,20 +5,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type StateChangeNotificationType string
-
-const (
-	NotificationDelete StateChangeNotificationType = "delete"
-	NotificationCreate StateChangeNotificationType = "write"
-	NotificationUpdate StateChangeNotificationType = "update"
-)
-
-type StateChangeNotification struct {
-	Type    StateChangeNotificationType `json:"type"`
-	Source  string                      `json:"source"`
-	FlagKey string                      `json:"flagKey"`
-}
-
 type AnyValue struct {
 	Value   interface{}
 	Variant string
