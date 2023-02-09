@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"io"
 	"math"
 	"strings"
 	"time"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -25,11 +23,11 @@ const (
 	Prefix = "grpc://"
 
 	// Connection retry constants
-	// Backoff period is calculated with backOffBase ^ #retry-iteration. However, when backoffLimit is reached, fallback
-	// to constantBackoffDelay
-	backoffLimit         = 3
+	// Back off period is calculated with backOffBase ^ #retry-iteration. However, when #retry-iteration count reach
+	// backOffLimit, retry delay fallback to constantBackOffDelay
+	backOffLimit         = 3
 	backOffBase          = 4
-	constantBackoffDelay = 60
+	constantBackOffDelay = 60
 )
 
 type Sync struct {
@@ -51,24 +49,27 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 
 	serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
-	syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+	syncClient, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
 		return err
 	}
 
 	// initial stream listening
-	err = g.streamListener(ctx, syncClient, dataSync)
+	err = g.handleFlagSync(syncClient, dataSync)
 	if err != nil {
 		g.Logger.Warn(fmt.Sprintf("Error with stream listener: %s", err.Error()))
 	}
 
 	// retry connection establishment
 	for {
-		g.Logger.Warn(fmt.Sprintf("Connection re-establishment attempt in-progress for grpc target: %s", g.Target))
+		syncClient, ok := g.connectWithRetry(ctx, options...)
+		if !ok {
+			// We shall exit
+			return nil
+		}
 
-		syncClient = g.connectWithRetry(ctx, options...)
-		err = g.streamListener(ctx, syncClient, dataSync)
+		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
 			g.Logger.Warn(fmt.Sprintf("Error with stream listener: %s", err.Error()))
 			continue
@@ -76,23 +77,34 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-// connectWithRetry is a helper to perform exponential backoff till provided configurations and then retry connection
-// periodically till a successful connection is established
+// connectWithRetry is a helper to perform exponential back off till provided configurations and then retry connection
+// periodically till a successful connection is established. Caller must not expect an error. Hence, errors are handled,
+// logged internally. However, if the provided context is done, method exit with a non-ok state which must be verified
+// by the caller
 func (g *Sync) connectWithRetry(
 	ctx context.Context, options ...grpc.DialOption,
-) syncv1grpc.FlagSyncService_SyncFlagsClient {
+) (syncv1grpc.FlagSyncService_SyncFlagsClient, bool) {
 	var iteration int
 
 	for {
 		var sleep time.Duration
-		if iteration >= backoffLimit {
-			sleep = constantBackoffDelay
+		if iteration >= backOffLimit {
+			sleep = constantBackOffDelay
 		} else {
 			iteration++
 			sleep = time.Duration(math.Pow(backOffBase, float64(iteration)))
 		}
 
-		time.Sleep(sleep * time.Second)
+		// Block the next connection attempt and check the context
+		select {
+		case <-time.After(sleep * time.Second):
+			break
+		case <-ctx.Done():
+			// context done means we shall exit
+			return nil, false
+		}
+
+		g.Logger.Warn(fmt.Sprintf("Connection re-establishment attempt in-progress for grpc target: %s", g.Target))
 
 		dial, err := grpc.DialContext(ctx, g.Target, options...)
 		if err != nil {
@@ -101,37 +113,18 @@ func (g *Sync) connectWithRetry(
 		}
 
 		serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
-		syncClient, err := serviceClient.SyncFlags(context.Background(), &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+		syncClient, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 		if err != nil {
 			g.Logger.Debug(fmt.Sprintf("Error openning service client: %s", err.Error()))
 			continue
 		}
 
 		g.Logger.Info(fmt.Sprintf("Connection re-established with grpc target: %s", g.Target))
-		return syncClient
+		return syncClient, true
 	}
 }
 
-// streamListener wraps the grpc listening on provided stream and push updates through dataSync channel
-func (g *Sync) streamListener(
-	ctx context.Context, stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync,
-) error {
-	group, localContext := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return g.handleFlagSync(stream, dataSync)
-	})
-
-	<-localContext.Done()
-
-	err := group.Wait()
-	if err == io.EOF {
-		g.Logger.Info("Stream closed by the server")
-		return err
-	}
-
-	return err
-}
-
+// handleFlagSync wraps the stream listening and push updates through dataSync channel
 func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
 	for {
 		data, err := stream.Recv()

@@ -253,7 +253,7 @@ func Test_StreamListener(t *testing.T) {
 
 		// listen to stream
 		go func() {
-			err := grpcSync.streamListener(context.Background(), syncClient, syncChan)
+			err := grpcSync.handleFlagSync(syncClient, syncChan)
 			if err != nil {
 				// must ignore EOF as this is returned for stream end
 				if err != io.EOF {
