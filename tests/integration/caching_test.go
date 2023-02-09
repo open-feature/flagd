@@ -1,8 +1,10 @@
 package integration_test
 
 import (
+	"flag"
 	"testing"
 
+	flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
 	"github.com/open-feature/go-sdk-contrib/tests/flagd/pkg/integration"
 
 	"github.com/cucumber/godog"
@@ -15,13 +17,23 @@ func TestCaching(t *testing.T) {
 		t.Skip()
 	}
 
-	initializeCachingScenario, err := integration.InitializeCachingScenario(flagConfigurationPath)
+	flag.Parse()
+
+	var providerOptions []flagd.ProviderOption
+	name := "caching.feature"
+
+	if tls == "true" {
+		name = "caching_tls.feature"
+		providerOptions = []flagd.ProviderOption{flagd.WithTLS(certPath)}
+	}
+
+	initializeCachingScenario, err := integration.InitializeCachingScenario(flagConfigurationPath, providerOptions...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	suite := godog.TestSuite{
-		Name:                "caching.feature",
+	testSuite := godog.TestSuite{
+		Name:                name,
 		ScenarioInitializer: initializeCachingScenario,
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -30,7 +42,7 @@ func TestCaching(t *testing.T) {
 		},
 	}
 
-	if suite.Run() != 0 {
+	if testSuite.Run() != 0 {
 		t.Fatal("non-zero status returned, failed to run caching tests")
 	}
 }
