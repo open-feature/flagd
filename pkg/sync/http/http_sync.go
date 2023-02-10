@@ -44,8 +44,6 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI, Type: sync.ALL}
-
 	_ = hs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
 		if err != nil {
@@ -82,6 +80,9 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	})
 
 	hs.Cron.Start()
+
+	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI, Type: sync.ALL}
+
 	<-ctx.Done()
 	hs.Cron.Stop()
 
