@@ -130,10 +130,26 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 // DeleteFlags matching flags from source.
 func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
 	notifications := map[string]interface{}{}
+	if len(flags) == 0 {
+		allFlags := f.GetAll()
+		for key, flag := range allFlags {
+			if flag.Source != source {
+				continue
+			}
+			notifications[key] = map[string]interface{}{
+				"type":   string(model.NotificationDelete),
+				"source": source,
+			}
+			f.Delete(key)
+		}
+	}
 
 	for k := range flags {
-		_, ok := f.Get(k)
+		flag, ok := f.Get(k)
 		if ok {
+			if flag.Source != source {
+				continue
+			}
 			notifications[k] = map[string]interface{}{
 				"type":   string(model.NotificationDelete),
 				"source": source,
@@ -142,7 +158,7 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 			f.Delete(k)
 		} else {
 			logger.Warn(
-				fmt.Sprintf("failed to remove flag, flag with key %s from source %s does not exisit.",
+				fmt.Sprintf("failed to remove flag, flag with key %s from source %s does not exist.",
 					k,
 					source))
 		}

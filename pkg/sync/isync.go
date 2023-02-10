@@ -18,6 +18,21 @@ const (
 	DELETE
 )
 
+func (t Type) String() string {
+	switch t {
+	case ALL:
+		return "ALL"
+	case ADD:
+		return "ADD"
+	case UPDATE:
+		return "UPDATE"
+	case DELETE:
+		return "DELETE"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 /*
 ISync implementations watch for changes in the flag sources (HTTP backend, local file, K8s CRDs ...),fetch the latest
 value and communicate to the Runtime with DataSync channel
