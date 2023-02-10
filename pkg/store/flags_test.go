@@ -396,18 +396,16 @@ func TestFlags_Delete(t *testing.T) {
 		},
 		{
 			name: "Remove all",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
 			},
-			deleteRequest: Flags{
-				Flags: map[string]Flag{},
-			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			deleteRequest: map[string]model.Flag{},
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"C": {Source: mockSource2},
 				},
 			},
