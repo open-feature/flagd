@@ -256,7 +256,6 @@ func (s *ConnectService) ResolveBoolean(
 		zap.String("flag-key", req.Msg.GetFlagKey()),
 		zap.Strings("context-keys", formatContextKeys(req.Msg.GetContext())),
 	)
-	s.Logger.WarnWithID(reqID, "test")
 	s.Logger.DebugWithID(reqID, "boolean flag value requested")
 
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
@@ -405,6 +404,7 @@ func (s *ConnectService) ResolveObject(
 		variant,
 		reason,
 	))
+	res.Msg.Reason = reason
 	res.Msg.Value = val
 	res.Msg.Variant = variant
 	return res, nil

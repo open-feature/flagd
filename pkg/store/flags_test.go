@@ -1,7 +1,9 @@
-package eval
+package store
 
 import (
 	"testing"
+
+	"github.com/open-feature/flagd/pkg/model"
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/stretchr/testify/require"
@@ -11,55 +13,65 @@ func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
-		current    Flags
-		new        Flags
+		current    *Flags
+		new        map[string]model.Flag
 		newSource  string
-		want       Flags
+		want       *Flags
 		wantNotifs map[string]interface{}
 	}{
 		{
-			name:       "both nil",
-			current:    Flags{Flags: nil},
-			new:        Flags{Flags: nil},
-			want:       Flags{Flags: map[string]Flag{}},
+			name: "both nil",
+			current: &Flags{
+				Flags: nil,
+			},
+			new:        nil,
+			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "both empty flags",
-			current:    Flags{Flags: map[string]Flag{}},
-			new:        Flags{Flags: map[string]Flag{}},
-			want:       Flags{Flags: map[string]Flag{}},
+			name: "both empty flags",
+			current: &Flags{
+				Flags: map[string]model.Flag{},
+			},
+			new:        map[string]model.Flag{},
+			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "empty current",
-			current:    Flags{Flags: nil},
-			new:        Flags{Flags: map[string]Flag{}},
-			want:       Flags{Flags: map[string]Flag{}},
+			name: "empty current",
+			current: &Flags{
+				Flags: nil,
+			},
+			new:        map[string]model.Flag{},
+			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name:       "empty new",
-			current:    Flags{Flags: map[string]Flag{}},
-			new:        Flags{Flags: nil},
-			want:       Flags{Flags: map[string]Flag{}},
+			name: "empty new",
+			current: &Flags{
+				Flags: map[string]model.Flag{},
+			},
+			new:        nil,
+			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name: "extra fields on each",
-			current: Flags{Flags: map[string]Flag{
-				"waka": {
-					DefaultVariant: "off",
-					Source:         "1",
+			current: &Flags{
+				Flags: map[string]model.Flag{
+					"waka": {
+						DefaultVariant: "off",
+						Source:         "1",
+					},
 				},
-			}},
-			new: Flags{Flags: map[string]Flag{
+			},
+			new: map[string]model.Flag{
 				"paka": {
 					DefaultVariant: "on",
 				},
-			}},
+			},
 			newSource: "2",
-			want: Flags{Flags: map[string]Flag{
+			want: &Flags{Flags: map[string]model.Flag{
 				"waka": {
 					DefaultVariant: "off",
 					Source:         "1",
@@ -75,14 +87,14 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "override",
-			current: Flags{Flags: map[string]Flag{
-				"waka": {DefaultVariant: "off"},
-			}},
-			new: Flags{Flags: map[string]Flag{
+			current: &Flags{
+				Flags: map[string]model.Flag{"waka": {DefaultVariant: "off"}},
+			},
+			new: map[string]model.Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
-			}},
-			want: Flags{Flags: map[string]Flag{
+			},
+			want: &Flags{Flags: map[string]model.Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
 			}},
@@ -93,13 +105,13 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "identical",
-			current: Flags{Flags: map[string]Flag{
+			current: &Flags{
+				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off"}},
+			},
+			new: map[string]model.Flag{
 				"hello": {DefaultVariant: "off"},
-			}},
-			new: Flags{Flags: map[string]Flag{
-				"hello": {DefaultVariant: "off"},
-			}},
-			want: Flags{Flags: map[string]Flag{
+			},
+			want: &Flags{Flags: map[string]model.Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
 			wantNotifs: map[string]interface{}{},
@@ -124,33 +136,31 @@ func TestFlags_Add(t *testing.T) {
 
 	type request struct {
 		source string
-		flags  Flags
+		flags  map[string]model.Flag
 	}
 
 	tests := []struct {
 		name                     string
-		storedState              Flags
+		storedState              *Flags
 		addRequest               request
-		expectedState            Flags
+		expectedState            *Flags
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Add success",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
 			},
 			addRequest: request{
 				source: mockSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"B": {Source: mockSource},
-					},
+				flags: map[string]model.Flag{
+					"B": {Source: mockSource},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 				},
@@ -159,22 +169,20 @@ func TestFlags_Add(t *testing.T) {
 		},
 		{
 			name: "Add multiple success",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
 			},
 			addRequest: request{
 				source: mockSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"B": {Source: mockSource},
-						"C": {Source: mockSource},
-					},
+				flags: map[string]model.Flag{
+					"B": {Source: mockSource},
+					"C": {Source: mockSource},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource},
@@ -184,21 +192,19 @@ func TestFlags_Add(t *testing.T) {
 		},
 		{
 			name: "Add success - conflict and override",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
 			},
 			addRequest: request{
 				source: mockOverrideSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"A": {Source: mockOverrideSource},
-					},
+				flags: map[string]model.Flag{
+					"A": {Source: mockOverrideSource},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockOverrideSource},
 				},
 			},
@@ -226,33 +232,31 @@ func TestFlags_Update(t *testing.T) {
 
 	type request struct {
 		source string
-		flags  Flags
+		flags  map[string]model.Flag
 	}
 
 	tests := []struct {
 		name                     string
-		storedState              Flags
+		storedState              *Flags
 		UpdateRequest            request
-		expectedState            Flags
+		expectedState            *Flags
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Update success",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
 			},
 			UpdateRequest: request{
 				source: mockSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"A": {Source: mockSource, DefaultVariant: "False"},
-					},
+				flags: map[string]model.Flag{
+					"A": {Source: mockSource, DefaultVariant: "False"},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 				},
 			},
@@ -260,23 +264,21 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update multiple success",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 					"B": {Source: mockSource, DefaultVariant: "True"},
 				},
 			},
 			UpdateRequest: request{
 				source: mockSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"A": {Source: mockSource, DefaultVariant: "False"},
-						"B": {Source: mockSource, DefaultVariant: "False"},
-					},
+				flags: map[string]model.Flag{
+					"A": {Source: mockSource, DefaultVariant: "False"},
+					"B": {Source: mockSource, DefaultVariant: "False"},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 					"B": {Source: mockSource, DefaultVariant: "False"},
 				},
@@ -285,21 +287,19 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update success - conflict and override",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
 			},
 			UpdateRequest: request{
 				source: mockOverrideSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"A": {Source: mockOverrideSource, DefaultVariant: "True"},
-					},
+				flags: map[string]model.Flag{
+					"A": {Source: mockOverrideSource, DefaultVariant: "True"},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockOverrideSource, DefaultVariant: "True"},
 				},
 			},
@@ -307,21 +307,19 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update fail",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
 			},
 			UpdateRequest: request{
 				source: mockSource,
-				flags: Flags{
-					Flags: map[string]Flag{
-						"B": {Source: mockSource},
-					},
+				flags: map[string]model.Flag{
+					"B": {Source: mockSource},
 				},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
 			},
@@ -350,27 +348,25 @@ func TestFlags_Delete(t *testing.T) {
 
 	tests := []struct {
 		name                     string
-		storedState              Flags
-		deleteRequest            Flags
-		expectedState            Flags
+		storedState              *Flags
+		deleteRequest            map[string]model.Flag
+		expectedState            *Flags
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Remove success",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
 			},
-			deleteRequest: Flags{
-				Flags: map[string]Flag{
-					"A": {Source: mockSource},
-				},
+			deleteRequest: map[string]model.Flag{
+				"A": {Source: mockSource},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
@@ -379,20 +375,18 @@ func TestFlags_Delete(t *testing.T) {
 		},
 		{
 			name: "Nothing to remove",
-			storedState: Flags{
-				Flags: map[string]Flag{
+			storedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
 			},
-			deleteRequest: Flags{
-				Flags: map[string]Flag{
-					"D	": {Source: mockSource},
-				},
+			deleteRequest: map[string]model.Flag{
+				"C": {Source: mockSource},
 			},
-			expectedState: Flags{
-				Flags: map[string]Flag{
+			expectedState: &Flags{
+				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
@@ -422,7 +416,7 @@ func TestFlags_Delete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			messages := tt.storedState.Delete(mockLogger, mockSource, tt.deleteRequest)
+			messages := tt.storedState.DeleteFlags(mockLogger, mockSource, tt.deleteRequest)
 
 			require.Equal(t, tt.storedState, tt.expectedState)
 

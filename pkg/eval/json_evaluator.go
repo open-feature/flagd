@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/open-feature/flagd/pkg/store"
 	"github.com/open-feature/flagd/pkg/sync"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
@@ -27,7 +28,7 @@ func init() {
 }
 
 type JSONEvaluator struct {
-	state  Flags
+	store  *store.Flags
 	Logger *logger.Logger
 }
 
@@ -45,20 +46,14 @@ func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
-		state: Flags{
-			Flags: map[string]Flag{},
-		},
+		store: store.NewFlags(),
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 	return &ev
 }
 
 func (je *JSONEvaluator) GetState() (string, error) {
-	data, err := json.Marshal(&je.state)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
+	return je.store.String()
 }
 
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
@@ -70,13 +65,13 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 
 	switch payload.Type {
 	case sync.ALL:
-		return je.state.Merge(je.Logger, payload.Source, newFlags), nil
+		return je.store.Merge(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.ADD:
-		return je.state.Add(je.Logger, payload.Source, newFlags), nil
+		return je.store.Add(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.UPDATE:
-		return je.state.Update(je.Logger, payload.Source, newFlags), nil
+		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.DELETE:
-		return je.state.Delete(je.Logger, payload.Source, newFlags), nil
+		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), nil
 	default:
 		return nil, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
@@ -110,7 +105,8 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 	var variant string
 	var reason string
 	var err error
-	for flagKey, flag := range je.state.Flags {
+	allFlags := je.store.GetAll()
+	for flagKey, flag := range allFlags {
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
@@ -119,7 +115,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				flagKey,
 				context,
 				je.evaluateVariant,
-				je.state.Flags[flagKey].Variants,
+				allFlags[flagKey].Variants,
 			)
 		case string:
 			value, variant, reason, err = resolve[string](
@@ -127,7 +123,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				flagKey,
 				context,
 				je.evaluateVariant,
-				je.state.Flags[flagKey].Variants,
+				allFlags[flagKey].Variants,
 			)
 		case float64:
 			value, variant, reason, err = resolve[float64](
@@ -135,7 +131,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				flagKey,
 				context,
 				je.evaluateVariant,
-				je.state.Flags[flagKey].Variants,
+				allFlags[flagKey].Variants,
 			)
 		case map[string]any:
 			value, variant, reason, err = resolve[map[string]any](
@@ -143,7 +139,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 				flagKey,
 				context,
 				je.evaluateVariant,
-				je.state.Flags[flagKey].Variants,
+				allFlags[flagKey].Variants,
 			)
 		}
 		if err != nil {
@@ -162,7 +158,8 @@ func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, conte
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
-	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	flag, _ := je.store.Get(flagKey)
+	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
 func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, context *structpb.Struct) (
@@ -172,7 +169,8 @@ func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, contex
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
-	return resolve[string](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	flag, _ := je.store.Get(flagKey)
+	return resolve[string](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
 func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context *structpb.Struct) (
@@ -182,8 +180,9 @@ func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
+	flag, _ := je.store.Get(flagKey)
 	value, variant, reason, err = resolve[float64](
-		reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 	return
 }
 
@@ -194,9 +193,10 @@ func (je *JSONEvaluator) ResolveIntValue(reqID string, flagKey string, context *
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
+	flag, _ := je.store.Get(flagKey)
 	var val float64
 	val, variant, reason, err = resolve[float64](
-		reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 	value = int64(val)
 	return
 }
@@ -208,7 +208,8 @@ func (je *JSONEvaluator) ResolveObjectValue(reqID string, flagKey string, contex
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
-	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, je.state.Flags[flagKey].Variants)
+	flag, _ := je.store.Get(flagKey)
+	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
@@ -217,7 +218,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	flagKey string,
 	context *structpb.Struct,
 ) (variant string, reason string, err error) {
-	flag, ok := je.state.Flags[flagKey]
+	flag, ok := je.store.Get(flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
@@ -256,7 +257,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
 
 		// if this is a valid variant, return it
-		if _, ok := je.state.Flags[flagKey].Variants[variant]; ok {
+		if _, ok := flag.Variants[variant]; ok {
 			return variant, model.TargetingMatchReason, nil
 		}
 
@@ -266,7 +267,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		reason = model.StaticReason
 	}
 
-	return je.state.Flags[flagKey].DefaultVariant, reason, nil
+	return flag.DefaultVariant, reason, nil
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
