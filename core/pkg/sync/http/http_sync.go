@@ -21,8 +21,8 @@ type Sync struct {
 	LastBodySHA string
 	Logger      *logger.Logger
 	BearerToken string
-
-	ready bool
+	Interval    int32
+	ready       bool
 }
 
 // Client defines the behaviour required of a http client
@@ -65,7 +65,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Set ready state
 	hs.ready = true
 
-	_ = hs.Cron.AddFunc("*/5 * * * *", func() {
+	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
 		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
 		if err != nil {
 			hs.Logger.Error(err.Error())
