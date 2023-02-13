@@ -9,3 +9,4 @@ dist/
 pkg/eval/flagd-definitions.json
 *.crt
 *.key
+coverage.out

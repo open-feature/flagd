@@ -14,7 +14,7 @@ docker-push:
 build:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o flagd
 test:
-	go test -cover ./...
+	go test -race -covermode=atomic -cover ./pkg/... -coverprofile=coverage.out
 run:
 	go run main.go start -f file:config/samples/example_flags.flagd.json
 install:

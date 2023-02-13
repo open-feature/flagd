@@ -33,11 +33,11 @@ jobs:
         with:
           ref: gh-pages
       - name: Setup Pages
-        uses: actions/configure-pages@5992ce8fd557229bb0e98f78a89136a149cc9758 # v3
+        uses: actions/configure-pages@37538b280cbfab35da9dcd936a2b95f1f522d927 # v3
       - name: Upload artifact
         uses: actions/upload-pages-artifact@253fd476ed429e83b7aae64a92a75b4ceb1a17cf # v1
         with:
           path: './dev/bench'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@20a4baa1095bad40ba7d6ca0d9abbc220b76603f # v1
+        uses: actions/deploy-pages@0243b6c10d06cb8e95ed8ee471231877621202c0 # v1

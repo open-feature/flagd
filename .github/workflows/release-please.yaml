@@ -7,6 +7,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DEFAULT_GO_VERSION: 1.19.3
+  PUBLIC_KEY_FILE: publicKey.pub
 
 name: Run Release Please
 jobs:
@@ -14,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@5c07f8be172b1f6e90f9c35baf8184461b91b85f # v3
+      - uses: google-github-actions/release-please-action@514bc6cdae71484c998108f2136a8f5e4c62b9b9 # v3
         id: release
         with:
           command: manifest
@@ -43,7 +44,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@6c3ca5dfa6895029f82e5b2f26f060bc0d3c6a2c
+        uses: docker/metadata-action@766400ca14a75010e7b2e3119aa0d5b46826e8c7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
@@ -55,11 +56,13 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@master
+
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
       - name: Build
-        uses: docker/build-push-action@37abcedcc1da61a57767b7588cb9d03eb57e28b3 # v3
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4
         with:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
@@ -75,6 +78,28 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
+
+      - name: Sign the image
+        run: |
+          cosign sign --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
+          cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
+
+      - name: Bundle release assets
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          tag_name: ${{ needs.release-please.outputs.release_tag_name }}
+          files: ${{ env.PUBLIC_KEY_FILE }}
+
+      - name: SBOM for latest image
+        uses: anchore/sbom-action@07978da4bdb4faa726e52dfc6b1bed63d4b56479 # v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
+          artifact-name: ${{ format('flagd-{0}-sbom.spdx', needs.release-please.outputs.release_tag_name) }}
   go-release:
     needs: release-please
     runs-on: ubuntu-latest
@@ -90,8 +115,11 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
 
+      - name: Set up syft
+        uses: anchore/sbom-action/download-syft@07978da4bdb4faa726e52dfc6b1bed63d4b56479 # v0
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@9754a253a8673b0ea869c2e863b4e975497efd0c # v4
+        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4
         with:
           args: release --rm-dist
         env:
@@ -107,6 +135,7 @@ jobs:
         with:
           formula-name: flagd
           tag-name: ${{ needs.release-please.outputs.release_tag_name }}
+          download-url: https://github.com/${{ github.repository }}.git
           commit-message: |
             {{formulaName}} {{version}}
 

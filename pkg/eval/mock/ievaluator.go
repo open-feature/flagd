@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	eval "github.com/open-feature/flagd/pkg/eval"
+	sync "github.com/open-feature/flagd/pkg/sync"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -150,16 +151,16 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(reqID, flagKey, context
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(source, state string) (map[string]interface{}, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetState", source, state)
+	ret := m.ctrl.Call(m, "SetState", payload)
 	ret0, _ := ret[0].(map[string]interface{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SetState indicates an expected call of SetState.
-func (mr *MockIEvaluatorMockRecorder) SetState(source, state interface{}) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) SetState(payload interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetState", reflect.TypeOf((*MockIEvaluator)(nil).SetState), source, state)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetState", reflect.TypeOf((*MockIEvaluator)(nil).SetState), payload)
 }

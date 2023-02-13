@@ -42,20 +42,20 @@ type Config struct {
 
 func (r *Runtime) Start() error {
 	if r.Service == nil {
-		return errors.New("no Service set")
+		return errors.New("no service set")
 	}
 	if len(r.SyncImpl) == 0 {
-		return errors.New("no SyncImplementation set")
+		return errors.New("no sync implementation set")
 	}
 	if r.Evaluator == nil {
-		return errors.New("no Evaluator set")
+		return errors.New("no evaluator set")
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	g, gCtx := errgroup.WithContext(ctx)
-	dataSync := make(chan sync.DataSync)
+	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 
 	// Initialize DataSync channel watcher
 	g.Go(func() error {
@@ -89,11 +89,11 @@ func (r *Runtime) Start() error {
 }
 
 // updateWithNotify helps to update state and notify listeners
-func (r *Runtime) updateWithNotify(data sync.DataSync) {
+func (r *Runtime) updateWithNotify(payload sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	notifications, err := r.Evaluator.SetState(data.Source, data.FlagData)
+	notifications, err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(err.Error())
 		return
