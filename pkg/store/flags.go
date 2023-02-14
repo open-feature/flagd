@@ -12,8 +12,24 @@ import (
 )
 
 type Flags struct {
-	mx    sync.RWMutex
-	Flags map[string]model.Flag `json:"flags"`
+	mx          sync.RWMutex
+	Flags       map[string]model.Flag `json:"flags"`
+	FlagSources []string              `json:"flagSources"`
+}
+
+func (f *Flags) hasPriority(stored string, new string) bool {
+	if stored == new {
+		return true
+	}
+	for i := len(f.FlagSources) - 1; i >= 0; i-- {
+		if f.FlagSources[i] == stored {
+			return false
+		} else if f.FlagSources[i] == new {
+
+			return true
+		}
+	}
+	return true
 }
 
 func NewFlags() *Flags {
@@ -70,13 +86,8 @@ func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model
 
 	for k, newFlag := range flags {
 		storedFlag, ok := f.Get(k)
-		if ok && storedFlag.Source != source {
-			logger.Warn(fmt.Sprintf(
-				"flag with key %s from source %s already exist, overriding this with flag from source %s",
-				k,
-				storedFlag.Source,
-				source,
-			))
+		if ok && !f.hasPriority(storedFlag.Source, source) {
+			continue
 		}
 
 		notifications[k] = map[string]interface{}{
@@ -106,13 +117,8 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 
 			continue
 		}
-		if storedFlag.Source != source {
-			logger.Warn(fmt.Sprintf(
-				"flag with key %s from source %s already exist, overriding this with flag from source %s",
-				k,
-				storedFlag.Source,
-				source,
-			))
+		if !f.hasPriority(storedFlag.Source, source) {
+			continue
 		}
 
 		notifications[k] = map[string]interface{}{
@@ -147,7 +153,8 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	for k := range flags {
 		flag, ok := f.Get(k)
 		if ok {
-			if flag.Source != source {
+			if !f.hasPriority(flag.Source, source) {
+				fmt.Println(flag.Source, source, "priority failing")
 				continue
 			}
 			notifications[k] = map[string]interface{}{
@@ -191,22 +198,15 @@ func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]mod
 		newFlag.Source = source
 
 		storedFlag, ok := f.Get(k)
+		if ok && (!f.hasPriority(storedFlag.Source, source) || reflect.DeepEqual(storedFlag, newFlag)) {
+			continue
+		}
 		if !ok {
 			notifications[k] = map[string]interface{}{
 				"type":   string(model.NotificationCreate),
 				"source": source,
 			}
-		} else if !reflect.DeepEqual(storedFlag, newFlag) {
-			if storedFlag.Source != source {
-				logger.Warn(
-					fmt.Sprintf(
-						"key value: %s is duplicated across multiple sources this can lead to unexpected behavior: %s, %s",
-						k,
-						storedFlag.Source,
-						source,
-					),
-				)
-			}
+		} else {
 			notifications[k] = map[string]interface{}{
 				"type":   string(model.NotificationUpdate),
 				"source": source,

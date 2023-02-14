@@ -361,6 +361,10 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
+				},
 			},
 			deleteRequest: map[string]model.Flag{
 				"A": {Source: mockSource},
@@ -369,6 +373,10 @@ func TestFlags_Delete(t *testing.T) {
 				Flags: map[string]model.Flag{
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
+				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
 				},
 			},
 			expectedNotificationKeys: []string{"A"},
@@ -381,6 +389,10 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
+				},
 			},
 			deleteRequest: map[string]model.Flag{
 				"C": {Source: mockSource},
@@ -390,6 +402,10 @@ func TestFlags_Delete(t *testing.T) {
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
+				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
 				},
 			},
 			expectedNotificationKeys: []string{},

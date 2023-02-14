@@ -908,7 +908,8 @@ func TestState_Evaluator(t *testing.T) {
 							]
 						  }
     					}
-					}
+					},
+					"flagSources":null
 				}
 			`,
 		},
@@ -966,7 +967,8 @@ func TestState_Evaluator(t *testing.T) {
 							]
 						  }
     					}
-					}
+					},
+					"flagSources":null
 				}
 			`,
 		},
