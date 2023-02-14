@@ -82,20 +82,6 @@ func TestSimpleSync(t *testing.T) {
 				},
 			},
 		},
-		"empty-file-use-default": {
-			manipulationFuncs: []func(t *testing.T){
-				func(t *testing.T) {
-					writeToFile(t, "")
-				},
-			},
-			expectedDataSync: []sync.DataSync{
-				{
-					FlagData: defaultState,
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-					Type:     sync.ALL,
-				},
-			},
-		},
 	}
 
 	handler := Sync{
@@ -119,6 +105,12 @@ func TestSimpleSync(t *testing.T) {
 					return
 				}
 			}()
+
+			// file sync perform an initial fetch and then watch for file events
+			init := <-dataSyncChan
+			if init.FlagData != defaultState {
+				t.Errorf("initial fetch for empty file expected to return default state: %s", defaultState)
+			}
 
 			for i, manipulation := range tt.manipulationFuncs {
 				syncEvent := tt.expectedDataSync[i]
