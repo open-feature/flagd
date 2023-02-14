@@ -87,6 +87,7 @@ func TestSimpleSync(t *testing.T) {
 	handler := Sync{
 		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 		Logger: logger.NewLogger(nil, false),
+		Source: fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 	}
 
 	for test, tt := range tests {
