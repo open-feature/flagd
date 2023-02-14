@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/store"
 	"github.com/open-feature/flagd/pkg/sync/file"
 	httpSync "github.com/open-feature/flagd/pkg/sync/http"
 
@@ -31,10 +32,12 @@ func init() {
 }
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
+	s := store.NewFlags()
+	s.FlagSources = config.SyncURI
 	rt := Runtime{
 		config:    config,
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: eval.NewJSONEvaluator(logger),
+		Evaluator: eval.NewJSONEvaluator(logger, s),
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
@@ -66,7 +69,8 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
 			r.SyncImpl = append(r.SyncImpl, &file.Sync{
-				URI: regFile.ReplaceAllString(uri, ""),
+				URI:    regFile.ReplaceAllString(uri, ""),
+				Source: uri,
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
 					zap.String("sync", "filepath"),
@@ -81,6 +85,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 					zap.String("sync", "kubernetes"),
 				),
 				URI:          regCrd.ReplaceAllString(uri, ""),
+				Source:       uri,
 				ProviderArgs: r.config.ProviderArgs,
 			})
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))

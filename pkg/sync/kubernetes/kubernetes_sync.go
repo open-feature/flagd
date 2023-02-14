@@ -30,6 +30,7 @@ type Sync struct {
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
 	URI          string
+	Source       string
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -40,7 +41,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.Source, Type: sync.ALL}
 
 	notifies := make(chan INotify)
 
@@ -60,7 +61,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.Source, Type: sync.ALL}
 			case DefaultEventTypeModify:
 				k.Logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
@@ -69,7 +70,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.Source, Type: sync.ALL}
 			case DefaultEventTypeDelete:
 				k.Logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
