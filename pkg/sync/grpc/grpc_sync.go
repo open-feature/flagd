@@ -44,22 +44,20 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial dial and connection. Failure here must result in a startup failure
 	dial, err := grpc.DialContext(ctx, g.Target, options...)
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("Error establishing grpc connection: %s", err.Error()))
+		g.Logger.Error(fmt.Sprintf("error establishing grpc connection: %s", err.Error()))
 		return err
 	}
 
 	serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
 	syncClient, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("Error calling streaming operation: %s", err.Error()))
+		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
 		return err
 	}
 
 	// initial stream listening
 	err = g.handleFlagSync(syncClient, dataSync)
-	if err != nil {
-		g.Logger.Warn(fmt.Sprintf("Error with stream listener: %s", err.Error()))
-	}
+	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 
 	// retry connection establishment
 	for {
@@ -71,16 +69,15 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
-			g.Logger.Warn(fmt.Sprintf("Error with stream listener: %s", err.Error()))
+			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 			continue
 		}
 	}
 }
 
-// connectWithRetry is a helper to perform exponential back off till provided configurations and then retry connection
-// periodically till a successful connection is established. Caller must not expect an error. Hence, errors are handled,
-// logged internally. However, if the provided context is done, method exit with a non-ok state which must be verified
-// by the caller
+// connectWithRetry is a helper to perform exponential back off and then retry connection periodically till a successful
+// connection is established. Caller must not expect an error. Hence, errors are handled, logged internally. However,
+// if the provided context is done, method exit with a non-ok state which must be verified by the caller
 func (g *Sync) connectWithRetry(
 	ctx context.Context, options ...grpc.DialOption,
 ) (syncv1grpc.FlagSyncService_SyncFlagsClient, bool) {
@@ -104,22 +101,22 @@ func (g *Sync) connectWithRetry(
 			return nil, false
 		}
 
-		g.Logger.Warn(fmt.Sprintf("Connection re-establishment attempt in-progress for grpc target: %s", g.Target))
+		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.Target))
 
 		dial, err := grpc.DialContext(ctx, g.Target, options...)
 		if err != nil {
-			g.Logger.Debug(fmt.Sprintf("Error dialing target: %s", err.Error()))
+			g.Logger.Debug(fmt.Sprintf("error dialing target: %s", err.Error()))
 			continue
 		}
 
 		serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
 		syncClient, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 		if err != nil {
-			g.Logger.Debug(fmt.Sprintf("Error openning service client: %s", err.Error()))
+			g.Logger.Debug(fmt.Sprintf("error openning service client: %s", err.Error()))
 			continue
 		}
 
-		g.Logger.Info(fmt.Sprintf("Connection re-established with grpc target: %s", g.Target))
+		g.Logger.Info(fmt.Sprintf("connection re-established with grpc target: %s", g.Target))
 		return syncClient, true
 	}
 }

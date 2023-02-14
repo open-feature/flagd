@@ -33,11 +33,10 @@ type Config struct {
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
-	ProviderArgs       sync.ProviderArgs
-	ProviderIdentifier string
-	SyncURI            []string
-	RemoteSyncType     string
-	SyncBearerToken    string
+	ProviderArgs    sync.ProviderArgs
+	SyncURI         []string
+	RemoteSyncType  string
+	SyncBearerToken string
 
 	CORS []string
 }

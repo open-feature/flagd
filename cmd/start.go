@@ -20,7 +20,6 @@ const (
 	metricsPortFlagName    = "metrics-port"
 	portFlagName           = "port"
 	providerArgsFlagName   = "sync-provider-args"
-	providerIdentifier     = "provider-id"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
@@ -58,7 +57,6 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
-	flags.StringP(providerIdentifier, "i", "", "Set the identifier of this flagd runtime")
 
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
@@ -67,7 +65,6 @@ func init() {
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
-	_ = viper.BindPFlag(providerIdentifier, flags.Lookup(providerIdentifier))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
@@ -107,16 +104,15 @@ var startCmd = &cobra.Command{
 		}
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS:               viper.GetStringSlice(corsFlagName),
-			MetricsPort:        viper.GetInt32(metricsPortFlagName),
-			ProviderArgs:       viper.GetStringMapString(providerArgsFlagName),
-			ProviderIdentifier: viper.GetString(providerIdentifier),
-			ServiceCertPath:    viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:     viper.GetString(serverKeyPathFlagName),
-			ServicePort:        viper.GetInt32(portFlagName),
-			ServiceSocketPath:  viper.GetString(socketPathFlagName),
-			SyncBearerToken:    viper.GetString(bearerTokenFlagName),
-			SyncURI:            viper.GetStringSlice(uriFlagName),
+			CORS:              viper.GetStringSlice(corsFlagName),
+			MetricsPort:       viper.GetInt32(metricsPortFlagName),
+			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
+			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
+			ServicePort:       viper.GetInt32(portFlagName),
+			ServiceSocketPath: viper.GetString(socketPathFlagName),
+			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
+			SyncURI:           viper.GetStringSlice(uriFlagName),
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

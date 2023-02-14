@@ -102,18 +102,16 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			})
 			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
 		case regGRPC.Match(uriB):
-
 			r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-				Target:     grpc.URLToGRPCTarget(uri),
-				ProviderID: r.config.ProviderIdentifier,
+				Target: grpc.URLToGRPCTarget(uri),
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
 					zap.String("sync", "grpc"),
 				),
 			})
 		default:
-			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', or 'core.openfeature.dev'",
-				uri)
+			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
+				" or 'core.openfeature.dev'", uri)
 		}
 	}
 	return nil
