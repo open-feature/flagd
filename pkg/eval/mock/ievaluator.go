@@ -151,12 +151,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(reqID, flagKey, context
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", payload)
 	ret0, _ := ret[0].(map[string]interface{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // SetState indicates an expected call of SetState.

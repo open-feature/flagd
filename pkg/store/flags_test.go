@@ -122,7 +122,7 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotNotifs := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
+			gotNotifs, _ := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
 			require.Equal(t, tt.want, tt.want)
 			require.Equal(t, tt.wantNotifs, gotNotifs)
 		})

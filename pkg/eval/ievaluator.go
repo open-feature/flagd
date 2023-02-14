@@ -27,7 +27,7 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(payload sync.DataSync) (map[string]interface{}, error)
+	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
 
 	ResolveBooleanValue(
 		reqID string,

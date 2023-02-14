@@ -28,6 +28,11 @@ type Sync struct {
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
 const defaultState = "{}"
 
+func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	fs.sendDataSync(ctx, sync.RESYNC, dataSync)
+	return nil
+}
+
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fs.Logger.Info("Starting filepath sync notifier")

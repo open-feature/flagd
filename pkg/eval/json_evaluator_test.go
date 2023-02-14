@@ -278,7 +278,7 @@ var Flags = fmt.Sprintf(`{
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -300,7 +300,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with an invalid flag definition
-	_, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -310,7 +310,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with a valid flag definition
-	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -318,7 +318,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 
 func TestResolveAllValues(t *testing.T) {
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -378,7 +378,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -417,7 +417,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	}
 
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -461,7 +461,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -501,7 +501,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	}
 
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -545,7 +545,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -585,7 +585,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	}
 
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -629,7 +629,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -669,7 +669,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	}
 
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -713,7 +713,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -756,7 +756,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
-	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -840,7 +840,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags})
+			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags})
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -1037,7 +1037,7 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
+			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
@@ -1137,7 +1137,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: sync.ADD})
+			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: sync.ADD})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1160,7 +1160,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 						errChan <- nil
 						return
 					default:
-						_, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: tt.dataSyncType})
+						_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Type: tt.dataSyncType})
 						if err != nil {
 							errChan <- err
 							return

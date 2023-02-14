@@ -175,8 +175,9 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 }
 
 // Merge provided flags from source with currently stored flags.
-func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
+func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]model.Flag) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
+	resyncRequired := false
 
 	f.mx.Lock()
 	for k, v := range f.Flags {
@@ -188,6 +189,7 @@ func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]mod
 					"type":   string(model.NotificationDelete),
 					"source": source,
 				}
+				resyncRequired = true
 				continue
 			}
 		}
@@ -217,5 +219,5 @@ func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]mod
 		f.Set(k, newFlag)
 	}
 
-	return notifications
+	return notifications, resyncRequired
 }

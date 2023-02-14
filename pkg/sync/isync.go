@@ -16,6 +16,7 @@ const (
 	UPDATE
 	// DELETE - Delete for flag(s) previously provided
 	DELETE
+	RESYNC
 )
 
 func (t Type) String() string {
@@ -28,6 +29,8 @@ func (t Type) String() string {
 		return "UPDATE"
 	case DELETE:
 		return "DELETE"
+	case RESYNC:
+		return "RESYNC"
 	default:
 		return "UNKNOWN"
 	}
@@ -41,6 +44,8 @@ type ISync interface {
 	// Sync is the contract between Runtime and sync implementation.
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
+
+	ReSync(ctx context.Context, dataSync chan<- DataSync) error
 }
 
 // DataSync is the data contract between Runtime and sync implementations

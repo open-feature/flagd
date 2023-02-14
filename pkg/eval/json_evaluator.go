@@ -56,24 +56,28 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return je.store.String()
 }
 
-func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
+func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
 	var newFlags Flags
 	err := je.configToFlags(payload.FlagData, &newFlags)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	switch payload.Type {
 	case sync.ALL:
-		return je.store.Merge(je.Logger, payload.Source, newFlags.Flags), nil
+		n, resync := je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
+		return n, resync, nil
 	case sync.ADD:
-		return je.store.Add(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.store.Add(je.Logger, payload.Source, newFlags.Flags), false, nil
 	case sync.UPDATE:
-		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), false, nil
 	case sync.DELETE:
-		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), true, nil
+	case sync.RESYNC:
+		n, _ := je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
+		return n, false, nil
 	default:
-		return nil, fmt.Errorf("unsupported sync type: %d", payload.Type)
+		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
 }
 

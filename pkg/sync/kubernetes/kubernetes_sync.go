@@ -33,6 +33,15 @@ type Sync struct {
 	Source       string
 }
 
+func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	fetch, err := k.fetch(ctx)
+	if err != nil {
+		return err
+	}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.Source, Type: sync.ALL}
+	return nil
+}
+
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := k.fetch(ctx)

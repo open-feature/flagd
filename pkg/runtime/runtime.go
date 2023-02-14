@@ -62,7 +62,16 @@ func (r *Runtime) Start() error {
 		for {
 			select {
 			case data := <-dataSync:
-				r.updateWithNotify(data)
+				if resyncRequired := r.updateWithNotify(data); resyncRequired {
+					for _, s := range r.SyncImpl {
+						p := s
+						go func() {
+							g.Go(func() error {
+								return p.ReSync(gCtx, dataSync)
+							})
+						}()
+					}
+				}
 			case <-gCtx.Done():
 				return nil
 			}
@@ -89,14 +98,14 @@ func (r *Runtime) Start() error {
 }
 
 // updateWithNotify helps to update state and notify listeners
-func (r *Runtime) updateWithNotify(payload sync.DataSync) {
+func (r *Runtime) updateWithNotify(payload sync.DataSync) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	notifications, err := r.Evaluator.SetState(payload)
+	notifications, resyncRequired, err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(err.Error())
-		return
+		return false
 	}
 
 	r.Service.Notify(service.Notification{
@@ -105,4 +114,6 @@ func (r *Runtime) updateWithNotify(payload sync.DataSync) {
 			"flags": notifications,
 		},
 	})
+
+	return resyncRequired
 }
