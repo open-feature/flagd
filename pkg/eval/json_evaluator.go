@@ -28,7 +28,7 @@ func init() {
 }
 
 type JSONEvaluator struct {
-	store  *store.Flags
+	Store  *store.Flags
 	Logger *logger.Logger
 }
 
@@ -46,14 +46,14 @@ func NewJSONEvaluator(logger *logger.Logger) *JSONEvaluator {
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
-		store: store.NewFlags(),
+		Store: store.NewFlags(),
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 	return &ev
 }
 
 func (je *JSONEvaluator) GetState() (string, error) {
-	return je.store.String()
+	return je.Store.String()
 }
 
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, error) {
@@ -65,13 +65,13 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 
 	switch payload.Type {
 	case sync.ALL:
-		return je.store.Merge(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.Store.Merge(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.ADD:
-		return je.store.Add(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.Store.Add(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.UPDATE:
-		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.Store.Update(je.Logger, payload.Source, newFlags.Flags), nil
 	case sync.DELETE:
-		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), nil
+		return je.Store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), nil
 	default:
 		return nil, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
@@ -105,7 +105,7 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 	var variant string
 	var reason string
 	var err error
-	allFlags := je.store.GetAll()
+	allFlags := je.Store.GetAll()
 	for flagKey, flag := range allFlags {
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
@@ -158,7 +158,7 @@ func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, conte
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
+	flag, _ := je.Store.Get(flagKey)
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
@@ -169,7 +169,7 @@ func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, contex
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
+	flag, _ := je.Store.Get(flagKey)
 	return resolve[string](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
@@ -180,7 +180,7 @@ func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
+	flag, _ := je.Store.Get(flagKey)
 	value, variant, reason, err = resolve[float64](
 		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 	return
@@ -193,7 +193,7 @@ func (je *JSONEvaluator) ResolveIntValue(reqID string, flagKey string, context *
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
+	flag, _ := je.Store.Get(flagKey)
 	var val float64
 	val, variant, reason, err = resolve[float64](
 		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
@@ -208,7 +208,7 @@ func (je *JSONEvaluator) ResolveObjectValue(reqID string, flagKey string, contex
 	err error,
 ) {
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
+	flag, _ := je.Store.Get(flagKey)
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
@@ -218,7 +218,7 @@ func (je *JSONEvaluator) evaluateVariant(
 	flagKey string,
 	context *structpb.Struct,
 ) (variant string, reason string, err error) {
-	flag, ok := je.store.Get(flagKey)
+	flag, ok := je.Store.Get(flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))

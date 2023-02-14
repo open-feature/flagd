@@ -283,10 +283,10 @@ func TestFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			je := NewJSONEvaluator(logger.NewLogger(nil, false))
-			je.store.Flags = tt.flags.Flags
+			je.Store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](
-				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
+				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.Store.Flags[tt.flagKey].Variants,
 			)
 
 			if value != tt.expectedValue {
@@ -415,10 +415,10 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	reqID := "test"
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
-			je := JSONEvaluator{store: &store.Flags{Flags: tt.flags.Flags}}
+			je := JSONEvaluator{Store: &store.Flags{Flags: tt.flags.Flags}}
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, err := resolve[string](
-					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
+					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.Store.Flags[tt.flagKey].Variants,
 				)
 
 				if value != tt.expectedValue {
