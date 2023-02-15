@@ -17,7 +17,6 @@ const (
 	// DELETE - Delete for flag(s) previously provided
 	DELETE
 	// DELETE - All flags of sync provider. Prevents the triggering of a second resync event
-	RESYNC
 )
 
 func (t Type) String() string {
@@ -30,8 +29,6 @@ func (t Type) String() string {
 		return "UPDATE"
 	case DELETE:
 		return "DELETE"
-	case RESYNC:
-		return "RESYNC"
 	default:
 		return "UNKNOWN"
 	}
@@ -47,6 +44,7 @@ type ISync interface {
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
 
 	// ReSync is used to validate the flag store following a delete event
+	// This method should trigger an ALL sync operation then exit
 	ReSync(ctx context.Context, dataSync chan<- DataSync) error
 }
 

@@ -73,9 +73,6 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), false, nil
 	case sync.DELETE:
 		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), true, nil
-	case sync.RESYNC:
-		n, _ := je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
-		return n, false, nil
 	default:
 		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}

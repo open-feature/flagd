@@ -25,7 +25,6 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 		if f.FlagSources[i] == stored {
 			return false
 		} else if f.FlagSources[i] == new {
-
 			return true
 		}
 	}
@@ -175,7 +174,11 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 }
 
 // Merge provided flags from source with currently stored flags.
-func (f *Flags) Merge(logger *logger.Logger, source string, flags map[string]model.Flag) (map[string]interface{}, bool) {
+func (f *Flags) Merge(
+	logger *logger.Logger,
+	source string,
+	flags map[string]model.Flag,
+) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
 	resyncRequired := false
 

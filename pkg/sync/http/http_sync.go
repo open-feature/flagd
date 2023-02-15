@@ -42,7 +42,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	if err != nil {
 		return err
 	}
-	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.RESYNC}
+	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
 	return nil
 }
 

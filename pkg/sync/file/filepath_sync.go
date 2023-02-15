@@ -29,7 +29,7 @@ type Sync struct {
 const defaultState = "{}"
 
 func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	fs.sendDataSync(ctx, sync.RESYNC, dataSync)
+	fs.sendDataSync(ctx, sync.ALL, dataSync)
 	return nil
 }
 
