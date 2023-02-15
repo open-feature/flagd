@@ -100,7 +100,11 @@ Follow the guidance [here](./caching.md) to implement caching.
 
 ## Configuration
 
-Expose means to configure the provider.
+Expose means to configure the provider aligned with the following priority system (highest to lowest).
+
+```mermaid
+    constructor-parameters -->|highest priority| environment-variables -->|lowest priority| defaults
+```
 
 ### Explicit declaration
 
@@ -110,17 +114,29 @@ This takes the form of parameters to the provider's constructor, it has the high
 
 Read environment variables with sensible defaults (before applying the values explicitly declared to the constructor).
 
-e.g.
-
-| Option name     | Environment variable name | Type    | Default   |
-|-----------------|---------------------------| ------- |-----------|
-| host            | FLAGD_HOST                | string  | localhost |
-| port            | FLAGD_PORT                | number  | 8013      |
-| tls             | FLAGD_TLS                 | boolean | false     |
-| socketPath      | FLAGD_SOCKET_PATH         | string  |           |
-| certPath        | FLAGD_SERVER_CERT_PATH    | string  |           |
-| cachingDisabled | FLAGD_CACHING_DISABLED    | boolean | false     |
+| Option name           | Environment variable name      | Type      | Options      | Default                                |
+|-----------------------|--------------------------------|-----------|--------------|----------------------------------------|
+| host                  | FLAGD_HOST                     | string    |              | localhost                              |
+| port                  | FLAGD_PORT                     | number    |              | 8013                                   |
+| tls                   | FLAGD_TLS                      | boolean   |              | false                                  |
+| socketPath            | FLAGD_SOCKET_PATH              | string    |              |                                        |
+| certPath              | FLAGD_SERVER_CERT_PATH         | string    |              |                                        |
+| cache                 | FLAGD_CACHE                    | string    | lru,disabled | lru (if possible in chosen technology) |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int       |              | 1000                                   |
+| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int       |              | 5                                      |
 
 ## Error handling
 
 Handle flag evaluation errors by using the error constructors exported by the SDK (e.g. `openfeature.NewProviderNotReadyResolutionError(ConnectionError)`), thereby allowing the SDK to parse and handle the error appropriately.
+
+## Post creation
+
+The following steps will extend the reach of the newly created provider to other developers of the chosen technology.
+
+### Add to flagd's list of providers
+
+Create a pull request appending the provider to the list [here](../usage/flagd_providers.md).
+
+### Open an issue to document the provider
+
+Create an issue in docs.openfeature.dev [here](https://github.com/open-feature/docs.openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+). This will ensure the provider is added to OpenFeature's website.
