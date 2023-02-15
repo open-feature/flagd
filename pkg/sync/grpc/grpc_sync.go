@@ -75,7 +75,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-// connectWithRetry is a helper to perform exponential back off and then retry connection periodically till a successful
+// connectWithRetry is a helper that performs exponential back off after retrying connection attempts periodically until a successful
 // connection is established. Caller must not expect an error. Hence, errors are handled, logged internally. However,
 // if the provided context is done, method exit with a non-ok state which must be verified by the caller
 func (g *Sync) connectWithRetry(
