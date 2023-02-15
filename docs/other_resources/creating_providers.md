@@ -21,7 +21,7 @@ Add the [open-feature schema repository](https://github.com/open-feature/schemas
 ```
 git submodule add --force https://github.com/open-feature/schemas.git
 ```
-Create a `buf.gen.{chosen language}.yaml` for the chosen language in `schemas/protobuf` (if it doesn't already exist) using one of the other files as a template (find a plugin for your chosen language [here](https://buf.build/protocolbuffers/plugins)) and create a pull request with this file.
+Create a `buf.gen.{chosen language}.yaml` for the chosen language in `schemas/protobuf` (if it doesn't already exist) using one of the other files as a template (find a plugin for the chosen language [here](https://buf.build/protocolbuffers/plugins)) and create a pull request with this file.
 
 Generate the code (this step ought to be automated in the build process for the chosen technology so that the generated code is never committed)
 ```
