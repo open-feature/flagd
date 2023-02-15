@@ -112,7 +112,7 @@ func (g *Sync) connectWithRetry(
 		serviceClient := syncv1grpc.NewFlagSyncServiceClient(dial)
 		syncClient, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 		if err != nil {
-			g.Logger.Debug(fmt.Sprintf("error openning service client: %s", err.Error()))
+			g.Logger.Debug(fmt.Sprintf("error opening service client: %s", err.Error()))
 			continue
 		}
 
