@@ -26,4 +26,5 @@ if reason == "STATIC" {
 }
 ```
 
-A client should bust the cache of any flag found in a `configuration_change` event to prevent stale data.
+A client should invalidate the cache of any flag found in a `configuration_change` event to prevent stale data.
+If the connection drops all cache values must be cleared (any number of events may have been missed).
