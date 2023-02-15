@@ -16,6 +16,7 @@ const (
 	UPDATE
 	// DELETE - Delete for flag(s) previously provided
 	DELETE
+	// DELETE - All flags of sync provider. Prevents the triggering of a second resync event
 	RESYNC
 )
 
@@ -45,6 +46,7 @@ type ISync interface {
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
 
+	// ReSync is used to validate the flag store following a delete event
 	ReSync(ctx context.Context, dataSync chan<- DataSync) error
 }
 
