@@ -103,6 +103,7 @@ Follow the guidance [here](./caching.md) to implement caching.
 Expose means to configure the provider aligned with the following priority system (highest to lowest).
 
 ```mermaid
+flowchart LR
     constructor-parameters -->|highest priority| environment-variables -->|lowest priority| defaults
 ```
 
