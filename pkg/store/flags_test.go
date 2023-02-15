@@ -18,6 +18,7 @@ func TestMergeFlags(t *testing.T) {
 		newSource  string
 		want       *Flags
 		wantNotifs map[string]interface{}
+		wantResync bool
 	}{
 		{
 			name: "both nil",
@@ -116,15 +117,29 @@ func TestMergeFlags(t *testing.T) {
 			}},
 			wantNotifs: map[string]interface{}{},
 		},
+		{
+			name: "deleted flag",
+			current: &Flags{
+				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}},
+			},
+			new:       map[string]model.Flag{},
+			newSource: "A",
+			want:      &Flags{Flags: map[string]model.Flag{}},
+			wantNotifs: map[string]interface{}{
+				"hello": map[string]interface{}{"type": "delete", "source": "A"},
+			},
+			wantResync: true,
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotNotifs, _ := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
+			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
 			require.Equal(t, tt.want, tt.want)
 			require.Equal(t, tt.wantNotifs, gotNotifs)
+			require.Equal(t, tt.wantResync, resyncRequired)
 		})
 	}
 }
