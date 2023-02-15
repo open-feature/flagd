@@ -16,6 +16,7 @@ const (
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
 	evaluatorFlagName      = "evaluator"
+	grpcCertPath           = "grpc-cert-path"
 	logFormatFlagName      = "log-format"
 	metricsPortFlagName    = "metrics-port"
 	portFlagName           = "port"
@@ -57,10 +58,12 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
+	flags.StringP(grpcCertPath, "g", "", "Path to TLS certificate to be used by grpc sync provider")
 
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
+	_ = viper.BindPFlag(grpcCertPath, flags.Lookup(grpcCertPath))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
@@ -105,6 +108,7 @@ var startCmd = &cobra.Command{
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
+			GrpcCertPath:      viper.GetString(grpcCertPath),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
 			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),

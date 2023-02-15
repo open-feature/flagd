@@ -14,12 +14,12 @@ Config file expects the keys to have the exact naming as the flags.
 
 Any URI passed to flagd via the `--uri` flag must follow one of the 4 following patterns to ensure that it is passed to the correct implementation: 
 
-| Sync       | Pattern                            | Example                               |
-|------------|------------------------------------|---------------------------------------|
+| Sync       | Pattern                               | Example                               |
+|------------|---------------------------------------|---------------------------------------|
 | Kubernetes | `core.openfeature.dev/namespace/name` | `core.openfeature.dev/default/my-crd` |
-| Filepath   | `file:path/to/my/flag`             | `file:etc/flagd/my-flags.json`        |
-| Remote     | `http(s)://flag-source-url`        | `https://my-flags.com/flags`          |
-| Grpc       | `grpc://flag-source-url`           | `grpc://my-flags-server`        |
+| Filepath   | `file:path/to/my/flag`                | `file:etc/flagd/my-flags.json`        |
+| Remote     | `http(s)://flag-source-url`           | `https://my-flags.com/flags`          |
+| Grpc       | `grpc(s)://flag-source-url`           | `grpc://my-flags-server`        |
 
 
 

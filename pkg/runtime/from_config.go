@@ -19,16 +19,18 @@ import (
 )
 
 var (
-	regCrd  *regexp.Regexp
-	regURL  *regexp.Regexp
-	regGRPC *regexp.Regexp
-	regFile *regexp.Regexp
+	regCrd   *regexp.Regexp
+	regGRPC  *regexp.Regexp
+	regGRPCS *regexp.Regexp
+	regFile  *regexp.Regexp
+	regURL   *regexp.Regexp
 )
 
 func init() {
 	regCrd = regexp.MustCompile("^core.openfeature.dev/")
 	regURL = regexp.MustCompile("^https?://")
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
+	regGRPCS = regexp.MustCompile("^" + grpc.PrefixSecure)
 	regFile = regexp.MustCompile("^file:")
 }
 
@@ -101,17 +103,18 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				Cron:         cron.New(),
 			})
 			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
-		case regGRPC.Match(uriB):
+		case regGRPC.Match(uriB), regGRPCS.Match(uriB):
 			r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-				Target: grpc.URLToGRPCTarget(uri),
+				CertPath: r.config.GrpcCertPath,
+				Source:   uri,
 				Logger: logger.WithFields(
 					zap.String("component", "sync"),
 					zap.String("sync", "grpc"),
 				),
 			})
 		default:
-			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
-				" or 'core.openfeature.dev'", uri)
+			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc(s)://'"+
+				", or 'core.openfeature.dev'", uri)
 		}
 	}
 	return nil

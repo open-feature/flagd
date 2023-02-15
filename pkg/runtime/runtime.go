@@ -38,6 +38,8 @@ type Config struct {
 	RemoteSyncType  string
 	SyncBearerToken string
 
+	GrpcCertPath string
+
 	CORS []string
 }
 
