@@ -74,7 +74,7 @@ func (p *Provider) BooleanEvaluation(
         return of.BoolResolutionDetail{
             Value: defaultValue,
             ProviderResolutionDetail: of.ProviderResolutionDetail{
-                ResolutionError: e,
+                ResolutionError: of.NewGeneralResolutionError(err.Error()),
                 Reason:          of.Reason(res.Reason),
                 Variant:         res.Variant,
             },
@@ -84,7 +84,6 @@ func (p *Provider) BooleanEvaluation(
     return of.BoolResolutionDetail{
         Value: defaultValue,
         ProviderResolutionDetail: of.ProviderResolutionDetail{
-            ResolutionError: e,
             Reason:          of.Reason(res.Reason),
             Variant:         res.Variant,
         },
