@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1676428346160,
+  "lastUpdate": 1676514692046,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -17898,6 +17898,178 @@ window.BENCHMARK_DATA = {
             "value": 4138,
             "unit": "ns/op\t    1640 B/op\t      27 allocs/op",
             "extra": "1444310 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Kavindu Dodanduwa",
+            "username": "Kavindu-Dodan",
+            "email": "Kavindu-Dodan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "33413f25882a3f1cf4953da0f18e746bfb69faf4",
+          "message": "feat: introduce grpc sync for flagd (#297)\n\n## This PR\r\n\r\nAttempts to resolve #249 by introducing grpc sync provider to flagd.\r\n\r\nOFEP [approved] -\r\nhttps://github.com/open-feature/ofep/blob/main/OFEP-flagd-grpc-sync.md\r\n\r\n### How to test/run ?\r\n\r\nFlagd acts as the grpc client, hence you need at least a minimal mock\r\nserver. For this, you can utilize this [1] server implementation.\r\n\r\nStartup arguments of flagd now support grpc target uri. This can be\r\nprovided with `grpc://` , for example,\r\n\r\n`./flagd start --uri grpc://localhost:8090`\r\n\r\n### Technical highlights\r\n\r\n- GRPC protobuf definitions are available in buf [2] and are backed by\r\nthe schema repository (https://github.com/open-feature/schemas)\r\n- Initial connection must be successful (i.e- grpc server/target must be\r\naccepting connections)\r\n- Subsequent server connection losses will not result in a runtime\r\nfailure and connection re-establishment attempts will be performed\r\n\r\n### What is not included (follow up improvements)\r\n\r\n- Connection security: This version does not enforce connection\r\nsecurity. This will be addressed with follow-up improvements (ex:- TLS\r\nenabled connections). Hence, strongly recommends not using this version\r\nin production scenarios (fixed by #398)\r\n- Server implementations: This sync provider was designed to be open and\r\nconnects to any server implementation. Hence there is no default server\r\nimplementation. You may create your own server implementation based on\r\ngrpc schemas.\r\n\r\n\r\n[1] - https://github.com/Kavindu-Dodan/flagd-grpc-sync-server\r\n[2] - https://buf.build/open-feature/flagd\r\n\r\n---------\r\n\r\nSigned-off-by: Kavindu Dodanduwa <kavindudodanduwa@gmail.com>\r\nSigned-off-by: Kavindu Dodanduwa <Kavindu-Dodan@users.noreply.github.com>\r\nCo-authored-by: James Milligan <75740990+james-milligan@users.noreply.github.com>\r\nCo-authored-by: Skye Gill <gill.skye95@gmail.com>",
+          "timestamp": "2023-02-15T15:58:41Z",
+          "url": "https://github.com/open-feature/flagd/commit/33413f25882a3f1cf4953da0f18e746bfb69faf4"
+        },
+        "date": 1676514690711,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 1268,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4749285 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 12090,
+            "unit": "ns/op\t    4817 B/op\t      80 allocs/op",
+            "extra": "493070 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1226,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4892410 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1411,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4158465 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1414,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4240974 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 1332,
+            "unit": "ns/op\t     128 B/op\t       6 allocs/op",
+            "extra": "4493443 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 11993,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "496800 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1212,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4955589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1401,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4261761 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1398,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4288525 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 1286,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4726011 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 11129,
+            "unit": "ns/op\t    4825 B/op\t      80 allocs/op",
+            "extra": "536469 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1228,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4895190 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1408,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "4256420 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1406,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4265608 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 4999,
+            "unit": "ns/op\t    1392 B/op\t      32 allocs/op",
+            "extra": "1206022 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 15556,
+            "unit": "ns/op\t    6106 B/op\t     104 allocs/op",
+            "extra": "382486 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1235,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4881624 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1417,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4253727 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1407,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "4250308 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveBoolean/happy_path",
+            "value": 2907,
+            "unit": "ns/op\t     480 B/op\t      12 allocs/op",
+            "extra": "2098839 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveString/happy_path",
+            "value": 2812,
+            "unit": "ns/op\t     496 B/op\t      12 allocs/op",
+            "extra": "2124495 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveFloat/happy_path",
+            "value": 2836,
+            "unit": "ns/op\t     480 B/op\t      12 allocs/op",
+            "extra": "2098798 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveInt/happy_path",
+            "value": 2830,
+            "unit": "ns/op\t     480 B/op\t      12 allocs/op",
+            "extra": "2098370 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkConnectService_ResolveObject/happy_path",
+            "value": 4175,
+            "unit": "ns/op\t    1640 B/op\t      27 allocs/op",
+            "extra": "1438726 times\n2 procs"
           }
         ]
       }
