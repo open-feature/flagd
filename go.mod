@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20221226184428-0dc62ff103b8.4
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20221226184428-0dc62ff103b8.4
-	github.com/bufbuild/connect-go v1.5.1
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230207182158-c211472558c3.4
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230207182158-c211472558c3.4
+	github.com/bufbuild/connect-go v1.5.2
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
@@ -24,7 +24,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
 	go.uber.org/zap v1.24.0
-	golang.org/x/net v0.6.0
+	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
