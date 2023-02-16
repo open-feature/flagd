@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"log"
-	"strings"
-
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
+	"strings"
 )
 
 const (
@@ -27,9 +27,21 @@ const (
 	uriFlagName            = "uri"
 )
 
-func init() {
-	flags := startCmd.Flags()
+// NewProviderCmd is the command to start flagd as a provider
+func NewProviderCmd() *cobra.Command {
+	flagd := &cobra.Command{
+		Use:   "start",
+		Short: "Start flagd",
+		Long:  ``,
+		Run:   runProvider,
+	}
 
+	setupProvider(flagd.Flags())
+	return flagd
+}
+
+// setupProvider setup flags of the command
+func setupProvider(flags *pflag.FlagSet) {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
@@ -72,54 +84,49 @@ func init() {
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
-// startCmd represents the start command
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start flagd",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Configure loggers -------------------------------------------------------
-		var level zapcore.Level
-		var err error
-		if Debug {
-			level = zapcore.DebugLevel
-		} else {
-			level = zapcore.InfoLevel
-		}
-		l, err := logger.NewZapLogger(level, viper.GetString(logFormatFlagName))
-		if err != nil {
-			log.Fatalf("can't initialize zap logger: %v", err)
-		}
-		logger := logger.NewLogger(l, Debug)
-		rtLogger := logger.WithFields(zap.String("component", "start"))
+// runProvider starts the provider implementation
+func runProvider(cmd *cobra.Command, args []string) {
+	// Configure loggers -------------------------------------------------------
+	var level zapcore.Level
+	var err error
+	if Debug {
+		level = zapcore.DebugLevel
+	} else {
+		level = zapcore.InfoLevel
+	}
+	l, err := logger.NewZapLogger(level, viper.GetString(logFormatFlagName))
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v", err)
+	}
+	logger := logger.NewLogger(l, Debug)
+	rtLogger := logger.WithFields(zap.String("component", "start"))
 
-		if viper.GetString(syncProviderFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
-		}
+	if viper.GetString(syncProviderFlagName) != "" {
+		rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
+			"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+	}
 
-		if viper.GetString(evaluatorFlagName) != "json" {
-			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
-		}
-		// Build Runtime -----------------------------------------------------------
-		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricsPort:       viper.GetInt32(metricsPortFlagName),
-			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
-			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       viper.GetInt32(portFlagName),
-			ServiceSocketPath: viper.GetString(socketPathFlagName),
-			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
-			SyncURI:           viper.GetStringSlice(uriFlagName),
-		})
-		if err != nil {
-			rtLogger.Fatal(err.Error())
-		}
+	if viper.GetString(evaluatorFlagName) != "json" {
+		rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
+			"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+	}
+	// Build Runtime -----------------------------------------------------------
+	rt, err := runtime.FromConfig(logger, runtime.Config{
+		CORS:              viper.GetStringSlice(corsFlagName),
+		MetricsPort:       viper.GetInt32(metricsPortFlagName),
+		ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
+		ServiceCertPath:   viper.GetString(serverCertPathFlagName),
+		ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
+		ServicePort:       viper.GetInt32(portFlagName),
+		ServiceSocketPath: viper.GetString(socketPathFlagName),
+		SyncBearerToken:   viper.GetString(bearerTokenFlagName),
+		SyncURI:           viper.GetStringSlice(uriFlagName),
+	})
+	if err != nil {
+		rtLogger.Fatal(err.Error())
+	}
 
-		if err := rt.Start(); err != nil {
-			rtLogger.Fatal(err.Error())
-		}
-	},
+	if err := rt.Start(); err != nil {
+		rtLogger.Fatal(err.Error())
+	}
 }

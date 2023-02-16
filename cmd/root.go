@@ -48,7 +48,8 @@ func init() {
 	// will be global for your application.
 	rootCmd.PersistentFlags().BoolVarP(&Debug, "debug", "x", false, "verbose logging")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agent.yaml)")
-	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(NewProviderCmd())
+	rootCmd.AddCommand(NewServerCmd())
 	rootCmd.AddCommand(versionCmd)
 }
 
