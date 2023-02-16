@@ -12,7 +12,7 @@ flagd start [flags]
   -b, --bearer-token string                 Set a bearer token to use for remote sync
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
-  -g, --grpc-cert-path string               Path to TLS certificate to be used by grpc sync provider
+  -g, --grpc-sync-cert-path string          Path to root certificate to be used by TLS enabled grpc sync (grpcs://). If TLS is used and this configuration is ignored, TLS uses the host's root CA set.
   -h, --help                                help for start
   -z, --log-format string                   Set the logging format, e.g. console or json  (default "console")
   -m, --metrics-port int32                  Port to serve metrics on (default 8014)

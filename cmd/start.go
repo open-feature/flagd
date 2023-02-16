@@ -16,7 +16,7 @@ const (
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
 	evaluatorFlagName      = "evaluator"
-	grpcCertPath           = "grpc-cert-path"
+	grpcCertPath           = "grpc-sync-cert-path"
 	logFormatFlagName      = "log-format"
 	metricsPortFlagName    = "metrics-port"
 	portFlagName           = "port"
@@ -58,7 +58,8 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
-	flags.StringP(grpcCertPath, "g", "", "Path to TLS certificate to be used by grpc sync provider")
+	flags.StringP(grpcCertPath, "g", "", "Path to root certificate to be used by TLS enabled grpc"+
+		" sync (grpcs://). If TLS is used and this configuration is ignored, TLS uses the host's root CA set.")
 
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))

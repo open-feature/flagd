@@ -353,12 +353,12 @@ func Test_BuildTCredentials(t *testing.T) {
 	const invalidCertFile = "invalid.cert"
 
 	// init cert files for tests & cleanup with a deffer
-	err := os.WriteFile(validCertFile, []byte(sampleCert), 0o444)
+	err := os.WriteFile(validCertFile, []byte(sampleCert), 0o600)
 	if err != nil {
 		t.Errorf("error creating valid certificate file: %s", err)
 	}
 
-	err = os.WriteFile(invalidCertFile, []byte("--certificate--"), 0o444)
+	err = os.WriteFile(invalidCertFile, []byte("--certificate--"), 0o600)
 	if err != nil {
 		t.Errorf("error creating invalid certificate file: %s", err)
 	}
