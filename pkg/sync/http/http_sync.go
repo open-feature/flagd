@@ -38,6 +38,7 @@ type Cron interface {
 }
 
 func (hs *Sync) Init(ctx context.Context) error {
+	// noop
 	return nil
 }
 

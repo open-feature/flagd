@@ -34,19 +34,17 @@ type Sync struct {
 	Target     string
 	ProviderID string
 	Logger     *logger.Logger
+	client     syncv1grpc.FlagSyncService_SyncFlagsClient
+	options    []grpc.DialOption
 }
 
 func (g *Sync) Init(ctx context.Context) error {
-	return nil
-}
-
-func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	options := []grpc.DialOption{
+	g.options = []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
 	// initial dial and connection. Failure here must result in a startup failure
-	dial, err := grpc.DialContext(ctx, g.Target, options...)
+	dial, err := grpc.DialContext(ctx, g.Target, g.options...)
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error establishing grpc connection: %s", err.Error()))
 		return err
@@ -58,14 +56,18 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
 		return err
 	}
+	g.client = syncClient
+	return nil
+}
+
+func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	// initial stream listening
-	err = g.handleFlagSync(syncClient, dataSync)
+	err := g.handleFlagSync(g.client, dataSync)
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
-
 	// retry connection establishment
 	for {
-		syncClient, ok := g.connectWithRetry(ctx, options...)
+		syncClient, ok := g.connectWithRetry(ctx, g.options...)
 		if !ok {
 			// We shall exit
 			return nil

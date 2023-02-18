@@ -22,35 +22,36 @@ type Sync struct {
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
 	fileType string
+	watcher  *fsnotify.Watcher
 }
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
 const defaultState = "{}"
 
 func (fs *Sync) Init(ctx context.Context) error {
+	fs.Logger.Info("Starting filepath sync notifier")
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	fs.watcher = w
+	err = fs.watcher.Add(fs.URI)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	fs.Logger.Info("Starting filepath sync notifier")
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-	defer watcher.Close()
 
-	err = watcher.Add(fs.URI)
-	if err != nil {
-		return err
-	}
-
+	defer fs.watcher.Close()
 	fs.sendDataSync(ctx, sync.ALL, dataSync)
 
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
 		select {
-		case event, ok := <-watcher.Events:
+		case event, ok := <-fs.watcher.Events:
 			if !ok {
 				fs.Logger.Info("filepath notifier closed")
 				return errors.New("filepath notifier closed")
@@ -63,7 +64,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
-				err = watcher.Add(fs.URI)
+				err := fs.watcher.Add(fs.URI)
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
@@ -84,7 +85,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				}
 			}
 
-		case err, ok := <-watcher.Errors:
+		case err, ok := <-fs.watcher.Errors:
 			if !ok {
 				return errors.New("watcher error")
 			}

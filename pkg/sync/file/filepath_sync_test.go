@@ -96,10 +96,15 @@ func TestSimpleSync(t *testing.T) {
 			createFile(t, fetchDirName, fetchFileName)
 
 			ctx := context.Background()
+			err := handler.Init(ctx)
+			if err != nil {
+				log.Fatalf("Error init sync: %s", err.Error())
+				return
+			}
 			dataSyncChan := make(chan sync.DataSync, len(tt.expectedDataSync))
 
 			go func() {
-				err := handler.Sync(ctx, dataSyncChan)
+				err = handler.Sync(ctx, dataSyncChan)
 				if err != nil {
 					log.Fatalf("Error start sync: %s", err.Error())
 					return

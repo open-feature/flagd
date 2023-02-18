@@ -33,6 +33,7 @@ type Sync struct {
 }
 
 func (k *Sync) Init(ctx context.Context) error {
+	// noop
 	return nil
 }
 
