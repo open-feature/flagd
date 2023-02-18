@@ -30,11 +30,17 @@ type Sync struct {
 	ProviderArgs sync.ProviderArgs
 	client       client.Client
 	URI          string
+	ready        bool
 }
 
 func (k *Sync) Init(ctx context.Context) error {
 	// noop
 	return nil
+}
+
+func (k *Sync) IsReady() bool {
+	// we cannot reliably check external HTTP(s) sources
+	return k.ready
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -203,8 +209,8 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 			EventType: DefaultEventTypeReady,
 		},
 	}
-
 	informer.Run(ctx.Done())
+	k.ready = true
 }
 
 func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {

@@ -56,9 +56,6 @@ func (r *Runtime) Start() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	// set flagd to NOT be ready to serve flag evaluations
-	r.setProviderReady(false)
-
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 
@@ -80,7 +77,6 @@ func (r *Runtime) Start() error {
 			return err
 		}
 	}
-	r.setProviderReady(true)
 
 	// Start sync provider
 	for _, s := range r.SyncImpl {
@@ -92,25 +88,24 @@ func (r *Runtime) Start() error {
 
 	g.Go(func() error {
 		return r.Service.Serve(gCtx, r.Evaluator, service.ServiceConfiguration{
-			ReadinessProbe: func() bool {
-				return r.ready
-			},
+			ReadinessProbe: r.isReady,
 		})
 	})
 
 	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
-		r.setProviderReady(false)
-		// TODO: try to recover from error
 		return err
 	}
 	return nil
 }
 
-func (r *Runtime) setProviderReady(val bool) {
-	r.mu.Lock()
-	r.ready = val
-	r.mu.Unlock()
+func (r *Runtime) isReady() bool {
+	// if at least a provider can watch for flags changes, we are ready.
+	pReady := false
+	for _, p := range r.SyncImpl {
+		pReady = pReady || p.IsReady()
+	}
+	return pReady
 }
 
 // updateWithNotify helps to update state and notify listeners

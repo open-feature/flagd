@@ -45,6 +45,9 @@ type ISync interface {
 	// Sync is the contract between Runtime and sync implementation.
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
+
+	// IsReady shall return true if the provider is ready to communicate with the Runtime
+	IsReady() bool
 }
 
 // DataSync is the data contract between Runtime and sync implementations

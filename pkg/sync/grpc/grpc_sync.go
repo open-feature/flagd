@@ -36,6 +36,7 @@ type Sync struct {
 	Logger     *logger.Logger
 	client     syncv1grpc.FlagSyncService_SyncFlagsClient
 	options    []grpc.DialOption
+	ready      bool
 }
 
 func (g *Sync) Init(ctx context.Context) error {
@@ -60,21 +61,28 @@ func (g *Sync) Init(ctx context.Context) error {
 	return nil
 }
 
-func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+func (g *Sync) IsReady() bool {
+	return g.ready
+}
 
+func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
+	g.ready = true
 	err := g.handleFlagSync(g.client, dataSync)
+	g.ready = false
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 	// retry connection establishment
 	for {
+		g.ready = false
 		syncClient, ok := g.connectWithRetry(ctx, g.options...)
 		if !ok {
 			// We shall exit
 			return nil
 		}
-
+		g.ready = true
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
+			g.ready = false
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 			continue
 		}

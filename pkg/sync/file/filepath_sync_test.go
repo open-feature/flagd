@@ -186,6 +186,43 @@ func TestFilePathSync_Fetch(t *testing.T) {
 	}
 }
 
+func TestIsReadySyncFlag(t *testing.T) {
+	fpSync := Sync{
+		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+		Logger: logger.NewLogger(nil, false),
+	}
+
+	setupDir(t, fetchDirName)
+	createFile(t, fetchDirName, fetchFileName)
+	writeToFile(t, fetchFileContents)
+	defer t.Cleanup(cleanupFilePath)
+	if fpSync.IsReady() != false {
+		t.Errorf("expected not to be ready")
+	}
+	ctx := context.TODO()
+	err := fpSync.Init(ctx)
+	if err != nil {
+		log.Fatalf("Error init sync: %s", err.Error())
+		return
+	}
+	if fpSync.IsReady() != false {
+		t.Errorf("expected not to be ready")
+	}
+	dataSyncChan := make(chan sync.DataSync, 1)
+
+	go func() {
+		err = fpSync.Sync(ctx, dataSyncChan)
+		if err != nil {
+			log.Fatalf("Error start sync: %s", err.Error())
+			return
+		}
+	}()
+	time.Sleep(1 * time.Second)
+	if fpSync.IsReady() != true {
+		t.Errorf("expected not to be ready")
+	}
+}
+
 func cleanupFilePath() {
 	if err := os.RemoveAll(fetchDirName); err != nil {
 		log.Fatalf("rmdir: %v", err)

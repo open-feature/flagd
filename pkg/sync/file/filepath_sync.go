@@ -23,6 +23,7 @@ type Sync struct {
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
 	fileType string
 	watcher  *fsnotify.Watcher
+	ready    bool
 }
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
@@ -42,12 +43,15 @@ func (fs *Sync) Init(ctx context.Context) error {
 	return nil
 }
 
+func (fs *Sync) IsReady() bool {
+	return fs.ready
+}
+
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-
 	defer fs.watcher.Close()
 	fs.sendDataSync(ctx, sync.ALL, dataSync)
-
+	fs.ready = true
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
 		select {
@@ -87,6 +91,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		case err, ok := <-fs.watcher.Errors:
 			if !ok {
+				fs.ready = false
 				return errors.New("watcher error")
 			}
 

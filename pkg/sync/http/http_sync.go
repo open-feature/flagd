@@ -42,6 +42,11 @@ func (hs *Sync) Init(ctx context.Context) error {
 	return nil
 }
 
+func (hs *Sync) IsReady() bool {
+	// we cannot reliably check external HTTP(s) sources
+	return true
+}
+
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := hs.Fetch(ctx)

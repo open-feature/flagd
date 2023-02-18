@@ -77,38 +77,45 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			})
 			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
 		case regCrd.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "kubernetes"),
-				),
-				URI:          regCrd.ReplaceAllString(uri, ""),
-				ProviderArgs: r.config.ProviderArgs,
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				&kubernetes.Sync{
+					Logger: logger.WithFields(
+						zap.String("component", "sync"),
+						zap.String("sync", "kubernetes"),
+					),
+					URI:          regCrd.ReplaceAllString(uri, ""),
+					ProviderArgs: r.config.ProviderArgs,
+				},
+			)
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))
 		case regURL.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &httpSync.Sync{
-				URI:         uri,
-				BearerToken: r.config.SyncBearerToken,
-				Client: &http.Client{
-					Timeout: time.Second * 10,
-				},
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "remote"),
-				),
-				ProviderArgs: r.config.ProviderArgs,
-				Cron:         cron.New(),
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				&httpSync.Sync{
+					URI:         uri,
+					BearerToken: r.config.SyncBearerToken,
+					Client: &http.Client{
+						Timeout: time.Second * 10,
+					},
+					Logger: logger.WithFields(
+						zap.String("component", "sync"),
+						zap.String("sync", "remote"),
+					),
+					ProviderArgs: r.config.ProviderArgs,
+					Cron:         cron.New(),
+				})
 			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
 		case regGRPC.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-				Target: grpc.URLToGRPCTarget(uri),
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "grpc"),
-				),
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				&grpc.Sync{
+					Target: grpc.URLToGRPCTarget(uri),
+					Logger: logger.WithFields(
+						zap.String("component", "sync"),
+						zap.String("sync", "grpc"),
+					),
+				})
 		default:
 			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
 				" or 'core.openfeature.dev'", uri)
