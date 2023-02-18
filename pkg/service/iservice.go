@@ -21,7 +21,7 @@ type Notification struct {
 
 type ReadinessProbe func() bool
 
-type ServiceConfiguration struct {
+type Configuration struct {
 	ReadinessProbe ReadinessProbe
 }
 
@@ -29,6 +29,6 @@ type ServiceConfiguration struct {
 IService implementations define handlers for a particular transport, which call the IEvaluator implementation.
 */
 type IService interface {
-	Serve(ctx context.Context, eval eval.IEvaluator, svcConf ServiceConfiguration) error
+	Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error
 	Notify(n Notification)
 }

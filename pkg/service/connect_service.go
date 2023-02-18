@@ -48,7 +48,7 @@ type eventingConfiguration struct {
 	subs map[interface{}]chan Notification
 }
 
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf ServiceConfiguration) error {
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error {
 	s.Eval = eval
 	s.eventingConfiguration = &eventingConfiguration{
 		subs: make(map[interface{}]chan Notification),
@@ -87,7 +87,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	}
 }
 
-func (s *ConnectService) setupServer(svcConf ServiceConfiguration) (net.Listener, error) {
+func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
@@ -113,17 +113,18 @@ func (s *ConnectService) setupServer(svcConf ServiceConfiguration) (net.Listener
 			ReadHeaderTimeout: 3 * time.Second,
 		}
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/healthz" {
+			switch r.URL.Path {
+			case "/healthz":
 				w.WriteHeader(http.StatusOK)
-			} else if r.URL.Path == "/readyz" {
+			case "/readyz":
 				if svcConf.ReadinessProbe() {
 					w.WriteHeader(http.StatusOK)
 				} else {
 					w.WriteHeader(http.StatusPreconditionFailed)
 				}
-			} else if r.URL.Path == "/metrics" {
+			case "/metric":
 				promhttp.Handler().ServeHTTP(w, r)
-			} else {
+			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
 		})

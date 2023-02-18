@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	lock "sync"
 	"time"
 
 	"google.golang.org/grpc/credentials/insecure"
@@ -37,6 +38,7 @@ type Sync struct {
 	client     syncv1grpc.FlagSyncService_SyncFlagsClient
 	options    []grpc.DialOption
 	ready      bool
+	readyLock  lock.RWMutex
 }
 
 func (g *Sync) Init(ctx context.Context) error {
@@ -65,24 +67,29 @@ func (g *Sync) IsReady() bool {
 	return g.ready
 }
 
+func (g *Sync) setReady(val bool) {
+	g.readyLock.Lock()
+	defer g.readyLock.Unlock()
+	g.ready = val
+}
+
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
-	g.ready = true
+	g.setReady(true)
 	err := g.handleFlagSync(g.client, dataSync)
-	g.ready = false
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 	// retry connection establishment
 	for {
-		g.ready = false
+		g.setReady(false)
 		syncClient, ok := g.connectWithRetry(ctx, g.options...)
 		if !ok {
 			// We shall exit
 			return nil
 		}
-		g.ready = true
+		g.setReady(true)
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
-			g.ready = false
+			g.setReady(false)
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 			continue
 		}

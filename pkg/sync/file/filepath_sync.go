@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	lock "sync"
 
 	"github.com/open-feature/flagd/pkg/sync"
 
@@ -21,9 +22,10 @@ type Sync struct {
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType string
-	watcher  *fsnotify.Watcher
-	ready    bool
+	fileType  string
+	watcher   *fsnotify.Watcher
+	ready     bool
+	readyLock *lock.RWMutex
 }
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
@@ -44,14 +46,22 @@ func (fs *Sync) Init(ctx context.Context) error {
 }
 
 func (fs *Sync) IsReady() bool {
+	fs.readyLock.RLock()
+	defer fs.readyLock.RUnlock()
 	return fs.ready
+}
+
+func (fs *Sync) setReady(val bool) {
+	fs.readyLock.Lock()
+	defer fs.readyLock.Unlock()
+	fs.ready = val
 }
 
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
 	fs.sendDataSync(ctx, sync.ALL, dataSync)
-	fs.ready = true
+	fs.setReady(true)
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
 		select {
@@ -91,7 +101,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		case err, ok := <-fs.watcher.Errors:
 			if !ok {
-				fs.ready = false
+				fs.setReady(false)
 				return errors.New("watcher error")
 			}
 

@@ -75,7 +75,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				},
 				Logger: logger.NewLogger(nil, false),
 			}
-			serveConf := service.ServiceConfiguration{
+			serveConf := service.Configuration{
 				ReadinessProbe: func() bool {
 					return true
 				},

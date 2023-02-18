@@ -38,7 +38,6 @@ ISync implementations watch for changes in the flag sources (HTTP backend, local
 value and communicate to the Runtime with DataSync channel
 */
 type ISync interface {
-
 	// Init is used by the sync provider to initialize its data structures and external dependencies.
 	Init(ctx context.Context) error
 

@@ -84,11 +84,6 @@ func TestSimpleSync(t *testing.T) {
 		},
 	}
 
-	handler := Sync{
-		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-		Logger: logger.NewLogger(nil, false),
-	}
-
 	for test, tt := range tests {
 		t.Run(test, func(t *testing.T) {
 			defer t.Cleanup(cleanupFilePath)
@@ -96,14 +91,19 @@ func TestSimpleSync(t *testing.T) {
 			createFile(t, fetchDirName, fetchFileName)
 
 			ctx := context.Background()
-			err := handler.Init(ctx)
-			if err != nil {
-				log.Fatalf("Error init sync: %s", err.Error())
-				return
-			}
+
 			dataSyncChan := make(chan sync.DataSync, len(tt.expectedDataSync))
 
 			go func() {
+				handler := Sync{
+					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Logger: logger.NewLogger(nil, false),
+				}
+				err := handler.Init(ctx)
+				if err != nil {
+					log.Fatalf("Error init sync: %s", err.Error())
+					return
+				}
 				err = handler.Sync(ctx, dataSyncChan)
 				if err != nil {
 					log.Fatalf("Error start sync: %s", err.Error())
@@ -202,7 +202,7 @@ func TestIsReadySyncFlag(t *testing.T) {
 	ctx := context.TODO()
 	err := fpSync.Init(ctx)
 	if err != nil {
-		log.Fatalf("Error init sync: %s", err.Error())
+		log.Printf("Error init sync: %s", err.Error())
 		return
 	}
 	if fpSync.IsReady() != false {

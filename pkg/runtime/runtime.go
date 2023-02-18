@@ -24,7 +24,6 @@ type Runtime struct {
 	mu        msync.Mutex
 	Evaluator eval.IEvaluator
 	Logger    *logger.Logger
-	ready     bool
 }
 
 type Config struct {
@@ -87,7 +86,7 @@ func (r *Runtime) Start() error {
 	}
 
 	g.Go(func() error {
-		return r.Service.Serve(gCtx, r.Evaluator, service.ServiceConfiguration{
+		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
 			ReadinessProbe: r.isReady,
 		})
 	})
