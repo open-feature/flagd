@@ -87,6 +87,11 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 	}
 }
 
+func (s *ConnectService) isReady() bool {
+	// check if all sync provider are loaded
+	return true
+}
+
 func (s *ConnectService) setupServer() (net.Listener, error) {
 	var lis net.Listener
 	var err error
@@ -107,13 +112,21 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 	})
 	h := Handler("", mdlw, mux)
 	go func() {
-		s.Logger.Info(fmt.Sprintf("metrics listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+		s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
 		server := &http.Server{
 			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
 			ReadHeaderTimeout: 3 * time.Second,
 		}
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/metrics" {
+			if r.URL.Path == "/healthz" {
+				w.WriteHeader(http.StatusOK)
+			} else if r.URL.Path == "/readyz" {
+				if s.isReady() {
+					w.WriteHeader(http.StatusOK)
+				} else {
+					w.WriteHeader(http.StatusPreconditionFailed)
+				}
+			} else if r.URL.Path == "/metrics" {
 				promhttp.Handler().ServeHTTP(w, r)
 			} else {
 				w.WriteHeader(http.StatusNotFound)
