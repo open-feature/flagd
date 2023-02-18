@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	msync "sync"
 	"testing"
 	"time"
 
@@ -98,6 +99,7 @@ func TestSimpleSync(t *testing.T) {
 				handler := Sync{
 					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Logger: logger.NewLogger(nil, false),
+					Mux:    &msync.RWMutex{},
 				}
 				err := handler.Init(ctx)
 				if err != nil {
@@ -190,6 +192,7 @@ func TestIsReadySyncFlag(t *testing.T) {
 	fpSync := Sync{
 		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 		Logger: logger.NewLogger(nil, false),
+		Mux:    &msync.RWMutex{},
 	}
 
 	setupDir(t, fetchDirName)

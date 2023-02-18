@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	lock "sync"
-
-	"github.com/open-feature/flagd/pkg/sync"
+	msync "sync"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/pkg/sync"
 )
 
 type Sync struct {
@@ -22,10 +21,10 @@ type Sync struct {
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType  string
-	watcher   *fsnotify.Watcher
-	ready     bool
-	readyLock *lock.RWMutex
+	fileType string
+	watcher  *fsnotify.Watcher
+	ready    bool
+	Mux      *msync.RWMutex
 }
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
@@ -46,14 +45,14 @@ func (fs *Sync) Init(ctx context.Context) error {
 }
 
 func (fs *Sync) IsReady() bool {
-	fs.readyLock.RLock()
-	defer fs.readyLock.RUnlock()
+	fs.Mux.RLock()
+	defer fs.Mux.RUnlock()
 	return fs.ready
 }
 
 func (fs *Sync) setReady(val bool) {
-	fs.readyLock.Lock()
-	defer fs.readyLock.Unlock()
+	fs.Mux.Lock()
+	defer fs.Mux.Unlock()
 	fs.ready = val
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	lock "sync"
+	msync "sync"
 	"time"
 
 	"google.golang.org/grpc/credentials/insecure"
@@ -38,7 +38,7 @@ type Sync struct {
 	client     syncv1grpc.FlagSyncService_SyncFlagsClient
 	options    []grpc.DialOption
 	ready      bool
-	readyLock  *lock.RWMutex
+	Mux        *msync.RWMutex
 }
 
 func (g *Sync) Init(ctx context.Context) error {
@@ -64,12 +64,14 @@ func (g *Sync) Init(ctx context.Context) error {
 }
 
 func (g *Sync) IsReady() bool {
+	g.Mux.RLock()
+	defer g.Mux.RUnlock()
 	return g.ready
 }
 
 func (g *Sync) setReady(val bool) {
-	g.readyLock.Lock()
-	defer g.readyLock.Unlock()
+	g.Mux.Lock()
+	defer g.Mux.Unlock()
 	g.ready = val
 }
 
