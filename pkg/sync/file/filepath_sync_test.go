@@ -219,7 +219,7 @@ func TestIsReadySyncFlag(t *testing.T) {
 	}()
 	time.Sleep(1 * time.Second)
 	if fpSync.IsReady() != true {
-		t.Errorf("expected not to be ready")
+		t.Errorf("expected to be ready")
 	}
 }
 

@@ -38,7 +38,7 @@ type Sync struct {
 	client     syncv1grpc.FlagSyncService_SyncFlagsClient
 	options    []grpc.DialOption
 	ready      bool
-	readyLock  lock.RWMutex
+	readyLock  *lock.RWMutex
 }
 
 func (g *Sync) Init(ctx context.Context) error {
