@@ -36,6 +36,10 @@ type Sync struct {
 	Logger     *logger.Logger
 }
 
+func (g *Sync) Init(ctx context.Context) error {
+	return nil
+}
+
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	options := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

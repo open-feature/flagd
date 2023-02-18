@@ -32,6 +32,10 @@ type Sync struct {
 	URI          string
 }
 
+func (k *Sync) Init(ctx context.Context) error {
+	return nil
+}
+
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := k.fetch(ctx)

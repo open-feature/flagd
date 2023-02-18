@@ -19,12 +19,16 @@ type Notification struct {
 	Data map[string]interface{} `json:"data"`
 }
 
-type IServiceConfiguration interface{}
+type ReadinessProbe func() bool
+
+type ServiceConfiguration struct {
+	ReadinessProbe ReadinessProbe
+}
 
 /*
 IService implementations define handlers for a particular transport, which call the IEvaluator implementation.
 */
 type IService interface {
-	Serve(ctx context.Context, eval eval.IEvaluator) error
+	Serve(ctx context.Context, eval eval.IEvaluator, svcConf ServiceConfiguration) error
 	Notify(n Notification)
 }

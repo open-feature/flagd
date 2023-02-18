@@ -48,13 +48,13 @@ type eventingConfiguration struct {
 	subs map[interface{}]chan Notification
 }
 
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error {
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf ServiceConfiguration) error {
 	s.Eval = eval
 	s.eventingConfiguration = &eventingConfiguration{
 		subs: make(map[interface{}]chan Notification),
 		mu:   &sync.RWMutex{},
 	}
-	lis, err := s.setupServer()
+	lis, err := s.setupServer(svcConf)
 	if err != nil {
 		return err
 	}
@@ -87,12 +87,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator) error 
 	}
 }
 
-func (s *ConnectService) isReady() bool {
-	// check if all sync provider are loaded
-	return true
-}
-
-func (s *ConnectService) setupServer() (net.Listener, error) {
+func (s *ConnectService) setupServer(svcConf ServiceConfiguration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
@@ -121,7 +116,7 @@ func (s *ConnectService) setupServer() (net.Listener, error) {
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(http.StatusOK)
 			} else if r.URL.Path == "/readyz" {
-				if s.isReady() {
+				if svcConf.ReadinessProbe() {
 					w.WriteHeader(http.StatusOK)
 				} else {
 					w.WriteHeader(http.StatusPreconditionFailed)

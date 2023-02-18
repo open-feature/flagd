@@ -24,6 +24,7 @@ type Runtime struct {
 	mu        msync.Mutex
 	Evaluator eval.IEvaluator
 	Logger    *logger.Logger
+	ready     bool
 }
 
 type Config struct {
@@ -55,6 +56,9 @@ func (r *Runtime) Start() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
+	// set flagd to NOT be ready to serve flag evaluations
+	r.setProviderReady(false)
+
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 
@@ -70,7 +74,15 @@ func (r *Runtime) Start() error {
 		}
 	})
 
-	// Start sync providers
+	// Init sync providers
+	for _, s := range r.SyncImpl {
+		if err := s.Init(gCtx); err != nil {
+			return err
+		}
+	}
+	r.setProviderReady(true)
+
+	// Start sync provider
 	for _, s := range r.SyncImpl {
 		p := s
 		g.Go(func() error {
@@ -79,14 +91,26 @@ func (r *Runtime) Start() error {
 	}
 
 	g.Go(func() error {
-		return r.Service.Serve(gCtx, r.Evaluator)
+		return r.Service.Serve(gCtx, r.Evaluator, service.ServiceConfiguration{
+			ReadinessProbe: func() bool {
+				return r.ready
+			},
+		})
 	})
 
 	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
+		r.setProviderReady(false)
+		// TODO: try to recover from error
 		return err
 	}
 	return nil
+}
+
+func (r *Runtime) setProviderReady(val bool) {
+	r.mu.Lock()
+	r.ready = val
+	r.mu.Unlock()
 }
 
 // updateWithNotify helps to update state and notify listeners
