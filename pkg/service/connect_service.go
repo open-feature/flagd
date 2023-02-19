@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -102,8 +103,16 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+	metricRecorder, err := NewOTelRecorder(exporter)
+	if err != nil {
+		return nil, err
+	}
 	mdlw := New(middlewareConfig{
-		Recorder: NewRecorder(prometheusConfig{}),
+		Recorder: metricRecorder,
 	})
 	h := Handler("", mdlw, mux)
 	go func() {
