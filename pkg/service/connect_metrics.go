@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"go.opentelemetry.io/otel/attribute"
-	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/unit"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -73,18 +74,23 @@ func (r OTelMetricsRecorder) setAttributes(p HTTPReqProperties) []attribute.KeyV
 func (r OTelMetricsRecorder) OTelObserveHTTPRequestDuration(p HTTPReqProperties, duration time.Duration) {
 	r.httpRequestDurHistogram.Record(context.TODO(), duration.Seconds(), r.setAttributes(p)...)
 }
+
 func (r OTelMetricsRecorder) OTelObserveHTTPResponseSize(p HTTPReqProperties, sizeBytes int64) {
 	r.httpResponseSizeHistogram.Record(context.TODO(), float64(sizeBytes), r.setAttributes(p)...)
 }
-func (r OTelMetricsRecorder) OTelInFlightRequest_Start(p HTTPReqProperties) {
+
+func (r OTelMetricsRecorder) OTelInFlightRequestStart(p HTTPReqProperties) {
 	r.httpRequestsInflight.Add(context.TODO(), 1, r.setAttributes(p)...)
 }
-func (r OTelMetricsRecorder) OTelInFlightRequest_End(p HTTPReqProperties) {
+
+func (r OTelMetricsRecorder) OTelInFlightRequestEnd(p HTTPReqProperties) {
 	r.httpRequestsInflight.Add(context.TODO(), -1, r.setAttributes(p)...)
 }
 
 type middlewareConfig struct {
-	Recorder           Recorder
+	recorder           Recorder
+	MetricReader       metric.Reader
+	Logger             *logger.Logger
 	Service            string
 	GroupedStatus      bool
 	DisableMeasureSize bool
@@ -94,23 +100,26 @@ type Middleware struct {
 	cfg middlewareConfig
 }
 
-func (c *middlewareConfig) defaults() {
-	if c.Recorder == nil {
-		panic("recorder is required")
-	}
-}
-
 func New(cfg middlewareConfig) Middleware {
 	cfg.defaults()
-
 	m := Middleware{cfg: cfg}
-
 	return m
 }
 
-func NewOTelRecorder(exporter *otelprom.Exporter) (*OTelMetricsRecorder, error) {
+func (cfg *middlewareConfig) defaults() {
+	var err error
+	if cfg.Logger == nil {
+		log.Fatal("Missing Logger")
+	}
+	cfg.recorder, err = cfg.newOTelRecorder(cfg.MetricReader)
+	if err != nil {
+		cfg.Logger.Warn(fmt.Sprintf("got error while setting up OpenTelemetry metric exporter: %v", err))
+	}
+}
+
+func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) (*OTelMetricsRecorder, error) {
 	provider := metric.NewMeterProvider(metric.WithReader(exporter))
-	meter := provider.Meter("openfeature/flagd")
+	meter := provider.Meter(cfg.Service)
 	hduration, err := meter.Float64Histogram(
 		"request_duration_seconds",
 		instrument.WithDescription("The latency of the HTTP requests"),
@@ -164,19 +173,19 @@ func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
 		Code:    code,
 	}
 
-	m.cfg.Recorder.OTelInFlightRequestStart(props)
-	defer m.cfg.Recorder.OTelInFlightRequestEnd(props)
+	m.cfg.recorder.OTelInFlightRequestStart(props)
+	defer m.cfg.recorder.OTelInFlightRequestEnd(props)
 
 	// Start the timer and when finishing measure the duration.
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 
-		m.cfg.Recorder.OTelObserveHTTPRequestDuration(props, duration)
+		m.cfg.recorder.OTelObserveHTTPRequestDuration(props, duration)
 
 		// Measure size of response if required.
 		if !m.cfg.DisableMeasureSize {
-			m.cfg.Recorder.OTelObserveHTTPResponseSize(props, reporter.BytesWritten())
+			m.cfg.recorder.OTelObserveHTTPResponseSize(props, reporter.BytesWritten())
 		}
 	}()
 

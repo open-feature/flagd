@@ -107,12 +107,11 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 	if err != nil {
 		return nil, err
 	}
-	metricRecorder, err := NewOTelRecorder(exporter)
-	if err != nil {
-		return nil, err
-	}
+
 	mdlw := New(middlewareConfig{
-		Recorder: metricRecorder,
+		Service:      "openfeature/flagd",
+		MetricReader: exporter,
+		Logger:       s.Logger,
 	})
 	h := Handler("", mdlw, mux)
 	go func() {
