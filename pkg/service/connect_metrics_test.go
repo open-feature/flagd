@@ -117,3 +117,19 @@ func TestMiddleware(t *testing.T) {
 		t.Errorf("Expected 3 metrics, got %d", len(scopeMetrics.Metrics))
 	}
 }
+
+func TestNew_AutowireOTel(t *testing.T) {
+	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+	log := logger.NewLogger(l, true)
+	exp := metric.NewManualReader()
+	mdw := New(middlewareConfig{
+		MetricReader:       exp,
+		Logger:             log,
+		Service:            "mySvc",
+		GroupedStatus:      false,
+		DisableMeasureSize: false,
+	})
+	if mdw.cfg.recorder == nil {
+		t.Errorf("Expected OpenTelemetry to be configured, got nil")
+	}
+}

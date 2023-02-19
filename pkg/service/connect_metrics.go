@@ -107,46 +107,37 @@ func New(cfg middlewareConfig) Middleware {
 }
 
 func (cfg *middlewareConfig) defaults() {
-	var err error
 	if cfg.Logger == nil {
 		log.Fatal("Missing Logger")
 	}
-	cfg.recorder, err = cfg.newOTelRecorder(cfg.MetricReader)
-	if err != nil {
-		cfg.Logger.Warn(fmt.Sprintf("got error while setting up OpenTelemetry metric exporter: %v", err))
+	if cfg.MetricReader == nil {
+		log.Fatal("Missing OpenTelemetry MetricReader/Exporter")
 	}
+	cfg.recorder = cfg.newOTelRecorder(cfg.MetricReader)
 }
 
-func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) (*OTelMetricsRecorder, error) {
+func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetricsRecorder {
 	provider := metric.NewMeterProvider(metric.WithReader(exporter))
 	meter := provider.Meter(cfg.Service)
-	hduration, err := meter.Float64Histogram(
+	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
+	hduration, _ := meter.Float64Histogram(
 		"request_duration_seconds",
 		instrument.WithDescription("The latency of the HTTP requests"),
 	)
-	if err != nil {
-		return nil, err
-	}
-	hsize, err := meter.Float64Histogram(
+	hsize, _ := meter.Float64Histogram(
 		"response_size_bytes",
 		instrument.WithDescription("The size of the HTTP responses"),
 		instrument.WithUnit(unit.Bytes),
 	)
-	if err != nil {
-		return nil, err
-	}
-	reqCounter, err := meter.Int64UpDownCounter(
+	reqCounter, _ := meter.Int64UpDownCounter(
 		"requests_inflight",
 		instrument.WithDescription("The number of inflight requests being handled at the same time"),
 	)
-	if err != nil {
-		return nil, err
-	}
 	return &OTelMetricsRecorder{
 		httpRequestDurHistogram:   hduration,
 		httpResponseSizeHistogram: hsize,
 		httpRequestsInflight:      reqCounter,
-	}, nil
+	}
 }
 
 func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
