@@ -100,11 +100,12 @@ func (r *Runtime) Start() error {
 
 func (r *Runtime) isReady() bool {
 	// if at least a provider can watch for flags changes, we are ready.
-	pReady := false
 	for _, p := range r.SyncImpl {
-		pReady = pReady || p.IsReady()
+		if p.IsReady() {
+			return true
+		}
 	}
-	return pReady
+	return false
 }
 
 // updateWithNotify helps to update state and notify listeners

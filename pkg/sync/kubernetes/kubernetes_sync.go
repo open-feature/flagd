@@ -85,6 +85,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				k.Logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
 				k.Logger.Debug("notifier ready")
+				k.ready = true
 			}
 		}
 	}
@@ -210,7 +211,6 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 		},
 	}
 	informer.Run(ctx.Done())
-	k.ready = true
 }
 
 func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
