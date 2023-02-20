@@ -108,10 +108,10 @@ func New(cfg middlewareConfig) Middleware {
 
 func (cfg *middlewareConfig) defaults() {
 	if cfg.Logger == nil {
-		log.Fatal("Missing Logger")
+		log.Fatal("missing logger")
 	}
 	if cfg.MetricReader == nil {
-		log.Fatal("Missing OpenTelemetry MetricReader/Exporter")
+		log.Fatal("missing MetricReader/Exporter")
 	}
 	cfg.recorder = cfg.newOTelRecorder(cfg.MetricReader)
 }
