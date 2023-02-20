@@ -122,7 +122,7 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 				} else {
 					w.WriteHeader(http.StatusPreconditionFailed)
 				}
-			case "/metric":
+			case "/metrics":
 				promhttp.Handler().ServeHTTP(w, r)
 			default:
 				w.WriteHeader(http.StatusNotFound)
