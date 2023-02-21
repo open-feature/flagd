@@ -840,7 +840,7 @@ func TestSetState(t *testing.T) {
 			jsonFlags: `{
 					  "flags": {
 						"defaultVariants": {
-						  "defaultVariant": "on"
+						  "defaultVariant": "true"
 						}
 					  }
 					}`,
@@ -849,10 +849,10 @@ func TestSetState(t *testing.T) {
 					  "flags": {
 						"defaultVariants": {
 						  "state": "",
-						  "defaultVariant": "on",
+						  "defaultVariant": "true",
 						  "variants": {
-							"off": false,
-							"on": true
+							"false": false,
+							"true": true
 						  },
 						  "source": ""
 						}

@@ -1,7 +1,7 @@
 {
   "flags": {
     "myBoolFlag": {
-      "defaultVariant": "on"
+      "defaultVariant": "true"
     },
     "myStringFlag": {
       "state": "ENABLED",

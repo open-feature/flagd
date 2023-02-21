@@ -321,13 +321,13 @@ func validateDefaultVariant(flags *Flags) error {
 // e.g. the following flag structure
 //
 //	"myBoolFlag": {
-//	   "defaultVariant": "on"
+//	   "defaultVariant": "true"
 //	 }
 //
 // becomes
 //
 //	"myBoolFlag": {
-//	   "defaultVariant": "on",
+//	   "defaultVariant": "true",
 //	   "variants": defaultVariantsObjectAsDefinedInJSONSchema
 //	 }
 func loadDefaultVariants(flags *Flags, schemaLoader gojsonschema.JSONLoader) error {
