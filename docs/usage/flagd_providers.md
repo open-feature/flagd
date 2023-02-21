@@ -1,6 +1,6 @@
 # Flagd Providers 
 
-Flagd providers are used for interacting with the flagd service via the OpenFeature SDK, they act as the translation layer between the evaluation API and the flag management system in use (in this case flagd). Documentation for each language specific provider can be found below:
+Flagd providers are used for interacting with the `flagd` service via the OpenFeature SDK, they act as the translation layer between the evaluation API and the flag management system in use (in this case `flagd`). Documentation for each language specific provider can be found below:
 
 | Language      | Provider |
 | ----------- | ----------- |
@@ -12,4 +12,4 @@ Flagd providers are used for interacting with the flagd service via the OpenFeat
 | .NET   | Not currently available, [help by contributing here](https://github.com/open-feature/dotnet-sdk-contrib)
 | Ruby  | Not currently available, [help by contributing here](https://github.com/open-feature/ruby-sdk-contrib)
 
-
+Any (new or existing) `flagd` providers ought to follow [these guidelines](../other_resources/creating_providers.md).

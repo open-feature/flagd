@@ -13,18 +13,18 @@ import (
 )
 
 const (
-	portFlagName           = "port"
-	metricsPortFlagName    = "metrics-port"
-	socketPathFlagName     = "socket-path"
-	providerArgsFlagName   = "sync-provider-args"
-	evaluatorFlagName      = "evaluator"
-	serverCertPathFlagName = "server-cert-path"
-	serverKeyPathFlagName  = "server-key-path"
-	uriFlagName            = "uri"
 	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
-	syncProviderFlagName   = "sync-provider"
+	evaluatorFlagName      = "evaluator"
 	logFormatFlagName      = "log-format"
+	metricsPortFlagName    = "metrics-port"
+	portFlagName           = "port"
+	providerArgsFlagName   = "sync-provider-args"
+	serverCertPathFlagName = "server-cert-path"
+	serverKeyPathFlagName  = "server-key-path"
+	socketPathFlagName     = "socket-path"
+	syncProviderFlagName   = "sync-provider"
+	uriFlagName            = "uri"
 )
 
 func init() {
@@ -46,7 +46,7 @@ func init() {
 		"a", nil, "Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
-			"url or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the merge priority "+
+			"url (http and grpc) or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the merge priority "+
 			"follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, "+
 			"with duplicated keys being overwritten by those from the uri at index 1. "+
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
@@ -59,18 +59,18 @@ func init() {
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
-	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
-	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
-	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
-	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
-	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
-	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
-	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
-	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
-	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
+	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
+	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
+	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
+	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
+	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
+	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
+	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
 // startCmd represents the start command
@@ -105,15 +105,15 @@ var startCmd = &cobra.Command{
 		}
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			ServicePort:       viper.GetInt32(portFlagName),
+			CORS:              viper.GetStringSlice(corsFlagName),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
-			ServiceSocketPath: viper.GetString(socketPathFlagName),
+			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
-			SyncURI:           viper.GetStringSlice(uriFlagName),
+			ServicePort:       viper.GetInt32(portFlagName),
+			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
-			CORS:              viper.GetStringSlice(corsFlagName),
+			SyncURI:           viper.GetStringSlice(uriFlagName),
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

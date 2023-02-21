@@ -35,6 +35,7 @@ type Config struct {
 
 	ProviderArgs    sync.ProviderArgs
 	SyncURI         []string
+	RemoteSyncType  string
 	SyncBearerToken string
 
 	CORS []string

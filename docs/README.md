@@ -27,7 +27,9 @@ This section documents any behavior of flagd which may seem unexpected, currentl
 - [Omitted value from evaluation response](./help/omitted_value_from_response.md)
 
 ## Other Resources
+
 - [High level architecture](./other_resources/high_level_architecture.md)
+- [Creating providers](./other_resources/creating_providers.md)
 - [Caching](./other_resources/caching.md)
 - [Snap](./other_resources/snap.md)
 - [Systemd service](./other_resources/systemd_service.md)
