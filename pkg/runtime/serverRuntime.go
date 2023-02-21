@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/pkg/server"
-	"github.com/open-feature/flagd/pkg/sync/kubernetes"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/open-feature/flagd/pkg/server"
+	"github.com/open-feature/flagd/pkg/sync/kubernetes"
+	"go.uber.org/zap"
 
 	"golang.org/x/sync/errgroup"
 
@@ -22,25 +23,25 @@ type ServerConfig struct {
 	Secure      bool
 	CertPath    string
 	KeyPath     string
-	SyncSources []string
+	SyncSources string
 }
 
 type ServerRuntime struct {
-	syncImpl []sync.ISync
-	logger   *logger.Logger
-	config   ServerConfig
+	syncProvider sync.ISync
+	logger       *logger.Logger
+	config       ServerConfig
 }
 
 func NewServerRuntime(config ServerConfig, rootLogger *logger.Logger) (*ServerRuntime, error) {
-	impls, err := buildSyncImpls(config.SyncSources, rootLogger)
+	syncImpl, err := buildSyncImpl(config.SyncSources, rootLogger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ServerRuntime{
-		syncImpl: impls,
-		logger:   rootLogger.WithFields(zap.String("component", "Server Runtime")),
-		config:   config,
+		syncProvider: syncImpl,
+		logger:       rootLogger.WithFields(zap.String("component", "Server Runtime")),
+		config:       config,
 	}, nil
 }
 
@@ -58,22 +59,18 @@ func (sr *ServerRuntime) Start() error {
 	}
 
 	g, gCtx := errgroup.WithContext(ctx)
-	dataSync := make(chan sync.DataSync, len(sr.syncImpl))
+	dataSync := make(chan sync.DataSync)
 
 	// Start server
 	g.Go(func() error {
 		return s.Listen(gCtx, dataSync)
 	})
 
-	// Start sync providers
-	for _, s := range sr.syncImpl {
-		p := s
-		g.Go(func() error {
-			return p.Sync(gCtx, dataSync)
-		})
-	}
+	// Start sync provider
+	g.Go(func() error {
+		return sr.syncProvider.Sync(gCtx, dataSync)
+	})
 
-	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
 		return err
 	}
@@ -81,27 +78,22 @@ func (sr *ServerRuntime) Start() error {
 	return nil
 }
 
-func buildSyncImpls(sources []string, rootLogger *logger.Logger) ([]sync.ISync, error) {
-	if len(sources) == 0 {
+func buildSyncImpl(source string, rootLogger *logger.Logger) (sync.ISync, error) {
+	if len(source) == 0 {
 		return nil, errors.New("no sync provider sources provided")
 	}
 
-	var syncs []sync.ISync
-	for _, source := range sources {
-		switch sourceBytes := []byte(source); {
-		case regCrd.Match(sourceBytes):
-			syncs = append(syncs, &kubernetes.Sync{
-				Logger: rootLogger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "kubernetes"),
-				),
-				URI: regCrd.ReplaceAllString(source, ""),
-			})
-			rootLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", source))
-		default:
-			return nil, fmt.Errorf("server supports only crd sync providers. recieved : %s", source)
-		}
+	switch sourceBytes := []byte(source); {
+	case regCrd.Match(sourceBytes):
+		rootLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", source))
+		return &kubernetes.Sync{
+			Logger: rootLogger.WithFields(
+				zap.String("component", "sync"),
+				zap.String("sync", "kubernetes"),
+			),
+			URI: regCrd.ReplaceAllString(source, ""),
+		}, nil
+	default:
+		return nil, fmt.Errorf("server supports only crd sync provider, but received : %s", source)
 	}
-
-	return syncs, nil
 }

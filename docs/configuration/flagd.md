@@ -12,6 +12,7 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 
 ### SEE ALSO
 
+* [flagd server](flagd_server.md)	 - Start flagd as a server
 * [flagd start](flagd_start.md)	 - Start flagd
 * [flagd version](flagd_version.md)	 - Print the version number of FlagD
 

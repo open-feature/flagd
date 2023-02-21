@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"log"
+	"strings"
+
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
@@ -8,8 +11,6 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log"
-	"strings"
 )
 
 const (
