@@ -295,26 +295,6 @@ func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	}
 }
 
-func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
-
-	// set state with an invalid flag definition
-	_, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-}
-
-func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
-
-	// set state with a valid flag definition
-	_, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
-	if err != nil {
-		t.Fatalf("expected no error")
-	}
-}
-
 func TestResolveAllValues(t *testing.T) {
 	evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false))
 	_, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
@@ -786,12 +766,17 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 }
 
-func TestSetState_DefaultVariantValidation(t *testing.T) {
+func TestSetState(t *testing.T) {
 	tests := map[string]struct {
-		jsonFlags string
-		valid     bool
+		jsonFlags     string
+		expectedState *string
+		valid         bool
 	}{
-		"is valid": {
+		"explicitly enabled": {
+			jsonFlags: ValidFlags,
+			valid:     true,
+		},
+		"valid default variant": {
 			jsonFlags: `
 				{
 				  "flags": {
@@ -816,7 +801,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 			`,
 			valid: true,
 		},
-		"is not valid": {
+		"invalid default variant": {
 			jsonFlags: `
 				{
 				  "flags": {
@@ -833,6 +818,47 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 			`,
 			valid: false,
 		},
+		"invalid flags": {
+			jsonFlags: InvalidFlags,
+			valid:     false,
+		},
+		"implicitly enabled": {
+			jsonFlags: `{
+					  "flags": {
+						"implicitlyEnabledFlag": {
+						  "variants": {
+							"on": true,
+							"off": false
+						  },
+						  "defaultVariant": "on"
+						}
+					  }
+					}`,
+			valid: true,
+		},
+		"default variants": {
+			jsonFlags: `{
+					  "flags": {
+						"defaultVariants": {
+						  "defaultVariant": "on"
+						}
+					  }
+					}`,
+			valid: true,
+			expectedState: strPtr(`{
+					  "flags": {
+						"defaultVariants": {
+						  "state": "",
+						  "defaultVariant": "on",
+						  "variants": {
+							"off": false,
+							"on": true
+						  },
+						  "source": ""
+						}
+					  }
+					}`),
+		},
 	}
 
 	for name, tt := range tests {
@@ -844,6 +870,17 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 			if tt.valid && err != nil {
 				t.Error(err)
 			}
+
+			if tt.expectedState == nil {
+				return
+			}
+
+			gotState, err := jsonEvaluator.GetState()
+			if err != nil {
+				t.Error(err)
+			}
+
+			assert.Equal(t, strings.Join(strings.Fields(*tt.expectedState), ""), gotState)
 		})
 	}
 }
@@ -1193,4 +1230,8 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 			}
 		})
 	}
+}
+
+func strPtr(s string) *string {
+	return &s
 }

@@ -291,21 +291,98 @@ func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
-	if err := validateDefaultVariants(newFlags); err != nil {
+
+	if err := loadDefaultVariants(newFlags, schemaLoader); err != nil {
+		return fmt.Errorf("loading default variants: %w", err)
+	}
+
+	if err := validateDefaultVariant(newFlags); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// validateDefaultVariants returns an error if any of the default variants aren't valid
-func validateDefaultVariants(flags *Flags) error {
+// validateDefaultVariant returns an error if any of the default variants aren't valid
+func validateDefaultVariant(flags *Flags) error {
 	for name, flag := range flags.Flags {
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
 				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
 			)
 		}
+	}
+
+	return nil
+}
+
+// loadDefaultVariants loads the default variants of the boolean type flag schema if variants aren't explicitly given
+// (defaults only make sense for boolean type)
+// e.g. the following flag structure
+//
+//	"myBoolFlag": {
+//	   "defaultVariant": "on"
+//	 }
+//
+// becomes
+//
+//	"myBoolFlag": {
+//	   "defaultVariant": "on",
+//	   "variants": defaultVariantsObjectAsDefinedInJSONSchema
+//	 }
+func loadDefaultVariants(flags *Flags, schemaLoader gojsonschema.JSONLoader) error {
+	flagKeysToLoadVariants := make([]string, 0)
+
+	for flagKey, flag := range flags.Flags {
+		if flag.Variants == nil {
+			flagKeysToLoadVariants = append(flagKeysToLoadVariants, flagKey)
+		}
+	}
+
+	if len(flagKeysToLoadVariants) == 0 {
+		// all variants are explicitly given
+		return nil
+	}
+
+	schemaJSON, err := schemaLoader.LoadJSON()
+	if err != nil {
+		return fmt.Errorf("load JSON from schema: %w", err)
+	}
+
+	schemaJSONMap, ok := schemaJSON.(map[string]interface{})
+	if !ok {
+		return errors.New("schemaJSON is of unexpected type")
+	}
+	defs := schemaJSONMap["$defs"]
+	defsMap, ok := defs.(map[string]interface{})
+	if !ok {
+		return errors.New("$defs is of unexpected type")
+	}
+	booleanVariants := defsMap["booleanVariants"]
+	booleanVariantsMap, ok := booleanVariants.(map[string]interface{})
+	if !ok {
+		return errors.New("booleanVariants is of unexpected type")
+	}
+	properties := booleanVariantsMap["properties"]
+	propertiesMap, ok := properties.(map[string]interface{})
+	if !ok {
+		return errors.New("properties is of unexpected type")
+	}
+	variants := propertiesMap["variants"]
+	variantsMap, ok := variants.(map[string]interface{})
+	if !ok {
+		return errors.New("variants is of unexpected type")
+	}
+	defaultVariants := variantsMap["default"]
+	defaultVariantsMap, ok := defaultVariants.(map[string]any)
+	if !ok {
+		return errors.New("default is of unexpected type")
+	}
+
+	for _, flagKey := range flagKeysToLoadVariants {
+		flag := flags.Flags[flagKey]
+		flag.Variants = defaultVariantsMap
+		flags.Flags[flagKey] = flag
 	}
 
 	return nil
