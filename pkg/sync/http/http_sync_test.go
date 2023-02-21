@@ -5,8 +5,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/open-feature/flagd/pkg/sync"
 
@@ -150,6 +152,98 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 			fetched, err := httpSync.Fetch(context.Background())
 			tt.handleResponse(t, httpSync, fetched, err)
+		})
+	}
+}
+
+func TestHTTPSync_Resync(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	tests := map[string]struct {
+		setup             func(t *testing.T, client *syncmock.MockClient)
+		uri               string
+		bearerToken       string
+		lastBodySHA       string
+		handleResponse    func(*testing.T, Sync, string, error)
+		wantErr           bool
+		wantNotifications []sync.DataSync
+	}{
+		"success": {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
+				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader("test response")),
+				}, nil)
+			},
+			uri: "http://localhost",
+			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+				if err != nil {
+					t.Fatalf("fetch: %v", err)
+				}
+				expected := "test response"
+				if fetched != expected {
+					t.Errorf("expected fetched to be: '%s', got: '%s'", expected, fetched)
+				}
+			},
+			wantErr: false,
+			wantNotifications: []sync.DataSync{
+				{
+					Type:     sync.ALL,
+					FlagData: "",
+					Source:   "",
+				},
+			},
+		},
+		"error response": {
+			setup: func(t *testing.T, client *syncmock.MockClient) {},
+			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+				if err == nil {
+					t.Error("expected err, got nil")
+				}
+			},
+			wantErr:           true,
+			wantNotifications: []sync.DataSync{},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockClient := syncmock.NewMockClient(ctrl)
+
+			d := make(chan sync.DataSync, len(tt.wantNotifications))
+
+			tt.setup(t, mockClient)
+
+			httpSync := Sync{
+				URI:         tt.uri,
+				Client:      mockClient,
+				BearerToken: tt.bearerToken,
+				LastBodySHA: tt.lastBodySHA,
+				Logger:      logger.NewLogger(nil, false),
+			}
+
+			err := httpSync.ReSync(context.Background(), d)
+			if tt.wantErr && err == nil {
+				t.Errorf("got no error for %s", name)
+			}
+			if !tt.wantErr && err != nil {
+				t.Errorf("got error for %s %s", name, err.Error())
+			}
+			for _, dataSync := range tt.wantNotifications {
+				select {
+				case x := <-d:
+					if !reflect.DeepEqual(x.String(), dataSync.String()) {
+						t.Error("unexpected datasync received", x, dataSync)
+					}
+				case <-time.After(2 * time.Second):
+					t.Error("expected datasync not received", dataSync)
+				}
+			}
+			select {
+			case x := <-d:
+				t.Error("unexpected datasync received", x)
+			case <-time.After(2 * time.Second):
+
+			}
 		})
 	}
 }

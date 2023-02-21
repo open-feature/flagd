@@ -130,6 +130,38 @@ func TestMergeFlags(t *testing.T) {
 			},
 			wantResync: true,
 		},
+		{
+			name: "no merge priority",
+			current: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+				Flags: map[string]model.Flag{
+					"hello": {
+						DefaultVariant: "off",
+						Source:         "A",
+					},
+				},
+			},
+			new: map[string]model.Flag{
+				"hello": {DefaultVariant: "off"},
+			},
+			newSource: "B",
+			want: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+				Flags: map[string]model.Flag{
+					"hello": {
+						DefaultVariant: "off",
+						Source:         "A",
+					},
+				},
+			},
+			wantNotifs: map[string]interface{}{},
+		},
 	}
 
 	for _, tt := range tests {
