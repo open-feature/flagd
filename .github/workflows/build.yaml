@@ -97,6 +97,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
@@ -113,6 +118,14 @@ jobs:
           file: ./build.Dockerfile
           outputs: type=docker,dest=${{ github.workspace }}/flagd-local.tar
           tags: flagd-local:test
+
+      - name: Load & run flagd image
+        run: |
+          docker load --input ${{ github.workspace }}/flagd-local.tar
+          docker run -d -p 8013:8013 -v ${{ github.workspace }}/test-harness/testing-flags.json:/testing-flags.json flagd-local:test start -f file:/testing-flags.json
+
+      - name: Integration tests
+        run: make integration-test
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
