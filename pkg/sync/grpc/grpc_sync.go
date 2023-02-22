@@ -202,33 +202,29 @@ func buildTransportCredentials(source string, certPath string) (credentials.Tran
 	}
 
 	if !strings.Contains(source, PrefixSecure) {
-		return nil, fmt.Errorf("invalid source. grpc source must must contain prefix %s or %s", Prefix, PrefixSecure)
+		return nil, fmt.Errorf("invalid source. grpc source must contain prefix %s or %s", Prefix, PrefixSecure)
 	}
-
-	var tCred credentials.TransportCredentials
 
 	if certPath == "" {
 		// Rely on CA certs provided from system
-		tCred = credentials.NewTLS(&tls.Config{MinVersion: tlsVersion})
-	} else {
-		// Rely on provided certificate
-		certBytes, err := os.ReadFile(certPath)
-		if err != nil {
-			return nil, err
-		}
-
-		cp := x509.NewCertPool()
-		if !cp.AppendCertsFromPEM(certBytes) {
-			return nil, fmt.Errorf("invalid certificate provided at path: %s", certPath)
-		}
-
-		tCred = credentials.NewTLS(&tls.Config{
-			MinVersion: tlsVersion,
-			RootCAs:    cp,
-		})
+		return credentials.NewTLS(&tls.Config{MinVersion: tlsVersion}), nil
 	}
 
-	return tCred, nil
+	// Rely on provided certificate
+	certBytes, err := os.ReadFile(certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	cp := x509.NewCertPool()
+	if !cp.AppendCertsFromPEM(certBytes) {
+		return nil, fmt.Errorf("invalid certificate provided at path: %s", certPath)
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		MinVersion: tlsVersion,
+		RootCAs:    cp,
+	}), nil
 }
 
 // sourceToGRPCTarget is a helper to derive GRPC target from a provided URL
