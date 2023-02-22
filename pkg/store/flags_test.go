@@ -9,6 +9,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestHasPriority(t *testing.T) {
+	tests := []struct {
+		name         string
+		currentState *Flags
+		storedSource string
+		newSource    string
+		hasPriority  bool
+	}{
+		{
+			name:         "same source",
+			currentState: &Flags{},
+			storedSource: "A",
+			newSource:    "A",
+			hasPriority:  true,
+		},
+		{
+			name: "no priority",
+			currentState: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+			},
+			storedSource: "A",
+			newSource:    "B",
+			hasPriority:  false,
+		},
+		{
+			name: "priority",
+			currentState: &Flags{
+				FlagSources: []string{
+					"A",
+					"B",
+				},
+			},
+			storedSource: "B",
+			newSource:    "A",
+			hasPriority:  false,
+		},
+		{
+			name: "not in sources",
+			currentState: &Flags{
+				FlagSources: []string{
+					"A",
+					"B",
+				},
+			},
+			storedSource: "C",
+			newSource:    "D",
+			hasPriority:  true,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := tt.currentState.hasPriority(tt.storedSource, tt.newSource)
+			require.Equal(t, p, tt.hasPriority)
+		})
+	}
+}
+
 func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
