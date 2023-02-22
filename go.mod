@@ -7,11 +7,14 @@ require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230222100723-491ee098dd92.4
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230222100723-491ee098dd92.4
 	github.com/bufbuild/connect-go v1.5.2
+	github.com/cucumber/godog v0.12.6
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/dimiro1/banner v1.1.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-colorable v0.1.13
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.7
+	github.com/open-feature/go-sdk-contrib/tests/flagd v1.1.0
 	github.com/open-feature/open-feature-operator v0.2.28
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.14.0
@@ -40,6 +43,8 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
+	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
@@ -47,6 +52,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
+	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -54,6 +60,10 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
+	github.com/hashicorp/go-memdb v1.3.2 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -70,6 +80,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/open-feature/go-sdk v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
