@@ -104,7 +104,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 // internally. However, if the provided context is done, method exit with a non-ok state which must be verified by the
 // caller
 func (g *Sync) connectWithRetry(
-	ctx context.Context, options ...grpc.DialOption,
+	ctx context.Context,
 ) (syncv1grpc.FlagSyncService_SyncFlagsClient, bool) {
 	var iteration int
 

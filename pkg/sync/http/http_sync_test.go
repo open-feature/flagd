@@ -242,7 +242,6 @@ func TestHTTPSync_Resync(t *testing.T) {
 			case x := <-d:
 				t.Error("unexpected datasync received", x)
 			case <-time.After(2 * time.Second):
-
 			}
 		})
 	}
