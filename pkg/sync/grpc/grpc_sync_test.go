@@ -328,3 +328,7 @@ func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.F
 
 	return nil
 }
+
+func (b *bufferedServer) FetchAllFlags(ctx context.Context, req *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
+	return nil, nil
+}
