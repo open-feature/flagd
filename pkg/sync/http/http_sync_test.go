@@ -154,7 +154,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
-			if httpSync.ready != tt.ready {
+			if httpSync.IsReady() != tt.ready {
 				t.Errorf("expected httpSync.ready to be: '%v', got: '%v'", tt.ready, httpSync.ready)
 			}
 			tt.handleResponse(t, httpSync, fetched, err)
