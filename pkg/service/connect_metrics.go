@@ -120,13 +120,13 @@ func (cfg *middlewareConfig) defaults() {
 }
 
 func (cfg *middlewareConfig) getDurationView(name string, bucket []float64) metric.View {
-	scope := instrumentation.Scope{
-		Name: cfg.Service,
-	}
 	return metric.NewView(
 		metric.Instrument{
-			Name:  name,
-			Scope: scope,
+			// we change aggregation only for instruments with this name and scope
+			Name: name,
+			Scope: instrumentation.Scope{
+				Name: cfg.Service,
+			},
 		},
 		metric.Stream{Aggregation: aggregation.ExplicitBucketHistogram{
 			Boundaries: bucket,
@@ -138,6 +138,7 @@ func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetric
 	const requestDurationName = "http_request_duration_seconds"
 	const responseSizeName = "http_response_size_bytes"
 
+	// create a metric provider with custom bucket size for histograms
 	provider := metric.NewMeterProvider(
 		metric.WithReader(exporter),
 		metric.WithView(cfg.getDurationView(requestDurationName, prometheus.DefBuckets)),
