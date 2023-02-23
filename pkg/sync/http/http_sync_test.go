@@ -64,6 +64,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		bearerToken    string
 		lastBodySHA    string
 		handleResponse func(*testing.T, Sync, string, error)
+		ready          bool
 	}{
 		"success": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
@@ -81,6 +82,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					t.Errorf("expected fetched to be: '%s', got: '%s'", expected, fetched)
 				}
 			},
+			ready: true,
 		},
 		"return an error if no uri": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {},
@@ -89,6 +91,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					t.Error("expected err, got nil")
 				}
 			},
+			ready: false,
 		},
 		"update last body sha": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
@@ -110,6 +113,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					)
 				}
 			},
+			ready: true,
 		},
 		"authorization header": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
@@ -131,6 +135,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					)
 				}
 			},
+			ready: true,
 		},
 	}
 
@@ -149,6 +154,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
+			if httpSync.ready != tt.ready {
+				t.Errorf("expected httpSync.ready to be: '%v', got: '%v'", tt.ready, httpSync.ready)
+			}
 			tt.handleResponse(t, httpSync, fetched, err)
 		})
 	}
