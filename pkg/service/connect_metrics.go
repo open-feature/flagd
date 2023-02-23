@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"log"
 	"net"
 	"net/http"
@@ -116,21 +119,43 @@ func (cfg *middlewareConfig) defaults() {
 	cfg.recorder = cfg.newOTelRecorder(cfg.MetricReader)
 }
 
+func (cfg *middlewareConfig) getDurationView(name string, bucket []float64) metric.View {
+	scope := instrumentation.Scope{
+		Name: cfg.Service,
+	}
+	return metric.NewView(
+		metric.Instrument{
+			Name:  name,
+			Scope: scope,
+		},
+		metric.Stream{Aggregation: aggregation.ExplicitBucketHistogram{
+			Boundaries: bucket,
+		}},
+	)
+}
+
 func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetricsRecorder {
-	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	const requestDurationName = "http_request_duration_seconds"
+	const responseSizeName = "http_response_size_bytes"
+
+	provider := metric.NewMeterProvider(
+		metric.WithReader(exporter),
+		metric.WithView(cfg.getDurationView(requestDurationName, prometheus.DefBuckets)),
+		metric.WithView(cfg.getDurationView(responseSizeName, prometheus.ExponentialBuckets(100, 10, 8))),
+	)
 	meter := provider.Meter(cfg.Service)
 	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
 	hduration, _ := meter.Float64Histogram(
-		"request_duration_seconds",
+		requestDurationName,
 		instrument.WithDescription("The latency of the HTTP requests"),
 	)
 	hsize, _ := meter.Float64Histogram(
-		"response_size_bytes",
+		responseSizeName,
 		instrument.WithDescription("The size of the HTTP responses"),
 		instrument.WithUnit(unit.Bytes),
 	)
 	reqCounter, _ := meter.Int64UpDownCounter(
-		"requests_inflight",
+		"http_requests_inflight",
 		instrument.WithDescription("The number of inflight requests being handled at the same time"),
 	)
 	return &OTelMetricsRecorder{
