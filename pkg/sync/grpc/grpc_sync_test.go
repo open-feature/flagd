@@ -123,7 +123,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			}()
 			data := <-syncChan
 
-			if grpcSyncImpl.ready != test.ready {
+			if grpcSyncImpl.IsReady() != test.ready {
 				t.Errorf("expected grpcSyncImpl.ready to be: '%v', got: '%v'", test.ready, grpcSyncImpl.ready)
 			}
 
