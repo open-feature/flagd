@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	msync "sync"
 	"testing"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
@@ -54,12 +55,14 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		Target:     "grpc://test",
 		ProviderID: "",
 		Logger:     logger.NewLogger(nil, false),
+		Mux:        &msync.RWMutex{},
 	}
 
 	tests := []struct {
 		name   string
 		stream syncv1grpc.FlagSyncService_SyncFlagsClient
 		want   sync.Type
+		ready  bool
 	}{
 		{
 			name: "State All maps to Sync All",
@@ -69,7 +72,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 					State:             v1.SyncState_SYNC_STATE_ALL,
 				},
 			},
-			want: sync.ALL,
+			want:  sync.ALL,
+			ready: true,
 		},
 		{
 			name: "State Add maps to Sync Add",
@@ -79,7 +83,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 					State:             v1.SyncState_SYNC_STATE_ADD,
 				},
 			},
-			want: sync.ADD,
+			want:  sync.ADD,
+			ready: true,
 		},
 		{
 			name: "State Update maps to Sync Update",
@@ -89,7 +94,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 					State:             v1.SyncState_SYNC_STATE_UPDATE,
 				},
 			},
-			want: sync.UPDATE,
+			want:  sync.UPDATE,
+			ready: true,
 		},
 		{
 			name: "State Delete maps to Sync Delete",
@@ -99,7 +105,8 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 					State:             v1.SyncState_SYNC_STATE_DELETE,
 				},
 			},
-			want: sync.DELETE,
+			want:  sync.DELETE,
+			ready: true,
 		},
 	}
 
@@ -108,12 +115,17 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			syncChan := make(chan sync.DataSync)
 
 			go func() {
-				err := grpcSyncImpl.handleFlagSync(test.stream, syncChan)
+				grpcSyncImpl.client = test.stream
+				err := grpcSyncImpl.Sync(context.TODO(), syncChan)
 				if err != nil {
 					t.Errorf("Error handling flag sync: %s", err.Error())
 				}
 			}()
 			data := <-syncChan
+
+			if grpcSyncImpl.ready != test.ready {
+				t.Errorf("expected grpcSyncImpl.ready to be: '%v', got: '%v'", test.ready, grpcSyncImpl.ready)
+			}
 
 			if data.Type != test.want {
 				t.Errorf("Returned data sync state = %v, wanted %v", data.Type, test.want)
@@ -231,6 +243,7 @@ func Test_StreamListener(t *testing.T) {
 			Target:     target,
 			ProviderID: "",
 			Logger:     logger.NewLogger(nil, false),
+			Mux:        &msync.RWMutex{},
 		}
 
 		// initialize client
@@ -253,7 +266,8 @@ func Test_StreamListener(t *testing.T) {
 
 		// listen to stream
 		go func() {
-			err := grpcSync.handleFlagSync(syncClient, syncChan)
+			grpcSync.client = syncClient
+			err := grpcSync.Sync(context.TODO(), syncChan)
 			if err != nil {
 				// must ignore EOF as this is returned for stream end
 				if err != io.EOF {
