@@ -20,7 +20,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Run benchmark
-        run: set -o pipefail; go test -bench . -benchtime=5s -benchmem ./... | tee output.txt
+        run: set -o pipefail; go test -bench=Bench -short -benchtime=5s -benchmem ./... | tee output.txt
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
