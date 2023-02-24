@@ -11,7 +11,6 @@ import (
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -28,10 +27,14 @@ var resyncPeriod = 1 * time.Minute
 type Sync struct {
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
-	client       client.Client
 	URI          string
-	Source       string
-	ready        bool
+
+	Source     string
+	ready      bool
+	namespace  string
+	crdName    string
+	readClient client.Reader
+	informer   cache.SharedInformer
 }
 
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -44,7 +47,39 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 }
 
 func (k *Sync) Init(ctx context.Context) error {
-	// noop
+	var err error
+
+	k.namespace, k.crdName, err = parseURI(k.URI)
+	if err != nil {
+		return err
+	}
+
+	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		return err
+	}
+	clusterConfig, err := k8sClusterConfig()
+	if err != nil {
+		return err
+	}
+
+	k.readClient, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return err
+	}
+
+	clusterClient, err := dynamic.NewForConfig(clusterConfig)
+	if err != nil {
+		return err
+	}
+
+	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+
+	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
+	// For more details on resync implications refer to tools/cache/shared_informer.go
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient, resyncPeriod, k.namespace, nil)
+
+	k.informer = factory.ForResource(resource).Informer()
+
 	return nil
 }
 
@@ -54,6 +89,8 @@ func (k *Sync) IsReady() bool {
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	k.Logger.Info(fmt.Sprintf("starting kubernetes sync notifier for resource: %s", k.URI))
+
 	// Initial fetch
 	fetch, err := k.fetch(ctx)
 	if err != nil {
@@ -86,7 +123,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				k.Logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(fmt.Sprintf("error fetching after write notification: %s", err.Error()))
+					k.Logger.Error(fmt.Sprintf("error fetching after update notification: %s", err.Error()))
 					continue
 				}
 
@@ -101,98 +138,44 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
+// fetch attempts to retrieve the latest feature flag configurations
 func (k *Sync) fetch(ctx context.Context) (string, error) {
-	if k.URI == "" {
-		k.Logger.Error("no target feature flag configuration set")
-		return "{}", nil
-	}
-
-	ns, name, err := parseURI(k.URI)
+	// first check the store - avoid overloading API
+	object, exist, err := k.informer.GetStore().GetByKey(k.URI)
 	if err != nil {
-		k.Logger.Error(err.Error())
-		return "{}", nil
+		return "", err
 	}
 
-	if k.client == nil {
-		k.Logger.Warn("client not initialised")
-		return "{}", nil
+	if exist {
+		configuration, err := toFFCfg(object)
+		if err != nil {
+			return "", err
+		}
+
+		k.Logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
+		return configuration.Spec.FeatureFlagSpec, nil
 	}
 
+	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
 	var ff v1alpha1.FeatureFlagConfiguration
-	err = k.client.Get(ctx, client.ObjectKey{
-		Name:      name,
-		Namespace: ns,
+	err = k.readClient.Get(ctx, client.ObjectKey{
+		Name:      k.crdName,
+		Namespace: k.namespace,
 	}, &ff)
-
-	return ff.Spec.FeatureFlagSpec, err
-}
-
-func parseURI(uri string) (string, string, error) {
-	s := strings.Split(uri, "/")
-	if len(s) != 2 {
-		return "", "", fmt.Errorf("invalid uri received: %s", uri)
-	}
-	return s[0], s[1], nil
-}
-
-func (k *Sync) buildConfiguration() (*rest.Config, error) {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	var clusterConfig *rest.Config
-	var err error
-	if kubeconfig != "" {
-		clusterConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	} else {
-		clusterConfig, err = rest.InClusterConfig()
-	}
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return clusterConfig, nil
+	k.Logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
+	return ff.Spec.FeatureFlagSpec, nil
 }
 
-//nolint:funlen
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
-	if k.URI == "" {
-		k.Logger.Error("No target feature flag configuration set")
-		return
-	}
-	ns, name, err := parseURI(k.URI)
-	if err != nil {
-		k.Logger.Error(err.Error())
-		return
-	}
-	k.Logger.Info(
-		fmt.Sprintf("starting kubernetes sync notifier for resource: %s",
-			k.URI,
-		),
-	)
-	clusterConfig, err := k.buildConfiguration()
-	if err != nil {
-		k.Logger.Error(fmt.Sprintf("error building configuration: %s", err))
-	}
-	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		k.Logger.Fatal(err.Error())
-	}
-	k.client, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		k.Logger.Fatal(err.Error())
-	}
-	clusterClient, err := dynamic.NewForConfig(clusterConfig)
-	if err != nil {
-		k.Logger.Fatal(err.Error())
-	}
-	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
-	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
-	// For more details on resync implications refer to tools/cache/shared_informer.go
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
-		resyncPeriod, corev1.NamespaceAll, nil)
-	informer := factory.ForResource(resource).Informer()
 	objectKey := client.ObjectKey{
-		Name:      name,
-		Namespace: ns,
+		Name:      k.crdName,
+		Namespace: k.namespace,
 	}
-	if _, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := createFuncHandler(obj, objectKey, c); err != nil {
@@ -220,13 +203,12 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 			EventType: DefaultEventTypeReady,
 		},
 	}
-	informer.Run(ctx.Done())
+
+	k.informer.Run(ctx.Done())
 }
 
 func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
-	var ffObj v1alpha1.FeatureFlagConfiguration
-	u := obj.(*unstructured.Unstructured)
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
 	}
@@ -244,24 +226,24 @@ func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotif
 }
 
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- INotify) error {
-	var ffOldObj v1alpha1.FeatureFlagConfiguration
-	u := oldObj.(*unstructured.Unstructured)
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffOldObj)
+	ffOldObj, err := toFFCfg(oldObj)
 	if err != nil {
 		return err
 	}
+
 	if ffOldObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
-	var ffNewObj v1alpha1.FeatureFlagConfiguration
-	u = newObj.(*unstructured.Unstructured)
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffNewObj)
+
+	ffNewObj, err := toFFCfg(newObj)
 	if err != nil {
 		return err
 	}
+
 	if ffNewObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
+
 	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
 		// Only update if there is an actual featureFlagSpec change
 		c <- &Notifier{
@@ -274,12 +256,11 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 }
 
 func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
-	var ffObj v1alpha1.FeatureFlagConfiguration
-	u := obj.(*unstructured.Unstructured)
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
 	}
+
 	if ffObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
 		return errors.New("invalid api version")
 	}
@@ -291,4 +272,47 @@ func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotif
 		}
 	}
 	return nil
+}
+
+// toFFCfg attempts to covert provided interface type arg to configurations
+func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
+	u := object.(*unstructured.Unstructured)
+
+	var ffObj v1alpha1.FeatureFlagConfiguration
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ffObj, nil
+}
+
+// parseURI parse provided uri in the format of <namespace>/<crdName> to namespace, crdName. Results in an error
+// for invalid format or failed parsing
+func parseURI(uri string) (string, string, error) {
+	s := strings.Split(uri, "/")
+	if len(s) != 2 {
+		return "", "", fmt.Errorf("invalid uri received: %s", uri)
+	}
+	return s[0], s[1], nil
+}
+
+// k8sClusterConfig build K8s connection config based available configurations
+func k8sClusterConfig() (*rest.Config, error) {
+	cfg := os.Getenv("KUBECONFIG")
+
+	var clusterConfig *rest.Config
+	var err error
+
+	if cfg != "" {
+		clusterConfig, err = clientcmd.BuildConfigFromFlags("", cfg)
+	} else {
+		clusterConfig, err = rest.InClusterConfig()
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterConfig, nil
 }
