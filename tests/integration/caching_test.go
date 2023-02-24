@@ -10,7 +10,11 @@ import (
 	"github.com/cucumber/godog"
 )
 
-const flagConfigurationPath = "../../test-harness/testing-flags.json"
+const (
+	flagConfigurationPath           = "../../test-harness/symlink_testing-flags.json"
+	flagConfigurationTargetFilePath = "../../test-harness/testing-flags.json"
+	flagConfigurationMutatedPath    = "../../test-harness/mutated-testing-flags.json"
+)
 
 func TestCaching(t *testing.T) {
 	if testing.Short() {
@@ -27,7 +31,8 @@ func TestCaching(t *testing.T) {
 		providerOptions = []flagd.ProviderOption{flagd.WithTLS(certPath)}
 	}
 
-	initializeCachingScenario, err := integration.InitializeCachingScenario(flagConfigurationPath, providerOptions...)
+	initializeCachingScenario, err := integration.InitializeCachingScenario(
+		flagConfigurationTargetFilePath, flagConfigurationPath, flagConfigurationMutatedPath, providerOptions...)
 	if err != nil {
 		t.Fatal(err)
 	}

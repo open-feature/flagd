@@ -15,7 +15,7 @@ build:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o flagd
 test:
 	go test -race -covermode=atomic -cover -short ./pkg/... -coverprofile=coverage.out
-integration-test: # dependent on: docker run -p 8013:8013 -v $PWD/test-harness/testing-flags.json:/testing-flags.json ghcr.io/open-feature/flagd:latest start -f file:/testing-flags.json
+integration-test: # dependent on: ./flagd start -f file:test-harness/symlink_testing-flags.json
 	go test -cover ./tests/integration $(ARGS)
 	cd test-harness; git restore testing-flags.json # reset testing-flags.json
 run:

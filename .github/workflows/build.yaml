@@ -119,14 +119,6 @@ jobs:
           outputs: type=docker,dest=${{ github.workspace }}/flagd-local.tar
           tags: flagd-local:test
 
-      - name: Load & run flagd image
-        run: |
-          docker load --input ${{ github.workspace }}/flagd-local.tar
-          docker run -d -p 8013:8013 -v ${{ github.workspace }}/test-harness/testing-flags.json:/testing-flags.json flagd-local:test start -f file:/testing-flags.json
-
-      - name: Integration tests
-        run: make integration-test
-
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -140,3 +132,26 @@ jobs:
         uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 # v2
         with:
           sarif_file: "trivy-results.sarif"
+
+  integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
+        with:
+          submodules: recursive
+
+      - name: Setup go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build flagd binary
+        run: make build
+
+      - name: Run flagd binary in background
+        run: ./flagd start -f file:${{ github.workspace }}/test-harness/symlink_testing-flags.json &
+
+      - name: Run tests
+        run: make integration-test
