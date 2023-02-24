@@ -14,7 +14,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.7
-	github.com/open-feature/go-sdk-contrib/tests/flagd v1.1.0
+	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.0
 	github.com/open-feature/open-feature-operator v0.2.28
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.14.0
@@ -116,8 +116,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
-)
-
-replace (
-	github.com/open-feature/go-sdk-contrib/tests/flagd => ../go-sdk-contrib/tests/flagd
 )
