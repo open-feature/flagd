@@ -44,9 +44,9 @@ func TestHasPriority(t *testing.T) {
 					"B",
 				},
 			},
-			storedSource: "B",
-			newSource:    "A",
-			hasPriority:  false,
+			storedSource: "A",
+			newSource:    "B",
+			hasPriority:  true,
 		},
 		{
 			name: "not in sources",
