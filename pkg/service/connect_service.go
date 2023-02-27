@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -102,37 +103,19 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 	}
 	path, handler := schemaConnectV1.NewServiceHandler(s)
 	mux.Handle(path, handler)
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+
 	mdlw := New(middlewareConfig{
-		Recorder: NewRecorder(prometheusConfig{}),
+		Service:      "openfeature/flagd",
+		MetricReader: exporter,
+		Logger:       s.Logger,
 	})
 	h := Handler("", mdlw, mux)
-	go func() {
-		s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
-		server := &http.Server{
-			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
-			ReadHeaderTimeout: 3 * time.Second,
-		}
-		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			switch r.URL.Path {
-			case "/healthz":
-				w.WriteHeader(http.StatusOK)
-			case "/readyz":
-				if svcConf.ReadinessProbe() {
-					w.WriteHeader(http.StatusOK)
-				} else {
-					w.WriteHeader(http.StatusPreconditionFailed)
-				}
-			case "/metrics":
-				promhttp.Handler().ServeHTTP(w, r)
-			default:
-				w.WriteHeader(http.StatusNotFound)
-			}
-		})
-		err := server.ListenAndServe()
-		if err != nil {
-			panic(err)
-		}
-	}()
+
+	go bindMetrics(s, svcConf)
 
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		handler = s.newCORS().Handler(h)
@@ -382,6 +365,34 @@ func (s *ConnectService) newCORS() *cors.Cors {
 			"Grpc-Status-Details-Bin",
 		},
 	})
+}
+
+func bindMetrics(s *ConnectService, svcConf Configuration) {
+	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/healthz":
+			w.WriteHeader(http.StatusOK)
+		case "/readyz":
+			if svcConf.ReadinessProbe() {
+				w.WriteHeader(http.StatusOK)
+			} else {
+				w.WriteHeader(http.StatusPreconditionFailed)
+			}
+		case "/metrics":
+			promhttp.Handler().ServeHTTP(w, r)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	err := server.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func errFormat(err error) error {
