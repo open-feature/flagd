@@ -87,7 +87,6 @@ func (k *Sync) Init(ctx context.Context) error {
 }
 
 func (k *Sync) IsReady() bool {
-	// we cannot reliably check external HTTP(s) sources
 	return k.ready
 }
 
