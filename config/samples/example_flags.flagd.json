@@ -126,9 +126,9 @@
   },
   "$evaluators": {
     "emailWithFaas": {
-          "in": ["@faas.com", {
-            "var": ["email"]
-          }]
+      "in": ["@faas.com", {
+        "var": ["email"]
+      }]
     }
   }
 }
