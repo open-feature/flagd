@@ -22,7 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var resyncPeriod = 1 * time.Minute
+var (
+	resyncPeriod = 1 * time.Minute
+	apiVersion   = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
+)
 
 type Sync struct {
 	Logger       *logger.Logger
@@ -178,7 +181,7 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
-			if err := createFuncHandler(obj, objectKey, c); err != nil {
+			if err := commonHandler(obj, objectKey, DefaultEventTypeCreate, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
@@ -190,7 +193,7 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 		},
 		DeleteFunc: func(obj interface{}) {
 			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete: %s %s", objectKey.Namespace, objectKey.Name))
-			if err := deleteFuncHandler(obj, objectKey, c); err != nil {
+			if err := commonHandler(obj, objectKey, DefaultEventTypeDelete, c); err != nil {
 				k.Logger.Warn(err.Error())
 			}
 		},
@@ -207,31 +210,36 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	k.informer.Run(ctx.Done())
 }
 
-func createFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
+// commonHandler emits the desired event if and only if handler receive an object matching apiVersion and resource name
+func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEventType, c chan<- INotify) error {
 	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
 	}
-	if ffObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
+
+	if ffObj.APIVersion != apiVersion {
 		return errors.New("invalid api version")
 	}
+
 	if ffObj.Name == object.Name {
 		c <- &Notifier{
 			Event: Event[DefaultEventType]{
-				EventType: DefaultEventTypeCreate,
+				EventType: emitEvent,
 			},
 		}
 	}
+
 	return nil
 }
 
+// updateFuncHandler handles updates. Event is emitted if and only if resource name, apiVersion of old & new are equal
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- INotify) error {
 	ffOldObj, err := toFFCfg(oldObj)
 	if err != nil {
 		return err
 	}
 
-	if ffOldObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
+	if ffOldObj.APIVersion != apiVersion {
 		return errors.New("invalid api version")
 	}
 
@@ -240,7 +248,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 		return err
 	}
 
-	if ffNewObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
+	if ffNewObj.APIVersion != apiVersion {
 		return errors.New("invalid api version")
 	}
 
@@ -255,28 +263,12 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	return nil
 }
 
-func deleteFuncHandler(obj interface{}, object client.ObjectKey, c chan<- INotify) error {
-	ffObj, err := toFFCfg(obj)
-	if err != nil {
-		return err
-	}
-
-	if ffObj.APIVersion != fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version) {
-		return errors.New("invalid api version")
-	}
-	if ffObj.Name == object.Name {
-		c <- &Notifier{
-			Event: Event[DefaultEventType]{
-				EventType: DefaultEventTypeDelete,
-			},
-		}
-	}
-	return nil
-}
-
-// toFFCfg attempts to covert provided interface type arg to configurations
+// toFFCfg attempts to covert unstructured payload to configurations
 func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
-	u := object.(*unstructured.Unstructured)
+	u, ok := object.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
+	}
 
 	var ffObj v1alpha1.FeatureFlagConfiguration
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
@@ -291,8 +283,8 @@ func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
 // for invalid format or failed parsing
 func parseURI(uri string) (string, string, error) {
 	s := strings.Split(uri, "/")
-	if len(s) != 2 {
-		return "", "", fmt.Errorf("invalid uri received: %s", uri)
+	if len(s) != 2 || len(s[0]) == 0 || len(s[1]) == 0 {
+		return "", "", fmt.Errorf("invalid resource uri: %s", uri)
 	}
 	return s[0], s[1], nil
 }
