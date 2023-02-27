@@ -114,33 +114,8 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 		Logger:       s.Logger,
 	})
 	h := Handler("", mdlw, mux)
-	go func() {
-		s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
-		server := &http.Server{
-			Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
-			ReadHeaderTimeout: 3 * time.Second,
-		}
-		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			switch r.URL.Path {
-			case "/healthz":
-				w.WriteHeader(http.StatusOK)
-			case "/readyz":
-				if svcConf.ReadinessProbe() {
-					w.WriteHeader(http.StatusOK)
-				} else {
-					w.WriteHeader(http.StatusPreconditionFailed)
-				}
-			case "/metrics":
-				promhttp.Handler().ServeHTTP(w, r)
-			default:
-				w.WriteHeader(http.StatusNotFound)
-			}
-		})
-		err := server.ListenAndServe()
-		if err != nil {
-			panic(err)
-		}
-	}()
+
+	go bindMetrics(s, svcConf)
 
 	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 		handler = s.newCORS().Handler(h)
@@ -390,6 +365,34 @@ func (s *ConnectService) newCORS() *cors.Cors {
 			"Grpc-Status-Details-Bin",
 		},
 	})
+}
+
+func bindMetrics(s *ConnectService, svcConf Configuration) {
+	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/healthz":
+			w.WriteHeader(http.StatusOK)
+		case "/readyz":
+			if svcConf.ReadinessProbe() {
+				w.WriteHeader(http.StatusOK)
+			} else {
+				w.WriteHeader(http.StatusPreconditionFailed)
+			}
+		case "/metrics":
+			promhttp.Handler().ServeHTTP(w, r)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	err := server.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func errFormat(err error) error {
