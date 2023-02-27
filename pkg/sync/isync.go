@@ -38,9 +38,15 @@ ISync implementations watch for changes in the flag sources (HTTP backend, local
 value and communicate to the Runtime with DataSync channel
 */
 type ISync interface {
+	// Init is used by the sync provider to initialize its data structures and external dependencies.
+	Init(ctx context.Context) error
+
 	// Sync is the contract between Runtime and sync implementation.
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
+
+	// IsReady shall return true if the provider is ready to communicate with the Runtime
+	IsReady() bool
 }
 
 // DataSync is the data contract between Runtime and sync implementations

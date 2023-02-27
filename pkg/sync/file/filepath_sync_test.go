@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	msync "sync"
 	"testing"
 	"time"
 
@@ -84,11 +85,6 @@ func TestSimpleSync(t *testing.T) {
 		},
 	}
 
-	handler := Sync{
-		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-		Logger: logger.NewLogger(nil, false),
-	}
-
 	for test, tt := range tests {
 		t.Run(test, func(t *testing.T) {
 			defer t.Cleanup(cleanupFilePath)
@@ -96,10 +92,21 @@ func TestSimpleSync(t *testing.T) {
 			createFile(t, fetchDirName, fetchFileName)
 
 			ctx := context.Background()
+
 			dataSyncChan := make(chan sync.DataSync, len(tt.expectedDataSync))
 
 			go func() {
-				err := handler.Sync(ctx, dataSyncChan)
+				handler := Sync{
+					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Logger: logger.NewLogger(nil, false),
+					Mux:    &msync.RWMutex{},
+				}
+				err := handler.Init(ctx)
+				if err != nil {
+					log.Fatalf("Error init sync: %s", err.Error())
+					return
+				}
+				err = handler.Sync(ctx, dataSyncChan)
 				if err != nil {
 					log.Fatalf("Error start sync: %s", err.Error())
 					return
@@ -178,6 +185,44 @@ func TestFilePathSync_Fetch(t *testing.T) {
 
 			tt.handleResponse(t, data, err)
 		})
+	}
+}
+
+func TestIsReadySyncFlag(t *testing.T) {
+	fpSync := Sync{
+		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+		Logger: logger.NewLogger(nil, false),
+		Mux:    &msync.RWMutex{},
+	}
+
+	setupDir(t, fetchDirName)
+	createFile(t, fetchDirName, fetchFileName)
+	writeToFile(t, fetchFileContents)
+	defer t.Cleanup(cleanupFilePath)
+	if fpSync.IsReady() != false {
+		t.Errorf("expected not to be ready")
+	}
+	ctx := context.TODO()
+	err := fpSync.Init(ctx)
+	if err != nil {
+		log.Printf("Error init sync: %s", err.Error())
+		return
+	}
+	if fpSync.IsReady() != false {
+		t.Errorf("expected not to be ready")
+	}
+	dataSyncChan := make(chan sync.DataSync, 1)
+
+	go func() {
+		err = fpSync.Sync(ctx, dataSyncChan)
+		if err != nil {
+			log.Fatalf("Error start sync: %s", err.Error())
+			return
+		}
+	}()
+	time.Sleep(1 * time.Second)
+	if fpSync.IsReady() != true {
+		t.Errorf("expected to be ready")
 	}
 }
 

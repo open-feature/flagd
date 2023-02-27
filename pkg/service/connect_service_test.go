@@ -69,18 +69,23 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				tt.evalFields.reason,
 				tt.evalFields.err,
 			).AnyTimes()
-			service := service.ConnectService{
+			svc := service.ConnectService{
 				ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
 					ServerSocketPath: tt.socketPath,
 				},
 				Logger: logger.NewLogger(nil, false),
+			}
+			serveConf := service.Configuration{
+				ReadinessProbe: func() bool {
+					return true
+				},
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
 			go func() {
-				err := service.Serve(ctx, eval)
+				err := svc.Serve(ctx, eval, serveConf)
 				fmt.Println(err)
 			}()
 			conn, err := grpc.Dial(

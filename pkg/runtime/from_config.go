@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	msync "sync"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/eval"
@@ -67,52 +68,82 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	for _, uri := range r.config.SyncURI {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &file.Sync{
-				URI: regFile.ReplaceAllString(uri, ""),
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "filepath"),
-				),
-				ProviderArgs: r.config.ProviderArgs,
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				r.newFile(uri, logger),
+			)
 			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
 		case regCrd.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &kubernetes.Sync{
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "kubernetes"),
-				),
-				URI:          regCrd.ReplaceAllString(uri, ""),
-				ProviderArgs: r.config.ProviderArgs,
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				r.newK8s(uri, logger),
+			)
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))
 		case regURL.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &httpSync.Sync{
-				URI:         uri,
-				BearerToken: r.config.SyncBearerToken,
-				Client: &http.Client{
-					Timeout: time.Second * 10,
-				},
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "remote"),
-				),
-				ProviderArgs: r.config.ProviderArgs,
-				Cron:         cron.New(),
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				r.newHTTP(uri, logger),
+			)
 			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
 		case regGRPC.Match(uriB):
-			r.SyncImpl = append(r.SyncImpl, &grpc.Sync{
-				Target: grpc.URLToGRPCTarget(uri),
-				Logger: logger.WithFields(
-					zap.String("component", "sync"),
-					zap.String("sync", "grpc"),
-				),
-			})
+			r.SyncImpl = append(
+				r.SyncImpl,
+				r.newGRPC(uri, logger),
+			)
 		default:
 			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
 				" or 'core.openfeature.dev'", uri)
 		}
 	}
 	return nil
+}
+
+func (r *Runtime) newGRPC(uri string, logger *logger.Logger) *grpc.Sync {
+	return &grpc.Sync{
+		Target: grpc.URLToGRPCTarget(uri),
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "grpc"),
+		),
+		Mux: &msync.RWMutex{},
+	}
+}
+
+func (r *Runtime) newHTTP(uri string, logger *logger.Logger) *httpSync.Sync {
+	return &httpSync.Sync{
+		URI:         uri,
+		BearerToken: r.config.SyncBearerToken,
+		Client: &http.Client{
+			Timeout: time.Second * 10,
+		},
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "remote"),
+		),
+		ProviderArgs: r.config.ProviderArgs,
+		Cron:         cron.New(),
+	}
+}
+
+func (r *Runtime) newK8s(uri string, logger *logger.Logger) *kubernetes.Sync {
+	return &kubernetes.Sync{
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "kubernetes"),
+		),
+		URI:          regCrd.ReplaceAllString(uri, ""),
+		ProviderArgs: r.config.ProviderArgs,
+	}
+}
+
+func (r *Runtime) newFile(uri string, logger *logger.Logger) *file.Sync {
+	return &file.Sync{
+		URI: regFile.ReplaceAllString(uri, ""),
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "filepath"),
+		),
+		ProviderArgs: r.config.ProviderArgs,
+		Mux:          &msync.RWMutex{},
+	}
 }

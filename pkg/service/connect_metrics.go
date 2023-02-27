@@ -2,14 +2,25 @@ package service
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric/unit"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/aggregation"
+
+	semconv "go.opentelemetry.io/otel/semconv/v1.13.0"
 )
 
 var (
@@ -26,13 +37,15 @@ type HTTPReqProperties struct {
 }
 
 type Recorder interface {
-	// ObserveHTTPRequestDuration measures the duration of an HTTP request.
-	ObserveHTTPRequestDuration(props HTTPReqProperties, duration time.Duration)
-	// ObserveHTTPResponseSize measures the size of an HTTP response in bytes.
-	ObserveHTTPResponseSize(props HTTPReqProperties, sizeBytes int64)
-	// AddInflightRequests increments and decrements the number of inflight request being
-	// processed.
-	AddInflightRequests(props HTTPProperties, quantity int)
+	// OTelObserveHTTPRequestDuration measures the duration of an HTTP request.
+	OTelObserveHTTPRequestDuration(props HTTPReqProperties, duration time.Duration)
+	// OTelObserveHTTPResponseSize measures the size of an HTTP response in bytes.
+	OTelObserveHTTPResponseSize(props HTTPReqProperties, sizeBytes int64)
+
+	// OTelInFlightRequestStart count the active requests.
+	OTelInFlightRequestStart(props HTTPReqProperties)
+	// OTelInFlightRequestEnd count the finished requests.
+	OTelInFlightRequestEnd(props HTTPReqProperties)
 }
 
 type Reporter interface {
@@ -47,127 +60,111 @@ type HTTPProperties struct {
 	ID      string
 }
 
-type MetricsRecorder struct {
-	httpRequestDurHistogram   *prometheus.HistogramVec
-	httpResponseSizeHistogram *prometheus.HistogramVec
-	httpRequestsInflight      *prometheus.GaugeVec
+type OTelMetricsRecorder struct {
+	httpRequestDurHistogram   instrument.Float64Histogram
+	httpResponseSizeHistogram instrument.Float64Histogram
+	httpRequestsInflight      instrument.Int64UpDownCounter
 }
 
-func (r MetricsRecorder) ObserveHTTPRequestDuration(p HTTPReqProperties, duration time.Duration,
-) {
-	r.httpRequestDurHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(duration.Seconds())
+func (r OTelMetricsRecorder) setAttributes(p HTTPReqProperties) []attribute.KeyValue {
+	return []attribute.KeyValue{
+		semconv.ServiceNameKey.String(p.Service),
+		semconv.HTTPURLKey.String(p.ID),
+		semconv.HTTPMethodKey.String(p.Method),
+		semconv.HTTPStatusCodeKey.String(p.Code),
+	}
 }
 
-func (r MetricsRecorder) ObserveHTTPResponseSize(p HTTPReqProperties, sizeBytes int64) {
-	r.httpResponseSizeHistogram.WithLabelValues(p.Service, p.ID, p.Method, p.Code).Observe(float64(sizeBytes))
+func (r OTelMetricsRecorder) OTelObserveHTTPRequestDuration(p HTTPReqProperties, duration time.Duration) {
+	r.httpRequestDurHistogram.Record(context.TODO(), duration.Seconds(), r.setAttributes(p)...)
 }
 
-func (r MetricsRecorder) AddInflightRequests(p HTTPProperties, quantity int) {
-	r.httpRequestsInflight.WithLabelValues(p.Service, p.ID).Add(float64(quantity))
+func (r OTelMetricsRecorder) OTelObserveHTTPResponseSize(p HTTPReqProperties, sizeBytes int64) {
+	r.httpResponseSizeHistogram.Record(context.TODO(), float64(sizeBytes), r.setAttributes(p)...)
 }
 
-type prometheusConfig struct {
-	Prefix          string
-	DurationBuckets []float64
-	SizeBuckets     []float64
-	Registry        prometheus.Registerer
-	HandlerIDLabel  string
-	StatusCodeLabel string
-	MethodLabel     string
-	ServiceLabel    string
+func (r OTelMetricsRecorder) OTelInFlightRequestStart(p HTTPReqProperties) {
+	r.httpRequestsInflight.Add(context.TODO(), 1, r.setAttributes(p)...)
+}
+
+func (r OTelMetricsRecorder) OTelInFlightRequestEnd(p HTTPReqProperties) {
+	r.httpRequestsInflight.Add(context.TODO(), -1, r.setAttributes(p)...)
 }
 
 type middlewareConfig struct {
-	Recorder               Recorder
-	Service                string
-	GroupedStatus          bool
-	DisableMeasureSize     bool
-	DisableMeasureInflight bool
+	recorder           Recorder
+	MetricReader       metric.Reader
+	Logger             *logger.Logger
+	Service            string
+	GroupedStatus      bool
+	DisableMeasureSize bool
 }
 
 type Middleware struct {
 	cfg middlewareConfig
 }
 
-func (c *middlewareConfig) defaults() {
-	if c.Recorder == nil {
-		panic("recorder is required")
-	}
-}
-
 func New(cfg middlewareConfig) Middleware {
 	cfg.defaults()
-
 	m := Middleware{cfg: cfg}
-
 	return m
 }
 
-func (c *prometheusConfig) defaults() {
-	if len(c.DurationBuckets) == 0 {
-		c.DurationBuckets = prometheus.DefBuckets
+func (cfg *middlewareConfig) defaults() {
+	if cfg.Logger == nil {
+		log.Fatal("missing logger")
 	}
-
-	if len(c.SizeBuckets) == 0 {
-		c.SizeBuckets = prometheus.ExponentialBuckets(100, 10, 8)
+	if cfg.MetricReader == nil {
+		log.Fatal("missing MetricReader/Exporter")
 	}
-
-	if c.Registry == nil {
-		c.Registry = prometheus.DefaultRegisterer
-	}
-
-	if c.HandlerIDLabel == "" {
-		c.HandlerIDLabel = "handler"
-	}
-
-	if c.StatusCodeLabel == "" {
-		c.StatusCodeLabel = "code"
-	}
-
-	if c.MethodLabel == "" {
-		c.MethodLabel = "method"
-	}
-
-	if c.ServiceLabel == "" {
-		c.ServiceLabel = "service"
-	}
+	cfg.recorder = cfg.newOTelRecorder(cfg.MetricReader)
 }
 
-func NewRecorder(cfg prometheusConfig) *MetricsRecorder {
-	cfg.defaults()
-
-	r := &MetricsRecorder{
-		httpRequestDurHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: cfg.Prefix,
-			Subsystem: "http",
-			Name:      "request_duration_seconds",
-			Help:      "The latency of the HTTP requests.",
-			Buckets:   cfg.DurationBuckets,
-		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel, cfg.MethodLabel, cfg.StatusCodeLabel}),
-
-		httpResponseSizeHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: cfg.Prefix,
-			Subsystem: "http",
-			Name:      "response_size_bytes",
-			Help:      "The size of the HTTP responses.",
-			Buckets:   cfg.SizeBuckets,
-		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel, cfg.MethodLabel, cfg.StatusCodeLabel}),
-
-		httpRequestsInflight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: cfg.Prefix,
-			Subsystem: "http",
-			Name:      "requests_inflight",
-			Help:      "The number of inflight requests being handled at the same time.",
-		}, []string{cfg.ServiceLabel, cfg.HandlerIDLabel}),
-	}
-
-	cfg.Registry.MustRegister(
-		r.httpRequestDurHistogram,
-		r.httpResponseSizeHistogram,
-		r.httpRequestsInflight,
+func (cfg *middlewareConfig) getDurationView(name string, bucket []float64) metric.View {
+	return metric.NewView(
+		metric.Instrument{
+			// we change aggregation only for instruments with this name and scope
+			Name: name,
+			Scope: instrumentation.Scope{
+				Name: cfg.Service,
+			},
+		},
+		metric.Stream{Aggregation: aggregation.ExplicitBucketHistogram{
+			Boundaries: bucket,
+		}},
 	)
+}
 
-	return r
+func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetricsRecorder {
+	const requestDurationName = "http_request_duration_seconds"
+	const responseSizeName = "http_response_size_bytes"
+
+	// create a metric provider with custom bucket size for histograms
+	provider := metric.NewMeterProvider(
+		metric.WithReader(exporter),
+		metric.WithView(cfg.getDurationView(requestDurationName, prometheus.DefBuckets)),
+		metric.WithView(cfg.getDurationView(responseSizeName, prometheus.ExponentialBuckets(100, 10, 8))),
+	)
+	meter := provider.Meter(cfg.Service)
+	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
+	hduration, _ := meter.Float64Histogram(
+		requestDurationName,
+		instrument.WithDescription("The latency of the HTTP requests"),
+	)
+	hsize, _ := meter.Float64Histogram(
+		responseSizeName,
+		instrument.WithDescription("The size of the HTTP responses"),
+		instrument.WithUnit(unit.Bytes),
+	)
+	reqCounter, _ := meter.Int64UpDownCounter(
+		"http_requests_inflight",
+		instrument.WithDescription("The number of inflight requests being handled at the same time"),
+	)
+	return &OTelMetricsRecorder{
+		httpRequestDurHistogram:   hduration,
+		httpResponseSizeHistogram: hsize,
+		httpRequestsInflight:      reqCounter,
+	}
 }
 
 func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
@@ -178,32 +175,35 @@ func (m Middleware) Measure(handlerID string, reporter Reporter, next func()) {
 		hid = reporter.URLPath()
 	}
 
+	// If we need to group the status code, it uses the
+	// first number of the status code because is the least
+	// required identification way.
+	var code string
+	if m.cfg.GroupedStatus {
+		code = fmt.Sprintf("%dxx", reporter.StatusCode()/100)
+	} else {
+		code = strconv.Itoa(reporter.StatusCode())
+	}
+	props := HTTPReqProperties{
+		Service: m.cfg.Service,
+		ID:      hid,
+		Method:  reporter.Method(),
+		Code:    code,
+	}
+
+	m.cfg.recorder.OTelInFlightRequestStart(props)
+	defer m.cfg.recorder.OTelInFlightRequestEnd(props)
+
 	// Start the timer and when finishing measure the duration.
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 
-		// If we need to group the status code, it uses the
-		// first number of the status code because is the least
-		// required identification way.
-		var code string
-		if m.cfg.GroupedStatus {
-			code = fmt.Sprintf("%dxx", reporter.StatusCode()/100)
-		} else {
-			code = strconv.Itoa(reporter.StatusCode())
-		}
-
-		props := HTTPReqProperties{
-			Service: m.cfg.Service,
-			ID:      hid,
-			Method:  reporter.Method(),
-			Code:    code,
-		}
-		m.cfg.Recorder.ObserveHTTPRequestDuration(props, duration)
+		m.cfg.recorder.OTelObserveHTTPRequestDuration(props, duration)
 
 		// Measure size of response if required.
 		if !m.cfg.DisableMeasureSize {
-			m.cfg.Recorder.ObserveHTTPResponseSize(props, reporter.BytesWritten())
+			m.cfg.recorder.OTelObserveHTTPResponseSize(props, reporter.BytesWritten())
 		}
 	}()
 
@@ -227,12 +227,6 @@ func Handler(handlerID string, m Middleware, h http.Handler) http.Handler {
 			h.ServeHTTP(wi, r)
 		})
 	})
-}
-
-func HandlerProvider(handlerID string, m Middleware) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return Handler(handlerID, m, next)
-	}
 }
 
 type stdReporter struct {
