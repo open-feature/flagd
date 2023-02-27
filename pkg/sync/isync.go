@@ -42,7 +42,7 @@ type ISync interface {
 	// Note that, it is expected to return the first data sync as soon as possible to fill the store.
 	Sync(ctx context.Context, dataSync chan<- DataSync) error
 
-	// ReSync is used to validate the flag store following a delete event
+	// ReSync is used to fetch the full flag configuration from the sync
 	// This method should trigger an ALL sync operation then exit
 	ReSync(ctx context.Context, dataSync chan<- DataSync) error
 }
