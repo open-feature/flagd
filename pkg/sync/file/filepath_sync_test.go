@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -18,6 +19,57 @@ const (
 	fetchFileName     = "to_fetch.json"
 	fetchFileContents = "fetch me"
 )
+
+func TestSimpleReSync(t *testing.T) {
+	tests := map[string]struct {
+		fileContents     string
+		expectedDataSync sync.DataSync
+	}{
+		"simple-read": {
+			fileContents: "hello",
+			expectedDataSync: sync.DataSync{
+				FlagData: "hello",
+				Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+				Type:     sync.ALL,
+			},
+		},
+	}
+
+	handler := Sync{
+		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+		Logger: logger.NewLogger(nil, false),
+		Source: fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+	}
+
+	for test, tt := range tests {
+		t.Run(test, func(t *testing.T) {
+			defer t.Cleanup(cleanupFilePath)
+			setupDir(t, fetchDirName)
+			createFile(t, fetchDirName, fetchFileName)
+			writeToFile(t, tt.fileContents)
+
+			ctx := context.Background()
+			dataSyncChan := make(chan sync.DataSync, 1)
+
+			go func() {
+				err := handler.ReSync(ctx, dataSyncChan)
+				if err != nil {
+					log.Fatalf("Error start sync: %s", err.Error())
+					return
+				}
+			}()
+
+			select {
+			case s := <-dataSyncChan:
+				if !reflect.DeepEqual(tt.expectedDataSync, s) {
+					t.Errorf("resync failed, incorrect datasync value, got %v want %v", s, tt.expectedDataSync)
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("timed out waiting for datasync")
+			}
+		})
+	}
+}
 
 func TestSimpleSync(t *testing.T) {
 	tests := map[string]struct {

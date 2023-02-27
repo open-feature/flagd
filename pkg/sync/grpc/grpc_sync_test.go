@@ -19,16 +19,6 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-var reSyncTestResponses = map[string]struct {
-	res string
-	err error
-}{
-	"happy-path": {
-		res: "success",
-		err: nil,
-	},
-}
-
 func Test_ReSyncTests(t *testing.T) {
 	const target = "localBufCon"
 
@@ -119,7 +109,6 @@ func Test_ReSyncTests(t *testing.T) {
 			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
 		}
 	}
-
 }
 
 func TestUrlToGRPCTarget(t *testing.T) {

@@ -852,8 +852,10 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 func TestState_Evaluator(t *testing.T) {
 	tests := map[string]struct {
 		inputState          string
+		inputSyncType       sync.Type
 		expectedOutputState string
 		expectedError       bool
+		expectedResync      bool
 	}{
 		"success": {
 			inputState: `
@@ -886,6 +888,7 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
+			inputSyncType: sync.ALL,
 			expectedOutputState: `
 				{
   					"flags": {
@@ -945,6 +948,7 @@ func TestState_Evaluator(t *testing.T) {
 				}
 				}
 			`,
+			inputSyncType: sync.ALL,
 			expectedOutputState: `
 				{
   					"flags": {
@@ -1000,6 +1004,7 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
+			inputSyncType: sync.ALL,
 			expectedError: true,
 		},
 		"empty evaluator": {
@@ -1029,7 +1034,39 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
+			inputSyncType: sync.ALL,
 			expectedError: true,
+		},
+		"unexpected sync type": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": ""
+  					}
+				}
+			`,
+			inputSyncType:  999,
+			expectedError:  true,
+			expectedResync: false,
 		},
 	}
 
@@ -1037,15 +1074,22 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
+			_, resync, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
+				}
+				if resync != tt.expectedResync {
+					t.Errorf("expected resync %t got %t", tt.expectedResync, resync)
 				}
 				return
 			} else if tt.expectedError {
 				t.Error("expected error, got nil")
 				return
+			}
+
+			if resync != tt.expectedResync {
+				t.Errorf("expected resync %t got %t", tt.expectedResync, resync)
 			}
 
 			got, err := jsonEvaluator.GetState()
