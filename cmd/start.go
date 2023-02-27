@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -92,6 +93,8 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l, Debug)
 		rtLogger := logger.WithFields(zap.String("component", "start"))
+
+		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
 
 		if viper.GetString(syncProviderFlagName) != "" {
 			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
