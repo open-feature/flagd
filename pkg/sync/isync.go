@@ -16,7 +16,6 @@ const (
 	UPDATE
 	// DELETE - Delete for flag(s) previously provided
 	DELETE
-	// DELETE - All flags of sync provider. Prevents the triggering of a second resync event
 )
 
 func (t Type) String() string {
