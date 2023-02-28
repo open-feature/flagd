@@ -44,7 +44,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 
 	v, ok := dataMap[bucketBy]
 	if !ok {
-		return "", nil, fmt.Errorf("%s isn't a found var in data", bucketBy)
+		return "", nil, nil
 	}
 
 	valueToDistribute, ok := v.(string)
