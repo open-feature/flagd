@@ -8,9 +8,62 @@
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        "snap/snapcraft.yaml"
+      "extra-files": ["snap/snapcraft.yaml"],
+      "changelog-sections": [
+        {
+          "type": "feat",
+          "section": "✨ New Features"
+        },
+        {
+          "type": "fix",
+          "section": "🐛 Bug Fixes"
+        },
+        {
+          "type": "chore",
+          "section": "🧹 Chore"
+        },
+        {
+          "type": "docs",
+          "section": "📚 Documentation"
+        },
+        {
+          "type": "perf",
+          "section": "🚀 Performance"
+        },
+        {
+          "type": "build",
+          "hidden": true,
+          "section": "🛠️ Build"
+        },
+        {
+          "type": "deps",
+          "section": "📦 Dependencies"
+        },
+        {
+          "type": "ci",
+          "hidden": true,
+          "section": "🚦 CI"
+        },
+        {
+          "type": "refactor",
+          "section": "🔄 Refactoring"
+        },
+        {
+          "type": "revert",
+          "section": "🔙 Reverts"
+        },
+        {
+          "type": "style",
+          "hidden": true,
+          "section": "🎨 Styling"
+        },
+        {
+          "type": "test",
+          "hidden": true,
+          "section": "🧪 Tests"
+        }
       ]
     }
-  }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }
