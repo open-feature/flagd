@@ -1,16 +1,24 @@
 {
+  "monorepo-tags": true,
+  "tag-separator": "/",
   "bootstrap-sha": "c4e030ed651ab800aa56a555471da5913eb95259",
   "packages": {
-    ".": {
+    "cmd/flagd": {
       "release-type": "go",
-      "monorepo-tags": false,
-      "include-component-in-tag": false,
-      "prerelease": false,
+      "package-name": "flagd",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
+      "versioning": "default",
       "extra-files": [
         "snap/snapcraft.yaml"
       ]
+    },
+    "cmd/kube-flagd-proxy": {
+      "release-type": "go",
+      "package-name": "kube-flagd-proxy",
+      "versioning": "default",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     }
   }
 }

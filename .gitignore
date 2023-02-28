@@ -1,6 +1,6 @@
 __debug_bin
 .DS_Store
-flagd
+/flagd
 .vscode
 dist/
 .idea
