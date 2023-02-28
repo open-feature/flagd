@@ -33,7 +33,7 @@ type Config struct {
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
-	SyncProviders []sync.SyncProviderConfig
+	SyncProviders []sync.ProviderConfig
 	CORS          []string
 }
 

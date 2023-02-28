@@ -60,7 +60,7 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(
-		syncProvidersFlagName, "y", "", "JSON representation of an array of SyncProviderConfig objects. This object contains "+
+		syncProvidersFlagName, "y", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
 			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: ",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
@@ -112,7 +112,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		syncProviders2 := []sync.SyncProviderConfig{}
+		syncProviders2 := []sync.ProviderConfig{}
 		if cfgFile == "" {
 			syncProviders2, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
 			if err != nil {

@@ -27,7 +27,7 @@ var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
 	Logger *logger.Logger
-	Config sync.SyncProviderConfig
+	Config sync.ProviderConfig
 	client client.Client
 	URI    string
 	ready  bool

@@ -39,7 +39,7 @@ flagd start --uri core.openfeature.dev/default/my_example
 ### Sync Provider Configuration
 
 While a URI may be passed to flagd via the `--uri` flag, some implementations may require further configurations. In these cases the `--sync-providers` flag should be used.
-The flag takes a string argument, which should be a JSON representation of an array of SyncProviderConfig objects. Alternatively, these configurations should be passed to
+The flag takes a string argument, which should be a JSON representation of an array of `ProviderConfig` objects. Alternatively, these configurations should be passed to
 flagd via config file, specified using the `--config` flag.
 
 | Field       | Type  | 

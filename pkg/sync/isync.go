@@ -54,7 +54,7 @@ type DataSync struct {
 	Type
 }
 
-type SyncProviderConfig struct {
+type ProviderConfig struct {
 	URI      string `json:"uri"`
 	Provider string `json:"provider"`
 

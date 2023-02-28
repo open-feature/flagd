@@ -147,7 +147,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			httpSync := Sync{
 				URI:    tt.uri,
 				Client: mockClient,
-				Config: sync.SyncProviderConfig{
+				Config: sync.ProviderConfig{
 					BearerToken: tt.bearerToken,
 				},
 				LastBodySHA: tt.lastBodySHA,
