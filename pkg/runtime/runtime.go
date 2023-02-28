@@ -51,13 +51,10 @@ func (r *Runtime) Start() error {
 	if r.Evaluator == nil {
 		return errors.New("no evaluator set")
 	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
-
 	// Initialize DataSync channel watcher
 	g.Go(func() error {
 		for {
@@ -78,14 +75,12 @@ func (r *Runtime) Start() error {
 			}
 		}
 	})
-
 	// Init sync providers
 	for _, s := range r.SyncImpl {
 		if err := s.Init(gCtx); err != nil {
 			return err
 		}
 	}
-
 	// Start sync provider
 	for _, s := range r.SyncImpl {
 		p := s
@@ -93,13 +88,11 @@ func (r *Runtime) Start() error {
 			return p.Sync(gCtx, dataSync)
 		})
 	}
-
 	g.Go(func() error {
 		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
 			ReadinessProbe: r.isReady,
 		})
 	})
-
 	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
 		return err

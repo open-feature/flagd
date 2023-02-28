@@ -45,8 +45,8 @@ func TestSimpleReSync(t *testing.T) {
 	for test, tt := range tests {
 		t.Run(test, func(t *testing.T) {
 			defer t.Cleanup(cleanupFilePath)
-			setupDir(t, fetchDirName)
-			createFile(t, fetchDirName, fetchFileName)
+			setupDir(t)
+			createFile(t)
 			writeToFile(t, tt.fileContents)
 
 			ctx := context.Background()
@@ -140,8 +140,8 @@ func TestSimpleSync(t *testing.T) {
 	for test, tt := range tests {
 		t.Run(test, func(t *testing.T) {
 			defer t.Cleanup(cleanupFilePath)
-			setupDir(t, fetchDirName)
-			createFile(t, fetchDirName, fetchFileName)
+			setupDir(t)
+			createFile(t)
 
 			ctx := context.Background()
 
@@ -229,8 +229,8 @@ func TestFilePathSync_Fetch(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			setupDir(t, fetchDirName)
-			createFile(t, fetchDirName, fetchFileName)
+			setupDir(t)
+			createFile(t)
 			writeToFile(t, fetchFileContents)
 			defer t.Cleanup(cleanupFilePath)
 
@@ -248,8 +248,8 @@ func TestIsReadySyncFlag(t *testing.T) {
 		Mux:    &msync.RWMutex{},
 	}
 
-	setupDir(t, fetchDirName)
-	createFile(t, fetchDirName, fetchFileName)
+	setupDir(t)
+	createFile(t)
 	writeToFile(t, fetchFileContents)
 	defer t.Cleanup(cleanupFilePath)
 	if fpSync.IsReady() != false {
@@ -291,14 +291,14 @@ func deleteFile(t *testing.T, dirName string, fileName string) {
 	}
 }
 
-func setupDir(t *testing.T, dirName string) {
-	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
+func setupDir(t *testing.T) {
+	if err := os.Mkdir(fetchDirName, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func createFile(t *testing.T, dirName string, fileName string) {
-	if _, err := os.Create(fmt.Sprintf("%s/%s", dirName, fileName)); err != nil {
+func createFile(t *testing.T) {
+	if _, err := os.Create(fmt.Sprintf("%s/%s", fetchDirName, fetchFileName)); err != nil {
 		t.Fatal(err)
 	}
 }
