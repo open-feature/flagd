@@ -33,12 +33,8 @@ type Config struct {
 	ServiceCertPath   string
 	ServiceKeyPath    string
 
-	ProviderArgs    sync.ProviderArgs
-	SyncURI         []string
-	RemoteSyncType  string
-	SyncBearerToken string
-
-	CORS []string
+	SyncProviders []sync.SyncProviderConfig
+	CORS          []string
 }
 
 func (r *Runtime) Start() error {

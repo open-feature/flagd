@@ -7,6 +7,7 @@ import (
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
+	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -105,17 +106,27 @@ var startCmd = &cobra.Command{
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
+
+		syncProvidersFromURI, err := runtime.SyncProvidersFromArgs(viper.GetStringSlice(uriFlagName))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		syncProviders := []sync.SyncProviderConfig{}
+		if err := viper.UnmarshalKey(syncProviderFlagName, &syncProviders); err != nil {
+			log.Fatal(err)
+		}
+		syncProviders = append(syncProviders, syncProvidersFromURI...)
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
-			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetInt32(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
-			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
-			SyncURI:           viper.GetStringSlice(uriFlagName),
+			SyncProviders:     syncProviders,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

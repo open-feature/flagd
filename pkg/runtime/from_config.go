@@ -19,6 +19,13 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	syncProviderFile       = "file"
+	syncProviderGrpc       = "grpc"
+	syncProviderKubernetes = "kubernetes"
+	syncProviderHttp       = "http"
+)
+
 var (
 	regCrd  *regexp.Regexp
 	regURL  *regexp.Regexp
@@ -64,43 +71,43 @@ func (r *Runtime) setService(logger *logger.Logger) {
 
 func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	rtLogger := logger.WithFields(zap.String("component", "runtime"))
-	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncURI))
-	for _, uri := range r.config.SyncURI {
-		switch uriB := []byte(uri); {
-		case regFile.Match(uriB):
+	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncProviders))
+	for _, syncProvider := range r.config.SyncProviders {
+		switch syncProvider.Provider {
+		case syncProviderFile:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newFile(uri, logger),
+				r.newFile(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
-		case regCrd.Match(uriB):
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
+		case syncProviderKubernetes:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newK8s(uri, logger),
+				r.newK8s(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))
-		case regURL.Match(uriB):
+			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
+		case syncProviderHttp:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newHTTP(uri, logger),
+				r.newHTTP(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", uri))
-		case regGRPC.Match(uriB):
+			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", syncProvider.URI))
+		case syncProviderGrpc:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newGRPC(uri, logger),
+				r.newGRPC(syncProvider, logger),
 			)
 		default:
 			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
-				" or 'core.openfeature.dev'", uri)
+				" or 'core.openfeature.dev'", syncProvider.URI)
 		}
 	}
 	return nil
 }
 
-func (r *Runtime) newGRPC(uri string, logger *logger.Logger) *grpc.Sync {
+func (r *Runtime) newGRPC(config sync.SyncProviderConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
-		Target: grpc.URLToGRPCTarget(uri),
+		Target: grpc.URLToGRPCTarget(config.URI),
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
@@ -109,10 +116,9 @@ func (r *Runtime) newGRPC(uri string, logger *logger.Logger) *grpc.Sync {
 	}
 }
 
-func (r *Runtime) newHTTP(uri string, logger *logger.Logger) *httpSync.Sync {
+func (r *Runtime) newHTTP(config sync.SyncProviderConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
-		URI:         uri,
-		BearerToken: r.config.SyncBearerToken,
+		URI: config.URI,
 		Client: &http.Client{
 			Timeout: time.Second * 10,
 		},
@@ -120,30 +126,62 @@ func (r *Runtime) newHTTP(uri string, logger *logger.Logger) *httpSync.Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "remote"),
 		),
-		ProviderArgs: r.config.ProviderArgs,
-		Cron:         cron.New(),
+		Config: config,
+		Cron:   cron.New(),
 	}
 }
 
-func (r *Runtime) newK8s(uri string, logger *logger.Logger) *kubernetes.Sync {
+func (r *Runtime) newK8s(config sync.SyncProviderConfig, logger *logger.Logger) *kubernetes.Sync {
 	return &kubernetes.Sync{
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI:          regCrd.ReplaceAllString(uri, ""),
-		ProviderArgs: r.config.ProviderArgs,
+		URI:    config.URI,
+		Config: config,
 	}
 }
 
-func (r *Runtime) newFile(uri string, logger *logger.Logger) *file.Sync {
+func (r *Runtime) newFile(config sync.SyncProviderConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
-		URI: regFile.ReplaceAllString(uri, ""),
+		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "filepath"),
 		),
-		ProviderArgs: r.config.ProviderArgs,
-		Mux:          &msync.RWMutex{},
+		Config: config,
+		Mux:    &msync.RWMutex{},
 	}
+}
+
+func SyncProvidersFromArgs(uris []string) ([]sync.SyncProviderConfig, error) {
+	syncProvidersParsed := []sync.SyncProviderConfig{}
+	for _, uri := range uris {
+		switch uriB := []byte(uri); {
+		case regFile.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.SyncProviderConfig{
+				URI:      regFile.ReplaceAllString(uri, ""),
+				Provider: syncProviderFile,
+			})
+		case regCrd.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.SyncProviderConfig{
+				URI:      regCrd.ReplaceAllString(uri, ""),
+				Provider: syncProviderKubernetes,
+			})
+		case regURL.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.SyncProviderConfig{
+				URI:      uri,
+				Provider: syncProviderHttp,
+			})
+		case regGRPC.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.SyncProviderConfig{
+				URI:      uri,
+				Provider: syncProviderGrpc,
+			})
+		default:
+			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
+				" or 'core.openfeature.dev'", uri)
+		}
+	}
+	return syncProvidersParsed, nil
 }

@@ -26,11 +26,11 @@ import (
 var resyncPeriod = 1 * time.Minute
 
 type Sync struct {
-	Logger       *logger.Logger
-	ProviderArgs sync.ProviderArgs
-	client       client.Client
-	URI          string
-	ready        bool
+	Logger *logger.Logger
+	Config sync.SyncProviderConfig
+	client client.Client
+	URI    string
+	ready  bool
 }
 
 func (k *Sync) Init(ctx context.Context) error {

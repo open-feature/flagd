@@ -32,7 +32,6 @@ func TestSimpleSync(t *testing.T) {
 		URI:         "http://localhost",
 		Client:      mockClient,
 		Cron:        mockCron,
-		BearerToken: "",
 		LastBodySHA: "",
 		Logger:      logger.NewLogger(nil, false),
 	}
@@ -146,9 +145,11 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			tt.setup(t, mockClient)
 
 			httpSync := Sync{
-				URI:         tt.uri,
-				Client:      mockClient,
-				BearerToken: tt.bearerToken,
+				URI:    tt.uri,
+				Client: mockClient,
+				Config: sync.SyncProviderConfig{
+					BearerToken: tt.bearerToken,
+				},
 				LastBodySHA: tt.lastBodySHA,
 				Logger:      logger.NewLogger(nil, false),
 			}

@@ -16,14 +16,13 @@ import (
 )
 
 type Sync struct {
-	URI          string
-	Client       Client
-	Cron         Cron
-	BearerToken  string
-	LastBodySHA  string
-	Logger       *logger.Logger
-	ProviderArgs sync.ProviderArgs
-	ready        bool
+	URI         string
+	Client      Client
+	Cron        Cron
+	LastBodySHA string
+	Logger      *logger.Logger
+	ready       bool
+	Config      sync.SyncProviderConfig
 }
 
 // Client defines the behaviour required of a http client
@@ -108,8 +107,8 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	req.Header.Add("Accept", "application/json")
 
-	if hs.BearerToken != "" {
-		bearer := "Bearer " + hs.BearerToken
+	if hs.Config.BearerToken != "" {
+		bearer := fmt.Sprintf("Bearer %s", hs.Config.BearerToken)
 		req.Header.Set("Authorization", bearer)
 	}
 

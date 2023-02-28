@@ -2,8 +2,6 @@ package sync
 
 import "context"
 
-type ProviderArgs map[string]string
-
 type Type int
 
 // Type of the sync operation
@@ -54,4 +52,11 @@ type DataSync struct {
 	FlagData string
 	Source   string
 	Type
+}
+
+type SyncProviderConfig struct {
+	URI      string `json:"uri"`
+	Provider string `json:"provider"`
+
+	BearerToken string `json:"bearerToken,omitempty"`
 }
