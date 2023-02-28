@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -154,7 +156,23 @@ func (r *Runtime) newFile(config sync.SyncProviderConfig, logger *logger.Logger)
 	}
 }
 
-func SyncProvidersFromArgs(uris []string) ([]sync.SyncProviderConfig, error) {
+func SyncProviderArgPass(syncProviders string) ([]sync.SyncProviderConfig, error) {
+	syncProvidersParsed := []sync.SyncProviderConfig{}
+	if err := json.Unmarshal([]byte(syncProviders), &syncProvidersParsed); err != nil {
+		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
+	}
+	for _, sp := range syncProvidersParsed {
+		if sp.URI == "" {
+			return syncProvidersParsed, errors.New("sync provider argument parse: uri is a required field")
+		}
+		if sp.Provider == "" {
+			return syncProvidersParsed, errors.New("sync provider argument parse: provider is a required field")
+		}
+	}
+	return syncProvidersParsed, nil
+}
+
+func SyncProvidersFromURIs(uris []string) ([]sync.SyncProviderConfig, error) {
 	syncProvidersParsed := []sync.SyncProviderConfig{}
 	for _, uri := range uris {
 		switch uriB := []byte(uri); {
