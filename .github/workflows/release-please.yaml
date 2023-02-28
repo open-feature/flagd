@@ -36,7 +36,7 @@ jobs:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@3da7dc6e2b31f99ef2cb9fb4c50fb0971e0d0139
+        uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
