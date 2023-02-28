@@ -40,7 +40,7 @@ type Sync struct {
 	options    []grpc.DialOption
 	ready      bool
 	Mux        *msync.RWMutex
-	Config     sync.SyncProviderConfig
+	Config     sync.ProviderConfig
 }
 
 func (g *Sync) connectClient(ctx context.Context) error {
