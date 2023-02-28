@@ -23,6 +23,7 @@ type Sync struct {
 	LastBodySHA  string
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
+	ready        bool
 }
 
 // Client defines the behaviour required of a http client
@@ -46,12 +47,22 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return nil
 }
 
+func (hs *Sync) Init(ctx context.Context) error {
+	// noop
+	return nil
+}
+
+func (hs *Sync) IsReady() bool {
+	return hs.ready
+}
+
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := hs.Fetch(ctx)
 	if err != nil {
 		return err
 	}
+	hs.ready = true
 
 	_ = hs.Cron.AddFunc("*/5 * * * *", func() {
 		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
@@ -139,15 +150,18 @@ func (hs *Sync) generateSha(body []byte) string {
 
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 	if hs.URI == "" {
+		hs.ready = false
 		return "", errors.New("no HTTP URL string set")
 	}
 
 	body, err := hs.fetchBodyFromURL(ctx, hs.URI)
 	if err != nil {
+		hs.ready = false
 		return "", err
 	}
 	if len(body) != 0 {
 		hs.LastBodySHA = hs.generateSha(body)
 	}
+	hs.ready = true
 	return string(body), nil
 }

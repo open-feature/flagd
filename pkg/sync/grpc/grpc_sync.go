@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	msync "sync"
 	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
@@ -29,11 +30,13 @@ const (
 )
 
 type Sync struct {
-	Target      string
-	ProviderID  string
-	Logger      *logger.Logger
-	client      syncv1grpc.FlagSyncServiceClient
-	DialOptions []grpc.DialOption
+	Target     string
+	ProviderID string
+	Logger     *logger.Logger
+	client     syncv1grpc.FlagSyncService_SyncFlagsClient
+	options    []grpc.DialOption
+	ready      bool
+	Mux        *msync.RWMutex
 }
 
 func (g *Sync) connectClient(ctx context.Context) error {
@@ -67,8 +70,14 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	return nil
 }
 
-func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	if err := g.connectClient(ctx); err != nil {
+func (g *Sync) Init(ctx context.Context) error {
+	g.options = []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	// initial dial and connection. Failure here must result in a startup failure
+	dial, err := grpc.DialContext(ctx, g.Target, g.options...)
+	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error establishing grpc connection: %s", err.Error()))
 		return err
 	}
@@ -78,21 +87,39 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
 		return err
 	}
+	g.client = syncClient
+	return nil
+}
 
+func (g *Sync) IsReady() bool {
+	g.Mux.RLock()
+	defer g.Mux.RUnlock()
+	return g.ready
+}
+
+func (g *Sync) setReady(val bool) {
+	g.Mux.Lock()
+	defer g.Mux.Unlock()
+	g.ready = val
+}
+
+func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
-	err = g.handleFlagSync(syncClient, dataSync)
+	g.setReady(true)
+	err := g.handleFlagSync(g.client, dataSync)
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
-
 	// retry connection establishment
 	for {
-		syncClient, ok := g.connectWithRetry(ctx)
+		g.setReady(false)
+		syncClient, ok := g.connectWithRetry(ctx, g.options...)
 		if !ok {
 			// We shall exit
 			return nil
 		}
-
+		g.setReady(true)
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
+			g.setReady(false)
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 			continue
 		}

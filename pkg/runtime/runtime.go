@@ -79,7 +79,14 @@ func (r *Runtime) Start() error {
 		}
 	})
 
-	// Start sync providers
+	// Init sync providers
+	for _, s := range r.SyncImpl {
+		if err := s.Init(gCtx); err != nil {
+			return err
+		}
+	}
+
+	// Start sync provider
 	for _, s := range r.SyncImpl {
 		p := s
 		g.Go(func() error {
@@ -88,7 +95,9 @@ func (r *Runtime) Start() error {
 	}
 
 	g.Go(func() error {
-		return r.Service.Serve(gCtx, r.Evaluator)
+		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
+			ReadinessProbe: r.isReady,
+		})
 	})
 
 	<-gCtx.Done()
@@ -96,6 +105,16 @@ func (r *Runtime) Start() error {
 		return err
 	}
 	return nil
+}
+
+func (r *Runtime) isReady() bool {
+	// if all providers can watch for flag changes, we are ready.
+	for _, p := range r.SyncImpl {
+		if !p.IsReady() {
+			return false
+		}
+	}
+	return true
 }
 
 // updateWithNotify helps to update state and notify listeners
