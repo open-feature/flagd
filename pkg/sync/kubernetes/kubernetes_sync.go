@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -70,7 +69,7 @@ func (k *Sync) Init(ctx context.Context) error {
 		return err
 	}
 
-	clusterClient, err := dynamic.NewForConfig(clusterConfig)
+	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func (k *Sync) Init(ctx context.Context) error {
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient, resyncPeriod, k.namespace, nil)
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient, resyncPeriod, k.namespace, nil)
 
 	k.informer = factory.ForResource(resource).Informer()
 
@@ -217,7 +216,7 @@ func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEv
 	}
 
 	if ffObj.APIVersion != apiVersion {
-		return errors.New("invalid api version")
+		return fmt.Errorf("invalid api version %s, expected %s", ffObj.APIVersion, apiVersion)
 	}
 
 	if ffObj.Name == object.Name {
@@ -239,7 +238,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	}
 
 	if ffOldObj.APIVersion != apiVersion {
-		return errors.New("invalid api version")
+		return fmt.Errorf("invalid api version %s, expected %s", ffOldObj.APIVersion, apiVersion)
 	}
 
 	ffNewObj, err := toFFCfg(newObj)
@@ -248,7 +247,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 	}
 
 	if ffNewObj.APIVersion != apiVersion {
-		return errors.New("invalid api version")
+		return fmt.Errorf("invalid api version %s, expected %s", ffNewObj.APIVersion, apiVersion)
 	}
 
 	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
@@ -283,7 +282,7 @@ func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
 func parseURI(uri string) (string, string, error) {
 	s := strings.Split(uri, "/")
 	if len(s) != 2 || len(s[0]) == 0 || len(s[1]) == 0 {
-		return "", "", fmt.Errorf("invalid resource uri: %s", uri)
+		return "", "", fmt.Errorf("invalid resource uri format, expected <namespace>/<crdName> but got: %s", uri)
 	}
 	return s[0], s[1], nil
 }
