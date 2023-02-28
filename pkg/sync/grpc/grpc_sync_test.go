@@ -208,7 +208,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			syncChan := make(chan sync.DataSync)
 
 			go func() {
-				grpcSyncImpl.client = test.stream
+				grpcSyncImpl.syncClient = test.stream
 				err := grpcSyncImpl.Sync(context.TODO(), syncChan)
 				if err != nil {
 					t.Errorf("Error handling flag sync: %s", err.Error())
@@ -359,7 +359,7 @@ func Test_StreamListener(t *testing.T) {
 
 		// listen to stream
 		go func() {
-			grpcSync.client = syncClient
+			grpcSync.syncClient = syncClient
 			err := grpcSync.Sync(context.TODO(), syncChan)
 			if err != nil {
 				// must ignore EOF as this is returned for stream end

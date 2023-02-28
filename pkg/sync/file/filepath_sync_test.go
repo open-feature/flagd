@@ -152,6 +152,7 @@ func TestSimpleSync(t *testing.T) {
 					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Logger: logger.NewLogger(nil, false),
 					Mux:    &msync.RWMutex{},
+					Source: fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 				}
 				err := handler.Init(ctx)
 				if err != nil {

@@ -14,6 +14,7 @@ import (
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/sync"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -33,7 +34,8 @@ type Sync struct {
 	Target     string
 	ProviderID string
 	Logger     *logger.Logger
-	client     syncv1grpc.FlagSyncService_SyncFlagsClient
+	syncClient syncv1grpc.FlagSyncService_SyncFlagsClient
+	client     syncv1grpc.FlagSyncServiceClient
 	options    []grpc.DialOption
 	ready      bool
 	Mux        *msync.RWMutex
@@ -41,22 +43,23 @@ type Sync struct {
 
 func (g *Sync) connectClient(ctx context.Context) error {
 	// initial dial and connection. Failure here must result in a startup failure
-	dial, err := grpc.DialContext(ctx, g.Target, g.DialOptions...)
+	dial, err := grpc.DialContext(ctx, g.Target, g.options...)
 	if err != nil {
 		return err
 	}
 
 	g.client = syncv1grpc.NewFlagSyncServiceClient(dial)
+
+	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+	if err != nil {
+		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
+		return err
+	}
+	g.syncClient = syncClient
 	return nil
 }
 
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	if g.client == nil {
-		if err := g.connectClient(ctx); err != nil {
-			g.Logger.Error(fmt.Sprintf("error establishing grpc connection: %s", err.Error()))
-			return err
-		}
-	}
 	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error fetching all flags: %s", err.Error()))
@@ -76,19 +79,7 @@ func (g *Sync) Init(ctx context.Context) error {
 	}
 
 	// initial dial and connection. Failure here must result in a startup failure
-	dial, err := grpc.DialContext(ctx, g.Target, g.options...)
-	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error establishing grpc connection: %s", err.Error()))
-		return err
-	}
-
-	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
-	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
-		return err
-	}
-	g.client = syncClient
-	return nil
+	return g.connectClient(ctx)
 }
 
 func (g *Sync) IsReady() bool {
@@ -106,12 +97,15 @@ func (g *Sync) setReady(val bool) {
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
 	g.setReady(true)
-	err := g.handleFlagSync(g.client, dataSync)
+	err := g.handleFlagSync(g.syncClient, dataSync)
+	if err == nil {
+		return nil
+	}
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 	// retry connection establishment
 	for {
 		g.setReady(false)
-		syncClient, ok := g.connectWithRetry(ctx, g.options...)
+		syncClient, ok := g.connectWithRetry(ctx)
 		if !ok {
 			// We shall exit
 			return nil

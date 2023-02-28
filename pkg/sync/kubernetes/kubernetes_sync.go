@@ -31,6 +31,7 @@ type Sync struct {
 	client       client.Client
 	URI          string
 	Source       string
+	ready        bool
 }
 
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -40,7 +41,6 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	}
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.Source, Type: sync.ALL}
 	return nil
-	ready        bool
 }
 
 func (k *Sync) Init(ctx context.Context) error {
