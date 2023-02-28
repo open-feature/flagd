@@ -25,6 +25,7 @@ const (
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
+	syncProvidersFlagName  = "sync-providers"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
 )
@@ -58,6 +59,10 @@ func init() {
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
+	flags.StringP(
+		syncProvidersFlagName, "y", "", "JSON representation of an array of SyncProviderConfig objects. This object contains "+
+			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: ",
+	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
@@ -71,6 +76,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(syncProvidersFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
@@ -97,26 +103,28 @@ var startCmd = &cobra.Command{
 
 		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
 
-		if viper.GetString(syncProviderFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
-		}
-
 		if viper.GetString(evaluatorFlagName) != "json" {
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
-		syncProvidersFromURI, err := runtime.SyncProvidersFromArgs(viper.GetStringSlice(uriFlagName))
+		syncProviders, err := runtime.SyncProvidersFromURIs(viper.GetStringSlice(uriFlagName))
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		syncProviders := []sync.SyncProviderConfig{}
-		if err := viper.UnmarshalKey(syncProviderFlagName, &syncProviders); err != nil {
-			log.Fatal(err)
+		syncProviders2 := []sync.SyncProviderConfig{}
+		if cfgFile == "" {
+			syncProviders2, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err = viper.UnmarshalKey(syncProvidersFlagName, &syncProviders2)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-		syncProviders = append(syncProviders, syncProvidersFromURI...)
+		syncProviders = append(syncProviders, syncProviders2...)
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
