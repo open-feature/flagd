@@ -1,6 +1,14 @@
 IMG ?= flagd:latest
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
+
+workspace-init:
+	go work init
+	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
+
+workspace-update:
+	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \

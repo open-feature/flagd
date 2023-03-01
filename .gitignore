@@ -10,3 +10,5 @@ pkg/eval/flagd-definitions.json
 *.crt
 *.key
 coverage.out
+go.work
+go.work.sum
