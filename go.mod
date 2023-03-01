@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1
-	github.com/open-feature/open-feature-operator v0.2.28
+	github.com/open-feature/open-feature-operator v0.2.29
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron v1.2.0
