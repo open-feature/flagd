@@ -95,7 +95,6 @@ func Test_ReSyncTests(t *testing.T) {
 
 		for _, expected := range test.notifications {
 			out := <-syncChan
-			fmt.Println(out.Type)
 			if expected.Type != out.Type {
 				t.Errorf("Returned sync type = %v, wanted %v", out.Type, expected.Type)
 			}

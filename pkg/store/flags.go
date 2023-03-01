@@ -153,7 +153,6 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 		flag, ok := f.Get(k)
 		if ok {
 			if !f.hasPriority(flag.Source, source) {
-				fmt.Println(flag.Source, source, "priority failing")
 				continue
 			}
 			notifications[k] = map[string]interface{}{
