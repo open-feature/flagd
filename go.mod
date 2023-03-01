@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230207182158-c211472558c3.4
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230207182158-c211472558c3.4
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230222100723-491ee098dd92.4
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230222100723-491ee098dd92.4
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/cucumber/godog v0.12.6
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
