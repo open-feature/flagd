@@ -22,9 +22,10 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 		return true
 	}
 	for i := len(f.FlagSources) - 1; i >= 0; i-- {
-		if f.FlagSources[i] == stored {
+		switch f.FlagSources[i] {
+		case stored:
 			return false
-		} else if f.FlagSources[i] == new {
+		case new:
 			return true
 		}
 	}

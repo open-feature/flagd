@@ -62,7 +62,7 @@ func (g *Sync) connectClient(ctx context.Context) error {
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error fetching all flags: %s", err.Error()))
+		g.Logger.Error(fmt.Sprintf("fetching all flags: %s", err.Error()))
 		return err
 	}
 	dataSync <- sync.DataSync{
