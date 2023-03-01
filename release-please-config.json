@@ -11,12 +11,12 @@
       "extra-files": ["snap/snapcraft.yaml"],
       "changelog-sections": [
         {
-          "type": "feat",
-          "section": "✨ New Features"
-        },
-        {
           "type": "fix",
           "section": "🐛 Bug Fixes"
+        },
+        {
+          "type": "feat",
+          "section": "✨ New Features"
         },
         {
           "type": "chore",
