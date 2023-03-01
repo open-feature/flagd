@@ -328,6 +328,8 @@ github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1 h1:Tg712Egcqb5dsYxOGEa
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1/go.mod h1:zw/xpuDy9ziBEKVA1t4VoQtzFc80btAAQCiZkX6y9oQ=
 github.com/open-feature/open-feature-operator v0.2.28 h1:qzzVq8v9G7aXO7luocO/wQCGnTJjtcQh75mDOqjnFxo=
 github.com/open-feature/open-feature-operator v0.2.28/go.mod h1:bQncVK7hvhj5QStPwexxQ1aArPwox2Y1vWrVei/qIFg=
+github.com/open-feature/open-feature-operator v0.2.29 h1:Ky/SMzwEiBV5x9qOfHTj1jl/CakPZNClRtoeSPqVbNo=
+github.com/open-feature/open-feature-operator v0.2.29/go.mod h1:bQncVK7hvhj5QStPwexxQ1aArPwox2Y1vWrVei/qIFg=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
 github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
 github.com/pelletier/go-toml/v2 v2.0.6 h1:nrzqCb7j9cDFj2coyLNLaZuJTLjWjlaz6nvTvIwycIU=
