@@ -142,13 +142,13 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 // fetch attempts to retrieve the latest feature flag configurations
 func (k *Sync) fetch(ctx context.Context) (string, error) {
 	// first check the store - avoid overloading API
-	object, exist, err := k.informer.GetStore().GetByKey(k.URI)
+	item, exist, err := k.informer.GetStore().GetByKey(k.URI)
 	if err != nil {
 		return "", err
 	}
 
 	if exist {
-		configuration, err := toFFCfg(object)
+		configuration, err := toFFCfg(item)
 		if err != nil {
 			return "", err
 		}
