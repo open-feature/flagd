@@ -112,19 +112,19 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		syncProviders2 := []sync.ProviderConfig{}
+		syncProvidersFromConfig := []sync.ProviderConfig{}
 		if cfgFile == "" && viper.GetString(syncProvidersFlagName) != "" {
-			syncProviders2, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
+			syncProvidersFromConfig, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			err = viper.UnmarshalKey(syncProvidersFlagName, &syncProviders2)
+			err = viper.UnmarshalKey(syncProvidersFlagName, &syncProvidersFromConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		syncProviders = append(syncProviders, syncProviders2...)
+		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
