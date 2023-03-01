@@ -2,10 +2,14 @@ buf.build/gen/go/grpc-ecosystem/grpc-gateway/grpc/go v1.2.0-20220906183531-bc28b
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.28.1-20220906183531-bc28b723cd77.4/go.mod h1:92ejKVTiuvnKoAtRlpJpIxKfloI935DDqhs0NCRx+KM=
 buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1 h1:KoSPqmHyi3x27tPFLQ994CJjG4qc59v+0gbxY9+VXso=
 buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20221226184428-0dc62ff103b8.1/go.mod h1:68WGv4z/jXuTS3G7FEFQTEw4wiMmulBSX6BlSFX2Xc8=
+buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20230222100723-491ee098dd92.1 h1:1o6CNTXpOX9yE3mSXwd83S2ghBjHliTWugo+PkJnn+0=
+buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.4.1-20230222100723-491ee098dd92.1/go.mod h1:k1R1x4dQdST9d0ue9zjlKOiicXCWGLEAHzrJDu0oSQ0=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230207182158-c211472558c3.4 h1:11ayeHd1H1LhRuJlHzIfbcUk64gAtnm5zrBZXxoOyN0=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.2.0-20230207182158-c211472558c3.4/go.mod h1:8ce/bdmiPVo2i5s+bYLENyIvi24dmBN5zy+nPyCUAHg=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230207182158-c211472558c3.4 h1:6Ht0iYYWoG7qDuxGs/aG11uj9ulFfTL2zeWCryj9aWg=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230207182158-c211472558c3.4/go.mod h1:+Bnrjo56uVn/aBcLWchTveR8UeCj+KSJN4fE0xSmBNc=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230222100723-491ee098dd92.4 h1:4ktM86Sav99JsrBM2U1UcPCgOUz0zMeWcq/I5ZyIig0=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20230222100723-491ee098dd92.4/go.mod h1:+Bnrjo56uVn/aBcLWchTveR8UeCj+KSJN4fE0xSmBNc=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
