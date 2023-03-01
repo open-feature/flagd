@@ -31,6 +31,8 @@ type Sync struct {
 	client       client.Client
 	URI          string
 	ready        bool
+
+	informer cache.SharedInformer
 }
 
 func (k *Sync) Init(ctx context.Context) error {
@@ -92,6 +94,19 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 }
 
 func (k *Sync) fetch(ctx context.Context) (string, error) {
+	// first check the store - avoid overloading API
+	item, exist, _ := k.informer.GetStore().GetByKey(k.URI)
+	if exist {
+		var ffOldObj v1alpha1.FeatureFlagConfiguration
+		u := item.(*unstructured.Unstructured)
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffOldObj)
+		if err != nil {
+			return "", err
+		}
+
+		return ffOldObj.Spec.FeatureFlagSpec, nil
+	}
+
 	if k.URI == "" {
 		k.Logger.Error("no target feature flag configuration set")
 		return "{}", nil
@@ -178,6 +193,8 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		resyncPeriod, corev1.NamespaceAll, nil)
 	informer := factory.ForResource(resource).Informer()
+	k.informer = informer
+
 	objectKey := client.ObjectKey{
 		Name:      name,
 		Namespace: ns,
