@@ -18,6 +18,7 @@ import (
 
 type Sync struct {
 	URI          string
+	Source       string
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
@@ -29,6 +30,11 @@ type Sync struct {
 
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
 const defaultState = "{}"
+
+func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	fs.sendDataSync(ctx, sync.ALL, dataSync)
+	return nil
+}
 
 func (fs *Sync) Init(ctx context.Context) error {
 	fs.Logger.Info("Starting filepath sync notifier")
@@ -128,7 +134,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync c
 		}
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.Source, Type: syncType}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,6 +19,97 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+func Test_ReSyncTests(t *testing.T) {
+	const target = "localBufCon"
+
+	tests := []struct {
+		name          string
+		res           *v1.FetchAllFlagsResponse
+		err           error
+		shouldError   bool
+		notifications []sync.DataSync
+	}{
+		{
+			name: "happy-path",
+			res: &v1.FetchAllFlagsResponse{
+				FlagConfiguration: "success",
+			},
+			notifications: []sync.DataSync{
+				{
+					FlagData: "success",
+					Type:     sync.ALL,
+				},
+			},
+			shouldError: false,
+		},
+		{
+			name:          "happy-path",
+			res:           &v1.FetchAllFlagsResponse{},
+			err:           errors.New("internal disaster"),
+			notifications: []sync.DataSync{},
+			shouldError:   true,
+		},
+	}
+
+	for _, test := range tests {
+		bufCon := bufconn.Listen(5)
+
+		bufServer := bufferedServer{
+			listener:              bufCon,
+			fetchAllFlagsResponse: test.res,
+			fetchAllFlagsError:    test.err,
+		}
+
+		// start server
+		go serve(&bufServer)
+
+		// initialize client
+		dial, err := grpc.Dial(target,
+			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+				return bufCon.Dial()
+			}),
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			t.Errorf("Error setting up client connection: %s", err.Error())
+		}
+
+		c := syncv1grpc.NewFlagSyncServiceClient(dial)
+
+		grpcSync := Sync{
+			Target:     target,
+			ProviderID: "",
+			Logger:     logger.NewLogger(nil, false),
+			client:     c,
+		}
+
+		syncChan := make(chan sync.DataSync, 1)
+
+		err = grpcSync.ReSync(context.Background(), syncChan)
+		if test.shouldError && err == nil {
+			t.Errorf("test %s should have returned error but did not", test.name)
+		}
+		if !test.shouldError && err != nil {
+			t.Errorf("test %s should not have returned error, but did: %s", test.name, err.Error())
+		}
+
+		for _, expected := range test.notifications {
+			out := <-syncChan
+			if expected.Type != out.Type {
+				t.Errorf("Returned sync type = %v, wanted %v", out.Type, expected.Type)
+			}
+
+			if expected.FlagData != out.FlagData {
+				t.Errorf("Returned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
+			}
+		}
+
+		// channel must be empty
+		if len(syncChan) != 0 {
+			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
+		}
+	}
+}
 
 func TestUrlToGRPCTarget(t *testing.T) {
 	tests := []struct {
@@ -115,7 +207,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			syncChan := make(chan sync.DataSync)
 
 			go func() {
-				grpcSyncImpl.client = test.stream
+				grpcSyncImpl.syncClient = test.stream
 				err := grpcSyncImpl.Sync(context.TODO(), syncChan)
 				if err != nil {
 					t.Errorf("Error handling flag sync: %s", err.Error())
@@ -266,7 +358,7 @@ func Test_StreamListener(t *testing.T) {
 
 		// listen to stream
 		go func() {
-			grpcSync.client = syncClient
+			grpcSync.syncClient = syncClient
 			err := grpcSync.Sync(context.TODO(), syncChan)
 			if err != nil {
 				// must ignore EOF as this is returned for stream end
@@ -324,8 +416,10 @@ type serverPayload struct {
 
 // bufferedServer - a mock grpc service backed by buffered connection
 type bufferedServer struct {
-	listener      *bufconn.Listener
-	mockResponses []serverPayload
+	listener              *bufconn.Listener
+	mockResponses         []serverPayload
+	fetchAllFlagsResponse *v1.FetchAllFlagsResponse
+	fetchAllFlagsError    error
 }
 
 func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.FlagSyncService_SyncFlagsServer) error {
@@ -341,4 +435,8 @@ func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.F
 	}
 
 	return nil
+}
+
+func (b *bufferedServer) FetchAllFlags(ctx context.Context, req *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
+	return b.fetchAllFlagsResponse, b.fetchAllFlagsError
 }

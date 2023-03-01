@@ -9,6 +9,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestHasPriority(t *testing.T) {
+	tests := []struct {
+		name         string
+		currentState *Flags
+		storedSource string
+		newSource    string
+		hasPriority  bool
+	}{
+		{
+			name:         "same source",
+			currentState: &Flags{},
+			storedSource: "A",
+			newSource:    "A",
+			hasPriority:  true,
+		},
+		{
+			name: "no priority",
+			currentState: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+			},
+			storedSource: "A",
+			newSource:    "B",
+			hasPriority:  false,
+		},
+		{
+			name: "priority",
+			currentState: &Flags{
+				FlagSources: []string{
+					"A",
+					"B",
+				},
+			},
+			storedSource: "A",
+			newSource:    "B",
+			hasPriority:  true,
+		},
+		{
+			name: "not in sources",
+			currentState: &Flags{
+				FlagSources: []string{
+					"A",
+					"B",
+				},
+			},
+			storedSource: "C",
+			newSource:    "D",
+			hasPriority:  true,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := tt.currentState.hasPriority(tt.storedSource, tt.newSource)
+			require.Equal(t, p, tt.hasPriority)
+		})
+	}
+}
+
 func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -18,6 +80,7 @@ func TestMergeFlags(t *testing.T) {
 		newSource  string
 		want       *Flags
 		wantNotifs map[string]interface{}
+		wantResync bool
 	}{
 		{
 			name: "both nil",
@@ -116,15 +179,61 @@ func TestMergeFlags(t *testing.T) {
 			}},
 			wantNotifs: map[string]interface{}{},
 		},
+		{
+			name: "deleted flag",
+			current: &Flags{
+				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}},
+			},
+			new:       map[string]model.Flag{},
+			newSource: "A",
+			want:      &Flags{Flags: map[string]model.Flag{}},
+			wantNotifs: map[string]interface{}{
+				"hello": map[string]interface{}{"type": "delete", "source": "A"},
+			},
+			wantResync: true,
+		},
+		{
+			name: "no merge priority",
+			current: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+				Flags: map[string]model.Flag{
+					"hello": {
+						DefaultVariant: "off",
+						Source:         "A",
+					},
+				},
+			},
+			new: map[string]model.Flag{
+				"hello": {DefaultVariant: "off"},
+			},
+			newSource: "B",
+			want: &Flags{
+				FlagSources: []string{
+					"B",
+					"A",
+				},
+				Flags: map[string]model.Flag{
+					"hello": {
+						DefaultVariant: "off",
+						Source:         "A",
+					},
+				},
+			},
+			wantNotifs: map[string]interface{}{},
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotNotifs := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
+			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
 			require.Equal(t, tt.want, tt.want)
 			require.Equal(t, tt.wantNotifs, gotNotifs)
+			require.Equal(t, tt.wantResync, resyncRequired)
 		})
 	}
 }
@@ -361,6 +470,10 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
+				},
 			},
 			deleteRequest: map[string]model.Flag{
 				"A": {Source: mockSource},
@@ -369,6 +482,10 @@ func TestFlags_Delete(t *testing.T) {
 				Flags: map[string]model.Flag{
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
+				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
 				},
 			},
 			expectedNotificationKeys: []string{"A"},
@@ -381,6 +498,10 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
+				},
 			},
 			deleteRequest: map[string]model.Flag{
 				"C": {Source: mockSource},
@@ -390,6 +511,10 @@ func TestFlags_Delete(t *testing.T) {
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
+				},
+				FlagSources: []string{
+					mockSource,
+					mockSource2,
 				},
 			},
 			expectedNotificationKeys: []string{},
