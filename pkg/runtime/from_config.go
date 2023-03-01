@@ -81,7 +81,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				r.SyncImpl,
 				r.newFile(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %s", syncProvider.URI))
 		case syncProviderKubernetes:
 			r.SyncImpl = append(
 				r.SyncImpl,
@@ -93,7 +93,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				r.SyncImpl,
 				r.newHTTP(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %q", syncProvider.URI))
+			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %s", syncProvider.URI))
 		case syncProviderGrpc:
 			r.SyncImpl = append(
 				r.SyncImpl,
