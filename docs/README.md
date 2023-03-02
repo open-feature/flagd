@@ -18,6 +18,7 @@ Flagd is configured via CLI arguments on startup, these configuration options ca
 - [Flag configuration](./configuration/flag_configuration.md)
 - [Fractional evaluation](./configuration/fractional_evaluation.md)
 - [Reusable targeting rules](./configuration/reusable_targeting_rules.md)
+- [Flag configuration merging](./configuration/flag_configuration_merging.md)
 
 ## Help
 
