@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	parallel "sync"
+	msync "sync"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -104,7 +104,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	notifies := make(chan INotify)
 
-	var wg parallel.WaitGroup
+	var wg msync.WaitGroup
 
 	// Start K8s resource notifier
 	wg.Add(1)

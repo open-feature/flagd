@@ -287,7 +287,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			wantEvent: false,
 		},
 		{
-			name: "Simple error - API version mismatch",
+			name: "Simple error - API version mismatch new object",
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, v1alpha1.FeatureFlagConfiguration{
@@ -296,6 +296,24 @@ func Test_updateFuncHandler(t *testing.T) {
 						APIVersion: "someAPIVersion",
 					},
 				}),
+				object: client.ObjectKey{
+					Namespace: cfgNs,
+					Name:      cfgName,
+				},
+			},
+			wantErr:   true,
+			wantEvent: false,
+		},
+		{
+			name: "Simple error - API version mismatch old object",
+			args: args{
+				oldObj: toUnstructured(t, v1alpha1.FeatureFlagConfiguration{
+					TypeMeta: v1.TypeMeta{
+						Kind:       "FeatureFlagConfiguration",
+						APIVersion: "someAPIVersion",
+					},
+				}),
+				newObj: toUnstructured(t, validFFCfgNew),
 				object: client.ObjectKey{
 					Namespace: cfgNs,
 					Name:      cfgName,
