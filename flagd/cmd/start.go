@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/open-feature/flagd/internal/pkg/logger"
-	"github.com/open-feature/flagd/internal/pkg/runtime"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
