@@ -87,6 +87,14 @@ func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model
 	for k, newFlag := range flags {
 		storedFlag, ok := f.Get(k)
 		if ok && !f.hasPriority(storedFlag.Source, source) {
+			logger.Debug(
+				fmt.Sprintf(
+					"not overwriting: flag %s from source %s does not have priority over %s",
+					k,
+					source,
+					storedFlag.Source,
+				),
+			)
 			continue
 		}
 
@@ -118,6 +126,14 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 			continue
 		}
 		if !f.hasPriority(storedFlag.Source, source) {
+			logger.Debug(
+				fmt.Sprintf(
+					"not updating: flag %s from source %s does not have priority over %s",
+					k,
+					source,
+					storedFlag.Source,
+				),
+			)
 			continue
 		}
 
@@ -135,6 +151,12 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 
 // DeleteFlags matching flags from source.
 func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
+	logger.Debug(
+		fmt.Sprintf(
+			"store resync triggered: delete event from source %s",
+			source,
+		),
+	)
 	notifications := map[string]interface{}{}
 	if len(flags) == 0 {
 		allFlags := f.GetAll()
@@ -154,6 +176,14 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 		flag, ok := f.Get(k)
 		if ok {
 			if !f.hasPriority(flag.Source, source) {
+				logger.Debug(
+					fmt.Sprintf(
+						"not deleting: flag %s from source %s cannot be deleted by %s",
+						k,
+						flag.Source,
+						source,
+					),
+				)
 				continue
 			}
 			notifications[k] = map[string]interface{}{
@@ -193,6 +223,13 @@ func (f *Flags) Merge(
 					"source": source,
 				}
 				resyncRequired = true
+				logger.Debug(
+					fmt.Sprintf(
+						"store resync triggered: flag %s has been deleted from source %s",
+						k,
+						source,
+					),
+				)
 				continue
 			}
 		}
@@ -203,8 +240,21 @@ func (f *Flags) Merge(
 		newFlag.Source = source
 
 		storedFlag, ok := f.Get(k)
-		if ok && (!f.hasPriority(storedFlag.Source, source) || reflect.DeepEqual(storedFlag, newFlag)) {
-			continue
+		if ok {
+			if !f.hasPriority(storedFlag.Source, source) {
+				logger.Debug(
+					fmt.Sprintf(
+						"not merging: flag %s from source %s does not have priority over %s",
+						k,
+						source,
+						storedFlag.Source,
+					),
+				)
+				continue
+			}
+			if reflect.DeepEqual(storedFlag, newFlag) {
+				continue
+			}
 		}
 		if !ok {
 			notifications[k] = map[string]interface{}{
