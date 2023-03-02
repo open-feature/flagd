@@ -17,8 +17,7 @@ import (
 )
 
 type Sync struct {
-	URI string
-
+	URI          string
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
