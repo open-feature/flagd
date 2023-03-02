@@ -15,7 +15,6 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-
 docker-build-flagd:
 	docker buildx build --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
 docker-push-flagd:
@@ -42,7 +41,7 @@ install:
 	mkdir -p /etc/flagd
 	cp systemd/flags.json /etc/flagd/flags.json
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp flagd $(DESTDIR)$(PREFIX)/bin/flagd
+	cp bin/flagd $(DESTDIR)$(PREFIX)/bin/flagd
 	systemctl start flagd
 uninstall:
 	systemctl disable flagd
