@@ -223,9 +223,11 @@ func TestHTTPSync_Resync(t *testing.T) {
 			tt.setup(t, mockClient)
 
 			httpSync := Sync{
-				URI:         tt.uri,
-				Client:      mockClient,
-				BearerToken: tt.bearerToken,
+				URI:    tt.uri,
+				Client: mockClient,
+				Config: sync.ProviderConfig{
+					BearerToken: tt.bearerToken,
+				},
 				LastBodySHA: tt.lastBodySHA,
 				Logger:      logger.NewLogger(nil, false),
 			}

@@ -45,7 +45,11 @@ func init() {
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	s := store.NewFlags()
-	s.FlagSources = config.SyncURI
+	sources := []string{}
+	for _, sync := range config.SyncProviders {
+		sources = append(sources, sync.URI)
+	}
+	s.FlagSources = sources
 	rt := Runtime{
 		config:    config,
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
