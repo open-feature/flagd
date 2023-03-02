@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	parallel "sync"
 	"time"
 
 	"github.com/open-feature/flagd/pkg/logger"
@@ -103,12 +104,31 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	notifies := make(chan INotify)
 
-	go k.notify(ctx, notifies)
+	var wg parallel.WaitGroup
 
+	// Start K8s resource notifier
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		k.notify(ctx, notifies)
+	}()
+
+	// Start notifier watcher
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		k.watcher(ctx, notifies, dataSync)
+	}()
+
+	wg.Wait()
+	return nil
+}
+
+func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan<- sync.DataSync) {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		case w := <-notifies:
 			switch w.GetEvent().EventType {
 			case DefaultEventTypeCreate:

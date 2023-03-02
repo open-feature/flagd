@@ -1,10 +1,19 @@
 package kubernetes
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/open-feature/flagd/pkg/sync"
+
+	"github.com/open-feature/flagd/pkg/logger"
+	"k8s.io/client-go/tools/cache"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
 
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -224,14 +233,8 @@ func Test_updateFuncHandler(t *testing.T) {
 		},
 	}
 
-	validFFCfgNew := v1alpha1.FeatureFlagConfiguration{
-		TypeMeta: Metadata,
-		ObjectMeta: v1.ObjectMeta{
-			Namespace:       cfgNs,
-			Name:            cfgName,
-			ResourceVersion: "v2",
-		},
-	}
+	validFFCfgNew := validFFCfgOld
+	validFFCfgNew.ResourceVersion = "v2"
 
 	type args struct {
 		oldObj interface{}
@@ -344,6 +347,197 @@ func Test_updateFuncHandler(t *testing.T) {
 	}
 }
 
+func TestSync_fetch(t *testing.T) {
+	flagSpec := "fakeFlagSpec"
+
+	validCfg := v1alpha1.FeatureFlagConfiguration{
+		TypeMeta: Metadata,
+		ObjectMeta: v1.ObjectMeta{
+			Namespace:       "resourceNS",
+			Name:            "resourceName",
+			ResourceVersion: "v1",
+		},
+		Spec: v1alpha1.FeatureFlagConfigurationSpec{
+			FeatureFlagSpec: flagSpec,
+		},
+	}
+
+	type args struct {
+		InformerGetFunc func(key string) (item interface{}, exists bool, err error)
+		ClientResponse  v1alpha1.FeatureFlagConfiguration
+		ClientError     error
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Scenario - get from informer cache",
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return toUnstructured(t, validCfg), true, nil
+				},
+			},
+			wantErr: false,
+			want:    flagSpec,
+		},
+		{
+			name: "Scenario - get from API if informer cache miss",
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return nil, false, nil
+				},
+				ClientResponse: validCfg,
+			},
+			wantErr: false,
+			want:    flagSpec,
+		},
+		{
+			name: "Scenario - error for informer cache read error",
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return nil, false, errors.New("mock error")
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Scenario - error for API get error",
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return nil, false, nil
+				},
+				ClientError: errors.New("mock error"),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup with args
+			k := &Sync{
+				informer: &MockInformer{
+					fakeStore: cache.FakeCustomStore{
+						GetByKeyFunc: tt.args.InformerGetFunc,
+					},
+				},
+				readClient: &MockClient{
+					getResponse: tt.args.ClientResponse,
+					clientErr:   tt.args.ClientError,
+				},
+				Logger: logger.NewLogger(nil, false),
+			}
+
+			// Test fetch
+			got, err := k.fetch(context.Background())
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("fetch() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if got != tt.want {
+				t.Errorf("fetch() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSync_watcher(t *testing.T) {
+	flagSpec := "fakeFlagSpec"
+
+	validCfg := v1alpha1.FeatureFlagConfiguration{
+		TypeMeta: Metadata,
+		ObjectMeta: v1.ObjectMeta{
+			Namespace:       "resourceNS",
+			Name:            "resourceName",
+			ResourceVersion: "v1",
+		},
+		Spec: v1alpha1.FeatureFlagConfigurationSpec{
+			FeatureFlagSpec: flagSpec,
+		},
+	}
+
+	type args struct {
+		InformerGetFunc func(key string) (item interface{}, exists bool, err error)
+		notification    INotify
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "scenario - create event",
+			want: flagSpec,
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return toUnstructured(t, validCfg), true, nil
+				},
+				notification: &Notifier{
+					Event: Event[DefaultEventType]{
+						EventType: DefaultEventTypeCreate,
+					},
+				},
+			},
+		},
+		{
+			name: "scenario - modify event",
+			want: flagSpec,
+			args: args{
+				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+					return toUnstructured(t, validCfg), true, nil
+				},
+				notification: &Notifier{
+					Event: Event[DefaultEventType]{
+						EventType: DefaultEventTypeModify,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// setup sync
+			k := &Sync{
+				informer: &MockInformer{
+					fakeStore: cache.FakeCustomStore{
+						GetByKeyFunc: tt.args.InformerGetFunc,
+					},
+				},
+				Logger: logger.NewLogger(nil, false),
+			}
+
+			// create communication channels with buffer to so that calls are non-blocking
+			notifies := make(chan INotify, 1)
+			dataSyncs := make(chan sync.DataSync, 1)
+
+			// emit event
+			notifies <- tt.args.notification
+
+			tCtx, cFunc := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cFunc()
+
+			// start watcher
+			go k.watcher(tCtx, notifies, dataSyncs)
+
+			// wait for data sync
+			select {
+			case <-tCtx.Done():
+				t.Errorf("timeout waiting for the results")
+			case dataSyncs := <-dataSyncs:
+				if dataSyncs.FlagData != tt.want {
+					t.Errorf("fetch() got = %v, want %v", dataSyncs.FlagData, tt.want)
+				}
+			}
+		})
+	}
+}
+
 // toUnstructured helper to convert an interface to unstructured.Unstructured
 func toUnstructured(t *testing.T, obj interface{}) interface{} {
 	bytes, err := json.Marshal(obj)
@@ -359,4 +553,41 @@ func toUnstructured(t *testing.T, obj interface{}) interface{} {
 	}
 
 	return &unstructured.Unstructured{Object: res}
+}
+
+// Mock implementations
+
+// MockClient contains an embedded client.Reader for desired method overriding
+type MockClient struct {
+	client.Reader
+	clientErr error
+
+	getResponse v1alpha1.FeatureFlagConfiguration
+}
+
+func (m MockClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	// return error if error is set
+	if m.clientErr != nil {
+		return m.clientErr
+	}
+
+	// else try returning response
+	cfg, ok := obj.(*v1alpha1.FeatureFlagConfiguration)
+	if !ok {
+		return errors.New("must contain a pointer typed v1alpha1.FeatureFlagConfiguration")
+	}
+
+	*cfg = m.getResponse
+	return nil
+}
+
+// MockInformer contains an embedded controllertest.FakeInformer for desired method overriding
+type MockInformer struct {
+	controllertest.FakeInformer
+
+	fakeStore cache.FakeCustomStore
+}
+
+func (m MockInformer) GetStore() cache.Store {
+	return &m.fakeStore
 }
