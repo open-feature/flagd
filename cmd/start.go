@@ -46,7 +46,7 @@ func init() {
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringToStringP(providerArgsFlagName,
-		"a", nil, "Sync provider arguments as key values separated by =")
+		"a", nil, "DEPRECATED: Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
 			"url (http and grpc) or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the "+
@@ -62,7 +62,8 @@ func init() {
 	)
 	flags.StringP(
 		syncProvidersFlagName, "s", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
-			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: ",
+			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: "+
+			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
@@ -106,6 +107,11 @@ var startCmd = &cobra.Command{
 
 		if viper.GetString(evaluatorFlagName) != "json" {
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+		}
+
+		if viper.GetStringMapString(providerArgsFlagName) != nil {
+			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
