@@ -17,8 +17,8 @@ import (
 )
 
 type Sync struct {
-	URI          string
-	Source       string
+	URI string
+
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
@@ -134,7 +134,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync c
 		}
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.Source, Type: syncType}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
