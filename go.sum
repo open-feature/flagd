@@ -289,6 +289,8 @@ github.com/open-feature/go-sdk v1.2.0 h1:2xsUgNUUDITpryB9nFS43CI9gAF415I1He22Q1d
 github.com/open-feature/go-sdk v1.2.0/go.mod h1:UQJJXUptk92An4F6so2Vd0iRo6EEZ+QGa7HVyQ/GPi0=
 github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9 h1:hHa7sjOzohj9ZhYR6ym+Xjk517ogb4q2QIE6ztdLZMg=
 github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9/go.mod h1:IibpAPNmtUIJsJA6T4X1IcD4+BG1hCLw86luG8YQcqA=
+github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.10 h1:0QD8xsx35Ip6k7PcSdx/MEQq3ETEANKgRdz/pXjKtt4=
+github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.10/go.mod h1:IibpAPNmtUIJsJA6T4X1IcD4+BG1hCLw86luG8YQcqA=
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1 h1:Tg712Egcqb5dsYxOGEaQbfD3g1mqPFdV4tSmKKKxDPk=
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1/go.mod h1:zw/xpuDy9ziBEKVA1t4VoQtzFc80btAAQCiZkX6y9oQ=
 github.com/open-feature/open-feature-operator v0.2.29 h1:Ky/SMzwEiBV5x9qOfHTj1jl/CakPZNClRtoeSPqVbNo=
