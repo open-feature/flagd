@@ -77,7 +77,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
-	_ = viper.BindPFlag(syncProvidersFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(syncProvidersFlagName, flags.Lookup(syncProvidersFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
@@ -113,6 +113,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		syncProvidersFromConfig := []sync.ProviderConfig{}
 		if cfgFile == "" && viper.GetString(syncProvidersFlagName) != "" {
 			syncProvidersFromConfig, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
