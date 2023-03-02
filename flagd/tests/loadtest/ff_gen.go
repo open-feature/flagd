@@ -26,6 +26,7 @@ Configurable options:
 	-c : feature flag count (ex:go run ff_gen.go -c 500)
 	-t : type of feature flag (ex:go run ff_gen.go -t string). Support "boolean" and "string"
 */
+//nolint:gosec
 func main() {
 	// Get flag count
 	var flagCount int
@@ -58,7 +59,7 @@ func main() {
 		return
 	}
 
-	err = os.WriteFile("./random.json", bytes, 444)
+	err = os.WriteFile("./random.json", bytes, 0o444)
 	if err != nil {
 		fmt.Printf("File write error: %s ", err.Error())
 		return
@@ -103,6 +104,7 @@ type Flag struct {
 	Variants       map[string]any `json:"variants"`
 }
 
+//nolint:gosec
 func randomSelect(chooseFrom ...string) string {
 	return chooseFrom[rand.Intn(len(chooseFrom))]
 }

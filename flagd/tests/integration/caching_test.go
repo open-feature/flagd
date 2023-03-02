@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	flagConfigurationPath           = "../../test-harness/symlink_testing-flags.json"
-	flagConfigurationTargetFilePath = "../../test-harness/testing-flags.json"
-	flagConfigurationMutatedPath    = "../../test-harness/mutated-testing-flags.json"
+	flagConfigurationPath           = "../../../test-harness/symlink_testing-flags.json"
+	flagConfigurationTargetFilePath = "../../../test-harness/testing-flags.json"
+	flagConfigurationMutatedPath    = "../../../test-harness/mutated-testing-flags.json"
 )
 
 func TestCaching(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCaching(t *testing.T) {
 		ScenarioInitializer: initializeCachingScenario,
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"../../test-harness/features/caching.feature"},
+			Paths:    []string{"../../../test-harness/features/caching.feature"},
 			TestingT: t, // Testing instance that will run subtests.
 		},
 	}

@@ -30,7 +30,7 @@ func TestEvaluation(t *testing.T) {
 		ScenarioInitializer: integration.InitializeEvaluationScenario(providerOptions...),
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"../../test-harness/features/evaluation.feature"},
+			Paths:    []string{"../../../test-harness/features/evaluation.feature"},
 			TestingT: t, // Testing instance that will run subtests.
 		},
 	}
