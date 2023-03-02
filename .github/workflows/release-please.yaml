@@ -78,8 +78,8 @@ jobs:
             VERSION=${{ needs.release-please.outputs.release_tag_name }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
-        outputs:
-          image_digest: ${{ steps.build.outputs.digest }}
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
 
   container-signing:
     needs: container-release
