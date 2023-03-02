@@ -211,7 +211,6 @@ func (f *Flags) Merge(
 ) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
 	resyncRequired := false
-
 	f.mx.Lock()
 	for k, v := range f.Flags {
 		if v.Source == source {
@@ -226,8 +225,7 @@ func (f *Flags) Merge(
 				logger.Debug(
 					fmt.Sprintf(
 						"store resync triggered: flag %s has been deleted from source %s",
-						k,
-						source,
+						k, source,
 					),
 				)
 				continue
@@ -235,19 +233,15 @@ func (f *Flags) Merge(
 		}
 	}
 	f.mx.Unlock()
-
 	for k, newFlag := range flags {
 		newFlag.Source = source
-
 		storedFlag, ok := f.Get(k)
 		if ok {
 			if !f.hasPriority(storedFlag.Source, source) {
 				logger.Debug(
 					fmt.Sprintf(
 						"not merging: flag %s from source %s does not have priority over %s",
-						k,
-						source,
-						storedFlag.Source,
+						k, source, storedFlag.Source,
 					),
 				)
 				continue
@@ -267,10 +261,8 @@ func (f *Flags) Merge(
 				"source": source,
 			}
 		}
-
 		// Store the new version of the flag
 		f.Set(k, newFlag)
 	}
-
 	return notifications, resyncRequired
 }
