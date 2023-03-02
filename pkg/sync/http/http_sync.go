@@ -37,6 +37,15 @@ type Cron interface {
 	Stop()
 }
 
+func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	msg, err := hs.Fetch(ctx)
+	if err != nil {
+		return err
+	}
+	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
+	return nil
+}
+
 func (hs *Sync) Init(ctx context.Context) error {
 	// noop
 	return nil

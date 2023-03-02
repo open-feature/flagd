@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/pkg/eval"
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/service"
+	"github.com/open-feature/flagd/pkg/store"
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/flagd/pkg/sync/file"
 	"github.com/open-feature/flagd/pkg/sync/grpc"
@@ -43,10 +44,12 @@ func init() {
 }
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
+	s := store.NewFlags()
+	s.FlagSources = config.SyncURI
 	rt := Runtime{
 		config:    config,
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: eval.NewJSONEvaluator(logger),
+		Evaluator: eval.NewJSONEvaluator(logger, s),
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
