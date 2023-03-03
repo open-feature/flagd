@@ -64,10 +64,12 @@ func (k *Sync) Init(ctx context.Context) error {
 		return err
 	}
 
-	k.readClient, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		return err
 	}
+
+	k.readClient = readClient
 
 	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
