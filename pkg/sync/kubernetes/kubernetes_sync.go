@@ -31,7 +31,7 @@ type Sync struct {
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
 	URI          string
-	Source     string
+
 	ready      bool
 	namespace  string
 	crdName    string
