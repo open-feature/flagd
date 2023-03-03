@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,8 +22,11 @@ import (
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic/fake"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	fakeClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var Metadata = v1.TypeMeta{
@@ -442,7 +449,7 @@ func TestSync_fetch(t *testing.T) {
 						GetByKeyFunc: tt.args.InformerGetFunc,
 					},
 				},
-				readClient: &MockClient{
+				ReadClient: &MockClient{
 					getResponse: tt.args.ClientResponse,
 					clientErr:   tt.args.ClientError,
 				},
@@ -553,6 +560,246 @@ func TestSync_watcher(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestInit(t *testing.T) {
+	t.Run("expect error with wrong URI format", func(t *testing.T) {
+		k := Sync{URI: ""}
+		e := k.Init(context.TODO())
+		if e == nil {
+			t.Errorf("Expected error but got none")
+		}
+		if k.IsReady() {
+			t.Errorf("Expected NOT to be ready")
+		}
+	})
+	t.Run("expect informer registration", func(t *testing.T) {
+		const name = "myFF"
+		const ns = "myNS"
+		scheme := runtime.NewScheme()
+		ff := &unstructured.Unstructured{}
+		ff.SetUnstructuredContent(getCFG(name, ns))
+		fakeClient := fake.NewSimpleDynamicClient(scheme, ff)
+		k := Sync{
+			URI:           fmt.Sprintf("%s/%s", ns, name),
+			DynamicClient: fakeClient,
+			namespace:     ns,
+		}
+		e := k.Init(context.TODO())
+		if e != nil {
+			t.Errorf("Unexpected error: %v", e)
+		}
+		if k.informer == nil {
+			t.Errorf("Informer not initialized")
+		}
+		if k.IsReady() {
+			t.Errorf("The Sync should not be ready")
+		}
+	})
+}
+
+func TestSync(t *testing.T) {
+	const name = "myFF"
+	const ns = "myNS"
+	s := runtime.NewScheme()
+	ff := &unstructured.Unstructured{}
+	ff.SetUnstructuredContent(getCFG(name, ns))
+	fakeDynamicClient := fake.NewSimpleDynamicClient(s, ff)
+	validFFCfg := &v1alpha1.FeatureFlagConfiguration{
+		TypeMeta: Metadata,
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+	}
+	fakeReadClient := newFakeReadClient(validFFCfg)
+	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+	t.Run("Happy Path", func(t *testing.T) {
+		k := Sync{
+			URI:           fmt.Sprintf("%s/%s", ns, name),
+			DynamicClient: fakeDynamicClient,
+			ReadClient:    fakeReadClient,
+			namespace:     ns,
+			Logger:        logger.NewLogger(l, true),
+		}
+		e := k.Init(context.TODO())
+		if e != nil {
+			t.Errorf("Unexpected error: %v", e)
+		}
+		dataChannel := make(chan sync.DataSync)
+		go func() {
+			if err := k.Sync(context.TODO(), dataChannel); err != nil {
+				t.Errorf("Unexpected error: %v", e)
+			}
+		}()
+		d := <-dataChannel
+		if d.Type != sync.ALL {
+			t.Errorf("Expected %v, got %v", sync.ALL, d)
+		}
+	})
+	t.Run("CRD not found", func(t *testing.T) {
+		k := Sync{
+			URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
+			DynamicClient: fakeDynamicClient,
+			ReadClient:    fakeReadClient,
+			namespace:     ns,
+			Logger:        logger.NewLogger(l, true),
+		}
+		e := k.Init(context.TODO())
+		if e != nil {
+			t.Errorf("Unexpected error: %v", e)
+		}
+		dataChannel := make(chan sync.DataSync)
+		if err := k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+	t.Run("ReSync", func(t *testing.T) {
+		k := Sync{
+			URI:           fmt.Sprintf("%s/%s", ns, name),
+			DynamicClient: fakeDynamicClient,
+			ReadClient:    fakeReadClient,
+			namespace:     ns,
+			Logger:        logger.NewLogger(l, true),
+		}
+		e := k.Init(context.TODO())
+		if e != nil {
+			t.Errorf("Unexpected error: %v", e)
+		}
+		dataChannel := make(chan sync.DataSync)
+		go func() {
+			if err := k.ReSync(context.TODO(), dataChannel); err != nil {
+				t.Errorf("Unexpected error: %v", e)
+			}
+		}()
+		d := <-dataChannel
+		if d.Type != sync.ALL {
+			t.Errorf("Expected %v, got %v", sync.ALL, d)
+		}
+	})
+	t.Run("Resync CRD not found", func(t *testing.T) {
+		k := Sync{
+			URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
+			DynamicClient: fakeDynamicClient,
+			ReadClient:    fakeReadClient,
+			namespace:     ns,
+			Logger:        logger.NewLogger(l, true),
+		}
+		e := k.Init(context.TODO())
+		if e != nil {
+			t.Errorf("Unexpected error: %v", e)
+		}
+		dataChannel := make(chan sync.DataSync)
+		if err := k.ReSync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+}
+
+func TestNotify(t *testing.T) {
+	const name = "myFF"
+	const ns = "myNS"
+	s := runtime.NewScheme()
+	ff := &unstructured.Unstructured{}
+	cfg := getCFG(name, ns)
+	ff.SetUnstructuredContent(cfg)
+	fc := fake.NewSimpleDynamicClient(s, ff)
+	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+	k := Sync{
+		URI:           fmt.Sprintf("%s/%s", ns, name),
+		DynamicClient: fc,
+		namespace:     ns,
+		Logger:        logger.NewLogger(l, true),
+	}
+	err := k.Init(context.TODO())
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if k.informer == nil {
+		t.Errorf("Informer not initialized")
+	}
+	c := make(chan INotify)
+	go func() { k.notify(context.TODO(), c) }()
+
+	// wait for informer callbacks to be set
+	msg := <-c
+	if msg.GetEvent().EventType != DefaultEventTypeReady {
+		t.Errorf("Expected message %v, got %v", DefaultEventTypeReady, msg)
+	}
+	// create
+	cfg["status"] = map[string]interface{}{
+		"empty": "",
+	}
+	ff.SetUnstructuredContent(cfg)
+	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	msg = <-c
+	if msg.GetEvent().EventType != DefaultEventTypeCreate {
+		t.Errorf("Expected message %v, got %v", DefaultEventTypeCreate, msg)
+	}
+	// update
+	old := cfg["metadata"].(map[string]interface{})
+	old["resourceVersion"] = "newVersion"
+	cfg["metadata"] = old
+	ff.SetUnstructuredContent(cfg)
+	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	msg = <-c
+	if msg.GetEvent().EventType != DefaultEventTypeModify {
+		t.Errorf("Expected message %v, got %v", DefaultEventTypeModify, msg)
+	}
+	// delete
+	err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	msg = <-c
+	if msg.GetEvent().EventType != DefaultEventTypeDelete {
+		t.Errorf("Expected message %v, got %v", DefaultEventTypeDelete, msg)
+	}
+
+	// validate we don't crash parsing wrong spec
+	cfg["spec"] = map[string]interface{}{
+		"featureFlagSpec": int64(12),
+	}
+	ff.SetUnstructuredContent(cfg)
+	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	cfg["status"] = map[string]interface{}{
+		"bump": "1",
+	}
+	ff.SetUnstructuredContent(cfg)
+	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func newFakeReadClient(objs ...client.Object) client.Client {
+	_ = v1alpha1.AddToScheme(scheme.Scheme)
+	return fakeClient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
+}
+
+func getCFG(name, namespace string) map[string]interface{} {
+	return map[string]interface{}{
+		"apiVersion": "core.openfeature.dev/v1alpha1",
+		"kind":       "FeatureFlagConfiguration",
+		"metadata": map[string]interface{}{
+			"name":      name,
+			"namespace": namespace,
+		},
+		"spec": map[string]interface{}{},
 	}
 }
 

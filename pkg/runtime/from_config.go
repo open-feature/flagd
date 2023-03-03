@@ -77,9 +77,13 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 			)
 			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
 		case regCrd.Match(uriB):
+			k, err := r.newK8s(uri, logger)
+			if err != nil {
+				return err
+			}
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newK8s(uri, logger),
+				k,
 			)
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", uri))
 		case regURL.Match(uriB):
@@ -127,15 +131,21 @@ func (r *Runtime) newHTTP(uri string, logger *logger.Logger) *httpSync.Sync {
 	}
 }
 
-func (r *Runtime) newK8s(uri string, logger *logger.Logger) *kubernetes.Sync {
+func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+	reader, dynamic, err := kubernetes.GetClients()
+	if err != nil {
+		return nil, err
+	}
 	return &kubernetes.Sync{
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI:          regCrd.ReplaceAllString(uri, ""),
-		ProviderArgs: r.config.ProviderArgs,
-	}
+		URI:           regCrd.ReplaceAllString(uri, ""),
+		ProviderArgs:  r.config.ProviderArgs,
+		ReadClient:    reader,
+		DynamicClient: dynamic,
+	}, nil
 }
 
 func (r *Runtime) newFile(uri string, logger *logger.Logger) *file.Sync {

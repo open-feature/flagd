@@ -23,20 +23,22 @@ import (
 )
 
 var (
-	resyncPeriod = 1 * time.Minute
-	apiVersion   = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
+	resyncPeriod                    = 1 * time.Minute
+	apiVersion                      = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
+	featurFlagConfigurationResource = v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 )
 
 type Sync struct {
-	Logger       *logger.Logger
-	ProviderArgs sync.ProviderArgs
-	URI          string
+	Logger        *logger.Logger
+	ProviderArgs  sync.ProviderArgs
+	URI           string
+	ReadClient    client.Reader
+	DynamicClient dynamic.Interface
 
-	ready      bool
-	namespace  string
-	crdName    string
-	readClient client.Reader
-	informer   cache.SharedInformer
+	ready     bool
+	namespace string
+	crdName   string
+	informer  cache.SharedInformer
 }
 
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -59,28 +61,12 @@ func (k *Sync) Init(ctx context.Context) error {
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
-	clusterConfig, err := k8sClusterConfig()
-	if err != nil {
-		return err
-	}
-
-	k.readClient, err = client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		return err
-	}
-
-	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
-	if err != nil {
-		return err
-	}
-
-	resource := v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient, resyncPeriod, k.namespace, nil)
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(k.DynamicClient, resyncPeriod, k.namespace, nil)
 
-	k.informer = factory.ForResource(resource).Informer()
+	k.informer = factory.ForResource(featurFlagConfigurationResource).Informer()
 
 	return nil
 }
@@ -178,7 +164,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
 	var ff v1alpha1.FeatureFlagConfiguration
-	err = k.readClient.Get(ctx, client.ObjectKey{
+	err = k.ReadClient.Get(ctx, client.ObjectKey{
 		Name:      k.crdName,
 		Namespace: k.namespace,
 	}, &ff)
@@ -324,4 +310,22 @@ func k8sClusterConfig() (*rest.Config, error) {
 	}
 
 	return clusterConfig, nil
+}
+
+func GetClients() (client.Reader, dynamic.Interface, error) {
+	clusterConfig, err := k8sClusterConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	return readClient, dynamicClient, nil
 }
