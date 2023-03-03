@@ -13,7 +13,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.10
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1
 	github.com/open-feature/open-feature-operator v0.2.29
 	github.com/open-feature/schemas v0.2.8
