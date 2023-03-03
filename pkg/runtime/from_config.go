@@ -108,7 +108,6 @@ func (r *Runtime) newGRPC(uri string, logger *logger.Logger) *grpc.Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		Mux: &msync.RWMutex{},
 	}
 }
 
