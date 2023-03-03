@@ -32,7 +32,6 @@ type Sync struct {
 	ProviderArgs sync.ProviderArgs
 	URI          string
 
-	Source     string
 	ready      bool
 	namespace  string
 	crdName    string
@@ -45,7 +44,7 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	if err != nil {
 		return err
 	}
-	dataSync <- sync.DataSync{FlagData: fetch, Source: k.Source, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
 	return nil
 }
 
@@ -100,7 +99,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: k.Source, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
 
 	notifies := make(chan INotify)
 
@@ -139,7 +138,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.Source, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
 			case DefaultEventTypeModify:
 				k.Logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
@@ -148,7 +147,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.Source, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
 			case DefaultEventTypeDelete:
 				k.Logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:

@@ -39,7 +39,6 @@ func TestSimpleReSync(t *testing.T) {
 	handler := Sync{
 		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 		Logger: logger.NewLogger(nil, false),
-		Source: fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 	}
 
 	for test, tt := range tests {
@@ -152,7 +151,6 @@ func TestSimpleSync(t *testing.T) {
 					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 					Logger: logger.NewLogger(nil, false),
 					Mux:    &msync.RWMutex{},
-					Source: fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 				}
 				err := handler.Init(ctx)
 				if err != nil {

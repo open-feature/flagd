@@ -34,6 +34,7 @@ type Sync struct {
 	Target     string
 	ProviderID string
 	Logger     *logger.Logger
+
 	syncClient syncv1grpc.FlagSyncService_SyncFlagsClient
 	client     syncv1grpc.FlagSyncServiceClient
 	options    []grpc.DialOption

@@ -23,7 +23,8 @@ type Sync struct {
 	LastBodySHA  string
 	Logger       *logger.Logger
 	ProviderArgs sync.ProviderArgs
-	ready        bool
+
+	ready bool
 }
 
 // Client defines the behaviour required of a http client
