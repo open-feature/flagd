@@ -5,28 +5,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/zap/zapcore"
-	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/pkg/sync"
-
 	"github.com/open-feature/flagd/pkg/logger"
-	"k8s.io/client-go/tools/cache"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
-
+	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
-
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakeClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
 )
 
 var Metadata = v1.TypeMeta{
@@ -615,6 +611,7 @@ func TestSync(t *testing.T) {
 	}
 	fakeReadClient := newFakeReadClient(validFFCfg)
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+
 	t.Run("Happy Path", func(t *testing.T) {
 		k := Sync{
 			URI:           fmt.Sprintf("%s/%s", ns, name),
@@ -627,7 +624,10 @@ func TestSync(t *testing.T) {
 		if e != nil {
 			t.Errorf("Unexpected error: %v", e)
 		}
-		dataChannel := make(chan sync.DataSync)
+		if k.IsReady() {
+			t.Errorf("The Sync should not be ready")
+		}
+		dataChannel := make(chan sync.DataSync, 1)
 		go func() {
 			if err := k.Sync(context.TODO(), dataChannel); err != nil {
 				t.Errorf("Unexpected error: %v", e)
@@ -650,6 +650,7 @@ func TestSync(t *testing.T) {
 		if e != nil {
 			t.Errorf("Unexpected error: %v", e)
 		}
+		// no messages expected
 		dataChannel := make(chan sync.DataSync)
 		if err := k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
 			t.Errorf("Unexpected error: %v", err)
@@ -667,7 +668,7 @@ func TestSync(t *testing.T) {
 		if e != nil {
 			t.Errorf("Unexpected error: %v", e)
 		}
-		dataChannel := make(chan sync.DataSync)
+		dataChannel := make(chan sync.DataSync, 1)
 		go func() {
 			if err := k.ReSync(context.TODO(), dataChannel); err != nil {
 				t.Errorf("Unexpected error: %v", e)
@@ -690,6 +691,7 @@ func TestSync(t *testing.T) {
 		if e != nil {
 			t.Errorf("Unexpected error: %v", e)
 		}
+		// no messages expected
 		dataChannel := make(chan sync.DataSync)
 		if err := k.ReSync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
 			t.Errorf("Unexpected error: %v", err)
@@ -721,6 +723,10 @@ func TestNotify(t *testing.T) {
 	}
 	c := make(chan INotify)
 	go func() { k.notify(context.TODO(), c) }()
+
+	if k.IsReady() {
+		t.Errorf("The Sync should not be ready")
+	}
 
 	// wait for informer callbacks to be set
 	msg := <-c
@@ -765,7 +771,7 @@ func TestNotify(t *testing.T) {
 
 	// validate we don't crash parsing wrong spec
 	cfg["spec"] = map[string]interface{}{
-		"featureFlagSpec": int64(12),
+		"featureFlagSpec": int64(12), // we expect string here
 	}
 	ff.SetUnstructuredContent(cfg)
 	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
@@ -784,6 +790,31 @@ func TestNotify(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+}
+
+func Test_k8sClusterConfig(t *testing.T) {
+	t.Run("Cannot find KUBECONFIG file", func(tt *testing.T) {
+		tt.Setenv("KUBECONFIG", "")
+		_, err := k8sClusterConfig()
+		if err == nil {
+			tt.Error("Expected error but got none")
+		}
+	})
+	t.Run("KUBECONFIG file not existing", func(tt *testing.T) {
+		tt.Setenv("KUBECONFIG", "value")
+		_, err := k8sClusterConfig()
+		if err == nil {
+			tt.Error("Expected error but got none")
+		}
+	})
+	t.Run("Default REST Config and missing svc account", func(tt *testing.T) {
+		tt.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+		tt.Setenv("KUBERNETES_SERVICE_PORT", "8080")
+		_, err := k8sClusterConfig()
+		if err == nil {
+			tt.Error("Expected error but got none")
+		}
+	})
 }
 
 func newFakeReadClient(objs ...client.Object) client.Client {
