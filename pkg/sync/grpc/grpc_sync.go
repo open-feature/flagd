@@ -2,11 +2,16 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	msync "sync"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -18,9 +23,10 @@ import (
 )
 
 const (
-	// Prefix for GRPC URL inputs. GRPC does not define a prefix through standard. This prefix helps to differentiate
-	// remote URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
-	Prefix = "grpc://"
+	// Prefix for GRPC URL inputs. GRPC does not define a standard prefix. This prefix helps to differentiate remote
+	// URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
+	Prefix       = "grpc://"
+	PrefixSecure = "grpcs://"
 
 	// Connection retry constants
 	// Back off period is calculated with backOffBase ^ #retry-iteration. However, when #retry-iteration count reach
@@ -28,36 +34,44 @@ const (
 	backOffLimit         = 3
 	backOffBase          = 4
 	constantBackOffDelay = 60
+
+	tlsVersion = tls.VersionTLS12
 )
 
 type Sync struct {
-	Target     string
+	URI        string
 	ProviderID string
+	CertPath   string
 	Logger     *logger.Logger
-
-	syncClient syncv1grpc.FlagSyncService_SyncFlagsClient
-	client     syncv1grpc.FlagSyncServiceClient
-	options    []grpc.DialOption
-	ready      bool
 	Mux        *msync.RWMutex
 	Config     sync.ProviderConfig
+
+	client syncv1grpc.FlagSyncServiceClient
+	ready  bool
 }
 
-func (g *Sync) connectClient(ctx context.Context) error {
-	// initial dial and connection. Failure here must result in a startup failure
-	dial, err := grpc.DialContext(ctx, g.Target, g.options...)
+func (g *Sync) Init(ctx context.Context) error {
+	tCredentials, err := buildTransportCredentials(g.URI, g.CertPath)
 	if err != nil {
+		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
 		return err
 	}
 
-	g.client = syncv1grpc.NewFlagSyncServiceClient(dial)
+	target, ok := sourceToGRPCTarget(g.URI)
+	if !ok {
+		return fmt.Errorf("invalid grpc source: %s", g.URI)
+	}
 
-	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+	// Derive reusable client connection
+	rpcCon, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(tCredentials))
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error calling streaming operation: %s", err.Error()))
+		g.Logger.Error(fmt.Sprintf("error initiating grpc client connection: %s", err.Error()))
 		return err
 	}
-	g.syncClient = syncClient
+
+	// Setup service client
+	g.client = syncv1grpc.NewFlagSyncServiceClient(rpcCon)
+
 	return nil
 }
 
@@ -69,19 +83,10 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	}
 	dataSync <- sync.DataSync{
 		FlagData: res.GetFlagConfiguration(),
-		Source:   g.Target,
+		Source:   g.URI,
 		Type:     sync.ALL,
 	}
 	return nil
-}
-
-func (g *Sync) Init(ctx context.Context) error {
-	g.options = []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	// initial dial and connection. Failure here must result in a startup failure
-	return g.connectClient(ctx)
 }
 
 func (g *Sync) IsReady() bool {
@@ -99,7 +104,13 @@ func (g *Sync) setReady(val bool) {
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
 	g.setReady(true)
-	err := g.handleFlagSync(g.syncClient, dataSync)
+
+	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+	if err != nil {
+		return nil
+	}
+
+	err = g.handleFlagSync(syncClient, dataSync)
 	if err == nil {
 		return nil
 	}
@@ -149,12 +160,7 @@ func (g *Sync) connectWithRetry(
 			return nil, false
 		}
 
-		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.Target))
-
-		if err := g.connectClient(ctx); err != nil {
-			g.Logger.Debug(fmt.Sprintf("error dialing target: %s", err.Error()))
-			continue
-		}
+		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.URI))
 
 		syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 		if err != nil {
@@ -162,7 +168,7 @@ func (g *Sync) connectWithRetry(
 			continue
 		}
 
-		g.Logger.Info(fmt.Sprintf("connection re-established with grpc target: %s", g.Target))
+		g.Logger.Info(fmt.Sprintf("connection re-established with grpc target: %s", g.URI))
 		return syncClient, true
 	}
 }
@@ -179,7 +185,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		case v1.SyncState_SYNC_STATE_ALL:
 			dataSync <- sync.DataSync{
 				FlagData: data.FlagConfiguration,
-				Source:   g.Target,
+				Source:   g.URI,
 				Type:     sync.ALL,
 			}
 
@@ -187,7 +193,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		case v1.SyncState_SYNC_STATE_ADD:
 			dataSync <- sync.DataSync{
 				FlagData: data.FlagConfiguration,
-				Source:   g.Target,
+				Source:   g.URI,
 				Type:     sync.ADD,
 			}
 
@@ -195,7 +201,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		case v1.SyncState_SYNC_STATE_UPDATE:
 			dataSync <- sync.DataSync{
 				FlagData: data.FlagConfiguration,
-				Source:   g.Target,
+				Source:   g.URI,
 				Type:     sync.UPDATE,
 			}
 
@@ -203,7 +209,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		case v1.SyncState_SYNC_STATE_DELETE:
 			dataSync <- sync.DataSync{
 				FlagData: data.FlagConfiguration,
-				Source:   g.Target,
+				Source:   g.URI,
 				Type:     sync.DELETE,
 			}
 
@@ -216,14 +222,57 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 	}
 }
 
-// URLToGRPCTarget is a helper to derive GRPC target from a provided URL
-// For example, function returns the target localhost:9090 for the input grpc://localhost:9090
-func URLToGRPCTarget(url string) string {
-	index := strings.Split(url, Prefix)
-
-	if len(index) == 2 {
-		return index[1]
+// buildTransportCredentials is a helper to build grpc credentials.TransportCredentials based on source and cert path
+func buildTransportCredentials(source string, certPath string) (credentials.TransportCredentials, error) {
+	if strings.Contains(source, Prefix) {
+		return insecure.NewCredentials(), nil
 	}
 
-	return index[0]
+	if !strings.Contains(source, PrefixSecure) {
+		return nil, fmt.Errorf("invalid source. grpc source must contain prefix %s or %s", Prefix, PrefixSecure)
+	}
+
+	if certPath == "" {
+		// Rely on CA certs provided from system
+		return credentials.NewTLS(&tls.Config{MinVersion: tlsVersion}), nil
+	}
+
+	// Rely on provided certificate
+	certBytes, err := os.ReadFile(certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	cp := x509.NewCertPool()
+	if !cp.AppendCertsFromPEM(certBytes) {
+		return nil, fmt.Errorf("invalid certificate provided at path: %s", certPath)
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		MinVersion: tlsVersion,
+		RootCAs:    cp,
+	}), nil
+}
+
+// sourceToGRPCTarget is a helper to derive GRPC target from a provided URL
+// For example, function returns the target localhost:9090 for the input grpc://localhost:9090
+func sourceToGRPCTarget(url string) (string, bool) {
+	var separator string
+
+	switch {
+	case strings.Contains(url, Prefix):
+		separator = Prefix
+	case strings.Contains(url, PrefixSecure):
+		separator = PrefixSecure
+	default:
+		return "", false
+	}
+
+	index := strings.Split(url, separator)
+
+	if len(index) == 2 && len(index[1]) != 0 {
+		return index[1], true
+	}
+
+	return "", false
 }

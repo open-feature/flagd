@@ -116,7 +116,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 
 func (r *Runtime) newGRPC(config sync.ProviderConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
-		Target: grpc.URLToGRPCTarget(config.URI),
+		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
