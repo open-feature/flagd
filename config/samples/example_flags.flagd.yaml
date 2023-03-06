@@ -80,6 +80,26 @@ flags:
         - - yellow
           - 25
       - null
+  targetedFlag:
+    variants:
+      first: "AAA"
+      second: "BBB"
+      third: "CCC"
+    defaultVariant: first
+    state: ENABLED
+    targeting:
+      if:
+      - "in":
+        - var:
+          - "email"
+        - "@openfeature.dev"
+      - 'second'
+      - null
+        - var:
+          - "userAgent"
+        - "Chrome"
+      - 'third'
+      - null
 "$evaluators":
   emailWithFaas:
     in:
