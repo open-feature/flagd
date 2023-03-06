@@ -142,7 +142,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 }
 
 func (hs *Sync) generateSha(body []byte) string {
-	hasher := sha3.New256() //nolint:gosec
+	hasher := sha3.New256()
 	hasher.Write(body)
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
