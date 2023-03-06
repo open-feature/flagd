@@ -3,16 +3,15 @@ package http
 import (
 	"bytes"
 	"context"
-	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	"github.com/open-feature/flagd/pkg/sync"
-
 	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/pkg/sync"
+	"golang.org/x/crypto/sha3" //nolint:gosec
 )
 
 type Sync struct {
@@ -143,10 +142,9 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 }
 
 func (hs *Sync) generateSha(body []byte) string {
-	hasher := sha1.New() //nolint:gosec
+	hasher := sha3.New256()
 	hasher.Write(body)
-	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-	return sha
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {

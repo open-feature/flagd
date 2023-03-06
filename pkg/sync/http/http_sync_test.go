@@ -108,7 +108,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					t.Fatalf("fetch: %v", err)
 				}
 
-				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
+				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
 						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
@@ -130,7 +130,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					t.Fatalf("fetch: %v", err)
 				}
 
-				expectedLastBodySHA := "fUH6MbDL8tR0nCiC4bag0Rf_6is="
+				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
 				if httpSync.LastBodySHA != expectedLastBodySHA {
 					t.Errorf(
 						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
