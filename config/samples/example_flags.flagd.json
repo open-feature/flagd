@@ -124,7 +124,6 @@
       }
     },
     "targetedFlag": {
-      "returnType": "string",
       "variants": {
         "first": "AAA",
         "second": "BBB",
