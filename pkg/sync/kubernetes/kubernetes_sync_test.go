@@ -445,11 +445,11 @@ func TestSync_fetch(t *testing.T) {
 						GetByKeyFunc: tt.args.InformerGetFunc,
 					},
 				},
-				ReadClient: &MockClient{
+				readClient: &MockClient{
 					getResponse: tt.args.ClientResponse,
 					clientErr:   tt.args.ClientError,
 				},
-				Logger: logger.NewLogger(nil, false),
+				logger: logger.NewLogger(nil, false),
 			}
 
 			// Test fetch
@@ -530,7 +530,7 @@ func TestSync_watcher(t *testing.T) {
 						GetByKeyFunc: tt.args.InformerGetFunc,
 					},
 				},
-				Logger: logger.NewLogger(nil, false),
+				logger: logger.NewLogger(nil, false),
 			}
 
 			// create communication channels with buffer to so that calls are non-blocking
@@ -579,7 +579,7 @@ func TestInit(t *testing.T) {
 		fakeClient := fake.NewSimpleDynamicClient(scheme, ff)
 		k := Sync{
 			URI:           fmt.Sprintf("%s/%s", ns, name),
-			DynamicClient: fakeClient,
+			dynamicClient: fakeClient,
 			namespace:     ns,
 		}
 		e := k.Init(context.TODO())
@@ -595,7 +595,7 @@ func TestInit(t *testing.T) {
 	})
 }
 
-func TestSync(t *testing.T) {
+func TestSync_ReSync(t *testing.T) {
 	const name = "myFF"
 	const ns = "myNS"
 	s := runtime.NewScheme()
@@ -610,93 +610,80 @@ func TestSync(t *testing.T) {
 		},
 	}
 	fakeReadClient := newFakeReadClient(validFFCfg)
-	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
-	t.Run("Happy Path", func(t *testing.T) {
-		k := Sync{
-			URI:           fmt.Sprintf("%s/%s", ns, name),
-			DynamicClient: fakeDynamicClient,
-			ReadClient:    fakeReadClient,
-			namespace:     ns,
-			Logger:        logger.NewLogger(l, true),
-		}
-		e := k.Init(context.TODO())
-		if e != nil {
-			t.Errorf("Unexpected error: %v", e)
-		}
-		if k.IsReady() {
-			t.Errorf("The Sync should not be ready")
-		}
-		dataChannel := make(chan sync.DataSync, 1)
-		go func() {
-			if err := k.Sync(context.TODO(), dataChannel); err != nil {
+	tests := []struct {
+		name     string
+		k        Sync
+		countMsg int
+		async    bool
+	}{
+		{
+			name: "Happy Path",
+			k: Sync{
+				URI:           fmt.Sprintf("%s/%s", ns, name),
+				dynamicClient: fakeDynamicClient,
+				readClient:    fakeReadClient,
+				namespace:     ns,
+				logger:        logger.NewLogger(l, true),
+			},
+			countMsg: 2, // one for sync and one for resync
+			async:    true,
+		},
+		{
+			name: "CRD not found",
+			k: Sync{
+				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
+				dynamicClient: fakeDynamicClient,
+				readClient:    fakeReadClient,
+				namespace:     ns,
+				logger:        logger.NewLogger(l, true),
+			},
+			countMsg: 0,
+			async:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := tt.k.Init(context.TODO())
+			if e != nil {
 				t.Errorf("Unexpected error: %v", e)
 			}
-		}()
-		d := <-dataChannel
-		if d.Type != sync.ALL {
-			t.Errorf("Expected %v, got %v", sync.ALL, d)
-		}
-	})
-	t.Run("CRD not found", func(t *testing.T) {
-		k := Sync{
-			URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
-			DynamicClient: fakeDynamicClient,
-			ReadClient:    fakeReadClient,
-			namespace:     ns,
-			Logger:        logger.NewLogger(l, true),
-		}
-		e := k.Init(context.TODO())
-		if e != nil {
-			t.Errorf("Unexpected error: %v", e)
-		}
-		// no messages expected
-		dataChannel := make(chan sync.DataSync)
-		if err := k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
-			t.Errorf("Unexpected error: %v", err)
-		}
-	})
-	t.Run("ReSync", func(t *testing.T) {
-		k := Sync{
-			URI:           fmt.Sprintf("%s/%s", ns, name),
-			DynamicClient: fakeDynamicClient,
-			ReadClient:    fakeReadClient,
-			namespace:     ns,
-			Logger:        logger.NewLogger(l, true),
-		}
-		e := k.Init(context.TODO())
-		if e != nil {
-			t.Errorf("Unexpected error: %v", e)
-		}
-		dataChannel := make(chan sync.DataSync, 1)
-		go func() {
-			if err := k.ReSync(context.TODO(), dataChannel); err != nil {
-				t.Errorf("Unexpected error: %v", e)
+			if tt.k.IsReady() {
+				t.Errorf("The Sync should not be ready")
 			}
-		}()
-		d := <-dataChannel
-		if d.Type != sync.ALL {
-			t.Errorf("Expected %v, got %v", sync.ALL, d)
-		}
-	})
-	t.Run("Resync CRD not found", func(t *testing.T) {
-		k := Sync{
-			URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
-			DynamicClient: fakeDynamicClient,
-			ReadClient:    fakeReadClient,
-			namespace:     ns,
-			Logger:        logger.NewLogger(l, true),
-		}
-		e := k.Init(context.TODO())
-		if e != nil {
-			t.Errorf("Unexpected error: %v", e)
-		}
-		// no messages expected
-		dataChannel := make(chan sync.DataSync)
-		if err := k.ReSync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
-			t.Errorf("Unexpected error: %v", err)
-		}
-	})
+			dataChannel := make(chan sync.DataSync, tt.countMsg)
+			if tt.async {
+				go func() {
+					if err := tt.k.Sync(context.TODO(), dataChannel); err != nil {
+						t.Errorf("Unexpected error: %v", e)
+					}
+					if err := tt.k.ReSync(context.TODO(), dataChannel); err != nil {
+						t.Errorf("Unexpected error: %v", e)
+					}
+
+				}()
+				i := tt.countMsg
+				for i > 0 {
+					d := <-dataChannel
+					if d.Type != sync.ALL {
+						t.Errorf("Expected %v, got %v", sync.ALL, d)
+					}
+					i--
+				}
+			} else {
+				if err := tt.k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if err := tt.k.ReSync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
+					t.Errorf("Unexpected error: %v", err)
+				}
+			}
+		})
+	}
 }
 
 func TestNotify(t *testing.T) {
@@ -707,14 +694,17 @@ func TestNotify(t *testing.T) {
 	cfg := getCFG(name, ns)
 	ff.SetUnstructuredContent(cfg)
 	fc := fake.NewSimpleDynamicClient(s, ff)
-	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
+	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 	k := Sync{
 		URI:           fmt.Sprintf("%s/%s", ns, name),
-		DynamicClient: fc,
+		dynamicClient: fc,
 		namespace:     ns,
-		Logger:        logger.NewLogger(l, true),
+		logger:        logger.NewLogger(l, true),
 	}
-	err := k.Init(context.TODO())
+	err = k.Init(context.TODO())
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -738,7 +728,7 @@ func TestNotify(t *testing.T) {
 		"empty": "",
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -751,7 +741,7 @@ func TestNotify(t *testing.T) {
 	old["resourceVersion"] = "newVersion"
 	cfg["metadata"] = old
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -760,7 +750,7 @@ func TestNotify(t *testing.T) {
 		t.Errorf("Expected message %v, got %v", DefaultEventTypeModify, msg)
 	}
 	// delete
-	err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -774,7 +764,7 @@ func TestNotify(t *testing.T) {
 		"featureFlagSpec": int64(12), // we expect string here
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
+	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -782,11 +772,11 @@ func TestNotify(t *testing.T) {
 		"bump": "1",
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	err = fc.Resource(featurFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -815,6 +805,28 @@ func Test_k8sClusterConfig(t *testing.T) {
 			tt.Error("Expected error but got none")
 		}
 	})
+}
+
+func Test_NewK8sSync(t *testing.T) {
+	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	const uri = "myURI"
+	args := map[string]string{"myArg": "myVal"}
+	rc := newFakeReadClient()
+	fc := fake.NewSimpleDynamicClient(runtime.NewScheme())
+	k := NewK8sSync(
+		logger.NewLogger(l, true),
+		uri,
+		args,
+		rc,
+		fc,
+	)
+	if k == nil {
+		t.Errorf("Object not initialized properly")
+	}
+	// TODO complete asserts
 }
 
 func newFakeReadClient(objs ...client.Object) client.Client {

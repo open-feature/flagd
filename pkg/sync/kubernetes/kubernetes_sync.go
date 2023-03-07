@@ -23,22 +23,22 @@ import (
 )
 
 var (
-	resyncPeriod                    = 1 * time.Minute
-	apiVersion                      = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
-	featurFlagConfigurationResource = v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	resyncPeriod                     = 1 * time.Minute
+	apiVersion                       = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
+	featureFlagConfigurationResource = v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
 )
 
 type Sync struct {
-	Logger        *logger.Logger
-	ProviderArgs  sync.ProviderArgs
-	URI           string
-	ReadClient    client.Reader
-	DynamicClient dynamic.Interface
+	URI string
 
-	ready     bool
-	namespace string
-	crdName   string
-	informer  cache.SharedInformer
+	ready         bool
+	namespace     string
+	crdName       string
+	logger        *logger.Logger
+	providerArgs  sync.ProviderArgs
+	readClient    client.Reader
+	dynamicClient dynamic.Interface
+	informer      cache.SharedInformer
 }
 
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -64,9 +64,9 @@ func (k *Sync) Init(ctx context.Context) error {
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(k.DynamicClient, resyncPeriod, k.namespace, nil)
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(k.dynamicClient, resyncPeriod, k.namespace, nil)
 
-	k.informer = factory.ForResource(featurFlagConfigurationResource).Informer()
+	k.informer = factory.ForResource(featureFlagConfigurationResource).Informer()
 
 	return nil
 }
@@ -76,12 +76,12 @@ func (k *Sync) IsReady() bool {
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	k.Logger.Info(fmt.Sprintf("starting kubernetes sync notifier for resource: %s", k.URI))
+	k.logger.Info(fmt.Sprintf("starting kubernetes sync notifier for resource: %s", k.URI))
 
 	// Initial fetch
 	fetch, err := k.fetch(ctx)
 	if err != nil {
-		k.Logger.Error(fmt.Sprintf("error with the initial fetch: %s", err.Error()))
+		k.logger.Error(fmt.Sprintf("error with the initial fetch: %s", err.Error()))
 		return err
 	}
 
@@ -117,27 +117,27 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 		case w := <-notifies:
 			switch w.GetEvent().EventType {
 			case DefaultEventTypeCreate:
-				k.Logger.Debug("new configuration created")
+				k.logger.Debug("new configuration created")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(fmt.Sprintf("error fetching after create notification: %s", err.Error()))
+					k.logger.Error(fmt.Sprintf("error fetching after create notification: %s", err.Error()))
 					continue
 				}
 
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
 			case DefaultEventTypeModify:
-				k.Logger.Debug("Configuration modified")
+				k.logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
 				if err != nil {
-					k.Logger.Error(fmt.Sprintf("error fetching after update notification: %s", err.Error()))
+					k.logger.Error(fmt.Sprintf("error fetching after update notification: %s", err.Error()))
 					continue
 				}
 
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
 			case DefaultEventTypeDelete:
-				k.Logger.Debug("configuration deleted")
+				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
-				k.Logger.Debug("notifier ready")
+				k.logger.Debug("notifier ready")
 				k.ready = true
 			}
 		}
@@ -158,13 +158,13 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 			return "", err
 		}
 
-		k.Logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
+		k.logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
 		return configuration.Spec.FeatureFlagSpec, nil
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
 	var ff v1alpha1.FeatureFlagConfiguration
-	err = k.ReadClient.Get(ctx, client.ObjectKey{
+	err = k.readClient.Get(ctx, client.ObjectKey{
 		Name:      k.crdName,
 		Namespace: k.namespace,
 	}, &ff)
@@ -172,7 +172,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	k.Logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
+	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
 	return ff.Spec.FeatureFlagSpec, nil
 }
 
@@ -183,25 +183,25 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	}
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
+			k.logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := commonHandler(obj, objectKey, DefaultEventTypeCreate, c); err != nil {
-				k.Logger.Warn(err.Error())
+				k.logger.Warn(err.Error())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: update: %s %s", objectKey.Namespace, objectKey.Name))
+			k.logger.Info(fmt.Sprintf("kube sync notifier event: update: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := updateFuncHandler(oldObj, newObj, objectKey, c); err != nil {
-				k.Logger.Warn(err.Error())
+				k.logger.Warn(err.Error())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			k.Logger.Info(fmt.Sprintf("kube sync notifier event: delete: %s %s", objectKey.Namespace, objectKey.Name))
+			k.logger.Info(fmt.Sprintf("kube sync notifier event: delete: %s %s", objectKey.Namespace, objectKey.Name))
 			if err := commonHandler(obj, objectKey, DefaultEventTypeDelete, c); err != nil {
-				k.Logger.Warn(err.Error())
+				k.logger.Warn(err.Error())
 			}
 		},
 	}); err != nil {
-		k.Logger.Fatal(err.Error())
+		k.logger.Fatal(err.Error())
 	}
 
 	c <- &Notifier{
@@ -310,6 +310,16 @@ func k8sClusterConfig() (*rest.Config, error) {
 	}
 
 	return clusterConfig, nil
+}
+
+func NewK8sSync(logger *logger.Logger, uri string, providerArgs sync.ProviderArgs, reader client.Reader, dynamic dynamic.Interface) *Sync {
+	return &Sync{
+		logger:        logger,
+		URI:           uri,
+		providerArgs:  providerArgs,
+		readClient:    reader,
+		dynamicClient: dynamic,
+	}
 }
 
 func GetClients() (client.Reader, dynamic.Interface, error) {

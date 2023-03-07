@@ -136,16 +136,16 @@ func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, e
 	if err != nil {
 		return nil, err
 	}
-	return &kubernetes.Sync{
-		Logger: logger.WithFields(
+	return kubernetes.NewK8sSync(
+		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI:           regCrd.ReplaceAllString(uri, ""),
-		ProviderArgs:  r.config.ProviderArgs,
-		ReadClient:    reader,
-		DynamicClient: dynamic,
-	}, nil
+		regCrd.ReplaceAllString(uri, ""),
+		r.config.ProviderArgs,
+		reader,
+		dynamic,
+	), nil
 }
 
 func (r *Runtime) newFile(uri string, logger *logger.Logger) *file.Sync {
