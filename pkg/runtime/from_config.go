@@ -135,8 +135,8 @@ func (r *Runtime) newHTTP(config sync.ProviderConfig, logger *logger.Logger) *ht
 			zap.String("component", "sync"),
 			zap.String("sync", "remote"),
 		),
-		Config: config,
-		Cron:   cron.New(),
+		BearerToken: config.BearerToken,
+		Cron:        cron.New(),
 	}
 }
 
@@ -146,8 +146,7 @@ func (r *Runtime) newK8s(config sync.ProviderConfig, logger *logger.Logger) *kub
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI:    config.URI,
-		Config: config,
+		URI: config.URI,
 	}
 }
 
@@ -158,8 +157,7 @@ func (r *Runtime) newFile(config sync.ProviderConfig, logger *logger.Logger) *fi
 			zap.String("component", "sync"),
 			zap.String("sync", "filepath"),
 		),
-		Config: config,
-		Mux:    &msync.RWMutex{},
+		Mux: &msync.RWMutex{},
 	}
 }
 

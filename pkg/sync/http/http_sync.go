@@ -22,7 +22,7 @@ type Sync struct {
 	LastBodySHA string
 	Logger      *logger.Logger
 	ready       bool
-	Config      sync.ProviderConfig
+	BearerToken string
 }
 
 // Client defines the behaviour required of a http client
@@ -116,8 +116,8 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	req.Header.Add("Accept", "application/json")
 
-	if hs.Config.BearerToken != "" {
-		bearer := fmt.Sprintf("Bearer %s", hs.Config.BearerToken)
+	if hs.BearerToken != "" {
+		bearer := fmt.Sprintf("Bearer %s", hs.BearerToken)
 		req.Header.Set("Authorization", bearer)
 	}
 
