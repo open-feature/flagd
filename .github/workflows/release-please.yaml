@@ -86,6 +86,13 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@bd2d1189b064bcddc3903176a807dcdba72d7fd0
 
