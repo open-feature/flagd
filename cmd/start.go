@@ -25,7 +25,7 @@ const (
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
-	syncProvidersFlagName  = "sync-providers"
+	sourcesFlagName        = "sources"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
 )
@@ -61,7 +61,7 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(
-		syncProvidersFlagName, "s", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
+		sourcesFlagName, "s", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
 			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: "+
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
@@ -78,7 +78,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
-	_ = viper.BindPFlag(syncProvidersFlagName, flags.Lookup(syncProvidersFlagName))
+	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
@@ -121,13 +121,13 @@ var startCmd = &cobra.Command{
 		}
 
 		syncProvidersFromConfig := []sync.ProviderConfig{}
-		if cfgFile == "" && viper.GetString(syncProvidersFlagName) != "" {
-			syncProvidersFromConfig, err = runtime.SyncProviderArgPass(viper.GetString(syncProvidersFlagName))
+		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
+			syncProvidersFromConfig, err = runtime.SyncProviderArgPass(viper.GetString(sourcesFlagName))
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			err = viper.UnmarshalKey(syncProvidersFlagName, &syncProvidersFromConfig)
+			err = viper.UnmarshalKey(sourcesFlagName, &syncProvidersFromConfig)
 			if err != nil {
 				log.Fatal(err)
 			}

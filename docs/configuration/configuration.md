@@ -36,9 +36,9 @@ To use an existing FeatureFlagConfiguration custom resource, start flagD with th
 flagd start --uri core.openfeature.dev/default/my_example
 ```
 
-### Sync Provider Configuration
+### Source Configuration
 
-While a URI may be passed to flagd via the `--uri` flag, some implementations may require further configurations. In these cases the `--sync-providers` flag should be used.
+While a URI may be passed to flagd via the `--uri` flag, some implementations may require further configurations. In these cases the `--sources` flag should be used.
 The flag takes a string argument, which should be a JSON representation of an array of `ProviderConfig` objects. Alternatively, these configurations should be passed to
 flagd via config file, specified using the `--config` flag.
 
@@ -52,11 +52,11 @@ The `uri` field values do not need to follow the [URI patterns](#uri-patterns), 
 
 Example start command using a filepath sync provider and the equivalent config file definition:
 ```sh
-./flagd start --sync-providers=\[{\"uri\":\"config/samples/example_flags.json\"\,\"provider\":\"file\"}\]
+./flagd start --sources=\[{\"uri\":\"config/samples/example_flags.json\"\,\"provider\":\"file\"}\]
 ```
 
 ```yaml
-sync-providers:
+sources:
 - uri: config/samples/example_flags.json
   provider: file
 ```
