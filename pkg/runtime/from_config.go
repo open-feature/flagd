@@ -161,7 +161,7 @@ func (r *Runtime) newFile(config sync.ProviderConfig, logger *logger.Logger) *fi
 	}
 }
 
-func SyncProviderArgPass(syncProviders string) ([]sync.ProviderConfig, error) {
+func SyncProviderArgParse(syncProviders string) ([]sync.ProviderConfig, error) {
 	syncProvidersParsed := []sync.ProviderConfig{}
 	if err := json.Unmarshal([]byte(syncProviders), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)

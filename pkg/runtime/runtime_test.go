@@ -8,7 +8,7 @@ import (
 	"github.com/open-feature/flagd/pkg/sync"
 )
 
-func TestSyncProviderArgPass(t *testing.T) {
+func TestSyncProviderArgParse(t *testing.T) {
 	test := map[string]struct {
 		in        string
 		expectErr bool
@@ -66,7 +66,7 @@ func TestSyncProviderArgPass(t *testing.T) {
 
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
-			out, err := runtime.SyncProviderArgPass(tt.in)
+			out, err := runtime.SyncProviderArgParse(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")
