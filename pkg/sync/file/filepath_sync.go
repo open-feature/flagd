@@ -133,7 +133,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync c
 		}
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.Source, Type: syncType}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
