@@ -27,3 +27,21 @@ The update provided by sync implementation is pushed to the evaluator engine, wh
 process gets pushed to event subscribers.
 
 <img src="../images/of-flagd-1.png" width="560">
+
+## Readiness & Liveness probes
+
+Flagd exposes HTTP liveness and readiness probes. These probes can be used for K8s deployments. With default 
+start-up configurations, these probes are exposed at the following URLs,
+
+- Liveness: http://localhost:8014/healthz
+- Readiness: http://localhost:8014/readyz
+
+### Definition of Liveness
+
+The liveness probe becomes active and HTTP 200 status is served as soon as Flagd service is up and running.
+
+### Definition of Readiness
+
+The readiness probe becomes active similar to the liveness probe as soon as Flagd service is up and running. However,
+the probe emits HTTP 412 until all sync providers are ready. This status changes to HTTP 200 when all sync providers at
+least have one successful data sync. The status does not change from there on.
