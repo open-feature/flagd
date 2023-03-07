@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net"
-	msync "sync"
 	"testing"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
@@ -147,7 +146,6 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		Target:     "grpc://test",
 		ProviderID: "",
 		Logger:     logger.NewLogger(nil, false),
-		Mux:        &msync.RWMutex{},
 	}
 
 	tests := []struct {
@@ -335,7 +333,6 @@ func Test_StreamListener(t *testing.T) {
 			Target:     target,
 			ProviderID: "",
 			Logger:     logger.NewLogger(nil, false),
-			Mux:        &msync.RWMutex{},
 		}
 
 		// initialize client

@@ -3,16 +3,15 @@ package http
 import (
 	"bytes"
 	"context"
-	"crypto/sha1" //nolint:gosec
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	"github.com/open-feature/flagd/pkg/sync"
-
 	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/pkg/sync"
+	"golang.org/x/crypto/sha3" //nolint:gosec
 )
 
 type Sync struct {
@@ -63,6 +62,8 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	if err != nil {
 		return err
 	}
+
+	// Set ready state
 	hs.ready = true
 
 	_ = hs.Cron.AddFunc("*/5 * * * *", func() {
@@ -143,26 +144,23 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 }
 
 func (hs *Sync) generateSha(body []byte) string {
-	hasher := sha1.New() //nolint:gosec
+	hasher := sha3.New256()
 	hasher.Write(body)
-	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-	return sha
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 	if hs.URI == "" {
-		hs.ready = false
 		return "", errors.New("no HTTP URL string set")
 	}
 
 	body, err := hs.fetchBodyFromURL(ctx, hs.URI)
 	if err != nil {
-		hs.ready = false
 		return "", err
 	}
 	if len(body) != 0 {
 		hs.LastBodySHA = hs.generateSha(body)
 	}
-	hs.ready = true
+
 	return string(body), nil
 }
