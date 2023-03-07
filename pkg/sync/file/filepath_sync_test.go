@@ -146,18 +146,19 @@ func TestSimpleSync(t *testing.T) {
 
 			dataSyncChan := make(chan sync.DataSync, len(tt.expectedDataSync))
 
+			syncHandler := Sync{
+				URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+				Logger: logger.NewLogger(nil, false),
+				Mux:    &msync.RWMutex{},
+			}
+
 			go func() {
-				handler := Sync{
-					URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-					Logger: logger.NewLogger(nil, false),
-					Mux:    &msync.RWMutex{},
-				}
-				err := handler.Init(ctx)
+				err := syncHandler.Init(ctx)
 				if err != nil {
 					log.Fatalf("Error init sync: %s", err.Error())
 					return
 				}
-				err = handler.Sync(ctx, dataSyncChan)
+				err = syncHandler.Sync(ctx, dataSyncChan)
 				if err != nil {
 					log.Fatalf("Error start sync: %s", err.Error())
 					return
@@ -186,6 +187,11 @@ func TestSimpleSync(t *testing.T) {
 					}
 				case <-time.After(10 * time.Second):
 					t.Errorf("event not found, timeout out after 10 seconds")
+				}
+
+				// validate readiness - readiness must not change
+				if syncHandler.ready != true {
+					t.Errorf("readiness must be set to true, but found: %t", syncHandler.ready)
 				}
 			}
 		})
