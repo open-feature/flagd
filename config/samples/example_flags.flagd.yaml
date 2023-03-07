@@ -88,18 +88,16 @@ flags:
     defaultVariant: first
     state: ENABLED
     targeting:
-      if:
-      - "in":
-        - var:
-          - "email"
-        - "@openfeature.dev"
-      - 'second'
-      - null
-        - var:
-          - "userAgent"
-        - "Chrome"
-      - 'third'
-      - null
+if:
+- in:
+  - "@openfeature.dev"
+  - var: email
+- second
+- in:
+  - Chrome
+  - var: userAgent
+- third
+-
 "$evaluators":
   emailWithFaas:
     in:
