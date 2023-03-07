@@ -312,7 +312,13 @@ func k8sClusterConfig() (*rest.Config, error) {
 	return clusterConfig, nil
 }
 
-func NewK8sSync(logger *logger.Logger, uri string, providerArgs sync.ProviderArgs, reader client.Reader, dynamic dynamic.Interface) *Sync {
+func NewK8sSync(
+	logger *logger.Logger,
+	uri string,
+	providerArgs sync.ProviderArgs,
+	reader client.Reader,
+	dynamic dynamic.Interface,
+) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,

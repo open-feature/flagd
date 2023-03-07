@@ -664,7 +664,6 @@ func TestSync_ReSync(t *testing.T) {
 					if err := tt.k.ReSync(context.TODO(), dataChannel); err != nil {
 						t.Errorf("Unexpected error: %v", e)
 					}
-
 				}()
 				i := tt.countMsg
 				for i > 0 {
@@ -813,20 +812,36 @@ func Test_NewK8sSync(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	const uri = "myURI"
-	args := map[string]string{"myArg": "myVal"}
+	log := logger.NewLogger(l, true)
+	const key, value = "myKey", "myValue"
+	args := map[string]string{key: value}
 	rc := newFakeReadClient()
-	fc := fake.NewSimpleDynamicClient(runtime.NewScheme())
+	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
-		logger.NewLogger(l, true),
+		log,
 		uri,
 		args,
 		rc,
-		fc,
+		dc,
 	)
 	if k == nil {
 		t.Errorf("Object not initialized properly")
 	}
-	// TODO complete asserts
+	if k.URI != uri {
+		t.Errorf("Object not initialized with the right URI")
+	}
+	if k.logger != log {
+		t.Errorf("Object not initialized with the right logger")
+	}
+	if k.providerArgs[key] != value {
+		t.Errorf("Object not initialized with the right arguments")
+	}
+	if k.readClient != rc {
+		t.Errorf("Object not initialized with the right K8s client")
+	}
+	if k.dynamicClient != dc {
+		t.Errorf("Object not initialized with the right K8s dynamic client")
+	}
 }
 
 func newFakeReadClient(objs ...client.Object) client.Client {
