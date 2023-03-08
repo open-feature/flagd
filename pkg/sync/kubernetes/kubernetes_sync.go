@@ -41,6 +41,40 @@ type Sync struct {
 	informer      cache.SharedInformer
 }
 
+func NewK8sSync(
+	logger *logger.Logger,
+	uri string,
+	providerArgs sync.ProviderArgs,
+	reader client.Reader,
+	dynamic dynamic.Interface,
+) *Sync {
+	return &Sync{
+		logger:        logger,
+		URI:           uri,
+		providerArgs:  providerArgs,
+		readClient:    reader,
+		dynamicClient: dynamic,
+	}
+}
+
+func GetClients() (client.Reader, dynamic.Interface, error) {
+	clusterConfig, err := k8sClusterConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	return readClient, dynamicClient, nil
+}
+
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fetch, err := k.fetch(ctx)
 	if err != nil {
@@ -310,38 +344,4 @@ func k8sClusterConfig() (*rest.Config, error) {
 	}
 
 	return clusterConfig, nil
-}
-
-func NewK8sSync(
-	logger *logger.Logger,
-	uri string,
-	providerArgs sync.ProviderArgs,
-	reader client.Reader,
-	dynamic dynamic.Interface,
-) *Sync {
-	return &Sync{
-		logger:        logger,
-		URI:           uri,
-		providerArgs:  providerArgs,
-		readClient:    reader,
-		dynamicClient: dynamic,
-	}
-}
-
-func GetClients() (client.Reader, dynamic.Interface, error) {
-	clusterConfig, err := k8sClusterConfig()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-	return readClient, dynamicClient, nil
 }
