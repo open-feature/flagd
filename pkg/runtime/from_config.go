@@ -88,11 +88,15 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				r.SyncImpl,
 				r.newFile(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %s", syncProvider.URI))
-		case syncProviderKubernetes:
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
+		case regCrd.Match(uriB):
+			k, err := r.newK8s(uri, logger)
+			if err != nil {
+				return err
+			}
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newK8s(syncProvider, logger),
+				k,
 			)
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
 		case syncProviderHTTP:
@@ -139,14 +143,21 @@ func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *http
 	}
 }
 
-func (r *Runtime) newK8s(config sync.SourceConfig, logger *logger.Logger) *kubernetes.Sync {
-	return &kubernetes.Sync{
-		Logger: logger.WithFields(
+func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+	reader, dynamic, err := kubernetes.GetClients()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewK8sSync(
+		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI: config.URI,
-	}
+		regCrd.ReplaceAllString(uri, ""),
+		r.config.ProviderArgs,
+		reader,
+		dynamic,
+	), nil
 }
 
 func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
