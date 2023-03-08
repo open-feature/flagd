@@ -29,7 +29,6 @@ var (
 
 type Sync struct {
 	Logger *logger.Logger
-	Source string
 	URI    string
 
 	ready      bool
