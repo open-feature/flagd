@@ -32,7 +32,6 @@ type Sync struct {
 	Source string
 	URI    string
 
-	client     client.Client
 	ready      bool
 	namespace  string
 	crdName    string
