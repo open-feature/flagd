@@ -122,6 +122,29 @@
           }, null
         ]
       }
+    },
+    "targetedFlag": {
+      "variants": {
+        "first": "AAA",
+        "second": "BBB",
+        "third": "CCC"
+      },
+      "defaultVariant": "first",
+      "state": "ENABLED",
+      "targeting": {
+        "if": [{
+            "in": ["@openfeature.dev", {
+              "var": "email"
+            }]
+          }, "second",
+          {
+            "in": ["Chrome", {
+              "var": "userAgent"
+            }]
+          }, "third",
+          null
+        ]
+      }
     }
   },
   "$evaluators": {
