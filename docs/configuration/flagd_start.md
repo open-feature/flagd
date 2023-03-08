@@ -9,7 +9,7 @@ flagd start [flags]
 ### Options
 
 ```
-  -b, --bearer-token string                 Set a bearer token to use for remote sync
+  -b, --bearer-token string                 DEPRECATED: Superseded by --sources.
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
   -h, --help                                help for start

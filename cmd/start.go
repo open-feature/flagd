@@ -55,7 +55,7 @@ func init() {
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
 	flags.StringP(
-		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+		bearerTokenFlagName, "b", "", "DEPRECATED: Superseded by --sources.")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
