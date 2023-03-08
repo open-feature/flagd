@@ -88,9 +88,9 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				r.SyncImpl,
 				r.newFile(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", uri))
-		case regCrd.Match(uriB):
-			k, err := r.newK8s(uri, logger)
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
+		case syncProviderKubernetes:
+			k, err := r.newK8s(syncProvider.URI, logger)
 			if err != nil {
 				return err
 			}
@@ -154,7 +154,6 @@ func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, e
 			zap.String("sync", "kubernetes"),
 		),
 		regCrd.ReplaceAllString(uri, ""),
-		r.config.ProviderArgs,
 		reader,
 		dynamic,
 	), nil
