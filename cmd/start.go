@@ -62,7 +62,7 @@ func init() {
 	)
 	flags.StringP(
 		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
-			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: "+
+			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
