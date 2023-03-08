@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862 # v3
+      - uses: google-github-actions/release-please-action@e0b9d1885d92e9a93d5ce8656de60e3b806e542c # v3
         id: release
         with:
           command: manifest

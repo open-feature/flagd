@@ -30,6 +30,8 @@ const (
 	constantBackOffDelay = 60
 )
 
+var once msync.Once
+
 type Sync struct {
 	Target     string
 	ProviderID string
@@ -84,37 +86,28 @@ func (g *Sync) Init(ctx context.Context) error {
 }
 
 func (g *Sync) IsReady() bool {
-	g.Mux.RLock()
-	defer g.Mux.RUnlock()
 	return g.ready
-}
-
-func (g *Sync) setReady(val bool) {
-	g.Mux.Lock()
-	defer g.Mux.Unlock()
-	g.ready = val
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// initial stream listening
-	g.setReady(true)
 	err := g.handleFlagSync(g.syncClient, dataSync)
 	if err == nil {
 		return nil
 	}
+
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
+
 	// retry connection establishment
 	for {
-		g.setReady(false)
 		syncClient, ok := g.connectWithRetry(ctx)
 		if !ok {
 			// We shall exit
 			return nil
 		}
-		g.setReady(true)
+
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
-			g.setReady(false)
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 			continue
 		}
@@ -168,6 +161,11 @@ func (g *Sync) connectWithRetry(
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
 func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+	// Set ready state once only
+	once.Do(func() {
+		g.ready = true
+	})
+
 	for {
 		data, err := stream.Recv()
 		if err != nil {
