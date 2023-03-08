@@ -20,8 +20,9 @@ type Sync struct {
 	Cron        Cron
 	LastBodySHA string
 	Logger      *logger.Logger
-	ready       bool
 	BearerToken string
+
+	ready bool
 }
 
 // Client defines the behaviour required of a http client

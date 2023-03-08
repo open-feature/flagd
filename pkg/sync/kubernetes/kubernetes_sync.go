@@ -28,10 +28,11 @@ var (
 )
 
 type Sync struct {
-	Logger     *logger.Logger
+	Logger *logger.Logger
+	Source string
+	URI    string
+
 	client     client.Client
-	Source     string
-	URI        string
 	ready      bool
 	namespace  string
 	crdName    string

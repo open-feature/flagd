@@ -34,12 +34,12 @@ type Sync struct {
 	Target     string
 	ProviderID string
 	Logger     *logger.Logger
+	Mux        *msync.RWMutex
 
 	syncClient syncv1grpc.FlagSyncService_SyncFlagsClient
 	client     syncv1grpc.FlagSyncServiceClient
 	options    []grpc.DialOption
 	ready      bool
-	Mux        *msync.RWMutex
 }
 
 func (g *Sync) connectClient(ctx context.Context) error {

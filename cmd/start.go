@@ -61,7 +61,7 @@ func init() {
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(
-		sourcesFlagName, "s", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
+		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
 			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: "+
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
@@ -115,7 +115,7 @@ var startCmd = &cobra.Command{
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
-		if viper.GetStringMapString(providerArgsFlagName) != nil {
+		if viper.GetString(providerArgsFlagName) != "" {
 			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
@@ -125,7 +125,7 @@ var startCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		syncProvidersFromConfig := []sync.ProviderConfig{}
+		syncProvidersFromConfig := []sync.SourceConfig{}
 		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
 			syncProvidersFromConfig, err = runtime.SyncProviderArgParse(viper.GetString(sourcesFlagName))
 			if err != nil {
