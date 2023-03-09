@@ -10,7 +10,7 @@ Environment variable keys are uppercased, prefixed with `FLAGD_` and all `-` are
 
 Config file expects the keys to have the exact naming as the flags.
 
-### URI patterns
+### <a name="uri-patterns"></a> URI patterns
 
 Any URI passed to flagd via the `--uri` flag must follow one of the 4 following patterns to ensure that it is passed to the correct implementation: 
 
@@ -20,7 +20,6 @@ Any URI passed to flagd via the `--uri` flag must follow one of the 4 following 
 | Filepath   | `file:path/to/my/flag`             | `file:etc/flagd/my-flags.json`        |
 | Remote     | `http(s)://flag-source-url`        | `https://my-flags.com/flags`          |
 | Grpc       | `grpc://flag-source-url`           | `grpc://my-flags-server`        |
-
 
 
 ### Customising sync providers
@@ -35,4 +34,38 @@ To use an existing FeatureFlagConfiguration custom resource, start flagD with th
 
 ```shell
 flagd start --uri core.openfeature.dev/default/my_example
+```
+
+### Source Configuration
+
+While a URI may be passed to flagd via the `--uri` flag, some implementations may require further configurations. In these cases the `--sources` flag should be used.
+The flag takes a string argument, which should be a JSON representation of an array of `SourceConfig` objects. Alternatively, these configurations should be passed to
+flagd via config file, specified using the `--config` flag.
+
+| Field       | Type  | 
+|------------|------------------------------------|
+| uri | required `string` |  |
+| provider   | required `string` (`file`, `kubernetes`, `http` or `grpc`) |
+| bearerToken     | optional `string`        |
+
+The `uri` field values do not need to follow the [URI patterns](#uri-patterns), the provider type is instead derived from the provider field. If the prefix is supplied, it will be removed on startup without error.
+
+Example start command using a filepath sync provider and the equivalent config file definition:
+```sh
+./flagd start --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"}]{"uri":"default/my-flag-config","provider":"kubernetes"},{"uri":"grpc://my-flag-source:8080","provider":"grpc"}'
+```
+
+```yaml
+sources:
+- uri: config/samples/example_flags.json
+  provider: file
+- uri: http://my-flag-source.json
+  provider: http
+  bearerToken: bearer-dji34ld2l
+- uri: default/my-flag-config
+  provider: kubernetes
+- uri: http://my-flag-source.json
+  provider: kubernetes
+- uri: grpc://my-flag-source:8080
+  provider: grpc
 ```
