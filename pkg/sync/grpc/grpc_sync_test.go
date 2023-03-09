@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
 
@@ -612,6 +614,94 @@ func Test_ConnectWithRetry(t *testing.T) {
 
 	if con == nil {
 		t.Errorf("received a nil value when expecting a non-nil return")
+	}
+}
+
+// Test_SyncRetry validates sync and retry attempts
+func Test_SyncRetry(t *testing.T) {
+	// Setup
+	target := "grpc://local"
+	bufListener := bufconn.Listen(1)
+
+	expectType := sync.ALL
+
+	// buffer based server. response ignored purposefully
+	bServer := bufferedServer{listener: bufListener, mockResponses: []serverPayload{
+		{
+			flags: "{}",
+			state: v1.SyncState_SYNC_STATE_ALL,
+		},
+	}}
+
+	// generate a client connection backed by bufListener
+	clientConn, err := grpc.Dial(target,
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return bufListener.DialContext(ctx)
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Errorf("error initiating the connection: %s", err.Error())
+	}
+
+	// minimal sync provider
+	grpcSync := Sync{
+		Logger: logger.NewLogger(nil, false),
+		client: syncv1grpc.NewFlagSyncServiceClient(clientConn),
+	}
+
+	// channel for data sync
+	syncChan := make(chan sync.DataSync, 1)
+
+	// Testing
+
+	// Initial mock server - start mock server backed by a error group. Allow connection and disconnect with a timeout
+	tCtx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelFunc()
+
+	group, _ := errgroup.WithContext(tCtx)
+	group.Go(func() error {
+		serve(&bServer)
+		return nil
+	})
+
+	// Start Sync for grpc streaming
+	go func() {
+		err := grpcSync.Sync(context.Background(), syncChan)
+		if err != nil {
+			t.Errorf("sync start error: %s", err.Error())
+		}
+	}()
+
+	// Check for timeout (not ideal) or data sync (ideal) and cancel the context
+	select {
+	case <-tCtx.Done():
+		t.Errorf("timeout waiting for conditions to fulfil")
+		break
+	case data := <-syncChan:
+		if data.Type != expectType {
+			t.Errorf("sync start error: %s", err.Error())
+		}
+	}
+
+	// cancel make error group to complete, making background mock server to exit
+	cancelFunc()
+
+	// Follow up mock server start - start mock server after initial shutdown
+	tCtx, cancelFunc = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	// Restart the server
+	go serve(&bServer)
+
+	// validate connection re-establishment
+	select {
+	case <-tCtx.Done():
+		cancelFunc()
+		t.Error("timeout waiting for conditions to fulfil")
+	case rsp := <-syncChan:
+		if rsp.Type != expectType {
+			t.Errorf("expected response: %s, but got: %s", expectType, rsp.Type)
+		}
 	}
 }
 

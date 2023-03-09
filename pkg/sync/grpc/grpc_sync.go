@@ -94,14 +94,16 @@ func (g *Sync) IsReady() bool {
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
 	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 	if err != nil {
 		return err
 	}
 
-	// initial stream listening
+	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)
-	if err != nil {
+	if err == nil {
+		// This should not happen as handleFlagSync expects to return with an error
 		return err
 	}
 
