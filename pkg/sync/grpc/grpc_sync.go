@@ -45,8 +45,6 @@ type Sync struct {
 	ProviderID string
 	CertPath   string
 	Logger     *logger.Logger
-	Mux        *msync.RWMutex
-	Config     sync.ProviderConfig
 
 	client syncv1grpc.FlagSyncServiceClient
 	ready  bool
@@ -98,7 +96,7 @@ func (g *Sync) IsReady() bool {
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// initial stream listening

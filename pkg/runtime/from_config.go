@@ -30,16 +30,18 @@ const (
 )
 
 var (
-	regCrd  *regexp.Regexp
-	regURL  *regexp.Regexp
-	regGRPC *regexp.Regexp
-	regFile *regexp.Regexp
+	regCrd        *regexp.Regexp
+	regURL        *regexp.Regexp
+	regGRPC       *regexp.Regexp
+	regGRPCSecure *regexp.Regexp
+	regFile       *regexp.Regexp
 )
 
 func init() {
 	regCrd = regexp.MustCompile("^core.openfeature.dev/")
 	regURL = regexp.MustCompile("^https?://")
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
+	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
 	regFile = regexp.MustCompile("^file:")
 }
 
@@ -118,17 +120,18 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	return nil
 }
 
-func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
+func (r *Runtime) newGRPC(config sync.ProviderConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
-		Target: grpc.URLToGRPCTarget(config.URI),
+		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
+		CertPath: config.CertPath,
 	}
 }
 
-func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
+func (r *Runtime) newHTTP(config sync.ProviderConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -159,9 +162,9 @@ func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, e
 	), nil
 }
 
-func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
+func (r *Runtime) newFile(config sync.ProviderConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
-		URI: regFile.ReplaceAllString(uri, ""),
+		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "filepath"),
@@ -170,8 +173,8 @@ func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file
 	}
 }
 
-func SyncProviderArgParse(syncProviders string) ([]sync.SourceConfig, error) {
-	syncProvidersParsed := []sync.SourceConfig{}
+func SyncProviderArgParse(syncProviders string) ([]sync.ProviderConfig, error) {
+	syncProvidersParsed := []sync.ProviderConfig{}
 	if err := json.Unmarshal([]byte(syncProviders), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
 	}
@@ -192,27 +195,27 @@ func SyncProviderArgParse(syncProviders string) ([]sync.SourceConfig, error) {
 	return syncProvidersParsed, nil
 }
 
-func SyncProvidersFromURIs(uris []string) ([]sync.SourceConfig, error) {
-	syncProvidersParsed := []sync.SourceConfig{}
+func SyncProvidersFromURIs(uris []string) ([]sync.ProviderConfig, error) {
+	syncProvidersParsed := []sync.ProviderConfig{}
 	for _, uri := range uris {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
 				URI:      regFile.ReplaceAllString(uri, ""),
 				Provider: syncProviderFile,
 			})
 		case regCrd.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
 				URI:      regCrd.ReplaceAllString(uri, ""),
 				Provider: syncProviderKubernetes,
 			})
 		case regURL.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
-		case regGRPC.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+		case regGRPC.Match(uriB), regGRPCSecure.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
 				URI:      uri,
 				Provider: syncProviderGrpc,
 			})

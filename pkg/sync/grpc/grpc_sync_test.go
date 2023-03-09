@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	msync "sync"
 	"testing"
 	"time"
 
@@ -413,7 +412,6 @@ func Test_StreamListener(t *testing.T) {
 			URI:        target,
 			ProviderID: "",
 			Logger:     logger.NewLogger(nil, false),
-			Mux:        &msync.RWMutex{},
 
 			client: serviceClient,
 		}
