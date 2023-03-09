@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.2](https://github.com/open-feature/flagd/compare/v0.4.1...v0.4.2) (2023-03-09)
+
+
+### 🧹 Chore
+
+* Add targeted Flag to example config ([#467](https://github.com/open-feature/flagd/issues/467)) ([6a039ce](https://github.com/open-feature/flagd/commit/6a039cef875caae61ea6c65799f3b6dc3863d131))
+* **deps:** pin dependencies ([#473](https://github.com/open-feature/flagd/issues/473)) ([679e860](https://github.com/open-feature/flagd/commit/679e8600f57ab1e03c493c4a4046bd9d7368efac))
+* **deps:** update google-github-actions/release-please-action digest to e0b9d18 ([#474](https://github.com/open-feature/flagd/issues/474)) ([5b85b2a](https://github.com/open-feature/flagd/commit/5b85b2a611d9199e39735f101ed7e560257ce2e4))
+* refactoring and improve coverage for K8s Sync ([#466](https://github.com/open-feature/flagd/issues/466)) ([6dc441e](https://github.com/open-feature/flagd/commit/6dc441e2f2418c1fd3a5a58dbb99f848ccbd8735))
+
+
+### 🐛 Bug Fixes
+
+* add registry login ([#476](https://github.com/open-feature/flagd/issues/476)) ([99de755](https://github.com/open-feature/flagd/commit/99de755749df43d2b1028d47487b78b0ab626a9e))
+* **deps:** update module golang.org/x/crypto to v0.7.0 ([#472](https://github.com/open-feature/flagd/issues/472)) ([f53f6c8](https://github.com/open-feature/flagd/commit/f53f6c885ee90813161b99be5a273b485e064de8))
+* **deps:** update module google.golang.org/protobuf to v1.29.0 ([#478](https://github.com/open-feature/flagd/issues/478)) ([f9adc8e](https://github.com/open-feature/flagd/commit/f9adc8e3746256bcec045c06c78034c45722d60c))
+
+
+### ✨ New Features
+
+* grpc tls connectivity (grpcs) ([#477](https://github.com/open-feature/flagd/issues/477)) ([228f430](https://github.com/open-feature/flagd/commit/228f430e4945173755f52b8e712b23c28314517e))
+* introduce per-sync configurations ([#448](https://github.com/open-feature/flagd/issues/448)) ([1d80039](https://github.com/open-feature/flagd/commit/1d80039558b29fff117478e308fd794a1244f0e5))
+
 ## [0.4.1](https://github.com/open-feature/flagd/compare/v0.4.0...v0.4.1) (2023-03-07)
 
 
