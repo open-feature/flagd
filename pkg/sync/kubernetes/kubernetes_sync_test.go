@@ -14,7 +14,7 @@ import (
 	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	"go.uber.org/zap/zapcore"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
@@ -813,14 +813,11 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	const uri = "myURI"
 	log := logger.NewLogger(l, true)
-	const key, value = "myKey", "myValue"
-	args := map[string]string{key: value}
 	rc := newFakeReadClient()
 	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
 		log,
 		uri,
-		args,
 		rc,
 		dc,
 	)
@@ -832,9 +829,6 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	if k.logger != log {
 		t.Errorf("Object not initialized with the right logger")
-	}
-	if k.providerArgs[key] != value {
-		t.Errorf("Object not initialized with the right arguments")
 	}
 	if k.readClient != rc {
 		t.Errorf("Object not initialized with the right K8s client")

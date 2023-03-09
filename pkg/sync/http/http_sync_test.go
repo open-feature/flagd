@@ -34,7 +34,6 @@ func TestSimpleSync(t *testing.T) {
 		URI:         "http://localhost",
 		Client:      mockClient,
 		Cron:        mockCron,
-		BearerToken: "",
 		LastBodySHA: "",
 		Logger:      logger.NewLogger(nil, false),
 	}

@@ -15,13 +15,12 @@ import (
 )
 
 type Sync struct {
-	URI          string
-	Client       Client
-	Cron         Cron
-	BearerToken  string
-	LastBodySHA  string
-	Logger       *logger.Logger
-	ProviderArgs sync.ProviderArgs
+	URI         string
+	Client      Client
+	Cron        Cron
+	LastBodySHA string
+	Logger      *logger.Logger
+	BearerToken string
 
 	ready bool
 }
@@ -120,7 +119,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 	req.Header.Add("Accept", "application/json")
 
 	if hs.BearerToken != "" {
-		bearer := "Bearer " + hs.BearerToken
+		bearer := fmt.Sprintf("Bearer %s", hs.BearerToken)
 		req.Header.Set("Authorization", bearer)
 	}
 

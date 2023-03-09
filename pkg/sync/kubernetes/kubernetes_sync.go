@@ -35,7 +35,6 @@ type Sync struct {
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
-	providerArgs  sync.ProviderArgs
 	readClient    client.Reader
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
@@ -44,14 +43,12 @@ type Sync struct {
 func NewK8sSync(
 	logger *logger.Logger,
 	uri string,
-	providerArgs sync.ProviderArgs,
 	reader client.Reader,
 	dynamic dynamic.Interface,
 ) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,
-		providerArgs:  providerArgs,
 		readClient:    reader,
 		dynamicClient: dynamic,
 	}

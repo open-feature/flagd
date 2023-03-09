@@ -7,6 +7,7 @@ import (
 
 	"github.com/open-feature/flagd/pkg/logger"
 	"github.com/open-feature/flagd/pkg/runtime"
+	"github.com/open-feature/flagd/pkg/sync"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -24,6 +25,7 @@ const (
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
+	sourcesFlagName        = "sources"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
 )
@@ -44,7 +46,7 @@ func init() {
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringToStringP(providerArgsFlagName,
-		"a", nil, "Sync provider arguments as key values separated by =")
+		"a", nil, "DEPRECATED: Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
 			"url (http and grpc) or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the "+
@@ -53,10 +55,15 @@ func init() {
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
 	flags.StringP(
-		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+		bearerTokenFlagName, "b", "", "DEPRECATED: Superseded by --sources.")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
+	)
+	flags.StringP(
+		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
+			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
+			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
@@ -71,6 +78,7 @@ func init() {
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
+	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
 
@@ -106,17 +114,40 @@ var startCmd = &cobra.Command{
 			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
+
+		if viper.GetString(providerArgsFlagName) != "" {
+			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated. " +
+				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+		}
+
+		syncProviders, err := runtime.SyncProvidersFromURIs(viper.GetStringSlice(uriFlagName))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		syncProvidersFromConfig := []sync.SourceConfig{}
+		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
+			syncProvidersFromConfig, err = runtime.SyncProviderArgParse(viper.GetString(sourcesFlagName))
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err = viper.UnmarshalKey(sourcesFlagName, &syncProvidersFromConfig)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		syncProviders = append(syncProviders, syncProvidersFromConfig...)
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
 			MetricsPort:       viper.GetInt32(metricsPortFlagName),
-			ProviderArgs:      viper.GetStringMapString(providerArgsFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetInt32(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
-			SyncBearerToken:   viper.GetString(bearerTokenFlagName),
-			SyncURI:           viper.GetStringSlice(uriFlagName),
+			SyncProviders:     syncProviders,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())
