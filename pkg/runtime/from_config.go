@@ -88,11 +88,15 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 				r.SyncImpl,
 				r.newFile(syncProvider, logger),
 			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %s", syncProvider.URI))
+			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
 		case syncProviderKubernetes:
+			k, err := r.newK8s(syncProvider.URI, logger)
+			if err != nil {
+				return err
+			}
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newK8s(syncProvider, logger),
+				k,
 			)
 			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
 		case syncProviderHTTP:
@@ -114,18 +118,17 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	return nil
 }
 
-func (r *Runtime) newGRPC(config sync.ProviderConfig, logger *logger.Logger) *grpc.Sync {
+func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
-		URI: config.URI,
+		Target: grpc.URLToGRPCTarget(config.URI),
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		Mux: &msync.RWMutex{},
 	}
 }
 
-func (r *Runtime) newHTTP(config sync.ProviderConfig, logger *logger.Logger) *httpSync.Sync {
+func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -140,19 +143,25 @@ func (r *Runtime) newHTTP(config sync.ProviderConfig, logger *logger.Logger) *ht
 	}
 }
 
-func (r *Runtime) newK8s(config sync.ProviderConfig, logger *logger.Logger) *kubernetes.Sync {
-	return &kubernetes.Sync{
-		Logger: logger.WithFields(
+func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+	reader, dynamic, err := kubernetes.GetClients()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewK8sSync(
+		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
-		URI: config.URI,
-	}
+		regCrd.ReplaceAllString(uri, ""),
+		reader,
+		dynamic,
+	), nil
 }
 
-func (r *Runtime) newFile(config sync.ProviderConfig, logger *logger.Logger) *file.Sync {
+func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
-		URI: config.URI,
+		URI: regFile.ReplaceAllString(uri, ""),
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "filepath"),
@@ -161,43 +170,49 @@ func (r *Runtime) newFile(config sync.ProviderConfig, logger *logger.Logger) *fi
 	}
 }
 
-func SyncProviderArgParse(syncProviders string) ([]sync.ProviderConfig, error) {
-	syncProvidersParsed := []sync.ProviderConfig{}
+func SyncProviderArgParse(syncProviders string) ([]sync.SourceConfig, error) {
+	syncProvidersParsed := []sync.SourceConfig{}
 	if err := json.Unmarshal([]byte(syncProviders), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
 	}
-	for _, sp := range syncProvidersParsed {
+	for i, sp := range syncProvidersParsed {
 		if sp.URI == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: uri is a required field")
 		}
 		if sp.Provider == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: provider is a required field")
 		}
+		switch uriB := []byte(sp.URI); {
+		case regFile.Match(uriB):
+			syncProvidersParsed[i].URI = regFile.ReplaceAllString(syncProvidersParsed[i].URI, "")
+		case regCrd.Match(uriB):
+			syncProvidersParsed[i].URI = regCrd.ReplaceAllString(syncProvidersParsed[i].URI, "")
+		}
 	}
 	return syncProvidersParsed, nil
 }
 
-func SyncProvidersFromURIs(uris []string) ([]sync.ProviderConfig, error) {
-	syncProvidersParsed := []sync.ProviderConfig{}
+func SyncProvidersFromURIs(uris []string) ([]sync.SourceConfig, error) {
+	syncProvidersParsed := []sync.SourceConfig{}
 	for _, uri := range uris {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      regFile.ReplaceAllString(uri, ""),
 				Provider: syncProviderFile,
 			})
 		case regCrd.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      regCrd.ReplaceAllString(uri, ""),
 				Provider: syncProviderKubernetes,
 			})
 		case regURL.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
 		case regGRPC.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.ProviderConfig{
+			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      uri,
 				Provider: syncProviderGrpc,
 			})

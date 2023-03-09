@@ -39,7 +39,7 @@ flagd start --uri core.openfeature.dev/default/my_example
 ### Source Configuration
 
 While a URI may be passed to flagd via the `--uri` flag, some implementations may require further configurations. In these cases the `--sources` flag should be used.
-The flag takes a string argument, which should be a JSON representation of an array of `ProviderConfig` objects. Alternatively, these configurations should be passed to
+The flag takes a string argument, which should be a JSON representation of an array of `SourceConfig` objects. Alternatively, these configurations should be passed to
 flagd via config file, specified using the `--config` flag.
 
 | Field       | Type  | 
@@ -48,15 +48,24 @@ flagd via config file, specified using the `--config` flag.
 | provider   | required `string` (`file`, `kubernetes`, `http` or `grpc`) |
 | bearerToken     | optional `string`        |
 
-The `uri` field values do not need to follow the [URI patterns](#uri-patterns), the provider type is instead derived from the provider field.
+The `uri` field values do not need to follow the [URI patterns](#uri-patterns), the provider type is instead derived from the provider field. If the prefix is supplied, it will be removed on startup without error.
 
 Example start command using a filepath sync provider and the equivalent config file definition:
 ```sh
-./flagd start --sources=\[{\"uri\":\"config/samples/example_flags.json\"\,\"provider\":\"file\"}\]
+./flagd start --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"}]{"uri":"default/my-flag-config","provider":"kubernetes"},{"uri":"grpc://my-flag-source:8080","provider":"grpc"}'
 ```
 
 ```yaml
 sources:
 - uri: config/samples/example_flags.json
   provider: file
+- uri: http://my-flag-source.json
+  provider: http
+  bearerToken: bearer-dji34ld2l
+- uri: default/my-flag-config
+  provider: kubernetes
+- uri: http://my-flag-source.json
+  provider: kubernetes
+- uri: grpc://my-flag-source:8080
+  provider: grpc
 ```

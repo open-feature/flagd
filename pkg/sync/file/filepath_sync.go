@@ -19,7 +19,6 @@ import (
 type Sync struct {
 	URI    string
 	Logger *logger.Logger
-	Source string
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
 	fileType string
 	watcher  *fsnotify.Watcher

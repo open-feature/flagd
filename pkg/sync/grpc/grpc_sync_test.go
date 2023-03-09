@@ -205,7 +205,6 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		URI:        "grpc://test",
 		ProviderID: "",
 		Logger:     logger.NewLogger(nil, false),
-		Mux:        &msync.RWMutex{},
 	}
 
 	tests := []struct {

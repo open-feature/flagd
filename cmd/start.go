@@ -55,14 +55,14 @@ func init() {
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
 	flags.StringP(
-		bearerTokenFlagName, "b", "", "Set a bearer token to use for remote sync")
+		bearerTokenFlagName, "b", "", "DEPRECATED: Superseded by --sources.")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
 		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
 	)
 	flags.StringP(
-		sourcesFlagName, "s", "", "JSON representation of an array of ProviderConfig objects. This object contains "+
-			"2 required fields, uri (string) and provider (string). Documentation for this object can be found here: "+
+		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
+			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
@@ -115,7 +115,7 @@ var startCmd = &cobra.Command{
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
-		if viper.GetStringMapString(providerArgsFlagName) != nil {
+		if viper.GetString(providerArgsFlagName) != "" {
 			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated. " +
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
@@ -125,7 +125,7 @@ var startCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		syncProvidersFromConfig := []sync.ProviderConfig{}
+		syncProvidersFromConfig := []sync.SourceConfig{}
 		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
 			syncProvidersFromConfig, err = runtime.SyncProviderArgParse(viper.GetString(sourcesFlagName))
 			if err != nil {

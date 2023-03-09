@@ -12,12 +12,12 @@ func TestSyncProviderArgParse(t *testing.T) {
 	test := map[string]struct {
 		in        string
 		expectErr bool
-		out       []sync.ProviderConfig
+		out       []sync.SourceConfig
 	}{
 		"simple": {
 			in:        "[{\"uri\":\"config/samples/example_flags.json\",\"provider\":\"file\"}]",
 			expectErr: false,
-			out: []sync.ProviderConfig{
+			out: []sync.SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -32,7 +32,7 @@ func TestSyncProviderArgParse(t *testing.T) {
 					{"uri":"default/my-crd","provider":"kubernetes"}
 				]`,
 			expectErr: false,
-			out: []sync.ProviderConfig{
+			out: []sync.SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -55,12 +55,12 @@ func TestSyncProviderArgParse(t *testing.T) {
 		"empty": {
 			in:        `[]`,
 			expectErr: false,
-			out:       []sync.ProviderConfig{},
+			out:       []sync.SourceConfig{},
 		},
 		"parse-failure": {
 			in:        ``,
 			expectErr: true,
-			out:       []sync.ProviderConfig{},
+			out:       []sync.SourceConfig{},
 		},
 	}
 
@@ -85,14 +85,14 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 	test := map[string]struct {
 		in        []string
 		expectErr bool
-		out       []sync.ProviderConfig
+		out       []sync.SourceConfig
 	}{
 		"simple": {
 			in: []string{
 				"file:my-file.json",
 			},
 			expectErr: false,
-			out: []sync.ProviderConfig{
+			out: []sync.SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -107,7 +107,7 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 				"core.openfeature.dev/default/my-crd",
 			},
 			expectErr: false,
-			out: []sync.ProviderConfig{
+			out: []sync.SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -129,12 +129,12 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 		"empty": {
 			in:        []string{},
 			expectErr: false,
-			out:       []sync.ProviderConfig{},
+			out:       []sync.SourceConfig{},
 		},
 		"parse-failure": {
 			in:        []string{"care.openfeature.dev/will/fail"},
 			expectErr: true,
-			out:       []sync.ProviderConfig{},
+			out:       []sync.SourceConfig{},
 		},
 	}
 
