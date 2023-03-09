@@ -14,12 +14,12 @@ Config file expects the keys to have the exact naming as the flags.
 
 Any URI passed to flagd via the `--uri` flag must follow one of the 4 following patterns to ensure that it is passed to the correct implementation: 
 
-| Sync       | Pattern                            | Example                               |
-|------------|------------------------------------|---------------------------------------|
+| Sync       | Pattern                               | Example                               |
+|------------|---------------------------------------|---------------------------------------|
 | Kubernetes | `core.openfeature.dev/namespace/name` | `core.openfeature.dev/default/my-crd` |
-| Filepath   | `file:path/to/my/flag`             | `file:etc/flagd/my-flags.json`        |
-| Remote     | `http(s)://flag-source-url`        | `https://my-flags.com/flags`          |
-| Grpc       | `grpc://flag-source-url`           | `grpc://my-flags-server`        |
+| Filepath   | `file:path/to/my/flag`                | `file:etc/flagd/my-flags.json`        |
+| Remote     | `http(s)://flag-source-url`           | `https://my-flags.com/flags`          |
+| Grpc       | `grpc(s)://flag-source-url`           | `grpc://my-flags-server`              | 
 
 
 ### Customising sync providers
@@ -42,11 +42,12 @@ While a URI may be passed to flagd via the `--uri` flag, some implementations ma
 The flag takes a string argument, which should be a JSON representation of an array of `SourceConfig` objects. Alternatively, these configurations should be passed to
 flagd via config file, specified using the `--config` flag.
 
-| Field       | Type  | 
-|------------|------------------------------------|
-| uri | required `string` |  |
-| provider   | required `string` (`file`, `kubernetes`, `http` or `grpc`) |
-| bearerToken     | optional `string`        |
+| Field       | Type                                                       | Note                                               | 
+|-------------|------------------------------------------------------------|----------------------------------------------------|
+| uri         | required `string`                                          |                                                    |
+| provider    | required `string` (`file`, `kubernetes`, `http` or `grpc`) |                                                    |
+| bearerToken | optional `string`                                          | Used for http sync                                 |
+| certPath    | optional `string`                                          | Used for grpcs sync when TLS certificate is needed |
 
 The `uri` field values do not need to follow the [URI patterns](#uri-patterns), the provider type is instead derived from the provider field. If the prefix is supplied, it will be removed on startup without error.
 
@@ -68,4 +69,7 @@ sources:
   provider: kubernetes
 - uri: grpc://my-flag-source:8080
   provider: grpc
+- uri: grpcs://my-flag-source:8080
+  provider: grpc
+  certPath: /certs/ca.cert
 ```

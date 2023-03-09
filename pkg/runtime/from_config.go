@@ -30,16 +30,18 @@ const (
 )
 
 var (
-	regCrd  *regexp.Regexp
-	regURL  *regexp.Regexp
-	regGRPC *regexp.Regexp
-	regFile *regexp.Regexp
+	regCrd        *regexp.Regexp
+	regURL        *regexp.Regexp
+	regGRPC       *regexp.Regexp
+	regGRPCSecure *regexp.Regexp
+	regFile       *regexp.Regexp
 )
 
 func init() {
 	regCrd = regexp.MustCompile("^core.openfeature.dev/")
 	regURL = regexp.MustCompile("^https?://")
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
+	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
 	regFile = regexp.MustCompile("^file:")
 }
 
@@ -120,11 +122,12 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 
 func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
-		Target: grpc.URLToGRPCTarget(config.URI),
+		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
+		CertPath: config.CertPath,
 	}
 }
 
@@ -211,7 +214,7 @@ func SyncProvidersFromURIs(uris []string) ([]sync.SourceConfig, error) {
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
-		case regGRPC.Match(uriB):
+		case regGRPC.Match(uriB), regGRPCSecure.Match(uriB):
 			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      uri,
 				Provider: syncProviderGrpc,
