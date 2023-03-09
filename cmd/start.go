@@ -125,7 +125,7 @@ var startCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		syncProvidersFromConfig := []sync.ProviderConfig{}
+		syncProvidersFromConfig := []sync.SourceConfig{}
 		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
 			syncProvidersFromConfig, err = runtime.SyncProviderArgParse(viper.GetString(sourcesFlagName))
 			if err != nil {
