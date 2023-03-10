@@ -9,4 +9,7 @@ dist/
 pkg/eval/flagd-definitions.json
 *.crt
 *.key
-coverage.out
+core-coverage.out
+go.work
+go.work.sum
+bin/
