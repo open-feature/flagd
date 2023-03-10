@@ -1,7 +1,7 @@
 package eval
 
 import (
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

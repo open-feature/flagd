@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-feature/flagd/pkg/runtime"
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/runtime"
+	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
 func TestSyncProviderArgParse(t *testing.T) {

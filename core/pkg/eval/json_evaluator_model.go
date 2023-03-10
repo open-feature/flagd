@@ -3,7 +3,7 @@ package eval
 import (
 	"encoding/json"
 
-	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 type Evaluators struct {

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/instrument"

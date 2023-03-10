@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	eval "github.com/open-feature/flagd/pkg/eval"
-	sync "github.com/open-feature/flagd/pkg/sync"
+	eval "github.com/open-feature/flagd/core/pkg/eval"
+	sync "github.com/open-feature/flagd/core/pkg/sync"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 

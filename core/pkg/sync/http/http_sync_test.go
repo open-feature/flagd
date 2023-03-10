@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync"
 
 	"github.com/golang/mock/gomock"
-	"github.com/open-feature/flagd/pkg/logger"
-	syncmock "github.com/open-feature/flagd/pkg/sync/http/mock"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	syncmock "github.com/open-feature/flagd/core/pkg/sync/http/mock"
 )
 
 func TestSimpleSync(t *testing.T) {

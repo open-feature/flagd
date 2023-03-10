@@ -10,10 +10,10 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/open-feature/flagd/pkg/eval"
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/service"
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
 type Runtime struct {

@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/logger"
 
-	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 type Flags struct {

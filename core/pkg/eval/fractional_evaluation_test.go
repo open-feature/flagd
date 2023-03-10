@@ -3,10 +3,10 @@ package eval
 import (
 	"testing"
 
-	"github.com/open-feature/flagd/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/store"
 
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

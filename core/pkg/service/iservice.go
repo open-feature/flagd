@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/open-feature/flagd/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/eval"
 )
 
 type NotificationType string

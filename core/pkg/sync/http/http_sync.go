@@ -9,8 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	"golang.org/x/crypto/sha3" //nolint:gosec
 )
 

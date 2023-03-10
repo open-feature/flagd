@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

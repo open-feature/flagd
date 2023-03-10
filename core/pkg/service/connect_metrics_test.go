@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-feature/flagd/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.13.0"

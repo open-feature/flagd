@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/open-feature/flagd/pkg/store"
-	"github.com/open-feature/flagd/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/sync"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
-	"github.com/open-feature/flagd/pkg/logger"
-	"github.com/open-feature/flagd/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	schema "github.com/open-feature/schemas/json"
 	"github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
