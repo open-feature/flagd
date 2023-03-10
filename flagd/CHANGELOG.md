@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/open-feature/flagd/compare/flagd-v0.4.3...flagd/v0.4.4) (2023-03-10)
+
+
+### ✨ New Features
+
+* Restructure for monorepo setup ([#486](https://github.com/open-feature/flagd/issues/486)) ([ed2993c](https://github.com/open-feature/flagd/commit/ed2993cd67b8a46db3beb6bb8a360e1aa20349da))
+
 ## [0.4.2](https://github.com/open-feature/flagd/compare/v0.4.1...v0.4.2) (2023-03-09)
 
 
