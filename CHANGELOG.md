@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/open-feature/flagd/compare/v0.4.2...v0.4.3) (2023-03-10)
+
+
+### 🧹 Chore
+
+* **deps:** update actions/deploy-pages digest to 497da40 ([#484](https://github.com/open-feature/flagd/issues/484)) ([4f7b3cf](https://github.com/open-feature/flagd/commit/4f7b3cf32d6abbf91bd002abbfe851e84fc3dac5))
+
 ## [0.4.2](https://github.com/open-feature/flagd/compare/v0.4.1...v0.4.2) (2023-03-09)
 
 
