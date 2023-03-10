@@ -37,6 +37,10 @@ jobs:
         env:
           CHANGED_ITEMS: '${{ steps.release.outputs.paths_released }}'
         with:
+          # Release please outputs a string representation of an array under the key paths_released
+          # This script parses the output, and filters each of the changed items (provided as paths to the root of the package, e.g. flagd or core)
+          # this filtered array is then stringified and exported as items-to-publish.outputs.result
+          # this can be picked up by subsequent jobs and used in a matrix to loop over the PUBLISHABLE_ITEMS within the release
           script: |
             const changedItems = JSON.parse(process.env.CHANGED_ITEMS || '[]');
             console.log("changed items", changedItems);
@@ -169,6 +173,7 @@ jobs:
         with:
           version: v1
       - name: setup for builds
+        # The README should also be moved ready for bundling once both kube-flagd-proxy and flagd have package specific READMEs
         run: |
           make workspace-init
           mv ./${{ matrix.path }}/CHANGELOG.md CHANGELOG.md 
