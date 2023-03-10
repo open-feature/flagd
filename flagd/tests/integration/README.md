@@ -11,7 +11,7 @@ make build
 ```
 then run the `flagd` binary
 ```
-./flagd start -f file:test-harness/symlink_testing-flags.json
+./bin/flagd start -f file:test-harness/symlink_testing-flags.json
 ```
 and finally run
 ```
@@ -35,7 +35,7 @@ make build
 ```
 then run the `flagd` binary with tls configuration
 ```
-./flagd start -f file:test-harness/symlink_testing-flags.json -c ./localhost.crt -k ./localhost.key
+./bin/flagd start -f file:test-harness/symlink_testing-flags.json -c ./localhost.crt -k ./localhost.key
 ```
 finally, either run the tests with an explicit path to the certificate:
 ```
