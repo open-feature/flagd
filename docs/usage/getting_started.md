@@ -21,10 +21,6 @@ There are many ways to get started with flagd. Choose the method that best serve
 
 1. Download pre-built binaries from https://github.com/open-feature/flagd/releases
 
-### Snapcraft
-
-Install via Snapcraft, documentation can be found here: https://snapcraft.io/flagd
-
 ### Systemd service
 
 Documentation for installing flagd as a systemd service can be found [here](../other_resources/systemd_service.md)
