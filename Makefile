@@ -39,7 +39,7 @@ install:
 	mkdir -p /etc/flagd
 	cp systemd/flags.json /etc/flagd/flags.json
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp flagd $(DESTDIR)$(PREFIX)/bin/flagd
+	cp bin/flagd $(DESTDIR)$(PREFIX)/bin/flagd
 	systemctl start flagd
 uninstall:
 	systemctl disable flagd
@@ -48,7 +48,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
 	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m ./... # Run linters
+	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m $(module)/...;)
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
 mockgen: install-mockgen
