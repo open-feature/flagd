@@ -53,7 +53,7 @@ The `uri` field values do not need to follow the [URI patterns](#uri-patterns), 
 
 Example start command using a filepath sync provider and the equivalent config file definition:
 ```sh
-./flagd start --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"}]{"uri":"default/my-flag-config","provider":"kubernetes"},{"uri":"grpc://my-flag-source:8080","provider":"grpc"}'
+./bin/flagd start --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"}]{"uri":"default/my-flag-config","provider":"kubernetes"},{"uri":"grpc://my-flag-source:8080","provider":"grpc"}'
 ```
 
 ```yaml

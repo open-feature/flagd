@@ -28,8 +28,10 @@ jobs:
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
+      - name: Workspace init
+        run: make workspace-init
       - name: Run benchmark
-        run: go test -bench=Bench -short -benchtime=5s -benchmem ./... | tee output.txt
+        run: go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee output.txt
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
@@ -56,6 +58,7 @@ jobs:
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
+      - run: make workspace-init
       - run: make lint
 
   docs-check:
@@ -67,6 +70,7 @@ jobs:
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
+      - run: make workspace-init
       - run: make generate-docs
       - name: Check no diff
         run: |
@@ -84,6 +88,7 @@ jobs:
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.GO_VERSION }}
+      - run: make workspace-init
       - run: make test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70 # v3
@@ -115,7 +120,7 @@ jobs:
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4
         with:
           context: .
-          file: ./build.Dockerfile
+          file: ./flagd/build.Dockerfile
           outputs: type=docker,dest=${{ github.workspace }}/flagd-local.tar
           tags: flagd-local:test
 
@@ -147,11 +152,14 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Workspace init
+        run: make workspace-init
+
       - name: Build flagd binary
         run: make build
 
       - name: Run flagd binary in background
-        run: ./flagd start -f file:${{ github.workspace }}/test-harness/symlink_testing-flags.json &
+        run: ./bin/flagd start -f file:${{ github.workspace }}/test-harness/symlink_testing-flags.json &
 
       - name: Run evaluation test suite
-        run: go test -cover ./tests/integration -run TestEvaluation
+        run: go test -cover ./flagd/tests/integration -run TestEvaluation

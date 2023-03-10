@@ -15,7 +15,7 @@ In most scenarios, these flag sources will be supplying `n` number of configurat
 Merge order is dictated by the order that `sync-providers` and `uris` are defined, with the latest defined source taking precedence over those defined before it, as an example:
 
 ```sh
-./flagd start --uri file:source-A.json --uri file:source-B.json --uri file:source-C.json
+./bin/flagd start --uri file:source-A.json --uri file:source-B.json --uri file:source-C.json
 ```
 
 When `flagd` is started with the command defined above, `source-B` takes priority over `source-A`, whilst `source-C` takes priority over both `source-B` and `source-A`. Using the above example, if a flag key is duplicated across all 3 sources, then the configuration from `source-C` would be the only one stored in the merged state.

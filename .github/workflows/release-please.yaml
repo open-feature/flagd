@@ -4,14 +4,18 @@ on:
       - main
 
 env:
+  # Stringified list of items that should be published
+  PUBLISHABLE_ITEMS: '["flagd"]'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  DEFAULT_GO_VERSION: 1.19.3
+  REPO_OWNER: ${{ github.repository_owner }}
+  DEFAULT_GO_VERSION: 1.19
   PUBLIC_KEY_FILE: publicKey.pub
+  GOPRIVATE: buf.build/gen/go
 
-name: Run Release Please
+name: Release Please
 jobs:
   release-please:
+    name: Release Please
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
@@ -21,19 +25,54 @@ jobs:
           command: manifest
           token: ${{secrets.GITHUB_TOKEN}}
           default-branch: main
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      release_tag_name: ${{ steps.release.outputs.tag_name }}
 
+      - name: Dump Release Please Output
+        env:
+          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
+        run: |
+          echo "$RELEASE_PLEASE_OUTPUT"
+      - name: Determine what should be published
+        uses: actions/github-script@v6
+        id: items-to-publish
+        env:
+          CHANGED_ITEMS: '${{ steps.release.outputs.paths_released }}'
+        with:
+          # Release please outputs a string representation of an array under the key paths_released
+          # This script parses the output, and filters each of the changed items (provided as paths to the root of the package, e.g. flagd or core)
+          # to remove any values not present in the PUBLISHABLE_ITEMS array. This filtered array is then stringified and exported as items-to-publish.outputs.result
+          # this can be picked up by subsequent jobs and used in a matrix to loop over the PUBLISHABLE_ITEMS within the release
+          script: |
+            const changedItems = JSON.parse(process.env.CHANGED_ITEMS || '[]');
+            console.log("changed items", changedItems);
+            const eligibleItems = JSON.parse(process.env.PUBLISHABLE_ITEMS || '[]');
+            console.log("eligible items", eligibleItems);
+            const itemsToPublish = changedItems.filter(i => eligibleItems.includes(i));
+            console.log("items to publish", itemsToPublish);
+            return itemsToPublish;
+    outputs:
+      items_to_publish: ${{ steps.items-to-publish.outputs.result }}
+      flagd_version: ${{ steps.release.outputs.flagd--version }}
+      flagd_tag_name: ${{ steps.release.outputs.flagd--tag_name }}
+      kube-flagd-proxy_version: ${{ steps.release.outputs.kube-flagd-proxy--version }}
+      kube-flagd-proxy_tag_name: ${{ steps.release.outputs.kube-flagd-proxy--tag_name }}
+      
   container-release:
+    name: Build and push containers to GHCR
     needs: release-please
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest 
+    if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
+    strategy:
+      matrix: 
+        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+
+    env:
+      TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }} 
+      VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
     steps:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
         with:
-          ref: ${{ needs.release-please.outputs.release_tag_name }}
+          ref: ${{ env.TAG }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
@@ -41,18 +80,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+  
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@3343011071fa59c64a174cc6aa415dc13b31b7b2
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
+          images: ${{ env.REGISTRY }}/${{ matrix.path }}
+  
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
           platforms: all
-
+  
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@master
@@ -67,38 +106,23 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
-          file: ./build.Dockerfile
+          file: ./${{ matrix.path }}/build.Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
-          labels: ${{ steps.meta.outputs.labels }}
+            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
+          labels: ${{ steps.meta.outputs.labels }} 
           build-args: |
-            VERSION=${{ needs.release-please.outputs.release_tag_name }}
+            VERSION=${{ env.VERSION }}
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
-    outputs:
-      image_digest: ${{ steps.build.outputs.digest }}
-
-  container-signing:
-    needs: container-release
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.release_created }}
-    steps:
-      - name: Log in to the Container registry
-        uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Install Cosign
         uses: sigstore/cosign-installer@bd2d1189b064bcddc3903176a807dcdba72d7fd0
 
       - name: Sign the image
         run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.container-release.outputs.image_digest }}
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}@${{ steps.build.outputs.digest }}
           cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
         env:
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
@@ -106,61 +130,105 @@ jobs:
 
       - name: Generate image SBOM file name
         id: image-sbom-file-gen
-        run: echo "IMG_SBOM_FILE=${{ format('flagd-{0}-sbom.spdx', needs.release-please.outputs.release_tag_name) }}" >> $GITHUB_OUTPUT
+        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
         uses: anchore/sbom-action@07978da4bdb4faa726e52dfc6b1bed63d4b56479 # v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.release-please.outputs.release_tag_name }}
+          image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
+          output-file: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
 
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
-          tag_name: ${{ needs.release-please.outputs.release_tag_name }}
+          tag_name: ${{ env.TAG }}
           files: |
             ${{ env.PUBLIC_KEY_FILE }}
-            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-
-  go-release:
+            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }} 
+  release-go-binaries:
+    name: Create and publish binaries to GitHub
     needs: release-please
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest 
+    if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
+    strategy:
+      matrix: 
+        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+
+    env:
+      TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }} 
+      VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
+      VERSION_NO_PREFIX: ${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
     steps:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
         with:
-          ref: ${{ needs.release-please.outputs.release_tag_name }}
-
+          ref: ${{ env.TAG }}
       - name: Set up Go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
-
-      - name: Set up syft
-        uses: anchore/sbom-action/download-syft@07978da4bdb4faa726e52dfc6b1bed63d4b56479 # v0
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4
+      - name: Download cyclonedx-gomod
+        uses: CycloneDX/gh-gomod-generate-sbom@v1
         with:
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  homebrew:
-    name: Bump homebrew-core formula
-    needs: release-please
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.release_created }}
-    steps:
-      - uses: mislav/bump-homebrew-formula-action@v2
+          version: v1
+      - name: setup for builds
+        # TODO: The README should also be moved ready for bundling once both kube-flagd-proxy and flagd have package specific READMEs
+        run: |
+          make workspace-init
+          mv ./${{ matrix.path }}/CHANGELOG.md CHANGELOG.md 
+          cd ${{ matrix.path }} && cyclonedx-gomod app > ../sbom.xml
+      - name: build darwin arm64
+        run: |
+          env GOOS=darwin GOARCH=arm64 go build -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_arm64.tar.gz ./${{ matrix.path }}_darwin_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build darwin x86_64
+        run: |
+          env GOOS=darwin GOARCH=amd64 go build -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_x86_64.tar.gz ./${{ matrix.path }}_darwin_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build linux arm64
+        run: |
+          env GOOS=linux GOARCH=arm64 go build -o ./${{ matrix.path }}_linux_arm64 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_arm64.tar.gz ./${{ matrix.path }}_linux_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build linux x86_64
+        run: |
+          env GOOS=linux GOARCH=amd64 go build -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_x86_64.tar.gz ./${{ matrix.path }}_linux_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build linux i386
+        run: |
+          env GOOS=linux GOARCH=386 go build -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build windows x86_64
+        run: |
+          env GOOS=windows GOARCH=amd64 go build -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.tar.gz ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: build windows i386
+        run: |
+          env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
+          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.tar.gz ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: Bundle release assets
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
-          formula-name: flagd
-          tag-name: ${{ needs.release-please.outputs.release_tag_name }}
-          download-url: https://github.com/${{ github.repository }}.git
-          commit-message: |
-            {{formulaName}} {{version}}
-
-            Created by https://github.com/mislav/bump-homebrew-formula-action
-        env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+          tag_name: ${{ env.TAG }}
+          files: |
+            ./sbom.xml
+            ./*.tar.gz
+  # TODO: Update the Homebrew build process
+  # https://github.com/Homebrew/homebrew-core/blob/master/Formula/flagd.rb
+  # homebrew:
+  #   name: Bump homebrew-core formula
+  #   needs: release-please
+  #   runs-on: ubuntu-latest
+  #   # Only run on non-forked flagd releases
+  #   if: ${{ github.repository_owner == 'openfeature' && needs.release-please.outputs.flagd_tag_name }}
+  #   steps:
+  #     - uses: mislav/bump-homebrew-formula-action@v2
+  #       with:
+  #         formula-name: flagd
+  #         tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
+  #         download-url: https://github.com/${{ github.repository }}.git
+  #         commit-message: |
+  #           {{formulaName}} {{version}}
+  #           Created by https://github.com/mislav/bump-homebrew-formula-action
+  #       env:
+  #         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
