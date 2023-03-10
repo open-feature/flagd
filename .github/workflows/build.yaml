@@ -31,7 +31,7 @@ jobs:
       - name: Workspace init
         run: make workspace-init
       - name: Run benchmark
-        run: go test -bench=Bench -short -benchtime=5s -benchmem ./... | tee output.txt
+        run: go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee output.txt
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
