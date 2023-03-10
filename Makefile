@@ -15,6 +15,10 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
+docker-build: # default to flagd
+	make docker-build-flagd
+docker-push: # default to flagd
+	make docker-push-flagd
 docker-build-flagd:
 	docker buildx build --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
 docker-push-flagd:
