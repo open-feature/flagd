@@ -1,0 +1,36 @@
+{
+  "flags": {
+    "myBoolFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "isColorGreen": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off",
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "color"
+                ]
+              },
+              "yellow"
+            ]
+          },
+          "on",
+          "off"
+        ]
+      }
+    }
+  }
+}
