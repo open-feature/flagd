@@ -1,5 +1,5 @@
 {
   "flagd": "0.4.3",
-  "kube-flagd-proxy": "0.4.3",
+  "kube-flagd-proxy": "0.1.0",
   "core": "0.4.3"
 }
