@@ -110,20 +110,15 @@ func (s *SyncServer) SyncFlags(ctx context.Context, req *connect.Request[syncv1.
 	for {
 		select {
 		case e := <-errChan:
-			fmt.Println("\n\nerror\n\n", e)
 			return e
 		case d := <-dataSync:
-			fmt.Println("received data sync type ", d.String())
 			if err := stream.Send(&syncv1.SyncFlagsResponse{
 				FlagConfiguration: d.FlagData,
 				State:             syncv1.SyncState(d.Type + 1),
 			}); err != nil {
-				fmt.Println("under")
 				return err
 			}
-			fmt.Println("after")
 		case <-ctx.Done():
-			fmt.Println("connection closed")
 			return nil
 		}
 	}

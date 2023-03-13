@@ -107,7 +107,6 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 		s.mu.Lock()
 		delete(s.syncHandlers, target)
 		s.mu.Unlock()
-		fmt.Println("deleted", target)
 	}()
 
 	go func() {
@@ -117,8 +116,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 				return
 			case d := <-s.syncHandlers[target].dataSync:
 				s.mu.Lock()
-				for k, ds := range s.syncHandlers[target].subs {
-					fmt.Println("sending data to ", k)
+				for _, ds := range s.syncHandlers[target].subs {
 					ds.dataSync <- d
 				}
 
@@ -130,8 +128,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	sync, err := s.SyncBuilder.SyncFromURI(target, *s.logger)
 	if err != nil {
 		s.mu.Lock()
-		for k, ec := range s.syncHandlers[target].subs {
-			fmt.Println("sending err to ", k)
+		for _, ec := range s.syncHandlers[target].subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
@@ -140,8 +137,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	err = sync.Init(ctx)
 	if err != nil {
 		s.mu.Lock()
-		for k, ec := range s.syncHandlers[target].subs {
-			fmt.Println("sending err to ", k)
+		for _, ec := range s.syncHandlers[target].subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
@@ -153,8 +149,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	err = sync.Sync(ctx, s.syncHandlers[target].dataSync)
 	if err != nil {
 		s.mu.Lock()
-		for k, ec := range s.syncHandlers[target].subs {
-			fmt.Println("sending err to ", k)
+		for _, ec := range s.syncHandlers[target].subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
@@ -169,7 +164,6 @@ func (s *SyncStore) Cleanup() {
 		case <-time.After(5 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.syncHandlers {
-				fmt.Println("target", k, len(v.subs))
 				if len(v.subs) == 0 {
 					s.syncHandlers[k].cancelFunc()
 				}
