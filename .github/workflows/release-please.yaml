@@ -32,7 +32,7 @@ jobs:
         run: |
           echo "$RELEASE_PLEASE_OUTPUT"
       - name: Determine what should be published
-        uses: actions/github-script@v6
+        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6
         id: items-to-publish
         env:
           CHANGED_ITEMS: '${{ steps.release.outputs.paths_released }}'
@@ -83,7 +83,7 @@ jobs:
   
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@3343011071fa59c64a174cc6aa415dc13b31b7b2
+        uses: docker/metadata-action@2bdac1078b04c6152f215bdcb4fd32591b9ba7c6
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
   
@@ -169,7 +169,7 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
       - name: Download cyclonedx-gomod
-        uses: CycloneDX/gh-gomod-generate-sbom@v1
+        uses: CycloneDX/gh-gomod-generate-sbom@d4aee0cf5133055dbd98899978246c10c18c440f # v1
         with:
           version: v1
       - name: setup for builds
