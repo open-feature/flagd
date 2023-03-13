@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/service"
 	syncServer "github.com/open-feature/flagd/core/pkg/service/sync"
 	sync_store "github.com/open-feature/flagd/core/pkg/sync-store"
 	"github.com/spf13/cobra"
@@ -29,6 +30,7 @@ func init() {
 
 	// allows environment variables to use _ instead of -
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
+	flags.Int32P(metricsPortFlagName, "m", 8014, "Metrics port to listen on")
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
@@ -62,13 +64,19 @@ var startCmd = &cobra.Command{
 
 		s := syncServer.SyncServer{
 			SyncStore: store,
-			Port:      viper.GetUint16(portFlagName),
+			Configuration: syncServer.SyncServerConfiguration{
+				Port:        viper.GetUint16(portFlagName),
+				MetricsPort: viper.GetUint16(metricsPortFlagName),
+			},
+			Logger: logger,
 		}
 
 		go store.Cleanup()
-		go s.Serve(ctx)
+		go s.Serve(ctx, service.Configuration{
+			ReadinessProbe: func() bool { return true },
+		})
 
-		logger.Info(fmt.Sprintf("listening for connections on %d...", s.Port))
+		logger.Info(fmt.Sprintf("listening for connections on %d...", s.Configuration.Port))
 
 		<-ctx.Done()
 	},
