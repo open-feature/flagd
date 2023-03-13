@@ -18,7 +18,7 @@ import (
 
 type Runtime struct {
 	config   Config
-	Service  service.IService
+	Service  service.IFlagEvaluationService
 	SyncImpl []sync.ISync
 
 	mu        msync.Mutex

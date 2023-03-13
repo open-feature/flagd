@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
@@ -46,13 +47,13 @@ type ConnectServiceConfiguration struct {
 
 type eventingConfiguration struct {
 	mu   *sync.RWMutex
-	subs map[interface{}]chan Notification
+	subs map[interface{}]chan iservice.Notification
 }
 
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error {
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf iservice.Configuration) error {
 	s.Eval = eval
 	s.eventingConfiguration = &eventingConfiguration{
-		subs: make(map[interface{}]chan Notification),
+		subs: make(map[interface{}]chan iservice.Notification),
 		mu:   &sync.RWMutex{},
 	}
 	lis, err := s.setupServer(svcConf)
@@ -88,7 +89,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	}
 }
 
-func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error) {
+func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
@@ -192,7 +193,7 @@ func (s *ConnectService) EventStream(
 	req *connect.Request[schemaV1.EventStreamRequest],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
-	requestNotificationChan := make(chan Notification, 1)
+	requestNotificationChan := make(chan iservice.Notification, 1)
 	s.eventingConfiguration.mu.Lock()
 	s.eventingConfiguration.subs[req] = requestNotificationChan
 	s.eventingConfiguration.mu.Unlock()
@@ -201,14 +202,14 @@ func (s *ConnectService) EventStream(
 		delete(s.eventingConfiguration.subs, req)
 		s.eventingConfiguration.mu.Unlock()
 	}()
-	requestNotificationChan <- Notification{
-		Type: ProviderReady,
+	requestNotificationChan <- iservice.Notification{
+		Type: iservice.ProviderReady,
 	}
 	for {
 		select {
 		case <-time.After(20 * time.Second):
 			err := stream.Send(&schemaV1.EventStreamResponse{
-				Type: string(KeepAlive),
+				Type: string(iservice.KeepAlive),
 			})
 			if err != nil {
 				s.Logger.Error(err.Error())
@@ -231,7 +232,7 @@ func (s *ConnectService) EventStream(
 	}
 }
 
-func (s *ConnectService) Notify(n Notification) {
+func (s *ConnectService) Notify(n iservice.Notification) {
 	s.eventingConfiguration.mu.RLock()
 	defer s.eventingConfiguration.mu.RUnlock()
 	for _, send := range s.eventingConfiguration.subs {
@@ -367,7 +368,7 @@ func (s *ConnectService) newCORS() *cors.Cors {
 	})
 }
 
-func bindMetrics(s *ConnectService, svcConf Configuration) {
+func bindMetrics(s *ConnectService, svcConf iservice.Configuration) {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
