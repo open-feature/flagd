@@ -3,9 +3,9 @@ module github.com/open-feature/flagd/core
 go 1.19
 
 require (
-	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230222100723-491ee098dd92.1
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230222100723-491ee098dd92.1
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.0-20230222100723-491ee098dd92.1
+	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230313153010-cb02ab376171.1
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230313153010-cb02ab376171.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.0-20230313153010-cb02ab376171.1
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/fsnotify/fsnotify v1.6.0

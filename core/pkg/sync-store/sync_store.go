@@ -2,6 +2,7 @@ package sync_store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sync"
@@ -54,6 +55,29 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) SyncStore {
 	}
 }
 
+func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
+	dataSyncChan := make(chan isync.DataSync, 1)
+	errChan := make(chan error, 1)
+	s.mu.Lock()
+	_, ok := s.syncHandlers[target]
+	if !ok {
+		s.mu.Unlock()
+		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
+	} else {
+		go s.syncHandlers[target].syncRef.ReSync(ctx, dataSyncChan)
+		s.mu.Unlock()
+	}
+
+	select {
+	case data := <-dataSyncChan:
+		return data, nil
+	case err := <-errChan:
+		return isync.DataSync{}, err
+	case <-time.After(5 * time.Second):
+		return isync.DataSync{}, errors.New("fetching all flags timed out after 5 seconds")
+	}
+}
+
 func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key interface{}, dataSync chan isync.DataSync, errChan chan error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -72,6 +96,7 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 			logger: s.logger,
 		}
 		s.syncHandlers[target] = &syncHandler
+		fmt.Println("here", s.syncHandlers[target])
 		go s.watchResource(s.ctx, target)
 	} else {
 		// register our sub in the map
@@ -80,18 +105,19 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 			dataSync: dataSync,
 		}
 
-		// access pointer + trigger resync passing the thing
+		// access pointer + trigger resync passing the dataSync
 		if s.syncHandlers[target].syncRef != nil {
 			go s.syncHandlers[target].syncRef.ReSync(ctx, dataSync)
 		}
 
 	}
-	// >> ideally here we would run the ReSync function passing the result directly into the dataSync, but this is not implemented yet :(
 	// defer until context close to remove the key
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()
-		delete(s.syncHandlers[target].subs, key)
+		if s.syncHandlers[target] != nil && s.syncHandlers[target].subs != nil {
+			delete(s.syncHandlers[target].subs, key)
+		}
 		s.mu.Unlock()
 	}()
 	return nil
@@ -119,7 +145,6 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 				for _, ds := range s.syncHandlers[target].subs {
 					ds.dataSync <- d
 				}
-
 				s.mu.Unlock()
 			}
 		}
@@ -179,7 +204,7 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger logger.Logger) (isync.ISyn
 	switch uriB := []byte(uri); {
 	case regFile.Match(uriB):
 		return &file.Sync{
-			URI: uri,
+			URI: regFile.ReplaceAllString(uri, ""),
 			Logger: logger.WithFields(
 				zap.String("component", "sync"),
 				zap.String("sync", "filepath"),

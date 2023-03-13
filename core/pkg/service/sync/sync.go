@@ -99,8 +99,15 @@ func (s *SyncServer) bindMetrics(svcConf iservice.Configuration) {
 	}
 }
 
-func (s *SyncServer) FetchAllFlags(context.Context, *connect.Request[syncv1.FetchAllFlagsRequest]) (*connect.Response[syncv1.FetchAllFlagsResponse], error) {
-	return nil, nil
+func (s *SyncServer) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1.FetchAllFlagsRequest]) (*connect.Response[syncv1.FetchAllFlagsResponse], error) {
+	data, err := s.SyncStore.FetchAllFlags(ctx, nil, req.Msg.GetProviderId())
+	if err != nil {
+		return connect.NewResponse(&syncv1.FetchAllFlagsResponse{}), err
+	}
+
+	return connect.NewResponse(&syncv1.FetchAllFlagsResponse{
+		FlagConfiguration: data.FlagData,
+	}), nil
 }
 
 func (s *SyncServer) SyncFlags(ctx context.Context, req *connect.Request[syncv1.SyncFlagsRequest], stream *connect.ServerStream[syncv1.SyncFlagsResponse]) error {
