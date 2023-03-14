@@ -3,6 +3,7 @@ package sync_store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -18,7 +19,8 @@ type syncMock struct {
 	resyncData     isync.DataSync
 	resyncError    error
 
-	initError error
+	initError     error
+	ctxCloseError error
 }
 
 func newMockSync() *syncMock {
@@ -36,7 +38,8 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			fmt.Println("here")
+			return s.ctxCloseError
 		case d := <-s.dataSyncChanIn:
 			dataSync <- d
 		case e := <-s.errChanIn:
@@ -51,11 +54,12 @@ func (s *syncMock) ReSync(ctx context.Context, dataSync chan<- isync.DataSync) e
 }
 
 type syncBuilderMock struct {
-	mock isync.ISync
+	mock      isync.ISync
+	initError error
 }
 
 func (s *syncBuilderMock) SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error) {
-	return s.mock, nil
+	return s.mock, s.initError
 }
 
 func newSyncHandler() (*syncHandler, interface{}) {
@@ -132,7 +136,7 @@ func Test_watchResource(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
 	if syncStore.syncHandlers[target] != nil {
-		t.Error("incorrect number of subs in syncHandler after cancellation", syncHandler.subs)
+		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 }
@@ -142,6 +146,8 @@ func Test_watchResource_initFail(t *testing.T) {
 	defer cancel()
 	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
+
+	// return an error on startup
 	syncMock.initError = errors.New("a terrible error")
 	syncStore.SyncBuilder = &syncBuilderMock{
 		mock: syncMock,
@@ -154,6 +160,7 @@ func Test_watchResource_initFail(t *testing.T) {
 
 	go syncStore.watchResource(ctx, target)
 
+	// the error channel should immediately receive an error response and close
 	select {
 	case e := <-syncHandler.subs[key].errChan:
 		if !errors.Is(e, syncMock.initError) {
@@ -162,4 +169,89 @@ func Test_watchResource_initFail(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Errorf("timed out waiting for broadcast of error")
 	}
+
+	// this should then close the internal context and the watcher should be removed
+	time.Sleep(1 * time.Second)
+	syncStore.mu.Lock()
+	if syncStore.syncHandlers[target] != nil {
+		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	}
+	syncStore.mu.Unlock()
+}
+
+func Test_watchResource_SyncFromURIFail(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+
+	// return an error on startup
+	syncBuilder := &syncBuilderMock{
+		mock:      syncMock,
+		initError: errors.New("a terrible error"),
+	}
+	syncStore.SyncBuilder = syncBuilder
+
+	target := "test-target"
+	syncHandler, key := newSyncHandler()
+
+	syncStore.syncHandlers[target] = syncHandler
+
+	go syncStore.watchResource(ctx, target)
+
+	// the error channel should immediately receive an error response and close
+	select {
+	case e := <-syncHandler.subs[key].errChan:
+		if !errors.Is(e, syncBuilder.initError) {
+			t.Error("unexpected sync error", e, syncBuilder.initError)
+		}
+	case <-time.After(3 * time.Second):
+		t.Errorf("timed out waiting for broadcast of error")
+	}
+
+	// this should then close the internal context and the watcher should be removed
+	time.Sleep(1 * time.Second)
+	syncStore.mu.Lock()
+	if syncStore.syncHandlers[target] != nil {
+		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	}
+	syncStore.mu.Unlock()
+}
+
+func Test_watchResource_SyncErrorOnClose(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+
+	// return an error on startup
+	syncMock.ctxCloseError = errors.New("a terrible error")
+	syncStore.SyncBuilder = &syncBuilderMock{
+		mock: syncMock,
+	}
+
+	target := "test-target"
+	syncHandler, key := newSyncHandler()
+
+	syncStore.syncHandlers[target] = syncHandler
+
+	go syncStore.watchResource(ctx, target)
+	cancel()
+	// the error channel should immediately receive an error response and close
+	select {
+	case e := <-syncHandler.subs[key].errChan:
+		if !errors.Is(e, syncMock.ctxCloseError) {
+			t.Error("unexpected sync error", e, syncMock.initError)
+		}
+	case <-time.After(3 * time.Second):
+		t.Errorf("timed out waiting for broadcast of error")
+	}
+
+	// this should then close the internal context and the watcher should be removed
+	time.Sleep(1 * time.Second)
+	syncStore.mu.Lock()
+	if syncStore.syncHandlers[target] != nil {
+		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	}
+	syncStore.mu.Unlock()
 }

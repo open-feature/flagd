@@ -174,11 +174,12 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	}
 
 	sh.syncRef = sync
-
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.mu.Lock()
+		fmt.Println(len(sh.subs))
 		for _, ec := range sh.subs {
+			fmt.Println(fmt.Println("sending"))
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
