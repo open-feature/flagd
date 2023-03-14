@@ -190,10 +190,12 @@ func (s *SyncStore) Cleanup() {
 		select {
 		case <-s.ctx.Done():
 			return
-		case <-time.After(5 * time.Second):
+		case <-time.After(2 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.syncHandlers {
+				s.logger.Debug(fmt.Sprintf("syncHandler for target %s has %d subscriptions", k, len(v.subs)))
 				if len(v.subs) == 0 {
+					s.logger.Debug(fmt.Sprintf("shutting down syncHandler %s", k))
 					s.syncHandlers[k].cancelFunc()
 				}
 			}

@@ -15,6 +15,8 @@ import (
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 type SyncServer struct {
@@ -30,6 +32,10 @@ type SyncServerConfiguration struct {
 }
 
 func (s *SyncServer) Serve(ctx context.Context, svcConf iservice.Configuration) error {
+	mux := http.NewServeMux()
+	path, handler := rpc.NewFlagSyncServiceHandler(s)
+	mux.Handle(path, handler)
+
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
@@ -55,6 +61,7 @@ func (s *SyncServer) Serve(ctx context.Context, svcConf iservice.Configuration) 
 }
 
 func (s *SyncServer) setupServer() (net.Listener, error) {
+
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
@@ -68,7 +75,7 @@ func (s *SyncServer) setupServer() (net.Listener, error) {
 
 	s.server = http.Server{
 		ReadHeaderTimeout: time.Second,
-		Handler:           handler,
+		Handler:           h2c.NewHandler(mux, &http2.Server{}),
 	}
 	return lis, nil
 }
