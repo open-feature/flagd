@@ -32,10 +32,6 @@ type SyncServerConfiguration struct {
 }
 
 func (s *SyncServer) Serve(ctx context.Context, svcConf iservice.Configuration) error {
-	mux := http.NewServeMux()
-	path, handler := rpc.NewFlagSyncServiceHandler(s)
-	mux.Handle(path, handler)
-
 	lis, err := s.setupServer()
 	if err != nil {
 		return err
