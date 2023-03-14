@@ -1,14 +1,15 @@
-# flagd start
+<!-- markdownlint-disable-file -->
+## flagd start
 
 Start flagd
 
-```shell
+```
 flagd start [flags]
 ```
 
-## Options
+### Options
 
-```shell
+```
   -b, --bearer-token string                 DEPRECATED: Superseded by --sources.
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
@@ -25,14 +26,14 @@ flagd start [flags]
   -f, --uri .yaml/.yml/.json                Set a sync provider uri to read data from, this can be a filepath,url (http and grpc) or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
 
-## Options inherited from parent commands
+### Options inherited from parent commands
 
-```shell
+```
       --config string   config file (default is $HOME/.agent.yaml)
   -x, --debug           verbose logging
 ```
 
-## SEE ALSO
+### SEE ALSO
 
-* [flagd](flagd.md)  - Flagd is a simple command line tool for fetching and presenting feature flags to services.
-  It is designed to conform to Open Feature schema for flag definitions.
+* [flagd](flagd)	 - Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.
+
