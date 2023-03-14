@@ -95,7 +95,6 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 			},
 		}
 		s.syncHandlers[target] = &syncHandler
-		fmt.Println("here", s.syncHandlers[target])
 		go s.watchResource(s.ctx, target)
 	} else {
 		// register our sub in the map
@@ -129,7 +128,6 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 
 	go func() {
 		<-ctx.Done()
-		fmt.Println("deleting")
 		s.mu.Lock()
 		delete(s.syncHandlers, target)
 		s.mu.Unlock()
