@@ -17,10 +17,19 @@ type syncMock struct {
 	errChanIn      chan error
 	resyncData     isync.DataSync
 	resyncError    error
+
+	initError error
+}
+
+func newMockSync() *syncMock {
+	return &syncMock{
+		dataSyncChanIn: make(chan isync.DataSync, 1),
+		errChanIn:      make(chan error, 1),
+	}
 }
 
 func (s *syncMock) Init(ctx context.Context) error {
-	return nil
+	return s.initError
 }
 
 func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) error {
@@ -49,26 +58,13 @@ func (s *syncBuilderMock) SyncFromURI(uri string, logger logger.Logger) (isync.I
 	return s.mock, nil
 }
 
-func Test_watchResource(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
-
-	syncMock := &syncMock{
-		dataSyncChanIn: make(chan isync.DataSync, 1),
-		errChanIn:      make(chan error, 1),
-	}
-
-	syncStore.SyncBuilder = &syncBuilderMock{
-		mock: syncMock,
-	}
-
+func newSyncHandler() (*syncHandler, interface{}) {
 	coreDataSyncChan := make(chan isync.DataSync, 1)
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	key := struct{}{}
-	target := "test-target"
 
-	syncHandler := syncHandler{
+	return &syncHandler{
 		dataSync: coreDataSyncChan,
 		subs: map[interface{}]storedChannels{
 			key: {
@@ -76,8 +72,21 @@ func Test_watchResource(t *testing.T) {
 				dataSync: dataSyncChan,
 			},
 		},
+	}, key
+}
+
+func Test_watchResource(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+	syncStore.SyncBuilder = &syncBuilderMock{
+		mock: syncMock,
 	}
-	syncStore.syncHandlers[target] = &syncHandler
+
+	target := "test-target"
+	syncHandler, key := newSyncHandler()
+
+	syncStore.syncHandlers[target] = syncHandler
 
 	go syncStore.watchResource(ctx, target)
 
@@ -90,7 +99,7 @@ func Test_watchResource(t *testing.T) {
 	syncMock.dataSyncChanIn <- in
 
 	select {
-	case d := <-dataSyncChan:
+	case d := <-syncHandler.subs[key].dataSync:
 		if !reflect.DeepEqual(d, in) {
 			t.Error("unexpected sync data", in, d)
 		}
@@ -102,7 +111,7 @@ func Test_watchResource(t *testing.T) {
 	err := errors.New("very bad error")
 	syncMock.errChanIn <- err
 	select {
-	case e := <-errChan:
+	case e := <-syncHandler.subs[key].errChan:
 		if !errors.Is(e, err) {
 			t.Error("unexpected sync error", e, err)
 		}
@@ -126,4 +135,31 @@ func Test_watchResource(t *testing.T) {
 		t.Error("incorrect number of subs in syncHandler after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
+}
+
+func Test_watchResource_initFail(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+	syncMock.initError = errors.New("a terrible error")
+	syncStore.SyncBuilder = &syncBuilderMock{
+		mock: syncMock,
+	}
+
+	target := "test-target"
+	syncHandler, key := newSyncHandler()
+
+	syncStore.syncHandlers[target] = syncHandler
+
+	go syncStore.watchResource(ctx, target)
+
+	select {
+	case e := <-syncHandler.subs[key].errChan:
+		if !errors.Is(e, syncMock.initError) {
+			t.Error("unexpected sync error", e, syncMock.initError)
+		}
+	case <-time.After(3 * time.Second):
+		t.Errorf("timed out waiting for broadcast of error")
+	}
 }
