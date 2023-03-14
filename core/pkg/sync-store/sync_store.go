@@ -30,13 +30,12 @@ type SyncStore struct {
 	syncHandlers map[string]*syncHandler
 	logger       *logger.Logger
 	mu           *sync.Mutex
-	SyncBuilder  SyncBuilder
+	SyncBuilder  SyncBuilderInterface
 }
 
 type syncHandler struct {
 	subs       map[interface{}]storedChannels
 	dataSync   chan isync.DataSync
-	logger     *logger.Logger
 	cancelFunc context.CancelFunc
 	syncRef    isync.ISync
 }
@@ -52,6 +51,7 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) SyncStore {
 		syncHandlers: map[string]*syncHandler{},
 		logger:       logger,
 		mu:           &sync.Mutex{},
+		SyncBuilder:  &SyncBuilder{},
 	}
 }
 
@@ -93,7 +93,6 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 					dataSync: dataSync,
 				},
 			},
-			logger: s.logger,
 		}
 		s.syncHandlers[target] = &syncHandler
 		fmt.Println("here", s.syncHandlers[target])
@@ -130,6 +129,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 
 	go func() {
 		<-ctx.Done()
+		fmt.Println("deleting")
 		s.mu.Lock()
 		delete(s.syncHandlers, target)
 		s.mu.Unlock()
@@ -196,6 +196,10 @@ func (s *SyncStore) Cleanup() {
 			s.mu.Unlock()
 		}
 	}
+}
+
+type SyncBuilderInterface interface {
+	SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error)
 }
 
 type SyncBuilder struct{}
