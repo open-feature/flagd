@@ -40,6 +40,8 @@ const (
 
 var once msync.Once
 
+type FlagSyncServiceSyncFlagsClient syncv1grpc.FlagSyncService_SyncFlagsClient
+
 type Sync struct {
 	URI        string
 	ProviderID string

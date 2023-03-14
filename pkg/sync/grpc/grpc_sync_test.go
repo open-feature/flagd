@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/golang/mock/gomock"
+	grpcmock "github.com/open-feature/flagd/pkg/sync/grpc/mock"
 	"github.com/stretchr/testify/require"
 	"io"
 	"log"
 	"net"
 	"testing"
+	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -146,69 +149,130 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		Logger:     logger.NewLogger(nil, false),
 	}
 
+	mockError := errors.New("could not sync")
+
 	tests := []struct {
-		name   string
-		stream syncv1grpc.FlagSyncService_SyncFlagsClient
-		want   sync.Type
-		ready  bool
+		name      string
+		stream    syncv1grpc.FlagSyncService_SyncFlagsClient
+		setup     func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient)
+		want      sync.Type
+		wantError error
+		ready     bool
 	}{
 		{
 			name: "State All maps to Sync All",
-			stream: &SimpleRecvMock{
-				mockResponse: v1.SyncFlagsResponse{
-					FlagConfiguration: "{}",
-					State:             v1.SyncState_SYNC_STATE_ALL,
-				},
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+				gomock.InOrder(
+					client.EXPECT().Recv().Return(
+						&v1.SyncFlagsResponse{
+							FlagConfiguration: "{}",
+							State:             v1.SyncState_SYNC_STATE_ALL,
+						},
+						nil,
+					),
+					client.EXPECT().Recv().Return(
+						nil, io.EOF,
+					),
+				)
 			},
 			want:  sync.ALL,
 			ready: true,
 		},
 		{
 			name: "State Add maps to Sync Add",
-			stream: &SimpleRecvMock{
-				mockResponse: v1.SyncFlagsResponse{
-					FlagConfiguration: "{}",
-					State:             v1.SyncState_SYNC_STATE_ADD,
-				},
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+				gomock.InOrder(
+					client.EXPECT().Recv().Return(
+						&v1.SyncFlagsResponse{
+							FlagConfiguration: "{}",
+							State:             v1.SyncState_SYNC_STATE_ADD,
+						},
+						nil,
+					),
+					client.EXPECT().Recv().Return(
+						nil, io.EOF,
+					),
+				)
 			},
 			want:  sync.ADD,
 			ready: true,
 		},
 		{
 			name: "State Update maps to Sync Update",
-			stream: &SimpleRecvMock{
-				mockResponse: v1.SyncFlagsResponse{
-					FlagConfiguration: "{}",
-					State:             v1.SyncState_SYNC_STATE_UPDATE,
-				},
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+				gomock.InOrder(
+					client.EXPECT().Recv().Return(
+						&v1.SyncFlagsResponse{
+							FlagConfiguration: "{}",
+							State:             v1.SyncState_SYNC_STATE_UPDATE,
+						},
+						nil,
+					),
+					client.EXPECT().Recv().Return(
+						nil, io.EOF,
+					),
+				)
 			},
 			want:  sync.UPDATE,
 			ready: true,
 		},
 		{
 			name: "State Delete maps to Sync Delete",
-			stream: &SimpleRecvMock{
-				mockResponse: v1.SyncFlagsResponse{
-					FlagConfiguration: "{}",
-					State:             v1.SyncState_SYNC_STATE_DELETE,
-				},
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+				gomock.InOrder(
+					client.EXPECT().Recv().Return(
+						&v1.SyncFlagsResponse{
+							FlagConfiguration: "{}",
+							State:             v1.SyncState_SYNC_STATE_DELETE,
+						},
+						nil,
+					),
+					client.EXPECT().Recv().Return(
+						nil, io.EOF,
+					),
+				)
 			},
 			want:  sync.DELETE,
 			ready: true,
+		},
+		{
+			name: "Error during flag sync",
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+				client.EXPECT().Recv().Return(
+					nil,
+					mockError,
+				)
+			},
+			ready: true,
+			want:  -1,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			syncChan := make(chan sync.DataSync)
+			ctrl := gomock.NewController(t)
+			syncChan := make(chan sync.DataSync, 1)
 
+			mockClient := grpcmock.NewMockFlagSyncServiceSyncFlagsClient(ctrl)
+			test.setup(t, mockClient)
+
+			waitChan := make(chan struct{})
 			go func() {
-				grpcSyncImpl.syncClient = test.stream
-				err := grpcSyncImpl.Sync(context.TODO(), syncChan)
+				grpcSyncImpl.syncClient = mockClient
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+				defer cancel()
+				err := grpcSyncImpl.Sync(ctx, syncChan)
 				if err != nil {
-					t.Errorf("Error handling flag sync: %s", err.Error())
+					t.Errorf("unexpected error: %v", err)
 				}
+				close(waitChan)
 			}()
+			<-waitChan
+
+			if test.want < 0 {
+				require.Empty(t, syncChan)
+				return
+			}
 			data := <-syncChan
 
 			if grpcSyncImpl.IsReady() != test.ready {
@@ -376,15 +440,6 @@ func Test_StreamListener(t *testing.T) {
 }
 
 // Mock implementations
-
-type SimpleRecvMock struct {
-	grpc.ClientStream
-	mockResponse v1.SyncFlagsResponse
-}
-
-func (s *SimpleRecvMock) Recv() (*v1.SyncFlagsResponse, error) {
-	return &s.mockResponse, nil
-}
 
 // serve serves a bufferedServer
 func serve(bServer *bufferedServer) {
