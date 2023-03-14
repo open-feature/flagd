@@ -59,12 +59,12 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	s.mu.Lock()
-	_, ok := s.syncHandlers[target]
+	syncHandler, ok := s.syncHandlers[target]
 	if !ok {
 		s.mu.Unlock()
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
-		go s.syncHandlers[target].syncRef.ReSync(ctx, dataSyncChan)
+		go syncHandler.syncRef.ReSync(ctx, dataSyncChan)
 		s.mu.Unlock()
 	}
 
@@ -82,10 +82,10 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// is there a currently active subscription for this target?
-	_, ok := s.syncHandlers[target]
+	sh, ok := s.syncHandlers[target]
 	if !ok {
 		// we need to start a sync for this
-		syncHandler := syncHandler{
+		sh = &syncHandler{
 			dataSync: make(chan isync.DataSync),
 			subs: map[interface{}]storedChannels{
 				key: {
@@ -94,18 +94,18 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 				},
 			},
 		}
-		s.syncHandlers[target] = &syncHandler
+		s.syncHandlers[target] = sh
 		go s.watchResource(s.ctx, target)
 	} else {
 		// register our sub in the map
-		s.syncHandlers[target].subs[key] = storedChannels{
+		sh.subs[key] = storedChannels{
 			errChan:  errChan,
 			dataSync: dataSync,
 		}
 
 		// access pointer + trigger resync passing the dataSync
-		if s.syncHandlers[target].syncRef != nil {
-			go s.syncHandlers[target].syncRef.ReSync(ctx, dataSync)
+		if sh.syncRef != nil {
+			go sh.syncRef.ReSync(ctx, dataSync)
 		}
 
 	}
@@ -123,8 +123,14 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 
 func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	ctx, cancel := context.WithCancel(ctx)
-	s.syncHandlers[target].cancelFunc = cancel
 	defer cancel()
+
+	sh, ok := s.syncHandlers[target]
+	if !ok {
+		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
+		return
+	}
+	sh.cancelFunc = cancel
 
 	go func() {
 		<-ctx.Done()
@@ -138,9 +144,9 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 			select {
 			case <-ctx.Done():
 				return
-			case d := <-s.syncHandlers[target].dataSync:
+			case d := <-sh.dataSync:
 				s.mu.Lock()
-				for _, ds := range s.syncHandlers[target].subs {
+				for _, ds := range sh.subs {
 					ds.dataSync <- d
 				}
 				s.mu.Unlock()
@@ -151,7 +157,7 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	sync, err := s.SyncBuilder.SyncFromURI(target, *s.logger)
 	if err != nil {
 		s.mu.Lock()
-		for _, ec := range s.syncHandlers[target].subs {
+		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
@@ -160,19 +166,19 @@ func (s *SyncStore) watchResource(ctx context.Context, target string) {
 	err = sync.Init(ctx)
 	if err != nil {
 		s.mu.Lock()
-		for _, ec := range s.syncHandlers[target].subs {
+		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
 		return
 	}
 
-	s.syncHandlers[target].syncRef = sync
+	sh.syncRef = sync
 
-	err = sync.Sync(ctx, s.syncHandlers[target].dataSync)
+	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.mu.Lock()
-		for _, ec := range s.syncHandlers[target].subs {
+		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
 		s.mu.Unlock()
