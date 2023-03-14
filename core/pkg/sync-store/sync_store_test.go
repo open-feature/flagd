@@ -117,11 +117,12 @@ func Test_watchResource(t *testing.T) {
 	}
 	syncStore.mu.Unlock()
 
-	// cancellation of context will result in the sub being deleted
+	// cancellation of context will result in the syncHandler being deleted
 	cancel()
-	time.Sleep(3 * time.Second)
+	// allow for the goroutine to catch the lock first
+	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
-	if len(syncHandler.subs) != 0 {
+	if syncStore.syncHandlers[target] != nil {
 		t.Error("incorrect number of subs in syncHandler after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
