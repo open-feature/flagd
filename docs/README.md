@@ -4,7 +4,8 @@ This directory contains all flagd documentation, see table of contents below:
 
 ## Usage
 
-There are many ways to get started with flagd, the sections below run through some simple deployment options. Once the flagd service is running flag evaluation requests can either be made via one of the language specific flagd providers, or, directly via curl.
+There are many ways to get started with flagd, the sections below run through some simple deployment options.
+Once the flagd service is running flag evaluation requests can either be made via one of the language specific flagd providers, or, directly via curl.
 
 - [Getting started](./usage/getting_started.md)
 - [Flagd providers](./usage/flagd_providers.md)
@@ -12,7 +13,8 @@ There are many ways to get started with flagd, the sections below run through so
 
 ## Flag Configuration
 
-Flagd is configured via CLI arguments on startup, these configuration options can be found in the flagd configuration section. The remaining sections cover the flag configurations themselves, which are JSON representations of the flag variants and targeting rules.
+Flagd is configured via CLI arguments on startup, these configuration options can be found in the flagd configuration section.
+The remaining sections cover the flag configurations themselves, which are JSON representations of the flag variants and targeting rules.
 
 - [Flagd Configuration](./configuration/configuration.md)
 - [Flag configuration](./configuration/flag_configuration.md)
@@ -34,5 +36,3 @@ This section documents any behavior of flagd which may seem unexpected, currentl
 - [Caching](./other_resources/caching.md)
 - [Snap](./other_resources/snap.md)
 - [Systemd service](./other_resources/systemd_service.md)
-
-
