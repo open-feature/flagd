@@ -149,7 +149,7 @@ func (s *SyncStore) RegisterSubscription(
 	}()
 }
 
-// function has 10+ lines of comments + logs that should nto be removed to pass this linting step
+// function has 10+ lines of comments + logs that should not be removed to pass this linting step
 // nolint: funlen
 func (s *SyncStore) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))

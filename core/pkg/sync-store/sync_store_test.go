@@ -310,7 +310,6 @@ func Test_watchResource_Cleanup(t *testing.T) {
 }
 
 func Test_FetchAllFlags(t *testing.T) {
-
 	tests := map[string]struct {
 		expectErr  bool
 		mockData   *isync.DataSync
@@ -382,7 +381,6 @@ func Test_FetchAllFlags(t *testing.T) {
 }
 
 func Test_registerSubscriptionResyncPath(t *testing.T) {
-
 	tests := map[string]struct {
 		data      *isync.DataSync
 		err       error
