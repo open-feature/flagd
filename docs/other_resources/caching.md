@@ -2,23 +2,25 @@
 
 `flagd` has a caching strategy implementable by providers that support server-to-client streaming.
 
-#### Cacheable flags
+## Cacheable flags
 
-`flagd` sets the `reason` of a flag evaluation as `STATIC` when no targeting rules are configured for the flag. A client can safely store the result of a static evaluation in its cache indefinitely (until the configuration of the flag changes, see [cache invalidation](#cache-invalidation)).
+`flagd` sets the `reason` of a flag evaluation as `STATIC` when no targeting rules are configured for the flag.
+A client can safely store the result of a static evaluation in its cache indefinitely (until the configuration of the flag changes, see [cache invalidation](#cache-invalidation)).
 
 Put simply in pseudocode:
 
-```
+```pseudo
 if reason == "STATIC" {
     isFlagCacheable = true
 }
 ```
 
-#### Cache invalidation
+## Cache invalidation
 
-`flagd` emits events to the server-to-client stream, among these is the `configuration_change` event. The structure of this event is as such:
+`flagd` emits events to the server-to-client stream, among these is the `configuration_change` event.
+The structure of this event is as such:
 
-```
+```json
 {
     "type": "delete", // ENUM:["delete","write","update"]
     "source": "/flag-configuration.json", // the source of the flag configuration
