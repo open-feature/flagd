@@ -83,7 +83,7 @@ func Test_watchResource(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
-	syncStore.SyncBuilder = &syncBuilderMock{
+	syncStore.syncBuilder = &syncBuilderMock{
 		mock: syncMock,
 	}
 
@@ -149,7 +149,7 @@ func Test_watchResource_initFail(t *testing.T) {
 
 	// return an error on startup
 	syncMock.initError = errors.New("a terrible error")
-	syncStore.SyncBuilder = &syncBuilderMock{
+	syncStore.syncBuilder = &syncBuilderMock{
 		mock: syncMock,
 	}
 
@@ -190,7 +190,7 @@ func Test_watchResource_SyncFromURIFail(t *testing.T) {
 		mock:      syncMock,
 		initError: errors.New("a terrible error"),
 	}
-	syncStore.SyncBuilder = syncBuilder
+	syncStore.syncBuilder = syncBuilder
 
 	target := "test-target"
 	syncHandler, key := newSyncHandler()
@@ -226,7 +226,7 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 
 	// return an error on startup
 	syncMock.ctxCloseError = errors.New("a terrible error")
-	syncStore.SyncBuilder = &syncBuilderMock{
+	syncStore.syncBuilder = &syncBuilderMock{
 		mock: syncMock,
 	}
 

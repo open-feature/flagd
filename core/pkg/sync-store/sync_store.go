@@ -30,7 +30,7 @@ type SyncStore struct {
 	syncHandlers map[string]*syncHandler
 	logger       *logger.Logger
 	mu           *sync.Mutex
-	SyncBuilder  SyncBuilderInterface
+	syncBuilder  SyncBuilderInterface
 }
 
 type syncHandler struct {
@@ -51,7 +51,7 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
 		syncHandlers: map[string]*syncHandler{},
 		logger:       logger,
 		mu:           &sync.Mutex{},
-		SyncBuilder:  &SyncBuilder{},
+		syncBuilder:  &SyncBuilder{},
 	}
 	go ss.cleanup()
 	return &ss
@@ -146,6 +146,8 @@ func (s *SyncStore) RegisterSubscription(
 	}()
 }
 
+// function has 10+ lines of comments + logs that should nto be removed to pass this linting step
+// nolint: funlen
 func (s *SyncStore) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
@@ -179,7 +181,7 @@ func (s *SyncStore) watchResource(target string) {
 		}
 	}()
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
-	sync, err := s.SyncBuilder.SyncFromURI(target, *s.logger)
+	sync, err := s.syncBuilder.SyncFromURI(target, *s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
 		s.mu.Lock()
@@ -201,6 +203,7 @@ func (s *SyncStore) watchResource(target string) {
 		return
 	}
 	// sync ref is used to trigger a resync on a single channel when a new subscription is started
+	// but the associated SyncHandler already exists, i.e. this function is not run
 	sh.syncRef = sync
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
@@ -221,6 +224,7 @@ func (s *SyncStore) cleanup() {
 		case <-time.After(5 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.syncHandlers {
+				// delete any syncHandlers with 0 active subscriptions through cancelling its context
 				s.logger.Debug(fmt.Sprintf("syncHandler for target %s has %d subscriptions", k, len(v.subs)))
 				if len(v.subs) == 0 {
 					s.logger.Debug(fmt.Sprintf("shutting down syncHandler %s", k))
@@ -240,6 +244,7 @@ type SyncBuilder struct{}
 
 func (sb *SyncBuilder) SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error) {
 	switch uriB := []byte(uri); {
+	// this switch only exists to allow for filepath sync to be used for debugging
 	case regFile.Match(uriB):
 		return &file.Sync{
 			URI: regFile.ReplaceAllString(uri, ""),
