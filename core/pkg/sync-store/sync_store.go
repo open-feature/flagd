@@ -68,6 +68,9 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
+		if syncHandler.syncRef == nil {
+			return isync.DataSync{}, errors.New("sync ref not set")
+		}
 		go func() {
 			s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
 			if err := syncHandler.syncRef.ReSync(ctx, dataSyncChan); err != nil {
@@ -181,7 +184,7 @@ func (s *SyncStore) watchResource(target string) {
 		}
 	}()
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
-	sync, err := s.syncBuilder.SyncFromURI(target, *s.logger)
+	sync, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
 		s.mu.Lock()
@@ -237,14 +240,14 @@ func (s *SyncStore) cleanup() {
 }
 
 type SyncBuilderInterface interface {
-	SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error)
+	SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error)
 }
 
 type SyncBuilder struct{}
 
-func (sb *SyncBuilder) SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error) {
+func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error) {
 	switch uriB := []byte(uri); {
-	// this switch only exists to allow for filepath sync to be used for debugging
+	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
 		return &file.Sync{
 			URI: regFile.ReplaceAllString(uri, ""),

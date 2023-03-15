@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -16,7 +15,7 @@ type syncMock struct {
 	isync.ISync
 	dataSyncChanIn chan isync.DataSync
 	errChanIn      chan error
-	resyncData     isync.DataSync
+	resyncData     *isync.DataSync
 	resyncError    error
 
 	initError     error
@@ -38,7 +37,6 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("here")
 			return s.ctxCloseError
 		case d := <-s.dataSyncChanIn:
 			dataSync <- d
@@ -49,7 +47,9 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 }
 
 func (s *syncMock) ReSync(ctx context.Context, dataSync chan<- isync.DataSync) error {
-	dataSync <- s.resyncData
+	if s.resyncData != nil {
+		dataSync <- *s.resyncData
+	}
 	return s.resyncError
 }
 
@@ -58,7 +58,7 @@ type syncBuilderMock struct {
 	initError error
 }
 
-func (s *syncBuilderMock) SyncFromURI(uri string, logger logger.Logger) (isync.ISync, error) {
+func (s *syncBuilderMock) SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error) {
 	return s.mock, s.initError
 }
 
@@ -254,4 +254,190 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
+}
+
+func Test_watchResource_SyncHandlerDoesNotExist(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+
+	// return an error on startup
+	syncMock.ctxCloseError = errors.New("a terrible error")
+	syncStore.syncBuilder = &syncBuilderMock{
+		mock: syncMock,
+	}
+
+	target := "test-target"
+
+	// sync store will early return and not block
+	syncStore.watchResource(target)
+}
+
+func Test_watchResource_Cleanup(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+
+	// return an error on startup
+	syncMock.ctxCloseError = errors.New("a terrible error")
+	syncStore.syncBuilder = &syncBuilderMock{
+		mock: syncMock,
+	}
+
+	target := "test-target"
+
+	syncHandler, _ := newSyncHandler()
+	syncHandler.subs = map[interface{}]storedChannels{}
+	doneChan := make(chan struct{}, 1)
+	syncHandler.cancelFunc = func() {
+		doneChan <- struct{}{}
+	}
+	syncStore.mu.Lock()
+	syncStore.syncHandlers[target] = syncHandler
+	syncStore.mu.Unlock()
+	go func() {
+		syncStore.cleanup()
+	}()
+
+	select {
+	case <-doneChan:
+		return
+	case <-time.After(10 * time.Second):
+		t.Error("syncHandlers not being cleaned up, timed out after 10 seconds")
+	}
+}
+
+func Test_FetchAllFlags(t *testing.T) {
+
+	tests := map[string]struct {
+		expectErr  bool
+		mockData   *isync.DataSync
+		mockError  error
+		setMock    bool
+		setHandler bool
+	}{
+		"resync route": {
+			expectErr: false,
+			setMock:   true,
+			mockData: &isync.DataSync{
+				FlagData: "im a flag",
+				Source:   "im a flag source",
+				Type:     isync.ALL,
+			},
+			setHandler: true,
+		},
+		"resync route sync does not exist": {
+			expectErr:  true,
+			setMock:    false,
+			mockData:   nil,
+			setHandler: true,
+		},
+		"resync route returns error": {
+			expectErr:  true,
+			setMock:    true,
+			mockData:   nil,
+			mockError:  errors.New("disaster"),
+			setHandler: true,
+		},
+		"register subscription route timeout": {
+			expectErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+			syncMock := newMockSync()
+			syncMock.resyncData = tt.mockData
+			syncMock.resyncError = tt.mockError
+			syncStore.syncBuilder = &syncBuilderMock{
+				mock: syncMock,
+			}
+
+			target := "test-target"
+			syncHandler, key := newSyncHandler()
+			if tt.setMock {
+				syncHandler.syncRef = syncMock
+			}
+			if tt.setHandler {
+				syncStore.syncHandlers[target] = syncHandler
+			}
+
+			data, err := syncStore.FetchAllFlags(ctx, key, target)
+			if err != nil && !tt.expectErr {
+				t.Error(err)
+			}
+			if err == nil && tt.expectErr {
+				t.Error("did not receive expected error")
+			}
+			if tt.mockData != nil && !reflect.DeepEqual(data.FlagData, tt.mockData.FlagData) {
+				t.Error("data does not match expected value", tt.mockData.FlagData, data.FlagData)
+			}
+		})
+	}
+}
+
+func Test_registerSubscriptionResyncPath(t *testing.T) {
+
+	tests := map[string]struct {
+		data      *isync.DataSync
+		err       error
+		expectErr bool
+	}{
+		"happy path": {
+			data: &isync.DataSync{
+				FlagData: "im a flag",
+				Source:   "im a flag source",
+				Type:     isync.ALL,
+			},
+			expectErr: false,
+		},
+		"resync fails": {
+			err:       errors.New("disaster"),
+			expectErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+
+			syncMock := newMockSync()
+			syncMock.resyncData = tt.data
+			syncMock.resyncError = tt.err
+
+			syncStore.syncBuilder = &syncBuilderMock{
+				mock: syncMock,
+			}
+
+			target := "test-target"
+			syncHandler, _ := newSyncHandler()
+			syncHandler.syncRef = syncMock
+			key := struct{}{}
+			syncStore.syncHandlers[target] = syncHandler
+			dataChan := make(chan isync.DataSync, 1)
+			errChan := make(chan error, 1)
+
+			go syncStore.RegisterSubscription(ctx, target, key, dataChan, errChan)
+
+			select {
+			case d := <-dataChan:
+				if !reflect.DeepEqual(d, *tt.data) {
+					t.Error("received unexpected data", d, *tt.data)
+				}
+			case err := <-errChan:
+				if !tt.expectErr {
+					t.Error(err)
+				}
+			case <-time.After(3 * time.Second):
+				t.Error("timed out waiting for data chan")
+			}
+		})
+	}
 }
