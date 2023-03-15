@@ -331,7 +331,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 				defer cancel()
 				err := grpcSyncImpl.Sync(ctx, syncChan)
 				if err != nil {
-					t.Errorf("unexpected error: %v", err)
+					t.Errorf("Error handling flag sync: %v", err)
 				}
 				close(waitChan)
 			}()
