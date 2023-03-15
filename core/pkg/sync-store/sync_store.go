@@ -29,7 +29,7 @@ type SyncStore struct {
 	ctx          context.Context
 	syncHandlers map[string]*syncHandler
 	logger       *logger.Logger
-	mu           *sync.Mutex
+	mu           *sync.RWMutex
 	syncBuilder  SyncBuilderInterface
 }
 
@@ -50,7 +50,7 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
 		ctx:          ctx,
 		syncHandlers: map[string]*syncHandler{},
 		logger:       logger,
-		mu:           &sync.Mutex{},
+		mu:           &sync.RWMutex{},
 		syncBuilder:  &SyncBuilder{},
 	}
 	go ss.cleanup()
@@ -61,9 +61,9 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
-	s.mu.Lock()
+	s.mu.RLock()
 	syncHandler, ok := s.syncHandlers[target]
-	s.mu.Unlock()
+	s.mu.RUnlock()
 	if !ok {
 		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
@@ -175,11 +175,11 @@ func (s *SyncStore) watchResource(target string) {
 			case <-ctx.Done():
 				return
 			case d := <-sh.dataSync:
-				s.mu.Lock()
+				s.mu.RLock()
 				for _, ds := range sh.subs {
 					ds.dataSync <- d
 				}
-				s.mu.Unlock()
+				s.mu.RUnlock()
 			}
 		}
 	}()
@@ -187,22 +187,22 @@ func (s *SyncStore) watchResource(target string) {
 	sync, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		s.mu.Lock()
+		s.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = sync.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		s.mu.Lock()
+		s.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		return
 	}
 	// sync ref is used to trigger a resync on a single channel when a new subscription is started
@@ -211,11 +211,11 @@ func (s *SyncStore) watchResource(target string) {
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		s.mu.Lock()
+		s.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.Unlock()
+		s.mu.RUnlock()
 	}
 }
 
