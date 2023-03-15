@@ -58,15 +58,18 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
 }
 
 func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
+	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	s.mu.Lock()
 	syncHandler, ok := s.syncHandlers[target]
 	s.mu.Unlock()
 	if !ok {
+		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
 		go func() {
+			s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
 			if err := syncHandler.syncRef.ReSync(ctx, dataSyncChan); err != nil {
 				errChan <- err
 			}
@@ -96,6 +99,12 @@ func (s *SyncStore) RegisterSubscription(
 	sh, ok := s.syncHandlers[target]
 	if !ok {
 		// we need to start a sync for this
+		s.logger.Debug(
+			fmt.Sprintf(
+				"sync handler does not exist for target %s, registering syncHandler with sub %p",
+				target,
+				key,
+			))
 		sh = &syncHandler{
 			dataSync: make(chan isync.DataSync),
 			subs: map[interface{}]storedChannels{
@@ -109,6 +118,7 @@ func (s *SyncStore) RegisterSubscription(
 		go s.watchResource(target)
 	} else {
 		// register our sub in the map
+		s.logger.Debug(fmt.Sprintf("registering sync subscription %p", key))
 		sh.subs[key] = storedChannels{
 			errChan:  errChan,
 			dataSync: dataSync,
@@ -117,6 +127,7 @@ func (s *SyncStore) RegisterSubscription(
 		// access pointer + trigger resync passing the dataSync
 		if sh.syncRef != nil {
 			go func() {
+				s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
 				if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
 					errChan <- err
 				}
@@ -128,6 +139,7 @@ func (s *SyncStore) RegisterSubscription(
 		<-ctx.Done()
 		s.mu.Lock()
 		if s.syncHandlers[target] != nil && s.syncHandlers[target].subs != nil {
+			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
 			delete(s.syncHandlers[target].subs, key)
 		}
 		s.mu.Unlock()
@@ -135,6 +147,7 @@ func (s *SyncStore) RegisterSubscription(
 }
 
 func (s *SyncStore) watchResource(target string) {
+	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
 	sh, ok := s.syncHandlers[target]
@@ -168,6 +181,7 @@ func (s *SyncStore) watchResource(target string) {
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
 	sync, err := s.SyncBuilder.SyncFromURI(target, *s.logger)
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
 		s.mu.Lock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
@@ -178,6 +192,7 @@ func (s *SyncStore) watchResource(target string) {
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = sync.Init(ctx)
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
 		s.mu.Lock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
@@ -189,6 +204,7 @@ func (s *SyncStore) watchResource(target string) {
 	sh.syncRef = sync
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
 		s.mu.Lock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
@@ -202,7 +218,7 @@ func (s *SyncStore) cleanup() {
 		select {
 		case <-s.ctx.Done():
 			return
-		case <-time.After(2 * time.Second):
+		case <-time.After(5 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.syncHandlers {
 				s.logger.Debug(fmt.Sprintf("syncHandler for target %s has %d subscriptions", k, len(v.subs)))
