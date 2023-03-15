@@ -50,7 +50,7 @@ type Sync struct {
 	ready  bool
 }
 
-func (g *Sync) Init(ctx context.Context, opts ...grpc.DialOption) error {
+func (g *Sync) Init(ctx context.Context) error {
 	tCredentials, err := buildTransportCredentials(g.URI, g.CertPath)
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
