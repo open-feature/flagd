@@ -40,7 +40,8 @@ const (
 
 var once msync.Once
 
-type FlagSyncServiceSyncFlagsClient syncv1grpc.FlagSyncService_SyncFlagsClient
+//go:generate mockgen . FlagSyncServiceClient
+type FlagSyncServiceClient syncv1grpc.FlagSyncServiceClient
 
 type Sync struct {
 	URI        string
@@ -52,7 +53,7 @@ type Sync struct {
 	ready  bool
 }
 
-func (g *Sync) Init(ctx context.Context) error {
+func (g *Sync) Init(ctx context.Context, opts ...grpc.DialOption) error {
 	tCredentials, err := buildTransportCredentials(g.URI, g.CertPath)
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
