@@ -27,8 +27,8 @@ type Runtime struct {
 }
 
 type Config struct {
-	ServicePort       int32
-	MetricsPort       int32
+	ServicePort       uint16
+	MetricsPort       uint16
 	ServiceSocketPath string
 	ServiceCertPath   string
 	ServiceKeyPath    string
@@ -90,6 +90,8 @@ func (r *Runtime) Start() error {
 	g.Go(func() error {
 		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
 			ReadinessProbe: r.isReady,
+			Port:           r.config.ServicePort,
+			MetricsPort:    r.config.MetricsPort,
 		})
 	})
 	<-gCtx.Done()

@@ -38,8 +38,6 @@ type ConnectService struct {
 	server                      http.Server
 }
 type ConnectServiceConfiguration struct {
-	Port             int32
-	MetricsPort      int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
@@ -97,7 +95,7 @@ func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listen
 	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
 		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
 	} else {
-		address := fmt.Sprintf(":%d", s.ConnectServiceConfiguration.Port)
+		address := fmt.Sprintf(":%d", svcConf.Port)
 		lis, err = net.Listen("tcp", address)
 	}
 	if err != nil {
@@ -370,9 +368,9 @@ func (s *ConnectService) newCORS() *cors.Cors {
 }
 
 func bindMetrics(s *ConnectService, svcConf iservice.Configuration) {
-	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

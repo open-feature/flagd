@@ -67,8 +67,6 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 func (r *Runtime) setService(logger *logger.Logger) {
 	r.Service = &service.ConnectService{
 		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
-			Port:             r.config.ServicePort,
-			MetricsPort:      r.config.MetricsPort,
 			ServerKeyPath:    r.config.ServiceKeyPath,
 			ServerCertPath:   r.config.ServiceCertPath,
 			ServerSocketPath: r.config.ServiceSocketPath,
