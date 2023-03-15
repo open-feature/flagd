@@ -15,7 +15,10 @@ type handler struct {
 	logger    *logger.Logger
 }
 
-func (l *handler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1.FetchAllFlagsRequest]) (*connect.Response[syncv1.FetchAllFlagsResponse], error) {
+func (l *handler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1.FetchAllFlagsRequest]) (
+	*connect.Response[syncv1.FetchAllFlagsResponse],
+	error,
+) {
 	data, err := l.syncStore.FetchAllFlags(ctx, nil, req.Msg.GetProviderId())
 	if err != nil {
 		return connect.NewResponse(&syncv1.FetchAllFlagsResponse{}), err
@@ -26,7 +29,11 @@ func (l *handler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1
 	}), nil
 }
 
-func (l *handler) SyncFlags(ctx context.Context, req *connect.Request[syncv1.SyncFlagsRequest], stream *connect.ServerStream[syncv1.SyncFlagsResponse]) error {
+func (l *handler) SyncFlags(
+	ctx context.Context,
+	req *connect.Request[syncv1.SyncFlagsRequest],
+	stream *connect.ServerStream[syncv1.SyncFlagsResponse],
+) error {
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
 	l.syncStore.RegisterSubscription(ctx, req.Msg.GetProviderId(), req, dataSync, errChan)

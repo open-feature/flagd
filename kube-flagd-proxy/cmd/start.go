@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -65,10 +67,19 @@ var startCmd = &cobra.Command{
 			Port:           viper.GetUint16(portFlagName),
 			MetricsPort:    viper.GetUint16(metricsPortFlagName),
 		}
-		go s.Serve(ctx, cfg)
+		errChan := make(chan error, 1)
+		go func() {
+			if err := s.Serve(ctx, cfg); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				errChan <- err
+			}
+		}()
 
 		logger.Info(fmt.Sprintf("listening for connections on %d", cfg.Port))
-
-		<-ctx.Done()
+		select {
+		case <-ctx.Done():
+			return
+		case err := <-errChan:
+			logger.Fatal(err.Error())
+		}
 	},
 }

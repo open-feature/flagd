@@ -1,4 +1,4 @@
-package sync_store
+package store
 
 import (
 	"context"
@@ -62,12 +62,15 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 	errChan := make(chan error, 1)
 	s.mu.Lock()
 	syncHandler, ok := s.syncHandlers[target]
+	s.mu.Unlock()
 	if !ok {
-		s.mu.Unlock()
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
-		go syncHandler.syncRef.ReSync(ctx, dataSyncChan)
-		s.mu.Unlock()
+		go func() {
+			if err := syncHandler.syncRef.ReSync(ctx, dataSyncChan); err != nil {
+				errChan <- err
+			}
+		}()
 	}
 
 	select {
@@ -80,7 +83,13 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 	}
 }
 
-func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key interface{}, dataSync chan isync.DataSync, errChan chan error) error {
+func (s *SyncStore) RegisterSubscription(
+	ctx context.Context,
+	target string,
+	key interface{},
+	dataSync chan isync.DataSync,
+	errChan chan error,
+) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// is there a currently active subscription for this target?
@@ -107,9 +116,12 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 
 		// access pointer + trigger resync passing the dataSync
 		if sh.syncRef != nil {
-			go sh.syncRef.ReSync(ctx, dataSync)
+			go func() {
+				if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
+					errChan <- err
+				}
+			}()
 		}
-
 	}
 	// defer until context close to remove the key
 	go func() {
@@ -120,30 +132,24 @@ func (s *SyncStore) RegisterSubscription(ctx context.Context, target string, key
 		}
 		s.mu.Unlock()
 	}()
-	return nil
 }
 
 func (s *SyncStore) watchResource(target string) {
-	// create a child context with cancel, this is used to cleanup
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
-
 	sh, ok := s.syncHandlers[target]
 	if !ok {
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
-	// this cancel can be accessed by the cleanup method, shutting down the listener
-	// and deleting the syncHandler under the target key
+	// this cancel is accessed by the cleanup method shutdown the listener + delete the syncHandler
 	sh.cancelFunc = cancel
-
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()
 		delete(s.syncHandlers, target)
 		s.mu.Unlock()
 	}()
-
 	// broadcast any data passed through the core channel to all subscribing channels
 	go func() {
 		for {
@@ -159,7 +165,6 @@ func (s *SyncStore) watchResource(target string) {
 			}
 		}
 	}()
-
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
 	sync, err := s.SyncBuilder.SyncFromURI(target, *s.logger)
 	if err != nil {
@@ -170,7 +175,6 @@ func (s *SyncStore) watchResource(target string) {
 		s.mu.Unlock()
 		return
 	}
-
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = sync.Init(ctx)
 	if err != nil {
@@ -181,9 +185,7 @@ func (s *SyncStore) watchResource(target string) {
 		s.mu.Unlock()
 		return
 	}
-
-	// start sync, the core dataSync used as the broadcast input is passed to the sync
-	// the syncRef is used on new subscriptions to trigger a single channel ReSync
+	// sync ref is used to trigger a resync on a single channel when a new subscription is started
 	sh.syncRef = sync
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {

@@ -1,4 +1,4 @@
-package sync_store
+package store
 
 import (
 	"context"
@@ -123,7 +123,7 @@ func Test_watchResource(t *testing.T) {
 		t.Errorf("timed out waiting for broadcast of error")
 	}
 
-	// no context cancellation should have ocurred, and there should still be registered sync sub
+	// no context cancellation should have occurred, and there should still be registered sync sub
 	syncStore.mu.Lock()
 	if len(syncHandler.subs) != 1 {
 		t.Error("incorrect number of subs in syncHandler", syncHandler.subs)

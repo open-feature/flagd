@@ -19,7 +19,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:               "flagd",
-	Short:             "Flagd-kube-proxy is a proxy allowing flagd to subscribe to CRD changes without the required permissions.",
+	Short:             "Flagd-kube-proxy allows flagd to subscribe to CRD changes without the required permissions.",
 	Long:              ``,
 	DisableAutoGenTag: true,
 	// Uncomment the following line if your bare application

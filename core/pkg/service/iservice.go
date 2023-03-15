@@ -28,7 +28,8 @@ type Configuration struct {
 }
 
 /*
-IFlagEvaluationService implementations define handlers for a particular transport, which call the IEvaluator implementation.
+IFlagEvaluationService implementations define handlers for a particular transport,
+which call the IEvaluator implementation.
 */
 type IFlagEvaluationService interface {
 	Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error
@@ -36,7 +37,8 @@ type IFlagEvaluationService interface {
 }
 
 /*
-IFlagEvaluationService implementations define handlers for a particular transport, which call the IEvaluator implementation.
+IFlagEvaluationService implementations define handlers for a particular transport,
+which call the IEvaluator implementation.
 */
 type IKubeSyncService interface {
 	Serve(ctx context.Context, svcConf Configuration) error

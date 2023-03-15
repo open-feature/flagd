@@ -61,7 +61,6 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 }
 
 func (s *Server) setupServer() (net.Listener, error) {
-
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
