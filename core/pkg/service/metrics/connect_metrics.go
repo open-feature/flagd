@@ -1,4 +1,4 @@
-package service
+package metrics
 
 import (
 	"bufio"
@@ -91,7 +91,7 @@ func (r OTelMetricsRecorder) OTelInFlightRequestEnd(p HTTPReqProperties) {
 	r.httpRequestsInflight.Add(context.TODO(), -1, r.setAttributes(p)...)
 }
 
-type middlewareConfig struct {
+type MiddlewareConfig struct {
 	recorder           Recorder
 	MetricReader       metric.Reader
 	Logger             *logger.Logger
@@ -101,16 +101,16 @@ type middlewareConfig struct {
 }
 
 type Middleware struct {
-	cfg middlewareConfig
+	cfg MiddlewareConfig
 }
 
-func New(cfg middlewareConfig) Middleware {
+func New(cfg MiddlewareConfig) Middleware {
 	cfg.defaults()
 	m := Middleware{cfg: cfg}
 	return m
 }
 
-func (cfg *middlewareConfig) defaults() {
+func (cfg *MiddlewareConfig) defaults() {
 	if cfg.Logger == nil {
 		log.Fatal("missing logger")
 	}
@@ -120,7 +120,7 @@ func (cfg *middlewareConfig) defaults() {
 	cfg.recorder = cfg.newOTelRecorder(cfg.MetricReader)
 }
 
-func (cfg *middlewareConfig) getDurationView(name string, bucket []float64) metric.View {
+func (cfg *MiddlewareConfig) getDurationView(name string, bucket []float64) metric.View {
 	return metric.NewView(
 		metric.Instrument{
 			// we change aggregation only for instruments with this name and scope
@@ -135,7 +135,7 @@ func (cfg *middlewareConfig) getDurationView(name string, bucket []float64) metr
 	)
 }
 
-func (cfg *middlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetricsRecorder {
+func (cfg *MiddlewareConfig) newOTelRecorder(exporter metric.Reader) *OTelMetricsRecorder {
 	const requestDurationName = "http_request_duration_seconds"
 	const responseSizeName = "http_response_size_bytes"
 

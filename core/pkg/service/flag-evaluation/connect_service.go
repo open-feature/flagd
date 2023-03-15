@@ -17,6 +17,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/service/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
@@ -109,12 +110,12 @@ func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listen
 		return nil, err
 	}
 
-	mdlw := New(middlewareConfig{
+	mdlw := metrics.New(metrics.MiddlewareConfig{
 		Service:      "openfeature/flagd",
 		MetricReader: exporter,
 		Logger:       s.Logger,
 	})
-	h := Handler("", mdlw, mux)
+	h := metrics.Handler("", mdlw, mux)
 
 	go bindMetrics(s, svcConf)
 

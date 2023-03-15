@@ -18,9 +18,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "flagd",
-	Short: "Flagd is a simple command line tool for fetching and presenting feature flags to services. " +
-		"It is designed to conform to Open Feature schema for flag definitions.",
+	Use:               "flagd",
+	Short:             "Flagd-kube-proxy is a proxy allowing flagd to subscribe to CRD changes without the required permissions.",
 	Long:              ``,
 	DisableAutoGenTag: true,
 	// Uncomment the following line if your bare application

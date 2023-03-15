@@ -92,7 +92,7 @@ func Test_watchResource(t *testing.T) {
 
 	syncStore.syncHandlers[target] = syncHandler
 
-	go syncStore.watchResource(ctx, target)
+	go syncStore.watchResource(target)
 
 	// sync update should be broadcasted to all registered sync subs:
 	in := isync.DataSync{
@@ -158,7 +158,7 @@ func Test_watchResource_initFail(t *testing.T) {
 
 	syncStore.syncHandlers[target] = syncHandler
 
-	go syncStore.watchResource(ctx, target)
+	go syncStore.watchResource(target)
 
 	// the error channel should immediately receive an error response and close
 	select {
@@ -197,7 +197,7 @@ func Test_watchResource_SyncFromURIFail(t *testing.T) {
 
 	syncStore.syncHandlers[target] = syncHandler
 
-	go syncStore.watchResource(ctx, target)
+	go syncStore.watchResource(target)
 
 	// the error channel should immediately receive an error response and close
 	select {
@@ -235,7 +235,7 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 
 	syncStore.syncHandlers[target] = syncHandler
 
-	go syncStore.watchResource(ctx, target)
+	go syncStore.watchResource(target)
 	cancel()
 	// the error channel should immediately receive an error response and close
 	select {

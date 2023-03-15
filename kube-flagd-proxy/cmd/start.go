@@ -11,7 +11,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	syncServer "github.com/open-feature/flagd/core/pkg/service/sync"
-	sync_store "github.com/open-feature/flagd/core/pkg/sync-store"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
@@ -41,7 +40,7 @@ func init() {
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start flagd",
+	Short: "Start flagd-kube-proxy",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------
@@ -60,23 +59,15 @@ var startCmd = &cobra.Command{
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-		store := sync_store.NewSyncStore(ctx, logger)
-
-		s := syncServer.SyncServer{
-			SyncStore: store,
-			Configuration: syncServer.SyncServerConfiguration{
-				Port:        viper.GetUint16(portFlagName),
-				MetricsPort: viper.GetUint16(metricsPortFlagName),
-			},
-			Logger: logger,
-		}
-
-		go store.Cleanup()
-		go s.Serve(ctx, service.Configuration{
+		s := syncServer.NewServer(ctx, logger)
+		cfg := service.Configuration{
 			ReadinessProbe: func() bool { return true },
-		})
+			Port:           viper.GetUint16(portFlagName),
+			MetricsPort:    viper.GetUint16(metricsPortFlagName),
+		}
+		go s.Serve(ctx, cfg)
 
-		logger.Info(fmt.Sprintf("listening for connections on %d...", s.Configuration.Port))
+		logger.Info(fmt.Sprintf("listening for connections on %d", cfg.Port))
 
 		<-ctx.Done()
 	},
