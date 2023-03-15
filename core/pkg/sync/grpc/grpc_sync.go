@@ -40,9 +40,6 @@ const (
 
 var once msync.Once
 
-//go:generate mockgen . FlagSyncServiceClient
-type FlagSyncServiceClient syncv1grpc.FlagSyncServiceClient
-
 type Sync struct {
 	URI        string
 	ProviderID string
