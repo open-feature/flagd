@@ -38,6 +38,7 @@ type syncHandler struct {
 	dataSync   chan isync.DataSync
 	cancelFunc context.CancelFunc
 	syncRef    isync.ISync
+	mu         *sync.RWMutex
 }
 
 type storedChannels struct {
@@ -116,6 +117,7 @@ func (s *SyncStore) RegisterSubscription(
 					dataSync: dataSync,
 				},
 			},
+			mu: &sync.RWMutex{},
 		}
 		s.syncHandlers[target] = sh
 		go s.watchResource(target)
@@ -164,9 +166,9 @@ func (s *SyncStore) watchResource(target string) {
 	sh.cancelFunc = cancel
 	go func() {
 		<-ctx.Done()
-		s.mu.Lock()
+		sh.mu.Lock()
 		delete(s.syncHandlers, target)
-		s.mu.Unlock()
+		sh.mu.Unlock()
 	}()
 	// broadcast any data passed through the core channel to all subscribing channels
 	go func() {
@@ -175,11 +177,11 @@ func (s *SyncStore) watchResource(target string) {
 			case <-ctx.Done():
 				return
 			case d := <-sh.dataSync:
-				s.mu.RLock()
+				sh.mu.RLock()
 				for _, ds := range sh.subs {
 					ds.dataSync <- d
 				}
-				s.mu.RUnlock()
+				sh.mu.RUnlock()
 			}
 		}
 	}()
@@ -187,22 +189,22 @@ func (s *SyncStore) watchResource(target string) {
 	sync, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		s.mu.RLock()
+		sh.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.RUnlock()
+		sh.mu.RUnlock()
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = sync.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		s.mu.RLock()
+		sh.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.RUnlock()
+		sh.mu.RUnlock()
 		return
 	}
 	// sync ref is used to trigger a resync on a single channel when a new subscription is started
@@ -211,11 +213,11 @@ func (s *SyncStore) watchResource(target string) {
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		s.mu.RLock()
+		sh.mu.RLock()
 		for _, ec := range sh.subs {
 			ec.errChan <- err
 		}
-		s.mu.RUnlock()
+		sh.mu.RUnlock()
 	}
 }
 
