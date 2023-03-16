@@ -44,7 +44,7 @@ func (l *handler) SyncFlags(
 		case d := <-dataSync:
 			if err := stream.Send(&syncv1.SyncFlagsResponse{
 				FlagConfiguration: d.FlagData,
-				State:             syncv1.SyncState(d.Type + 1),
+				State:             dataSyncToGrpcState(d),
 			}); err != nil {
 				return err
 			}
@@ -52,4 +52,8 @@ func (l *handler) SyncFlags(
 			return nil
 		}
 	}
+}
+
+func dataSyncToGrpcState(s sync.DataSync) syncv1.SyncState {
+	return syncv1.SyncState(s.Type + 1)
 }

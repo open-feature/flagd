@@ -22,9 +22,6 @@ var rootCmd = &cobra.Command{
 	Short:             "Flagd-kube-proxy allows flagd to subscribe to CRD changes without the required permissions.",
 	Long:              ``,
 	DisableAutoGenTag: true,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
