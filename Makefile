@@ -56,7 +56,8 @@ lint:
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
 mockgen: install-mockgen
-	mockgen -source=core/pkg/sync/http/http_sync.go -destination=core/pkg/sync/http/mock/http.go -package=syncmock
-	mockgen -source=core/pkg/eval/ievaluator.go -destination=core/pkg/eval/mock/ievaluator.go -package=evalmock
+	cd core; mockgen -source=pkg/sync/http/http_sync.go -destination=pkg/sync/http/mock/http.go -package=syncmock
+	cd core; mockgen -source=pkg/sync/grpc/grpc_sync.go -destination=pkg/sync/grpc/mock/grpc.go -package=grpcmock
+	cd core; mockgen -source=pkg/eval/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go

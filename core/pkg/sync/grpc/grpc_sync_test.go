@@ -216,14 +216,14 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 	tests := []struct {
 		name      string
 		stream    syncv1grpc.FlagSyncService_SyncFlagsClient
-		setup     func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient)
+		setup     func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse)
 		want      sync.Type
 		wantError error
 		ready     bool
 	}{
 		{
 			name: "State All maps to Sync All",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -243,7 +243,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Add maps to Sync Add",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -263,7 +263,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Update maps to Sync Update",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -283,7 +283,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Delete maps to Sync Delete",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -303,7 +303,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "Error during flag sync",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceSyncFlagsClient) {
+			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				clientResponse.EXPECT().Recv().Return(
 					nil,
@@ -321,7 +321,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			syncChan := make(chan sync.DataSync, 1)
 
 			mockClient := grpcmock.NewMockFlagSyncServiceClient(ctrl)
-			mockClientResponse := grpcmock.NewMockFlagSyncServiceSyncFlagsClient(ctrl)
+			mockClientResponse := grpcmock.NewMockFlagSyncServiceClientResponse(ctrl)
 			test.setup(t, mockClient, mockClientResponse)
 
 			waitChan := make(chan struct{})
