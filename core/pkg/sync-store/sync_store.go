@@ -151,8 +151,6 @@ func (s *SyncStore) RegisterSubscription(
 	}()
 }
 
-// function has 10+ lines of comments + logs that should not be removed to pass this linting step
-// nolint: funlen
 func (s *SyncStore) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
@@ -177,11 +175,7 @@ func (s *SyncStore) watchResource(target string) {
 			case <-ctx.Done():
 				return
 			case d := <-sh.dataSync:
-				sh.mu.RLock()
-				for _, ds := range sh.subs {
-					ds.dataSync <- d
-				}
-				sh.mu.RUnlock()
+				sh.writeData(s.logger, d)
 			}
 		}
 	}()
@@ -189,22 +183,14 @@ func (s *SyncStore) watchResource(target string) {
 	sync, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		sh.mu.RLock()
-		for _, ec := range sh.subs {
-			ec.errChan <- err
-		}
-		sh.mu.RUnlock()
+		sh.writeError(s.logger, err)
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = sync.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		sh.mu.RLock()
-		for _, ec := range sh.subs {
-			ec.errChan <- err
-		}
-		sh.mu.RUnlock()
+		sh.writeError(s.logger, err)
 		return
 	}
 	// sync ref is used to trigger a resync on a single channel when a new subscription is started
@@ -213,12 +199,34 @@ func (s *SyncStore) watchResource(target string) {
 	err = sync.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		sh.mu.RLock()
-		for _, ec := range sh.subs {
-			ec.errChan <- err
-		}
-		sh.mu.RUnlock()
+		sh.writeError(s.logger, err)
 	}
+}
+
+func (h *syncHandler) writeError(logger *logger.Logger, err error) {
+	h.mu.RLock()
+	for k, ec := range h.subs {
+		select {
+		case ec.errChan <- err:
+			continue
+		default:
+			logger.Error(fmt.Sprintf("unable to write error to channel for key %p", k))
+		}
+	}
+	h.mu.RUnlock()
+}
+
+func (h *syncHandler) writeData(logger *logger.Logger, data isync.DataSync) {
+	h.mu.RLock()
+	for k, ds := range h.subs {
+		select {
+		case ds.dataSync <- data:
+			continue
+		default:
+			logger.Error(fmt.Sprintf("unable to write data to channel for key %p", k))
+		}
+	}
+	h.mu.RUnlock()
 }
 
 func (s *SyncStore) cleanup() {

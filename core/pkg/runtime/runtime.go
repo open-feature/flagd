@@ -37,6 +37,7 @@ type Config struct {
 	CORS          []string
 }
 
+// nolint: funlen
 func (r *Runtime) Start() error {
 	if r.Service == nil {
 		return errors.New("no service set")
