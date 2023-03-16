@@ -166,9 +166,9 @@ func (s *SyncStore) watchResource(target string) {
 	sh.cancelFunc = cancel
 	go func() {
 		<-ctx.Done()
-		sh.mu.Lock()
+		s.mu.Lock()
 		delete(s.syncHandlers, target)
-		sh.mu.Unlock()
+		s.mu.Unlock()
 	}()
 	// broadcast any data passed through the core channel to all subscribing channels
 	go func() {

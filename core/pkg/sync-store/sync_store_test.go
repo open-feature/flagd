@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -76,6 +77,7 @@ func newSyncHandler() (*syncHandler, interface{}) {
 				dataSync: dataSyncChan,
 			},
 		},
+		mu: &sync.RWMutex{},
 	}, key
 }
 
