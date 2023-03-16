@@ -70,12 +70,12 @@ jobs:
       VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
     steps:
       - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
+        uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
         with:
           ref: ${{ env.TAG }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
+        uses: docker/login-action@219c305e1ce92a755f3aa4ba17387c95df31e987
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -83,7 +83,7 @@ jobs:
   
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@2bdac1078b04c6152f215bdcb4fd32591b9ba7c6
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
   
@@ -161,7 +161,7 @@ jobs:
       VERSION_NO_PREFIX: ${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
     steps:
       - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
+        uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
         with:
           ref: ${{ env.TAG }}
       - name: Set up Go
