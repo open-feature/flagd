@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/mock/gomock"
+	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/credentials"
 	"io"
 	"log"
 	"net"
@@ -24,6 +26,78 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+func Test_Init(t *testing.T) {
+	tests := []struct {
+		name                string
+		target              string
+		err                 error
+		returnedCredentials credentials.TransportCredentials
+		shouldError         bool
+	}{
+		{
+			name:                "happy path",
+			target:              "grpc://localBufCon",
+			err:                 nil,
+			returnedCredentials: insecure.NewCredentials(),
+			shouldError:         false,
+		},
+		{
+			name:                "invalid grpc source",
+			target:              "localBufCon",
+			err:                 nil,
+			returnedCredentials: insecure.NewCredentials(),
+			shouldError:         true,
+		},
+		{
+			name:                "nil credentials",
+			target:              "grpc://localBufCon",
+			err:                 nil,
+			returnedCredentials: nil,
+			shouldError:         true,
+		},
+		{
+			name:                "could not create transport credentials",
+			target:              "grpc://localBufCon",
+			err:                 errors.New("could not create transport credentials"),
+			returnedCredentials: nil,
+			shouldError:         true,
+		},
+	}
+
+	for _, test := range tests {
+		bufCon := bufconn.Listen(5)
+
+		bufServer := bufferedServer{
+			listener: bufCon,
+		}
+
+		// start server
+		go serve(&bufServer)
+
+		mockCtrl := gomock.NewController(t)
+		mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
+
+		mockCredentialBulder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(test.returnedCredentials, test.err)
+
+		grpcSync := Sync{
+			URI:               test.target,
+			ProviderID:        "",
+			Logger:            logger.NewLogger(nil, false),
+			CredentialBuilder: mockCredentialBulder,
+		}
+
+		err := grpcSync.Init(context.Background())
+
+		if test.shouldError {
+			require.NotNil(t, err)
+			require.Nil(t, grpcSync.client)
+		} else {
+			require.Nil(t, err)
+			require.NotNil(t, grpcSync.client)
+		}
+	}
+}
 
 func Test_ReSyncTests(t *testing.T) {
 	const target = "localBufCon"
