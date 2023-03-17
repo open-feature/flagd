@@ -38,6 +38,15 @@ const (
 	tlsVersion = tls.VersionTLS12
 )
 
+// type aliases for interfaces required by this component - needed for mock generation with gomock
+
+type FlagSyncServiceClient interface {
+	syncv1grpc.FlagSyncServiceClient
+}
+type FlagSyncServiceClientResponse interface {
+	syncv1grpc.FlagSyncService_SyncFlagsClient
+}
+
 var once msync.Once
 
 type Sync struct {
@@ -46,7 +55,7 @@ type Sync struct {
 	CertPath   string
 	Logger     *logger.Logger
 
-	client syncv1grpc.FlagSyncServiceClient
+	client FlagSyncServiceClient
 	ready  bool
 }
 
