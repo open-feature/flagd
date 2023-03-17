@@ -19,7 +19,7 @@ func (l *handler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1
 	*connect.Response[syncv1.FetchAllFlagsResponse],
 	error,
 ) {
-	data, err := l.syncStore.FetchAllFlags(ctx, nil, req.Msg.GetSelector())
+	data, err := l.syncStore.FetchAllFlags(ctx, req, req.Msg.GetSelector())
 	if err != nil {
 		return connect.NewResponse(&syncv1.FetchAllFlagsResponse{}), err
 	}
