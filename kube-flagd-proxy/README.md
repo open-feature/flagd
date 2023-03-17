@@ -1,6 +1,6 @@
 # Kube Flagd Proxy 
 
-The kube flagd proxy acts as a pub sub for deployed flagd sidecar for containers to subscribe to change events in FeatureFlagConfiguration CRs.
+The kube flagd proxy acts as a pub sub for deployed flagd sidecar containers to subscribe to change events in FeatureFlagConfiguration CRs.
 
 On request, the flagd-kube-proxy will spawn a goroutine to watch the CR using the `core` package kubernetes sync. Each further request for the same resource will add a new new stream to the broadcast list. Once all streams have been closed, and there are no longer any listeners for a given resource, the sync will be closed.
 
