@@ -1,0 +1,19 @@
+name: Markdown checks
+
+on:
+  push:
+    paths:
+      - '**.md'
+  pull_request:
+    paths:
+      - '**.md'
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
+
+      - name: Lint Markdown files
+        run: make markdownlint

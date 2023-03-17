@@ -1,10 +1,12 @@
 # Reusable targeting rules
 
-At the same level as the `flags` key one can define an `$evaluators` object. Each object defined under `$evaluators` is
-a reusable targeting rule. In any targeting rule one can reference a defined reusable targeting rule, foo, like so:
+At the same level as the `flags` key one can define an `$evaluators` object.
+Each object defined under `$evaluators` is
+a reusable targeting rule.
+In any targeting rule one can reference a defined reusable targeting rule, foo, like so:
 `"$ref": "foo"`
 
-<u>Example</u>
+## Example
 
 Flags/evaluators defined as such:
 

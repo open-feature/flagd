@@ -1,0 +1,18 @@
+config:
+  line-length:
+    line_length: 500
+    tables: false
+    code_blocks: false
+  no-inline-html:
+    allowed_elements:
+      - details
+      - summary
+      - img
+  github-admonition: true
+  max-one-sentence-per-line: true
+
+ignores:
+  - "**/CHANGELOG.md"
+  - "docs/specification"
+  - "node_modules"
+  - "tmp"

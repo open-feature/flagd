@@ -21,9 +21,11 @@
     docker run -p 8013:8013 -v $(pwd)/:/etc/flagd/ -it --pull=always ghcr.io/open-feature/flagd:latest start --uri file:./etc/flagd/example_flags.flagd.json
     ```
 
-1. Changes made in `example_flags.flagd.json` will immediately take affect. Go ahead, give a shot!
+1. Changes made in `example_flags.flagd.json` will immediately take affect.
+  Go ahead, give a shot!
 
-Flagd is now ready to perform flag evaluations over either HTTP or gRPC. In this example, we'll utilize HTTP via cURL.
+Flagd is now ready to perform flag evaluations over either HTTP or gRPC.
+In this example, we'll utilize HTTP via cURL.
 
 ### Resolve a boolean value
 
@@ -39,8 +41,6 @@ Result:
 {"value":true,"reason":"DEFAULT","variant":"on"}
 ```
 
-<br />
-
 ### Resolve a string value
 
 Command:
@@ -55,8 +55,6 @@ Result:
 {"value":"val1","reason":"DEFAULT","variant":"key1"}
 ```
 
-<br />
-
 ### Resolve a integer value
 
 Command:
@@ -70,9 +68,8 @@ Result:
 ```sh
 {"value":"1","reason":"DEFAULT","variant":"one"}
 ```
+
 [Why is this int response a string](https://github.com/open-feature/flagd/blob/main/docs/help/http_int_response.md)
-<br />
-<br />
 
 ### Resolve a float value
 
@@ -88,8 +85,6 @@ Result:
 {"value":1.23,"reason":"DEFAULT","variant":"one"}
 ```
 
-<br />
-
 ### Resolve an object value
 
 Command:
@@ -103,8 +98,6 @@ Result:
 ```sh
 {"value":{"key":"val"},"reason":"DEFAULT","variant":"object1"}
 ```
-
-<br />
 
 ### Resolve a boolean value with evaluation context
 
@@ -120,11 +113,10 @@ Result:
 {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 ```
 
-<br />
-
 ### Return value type mismatch error
 
-A type mismatch error is returned when the resolved value of a flag does not match the type requested. In the example below, the resolved value of `myBoolFlag` is a `boolean` but the request expects a `string` to be returned.
+A type mismatch error is returned when the resolved value of a flag does not match the type requested.
+In the example below, the resolved value of `myBoolFlag` is a `boolean` but the request expects a `string` to be returned.
 
 Command:
 
@@ -137,8 +129,6 @@ Result:
 ```sh
 {"code":"invalid_argument","message":"TYPE_MISMATCH"}
 ```
-
-<br />
 
 ### Return flag not found error
 

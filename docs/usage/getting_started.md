@@ -2,7 +2,8 @@
 
 ## Installation
 
-There are many ways to get started with flagd. Choose the method that best serves your requirements to get started.
+There are many ways to get started with flagd.
+Choose the method that best serves your requirements to get started.
 
 ### Docker
 
@@ -14,20 +15,22 @@ There are many ways to get started with flagd. Choose the method that best serve
 
 ### Go binary
 
-1. Install Go 1.18 or above
-1. run `go install github.com/open-feature/flagd@latest`
+1. Install Go 1.19 or above
+1. run `go install github.com/open-feature/flagd/flagd@latest`
 
 ### Release binary
 
-1. Download pre-built binaries from https://github.com/open-feature/flagd/releases
+1. Download pre-built binaries from <https://github.com/open-feature/flagd/releases>
 
 ### Systemd service
 
 Documentation for installing flagd as a systemd service can be found [here](../other_resources/systemd_service.md)
 
 ### Open Feature Operator
-The OpenFeature Operator is a Kubernetes native operator that allows you to expose feature flags to your applications. It injects a flagD sidecar into your pod and allows you to poll the flagD server for feature flags in a variety of ways.
-To get started with the operator, view the project here: https://github.com/open-feature/open-feature-operator
+
+The OpenFeature Operator is a Kubernetes native operator that allows you to expose feature flags to your applications.
+It injects a flagD sidecar into your pod and allows you to poll the flagD server for feature flags in a variety of ways.
+To get started with the operator, view the project here: <https://github.com/open-feature/open-feature-operator>
 
 ## Next Steps
 

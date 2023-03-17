@@ -61,3 +61,18 @@ mockgen: install-mockgen
 	cd core; mockgen -source=pkg/eval/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go
+
+# Markdown lint configuration
+#
+# - .markdownlintignore holds the configuration for files to be ignored
+# - .markdownlint.yaml contains the rules for markdownfiles
+MDL_DOCKER_VERSION := next
+ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+MDL_CMD := docker run -v $(ROOT_DIR):/workdir --rm 
+
+.PHONY: markdownlint markdownlint-fix
+markdownlint:
+	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
+
+markdownlint-fix:
+	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
