@@ -1,15 +1,14 @@
-# Kube Flagd Proxy 
+# Kube Flagd Proxy  
 
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
-
 The kube flagd proxy acts as a pub sub for deployed flagd sidecar containers to subscribe to change events in FeatureFlagConfiguration CRs.
-
+<!-- markdownlint-disable MD033 -->
 <p align="center">
     <img src="../images/kube-flagd-proxy.png" width="650">
 </p>
-
-On request, the flagd-kube-proxy will spawn a goroutine to watch the CR using the `core` package kubernetes sync. Each further request for the same resource will add a new new stream to the broadcast list. Once all streams have been closed, and there are no longer any listeners for a given resource, the sync will be closed.
+<!-- markdownlint-enable MD033 -->
+On request, the flagd-kube-proxy will spawn a goroutine to watch the CR using the `core` package kubernetes sync. Each further request for the same resource will add a new new stream to the broadcast list. Once all streams have been closed, and there are no longer any listeners for a given resource, the sync will be closed.  
 
 The kube-flagd-proxy API follows the flagd grpc spec, found in the [buf schema registry](https://buf.build/open-feature/flagd), as such the existing grpc sync can be used to subscribe to the the CR changes.
 
