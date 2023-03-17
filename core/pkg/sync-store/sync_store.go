@@ -227,7 +227,6 @@ func (h *syncHandler) writeData(logger *logger.Logger, data isync.DataSync) {
 			logger.Error(fmt.Sprintf("unable to write data to channel for key %p", k))
 		}
 	}
-	h.mu.RUnlock()
 }
 
 func (s *SyncStore) cleanup() {
