@@ -218,6 +218,7 @@ func (h *syncHandler) writeError(logger *logger.Logger, err error) {
 
 func (h *syncHandler) writeData(logger *logger.Logger, data isync.DataSync) {
 	h.mu.RLock()
+	defer h.mu.RUnlock()
 	for k, ds := range h.subs {
 		select {
 		case ds.dataSync <- data:
