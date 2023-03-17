@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Workspace init
@@ -55,7 +55,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make workspace-init
@@ -67,7 +67,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make workspace-init
@@ -85,7 +85,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: make workspace-init
@@ -103,7 +103,7 @@ jobs:
           submodules: recursive
 
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -148,7 +148,7 @@ jobs:
           submodules: recursive
 
       - name: Setup go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
         with:
           go-version: ${{ env.GO_VERSION }}
 
