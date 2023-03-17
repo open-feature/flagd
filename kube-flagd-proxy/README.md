@@ -21,7 +21,7 @@ kubectl create namespace kube-proxy
 kubectl apply -f ./config/deployments/kube-flagd-proxy
 ```
 
-Once the kube-proxy has been deployed any flagd instance subscribe to flag changes using the grpc sync, providing the target resource uri using the `providerID` configuration field.
+Once the kube-proxy has been deployed any flagd instance subscribe to flag changes using the grpc sync, providing the target resource uri using the `selector` configuration field.
 
 ```yaml
 apiVersion: v1
@@ -37,7 +37,7 @@ spec:
     args:
     - start
     - --sources
-    - '[{"uri":"grpc://kube-proxy-svc.kube-proxy.svc.cluster.local:8013","provider":"grpc","providerID":"core.openfeature.dev/NAMESPACE/NAME"}]'
+    - '[{"uri":"grpc://kube-proxy-svc.kube-proxy.svc.cluster.local:8013","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
     - --debug
 ---
 apiVersion: core.openfeature.dev/v1alpha2
