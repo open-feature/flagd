@@ -19,7 +19,7 @@ func (l *handler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1
 	*connect.Response[syncv1.FetchAllFlagsResponse],
 	error,
 ) {
-	data, err := l.syncStore.FetchAllFlags(ctx, nil, req.Msg.GetProviderId())
+	data, err := l.syncStore.FetchAllFlags(ctx, nil, req.Msg.GetSelector())
 	if err != nil {
 		return connect.NewResponse(&syncv1.FetchAllFlagsResponse{}), err
 	}
@@ -36,7 +36,7 @@ func (l *handler) SyncFlags(
 ) error {
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
-	l.syncStore.RegisterSubscription(ctx, req.Msg.GetProviderId(), req, dataSync, errChan)
+	l.syncStore.RegisterSubscription(ctx, req.Msg.GetSelector(), req, dataSync, errChan)
 	for {
 		select {
 		case e := <-errChan:

@@ -205,6 +205,7 @@ func (s *SyncStore) watchResource(target string) {
 
 func (h *syncHandler) writeError(logger *logger.Logger, err error) {
 	h.mu.RLock()
+	defer h.mu.RUnlock()
 	for k, ec := range h.subs {
 		select {
 		case ec.errChan <- err:
@@ -213,7 +214,6 @@ func (h *syncHandler) writeError(logger *logger.Logger, err error) {
 			logger.Error(fmt.Sprintf("unable to write error to channel for key %p", k))
 		}
 	}
-	h.mu.RUnlock()
 }
 
 func (h *syncHandler) writeData(logger *logger.Logger, data isync.DataSync) {
