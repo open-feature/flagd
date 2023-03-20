@@ -46,6 +46,7 @@ type storedChannels struct {
 	dataSync chan isync.DataSync
 }
 
+// NewSyncStore returns a new sync store
 func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
 	ss := SyncStore{
 		ctx:          ctx,
