@@ -11,7 +11,7 @@
       "versioning": "default",
       "extra-files": [
         "snap/snapcraft.yaml",
-        "kube-flagd-proxy/README.md"
+        "../kube-flagd-proxy/README.md"
       ]
     },
     "kube-flagd-proxy": {
@@ -21,7 +21,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "config/deployments/deployment.yaml"
+        "../config/deployments/deployment.yaml"
       ]
     },
     "core": {
