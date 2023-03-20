@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRoleBinding","metadata":{"annotations":{},"name":"open-feature-operator-flagd-kubernetes-sync"},"roleRef":{"apiGroup":"","kind":"ClusterRole","name":"open-feature-operator-flagd-kubernetes-sync"},"subjects":[{"apiGroup":"","kind":"ServiceAccount","name":"open-feature-operator-controller-manager","namespace":"system"}]}
+  name: open-feature-operator-flagd-kubernetes-sync
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: open-feature-operator-flagd-kubernetes-sync
+subjects:
+- kind: ServiceAccount
+  name: open-feature-operator-controller-manager
+  namespace: system
+- kind: ServiceAccount
+  name: default
+  namespace: kube-proxy

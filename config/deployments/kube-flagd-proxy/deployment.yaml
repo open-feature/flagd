@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  namespace: kube-proxy
+  labels:
+    app: kube-proxy
+  name: kube-proxy
+  annotations:
+    openfeature.dev/allowkubernetessync: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-proxy
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/name: kube-proxy 
+        app: kube-proxy
+      annotations:
+          openfeature.dev/allowkubernetessync: "true"
+    spec:
+      containers:
+      - image: ghcr.io/open-feature/kube-flagd-proxy:v0.1.1 # x-release-please-version
+        name: kube-flagd-proxy
+        ports:
+        - containerPort: 8015
+        args:
+          - start

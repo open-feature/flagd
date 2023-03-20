@@ -16,7 +16,8 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/eval/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	service "github.com/open-feature/flagd/core/pkg/service"
+	iservice "github.com/open-feature/flagd/core/pkg/service"
+	service "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -75,7 +76,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				},
 				Logger: logger.NewLogger(nil, false),
 			}
-			serveConf := service.Configuration{
+			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
 				},

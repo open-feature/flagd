@@ -18,7 +18,7 @@ import (
 
 type Runtime struct {
 	config   Config
-	Service  service.IService
+	Service  service.IFlagEvaluationService
 	SyncImpl []sync.ISync
 
 	mu        msync.Mutex
@@ -27,8 +27,8 @@ type Runtime struct {
 }
 
 type Config struct {
-	ServicePort       int32
-	MetricsPort       int32
+	ServicePort       uint16
+	MetricsPort       uint16
 	ServiceSocketPath string
 	ServiceCertPath   string
 	ServiceKeyPath    string
@@ -37,6 +37,7 @@ type Config struct {
 	CORS          []string
 }
 
+// nolint: funlen
 func (r *Runtime) Start() error {
 	if r.Service == nil {
 		return errors.New("no service set")
@@ -90,6 +91,8 @@ func (r *Runtime) Start() error {
 	g.Go(func() error {
 		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
 			ReadinessProbe: r.isReady,
+			Port:           r.config.ServicePort,
+			MetricsPort:    r.config.MetricsPort,
 		})
 	})
 	<-gCtx.Done()

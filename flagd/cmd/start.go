@@ -142,10 +142,10 @@ var startCmd = &cobra.Command{
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricsPort:       viper.GetInt32(metricsPortFlagName),
+			MetricsPort:       viper.GetUint16(metricsPortFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       viper.GetInt32(portFlagName),
+			ServicePort:       viper.GetUint16(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			SyncProviders:     syncProviders,
 		})
