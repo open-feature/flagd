@@ -48,7 +48,7 @@ var once msync.Once
 type Sync struct {
 	URI               string
 	ProviderID        string
-	Selector   string
+	Selector          string
 	CertPath          string
 	Logger            *logger.Logger
 	CredentialBuilder credentials2.Builder
