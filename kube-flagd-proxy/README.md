@@ -12,7 +12,7 @@ On request, the flagd-kube-proxy will spawn a goroutine to watch the CR using th
 
 The kube-flagd-proxy API follows the flagd grpc spec, found in the [buf schema registry](https://buf.build/open-feature/flagd), as such the existing grpc sync can be used to subscribe to the the CR changes.
 
-## Deplyoment
+## Deployment
 
 The proxy can be deployed to any namespace, provided that the associated service account has been added to the `flagd-kubernetes-sync` cluster role binding. A sample deployment can be found in `/config/deployments/kube-flagd-proxy` requiring the namespace `kube-proxy` to be deployed.
 
