@@ -52,6 +52,41 @@ func TestSyncProviderArgParse(t *testing.T) {
 				},
 			},
 		},
+		"multiple-syncs-with-options": {
+			in: `[
+					{"uri":"file:config/samples/example_flags.json","provider":"file"},
+					{"uri":"https://test.com","provider":"http","bearerToken":":)"},
+					{"uri":"host:port","provider":"grpc"},
+					{"uri":"host:port","provider":"grpcs","providerID":"appA","selector":"source=database"},
+					{"uri":"core.openfeature.dev/namespace/my-crd","provider":"kubernetes"}
+				]`,
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:      "config/samples/example_flags.json",
+					Provider: "file",
+				},
+				{
+					URI:         "https://test.com",
+					Provider:    "http",
+					BearerToken: ":)",
+				},
+				{
+					URI:      "host:port",
+					Provider: "grpc",
+				},
+				{
+					URI:        "host:port",
+					Provider:   "grpcs",
+					ProviderID: "appA",
+					Selector:   "source=database",
+				},
+				{
+					URI:      "namespace/my-crd",
+					Provider: "kubernetes",
+				},
+			},
+		},
 		"empty": {
 			in:        `[]`,
 			expectErr: false,

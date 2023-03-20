@@ -48,6 +48,7 @@ var once msync.Once
 type Sync struct {
 	URI               string
 	ProviderID        string
+	Selector   string
 	CertPath          string
 	Logger            *logger.Logger
 	CredentialBuilder credentials2.Builder
@@ -101,7 +102,7 @@ func (g *Sync) IsReady() bool {
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
-	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		return err
 	}
@@ -160,7 +161,7 @@ func (g *Sync) connectWithRetry(
 
 		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.URI))
 
-		syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID})
+		syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 		if err != nil {
 			g.Logger.Debug(fmt.Sprintf("error opening service client: %s", err.Error()))
 			continue

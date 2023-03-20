@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"strings"
+
 	"github.com/spf13/cobra/doc"
 )
 
@@ -16,4 +17,3 @@ func GenerateDoc(path string) error {
 	}
 	return doc.GenMarkdownTreeCustom(rootCmd, path, filePrepender, linkHandler)
 }
-

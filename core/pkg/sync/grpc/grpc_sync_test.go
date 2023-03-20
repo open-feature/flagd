@@ -14,6 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	"golang.org/x/sync/errgroup"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
