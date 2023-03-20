@@ -58,6 +58,8 @@ func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
 	return &ss
 }
 
+// FetchAllFlags returns a DataSync containing the full set of flag configurations from the SyncStore.
+// This will either occur via triggering a resync, or through setting up a new subscription to the resource
 func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
 	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
@@ -90,6 +92,8 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 	}
 }
 
+// RegisterSubscription starts a new subscription to the target resource.
+// Once the subscription is set an ALL sync event will be recieved via the DataSync chan.
 func (s *SyncStore) RegisterSubscription(
 	ctx context.Context,
 	target string,
@@ -255,6 +259,7 @@ type SyncBuilderInterface interface {
 
 type SyncBuilder struct{}
 
+// SyncFromURI builds an ISync interface from the input uri string
 func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error) {
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
