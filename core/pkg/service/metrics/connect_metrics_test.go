@@ -1,4 +1,4 @@
-package service
+package metrics
 
 import (
 	"context"
@@ -87,7 +87,7 @@ func TestMiddleware(t *testing.T) {
 	const svcName = "mySvc"
 	exp := metric.NewManualReader()
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
-	m := New(middlewareConfig{
+	m := New(MiddlewareConfig{
 		MetricReader: exp,
 		Service:      svcName,
 		Logger:       logger.NewLogger(l, true),
@@ -122,7 +122,7 @@ func TestNew_AutowireOTel(t *testing.T) {
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
 	log := logger.NewLogger(l, true)
 	exp := metric.NewManualReader()
-	mdw := New(middlewareConfig{
+	mdw := New(MiddlewareConfig{
 		MetricReader:       exp,
 		Logger:             log,
 		Service:            "mySvc",

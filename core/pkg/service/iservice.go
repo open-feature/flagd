@@ -23,12 +23,23 @@ type ReadinessProbe func() bool
 
 type Configuration struct {
 	ReadinessProbe ReadinessProbe
+	Port           uint16
+	MetricsPort    uint16
 }
 
 /*
-IService implementations define handlers for a particular transport, which call the IEvaluator implementation.
+IFlagEvaluationService implementations define handlers for a particular transport,
+which call the IEvaluator implementation.
 */
-type IService interface {
+type IFlagEvaluationService interface {
 	Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error
 	Notify(n Notification)
+}
+
+/*
+IFlagEvaluationService implementations define handlers for a particular transport,
+which call the IEvaluator implementation.
+*/
+type IKubeSyncService interface {
+	Serve(ctx context.Context, svcConf Configuration) error
 }

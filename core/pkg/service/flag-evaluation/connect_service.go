@@ -16,6 +16,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	iservice "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/service/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/xid"
@@ -36,8 +38,6 @@ type ConnectService struct {
 	server                      http.Server
 }
 type ConnectServiceConfiguration struct {
-	Port             int32
-	MetricsPort      int32
 	ServerCertPath   string
 	ServerKeyPath    string
 	ServerSocketPath string
@@ -46,13 +46,13 @@ type ConnectServiceConfiguration struct {
 
 type eventingConfiguration struct {
 	mu   *sync.RWMutex
-	subs map[interface{}]chan Notification
+	subs map[interface{}]chan iservice.Notification
 }
 
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error {
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf iservice.Configuration) error {
 	s.Eval = eval
 	s.eventingConfiguration = &eventingConfiguration{
-		subs: make(map[interface{}]chan Notification),
+		subs: make(map[interface{}]chan iservice.Notification),
 		mu:   &sync.RWMutex{},
 	}
 	lis, err := s.setupServer(svcConf)
@@ -88,14 +88,14 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	}
 }
 
-func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error) {
+func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
 	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
 		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
 	} else {
-		address := fmt.Sprintf(":%d", s.ConnectServiceConfiguration.Port)
+		address := fmt.Sprintf(":%d", svcConf.Port)
 		lis, err = net.Listen("tcp", address)
 	}
 	if err != nil {
@@ -108,12 +108,12 @@ func (s *ConnectService) setupServer(svcConf Configuration) (net.Listener, error
 		return nil, err
 	}
 
-	mdlw := New(middlewareConfig{
+	mdlw := metrics.New(metrics.MiddlewareConfig{
 		Service:      "openfeature/flagd",
 		MetricReader: exporter,
 		Logger:       s.Logger,
 	})
-	h := Handler("", mdlw, mux)
+	h := metrics.Handler("", mdlw, mux)
 
 	go bindMetrics(s, svcConf)
 
@@ -192,7 +192,7 @@ func (s *ConnectService) EventStream(
 	req *connect.Request[schemaV1.EventStreamRequest],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
-	requestNotificationChan := make(chan Notification, 1)
+	requestNotificationChan := make(chan iservice.Notification, 1)
 	s.eventingConfiguration.mu.Lock()
 	s.eventingConfiguration.subs[req] = requestNotificationChan
 	s.eventingConfiguration.mu.Unlock()
@@ -201,14 +201,14 @@ func (s *ConnectService) EventStream(
 		delete(s.eventingConfiguration.subs, req)
 		s.eventingConfiguration.mu.Unlock()
 	}()
-	requestNotificationChan <- Notification{
-		Type: ProviderReady,
+	requestNotificationChan <- iservice.Notification{
+		Type: iservice.ProviderReady,
 	}
 	for {
 		select {
 		case <-time.After(20 * time.Second):
 			err := stream.Send(&schemaV1.EventStreamResponse{
-				Type: string(KeepAlive),
+				Type: string(iservice.KeepAlive),
 			})
 			if err != nil {
 				s.Logger.Error(err.Error())
@@ -231,7 +231,7 @@ func (s *ConnectService) EventStream(
 	}
 }
 
-func (s *ConnectService) Notify(n Notification) {
+func (s *ConnectService) Notify(n iservice.Notification) {
 	s.eventingConfiguration.mu.RLock()
 	defer s.eventingConfiguration.mu.RUnlock()
 	for _, send := range s.eventingConfiguration.subs {
@@ -367,10 +367,10 @@ func (s *ConnectService) newCORS() *cors.Cors {
 	})
 }
 
-func bindMetrics(s *ConnectService, svcConf Configuration) {
-	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", s.ConnectServiceConfiguration.MetricsPort))
+func bindMetrics(s *ConnectService, svcConf iservice.Configuration) {
+	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", s.ConnectServiceConfiguration.MetricsPort),
+		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
