@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.5](https://github.com/open-feature/flagd/compare/flagd/v0.4.4...flagd/v0.4.5) (2023-03-20)
+
+
+### 📚 Documentation
+
+* improve markdown quality ([#498](https://github.com/open-feature/flagd/issues/498)) ([c77fa37](https://github.com/open-feature/flagd/commit/c77fa37979899f95ba51f69eeee21d96b6ab239c))
+
+
+### ✨ New Features
+
+* grpc connection options to flagd configuration options ([#532](https://github.com/open-feature/flagd/issues/532)) ([aa74951](https://github.com/open-feature/flagd/commit/aa74951f43b662ff2df53e68d347fc10e6d23bb8))
+* Introduce flagd kube proxy ([#495](https://github.com/open-feature/flagd/issues/495)) ([440864c](https://github.com/open-feature/flagd/commit/440864ce87174618321c9d5146221490d8f07b24))
+
 ## [0.4.4](https://github.com/open-feature/flagd/compare/flagd-v0.4.3...flagd/v0.4.4) (2023-03-10)
 
 
