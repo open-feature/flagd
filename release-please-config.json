@@ -10,8 +10,7 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
       "extra-files": [
-        "snap/snapcraft.yaml",
-        "../kube-flagd-proxy/README.md"
+        "snap/snapcraft.yaml"
       ]
     },
     "kube-flagd-proxy": {
@@ -19,10 +18,7 @@
       "package-name": "kube-flagd-proxy",
       "versioning": "default",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        "../config/deployments/kube-flagd-proxy/deployment.yaml"
-      ]
+      "bump-patch-for-minor-pre-major": true
     },
     "core": {
       "release-type": "go",
