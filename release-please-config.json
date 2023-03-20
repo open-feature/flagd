@@ -19,7 +19,10 @@
       "package-name": "kube-flagd-proxy",
       "versioning": "default",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        "config/deployments/deployment.yaml"
+      ]
     },
     "core": {
       "release-type": "go",
