@@ -40,4 +40,4 @@ jobs:
           path: './dev/bench'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@7fec4b245d2292f2713ef02d5488349a5da05175 # v1
+        uses: actions/deploy-pages@73e62e651178eeba977de2dc9f4c7645b3d01015 # v2

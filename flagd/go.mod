@@ -15,8 +15,8 @@ require (
 
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230222100723-491ee098dd92.1 // indirect
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230222100723-491ee098dd92.1 // indirect
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.0-20230222100723-491ee098dd92.1 // indirect
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230317150644-afd1cc2ef580.1 // indirect
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230317150644-afd1cc2ef580.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bufbuild/connect-go v1.5.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -73,6 +73,7 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20230221151758-ace64dc21148 // indirect
 	google.golang.org/protobuf v1.29.0 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

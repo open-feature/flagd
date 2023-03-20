@@ -45,12 +45,14 @@ The flag takes a string argument, which should be a JSON representation of an ar
 Alternatively, these configurations should be passed to
 flagd via config file, specified using the `--config` flag.
 
-| Field       | Type                                                       | Note                                               |
-|-------------|------------------------------------------------------------|----------------------------------------------------|
-| uri         | required `string`                                          |                                                    |
-| provider    | required `string` (`file`, `kubernetes`, `http` or `grpc`) |                                                    |
-| bearerToken | optional `string`                                          | Used for http sync                                 |
-| certPath    | optional `string`                                          | Used for grpcs sync when TLS certificate is needed |
+| Field       | Type                                                       | Note                                                                                                                              |
+|-------------|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| uri         | required `string`                                          |                                                                                                                                   |
+| provider    | required `string` (`file`, `kubernetes`, `http` or `grpc`) |                                                                                                                                   |
+| bearerToken | optional `string`                                          | Used for http sync                                                                                                                |
+| providerID  | optional `string`                                          | Value binds to grpc connection's providerID field. GRPC server implementations may use this to identify connecting flagd instance |
+| selector    | optional `string`                                          | Value binds to grpc connection's selector field. GRPC server implementations may use this to filter flag configurations           |
+| certPath    | optional `string`                                          | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection          |
 
 The `uri` field values do not need to follow the [URI patterns](#uri-patterns), the provider type is instead derived from the provider field.
 If the prefix is supplied, it will be removed on startup without error.
@@ -77,4 +79,9 @@ sources:
 - uri: grpcs://my-flag-source:8080
   provider: grpc
   certPath: /certs/ca.cert
+- uri: grpcs://my-flag-source:8080
+  provider: grpc
+  certPath: /certs/ca.cert
+  providerID: flagd-weatherapp-sidecar
+  selector: 'source=database,app=weatherapp'
 ```
