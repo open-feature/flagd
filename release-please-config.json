@@ -21,7 +21,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "../config/deployments/deployment.yaml"
+        "../config/deployments/kube-flagd-proxy/deployment.yaml"
       ]
     },
     "core": {
