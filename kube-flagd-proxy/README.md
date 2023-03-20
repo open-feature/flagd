@@ -22,7 +22,7 @@ kubectl apply -f ./config/deployments/kube-flagd-proxy
 ```
 
 Once the kube-proxy has been deployed any flagd instance subscribe to flag changes using the grpc sync, providing the target resource uri using the `selector` configuration field.
-
+<!-- x-release-please-start-version -->
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -31,7 +31,7 @@ metadata:
 spec:
   containers:
   - name: flagd
-    image: ghcr.io/open-feature/flagd:v0.4.5
+    image: ghcr.io/open-feature/flagd:v0.4.4
     ports:
     - containerPort: 8013
     args:
@@ -56,5 +56,5 @@ spec:
           yellow: yellow
         defaultVariant: yellow
 ```
-
+<!-- x-release-please-end -->
 Once deployed, the client flagd instance will be receiving almost instant flag configuration change events.
