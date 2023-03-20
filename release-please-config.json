@@ -10,7 +10,8 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
       "extra-files": [
-        "snap/snapcraft.yaml"
+        "snap/snapcraft.yaml",
+        "kube-flagd-proxy/README.md"
       ]
     },
     "kube-flagd-proxy": {

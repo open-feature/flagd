@@ -5,7 +5,7 @@ on:
 
 env:
   # Stringified list of items that should be published
-  PUBLISHABLE_ITEMS: '["flagd"]'
+  PUBLISHABLE_ITEMS: '["flagd","kube-flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
   DEFAULT_GO_VERSION: 1.19
