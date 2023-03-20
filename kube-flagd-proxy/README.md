@@ -31,7 +31,7 @@ metadata:
 spec:
   containers:
   - name: flagd
-    image: ghcr.io/james-milligan/flagd:v0.3.42 todo update before merge
+    image: ghcr.io/open-feature/flagd:v0.4.5
     ports:
     - containerPort: 8013
     args:
