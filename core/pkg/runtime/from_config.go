@@ -127,7 +127,9 @@ func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		CertPath: config.CertPath,
+		CertPath:   config.CertPath,
+		ProviderID: config.ProviderID,
+		Selector:   config.Selector,
 	}
 }
 
