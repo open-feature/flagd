@@ -37,7 +37,7 @@ spec:
     args:
     - start
     - --sources
-    - '[{"uri":"grpc://kube-proxy-svc.kube-proxy.svc.cluster.local:8013","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
+    - '[{"uri":"grpc://kube-proxy-svc.kube-proxy.svc.cluster.local:8015","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
     - --debug
 ---
 apiVersion: core.openfeature.dev/v1alpha2

@@ -7,5 +7,5 @@ spec:
   selector:
     app.kubernetes.io/name: kube-proxy
   ports:
-    - port: 8013
-      targetPort: 8013
+    - port: 8015
+      targetPort: 8015

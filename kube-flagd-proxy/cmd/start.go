@@ -30,8 +30,8 @@ func init() {
 	flags := startCmd.Flags()
 
 	// allows environment variables to use _ instead of -
-	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
-	flags.Int32P(metricsPortFlagName, "m", 8014, "Metrics port to listen on")
+	flags.Int32P(portFlagName, "p", 8015, "Port to listen on")
+	flags.Int32P(metricsPortFlagName, "m", 8016, "Metrics port to listen on")
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
