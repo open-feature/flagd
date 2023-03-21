@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"errors"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	"os"
 	"os/signal"
 	msync "sync"
@@ -17,13 +18,14 @@ import (
 )
 
 type Runtime struct {
-	config   Config
-	Service  service.IFlagEvaluationService
-	SyncImpl []sync.ISync
-
-	mu        msync.Mutex
-	Evaluator eval.IEvaluator
-	Logger    *logger.Logger
+	Evaluator   eval.IEvaluator
+	Logger      *logger.Logger
+	Service     service.IFlagEvaluationService
+	SyncImpl    []sync.ISync
+	config      Config
+	metrics     *otel.MetricsRecorder
+	mu          msync.Mutex
+	serviceName string
 }
 
 type Config struct {
@@ -93,6 +95,7 @@ func (r *Runtime) Start() error {
 			ReadinessProbe: r.isReady,
 			Port:           r.config.ServicePort,
 			MetricsPort:    r.config.MetricsPort,
+			ServiceName:    r.serviceName,
 		})
 	})
 	<-gCtx.Done()

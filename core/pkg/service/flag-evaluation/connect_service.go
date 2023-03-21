@@ -5,35 +5,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/otel"
+	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/service/middleware"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
-	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/model"
-	iservice "github.com/open-feature/flagd/core/pkg/service"
-	"github.com/open-feature/flagd/core/pkg/service/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
-	"github.com/rs/xid"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	Logger                      *logger.Logger
-	Eval                        eval.IEvaluator
 	ConnectServiceConfiguration *ConnectServiceConfiguration
+	Eval                        eval.IEvaluator
+	Logger                      *logger.Logger
+	Metrics                     *otel.MetricsRecorder
 	eventingConfiguration       *eventingConfiguration
 	server                      http.Server
 }
@@ -44,15 +40,10 @@ type ConnectServiceConfiguration struct {
 	CORS             []string
 }
 
-type eventingConfiguration struct {
-	mu   *sync.RWMutex
-	subs map[interface{}]chan iservice.Notification
-}
-
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf iservice.Configuration) error {
+func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
 	s.Eval = eval
 	s.eventingConfiguration = &eventingConfiguration{
-		subs: make(map[interface{}]chan iservice.Notification),
+		subs: make(map[interface{}]chan service.Notification),
 		mu:   &sync.RWMutex{},
 	}
 	lis, err := s.setupServer(svcConf)
@@ -88,7 +79,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	}
 }
 
-func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listener, error) {
+func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
@@ -101,19 +92,20 @@ func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listen
 	if err != nil {
 		return nil, err
 	}
-	path, handler := schemaConnectV1.NewServiceHandler(s)
+	fes := NewFlagEvaluationService(
+		s.Logger.WithFields(zap.String("component", "flagservice")),
+		s.Eval,
+		s.Metrics,
+	)
+	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
-	exporter, err := prometheus.New()
-	if err != nil {
-		return nil, err
-	}
 
-	mdlw := metrics.New(metrics.MiddlewareConfig{
-		Service:      "openfeature/flagd",
-		MetricReader: exporter,
-		Logger:       s.Logger,
+	mdlw := middleware.NewHttpMetric(middleware.Config{
+		Service:        "openfeature/flagd",
+		MetricRecorder: s.Metrics,
+		Logger:         s.Logger,
 	})
-	h := metrics.Handler("", mdlw, mux)
+	h := middleware.Handler("", mdlw, mux)
 
 	go bindMetrics(s, svcConf)
 
@@ -132,210 +124,12 @@ func (s *ConnectService) setupServer(svcConf iservice.Configuration) (net.Listen
 	return lis, nil
 }
 
-func (s *ConnectService) ResolveAll(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveAllRequest],
-) (*connect.Response[schemaV1.ResolveAllResponse], error) {
-	reqID := xid.New().String()
-	defer s.Logger.ClearFields(reqID)
-	res := &schemaV1.ResolveAllResponse{
-		Flags: make(map[string]*schemaV1.AnyFlag),
-	}
-	values := s.Eval.ResolveAllValues(reqID, req.Msg.GetContext())
-	for _, value := range values {
-		switch v := value.Value.(type) {
-		case bool:
-			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
-				Value: &schemaV1.AnyFlag_BoolValue{
-					BoolValue: v,
-				},
-			}
-		case string:
-			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
-				Value: &schemaV1.AnyFlag_StringValue{
-					StringValue: v,
-				},
-			}
-		case float64:
-			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
-				Value: &schemaV1.AnyFlag_DoubleValue{
-					DoubleValue: v,
-				},
-			}
-		case map[string]any:
-			val, err := structpb.NewStruct(v)
-			if err != nil {
-				s.Logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
-				continue
-			}
-			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
-				Value: &schemaV1.AnyFlag_ObjectValue{
-					ObjectValue: val,
-				},
-			}
-		}
-	}
-
-	return connect.NewResponse(res), nil
-}
-
-func (s *ConnectService) EventStream(
-	ctx context.Context,
-	req *connect.Request[schemaV1.EventStreamRequest],
-	stream *connect.ServerStream[schemaV1.EventStreamResponse],
-) error {
-	requestNotificationChan := make(chan iservice.Notification, 1)
-	s.eventingConfiguration.mu.Lock()
-	s.eventingConfiguration.subs[req] = requestNotificationChan
-	s.eventingConfiguration.mu.Unlock()
-	defer func() {
-		s.eventingConfiguration.mu.Lock()
-		delete(s.eventingConfiguration.subs, req)
-		s.eventingConfiguration.mu.Unlock()
-	}()
-	requestNotificationChan <- iservice.Notification{
-		Type: iservice.ProviderReady,
-	}
-	for {
-		select {
-		case <-time.After(20 * time.Second):
-			err := stream.Send(&schemaV1.EventStreamResponse{
-				Type: string(iservice.KeepAlive),
-			})
-			if err != nil {
-				s.Logger.Error(err.Error())
-			}
-		case notification := <-requestNotificationChan:
-			d, err := structpb.NewStruct(notification.Data)
-			if err != nil {
-				s.Logger.Error(err.Error())
-			}
-			err = stream.Send(&schemaV1.EventStreamResponse{
-				Type: string(notification.Type),
-				Data: d,
-			})
-			if err != nil {
-				s.Logger.Error(err.Error())
-			}
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-func (s *ConnectService) Notify(n iservice.Notification) {
+func (s *ConnectService) Notify(n service.Notification) {
 	s.eventingConfiguration.mu.RLock()
 	defer s.eventingConfiguration.mu.RUnlock()
 	for _, send := range s.eventingConfiguration.subs {
 		send <- n
 	}
-}
-
-func resolve[T constraints](
-	logger *logger.Logger,
-	resolver func(reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),
-	flagKey string,
-	ctx *structpb.Struct,
-	resp response[T],
-) error {
-	reqID := xid.New().String()
-	defer logger.ClearFields(reqID)
-
-	logger.WriteFields(
-		reqID,
-		zap.String("flag-key", flagKey),
-		zap.Strings("context-keys", formatContextKeys(ctx)),
-	)
-
-	result, variant, reason, evalErr := resolver(reqID, flagKey, ctx)
-	if evalErr != nil {
-		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
-		reason = model.ErrorReason
-		evalErr = errFormat(evalErr)
-	}
-
-	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
-		logger.ErrorWithID(reqID, err.Error())
-		return err
-	}
-
-	return evalErr
-}
-
-func (s *ConnectService) ResolveBoolean(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveBooleanRequest],
-) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
-	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
-	err := resolve[bool](
-		s.Logger, s.Eval.ResolveBooleanValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &booleanResponse{res},
-	)
-
-	return res, err
-}
-
-func (s *ConnectService) ResolveString(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveStringRequest],
-) (*connect.Response[schemaV1.ResolveStringResponse], error) {
-	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
-	err := resolve[string](
-		s.Logger, s.Eval.ResolveStringValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &stringResponse{res},
-	)
-
-	return res, err
-}
-
-func (s *ConnectService) ResolveInt(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveIntRequest],
-) (*connect.Response[schemaV1.ResolveIntResponse], error) {
-	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
-	err := resolve[int64](
-		s.Logger, s.Eval.ResolveIntValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &intResponse{res},
-	)
-
-	return res, err
-}
-
-func (s *ConnectService) ResolveFloat(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveFloatRequest],
-) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
-	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
-	err := resolve[float64](
-		s.Logger, s.Eval.ResolveFloatValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &floatResponse{res},
-	)
-
-	return res, err
-}
-
-func (s *ConnectService) ResolveObject(
-	ctx context.Context,
-	req *connect.Request[schemaV1.ResolveObjectRequest],
-) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
-	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
-	err := resolve[map[string]any](
-		s.Logger, s.Eval.ResolveObjectValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &objectResponse{res},
-	)
-
-	return res, err
-}
-
-func formatContextKeys(context *structpb.Struct) []string {
-	res := []string{}
-	for k := range context.AsMap() {
-		res = append(res, k)
-	}
-	return res
 }
 
 func (s *ConnectService) newCORS() *cors.Cors {
@@ -367,7 +161,7 @@ func (s *ConnectService) newCORS() *cors.Cors {
 	})
 }
 
-func bindMetrics(s *ConnectService, svcConf iservice.Configuration) {
+func bindMetrics(s *ConnectService, svcConf service.Configuration) {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
@@ -393,19 +187,4 @@ func bindMetrics(s *ConnectService, svcConf iservice.Configuration) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func errFormat(err error) error {
-	switch err.Error() {
-	case model.FlagNotFoundErrorCode:
-		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.TypeMismatchErrorCode:
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.DisabledReason:
-		return connect.NewError(connect.CodeUnavailable, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.ParseErrorCode:
-		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	}
-
-	return err
 }
