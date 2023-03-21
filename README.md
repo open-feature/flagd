@@ -25,7 +25,7 @@ Flagd is a simple command line tool for fetching and evaluating feature flags fo
 Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
 
 - OpenFeature compliant with providers available in many languages
-- Multiple flag configuration sources, including `files`, `http`, `grpc`, and `Kubernetes`
+- Multiple flag configuration sources, including `files`, `http`, `gRPC` and `Kubernetes` can be used simultaneously
 - Seamlessly [combine multiple configuration sources](docs/configuration/flag_configuration_merging.md)
 - Accessible over gRPC and HTTP
 - Supports subscriptions to real-time flag change events
@@ -43,34 +43,67 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 2. Start flagd:
 
     ```sh
-    // Start flagd
     flagd start \
       --port 8013 \
       --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
-
-    /* Or with docker:
-      docker run \
-        --rm -it \
-        --name flagd \
-        -p 8013:8013 \
-        ghcr.io/open-feature/flagd:latest start \
-        --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
-    */
     ```
 
+    Or use docker:
+
+    ```sh
+    docker run \
+      --rm -it \
+      --name flagd \
+      -p 8013:8013 \
+      ghcr.io/open-feature/flagd:latest start \
+      --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+    ```
+
+    If you wish, download the file locally to make changes:
+
+    ```sh
+    wget https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+    ```
+
+    In local mode, run flagd like this:
+    
+    ```sh
+    flagd start \
+      --port 8013 \
+      --uri file:./example_flags.flagd.json
+    ```
+
+    Or use docker:
+
+    ```sh
+    docker run \
+      --rm -it \
+      --name flagd \
+      -p 8013:8013 \
+      -v $(pwd):/etc/flagd \
+      ghcr.io/open-feature/flagd:latest start \
+      --uri file:./etc/flagd/example_flags.flagd.json
+    ```
+    
     `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](docs/configuration/configuration.md#uri-patterns).
 
     Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
 3. Flagd is now ready to perform flag evaluations over either `HTTP(s)` or `gRPC`. This example utilizes `HTTP` via `cURL`.
 
+    Retrieve a `String` value:
+    
     ```sh
-    // Retrieve a String flag
     curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
-
-    // Result:
-    {"value":"val1","reason":"DEFAULT","variant":"key1"}
+    ```
+    Result:
+    ```json
+    {
+      "value": "val1",
+      "reason": "DEFAULT",
+      "variant":"key1"
+    }
     ```
 
     Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
