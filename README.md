@@ -14,6 +14,8 @@
   </a>
 </a>
 </p>
+
+<h2 align="center"><a href="https://killercoda.com/open-feature/scenario/flagd-demo" target="_blank">Try flagd in the Killercoda Playground (in browser)</a></h4>
 <!-- markdownlint-enable MD033 -->
 
 ## Features
@@ -34,8 +36,6 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
 *High level, logical architecture of flagd*
-
-> Want to experiment without installing anything? [Try flagd in your browser now on Killercoda.](https://killercoda.com/open-feature/scenario/flagd-demo)
 
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
 
@@ -59,7 +59,7 @@ flagd start \
 
 Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
-3. Flagd is now ready to perform flag evaluations over either HTTP or gRPC. This example utilizes HTTP via cURL.
+3. Flagd is now ready to perform flag evaluations over either `HTTP(s)` or `gRPC`. This example utilizes `HTTP` via `cURL`.
 
 ```
 // Retrieve a String flag
@@ -70,7 +70,7 @@ curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
 {"value":"val1","reason":"DEFAULT","variant":"key1"}
 ```
 
-Updates to the underlying flag store (i.e. JSON file) are reflected by flagd in realtime. No restarts required.
+Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
 
 flagd also supports booleans, integers, floats and objects. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
 
