@@ -4,7 +4,7 @@ This directory contains all flagd documentation, see table of contents below:
 
 ## Quick Start / Basic Usage
 
-See the [main readme](../docs/README.md) for quick start guide and links to all further documentation.
+See the [main page](../README.md) for the quick start guide.
 
 ## Installation Options
 [See all flagd installation options](../docs/usage/installation_options.md)
