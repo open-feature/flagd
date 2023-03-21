@@ -10,7 +10,6 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
 
 Importantly, the evaluations are "sticky" meaning that the same `email` address will always belong to the same "bucket" and thus always receive the same color.
 
-
 ## Fractional Evaluation: Technical Description
 
 The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on

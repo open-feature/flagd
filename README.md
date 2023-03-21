@@ -40,39 +40,41 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
 
 2. Start flagd:
-```
-// Start flagd
-flagd start \
-  --port 8013 \
-  --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
 
-/* Or with docker:
-  docker run \
-    --rm -it \
-    --name flagd \
-    -p 8013:8013 \
-    ghcr.io/open-feature/flagd:latest start \
-    --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
-*/
-```
-`--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](docs/configuration/configuration.md#uri-patterns).
+    ```sh
+    // Start flagd
+    flagd start \
+      --port 8013 \
+      --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
 
-Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
+    /* Or with docker:
+      docker run \
+        --rm -it \
+        --name flagd \
+        -p 8013:8013 \
+        ghcr.io/open-feature/flagd:latest start \
+        --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+    */
+    ```
+
+    `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](docs/configuration/configuration.md#uri-patterns).
+
+    Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
 3. Flagd is now ready to perform flag evaluations over either `HTTP(s)` or `gRPC`. This example utilizes `HTTP` via `cURL`.
 
-```
-// Retrieve a String flag
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
-  -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
+    ```sh
+    // Retrieve a String flag
+    curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
+      -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
 
-// Result:
-{"value":"val1","reason":"DEFAULT","variant":"key1"}
-```
+    // Result:
+    {"value":"val1","reason":"DEFAULT","variant":"key1"}
+    ```
 
-Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
+    Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
 
-flagd also supports boolean, integer, float and object flag types. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
+    flagd also supports boolean, integer, float and object flag types. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
 
 4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
 

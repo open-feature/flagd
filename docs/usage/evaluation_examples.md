@@ -1,6 +1,6 @@
 # Evaluation Examples Using curl
 
-### Resolve a boolean value
+## Resolve a boolean value
 
 Command:
 
@@ -14,7 +14,7 @@ Result:
 {"value":true,"reason":"DEFAULT","variant":"on"}
 ```
 
-### Resolve a string value
+## Resolve a string value
 
 Command:
 
@@ -28,7 +28,7 @@ Result:
 {"value":"val1","reason":"DEFAULT","variant":"key1"}
 ```
 
-### Resolve a integer value
+## Resolve a integer value
 
 Command:
 
@@ -44,7 +44,7 @@ Result:
 
 [Why is this int response a string](https://github.com/open-feature/flagd/blob/main/docs/help/http_int_response.md)
 
-### Resolve a float value
+## Resolve a float value
 
 Command:
 
@@ -58,7 +58,7 @@ Result:
 {"value":1.23,"reason":"DEFAULT","variant":"one"}
 ```
 
-### Resolve an object value
+## Resolve an object value
 
 Command:
 
@@ -72,7 +72,7 @@ Result:
 {"value":{"key":"val"},"reason":"DEFAULT","variant":"object1"}
 ```
 
-### Resolve a boolean value with evaluation context
+## Resolve a boolean value with evaluation context
 
 Command:
 
@@ -86,7 +86,7 @@ Result:
 {"value":true,"reason":"TARGETING_MATCH","variant":"on"}
 ```
 
-### Return value type mismatch error
+## Return value type mismatch error
 
 A type mismatch error is returned when the resolved value of a flag does not match the type requested.
 In the example below, the resolved value of `myBoolFlag` is a `boolean` but the request expects a `string` to be returned.
@@ -103,7 +103,7 @@ Result:
 {"code":"invalid_argument","message":"TYPE_MISMATCH"}
 ```
 
-### Return flag not found error
+## Return flag not found error
 
 The flag not found error is returned when flag key in the request doesn't match any configured flags.
 
@@ -119,7 +119,7 @@ Result:
 {"code":"not_found","message":"FLAG_NOT_FOUND"}
 ```
 
-### Resolve all values
+## Resolve all values
 
 Command:
 
