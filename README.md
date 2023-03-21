@@ -53,7 +53,7 @@ flagd start \
     --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
 */
 ```
-`--uri` can be a local file or any remote endpoint.
+`--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`
 
 Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
