@@ -25,7 +25,8 @@ Flagd is a simple command line tool for fetching and evaluating feature flags fo
 Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
 
 - OpenFeature compliant with providers available in many languages
-- Multiple flag configuration sources including `files`, `http`, and `Kubernetes` can be used simultaneously
+- Multiple flag configuration sources, including `files`, `http`, `grpc`, and `Kubernetes`
+- Seamlessly [combine multiple configuration sources](docs/configuration/flag_configuration_merging.md)
 - Accessible over gRPC and HTTP
 - Supports subscriptions to real-time flag change events
 - Flexible targeting rules based on [JSON Logic](https://jsonlogic.com/)
