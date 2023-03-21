@@ -35,6 +35,8 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
 *High level, logical architecture of flagd*
 
+> Want to experiment without installing anything? [Try flagd in your browser now on Killercoda.](https://killercoda.com/open-feature/scenario/flagd-demo)
+
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
 
 2. Start flagd:
