@@ -72,9 +72,9 @@ curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
 
 Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
 
-flagd also supports booleans, integers, floats and objects. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
+flagd also supports boolean, integer, float and object flag types. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
 
-4. Now that flagd is running, time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
+4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
 
 ## Further Documentation
 
