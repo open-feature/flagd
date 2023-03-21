@@ -1,5 +1,18 @@
 # Fractional Evaluation
 
+OpenFeature allows clients to pass contextual information which can then be used during a flag evaluation. For example, a client could pass the email address of the user.
+
+In some scenarios it is desirable to be use that contextual information to further segment the user population and thus return dynamic values.
+
+Look at the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) flag. The `defaultVariant` is `red` but it contains a [targeting rule](reusable_targeting_rules.md) meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
+
+In this case, `25%` of the email addresses will receive `red`, `25%` will receive `blue` and so on.
+
+Importantly, the evaluations are "sticky" meaning that the same `email` address will always belong to the same "bucket" and thus always receive the same color.
+
+
+## Fractional Evaluation: Technical Description
+
 The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a percentage).
 This works by hashing ([xxHash](https://cyan4973.github.io/xxHash/))

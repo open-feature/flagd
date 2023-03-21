@@ -2,29 +2,41 @@
 
 This directory contains all flagd documentation, see table of contents below:
 
-## Usage
+## Quick Start / Basic Usage
 
-There are many ways to get started with flagd, the sections below run through some simple deployment options.
-Once the flagd service is running flag evaluation requests can either be made via one of the language specific flagd providers, or, directly via curl.
+See the [main readme](../docs/README.md) for quick start guide and links to all further documentation.
 
-- [Getting started](./usage/getting_started.md)
-- [Flagd providers](./usage/flagd_providers.md)
-- [Evaluation examples](./usage/evaluation_examples.md)
+## Installation Options
+[See all flagd installation options](../docs/usage/installation_options.md)
+
+## Copy and Paste Evaluation Options
+[This page](../docs/usage/evaluation_examples.md) provides copy and paste evaluation examples.
+
+## Flagd Configuration
+[Flagd is configured via CLI arguments on startup](configuration/configuration.md), this page describes all available options.
 
 ## Flag Configuration
+This document describes the syntax for feature flag JSON configurations: [Flag configuration](configuration/flag_configuration.md).
 
-Flagd is configured via CLI arguments on startup, these configuration options can be found in the flagd configuration section.
-The remaining sections cover the flag configurations themselves, which are JSON representations of the flag variants and targeting rules.
+## Application Integration
+Once flagd is running, your next step is to integrate it into you application. [This page](../docs/usage/flagd_providers.md) shows all available integration options (called providers) in a variety of languages.
 
-- [Flagd Configuration](./configuration/configuration.md)
-- [Flag configuration](./configuration/flag_configuration.md)
-- [Fractional evaluation](./configuration/fractional_evaluation.md)
-- [Reusable targeting rules](./configuration/reusable_targeting_rules.md)
-- [Flag configuration merging](./configuration/flag_configuration_merging.md)
+## Targeting Rules
+flagd offers a functionality called targeting rules which rely on the incoming context sent by the client during flag evaluation.
+
+[This page](configuration/reusable_targeting_rules.md) describes how to define targeting rules.
+
+## Fractional Evaluation
+flagd supports [fractional evaluation](configuration/fractional_evaluation.md) meaning an incoming property in the context can be sub-divided at "evaluation time" into "buckets".
+
+[This page](configuration/fractional_evaluation.md) explains the concept and describes the technical implementation in detail.
+
+## Flag Merging
+flagd can retrieve flags from multiple sources simultaneously. [This page](configuration/flag_configuration_merging.md) describes the de-duplication and merging rules that occur if multiple identical flags are found from different flag sources.
 
 ## Help
 
-This section documents any behavior of flagd which may seem unexpected, currently covering 2 topics; why the HTTP int response is a string, and why values may be omitted from the evaluation response.
+This section documents any behavior of flagd which may seem unexpected:
 
 - [HTTP int response](./help/http_int_response.md)
 - [Omitted value from evaluation response](./help/omitted_value_from_response.md)
@@ -36,3 +48,6 @@ This section documents any behavior of flagd which may seem unexpected, currentl
 - [Caching](./other_resources/caching.md)
 - [Snap](./other_resources/snap.md)
 - [Systemd service](./other_resources/systemd_service.md)
+
+## Still Stuck?
+[Speak to the OpenFeature community](https://docs.openfeature.dev/community) and someone will help.
