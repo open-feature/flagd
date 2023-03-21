@@ -33,6 +33,7 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 ## Quick Start
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
+*High level, logical architecture of flagd*
 
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
 
