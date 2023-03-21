@@ -43,8 +43,18 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 flagd start \
   --port 8013 \
   --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+
+/* Or with docker:
+  docker run \
+    --rm -it \
+    --name flagd \
+    -p 8013:8013 \
+    ghcr.io/open-feature/flagd:latest start \
+    --uri https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+*/
 ```
 `--uri` can be a local file or any remote endpoint.
+
 Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
 3. Flagd is now ready to perform flag evaluations over either HTTP or gRPC. This example utilizes HTTP via cURL.
