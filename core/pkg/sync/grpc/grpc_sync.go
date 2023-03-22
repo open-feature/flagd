@@ -3,15 +3,12 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
+	credentials2 "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	"math"
-	"os"
 	"strings"
 	msync "sync"
 	"time"
-
-	"google.golang.org/grpc/credentials"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -19,7 +16,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -50,18 +46,19 @@ type FlagSyncServiceClientResponse interface {
 var once msync.Once
 
 type Sync struct {
-	URI        string
-	ProviderID string
-	Selector   string
-	CertPath   string
-	Logger     *logger.Logger
+	URI               string
+	ProviderID        string
+	Selector          string
+	CertPath          string
+	Logger            *logger.Logger
+	CredentialBuilder credentials2.Builder
 
 	client FlagSyncServiceClient
 	ready  bool
 }
 
 func (g *Sync) Init(ctx context.Context) error {
-	tCredentials, err := buildTransportCredentials(g.URI, g.CertPath)
+	tCredentials, err := g.CredentialBuilder.Build(g.URI, g.CertPath)
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
 		return err
@@ -227,38 +224,6 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 			g.Logger.Debug(fmt.Sprintf("received unknown state: %s", data.State.String()))
 		}
 	}
-}
-
-// buildTransportCredentials is a helper to build grpc credentials.TransportCredentials based on source and cert path
-func buildTransportCredentials(source string, certPath string) (credentials.TransportCredentials, error) {
-	if strings.Contains(source, Prefix) {
-		return insecure.NewCredentials(), nil
-	}
-
-	if !strings.Contains(source, PrefixSecure) {
-		return nil, fmt.Errorf("invalid source. grpc source must contain prefix %s or %s", Prefix, PrefixSecure)
-	}
-
-	if certPath == "" {
-		// Rely on CA certs provided from system
-		return credentials.NewTLS(&tls.Config{MinVersion: tlsVersion}), nil
-	}
-
-	// Rely on provided certificate
-	certBytes, err := os.ReadFile(certPath)
-	if err != nil {
-		return nil, err
-	}
-
-	cp := x509.NewCertPool()
-	if !cp.AppendCertsFromPEM(certBytes) {
-		return nil, fmt.Errorf("invalid certificate provided at path: %s", certPath)
-	}
-
-	return credentials.NewTLS(&tls.Config{
-		MinVersion: tlsVersion,
-		RootCAs:    cp,
-	}), nil
 }
 
 // sourceToGRPCTarget is a helper to derive GRPC target from a provided URL
