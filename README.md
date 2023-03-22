@@ -97,7 +97,9 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
     curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
     ```
+
     Result:
+    
     ```json
     {
       "value": "val1",
