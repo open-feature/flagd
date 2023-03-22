@@ -46,7 +46,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return nil
 }
 
-func (hs *Sync) Init(ctx context.Context) error {
+func (hs *Sync) Init(_ context.Context) error {
 	// noop
 	return nil
 }
