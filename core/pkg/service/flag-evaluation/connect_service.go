@@ -53,6 +53,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 
 	errChan := make(chan error, 1)
 	go func() {
+		s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %d", lis.Addr()))
 		if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
 			if err := s.server.ServeTLS(
 				lis,
