@@ -55,7 +55,7 @@ type SourceConfig struct {
 	Selector    string `json:"selector,omitempty"`
 }
 
-// Config is the configuration structure from derived from startup arguments.
+// Config is the configuration structure derived from startup arguments.
 type Config struct {
 	ServicePort       uint16
 	MetricsPort       uint16
@@ -124,6 +124,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	}, nil
 }
 
+// syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig
 func syncProvidersFromConfig(logger *logger.Logger, sources []SourceConfig) ([]sync.ISync, error) {
 	syncImpls := []sync.ISync{}
 

@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"reflect"
 	"testing"
 )
@@ -182,6 +183,102 @@ func TestParseSyncProviderURIs(t *testing.T) {
 			}
 			if !reflect.DeepEqual(out, tt.out) {
 				t.Errorf("unexpected output, expected %v, got %v", tt.out, out)
+			}
+		})
+	}
+}
+
+// Note - K8s configuration require K8s client, hence do not use K8s sync provider in this test
+func Test_syncProvidersFromConfig(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+
+	type args struct {
+		logger  *logger.Logger
+		sources []SourceConfig
+	}
+
+	tests := []struct {
+		name      string
+		args      args
+		wantSyncs int // simply check the count of ISync providers yield from configurations
+		wantErr   bool
+	}{
+		{
+			name: "Empty",
+			args: args{
+				logger:  lg,
+				sources: []SourceConfig{},
+			},
+			wantSyncs: 0,
+			wantErr:   false,
+		},
+		{
+			name: "Error",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:      "fake",
+						Provider: "disk",
+					},
+				},
+			},
+			wantSyncs: 0,
+			wantErr:   true,
+		},
+		{
+			name: "single",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:        "grpc://host:port",
+						Provider:   syncProviderGrpc,
+						ProviderID: "myapp",
+						CertPath:   "/tmp/ca.cert",
+						Selector:   "source=database",
+					},
+				},
+			},
+			wantSyncs: 1,
+			wantErr:   false,
+		},
+		{
+			name: "combined",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:        "grpc://host:port",
+						Provider:   syncProviderGrpc,
+						ProviderID: "myapp",
+						CertPath:   "/tmp/ca.cert",
+						Selector:   "source=database",
+					},
+					{
+						URI:         "https://host:port",
+						Provider:    syncProviderHTTP,
+						BearerToken: "token",
+					},
+					{
+						URI:      "/tmp/flags.json",
+						Provider: syncProviderFile,
+					},
+				},
+			},
+			wantSyncs: 3,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			syncs, err := syncProvidersFromConfig(tt.args.logger, tt.args.sources)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("syncProvidersFromConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantSyncs != len(syncs) {
+				t.Errorf("syncProvidersFromConfig() yielded = %v, but expected %v", len(syncs), tt.wantSyncs)
 			}
 		})
 	}
