@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	service "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -19,6 +20,7 @@ import (
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +29,7 @@ const (
 	syncProviderGrpc       = "grpc"
 	syncProviderKubernetes = "kubernetes"
 	syncProviderHTTP       = "http"
+	svcName                = "openfeature/flagd"
 )
 
 var (
@@ -52,10 +55,16 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		sources = append(sources, sync.URI)
 	}
 	s.FlagSources = sources
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
 	rt := Runtime{
-		config:    config,
-		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: eval.NewJSONEvaluator(logger, s),
+		config:      config,
+		Logger:      logger.WithFields(zap.String("component", "runtime")),
+		Evaluator:   eval.NewJSONEvaluator(logger, s),
+		metrics:     otel.NewOTelRecorder(exporter, svcName),
+		serviceName: svcName,
 	}
 	if err := rt.setSyncImplFromConfig(logger); err != nil {
 		return nil, err
@@ -75,6 +84,7 @@ func (r *Runtime) setService(logger *logger.Logger) {
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),
+		Metrics: r.metrics,
 	}
 }
 

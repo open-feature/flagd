@@ -37,7 +37,7 @@ flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/sy
 run: # default to flagd
 	make run-flagd
 run-flagd:
-	cd flagd; go run main.go start -f file:config/samples/example_flags.flagd.json
+	cd flagd; go run main.go start -f file:../config/samples/example_flags.flagd.json
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd

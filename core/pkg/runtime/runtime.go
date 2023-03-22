@@ -8,22 +8,23 @@ import (
 	msync "sync"
 	"syscall"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {
-	config   Config
-	Service  service.IFlagEvaluationService
-	SyncImpl []sync.ISync
-
-	mu        msync.Mutex
-	Evaluator eval.IEvaluator
-	Logger    *logger.Logger
+	Evaluator   eval.IEvaluator
+	Logger      *logger.Logger
+	Service     service.IFlagEvaluationService
+	SyncImpl    []sync.ISync
+	config      Config
+	metrics     *otel.MetricsRecorder
+	mu          msync.Mutex
+	serviceName string
 }
 
 type Config struct {
@@ -93,6 +94,7 @@ func (r *Runtime) Start() error {
 			ReadinessProbe: r.isReady,
 			Port:           r.config.ServicePort,
 			MetricsPort:    r.config.MetricsPort,
+			ServiceName:    r.serviceName,
 		})
 	})
 	<-gCtx.Done()
