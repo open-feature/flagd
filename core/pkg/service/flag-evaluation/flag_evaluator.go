@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/service"
 	"sync"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/otel"
+	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"

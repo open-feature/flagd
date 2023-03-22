@@ -3,18 +3,17 @@ package runtime
 import (
 	"context"
 	"errors"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	"os"
 	"os/signal"
 	msync "sync"
 	"syscall"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/otel"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"net/http"
 	"regexp"
 	msync "sync"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	service "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -21,6 +20,7 @@ import (
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 )
 
