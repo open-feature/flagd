@@ -4,15 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/service"
 	"net/http"
 	"regexp"
 	msync "sync"
 	"time"
 
+	"go.opentelemetry.io/otel/exporters/prometheus"
+
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/otel"
-	service "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
+	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
@@ -20,9 +23,10 @@ import (
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.uber.org/zap"
 )
+
+// from_config is a collection of structures and parsers responsible for deriving flagd runtime
 
 const (
 	syncProviderFile       = "file"
@@ -40,6 +44,29 @@ var (
 	regFile       *regexp.Regexp
 )
 
+// SourceConfig is configuration option for flagd. This maps to startup parameter sources
+type SourceConfig struct {
+	URI      string `json:"uri"`
+	Provider string `json:"provider"`
+
+	BearerToken string `json:"bearerToken,omitempty"`
+	CertPath    string `json:"certPath,omitempty"`
+	ProviderID  string `json:"providerID,omitempty"`
+	Selector    string `json:"selector,omitempty"`
+}
+
+// Config is the configuration structure from derived from startup arguments.
+type Config struct {
+	ServicePort       uint16
+	MetricsPort       uint16
+	ServiceSocketPath string
+	ServiceCertPath   string
+	ServiceKeyPath    string
+
+	SyncProviders []SourceConfig
+	CORS          []string
+}
+
 func init() {
 	regCrd = regexp.MustCompile("^core.openfeature.dev/")
 	regURL = regexp.MustCompile("^https?://")
@@ -48,81 +75,86 @@ func init() {
 	regFile = regexp.MustCompile("^file:")
 }
 
+// FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
+	// build connect service
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+
+	connectService := &flageval.ConnectService{
+		ConnectServiceConfiguration: &flageval.ConnectServiceConfiguration{
+			ServerKeyPath:    config.ServiceKeyPath,
+			ServerCertPath:   config.ServiceCertPath,
+			ServerSocketPath: config.ServiceSocketPath,
+			CORS:             config.CORS,
+		},
+		Logger: logger.WithFields(
+			zap.String("component", "service"),
+		),
+		Metrics: otel.NewOTelRecorder(exporter, svcName),
+	}
+
+	// build flag store
 	s := store.NewFlags()
 	sources := []string{}
 	for _, sync := range config.SyncProviders {
 		sources = append(sources, sync.URI)
 	}
 	s.FlagSources = sources
-	exporter, err := prometheus.New()
+
+	// build sync providers
+	syncLogger := logger.WithFields(zap.String("component", "sync"))
+	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders)
 	if err != nil {
 		return nil, err
 	}
-	rt := Runtime{
-		config:      config,
-		Logger:      logger.WithFields(zap.String("component", "runtime")),
-		Evaluator:   eval.NewJSONEvaluator(logger, s),
-		metrics:     otel.NewOTelRecorder(exporter, svcName),
-		serviceName: svcName,
-	}
-	if err := rt.setSyncImplFromConfig(logger); err != nil {
-		return nil, err
-	}
-	rt.setService(logger)
-	return &rt, nil
+
+	return &Runtime{
+		Logger:    logger.WithFields(zap.String("component", "runtime")),
+		Evaluator: eval.NewJSONEvaluator(logger, s),
+		Service:   connectService,
+		ServiceConfig: service.Configuration{
+			Port:        config.ServicePort,
+			MetricsPort: config.MetricsPort,
+			ServiceName: svcName,
+		},
+		SyncImpl: iSyncs,
+	}, nil
 }
 
-func (r *Runtime) setService(logger *logger.Logger) {
-	r.Service = &service.ConnectService{
-		Logger: logger.WithFields(
-			zap.String("component", "service"),
-		),
-		Metrics: r.metrics,
-	}
-}
+func syncProvidersFromConfig(logger *logger.Logger, sources []SourceConfig) ([]sync.ISync, error) {
+	syncImpls := []sync.ISync{}
 
-func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
-	rtLogger := logger.WithFields(zap.String("component", "runtime"))
-	r.SyncImpl = make([]sync.ISync, 0, len(r.config.SyncProviders))
-	for _, syncProvider := range r.config.SyncProviders {
+	for _, syncProvider := range sources {
 		switch syncProvider.Provider {
 		case syncProviderFile:
-			r.SyncImpl = append(
-				r.SyncImpl,
-				r.newFile(syncProvider, logger),
-			)
-			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
+			syncImpls = append(syncImpls, newFile(syncProvider, logger))
+			logger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
 		case syncProviderKubernetes:
-			k, err := r.newK8s(syncProvider.URI, logger)
+			k, err := newK8s(syncProvider.URI, logger)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			r.SyncImpl = append(
-				r.SyncImpl,
-				k,
-			)
-			rtLogger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
+			syncImpls = append(syncImpls, k)
+			logger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
 		case syncProviderHTTP:
-			r.SyncImpl = append(
-				r.SyncImpl,
-				r.newHTTP(syncProvider, logger),
-			)
-			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %s", syncProvider.URI))
+			syncImpls = append(syncImpls, newHTTP(syncProvider, logger))
+			logger.Debug(fmt.Sprintf("using remote sync-provider for: %s", syncProvider.URI))
 		case syncProviderGrpc:
-			r.SyncImpl = append(
-				r.SyncImpl,
-				r.newGRPC(syncProvider, logger),
-			)
+			syncImpls = append(syncImpls, newGRPC(syncProvider, logger))
+			logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", syncProvider.URI))
+
 		default:
-			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
-				" or 'core.openfeature.dev'", syncProvider.URI)
+			return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s' or '%s'",
+				syncProvider.Provider, syncProviderFile, syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
 		}
 	}
-	return nil
+	return syncImpls, nil
 }
 
-func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
+func newGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(
@@ -135,7 +167,7 @@ func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc
 	}
 }
 
-func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
+func newHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -150,7 +182,7 @@ func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *http
 	}
 }
 
-func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+func newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	reader, dynamic, err := kubernetes.GetClients()
 	if err != nil {
 		return nil, err
@@ -166,7 +198,7 @@ func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, e
 	), nil
 }
 
-func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
+func newFile(config SourceConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(
@@ -177,9 +209,11 @@ func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file
 	}
 }
 
-func SyncProviderArgParse(syncProviders string) ([]sync.SourceConfig, error) {
-	syncProvidersParsed := []sync.SourceConfig{}
-	if err := json.Unmarshal([]byte(syncProviders), &syncProvidersParsed); err != nil {
+// ParseSources parse a json formatted SourceConfig array string and performs validations on the content
+func ParseSources(sourcesFlag string) ([]SourceConfig, error) {
+	syncProvidersParsed := []SourceConfig{}
+
+	if err := json.Unmarshal([]byte(sourcesFlag), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
 	}
 	for i, sp := range syncProvidersParsed {
@@ -199,33 +233,35 @@ func SyncProviderArgParse(syncProviders string) ([]sync.SourceConfig, error) {
 	return syncProvidersParsed, nil
 }
 
-func SyncProvidersFromURIs(uris []string) ([]sync.SourceConfig, error) {
-	syncProvidersParsed := []sync.SourceConfig{}
+// ParseSyncProviderURIs uri flag based sync sources to SourceConfig array. Replaces uri prefixes where necessary
+func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
+	syncProvidersParsed := []SourceConfig{}
+
 	for _, uri := range uris {
 		switch uriB := []byte(uri); {
 		case regFile.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
 				URI:      regFile.ReplaceAllString(uri, ""),
 				Provider: syncProviderFile,
 			})
 		case regCrd.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
 				URI:      regCrd.ReplaceAllString(uri, ""),
 				Provider: syncProviderKubernetes,
 			})
 		case regURL.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
 		case regGRPC.Match(uriB), regGRPCSecure.Match(uriB):
-			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
 				URI:      uri,
 				Provider: syncProviderGrpc,
 			})
 		default:
 			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', "+
-				"'http(s)://', 'grpc://', or 'core.openfeature.dev'", uri)
+				"'http(s)://', 'grpc(s)://', or 'core.openfeature.dev'", uri)
 		}
 	}
 	return syncProvidersParsed, nil

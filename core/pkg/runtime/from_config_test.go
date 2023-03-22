@@ -1,23 +1,20 @@
-package runtime_test
+package runtime
 
 import (
 	"reflect"
 	"testing"
-
-	"github.com/open-feature/flagd/core/pkg/runtime"
-	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
-func TestSyncProviderArgParse(t *testing.T) {
+func TestParseSource(t *testing.T) {
 	test := map[string]struct {
 		in        string
 		expectErr bool
-		out       []sync.SourceConfig
+		out       []SourceConfig
 	}{
 		"simple": {
 			in:        "[{\"uri\":\"config/samples/example_flags.json\",\"provider\":\"file\"}]",
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -32,7 +29,7 @@ func TestSyncProviderArgParse(t *testing.T) {
 					{"uri":"default/my-crd","provider":"kubernetes"}
 				]`,
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -61,7 +58,7 @@ func TestSyncProviderArgParse(t *testing.T) {
 					{"uri":"core.openfeature.dev/namespace/my-crd","provider":"kubernetes"}
 				]`,
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -90,18 +87,18 @@ func TestSyncProviderArgParse(t *testing.T) {
 		"empty": {
 			in:        `[]`,
 			expectErr: false,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 		"parse-failure": {
 			in:        ``,
 			expectErr: true,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 	}
 
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
-			out, err := runtime.SyncProviderArgParse(tt.in)
+			out, err := ParseSources(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")
@@ -116,18 +113,18 @@ func TestSyncProviderArgParse(t *testing.T) {
 	}
 }
 
-func TestSyncProvidersFromURIs(t *testing.T) {
+func TestParseSyncProviderURIs(t *testing.T) {
 	test := map[string]struct {
 		in        []string
 		expectErr bool
-		out       []sync.SourceConfig
+		out       []SourceConfig
 	}{
 		"simple": {
 			in: []string{
 				"file:my-file.json",
 			},
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -142,7 +139,7 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 				"core.openfeature.dev/default/my-crd",
 			},
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -164,18 +161,18 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 		"empty": {
 			in:        []string{},
 			expectErr: false,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 		"parse-failure": {
 			in:        []string{"care.openfeature.dev/will/fail"},
 			expectErr: true,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 	}
 
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
-			out, err := runtime.SyncProvidersFromURIs(tt.in)
+			out, err := ParseSyncProviderURIs(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")

@@ -7,7 +7,6 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/runtime"
-	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -120,14 +119,14 @@ var startCmd = &cobra.Command{
 				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
 		}
 
-		syncProviders, err := runtime.SyncProvidersFromURIs(viper.GetStringSlice(uriFlagName))
+		syncProviders, err := runtime.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		syncProvidersFromConfig := []sync.SourceConfig{}
+		syncProvidersFromConfig := []runtime.SourceConfig{}
 		if cfgFile == "" && viper.GetString(sourcesFlagName) != "" {
-			syncProvidersFromConfig, err = runtime.SyncProviderArgParse(viper.GetString(sourcesFlagName))
+			syncProvidersFromConfig, err = runtime.ParseSources(viper.GetString(sourcesFlagName))
 			if err != nil {
 				log.Fatal(err)
 			}
