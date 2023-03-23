@@ -98,10 +98,7 @@ func (r *Runtime) Start() error {
 		})
 	})
 	<-gCtx.Done()
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return g.Wait()
 }
 
 func (r *Runtime) isReady() bool {

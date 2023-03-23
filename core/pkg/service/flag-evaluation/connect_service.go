@@ -101,7 +101,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
 
-	mdlw := middleware.NewHttpMetric(middleware.Config{
+	mdlw := middleware.NewHTTPMetric(middleware.Config{
 		Service:        "openfeature/flagd",
 		MetricRecorder: s.Metrics,
 		Logger:         s.Logger,

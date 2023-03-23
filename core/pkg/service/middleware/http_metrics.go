@@ -27,7 +27,7 @@ type Middleware struct {
 	cfg Config
 }
 
-func NewHttpMetric(cfg Config) Middleware {
+func NewHTTPMetric(cfg Config) Middleware {
 	cfg.defaults()
 	m := Middleware{
 		cfg: cfg,

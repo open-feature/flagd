@@ -292,11 +292,8 @@ func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
-	if err := validateDefaultVariants(newFlags); err != nil {
-		return err
-	}
 
-	return nil
+	return validateDefaultVariants(newFlags)
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid

@@ -34,7 +34,7 @@ func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return nil
 }
 
-func (fs *Sync) Init(ctx context.Context) error {
+func (fs *Sync) Init(_ context.Context) error {
 	fs.Logger.Info("Starting filepath sync notifier")
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
