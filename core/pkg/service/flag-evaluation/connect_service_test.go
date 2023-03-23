@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -118,4 +120,53 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			require.Equal(t, tt.want.Variant, res.Variant)
 		})
 	}
+}
+
+func TestAddMiddleware(t *testing.T) {
+	const port = 12345
+	ctrl := gomock.NewController(t)
+
+	mwMock := middlewaremock.NewMockIMiddleware(ctrl)
+
+	mwMock.EXPECT().Handler(gomock.Any()).Return(
+		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			writer.WriteHeader(http.StatusTeapot)
+		}))
+
+	exp := metric.NewManualReader()
+	metricRecorder := otel.NewOTelRecorder(exp, "my-exporter")
+
+	svc := ConnectService{
+		ConnectServiceConfiguration: &ConnectServiceConfiguration{},
+		Logger:                      logger.NewLogger(nil, false),
+		Metrics:                     metricRecorder,
+	}
+
+	serveConf := iservice.Configuration{
+		ReadinessProbe: func() bool {
+			return true
+		},
+		Port: port,
+	}
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		err := svc.Serve(ctx, nil, serveConf)
+		fmt.Println(err)
+	}()
+
+	require.Eventually(t, func() bool {
+		return svc.server.Handler != nil
+	}, 3*time.Second, 100*time.Millisecond)
+
+	svc.AddMiddleware(mwMock)
+
+	// call an endpoint provided by the server
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/schema.v1.Service/ResolveAll", port))
+
+	require.Nil(t, err)
+	// verify that the status we return in the mocked middleware
+	require.Equal(t, http.StatusTeapot, resp.StatusCode)
 }

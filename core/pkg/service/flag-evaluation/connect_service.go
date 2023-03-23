@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/service/middleware"
 	"net"
 	"net/http"
 	"sync"
@@ -15,12 +16,12 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
-	"github.com/open-feature/flagd/core/pkg/service/middleware"
+	corsmw "github.com/open-feature/flagd/core/pkg/service/middleware/cors"
+	h2cmw "github.com/open-feature/flagd/core/pkg/service/middleware/h2c"
+	metricsmw "github.com/open-feature/flagd/core/pkg/service/middleware/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 const ErrorPrefix = "FlagdError:"
@@ -101,28 +102,37 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
 
-	mdlw := middleware.NewHttpMetric(middleware.Config{
-		Service:        "openfeature/flagd",
-		MetricRecorder: s.Metrics,
-		Logger:         s.Logger,
-	})
-	h := middleware.Handler("", mdlw, mux)
-
-	go bindMetrics(s, svcConf)
-
-	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		handler = s.newCORS().Handler(h)
-	} else {
-		handler = h2c.NewHandler(
-			s.newCORS().Handler(h),
-			&http2.Server{},
-		)
-	}
 	s.server = http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
+
+	go bindMetrics(s, svcConf)
+
+	// Add middlewares
+
+	metricsMiddleware := metricsmw.NewHttpMetric(metricsmw.Config{
+		Service:        "openfeature/flagd",
+		MetricRecorder: s.Metrics,
+		Logger:         s.Logger,
+		HandlerID:      "",
+	})
+
+	s.AddMiddleware(metricsMiddleware)
+
+	corsMiddleware := corsmw.New(s.ConnectServiceConfiguration.CORS)
+	s.AddMiddleware(corsMiddleware)
+
+	if s.ConnectServiceConfiguration.ServerCertPath == "" || s.ConnectServiceConfiguration.ServerKeyPath == "" {
+		h2cMiddleware := h2cmw.New()
+		s.AddMiddleware(h2cMiddleware)
+	}
+
 	return lis, nil
+}
+
+func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
+	s.server.Handler = mw.Handler(s.server.Handler)
 }
 
 func (s *ConnectService) Notify(n service.Notification) {

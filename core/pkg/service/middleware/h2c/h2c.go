@@ -12,6 +12,6 @@ func New() *Middleware {
 	return &Middleware{}
 }
 
-func (m Middleware) Handle(handler http.Handler) http.Handler {
+func (m Middleware) Handler(handler http.Handler) http.Handler {
 	return h2c.NewHandler(handler, &http2.Server{})
 }

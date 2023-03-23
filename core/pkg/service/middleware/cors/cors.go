@@ -40,6 +40,6 @@ func New(allowedOrigins []string) *Middleware {
 	}
 }
 
-func (c Middleware) Handle(handler http.Handler) http.Handler {
+func (c Middleware) Handler(handler http.Handler) http.Handler {
 	return c.cors.Handler(handler)
 }
