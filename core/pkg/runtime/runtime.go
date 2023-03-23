@@ -95,6 +95,10 @@ func (r *Runtime) Start() error {
 			Port:           r.config.ServicePort,
 			MetricsPort:    r.config.MetricsPort,
 			ServiceName:    r.serviceName,
+			KeyPath:        r.config.ServiceKeyPath,
+			CertPath:       r.config.ServiceCertPath,
+			SocketPath:     r.config.ServiceSocketPath,
+			CORS:           r.config.CORS,
 		})
 	})
 	<-gCtx.Done()
