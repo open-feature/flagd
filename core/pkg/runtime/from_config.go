@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/eval"
+	evalPlugins "github.com/open-feature/flagd/core/pkg/eval/plugins"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/otel"
 	service "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
@@ -49,12 +50,6 @@ func init() {
 }
 
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	s := store.NewFlags()
-	sources := []string{}
-	for _, sync := range config.SyncProviders {
-		sources = append(sources, sync.URI)
-	}
-	s.FlagSources = sources
 	exporter, err := prometheus.New()
 	if err != nil {
 		return nil, err
@@ -62,7 +57,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	rt := Runtime{
 		config:      config,
 		Logger:      logger.WithFields(zap.String("component", "runtime")),
-		Evaluator:   eval.NewJSONEvaluator(logger, s),
+		Evaluator:   getEvaluatorFor(logger, config),
 		metrics:     otel.NewOTelRecorder(exporter, svcName),
 		serviceName: svcName,
 	}
@@ -235,4 +230,19 @@ func SyncProvidersFromURIs(uris []string) ([]sync.SourceConfig, error) {
 		}
 	}
 	return syncProvidersParsed, nil
+}
+
+func getEvaluatorFor(logger *logger.Logger, config Config) eval.IEvaluator {
+	if evaluator, err := evalPlugins.FromPath(config.EvaluatorPlugin); err != nil {
+		return *evaluator
+	}
+
+	s := store.NewFlags()
+	sources := []string{}
+	for _, sync := range config.SyncProviders {
+		sources = append(sources, sync.URI)
+	}
+	s.FlagSources = sources
+
+	return eval.NewJSONEvaluator(logger, s)
 }

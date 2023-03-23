@@ -36,6 +36,9 @@ type Config struct {
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
+
+	// Experimental feature: Dynamically loadable evaluator plugins
+	EvaluatorPlugin string
 }
 
 // nolint: funlen

@@ -15,19 +15,20 @@ import (
 )
 
 const (
-	bearerTokenFlagName    = "bearer-token"
-	corsFlagName           = "cors-origin"
-	evaluatorFlagName      = "evaluator"
-	logFormatFlagName      = "log-format"
-	metricsPortFlagName    = "metrics-port"
-	portFlagName           = "port"
-	providerArgsFlagName   = "sync-provider-args"
-	serverCertPathFlagName = "server-cert-path"
-	serverKeyPathFlagName  = "server-key-path"
-	socketPathFlagName     = "socket-path"
-	sourcesFlagName        = "sources"
-	syncProviderFlagName   = "sync-provider"
-	uriFlagName            = "uri"
+	bearerTokenFlagName     = "bearer-token"
+	corsFlagName            = "cors-origin"
+	evaluatorFlagName       = "evaluator"
+	logFormatFlagName       = "log-format"
+	metricsPortFlagName     = "metrics-port"
+	evaluatorPluginFlagName = "evaluator-plugin"
+	portFlagName            = "port"
+	providerArgsFlagName    = "sync-provider-args"
+	serverCertPathFlagName  = "server-cert-path"
+	serverKeyPathFlagName   = "server-key-path"
+	socketPathFlagName      = "socket-path"
+	sourcesFlagName         = "sources"
+	syncProviderFlagName    = "sync-provider"
+	uriFlagName             = "uri"
 )
 
 func init() {
@@ -42,6 +43,8 @@ func init() {
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
 	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: Set an evaluator e.g. json, yaml/yml."+
+		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
+	flags.StringP(evaluatorPluginFlagName, "P", "", "Set an evaluator plugin path e.g. ./plugin.so"+
 		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
@@ -72,6 +75,7 @@ func init() {
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
+	_ = viper.BindPFlag(evaluatorPluginFlagName, flags.Lookup(evaluatorPluginFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
@@ -143,6 +147,7 @@ var startCmd = &cobra.Command{
 		rt, err := runtime.FromConfig(logger, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
 			MetricsPort:       viper.GetUint16(metricsPortFlagName),
+			EvaluatorPlugin:   viper.GetString(evaluatorPluginFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetUint16(portFlagName),
