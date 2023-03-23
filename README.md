@@ -20,25 +20,27 @@
 
 ## Features
 
-Flagd is a simple command line tool for fetching and evaluating feature flags for services.
+Flagd is a simple command line tool for fetching and evaluating feature flags.
 
 Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
 
-- OpenFeature compliant with providers available in many languages
-- Multiple flag configuration sources, including `files`, `http`, `gRPC` and `Kubernetes` can be used simultaneously
-- Seamlessly [combine multiple configuration sources](docs/configuration/flag_configuration_merging.md)
-- Accessible over gRPC and HTTP
-- Supports subscriptions to real-time flag change events
-- Flexible targeting rules based on [JSON Logic](https://jsonlogic.com/)
-- Lightweight daemon, with an emphasis on performance
-- Native support for metrics using Prometheus
+flagd:
 
-## Quick Start
+- 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
+- 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
+- 👍 Reads feature flags from multiple sources. `files`, `http(s)`, `gRPC` and `Kubernetes Custom Resources` can be used simultaneously.
+- 🔄 Centralized flag management. Use multiple flag sources and vendors. [Flag values are automatically merged](docs/configuration/flag_configuration_merging.md).
+- 🕒 Feature Flag updates occur in near-realtime (HTTP) or realtime (gRPC)
+- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and ["bucket-based" fractional evaluation for flag micro-targeting](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
+- 🔦 [Flag statistics and metrics are exposed](https://example.com) and compatible with Prometheus.
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
 *High level, logical architecture of flagd*
 
+## ▶️ Quick Start
+
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
+   Kubernetes-native? flagd can also be run as part of the OpenFeature Kubernetes Operator.
 
 2. Start flagd:
 
@@ -114,16 +116,18 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 
 4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
 
-## Further Documentation
+## 📝 Further Documentation
 
 Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found [on this page](docs/README.md).
 
-## Contributing
+## 🫶 Contributing
+
+OpenFeature 🫶 contributors.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to the OpenFeature project.
 
 Our community meetings are held regularly and open to everyone.
-Check the [OpenFeature community calendar](https://calendar.google.com/calendar/u/0?cid=MHVhN2kxaGl2NWRoMThiMjd0b2FoNjM2NDRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ) for specific dates and for the Zoom meeting links.
+Check the [OpenFeature community page](https://docs.openfeature.dev/community/) for all the ways to get involved.
 
 Thanks so much to our contributors.
 
