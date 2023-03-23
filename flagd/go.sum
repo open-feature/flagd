@@ -682,6 +682,8 @@ github.com/open-feature/flagd v0.3.7 h1:cRIcZO2WcLx9y9RibhkV+GDU/pNtMbXoVId1bTDQ
 github.com/open-feature/flagd v0.3.7/go.mod h1:IQ/mfi0P0dL+4m9X9prbHc64fthbimr1CdZWppHcf70=
 github.com/open-feature/flagd/core v0.4.4 h1:78eo5ZpfyeQys8YFGygBpSFbT0oU4NMpRK4l5v1FcaI=
 github.com/open-feature/flagd/core v0.4.4/go.mod h1:APeKXK/sVdErzJUPilXL8Aet7ufhIZN9xIYbIqttz3A=
+github.com/open-feature/flagd/core v0.4.5 h1:pg8BMJFLf4k5Y3AvhZcVhZKcaK8eZCwqKi5k5zActUQ=
+github.com/open-feature/flagd/core v0.4.5/go.mod h1:zXfz8XMmBUo+Rpag4WNQqRR5c/fyTSm99nkZoNvnqeY=
 github.com/open-feature/go-sdk v1.2.0 h1:2xsUgNUUDITpryB9nFS43CI9gAF415I1He22Q1d4+Po=
 github.com/open-feature/go-sdk v1.2.0/go.mod h1:UQJJXUptk92An4F6so2Vd0iRo6EEZ+QGa7HVyQ/GPi0=
 github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9 h1:hHa7sjOzohj9ZhYR6ym+Xjk517ogb4q2QIE6ztdLZMg=
@@ -690,6 +692,8 @@ github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1 h1:Tg712Egcqb5dsYxOGEa
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1/go.mod h1:zw/xpuDy9ziBEKVA1t4VoQtzFc80btAAQCiZkX6y9oQ=
 github.com/open-feature/open-feature-operator v0.2.29 h1:Ky/SMzwEiBV5x9qOfHTj1jl/CakPZNClRtoeSPqVbNo=
 github.com/open-feature/open-feature-operator v0.2.29/go.mod h1:bQncVK7hvhj5QStPwexxQ1aArPwox2Y1vWrVei/qIFg=
+github.com/open-feature/open-feature-operator v0.2.31 h1:8MCULZPHGJpGVHIOm/vx07tpjDD6fMdNvOCdSFFhIaY=
+github.com/open-feature/open-feature-operator v0.2.31/go.mod h1:4kdmeO7v33TFg/IxEH8N7c3Jply571G2Db12kXo8StA=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
 github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
 github.com/pelletier/go-toml/v2 v2.0.6 h1:nrzqCb7j9cDFj2coyLNLaZuJTLjWjlaz6nvTvIwycIU=
@@ -1380,12 +1384,18 @@ honnef.co/go/tools v0.0.1-2020.1.3/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 k8s.io/api v0.26.2 h1:dM3cinp3PGB6asOySalOZxEG4CZ0IAdJsrYZXE/ovGQ=
 k8s.io/api v0.26.2/go.mod h1:1kjMQsFE+QHPfskEcVNgL3+Hp88B80uj0QtSOlj8itU=
+k8s.io/api v0.26.3 h1:emf74GIQMTik01Aum9dPP0gAypL8JTLl/lHa4V9RFSU=
+k8s.io/api v0.26.3/go.mod h1:PXsqwPMXBSBcL1lJ9CYDKy7kIReUydukS5JiRlxC3qE=
 k8s.io/apiextensions-apiserver v0.26.1 h1:cB8h1SRk6e/+i3NOrQgSFij1B2S0Y0wDoNl66bn8RMI=
 k8s.io/apiextensions-apiserver v0.26.1/go.mod h1:AptjOSXDGuE0JICx/Em15PaoO7buLwTs0dGleIHixSM=
 k8s.io/apimachinery v0.26.2 h1:da1u3D5wfR5u2RpLhE/ZtZS2P7QvDgLZTi9wrNZl/tQ=
 k8s.io/apimachinery v0.26.2/go.mod h1:ats7nN1LExKHvJ9TmwootT00Yz05MuYqPXEXaVeOy5I=
+k8s.io/apimachinery v0.26.3 h1:dQx6PNETJ7nODU3XPtrwkfuubs6w7sX0M8n61zHIV/k=
+k8s.io/apimachinery v0.26.3/go.mod h1:ats7nN1LExKHvJ9TmwootT00Yz05MuYqPXEXaVeOy5I=
 k8s.io/client-go v0.26.2 h1:s1WkVujHX3kTp4Zn4yGNFK+dlDXy1bAAkIl+cFAiuYI=
 k8s.io/client-go v0.26.2/go.mod h1:u5EjOuSyBa09yqqyY7m3abZeovO/7D/WehVVlZ2qcqU=
+k8s.io/client-go v0.26.3 h1:k1UY+KXfkxV2ScEL3gilKcF7761xkYsSD6BC9szIu8s=
+k8s.io/client-go v0.26.3/go.mod h1:ZPNu9lm8/dbRIPAgteN30RSXea6vrCpFvq+MateTUuQ=
 k8s.io/component-base v0.26.1 h1:4ahudpeQXHZL5kko+iDHqLj/FSGAEUnSVO0EBbgDd+4=
 k8s.io/component-base v0.26.1/go.mod h1:VHrLR0b58oC035w6YQiBSbtsf0ThuSwXP+p5dD/kAWU=
 k8s.io/klog/v2 v2.90.0 h1:VkTxIV/FjRXn1fgNNcKGM8cfmL1Z33ZjXRTVxKCoF5M=
