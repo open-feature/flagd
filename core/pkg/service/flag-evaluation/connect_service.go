@@ -20,7 +20,6 @@ import (
 	h2cmw "github.com/open-feature/flagd/core/pkg/service/middleware/h2c"
 	metricsmw "github.com/open-feature/flagd/core/pkg/service/middleware/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/cors"
 	"go.uber.org/zap"
 )
 
@@ -141,35 +140,6 @@ func (s *ConnectService) Notify(n service.Notification) {
 	for _, send := range s.eventingConfiguration.subs {
 		send <- n
 	}
-}
-
-func (s *ConnectService) newCORS() *cors.Cors {
-	return cors.New(cors.Options{
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-		},
-		AllowedOrigins: s.ConnectServiceConfiguration.CORS,
-		AllowedHeaders: []string{"*"},
-		ExposedHeaders: []string{
-			// Content-Type is in the default safelist.
-			"Accept",
-			"Accept-Encoding",
-			"Accept-Post",
-			"Connect-Accept-Encoding",
-			"Connect-Content-Encoding",
-			"Content-Encoding",
-			"Grpc-Accept-Encoding",
-			"Grpc-Encoding",
-			"Grpc-Message",
-			"Grpc-Status",
-			"Grpc-Status-Details-Bin",
-		},
-	})
 }
 
 func bindMetrics(s *ConnectService, svcConf service.Configuration) {
