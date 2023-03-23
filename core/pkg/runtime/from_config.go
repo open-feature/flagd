@@ -85,12 +85,6 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	}
 
 	connectService := &flageval.ConnectService{
-		ConnectServiceConfiguration: &flageval.ConnectServiceConfiguration{
-			ServerKeyPath:    config.ServiceKeyPath,
-			ServerCertPath:   config.ServiceCertPath,
-			ServerSocketPath: config.ServiceSocketPath,
-			CORS:             config.CORS,
-		},
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),
@@ -120,6 +114,10 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 			Port:        config.ServicePort,
 			MetricsPort: config.MetricsPort,
 			ServiceName: svcName,
+			KeyPath:     config.ServiceKeyPath,
+			CertPath:    config.ServiceCertPath,
+			SocketPath:  config.ServiceSocketPath,
+			CORS:        config.CORS,
 		},
 		SyncImpl: iSyncs,
 	}, nil
