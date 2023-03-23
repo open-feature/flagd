@@ -39,7 +39,7 @@ flagd:
 ## ▶️ Quick Start
 
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
-   
+
    Kubernetes-native? flagd can also be run [as part of the Kubernetes Operator](https://github.com/open-feature/open-feature-operator).
 
 2. Start flagd:
@@ -68,7 +68,7 @@ flagd:
     ```
 
     In local mode, run flagd like this:
-    
+
     ```sh
     flagd start \
       --port 8013 \
@@ -86,7 +86,7 @@ flagd:
       ghcr.io/open-feature/flagd:latest start \
       --uri file:./etc/flagd/example_flags.flagd.json
     ```
-    
+
     `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](docs/configuration/configuration.md#uri-patterns).
 
     Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
@@ -94,14 +94,14 @@ flagd:
 3. Flagd is now ready to perform flag evaluations over either `HTTP(s)` or `gRPC`. This example utilizes `HTTP` via `cURL`.
 
     Retrieve a `String` value:
-    
+
     ```sh
     curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
     ```
 
     Result:
-    
+
     ```json
     {
       "value": "val1",
