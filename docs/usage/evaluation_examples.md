@@ -1,5 +1,30 @@
 # Evaluation Examples Using curl
 
+1. Download sample flag configuration:
+
+    ```shell
+    curl https://raw.githubusercontent.com/open-feature/flagd/main/config/samples/example_flags.flagd.json -o example_flags.flagd.json
+    ```
+
+1. Run one of the following commands, depending on how [flagd was installed](../usage/getting_started.md):
+   - binary:
+
+    ```shell
+    flagd start --uri file:example_flags.flagd.json
+    ```
+
+   - Docker:
+
+    ```shell
+    docker run -p 8013:8013 -v $(pwd)/:/etc/flagd/ -it --pull=always ghcr.io/open-feature/flagd:latest start --uri file:./etc/flagd/example_flags.flagd.json
+    ```
+
+1. Changes made in `example_flags.flagd.json` will immediately take affect.
+  Go ahead, give a shot!
+
+Flagd is now ready to perform flag evaluations over either HTTP or gRPC.
+In this example, we'll utilize HTTP via cURL.
+
 ## Resolve a boolean value
 
 Command:
