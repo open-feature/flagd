@@ -10,32 +10,19 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {
-	Evaluator   eval.IEvaluator
-	Logger      *logger.Logger
-	Service     service.IFlagEvaluationService
-	SyncImpl    []sync.ISync
-	config      Config
-	metrics     *otel.MetricsRecorder
-	mu          msync.Mutex
-	serviceName string
-}
+	Evaluator     eval.IEvaluator
+	Logger        *logger.Logger
+	Service       service.IFlagEvaluationService
+	ServiceConfig service.Configuration
+	SyncImpl      []sync.ISync
 
-type Config struct {
-	ServicePort       uint16
-	MetricsPort       uint16
-	ServiceSocketPath string
-	ServiceCertPath   string
-	ServiceKeyPath    string
-
-	SyncProviders []sync.SourceConfig
-	CORS          []string
+	mu msync.Mutex
 }
 
 // nolint: funlen
@@ -90,16 +77,9 @@ func (r *Runtime) Start() error {
 		})
 	}
 	g.Go(func() error {
-		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
-			ReadinessProbe: r.isReady,
-			Port:           r.config.ServicePort,
-			MetricsPort:    r.config.MetricsPort,
-			ServiceName:    r.serviceName,
-			KeyPath:        r.config.ServiceKeyPath,
-			CertPath:       r.config.ServiceCertPath,
-			SocketPath:     r.config.ServiceSocketPath,
-			CORS:           r.config.CORS,
-		})
+		// Readiness probe rely on the runtime
+		r.ServiceConfig.ReadinessProbe = r.isReady
+		return r.Service.Serve(gCtx, r.Evaluator, r.ServiceConfig)
 	})
 	<-gCtx.Done()
 	return g.Wait()
