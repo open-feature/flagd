@@ -28,10 +28,9 @@ flagd:
 
 - 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
 - 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
-- 👍 Reads feature flags from multiple sources. `files`, `http(s)`, `gRPC` and `Kubernetes Custom Resources` can be used simultaneously.
 - 🔄 Centralized flag management. Use multiple flag sources and vendors. [Flag values are automatically merged](docs/configuration/flag_configuration_merging.md).
 - 🕒 Feature Flag updates occur in near-realtime (HTTP) or realtime (gRPC)
-- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and ["bucket-based" fractional evaluation for flag micro-targeting](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
+- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
 - 🔦 [Flag statistics and metrics are exposed](https://example.com) and compatible with Prometheus.
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
@@ -40,7 +39,8 @@ flagd:
 ## ▶️ Quick Start
 
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
-   Kubernetes-native? flagd can also be run as part of the OpenFeature Kubernetes Operator.
+   
+   Kubernetes-native? flagd can also be run [as part of the Kubernetes Operator](https://github.com/open-feature/open-feature-operator).
 
 2. Start flagd:
 
