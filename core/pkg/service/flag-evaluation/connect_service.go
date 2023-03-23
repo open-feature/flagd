@@ -104,7 +104,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	// Add middlewares
 
-	metricsMiddleware := metricsmw.NewHttpMetric(metricsmw.Config{
+	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
 		Service:        "openfeature/flagd",
 		MetricRecorder: s.Metrics,
 		Logger:         s.Logger,
@@ -116,7 +116,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	corsMiddleware := corsmw.New(svcConf.CORS)
 	s.AddMiddleware(corsMiddleware)
 
-	if svcConf.CertPath == "" || svcConf.ServerKeyPath == "" {
+	if svcConf.CertPath == "" || svcConf.KeyPath == "" {
 		h2cMiddleware := h2cmw.New()
 		s.AddMiddleware(h2cMiddleware)
 	}

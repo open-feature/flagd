@@ -136,9 +136,8 @@ func TestAddMiddleware(t *testing.T) {
 	metricRecorder := otel.NewOTelRecorder(exp, "my-exporter")
 
 	svc := ConnectService{
-		ConnectServiceConfiguration: &ConnectServiceConfiguration{},
-		Logger:                      logger.NewLogger(nil, false),
-		Metrics:                     metricRecorder,
+		Logger:  logger.NewLogger(nil, false),
+		Metrics: metricRecorder,
 	}
 
 	serveConf := iservice.Configuration{
