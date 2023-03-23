@@ -277,18 +277,16 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
 		return runtime.NewFile(isync.SourceConfig{
-			URI:      regFile.ReplaceAllString(uri, ""),
-			Provider: "file",
+			URI: regFile.ReplaceAllString(uri, ""),
 		}, logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "filepath"),
 			zap.String("target", "target"),
 		)), nil
 	case regCrd.Match(uriB):
-		return runtime.NewK8s(regCrd.ReplaceAllString(uri, ""), logger.WithFields(
+		return runtime.NewK8s(uri, logger.WithFields(
 			zap.String("component", "sync"),
-			zap.String("sync", "filepath"),
-			zap.String("target", "target"),
+			zap.String("sync", "kubernetes"),
 		))
 	}
 	return nil, fmt.Errorf("unrecognized URI: %s", uri)

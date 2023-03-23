@@ -17,6 +17,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
+	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
@@ -135,9 +136,10 @@ func NewGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		CertPath:   config.CertPath,
-		ProviderID: config.ProviderID,
-		Selector:   config.Selector,
+		CertPath:          config.CertPath,
+		ProviderID:        config.ProviderID,
+		Selector:          config.Selector,
+		CredentialBuilder: &credentials.CredentialBuilder{},
 	}
 }
 
