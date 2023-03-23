@@ -26,18 +26,11 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	ConnectServiceConfiguration *ConnectServiceConfiguration
-	Eval                        eval.IEvaluator
-	Logger                      *logger.Logger
-	Metrics                     *otel.MetricsRecorder
-	eventingConfiguration       *eventingConfiguration
-	server                      http.Server
-}
-type ConnectServiceConfiguration struct {
-	ServerCertPath   string
-	ServerKeyPath    string
-	ServerSocketPath string
-	CORS             []string
+	Logger                *logger.Logger
+	Eval                  eval.IEvaluator
+	Metrics               *otel.MetricsRecorder
+	eventingConfiguration *eventingConfiguration
+	server                http.Server
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
@@ -54,11 +47,11 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	errChan := make(chan error, 1)
 	go func() {
 		s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
-		if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
+		if svcConf.CertPath != "" && svcConf.KeyPath != "" {
 			if err := s.server.ServeTLS(
 				lis,
-				s.ConnectServiceConfiguration.ServerCertPath,
-				s.ConnectServiceConfiguration.ServerKeyPath,
+				svcConf.CertPath,
+				svcConf.KeyPath,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
@@ -84,8 +77,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
-	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
-		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	if svcConf.SocketPath != "" {
+		lis, err = net.Listen("unix", svcConf.SocketPath)
 	} else {
 		address := fmt.Sprintf(":%d", svcConf.Port)
 		lis, err = net.Listen("tcp", address)
@@ -110,11 +103,11 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	go bindMetrics(s, svcConf)
 
-	if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
-		handler = s.newCORS().Handler(h)
+	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
+		handler = s.newCORS(svcConf).Handler(h)
 	} else {
 		handler = h2c.NewHandler(
-			s.newCORS().Handler(h),
+			s.newCORS(svcConf).Handler(h),
 			&http2.Server{},
 		)
 	}
@@ -133,7 +126,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	}
 }
 
-func (s *ConnectService) newCORS() *cors.Cors {
+func (s *ConnectService) newCORS(svcConf service.Configuration) *cors.Cors {
 	return cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,
@@ -143,7 +136,7 @@ func (s *ConnectService) newCORS() *cors.Cors {
 			http.MethodPatch,
 			http.MethodDelete,
 		},
-		AllowedOrigins: s.ConnectServiceConfiguration.CORS,
+		AllowedOrigins: svcConf.CORS,
 		AllowedHeaders: []string{"*"},
 		ExposedHeaders: []string{
 			// Content-Type is in the default safelist.
