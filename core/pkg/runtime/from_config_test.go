@@ -1,9 +1,10 @@
 package runtime
 
 import (
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"reflect"
 	"testing"
+
+	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
 func TestParseSource(t *testing.T) {

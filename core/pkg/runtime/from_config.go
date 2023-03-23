@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/service"
 	"net/http"
 	"regexp"
 	msync "sync"
 	"time"
+
+	"github.com/open-feature/flagd/core/pkg/service"
 
 	"go.opentelemetry.io/otel/exporters/prometheus"
 
