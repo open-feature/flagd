@@ -18,7 +18,7 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 	const svcName = "mySvc"
 	exp := metric.NewManualReader()
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
-	m := NewHttpMetric(Config{
+	m := NewHTTPMetric(Config{
 		MetricRecorder: otel.NewOTelRecorder(exp, svcName),
 		Service:        svcName,
 		Logger:         logger.NewLogger(l, true),
@@ -129,7 +129,7 @@ func TestMeasure(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// test the middleware correctly
 			rep := tt.rep
-			m := NewHttpMetric(Config{
+			m := NewHTTPMetric(Config{
 				MetricRecorder:     otel.NewOTelRecorder(exp, tt.name),
 				Service:            tt.name,
 				Logger:             logger.NewLogger(l, true),
@@ -197,7 +197,7 @@ func TestNewHttpMetric(t *testing.T) {
 	const groupedStatus = false
 	const disableMeasureSize = false
 
-	mdw := NewHttpMetric(Config{
+	mdw := NewHTTPMetric(Config{
 		MetricRecorder:     otel.NewOTelRecorder(exp, svcName),
 		Logger:             log,
 		Service:            svcName,

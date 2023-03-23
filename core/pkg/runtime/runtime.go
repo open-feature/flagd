@@ -95,13 +95,14 @@ func (r *Runtime) Start() error {
 			Port:           r.config.ServicePort,
 			MetricsPort:    r.config.MetricsPort,
 			ServiceName:    r.serviceName,
+			KeyPath:        r.config.ServiceKeyPath,
+			CertPath:       r.config.ServiceCertPath,
+			SocketPath:     r.config.ServiceSocketPath,
+			CORS:           r.config.CORS,
 		})
 	})
 	<-gCtx.Done()
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return g.Wait()
 }
 
 func (r *Runtime) isReady() bool {

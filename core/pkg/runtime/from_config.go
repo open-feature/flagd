@@ -75,12 +75,6 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 
 func (r *Runtime) setService(logger *logger.Logger) {
 	r.Service = &service.ConnectService{
-		ConnectServiceConfiguration: &service.ConnectServiceConfiguration{
-			ServerKeyPath:    r.config.ServiceKeyPath,
-			ServerCertPath:   r.config.ServiceCertPath,
-			ServerSocketPath: r.config.ServiceSocketPath,
-			CORS:             r.config.CORS,
-		},
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),

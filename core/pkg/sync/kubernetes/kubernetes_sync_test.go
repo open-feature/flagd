@@ -882,7 +882,7 @@ type MockClient struct {
 	getResponse v1alpha1.FeatureFlagConfiguration
 }
 
-func (m MockClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
 	// return error if error is set
 	if m.clientErr != nil {
 		return m.clientErr

@@ -27,18 +27,11 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	ConnectServiceConfiguration *ConnectServiceConfiguration
-	Eval                        eval.IEvaluator
-	Logger                      *logger.Logger
-	Metrics                     *otel.MetricsRecorder
-	eventingConfiguration       *eventingConfiguration
-	server                      http.Server
-}
-type ConnectServiceConfiguration struct {
-	ServerCertPath   string
-	ServerKeyPath    string
-	ServerSocketPath string
-	CORS             []string
+	Logger                *logger.Logger
+	Eval                  eval.IEvaluator
+	Metrics               *otel.MetricsRecorder
+	eventingConfiguration *eventingConfiguration
+	server                http.Server
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
@@ -55,11 +48,11 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	errChan := make(chan error, 1)
 	go func() {
 		s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
-		if s.ConnectServiceConfiguration.ServerCertPath != "" && s.ConnectServiceConfiguration.ServerKeyPath != "" {
+		if svcConf.CertPath != "" && svcConf.KeyPath != "" {
 			if err := s.server.ServeTLS(
 				lis,
-				s.ConnectServiceConfiguration.ServerCertPath,
-				s.ConnectServiceConfiguration.ServerKeyPath,
+				svcConf.CertPath,
+				svcConf.KeyPath,
 			); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errChan <- err
 			}
@@ -85,8 +78,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	var lis net.Listener
 	var err error
 	mux := http.NewServeMux()
-	if s.ConnectServiceConfiguration.ServerSocketPath != "" {
-		lis, err = net.Listen("unix", s.ConnectServiceConfiguration.ServerSocketPath)
+	if svcConf.SocketPath != "" {
+		lis, err = net.Listen("unix", svcConf.SocketPath)
 	} else {
 		address := fmt.Sprintf(":%d", svcConf.Port)
 		lis, err = net.Listen("tcp", address)
@@ -120,10 +113,10 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	s.AddMiddleware(metricsMiddleware)
 
-	corsMiddleware := corsmw.New(s.ConnectServiceConfiguration.CORS)
+	corsMiddleware := corsmw.New(svcConf.CORS)
 	s.AddMiddleware(corsMiddleware)
 
-	if s.ConnectServiceConfiguration.ServerCertPath == "" || s.ConnectServiceConfiguration.ServerKeyPath == "" {
+	if svcConf.CertPath == "" || svcConf.ServerKeyPath == "" {
 		h2cMiddleware := h2cmw.New()
 		s.AddMiddleware(h2cMiddleware)
 	}
