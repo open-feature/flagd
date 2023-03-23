@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.12.6
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/flagd/core v0.4.4
+	github.com/open-feature/flagd/core v0.4.5
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1
 	github.com/spf13/cobra v1.6.1
@@ -65,7 +65,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/open-feature/flagd v0.3.7 // indirect
 	github.com/open-feature/go-sdk v1.2.0 // indirect
-	github.com/open-feature/open-feature-operator v0.2.29 // indirect
+	github.com/open-feature/open-feature-operator v0.2.31 // indirect
 	github.com/open-feature/schemas v0.2.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -111,10 +111,10 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.26.2 // indirect
+	k8s.io/api v0.26.3 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
-	k8s.io/apimachinery v0.26.2 // indirect
-	k8s.io/client-go v0.26.2 // indirect
+	k8s.io/apimachinery v0.26.3 // indirect
+	k8s.io/client-go v0.26.3 // indirect
 	k8s.io/component-base v0.26.1 // indirect
 	k8s.io/klog/v2 v2.90.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20230217203603-ff9a8e8fa21d // indirect
