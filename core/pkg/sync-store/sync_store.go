@@ -93,7 +93,7 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 }
 
 // RegisterSubscription starts a new subscription to the target resource.
-// Once the subscription is set an ALL sync event will be recieved via the DataSync chan.
+// Once the subscription is set an ALL sync event will be received via the DataSync chan.
 func (s *SyncStore) RegisterSubscription(
 	ctx context.Context,
 	target string,

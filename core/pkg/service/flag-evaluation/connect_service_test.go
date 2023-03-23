@@ -76,9 +76,6 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			metricRecorder := otel.NewOTelRecorder(exp, tt.name)
 			svc := ConnectService{
-				ConnectServiceConfiguration: &ConnectServiceConfiguration{
-					ServerSocketPath: tt.socketPath,
-				},
 				Logger:  logger.NewLogger(nil, false),
 				Metrics: metricRecorder,
 			}
@@ -86,6 +83,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				ReadinessProbe: func() bool {
 					return true
 				},
+				SocketPath: tt.socketPath,
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)

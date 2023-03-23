@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/credentials"
 	"io"
 	"log"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/credentials"
 
 	"golang.org/x/sync/errgroup"
 
@@ -739,7 +740,7 @@ type bufferedServer struct {
 	fetchAllFlagsError    error
 }
 
-func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.FlagSyncService_SyncFlagsServer) error {
+func (b *bufferedServer) SyncFlags(_ *v1.SyncFlagsRequest, stream syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	for _, response := range b.mockResponses {
 		err := stream.Send(&v1.SyncFlagsResponse{
 			FlagConfiguration: response.flags,
@@ -754,6 +755,6 @@ func (b *bufferedServer) SyncFlags(req *v1.SyncFlagsRequest, stream syncv1grpc.F
 	return nil
 }
 
-func (b *bufferedServer) FetchAllFlags(ctx context.Context, req *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
+func (b *bufferedServer) FetchAllFlags(_ context.Context, _ *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
 	return b.fetchAllFlagsResponse, b.fetchAllFlagsError
 }
