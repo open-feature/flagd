@@ -96,11 +96,11 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 		case syncProviderFile:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newFile(syncProvider, logger),
+				NewFile(syncProvider, logger),
 			)
 			rtLogger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
 		case syncProviderKubernetes:
-			k, err := r.newK8s(syncProvider.URI, logger)
+			k, err := NewK8s(syncProvider.URI, logger)
 			if err != nil {
 				return err
 			}
@@ -112,13 +112,13 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 		case syncProviderHTTP:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newHTTP(syncProvider, logger),
+				NewHTTP(syncProvider, logger),
 			)
 			rtLogger.Debug(fmt.Sprintf("using remote sync-provider for: %s", syncProvider.URI))
 		case syncProviderGrpc:
 			r.SyncImpl = append(
 				r.SyncImpl,
-				r.newGRPC(syncProvider, logger),
+				NewGRPC(syncProvider, logger),
 			)
 		default:
 			return fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', 'http(s)://', 'grpc://',"+
@@ -128,7 +128,7 @@ func (r *Runtime) setSyncImplFromConfig(logger *logger.Logger) error {
 	return nil
 }
 
-func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
+func NewGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(
@@ -141,7 +141,7 @@ func (r *Runtime) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc
 	}
 }
 
-func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
+func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -156,7 +156,7 @@ func (r *Runtime) newHTTP(config sync.SourceConfig, logger *logger.Logger) *http
 	}
 }
 
-func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	reader, dynamic, err := kubernetes.GetClients()
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func (r *Runtime) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, e
 	), nil
 }
 
-func (r *Runtime) newFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
+func NewFile(config sync.SourceConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(

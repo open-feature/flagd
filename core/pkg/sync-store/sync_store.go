@@ -9,9 +9,8 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/runtime"
 	isync "github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/flagd/core/pkg/sync/file"
-	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"go.uber.org/zap"
 )
 
@@ -254,6 +253,18 @@ func (s *SyncStore) cleanup() {
 	}
 }
 
+func (s *SyncStore) GetSyncMetrics() float64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	syncs := 0
+	for _, v := range s.syncHandlers {
+		syncs += len(v.subs)
+	}
+
+	return float64(syncs)
+}
+
 type SyncBuilderInterface interface {
 	SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error)
 }
@@ -265,29 +276,20 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
-		return &file.Sync{
-			URI: regFile.ReplaceAllString(uri, ""),
-			Logger: logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "filepath"),
-				zap.String("target", "target"),
-			),
-			Mux: &sync.RWMutex{},
-		}, nil
+		return runtime.NewFile(isync.SourceConfig{
+			URI:      regFile.ReplaceAllString(uri, ""),
+			Provider: "file",
+		}, logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "filepath"),
+			zap.String("target", "target"),
+		)), nil
 	case regCrd.Match(uriB):
-		reader, dynamic, err := kubernetes.GetClients()
-		if err != nil {
-			return nil, err
-		}
-		return kubernetes.NewK8sSync(
-			logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "kubernetes"),
-			),
-			regCrd.ReplaceAllString(uri, ""),
-			reader,
-			dynamic,
-		), nil
+		return runtime.NewK8s(regCrd.ReplaceAllString(uri, ""), logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "filepath"),
+			zap.String("target", "target"),
+		))
 	}
 	return nil, fmt.Errorf("unrecognized URI: %s", uri)
 }

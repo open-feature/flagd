@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
@@ -61,6 +62,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 		}
 		return nil
 	})
+	go s.captureMetrics(gCtx)
 
 	err := g.Wait()
 	if err != nil {
@@ -111,6 +113,8 @@ func (s *Server) startMetricsServer() error {
 			} else {
 				w.WriteHeader(http.StatusPreconditionFailed)
 			}
+		case "/metrics":
+			promhttp.Handler().ServeHTTP(w, r)
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
