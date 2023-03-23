@@ -1,8 +1,9 @@
 package cors
 
 import (
-	"github.com/rs/cors"
 	"net/http"
+
+	"github.com/rs/cors"
 )
 
 type Middleware struct {

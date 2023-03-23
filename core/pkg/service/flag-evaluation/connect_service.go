@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/service/middleware"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/open-feature/flagd/core/pkg/service/middleware"
 
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
 	"github.com/open-feature/flagd/core/pkg/eval"

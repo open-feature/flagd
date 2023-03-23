@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
 
 	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"

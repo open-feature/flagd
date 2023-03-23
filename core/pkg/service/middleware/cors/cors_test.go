@@ -1,12 +1,13 @@
 package cors
 
 import (
-	"github.com/golang/mock/gomock"
-	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMiddleware(t *testing.T) {

@@ -1,9 +1,10 @@
 package h2c
 
 import (
+	"net/http"
+
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"net/http"
 )
 
 type Middleware struct{}
