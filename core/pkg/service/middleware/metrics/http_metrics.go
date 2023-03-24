@@ -1,4 +1,4 @@
-package middleware
+package metrics
 
 import (
 	"bufio"
@@ -21,6 +21,7 @@ type Config struct {
 	Service            string
 	GroupedStatus      bool
 	DisableMeasureSize bool
+	HandlerID          string
 }
 
 type Middleware struct {
@@ -90,7 +91,7 @@ func (m Middleware) Measure(ctx context.Context, handlerID string, reporter Repo
 }
 
 // Handler returns an measuring standard http.Handler.
-func Handler(handlerID string, m Middleware, h http.Handler) http.Handler {
+func (m Middleware) Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		wi := &responseWriterInterceptor{
 			statusCode:     http.StatusOK,
@@ -100,7 +101,7 @@ func Handler(handlerID string, m Middleware, h http.Handler) http.Handler {
 			w: wi,
 			r: r,
 		}
-		m.Measure(r.Context(), handlerID, reporter, func() {
+		m.Measure(r.Context(), m.cfg.HandlerID, reporter, func() {
 			h.ServeHTTP(wi, r)
 		})
 	})

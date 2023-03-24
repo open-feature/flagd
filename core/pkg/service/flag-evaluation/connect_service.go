@@ -10,17 +10,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/service/middleware"
+
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
-	"github.com/open-feature/flagd/core/pkg/service/middleware"
+	corsmw "github.com/open-feature/flagd/core/pkg/service/middleware/cors"
+	h2cmw "github.com/open-feature/flagd/core/pkg/service/middleware/h2c"
+	metricsmw "github.com/open-feature/flagd/core/pkg/service/middleware/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/cors"
 	"go.uber.org/zap"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 const ErrorPrefix = "FlagdError:"
@@ -65,6 +66,8 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 		close(errChan)
 	}()
 
+	go s.startMetricsServer(svcConf)
+
 	select {
 	case err := <-errChan:
 		return err
@@ -94,28 +97,35 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
 
-	mdlw := middleware.NewHTTPMetric(middleware.Config{
-		Service:        "openfeature/flagd",
-		MetricRecorder: s.Metrics,
-		Logger:         s.Logger,
-	})
-	h := middleware.Handler("", mdlw, mux)
-
-	go bindMetrics(s, svcConf)
-
-	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
-		handler = s.newCORS(svcConf).Handler(h)
-	} else {
-		handler = h2c.NewHandler(
-			s.newCORS(svcConf).Handler(h),
-			&http2.Server{},
-		)
-	}
 	s.server = http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
+
+	// Add middlewares
+
+	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
+		Service:        svcConf.ServiceName,
+		MetricRecorder: s.Metrics,
+		Logger:         s.Logger,
+		HandlerID:      "",
+	})
+
+	s.AddMiddleware(metricsMiddleware)
+
+	corsMiddleware := corsmw.New(svcConf.CORS)
+	s.AddMiddleware(corsMiddleware)
+
+	if svcConf.CertPath == "" || svcConf.KeyPath == "" {
+		h2cMiddleware := h2cmw.New()
+		s.AddMiddleware(h2cMiddleware)
+	}
+
 	return lis, nil
+}
+
+func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
+	s.server.Handler = mw.Handler(s.server.Handler)
 }
 
 func (s *ConnectService) Notify(n service.Notification) {
@@ -126,36 +136,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	}
 }
 
-func (s *ConnectService) newCORS(svcConf service.Configuration) *cors.Cors {
-	return cors.New(cors.Options{
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-		},
-		AllowedOrigins: svcConf.CORS,
-		AllowedHeaders: []string{"*"},
-		ExposedHeaders: []string{
-			// Content-Type is in the default safelist.
-			"Accept",
-			"Accept-Encoding",
-			"Accept-Post",
-			"Connect-Accept-Encoding",
-			"Connect-Content-Encoding",
-			"Content-Encoding",
-			"Grpc-Accept-Encoding",
-			"Grpc-Encoding",
-			"Grpc-Message",
-			"Grpc-Status",
-			"Grpc-Status-Details-Bin",
-		},
-	})
-}
-
-func bindMetrics(s *ConnectService, svcConf service.Configuration) {
+func (s *ConnectService) startMetricsServer(svcConf service.Configuration) {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
