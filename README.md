@@ -24,8 +24,6 @@ Flagd is a simple command line tool for fetching and evaluating feature flags.
 
 Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
 
-flagd:
-
 - 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
 - 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
 - 🔄 Centralized flag management. Use multiple flag sources and vendors. [Flag values are automatically merged](docs/configuration/flag_configuration_merging.md).
