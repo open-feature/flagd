@@ -109,8 +109,9 @@ Alternatively, these configurations should be passed to flagd via config file, s
 | grpcSecure  | optional `boolean` | Used to enable secure TLS connectivity for grpc sync. Default(ex:- if unset) is false, which will use insecure grpc connection               |
 | certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                     |
 
-The `uri` field values **do not** need to follow the [URI patterns](#uri-patterns), the provider type is instead derived
-from the provider field. Only exception is the remote provider where `http(s)://` is expected by default.
+The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
+from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect 
+URIs will result in a flagd start-up failure with errors from the respective sync provider implementation.
 
 Example start command using a filepath sync provider and the equivalent config file definition:
 
