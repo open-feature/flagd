@@ -28,57 +28,43 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-func Test_Init(t *testing.T) {
+func Test_InitWithMockCredentialBuilder(t *testing.T) {
 	tests := []struct {
-		name                string
-		target              string
-		err                 error
-		returnedCredentials credentials.TransportCredentials
-		shouldError         bool
+		name                       string
+		mockCredentials            credentials.TransportCredentials
+		mockCredentialBuilderError error
+		shouldError                bool
 	}{
 		{
-			name:                "happy path",
-			target:              "localBufCon",
-			err:                 nil,
-			returnedCredentials: insecure.NewCredentials(),
-			shouldError:         false,
+			name:                       "Initializer - happy path",
+			mockCredentialBuilderError: nil,
+			mockCredentials:            insecure.NewCredentials(),
+			shouldError:                false,
 		},
 		{
-			name:                "nil credentials",
-			target:              "localBufCon",
-			err:                 nil,
-			returnedCredentials: nil,
-			shouldError:         true,
+			name:                       "Initializer fails on nil credentials",
+			mockCredentialBuilderError: nil,
+			mockCredentials:            nil,
+			shouldError:                true,
 		},
 		{
-			name:                "could not create transport credentials",
-			target:              "localBufCon",
-			err:                 errors.New("could not create transport credentials"),
-			returnedCredentials: nil,
-			shouldError:         true,
+			name:                       "Initializer handles credential builder error",
+			mockCredentialBuilderError: errors.New("could not create transport credentials"),
+			mockCredentials:            nil,
+			shouldError:                true,
 		},
 	}
 
 	for _, test := range tests {
-		bufCon := bufconn.Listen(5)
-
-		bufServer := bufferedServer{
-			listener: bufCon,
-		}
-
-		// start server
-		go serve(&bufServer)
-
 		mockCtrl := gomock.NewController(t)
 		mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
 
 		mockCredentialBulder.EXPECT().
 			Build(gomock.Any(), gomock.Any()).
-			Return(test.returnedCredentials, test.err)
+			Return(test.mockCredentials, test.mockCredentialBuilderError)
 
 		grpcSync := Sync{
-			URI:               test.target,
-			ProviderID:        "",
+			URI:               "grpc-target",
 			Logger:            logger.NewLogger(nil, false),
 			CredentialBuilder: mockCredentialBulder,
 		}
@@ -86,11 +72,10 @@ func Test_Init(t *testing.T) {
 		err := grpcSync.Init(context.Background())
 
 		if test.shouldError {
-			require.NotNil(t, err)
-			require.Nil(t, grpcSync.client)
+			require.NotNilf(t, err, "%s: expected an error", test.name)
 		} else {
-			require.Nil(t, err)
-			require.NotNil(t, grpcSync.client)
+			require.Nilf(t, err, "%s: expected no error, but got non nil error", test.name)
+			require.NotNilf(t, grpcSync.client, "%s: expected client to be initialized", test.name)
 		}
 	}
 }
