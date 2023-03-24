@@ -145,13 +145,13 @@ func (s *FlagEvaluationService) EventStream(
 }
 
 func resolve[T constraints](
+	goCtx context.Context,
 	logger *logger.Logger,
 	resolver func(reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),
 	flagKey string,
 	ctx *structpb.Struct,
 	resp response[T],
 	metrics *otel.MetricsRecorder,
-	goCtx context.Context,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
@@ -184,13 +184,13 @@ func (s *FlagEvaluationService) ResolveBoolean(
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	err := resolve[bool](
+		ctx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&booleanResponse{res},
 		s.metrics,
-		ctx,
 	)
 
 	return res, err
@@ -202,13 +202,13 @@ func (s *FlagEvaluationService) ResolveString(
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	err := resolve[string](
+		ctx,
 		s.logger,
 		s.eval.ResolveStringValue,
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&stringResponse{res},
 		s.metrics,
-		ctx,
 	)
 
 	return res, err
@@ -220,13 +220,13 @@ func (s *FlagEvaluationService) ResolveInt(
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	err := resolve[int64](
+		ctx,
 		s.logger,
 		s.eval.ResolveIntValue,
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&intResponse{res},
 		s.metrics,
-		ctx,
 	)
 
 	return res, err
@@ -238,13 +238,13 @@ func (s *FlagEvaluationService) ResolveFloat(
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	err := resolve[float64](
+		ctx,
 		s.logger,
 		s.eval.ResolveFloatValue,
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&floatResponse{res},
 		s.metrics,
-		ctx,
 	)
 
 	return res, err
@@ -256,13 +256,13 @@ func (s *FlagEvaluationService) ResolveObject(
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	err := resolve[map[string]any](
+		ctx,
 		s.logger,
 		s.eval.ResolveObjectValue,
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&objectResponse{res},
 		s.metrics,
-		ctx,
 	)
 
 	return res, err
