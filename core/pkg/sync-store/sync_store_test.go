@@ -30,7 +30,7 @@ func newMockSync() *syncMock {
 	}
 }
 
-func (s *syncMock) Init(ctx context.Context) error {
+func (s *syncMock) Init(_ context.Context) error {
 	return s.initError
 }
 
@@ -47,7 +47,7 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 	}
 }
 
-func (s *syncMock) ReSync(ctx context.Context, dataSync chan<- isync.DataSync) error {
+func (s *syncMock) ReSync(_ context.Context, dataSync chan<- isync.DataSync) error {
 	if s.resyncData != nil {
 		dataSync <- *s.resyncData
 	}
@@ -59,7 +59,7 @@ type syncBuilderMock struct {
 	initError error
 }
 
-func (s *syncBuilderMock) SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error) {
+func (s *syncBuilderMock) SyncFromURI(_ string, _ *logger.Logger) (isync.ISync, error) {
 	return s.mock, s.initError
 }
 
@@ -258,7 +258,7 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 	syncStore.mu.Unlock()
 }
 
-func Test_watchResource_SyncHandlerDoesNotExist(t *testing.T) {
+func Test_watchResource_SyncHandlerDoesNotExist(_ *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))

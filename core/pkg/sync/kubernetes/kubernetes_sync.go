@@ -81,7 +81,7 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	return nil
 }
 
-func (k *Sync) Init(ctx context.Context) error {
+func (k *Sync) Init(_ context.Context) error {
 	var err error
 
 	k.namespace, k.crdName, err = parseURI(k.URI)

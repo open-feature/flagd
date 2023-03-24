@@ -2,13 +2,13 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	credentials2 "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	"math"
 	"strings"
 	msync "sync"
 	"time"
+
+	credentials2 "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -30,8 +30,6 @@ const (
 	backOffLimit         = 3
 	backOffBase          = 4
 	constantBackOffDelay = 60
-
-	tlsVersion = tls.VersionTLS12
 )
 
 // type aliases for interfaces required by this component - needed for mock generation with gomock

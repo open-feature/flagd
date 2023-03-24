@@ -30,7 +30,9 @@ type eventingConfiguration struct {
 	subs map[interface{}]chan service.Notification
 }
 
-func NewFlagEvaluationService(log *logger.Logger, eval eval.IEvaluator, metricsRecorder *otel.MetricsRecorder) *FlagEvaluationService {
+func NewFlagEvaluationService(log *logger.Logger,
+	eval eval.IEvaluator, metricsRecorder *otel.MetricsRecorder,
+) *FlagEvaluationService {
 	return &FlagEvaluationService{
 		logger:  log,
 		eval:    eval,
@@ -43,7 +45,7 @@ func NewFlagEvaluationService(log *logger.Logger, eval eval.IEvaluator, metricsR
 }
 
 func (s *FlagEvaluationService) ResolveAll(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
 	reqID := xid.New().String()
@@ -173,7 +175,7 @@ func resolve[T constraints](
 }
 
 func (s *FlagEvaluationService) ResolveBoolean(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
@@ -185,7 +187,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 }
 
 func (s *FlagEvaluationService) ResolveString(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
@@ -197,7 +199,7 @@ func (s *FlagEvaluationService) ResolveString(
 }
 
 func (s *FlagEvaluationService) ResolveInt(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
@@ -209,7 +211,7 @@ func (s *FlagEvaluationService) ResolveInt(
 }
 
 func (s *FlagEvaluationService) ResolveFloat(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
@@ -221,7 +223,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 }
 
 func (s *FlagEvaluationService) ResolveObject(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})

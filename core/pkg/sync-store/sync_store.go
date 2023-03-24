@@ -93,7 +93,7 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 }
 
 // RegisterSubscription starts a new subscription to the target resource.
-// Once the subscription is set an ALL sync event will be recieved via the DataSync chan.
+// Once the subscription is set an ALL sync event will be received via the DataSync chan.
 func (s *SyncStore) RegisterSubscription(
 	ctx context.Context,
 	target string,
@@ -276,7 +276,7 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
-		return runtime.NewFile(isync.SourceConfig{
+		return runtime.NewFile(runtime.SourceConfig{
 			URI: regFile.ReplaceAllString(uri, ""),
 		}, logger.WithFields(
 			zap.String("component", "sync"),
