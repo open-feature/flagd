@@ -27,7 +27,7 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 - 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
 - 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
 - 🔄 Aggregate multiple data sources.
-- 🕒 Feature Flag updates occur in near-realtime (HTTP) or realtime (gRPC)
+- 🕒 Feature Flag updates occur in near-realtime
 - 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
 - 🔦 [Flag statistics and metrics are exposed](https://example.com) and compatible with Prometheus.
 
