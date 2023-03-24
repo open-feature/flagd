@@ -66,6 +66,8 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 		close(errChan)
 	}()
 
+	go s.startMetricsServer(svcConf)
+
 	select {
 	case err := <-errChan:
 		return err
@@ -100,12 +102,10 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		Handler:           handler,
 	}
 
-	go bindMetrics(s, svcConf)
-
 	// Add middlewares
 
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
-		Service:        "openfeature/flagd",
+		Service:        svcConf.ServiceName,
 		MetricRecorder: s.Metrics,
 		Logger:         s.Logger,
 		HandlerID:      "",
@@ -136,7 +136,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	}
 }
 
-func bindMetrics(s *ConnectService, svcConf service.Configuration) {
+func (s *ConnectService) startMetricsServer(svcConf service.Configuration) {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
