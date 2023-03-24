@@ -3,7 +3,7 @@
   <img src="images/flagD.png" width="350px;" >
 </h1>
 
-<h2 align="center">A feature flag daemon with a Unix philosophy.</h4>
+<h2 align="center">A feature flag daemon with a Unix philosophy.</h2>
 
 <p align="center">
   <a href="https://github.com/open-feature/flagd/actions">
@@ -12,27 +12,25 @@
   <a href="https://goreportcard.com/report/github.com/open-feature/flagd">
     <img src="https://goreportcard.com/badge/github.com/open-feature/flagd">
   </a>
-</a>
+  <a href="https://killercoda.com/open-feature/scenario/flagd-demo">
+    <img src="https://img.shields.io/badge/Killercoda-Interactive%20Demo-blue">
+  </a>
 </p>
 
-<h2 align="center"><a href="https://killercoda.com/open-feature/scenario/flagd-demo" target="_blank">Try flagd in the Killercoda Playground (in browser)</a></h4>
 <!-- markdownlint-enable MD033 -->
+
+## What's flagd?
+
+Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
 
 ## Features
 
-Flagd is a feature flag daemon with a Unix philosophy.
-
-Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
-
 - 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
 - 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
-- 🔄 Aggregate multiple data sources.
-- 🕒 Feature Flag updates occur in near-realtime
-- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
-- 🔦 Flag statistics and metrics are exposed and compatible with Prometheus.
-
-![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
-*High level, logical architecture of flagd*
+- 🔄 Supports multiple data sources simultaneously.
+- 🕒 Feature Flag updates occur in near real-time.
+- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](docs/configuration/fractional_evaluation.md).
+- 🔦 Flag evaluation statistics and metrics are exposed and compatible with Prometheus.
 
 ## ▶️ Quick Start
 
@@ -114,17 +112,19 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 
 4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
 
+## 📐 High-level Architecture
+
+![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg "High level, logical architecture of flagd")
+
 ## 📝 Further Documentation
 
 Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found [on this page](docs/README.md).
 
 ## 🫶 Contributing
 
-OpenFeature 🫶 contributors.
+Interested in contributing? Great, we'd love your help! To get started, take a look at the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to the OpenFeature project.
-
-Our community meetings are held regularly and open to everyone.
+We also hold regular community meetings that are open to everyone.
 Check the [OpenFeature community page](https://docs.openfeature.dev/community/) for all the ways to get involved.
 
 Thanks so much to our contributors.
@@ -139,4 +139,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## License
 
-Apache License 2.0
+[Apache License 2.0](LICENSE)
