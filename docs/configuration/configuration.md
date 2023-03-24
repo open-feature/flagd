@@ -45,6 +45,9 @@ To use an existing FeatureFlagConfiguration custom resource, start flagD with th
 flagd start --uri core.openfeature.dev/default/my_example
 ```
 
+In this example, `default/my_example` expected to be a valid FeatureFlagConfiguration resource, where `default` is the
+namespace and `my_example` being the resource name.
+
 ### Filepath provider
 
 File path sync provider reads and watch the source file for updates(ex:- changes and deletions).
@@ -53,6 +56,8 @@ File path sync provider reads and watch the source file for updates(ex:- changes
 flagd start --uri file:etc/featureflags.json
 ```
 
+In this example, `etc/featureflags.json` is a valid feature flag configuration file accessible by the flagd runtime.
+
 ### Remote provider
 
 Remote sync provider fetch flags from a remote source and periodically poll the source for flag configuration updates.
@@ -60,6 +65,9 @@ Remote sync provider fetch flags from a remote source and periodically poll the 
 ```shell
 flagd start --uri https://my-flag-source.json
 ```
+
+In this example, `https://my-flag-source.json` is a remote endpoint responding valid feature flag configurations when
+invoked with **HTTP GET** request.
 
 ### GRPC provider
 
@@ -70,6 +78,8 @@ the [sync service protobuf definition](https://github.com/open-feature/schemas/b
 ```shell
 flagd start --uri grpc://grpc-sync-source
 ```
+
+In this example, `grpc-sync-source` is a grpc target implementing flagd protobuf definition.
 
 There are two mechanisms to provide configurations of sync providers,
 
@@ -97,7 +107,7 @@ In these cases the `--sources` flag should be used.
 
 The flagd accepts a string argument, which should be a JSON representation of an array of `SourceConfig` objects.
 
-Alternatively, these configurations should be passed to flagd via config file, specified using the `--config` flag.
+Alternatively, these configurations can be passed to flagd via config file, specified using the `--config` flag.
 
 | Field       | Type               | Note                                                                                                                                         |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -110,10 +120,20 @@ Alternatively, these configurations should be passed to flagd via config file, s
 | certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                     |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
-from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect 
+from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
 URIs will result in a flagd start-up failure with errors from the respective sync provider implementation.
 
-Example start command using a filepath sync provider and the equivalent config file definition:
+Given below are example sync providers, startup command and equivalent config file definition:
+
+Sync providers,
+
+* `file` - config/samples/example_flags.json
+* `http` - "http://my-flag-source.json"
+* `kubernetes` - default/my-flag-config
+* `grpc`(insecure) - grpc-source:8080
+* `grpc`(secure) - my-flag-source:8080
+
+Startup command,
 
 ```sh
 ./bin/flagd start 
@@ -121,8 +141,10 @@ Example start command using a filepath sync provider and the equivalent config f
             {"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
             {"uri":"default/my-flag-config","provider":"kubernetes"},
             {"uri":"grpc-source:8080","provider":"grpc"},
-            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "grpcSecure": "true", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]'
+            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "grpcSecure": true, "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]'
 ```
+
+Configuration file,
 
 ```yaml
 sources:
