@@ -264,7 +264,7 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
-		return runtime.NewFile(isync.SourceConfig{
+		return runtime.NewFile(runtime.SourceConfig{
 			URI: regFile.ReplaceAllString(uri, ""),
 		}, logger.WithFields(
 			zap.String("component", "sync"),
