@@ -1,4 +1,4 @@
-package middleware
+package metrics
 
 import (
 	"context"
@@ -22,11 +22,12 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 		MetricRecorder: otel.NewOTelRecorder(exp, svcName),
 		Service:        svcName,
 		Logger:         logger.NewLogger(l, true),
+		HandlerID:      "id",
 	})
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("answer"))
 	})
-	svr := httptest.NewServer(Handler("id", m, handler))
+	svr := httptest.NewServer(m.Handler(handler))
 	defer svr.Close()
 	resp, err := http.Get(svr.URL)
 	if err != nil {
