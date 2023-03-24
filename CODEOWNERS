@@ -1,3 +1,6 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence
-* @AlexsJones @james-milligan @toddbaert @kavindu-dodan
+#
+# Managed by Peribolos: https://github.com/open-feature/community/blob/main/config/open-feature/cloud-native/workgroup.yaml
+#
+* @open-feature/cloud-native-maintainers
