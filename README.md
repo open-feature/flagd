@@ -29,7 +29,7 @@ Think of it as a ready-made, open source, OpenFeature compliant feature flag bac
 - 🔄 Aggregate multiple data sources.
 - 🕒 Feature Flag updates occur in near-realtime
 - 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
-- 🔦 [Flag statistics and metrics are exposed](https://example.com) and compatible with Prometheus.
+- 🔦 Flag statistics and metrics are exposed and compatible with Prometheus.
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg)
 *High level, logical architecture of flagd*
