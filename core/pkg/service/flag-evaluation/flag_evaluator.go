@@ -167,8 +167,9 @@ func resolve[T constraints](
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
 		evalErr = errFormat(evalErr)
+	} else {
+		metrics.Impressions(goCtx, flagKey, variant)
 	}
-	metrics.Impressions(goCtx, flagKey, variant)
 
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())

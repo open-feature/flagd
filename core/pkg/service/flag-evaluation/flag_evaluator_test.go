@@ -122,6 +122,7 @@ type resolveBooleanArgs struct {
 	functionArgs resolveBooleanFunctionArgs
 	want         *schemaV1.ResolveBooleanResponse
 	wantErr      error
+	mCount       int
 }
 type resolveBooleanFunctionArgs struct {
 	ctx context.Context
@@ -138,6 +139,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 
 	tests := map[string]resolveBooleanArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
@@ -158,6 +160,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
@@ -201,7 +204,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 			data, err := exp.Collect(context.TODO())
 			require.Nil(t, err)
 			// the impression metric is registered
-			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 			require.Equal(t, tt.want, got.Msg)
 		})
 	}
@@ -267,6 +270,7 @@ type resolveStringArgs struct {
 	functionArgs resolveStringFunctionArgs
 	want         *schemaV1.ResolveStringResponse
 	wantErr      error
+	mCount       int
 }
 type resolveStringFunctionArgs struct {
 	ctx context.Context
@@ -282,6 +286,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveStringArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
@@ -302,6 +307,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
@@ -345,7 +351,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 			data, err := exp.Collect(context.TODO())
 			require.Nil(t, err)
 			// the impression metric is registered
-			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 			require.Equal(t, tt.want, got.Msg)
 		})
 	}
@@ -411,6 +417,7 @@ type resolveFloatArgs struct {
 	functionArgs resolveFloatFunctionArgs
 	want         *schemaV1.ResolveFloatResponse
 	wantErr      error
+	mCount       int
 }
 type resolveFloatFunctionArgs struct {
 	ctx context.Context
@@ -426,6 +433,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveFloatArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
@@ -446,6 +454,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
@@ -490,7 +499,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 			data, err := exp.Collect(context.TODO())
 			require.Nil(t, err)
 			// the impression metric is registered
-			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
@@ -555,6 +564,7 @@ type resolveIntArgs struct {
 	functionArgs resolveIntFunctionArgs
 	want         *schemaV1.ResolveIntResponse
 	wantErr      error
+	mCount       int
 }
 type resolveIntFunctionArgs struct {
 	ctx context.Context
@@ -570,6 +580,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveIntArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
@@ -590,6 +601,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
@@ -634,7 +646,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 			data, err := exp.Collect(context.TODO())
 			require.Nil(t, err)
 			// the impression metric is registered
-			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
@@ -699,6 +711,7 @@ type resolveObjectArgs struct {
 	functionArgs resolveObjectFunctionArgs
 	want         *schemaV1.ResolveObjectResponse
 	wantErr      error
+	mCount       int
 }
 type resolveObjectFunctionArgs struct {
 	ctx context.Context
@@ -714,6 +727,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveObjectArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveObjectEvalFields{
 				result: map[string]interface{}{
 					"food": "bars",
@@ -736,6 +750,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveObjectEvalFields{
 				result: map[string]interface{}{
 					"food": "bars",
@@ -787,7 +802,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 			data, err := exp.Collect(context.TODO())
 			require.Nil(t, err)
 			// the impression metric is registered
-			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
