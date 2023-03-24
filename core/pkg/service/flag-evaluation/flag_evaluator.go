@@ -45,7 +45,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 }
 
 func (s *FlagEvaluationService) ResolveAll(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
 	reqID := xid.New().String()
@@ -55,6 +55,8 @@ func (s *FlagEvaluationService) ResolveAll(
 	}
 	values := s.eval.ResolveAllValues(reqID, req.Msg.GetContext())
 	for _, value := range values {
+		// register the impression for each flag evaluated
+		s.metrics.Impressions(ctx, value.FlagKey, value.Variant)
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
@@ -95,7 +97,6 @@ func (s *FlagEvaluationService) ResolveAll(
 			}
 		}
 	}
-
 	return connect.NewResponse(res), nil
 }
 
@@ -149,6 +150,8 @@ func resolve[T constraints](
 	flagKey string,
 	ctx *structpb.Struct,
 	resp response[T],
+	metrics *otel.MetricsRecorder,
+	goCtx context.Context,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
@@ -165,6 +168,7 @@ func resolve[T constraints](
 		reason = model.ErrorReason
 		evalErr = errFormat(evalErr)
 	}
+	metrics.Impressions(goCtx, flagKey, variant)
 
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
@@ -175,60 +179,90 @@ func resolve[T constraints](
 }
 
 func (s *FlagEvaluationService) ResolveBoolean(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	err := resolve[bool](
-		s.logger, s.eval.ResolveBooleanValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &booleanResponse{res},
+		s.logger,
+		s.eval.ResolveBooleanValue,
+		req.Msg.GetFlagKey(),
+		req.Msg.GetContext(),
+		&booleanResponse{res},
+		s.metrics,
+		ctx,
 	)
 
 	return res, err
 }
 
 func (s *FlagEvaluationService) ResolveString(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	err := resolve[string](
-		s.logger, s.eval.ResolveStringValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &stringResponse{res},
+		s.logger,
+		s.eval.ResolveStringValue,
+		req.Msg.GetFlagKey(),
+		req.Msg.GetContext(),
+		&stringResponse{res},
+		s.metrics,
+		ctx,
 	)
 
 	return res, err
 }
 
 func (s *FlagEvaluationService) ResolveInt(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	err := resolve[int64](
-		s.logger, s.eval.ResolveIntValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &intResponse{res},
+		s.logger,
+		s.eval.ResolveIntValue,
+		req.Msg.GetFlagKey(),
+		req.Msg.GetContext(),
+		&intResponse{res},
+		s.metrics,
+		ctx,
 	)
 
 	return res, err
 }
 
 func (s *FlagEvaluationService) ResolveFloat(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	err := resolve[float64](
-		s.logger, s.eval.ResolveFloatValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &floatResponse{res},
+		s.logger,
+		s.eval.ResolveFloatValue,
+		req.Msg.GetFlagKey(),
+		req.Msg.GetContext(),
+		&floatResponse{res},
+		s.metrics,
+		ctx,
 	)
 
 	return res, err
 }
 
 func (s *FlagEvaluationService) ResolveObject(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	err := resolve[map[string]any](
-		s.logger, s.eval.ResolveObjectValue, req.Msg.GetFlagKey(), req.Msg.GetContext(), &objectResponse{res},
+		s.logger,
+		s.eval.ResolveObjectValue,
+		req.Msg.GetFlagKey(),
+		req.Msg.GetContext(),
+		&objectResponse{res},
+		s.metrics,
+		ctx,
 	)
 
 	return res, err
