@@ -21,6 +21,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
+	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
@@ -130,20 +131,20 @@ func syncProvidersFromConfig(logger *logger.Logger, sources []SourceConfig) ([]s
 	for _, syncProvider := range sources {
 		switch syncProvider.Provider {
 		case syncProviderFile:
-			syncImpls = append(syncImpls, newFile(syncProvider, logger))
+			syncImpls = append(syncImpls, NewFile(syncProvider, logger))
 			logger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", syncProvider.URI))
 		case syncProviderKubernetes:
-			k, err := newK8s(syncProvider.URI, logger)
+			k, err := NewK8s(syncProvider.URI, logger)
 			if err != nil {
 				return nil, err
 			}
 			syncImpls = append(syncImpls, k)
 			logger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", syncProvider.URI))
 		case syncProviderHTTP:
-			syncImpls = append(syncImpls, newHTTP(syncProvider, logger))
+			syncImpls = append(syncImpls, NewHTTP(syncProvider, logger))
 			logger.Debug(fmt.Sprintf("using remote sync-provider for: %s", syncProvider.URI))
 		case syncProviderGrpc:
-			syncImpls = append(syncImpls, newGRPC(syncProvider, logger))
+			syncImpls = append(syncImpls, NewGRPC(syncProvider, logger))
 			logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", syncProvider.URI))
 
 		default:
@@ -154,20 +155,21 @@ func syncProvidersFromConfig(logger *logger.Logger, sources []SourceConfig) ([]s
 	return syncImpls, nil
 }
 
-func newGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
+func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		CertPath:   config.CertPath,
-		ProviderID: config.ProviderID,
-		Selector:   config.Selector,
+		CertPath:          config.CertPath,
+		ProviderID:        config.ProviderID,
+		Selector:          config.Selector,
+		CredentialBuilder: &credentials.CredentialBuilder{},
 	}
 }
 
-func newHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
+func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -182,7 +184,7 @@ func newHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 	}
 }
 
-func newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	reader, dynamic, err := kubernetes.GetClients()
 	if err != nil {
 		return nil, err
@@ -198,7 +200,7 @@ func newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	), nil
 }
 
-func newFile(config SourceConfig, logger *logger.Logger) *file.Sync {
+func NewFile(config SourceConfig, logger *logger.Logger) *file.Sync {
 	return &file.Sync{
 		URI: config.URI,
 		Logger: logger.WithFields(
