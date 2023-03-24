@@ -66,49 +66,49 @@ func TestCredentialBuilder_Build(t *testing.T) {
 		name           string
 		source         string
 		certPath       string
+		secure         bool
 		expectSecProto string
 		error          bool
 	}{
 		{
 			name:           "Insecure source results in insecure connection",
-			source:         Prefix + "some.domain",
+			secure:         false,
 			certPath:       "",
 			expectSecProto: insecure,
 		},
 		{
 			name:           "Secure source results in secure connection",
-			source:         PrefixSecure + "some.domain",
+			source:         "some.domain",
 			certPath:       validCertFile,
+			secure:         true,
 			expectSecProto: tls,
 		},
 		{
 			name:           "Secure source with no certificate results in a secure connection",
-			source:         PrefixSecure + "some.domain",
+			source:         "some.domain",
+			secure:         true,
 			expectSecProto: tls,
 		},
 		{
 			name:     "Invalid cert path results in an error",
-			source:   PrefixSecure + "some.domain",
+			source:   "some.domain",
+			secure:   true,
 			certPath: "invalid/path",
 			error:    true,
 		},
 		{
 			name:     "Invalid certificate results in an error",
-			source:   PrefixSecure + "some.domain",
+			source:   "some.domain",
+			secure:   true,
 			certPath: invalidCertFile,
 			error:    true,
-		},
-		{
-			name:   "Invalid prefix results in an error",
-			source: "http://some.domain",
-			error:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			builder := CredentialBuilder{}
-			tCred, err := builder.Build(test.source, test.certPath)
+			tCred, err := builder.Build(test.secure, test.certPath)
 
 			if test.error {
 				if err == nil {

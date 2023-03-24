@@ -9,6 +9,8 @@ import (
 	msync "sync"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
+
 	"github.com/open-feature/flagd/core/pkg/service"
 
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -21,7 +23,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
-	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
@@ -53,6 +54,7 @@ type SourceConfig struct {
 
 	BearerToken string `json:"bearerToken,omitempty"`
 	CertPath    string `json:"certPath,omitempty"`
+	GrpcSecure  bool   `json:"grpcSecure,omitempty"`
 	ProviderID  string `json:"providerID,omitempty"`
 	Selector    string `json:"selector,omitempty"`
 }
@@ -162,10 +164,11 @@ func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
+		CredentialBuilder: &credentials.CredentialBuilder{},
 		CertPath:          config.CertPath,
 		ProviderID:        config.ProviderID,
+		Secure:            config.GrpcSecure,
 		Selector:          config.Selector,
-		CredentialBuilder: &credentials.CredentialBuilder{},
 	}
 }
 
@@ -218,24 +221,19 @@ func ParseSources(sourcesFlag string) ([]SourceConfig, error) {
 	if err := json.Unmarshal([]byte(sourcesFlag), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
 	}
-	for i, sp := range syncProvidersParsed {
+	for _, sp := range syncProvidersParsed {
 		if sp.URI == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: uri is a required field")
 		}
 		if sp.Provider == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: provider is a required field")
 		}
-		switch uriB := []byte(sp.URI); {
-		case regFile.Match(uriB):
-			syncProvidersParsed[i].URI = regFile.ReplaceAllString(syncProvidersParsed[i].URI, "")
-		case regCrd.Match(uriB):
-			syncProvidersParsed[i].URI = regCrd.ReplaceAllString(syncProvidersParsed[i].URI, "")
-		}
 	}
 	return syncProvidersParsed, nil
 }
 
-// ParseSyncProviderURIs uri flag based sync sources to SourceConfig array. Replaces uri prefixes where necessary
+// ParseSyncProviderURIs uri flag based sync sources to SourceConfig array. Replaces uri prefixes where necessary to
+// derive SourceConfig
 func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
 	syncProvidersParsed := []SourceConfig{}
 
@@ -256,10 +254,16 @@ func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
-		case regGRPC.Match(uriB), regGRPCSecure.Match(uriB):
+		case regGRPC.Match(uriB):
 			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
-				URI:      uri,
+				URI:      regGRPC.ReplaceAllString(uri, ""),
 				Provider: syncProviderGrpc,
+			})
+		case regGRPCSecure.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
+				URI:        regGRPCSecure.ReplaceAllString(uri, ""),
+				Provider:   syncProviderGrpc,
+				GrpcSecure: true,
 			})
 		default:
 			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', "+

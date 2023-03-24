@@ -38,28 +38,21 @@ func Test_Init(t *testing.T) {
 	}{
 		{
 			name:                "happy path",
-			target:              "grpc://localBufCon",
+			target:              "localBufCon",
 			err:                 nil,
 			returnedCredentials: insecure.NewCredentials(),
 			shouldError:         false,
 		},
 		{
-			name:                "invalid grpc source",
-			target:              "localBufCon",
-			err:                 nil,
-			returnedCredentials: insecure.NewCredentials(),
-			shouldError:         true,
-		},
-		{
 			name:                "nil credentials",
-			target:              "grpc://localBufCon",
+			target:              "localBufCon",
 			err:                 nil,
 			returnedCredentials: nil,
 			shouldError:         true,
 		},
 		{
 			name:                "could not create transport credentials",
-			target:              "grpc://localBufCon",
+			target:              "localBufCon",
 			err:                 errors.New("could not create transport credentials"),
 			returnedCredentials: nil,
 			shouldError:         true,
@@ -79,7 +72,9 @@ func Test_Init(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
 
-		mockCredentialBulder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(test.returnedCredentials, test.err)
+		mockCredentialBulder.EXPECT().
+			Build(gomock.Any(), gomock.Any()).
+			Return(test.returnedCredentials, test.err)
 
 		grpcSync := Sync{
 			URI:               test.target,
@@ -188,65 +183,6 @@ func Test_ReSyncTests(t *testing.T) {
 		if len(syncChan) != 0 {
 			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
 		}
-	}
-}
-
-func TestSourceToGRPCTarget(t *testing.T) {
-	tests := []struct {
-		name string
-		url  string
-		want string
-		ok   bool
-	}{
-		{
-			name: "With Prefix",
-			url:  "grpc://test.com/endpoint",
-			want: "test.com/endpoint",
-			ok:   true,
-		},
-		{
-			name: "With secure Prefix",
-			url:  "grpcs://test.com/endpoint",
-			want: "test.com/endpoint",
-			ok:   true,
-		},
-		{
-			name: "Empty is error",
-			url:  "",
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Invalid is error",
-			url:  "https://test.com/endpoint",
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Prefix is not enough I",
-			url:  Prefix,
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Prefix is not enough II",
-			url:  PrefixSecure,
-			want: "",
-			ok:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, ok := sourceToGRPCTarget(tt.url)
-
-			if tt.ok != ok {
-				t.Errorf("URLToGRPCTarget() returned = %v, want %v", ok, tt.ok)
-			}
-
-			if got != tt.want {
-				t.Errorf("URLToGRPCTarget() returned = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 

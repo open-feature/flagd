@@ -19,7 +19,7 @@ func TestParseSource(t *testing.T) {
 			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
-					Provider: "file",
+					Provider: syncProviderFile,
 				},
 			},
 		},
@@ -34,55 +34,55 @@ func TestParseSource(t *testing.T) {
 			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
-					Provider: "file",
+					Provider: syncProviderFile,
 				},
 				{
 					URI:         "http://test.com",
-					Provider:    "http",
+					Provider:    syncProviderHTTP,
 					BearerToken: ":)",
 				},
 				{
 					URI:      "host:port",
-					Provider: "grpc",
+					Provider: syncProviderGrpc,
 				},
 				{
 					URI:      "default/my-crd",
-					Provider: "kubernetes",
+					Provider: syncProviderKubernetes,
 				},
 			},
 		},
 		"multiple-syncs-with-options": {
-			in: `[
-					{"uri":"file:config/samples/example_flags.json","provider":"file"},
-					{"uri":"https://test.com","provider":"http","bearerToken":":)"},
-					{"uri":"host:port","provider":"grpc"},
-					{"uri":"host:port","provider":"grpcs","providerID":"appA","selector":"source=database"},
-					{"uri":"core.openfeature.dev/namespace/my-crd","provider":"kubernetes"}
-				]`,
+			in: `[{"uri":"config/samples/example_flags.json","provider":"file"},
+            		{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
+					{"uri":"default/my-flag-config","provider":"kubernetes"},
+            		{"uri":"grpc-source:8080","provider":"grpc"},
+            		{"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
+				`,
 			expectErr: false,
 			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
-					Provider: "file",
+					Provider: syncProviderFile,
 				},
 				{
-					URI:         "https://test.com",
-					Provider:    "http",
-					BearerToken: ":)",
+					URI:         "http://my-flag-source.json",
+					Provider:    syncProviderHTTP,
+					BearerToken: "bearer-dji34ld2l",
 				},
 				{
-					URI:      "host:port",
-					Provider: "grpc",
+					URI:      "default/my-flag-config",
+					Provider: syncProviderKubernetes,
 				},
 				{
-					URI:        "host:port",
-					Provider:   "grpcs",
-					ProviderID: "appA",
-					Selector:   "source=database",
+					URI:      "grpc-source:8080",
+					Provider: syncProviderGrpc,
 				},
 				{
-					URI:      "namespace/my-crd",
-					Provider: "kubernetes",
+					URI:        "my-flag-source:8080",
+					Provider:   syncProviderGrpc,
+					CertPath:   "/certs/ca.cert",
+					ProviderID: "flagd-weatherapp-sidecar",
+					Selector:   "source=database,app=weatherapp",
 				},
 			},
 		},
@@ -138,6 +138,7 @@ func TestParseSyncProviderURIs(t *testing.T) {
 				"file:my-file.json",
 				"https://test.com",
 				"grpc://host:port",
+				"grpcs://secure-grpc",
 				"core.openfeature.dev/default/my-crd",
 			},
 			expectErr: false,
@@ -151,8 +152,14 @@ func TestParseSyncProviderURIs(t *testing.T) {
 					Provider: "http",
 				},
 				{
-					URI:      "grpc://host:port",
-					Provider: "grpc",
+					URI:        "host:port",
+					Provider:   "grpc",
+					GrpcSecure: false,
+				},
+				{
+					URI:        "secure-grpc",
+					Provider:   "grpc",
+					GrpcSecure: true,
 				},
 				{
 					URI:      "default/my-crd",
