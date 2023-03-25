@@ -3,7 +3,7 @@ PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
-workspace-init:
+workspace-init: clean
 	go work init
 	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
 
@@ -15,6 +15,8 @@ guard-%:
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
+clean:
+	rm -rf go.work
 docker-build: # default to flagd
 	make docker-build-flagd
 docker-push: # default to flagd
@@ -23,7 +25,7 @@ docker-build-flagd:
 	docker buildx build --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
 docker-push-flagd:
 	docker buildx build --push --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
-build: # default to flagd
+build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
