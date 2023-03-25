@@ -38,8 +38,6 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
 1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
 
-   
-
    Kubernetes-native? flagd can also be run [as part of the Kubernetes Operator](https://github.com/open-feature/open-feature-operator).
 
 2. Start flagd:
