@@ -3,20 +3,21 @@ PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
-workspace-init: clean
+workspace-init: workspace-clean
 	go work init
 	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
 
 workspace-update:
 	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
 
+workspace-clean:
+	rm -rf go.work
+
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
         echo "Environment variable $* not set"; \
         exit 1; \
     fi
-clean:
-	rm -rf go.work
 docker-build: # default to flagd
 	make docker-build-flagd
 docker-push: # default to flagd
