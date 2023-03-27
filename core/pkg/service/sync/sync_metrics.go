@@ -13,7 +13,7 @@ const (
 	serviceName = "openfeature/kube-flagd-proxy"
 )
 
-func (s *Server) captureMetrics(ctx context.Context) error {
+func (s *Server) captureMetrics() error {
 	exporter, err := prometheus.New()
 	if err != nil {
 		return err
@@ -37,6 +37,5 @@ func (s *Server) captureMetrics(ctx context.Context) error {
 		return err
 	}
 
-	<-ctx.Done()
 	return nil
 }

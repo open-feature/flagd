@@ -62,9 +62,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 		}
 		return nil
 	})
-	g.Go(func() error {
-		return s.captureMetrics(ctx)
-	})
+	g.Go(s.captureMetrics)
 
 	err := g.Wait()
 	if err != nil {
