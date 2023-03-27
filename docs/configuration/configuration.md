@@ -50,7 +50,7 @@ namespace and `my_example` being the resource name.
 
 ### Filepath provider
 
-File path sync provider reads and watch the source file for updates(ex:- changes and deletions).
+The file path sync provider reads and watch the source file for updates(ex:- changes and deletions).
 
 ```shell
 flagd start --uri file:etc/featureflags.json
