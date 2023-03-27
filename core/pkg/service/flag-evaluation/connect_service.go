@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/open-feature/flagd/core/pkg/service/middleware"
 
