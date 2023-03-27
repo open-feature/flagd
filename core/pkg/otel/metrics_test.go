@@ -127,6 +127,14 @@ func TestMetrics(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "Impressions",
+			metricFunc: func() {
+				for i := 0; i < n; i++ {
+					rec.Impressions(ctx, "key", "variant")
+				}
+			},
+		},
 	}
 	i := 0
 	for _, tt := range tests {

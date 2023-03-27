@@ -18,6 +18,7 @@ type MetricsRecorder struct {
 	httpRequestDurHistogram   instrument.Float64Histogram
 	httpResponseSizeHistogram instrument.Float64Histogram
 	httpRequestsInflight      instrument.Int64UpDownCounter
+	impressions               instrument.Int64Counter
 }
 
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code string) []attribute.KeyValue {
@@ -43,6 +44,14 @@ func (r MetricsRecorder) InFlightRequestStart(ctx context.Context, attrs []attri
 
 func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue) {
 	r.httpRequestsInflight.Add(ctx, -1, attrs...)
+}
+
+func (r MetricsRecorder) Impressions(ctx context.Context, key, variant string) {
+	r.impressions.Add(ctx, 1, []attribute.KeyValue{
+		semconv.FeatureFlagKey(key),
+		semconv.FeatureFlagVariant(variant),
+		semconv.FeatureFlagProviderName("flagd"),
+	}...)
 }
 
 func getDurationView(svcName, viewName string, bucket []float64) metric.View {
@@ -87,9 +96,14 @@ func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorde
 		"http_requests_inflight",
 		instrument.WithDescription("The number of inflight requests being handled at the same time"),
 	)
+	impressions, _ := meter.Int64Counter(
+		"impressions",
+		instrument.WithDescription("The number of evaluation for a given flag"),
+	)
 	return &MetricsRecorder{
 		httpRequestDurHistogram:   hduration,
 		httpResponseSizeHistogram: hsize,
 		httpRequestsInflight:      reqCounter,
+		impressions:               impressions,
 	}
 }

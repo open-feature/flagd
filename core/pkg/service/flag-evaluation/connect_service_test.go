@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
 
 	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
@@ -116,4 +119,54 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			require.Equal(t, tt.want.Variant, res.Variant)
 		})
 	}
+}
+
+func TestAddMiddleware(t *testing.T) {
+	const port = 12345
+	ctrl := gomock.NewController(t)
+
+	mwMock := middlewaremock.NewMockIMiddleware(ctrl)
+
+	mwMock.EXPECT().Handler(gomock.Any()).Return(
+		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			writer.WriteHeader(http.StatusOK)
+		}))
+
+	exp := metric.NewManualReader()
+	metricRecorder := otel.NewOTelRecorder(exp, "my-exporter")
+
+	svc := ConnectService{
+		Logger:  logger.NewLogger(nil, false),
+		Metrics: metricRecorder,
+	}
+
+	serveConf := iservice.Configuration{
+		ReadinessProbe: func() bool {
+			return true
+		},
+		Port: port,
+	}
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		err := svc.Serve(ctx, nil, serveConf)
+		fmt.Println(err)
+	}()
+
+	require.Eventually(t, func() bool {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/schema.v1.Service/ResolveAll", port))
+		// with the default http handler we should get a method not allowed (405) when attempting a GET request
+		return err == nil && resp.StatusCode == http.StatusMethodNotAllowed
+	}, 3*time.Second, 100*time.Millisecond)
+
+	svc.AddMiddleware(mwMock)
+
+	// with the injected middleware, the GET method should work
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/schema.v1.Service/ResolveAll", port))
+
+	require.Nil(t, err)
+	// verify that the status we return in the mocked middleware
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 }

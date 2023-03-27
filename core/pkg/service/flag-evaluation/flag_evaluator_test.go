@@ -12,7 +12,9 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/eval/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -83,16 +85,21 @@ func TestConnectService_ResolveAll(t *testing.T) {
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any()).Return(
 				tt.evalRes,
 			).AnyTimes()
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
 				t.Errorf("ConnectService.ResolveAll() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
 				return
 			}
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), 1)
 			for _, flag := range tt.evalRes {
 				switch v := flag.Value.(type) {
 				case bool:
@@ -115,6 +122,7 @@ type resolveBooleanArgs struct {
 	functionArgs resolveBooleanFunctionArgs
 	want         *schemaV1.ResolveBooleanResponse
 	wantErr      error
+	mCount       int
 }
 type resolveBooleanFunctionArgs struct {
 	ctx context.Context
@@ -128,8 +136,10 @@ type resolveBooleanEvalFields struct {
 
 func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 	ctrl := gomock.NewController(t)
+
 	tests := map[string]resolveBooleanArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: "on",
@@ -150,6 +160,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
@@ -179,16 +190,21 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("Flag_Evaluation.ResolveBoolean() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
 				return
 			}
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 			require.Equal(t, tt.want, got.Msg)
 		})
 	}
@@ -226,10 +242,11 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
+		metrics, exp := getMetricReader()
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
-			nil,
+			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -239,6 +256,10 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
+				data, err := exp.Collect(context.TODO())
+				require.Nil(b, err)
+				// the impression metric is registered
+				require.Equal(b, len(data.ScopeMetrics), 1)
 			}
 		})
 	}
@@ -249,6 +270,7 @@ type resolveStringArgs struct {
 	functionArgs resolveStringFunctionArgs
 	want         *schemaV1.ResolveStringResponse
 	wantErr      error
+	mCount       int
 }
 type resolveStringFunctionArgs struct {
 	ctx context.Context
@@ -264,6 +286,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveStringArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: "on",
@@ -284,6 +307,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
@@ -313,16 +337,21 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				tt.evalFields.reason,
 				tt.wantErr,
 			)
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
 				t.Errorf("Flag_Evaluation.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 			require.Equal(t, tt.want, got.Msg)
 		})
 	}
@@ -360,11 +389,11 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
-
+		metrics, exp := getMetricReader()
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
-			nil,
+			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -374,6 +403,10 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
+				data, err := exp.Collect(context.TODO())
+				require.Nil(b, err)
+				// the impression metric is registered
+				require.Equal(b, len(data.ScopeMetrics), 1)
 			}
 		})
 	}
@@ -384,6 +417,7 @@ type resolveFloatArgs struct {
 	functionArgs resolveFloatFunctionArgs
 	want         *schemaV1.ResolveFloatResponse
 	wantErr      error
+	mCount       int
 }
 type resolveFloatFunctionArgs struct {
 	ctx context.Context
@@ -399,6 +433,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveFloatArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: "on",
@@ -419,6 +454,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
@@ -448,10 +484,11 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -459,6 +496,10 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
@@ -495,11 +536,11 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
-
+		metrics, exp := getMetricReader()
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
-			nil,
+			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -509,6 +550,10 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
+				data, err := exp.Collect(context.TODO())
+				require.Nil(b, err)
+				// the impression metric is registered
+				require.Equal(b, len(data.ScopeMetrics), 1)
 			}
 		})
 	}
@@ -519,6 +564,7 @@ type resolveIntArgs struct {
 	functionArgs resolveIntFunctionArgs
 	want         *schemaV1.ResolveIntResponse
 	wantErr      error
+	mCount       int
 }
 type resolveIntFunctionArgs struct {
 	ctx context.Context
@@ -534,6 +580,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveIntArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: "on",
@@ -554,6 +601,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
@@ -583,10 +631,11 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -594,6 +643,10 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
@@ -630,11 +683,11 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
-
+		metrics, exp := getMetricReader()
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
-			nil,
+			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -644,6 +697,10 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
+				data, err := exp.Collect(context.TODO())
+				require.Nil(b, err)
+				// the impression metric is registered
+				require.Equal(b, len(data.ScopeMetrics), 1)
 			}
 		})
 	}
@@ -654,6 +711,7 @@ type resolveObjectArgs struct {
 	functionArgs resolveObjectFunctionArgs
 	want         *schemaV1.ResolveObjectResponse
 	wantErr      error
+	mCount       int
 }
 type resolveObjectFunctionArgs struct {
 	ctx context.Context
@@ -669,6 +727,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tests := map[string]resolveObjectArgs{
 		"happy path": {
+			mCount: 1,
 			evalFields: resolveObjectEvalFields{
 				result: map[string]interface{}{
 					"food": "bars",
@@ -691,6 +750,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
+			mCount: 0,
 			evalFields: resolveObjectEvalFields{
 				result: map[string]interface{}{
 					"food": "bars",
@@ -721,10 +781,11 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				tt.evalFields.reason,
 				tt.wantErr,
 			).AnyTimes()
+			metrics, exp := getMetricReader()
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
-				nil,
+				metrics,
 			)
 
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -738,6 +799,10 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
+			data, err := exp.Collect(context.TODO())
+			require.Nil(t, err)
+			// the impression metric is registered
+			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
 		})
 	}
 }
@@ -776,11 +841,11 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 			tt.evalFields.reason,
 			tt.wantErr,
 		).AnyTimes()
-
+		metrics, exp := getMetricReader()
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
-			nil,
+			metrics,
 		)
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -797,7 +862,16 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
+				data, err := exp.Collect(context.TODO())
+				require.Nil(b, err)
+				// the impression metric is registered
+				require.Equal(b, len(data.ScopeMetrics), 1)
 			}
 		})
 	}
+}
+
+func getMetricReader() (*otel.MetricsRecorder, metric.Reader) {
+	exp := metric.NewManualReader()
+	return otel.NewOTelRecorder(exp, "testSvc"), exp
 }
