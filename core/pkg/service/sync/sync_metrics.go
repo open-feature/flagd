@@ -23,7 +23,7 @@ func (s *Server) captureMetrics(ctx context.Context) error {
 
 	syncGuage, err := meter.Int64ObservableGauge(
 		"sync_active_streams",
-		instrument.WithDescription("number of open sync subscriptions."),
+		instrument.WithDescription("number of open sync subscriptions"),
 	)
 	if err != nil {
 		return err
@@ -36,6 +36,7 @@ func (s *Server) captureMetrics(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	<-ctx.Done()
 	return nil
 }
