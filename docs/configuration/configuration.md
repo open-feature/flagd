@@ -128,7 +128,7 @@ Given below are example sync providers, startup command and equivalent config fi
 Sync providers,
 
 * `file` - config/samples/example_flags.json
-* `http` - "http://my-flag-source.json"
+* `http` - <http://my-flag-source.json/>
 * `kubernetes` - default/my-flag-config
 * `grpc`(insecure) - grpc-source:8080
 * `grpc`(secure) - my-flag-source:8080
