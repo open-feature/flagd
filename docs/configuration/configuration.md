@@ -109,15 +109,15 @@ The flagd accepts a string argument, which should be a JSON representation of an
 
 Alternatively, these configurations can be passed to flagd via config file, specified using the `--config` flag.
 
-| Field       | Type               | Note                                                                                                                                         |
-|-------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| uri         | required `string`  | Flag configuration source of the provider                                                                                                    |
-| provider    | required `string`  | Provider type - `file`, `kubernetes`, `http` or `grpc`                                                                                       |
-| bearerToken | optional `string`  | Used for http sync and token get appended to `Authorization` header with [bearer schema](https://www.rfc-editor.org/rfc/rfc6750#section-2.1) |
-| providerID  | optional `string`  | Value binds to grpc connection's providerID field. GRPC server implementations may use this to identify connecting flagd instance            |
-| selector    | optional `string`  | Value binds to grpc connection's selector field. GRPC server implementations may use this to filter flag configurations                      |
-| grpcSecure  | optional `boolean` | Used to enable secure TLS connectivity for grpc sync. Default(ex:- if unset) is false, which will use insecure grpc connection               |
-| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                     |
+| Field       | Type               | Note                                                                                                                                             |
+|-------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| uri         | required `string`  | Flag configuration source of the provider                                                                                                        |
+| provider    | required `string`  | Provider type - `file`, `kubernetes`, `http` or `grpc`                                                                                           |
+| bearerToken | optional `string`  | Used for http sync and token get appended to `Authorization` header with [bearer schema](https://www.rfc-editor.org/rfc/rfc6750#section-2.1)     |
+| tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by GRPC sync. Default(ex:- if unset) is false, which will use an insecure connection |
+| providerID  | optional `string`  | Value binds to grpc connection's providerID field. GRPC server implementations may use this to identify connecting flagd instance                |
+| selector    | optional `string`  | Value binds to grpc connection's selector field. GRPC server implementations may use this to filter flag configurations                          |
+| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                         |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -141,7 +141,7 @@ Startup command,
             {"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
             {"uri":"default/my-flag-config","provider":"kubernetes"},
             {"uri":"grpc-source:8080","provider":"grpc"},
-            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "grpcSecure": true, "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]'
+            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "tls": true, "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]'
 ```
 
 Configuration file,
@@ -160,7 +160,7 @@ sources:
   - uri: my-flag-source:8080
     provider: grpc
     certPath: /certs/ca.cert
-    grpcSecure: true
+    tls: true
     providerID: flagd-weatherapp-sidecar
     selector: 'source=database,app=weatherapp'
 ```

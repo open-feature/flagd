@@ -54,7 +54,7 @@ type SourceConfig struct {
 
 	BearerToken string `json:"bearerToken,omitempty"`
 	CertPath    string `json:"certPath,omitempty"`
-	GrpcSecure  bool   `json:"grpcSecure,omitempty"`
+	TLS         bool   `json:"tls,omitempty"`
 	ProviderID  string `json:"providerID,omitempty"`
 	Selector    string `json:"selector,omitempty"`
 }
@@ -167,7 +167,7 @@ func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 		CredentialBuilder: &credentials.CredentialBuilder{},
 		CertPath:          config.CertPath,
 		ProviderID:        config.ProviderID,
-		Secure:            config.GrpcSecure,
+		Secure:            config.TLS,
 		Selector:          config.Selector,
 	}
 }
@@ -261,9 +261,9 @@ func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
 			})
 		case regGRPCSecure.Match(uriB):
 			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
-				URI:        regGRPCSecure.ReplaceAllString(uri, ""),
-				Provider:   syncProviderGrpc,
-				GrpcSecure: true,
+				URI:      regGRPCSecure.ReplaceAllString(uri, ""),
+				Provider: syncProviderGrpc,
+				TLS:      true,
 			})
 		default:
 			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', "+

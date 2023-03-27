@@ -21,6 +21,12 @@ type CredentialBuilder struct{}
 // Build is a helper to build grpc credentials.TransportCredentials based on source and cert path
 func (cb *CredentialBuilder) Build(secure bool, certPath string) (credentials.TransportCredentials, error) {
 	if !secure {
+		// check if certificate is set & make this an error so that we do not establish an unwanted insecure connection
+		if certPath != "" {
+			return nil, fmt.Errorf("provided a non empty certificate %s, but requested an insecure connection."+
+				" Please check configurations of the grpc sync source", certPath)
+		}
+
 		return insecure.NewCredentials(), nil
 	}
 

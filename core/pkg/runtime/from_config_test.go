@@ -57,7 +57,7 @@ func TestParseSource(t *testing.T) {
             		{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
 					{"uri":"default/my-flag-config","provider":"kubernetes"},
             		{"uri":"grpc-source:8080","provider":"grpc"},
-            		{"uri":"my-flag-source:8080","provider":"grpc", "grpcSecure":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
+            		{"uri":"my-flag-source:8080","provider":"grpc", "tls":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
 				`,
 			expectErr: false,
 			out: []SourceConfig{
@@ -86,7 +86,7 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:        "my-flag-source:8080",
 					Provider:   syncProviderGrpc,
-					GrpcSecure: true,
+					TLS:        true,
 					CertPath:   "/certs/ca.cert",
 					ProviderID: "flagd-weatherapp-sidecar",
 					Selector:   "source=database,app=weatherapp",
@@ -159,14 +159,14 @@ func TestParseSyncProviderURIs(t *testing.T) {
 					Provider: "http",
 				},
 				{
-					URI:        "host:port",
-					Provider:   "grpc",
-					GrpcSecure: false,
+					URI:      "host:port",
+					Provider: "grpc",
+					TLS:      false,
 				},
 				{
-					URI:        "secure-grpc",
-					Provider:   "grpc",
-					GrpcSecure: true,
+					URI:      "secure-grpc",
+					Provider: "grpc",
+					TLS:      true,
 				},
 				{
 					URI:      "default/my-crd",

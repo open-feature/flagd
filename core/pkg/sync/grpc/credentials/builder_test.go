@@ -64,7 +64,6 @@ func TestCredentialBuilder_Build(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		source         string
 		certPath       string
 		secure         bool
 		expectSecProto string
@@ -78,29 +77,31 @@ func TestCredentialBuilder_Build(t *testing.T) {
 		},
 		{
 			name:           "Secure source results in secure connection",
-			source:         "some.domain",
 			certPath:       validCertFile,
 			secure:         true,
 			expectSecProto: tls,
 		},
 		{
 			name:           "Secure source with no certificate results in a secure connection",
-			source:         "some.domain",
 			secure:         true,
 			expectSecProto: tls,
 		},
 		{
 			name:     "Invalid cert path results in an error",
-			source:   "some.domain",
 			secure:   true,
 			certPath: "invalid/path",
 			error:    true,
 		},
 		{
 			name:     "Invalid certificate results in an error",
-			source:   "some.domain",
 			secure:   true,
 			certPath: invalidCertFile,
+			error:    true,
+		},
+		{
+			name:     "Prevent insecure if certificate path is set - configuration check",
+			secure:   false,
+			certPath: validCertFile,
 			error:    true,
 		},
 	}
