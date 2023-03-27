@@ -253,7 +253,7 @@ func (s *SyncStore) cleanup() {
 	}
 }
 
-func (s *SyncStore) GetSyncMetrics() float64 {
+func (s *SyncStore) GetSyncMetrics() int64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -262,7 +262,7 @@ func (s *SyncStore) GetSyncMetrics() float64 {
 		syncs += len(v.subs)
 	}
 
-	return float64(syncs)
+	return int64(syncs)
 }
 
 type SyncBuilderInterface interface {
