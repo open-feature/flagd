@@ -34,6 +34,9 @@ type ConnectService struct {
 	eventingConfiguration *eventingConfiguration
 	server                *http.Server
 	metricsServer         *http.Server
+
+	serverMtx        sync.RWMutex
+	metricsServerMtx sync.RWMutex
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
@@ -53,6 +56,8 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	})
 	g.Go(func() error {
 		<-gCtx.Done()
+		s.serverMtx.RLock()
+		defer s.serverMtx.RUnlock()
 		if s.server != nil {
 			if err := s.server.Shutdown(gCtx); err != nil {
 				return err
@@ -62,6 +67,8 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	})
 	g.Go(func() error {
 		<-gCtx.Done()
+		s.metricsServerMtx.RLock()
+		defer s.metricsServerMtx.RUnlock()
 		if s.metricsServer != nil {
 			if err := s.metricsServer.Shutdown(gCtx); err != nil {
 				return err
@@ -97,10 +104,12 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
 
+	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
+	s.serverMtx.Unlock()
 
 	// Add middlewares
 
@@ -162,10 +171,12 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
+	s.metricsServerMtx.Lock()
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
+	s.metricsServerMtx.Unlock()
 	s.metricsServer.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz":
