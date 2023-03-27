@@ -12,7 +12,7 @@ See the [main page](../README.md) for the quick start guide.
 
 ## Copy and Paste Evaluation Options
 
-[This page](../docs/usage/evaluation_examples.md) provides copy and paste evaluation examples.
+[This page](usage/evaluation_examples.md) provides copy and paste evaluation examples.
 
 ## Flagd Configuration
 
