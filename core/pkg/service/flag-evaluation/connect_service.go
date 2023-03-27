@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"net"
 	"net/http"
 	"sync"
@@ -31,7 +32,8 @@ type ConnectService struct {
 	Eval                  eval.IEvaluator
 	Metrics               *otel.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
-	server                http.Server
+	server                *http.Server
+	metricsServer         *http.Server
 }
 
 func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
@@ -40,40 +42,38 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 		subs: make(map[interface{}]chan service.Notification),
 		mu:   &sync.RWMutex{},
 	}
-	lis, err := s.setupServer(svcConf)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		return s.startServer(svcConf)
+	})
+	g.Go(func() error {
+		return s.startMetricsServer(svcConf)
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+		if s.server != nil {
+			if err := s.server.Shutdown(gCtx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+		if s.metricsServer != nil {
+			if err := s.metricsServer.Shutdown(gCtx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	err := g.Wait()
 	if err != nil {
 		return err
 	}
-
-	errChan := make(chan error, 1)
-	go func() {
-		s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
-		if svcConf.CertPath != "" && svcConf.KeyPath != "" {
-			if err := s.server.ServeTLS(
-				lis,
-				svcConf.CertPath,
-				svcConf.KeyPath,
-			); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				errChan <- err
-			}
-		} else {
-			if err := s.server.Serve(
-				lis,
-			); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				errChan <- err
-			}
-		}
-		close(errChan)
-	}()
-
-	go s.startMetricsServer(svcConf)
-
-	select {
-	case err := <-errChan:
-		return err
-	case <-ctx.Done():
-		return s.server.Shutdown(ctx)
-	}
+	return nil
 }
 
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
@@ -97,7 +97,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
 
-	s.server = http.Server{
+	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler:           handler,
 	}
@@ -136,13 +136,37 @@ func (s *ConnectService) Notify(n service.Notification) {
 	}
 }
 
-func (s *ConnectService) startMetricsServer(svcConf service.Configuration) {
+func (s *ConnectService) startServer(svcConf service.Configuration) error {
+	lis, err := s.setupServer(svcConf)
+	if err != nil {
+		return err
+	}
+	s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
+	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
+		if err := s.server.ServeTLS(
+			lis,
+			svcConf.CertPath,
+			svcConf.KeyPath,
+		); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+	} else {
+		if err := s.server.Serve(
+			lis,
+		); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
 	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
-	server := &http.Server{
+	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
-	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.metricsServer.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz":
 			w.WriteHeader(http.StatusOK)
@@ -158,8 +182,8 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	})
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(err)
+	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
 	}
+	return nil
 }
