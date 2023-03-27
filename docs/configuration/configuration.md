@@ -24,8 +24,8 @@ The config file expects the keys to have the exact naming as startup-flags flags
 
 ## Sync providers
 
-Sync providers are a core part of flagd. They are the sources of feature flag configurations for evaluations. flagd
-currently support the following sync providers,
+Sync providers are a core part of flagd; they are the abstraction that enables different sources for feature flag configurations.
+flagd currently support the following sync providers:
 
 * [Kubernetes provider](#kubernetes-provider)
 * [Filepath Configuration](#filepath-provider)
