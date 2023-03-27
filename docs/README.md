@@ -8,7 +8,7 @@ See the [main page](../README.md) for the quick start guide.
 
 ## Installation Options
 
-[See all flagd installation options](../docs/usage/installation_options.md)
+[See all flagd installation options](usage/installation_options.md)
 
 ## Copy and Paste Evaluation Options
 
