@@ -8,33 +8,21 @@ import (
 	msync "sync"
 	"syscall"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {
-	config   Config
-	Service  service.IFlagEvaluationService
-	SyncImpl []sync.ISync
+	Evaluator     eval.IEvaluator
+	Logger        *logger.Logger
+	Service       service.IFlagEvaluationService
+	ServiceConfig service.Configuration
+	SyncImpl      []sync.ISync
 
-	mu        msync.Mutex
-	Evaluator eval.IEvaluator
-	Logger    *logger.Logger
-}
-
-type Config struct {
-	ServicePort       uint16
-	MetricsPort       uint16
-	ServiceSocketPath string
-	ServiceCertPath   string
-	ServiceKeyPath    string
-
-	SyncProviders []sync.SourceConfig
-	CORS          []string
+	mu msync.Mutex
 }
 
 // nolint: funlen
@@ -89,17 +77,12 @@ func (r *Runtime) Start() error {
 		})
 	}
 	g.Go(func() error {
-		return r.Service.Serve(gCtx, r.Evaluator, service.Configuration{
-			ReadinessProbe: r.isReady,
-			Port:           r.config.ServicePort,
-			MetricsPort:    r.config.MetricsPort,
-		})
+		// Readiness probe rely on the runtime
+		r.ServiceConfig.ReadinessProbe = r.isReady
+		return r.Service.Serve(gCtx, r.Evaluator, r.ServiceConfig)
 	})
 	<-gCtx.Done()
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return g.Wait()
 }
 
 func (r *Runtime) isReady() bool {

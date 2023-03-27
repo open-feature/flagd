@@ -37,7 +37,7 @@ flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/sy
 run: # default to flagd
 	make run-flagd
 run-flagd:
-	cd flagd; go run main.go start -f file:config/samples/example_flags.flagd.json
+	cd flagd; go run main.go start -f file:../config/samples/example_flags.flagd.json
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd
@@ -52,13 +52,15 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
 	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m $(module)/...;)
+	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=3m --timeout=3m $(module)/... || exit;)
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
 mockgen: install-mockgen
 	cd core; mockgen -source=pkg/sync/http/http_sync.go -destination=pkg/sync/http/mock/http.go -package=syncmock
 	cd core; mockgen -source=pkg/sync/grpc/grpc_sync.go -destination=pkg/sync/grpc/mock/grpc.go -package=grpcmock
+	cd core; mockgen -source=pkg/sync/grpc/credentials/builder.go -destination=pkg/sync/grpc/credentials/mock/builder.go -package=credendialsmock
 	cd core; mockgen -source=pkg/eval/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
+	cd core; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go
 

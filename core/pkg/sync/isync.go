@@ -57,13 +57,3 @@ type DataSync struct {
 	Source   string
 	Type
 }
-
-type SourceConfig struct {
-	URI      string `json:"uri"`
-	Provider string `json:"provider"`
-
-	BearerToken string `json:"bearerToken,omitempty"`
-	CertPath    string `json:"certPath,omitempty"`
-	ProviderID  string `json:"providerID,omitempty"`
-	Selector    string `json:"selector,omitempty"`
-}

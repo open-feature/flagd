@@ -25,6 +25,11 @@ type Configuration struct {
 	ReadinessProbe ReadinessProbe
 	Port           uint16
 	MetricsPort    uint16
+	ServiceName    string
+	CertPath       string
+	KeyPath        string
+	SocketPath     string
+	CORS           []string
 }
 
 /*

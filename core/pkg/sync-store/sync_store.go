@@ -9,9 +9,8 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/runtime"
 	isync "github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/flagd/core/pkg/sync/file"
-	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"go.uber.org/zap"
 )
 
@@ -94,7 +93,7 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 }
 
 // RegisterSubscription starts a new subscription to the target resource.
-// Once the subscription is set an ALL sync event will be recieved via the DataSync chan.
+// Once the subscription is set an ALL sync event will be received via the DataSync chan.
 func (s *SyncStore) RegisterSubscription(
 	ctx context.Context,
 	target string,
@@ -265,29 +264,18 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
-		return &file.Sync{
+		return runtime.NewFile(runtime.SourceConfig{
 			URI: regFile.ReplaceAllString(uri, ""),
-			Logger: logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "filepath"),
-				zap.String("target", "target"),
-			),
-			Mux: &sync.RWMutex{},
-		}, nil
+		}, logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "filepath"),
+			zap.String("target", "target"),
+		)), nil
 	case regCrd.Match(uriB):
-		reader, dynamic, err := kubernetes.GetClients()
-		if err != nil {
-			return nil, err
-		}
-		return kubernetes.NewK8sSync(
-			logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "kubernetes"),
-			),
-			regCrd.ReplaceAllString(uri, ""),
-			reader,
-			dynamic,
-		), nil
+		return runtime.NewK8s(uri, logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "kubernetes"),
+		))
 	}
 	return nil, fmt.Errorf("unrecognized URI: %s", uri)
 }

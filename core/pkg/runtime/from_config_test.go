@@ -1,23 +1,22 @@
-package runtime_test
+package runtime
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/open-feature/flagd/core/pkg/runtime"
-	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
-func TestSyncProviderArgParse(t *testing.T) {
+func TestParseSource(t *testing.T) {
 	test := map[string]struct {
 		in        string
 		expectErr bool
-		out       []sync.SourceConfig
+		out       []SourceConfig
 	}{
 		"simple": {
 			in:        "[{\"uri\":\"config/samples/example_flags.json\",\"provider\":\"file\"}]",
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -32,7 +31,7 @@ func TestSyncProviderArgParse(t *testing.T) {
 					{"uri":"default/my-crd","provider":"kubernetes"}
 				]`,
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -61,7 +60,7 @@ func TestSyncProviderArgParse(t *testing.T) {
 					{"uri":"core.openfeature.dev/namespace/my-crd","provider":"kubernetes"}
 				]`,
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: "file",
@@ -90,18 +89,18 @@ func TestSyncProviderArgParse(t *testing.T) {
 		"empty": {
 			in:        `[]`,
 			expectErr: false,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 		"parse-failure": {
 			in:        ``,
 			expectErr: true,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 	}
 
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
-			out, err := runtime.SyncProviderArgParse(tt.in)
+			out, err := ParseSources(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")
@@ -116,18 +115,18 @@ func TestSyncProviderArgParse(t *testing.T) {
 	}
 }
 
-func TestSyncProvidersFromURIs(t *testing.T) {
+func TestParseSyncProviderURIs(t *testing.T) {
 	test := map[string]struct {
 		in        []string
 		expectErr bool
-		out       []sync.SourceConfig
+		out       []SourceConfig
 	}{
 		"simple": {
 			in: []string{
 				"file:my-file.json",
 			},
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -142,7 +141,7 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 				"core.openfeature.dev/default/my-crd",
 			},
 			expectErr: false,
-			out: []sync.SourceConfig{
+			out: []SourceConfig{
 				{
 					URI:      "my-file.json",
 					Provider: "file",
@@ -164,18 +163,18 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 		"empty": {
 			in:        []string{},
 			expectErr: false,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 		"parse-failure": {
 			in:        []string{"care.openfeature.dev/will/fail"},
 			expectErr: true,
-			out:       []sync.SourceConfig{},
+			out:       []SourceConfig{},
 		},
 	}
 
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
-			out, err := runtime.SyncProvidersFromURIs(tt.in)
+			out, err := ParseSyncProviderURIs(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")
@@ -185,6 +184,102 @@ func TestSyncProvidersFromURIs(t *testing.T) {
 			}
 			if !reflect.DeepEqual(out, tt.out) {
 				t.Errorf("unexpected output, expected %v, got %v", tt.out, out)
+			}
+		})
+	}
+}
+
+// Note - K8s configuration require K8s client, hence do not use K8s sync provider in this test
+func Test_syncProvidersFromConfig(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+
+	type args struct {
+		logger  *logger.Logger
+		sources []SourceConfig
+	}
+
+	tests := []struct {
+		name      string
+		args      args
+		wantSyncs int // simply check the count of ISync providers yield from configurations
+		wantErr   bool
+	}{
+		{
+			name: "Empty",
+			args: args{
+				logger:  lg,
+				sources: []SourceConfig{},
+			},
+			wantSyncs: 0,
+			wantErr:   false,
+		},
+		{
+			name: "Error",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:      "fake",
+						Provider: "disk",
+					},
+				},
+			},
+			wantSyncs: 0,
+			wantErr:   true,
+		},
+		{
+			name: "single",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:        "grpc://host:port",
+						Provider:   syncProviderGrpc,
+						ProviderID: "myapp",
+						CertPath:   "/tmp/ca.cert",
+						Selector:   "source=database",
+					},
+				},
+			},
+			wantSyncs: 1,
+			wantErr:   false,
+		},
+		{
+			name: "combined",
+			args: args{
+				logger: lg,
+				sources: []SourceConfig{
+					{
+						URI:        "grpc://host:port",
+						Provider:   syncProviderGrpc,
+						ProviderID: "myapp",
+						CertPath:   "/tmp/ca.cert",
+						Selector:   "source=database",
+					},
+					{
+						URI:         "https://host:port",
+						Provider:    syncProviderHTTP,
+						BearerToken: "token",
+					},
+					{
+						URI:      "/tmp/flags.json",
+						Provider: syncProviderFile,
+					},
+				},
+			},
+			wantSyncs: 3,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			syncs, err := syncProvidersFromConfig(tt.args.logger, tt.args.sources)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("syncProvidersFromConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantSyncs != len(syncs) {
+				t.Errorf("syncProvidersFromConfig() yielded = %v, but expected %v", len(syncs), tt.wantSyncs)
 			}
 		})
 	}
