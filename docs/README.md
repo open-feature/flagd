@@ -24,7 +24,7 @@ This document describes the syntax for feature flag JSON configurations: [Flag c
 
 ## Application Integration
 
-Once flagd is running, your next step is to integrate it into you application. [This page](../docs/usage/flagd_providers.md) shows all available integration options (called providers) in a variety of languages.
+Once flagd is running, your next step is to integrate it into you application. [This page](usage/flagd_providers.md) shows all available integration options (called providers) in a variety of languages.
 
 ## Targeting Rules
 
