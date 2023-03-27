@@ -54,9 +54,10 @@ func TestParseSource(t *testing.T) {
 		"multiple-syncs-with-options": {
 			in: `[{"uri":"config/samples/example_flags.json","provider":"file"},
             		{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
+            		{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
 					{"uri":"default/my-flag-config","provider":"kubernetes"},
             		{"uri":"grpc-source:8080","provider":"grpc"},
-            		{"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
+            		{"uri":"my-flag-source:8080","provider":"grpc", "grpcSecure":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
 				`,
 			expectErr: false,
 			out: []SourceConfig{
@@ -66,6 +67,11 @@ func TestParseSource(t *testing.T) {
 				},
 				{
 					URI:         "http://my-flag-source.json",
+					Provider:    syncProviderHTTP,
+					BearerToken: "bearer-dji34ld2l",
+				},
+				{
+					URI:         "https://secure-remote",
 					Provider:    syncProviderHTTP,
 					BearerToken: "bearer-dji34ld2l",
 				},
@@ -80,6 +86,7 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:        "my-flag-source:8080",
 					Provider:   syncProviderGrpc,
+					GrpcSecure: true,
 					CertPath:   "/certs/ca.cert",
 					ProviderID: "flagd-weatherapp-sidecar",
 					Selector:   "source=database,app=weatherapp",
