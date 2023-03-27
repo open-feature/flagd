@@ -20,7 +20,7 @@ Supported start-up flags are documented (auto-generated) [here](./flagd_start.md
 Environment variable keys are uppercase, prefixed with `FLAGD_` and all `-` are replaced with `_`. For example,
 `metrics-port` flag in environment variable form is `FLAGD_METRICS_PORT`.
 
-Config file expects the keys to have the exact naming as startup-flags flags.
+The config file expects the keys to have the exact naming as startup-flags flags.
 
 ## Sync providers
 
