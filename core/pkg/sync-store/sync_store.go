@@ -253,7 +253,7 @@ func (s *SyncStore) cleanup() {
 	}
 }
 
-func (s *SyncStore) GetSyncMetrics() int64 {
+func (s *SyncStore) GetActiveSubscriptionsInt64() int64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
