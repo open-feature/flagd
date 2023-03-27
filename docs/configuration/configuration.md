@@ -34,7 +34,7 @@ currently support the following sync providers,
 
 ### Kubernetes provider
 
-The Kubernetes sync provider allows flagD to connect to a Kubernetes cluster and evaluate flags against a specified
+The Kubernetes sync provider allows flagd to connect to a Kubernetes cluster and evaluate flags against a specified
 FeatureFlagConfiguration resource as defined within
 the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1alpha1/featureflagconfiguration_types.go)
 spec.
