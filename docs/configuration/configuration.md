@@ -60,7 +60,7 @@ In this example, `etc/featureflags.json` is a valid feature flag configuration f
 
 ### Remote provider
 
-Remote sync provider fetch flags from a remote source and periodically poll the source for flag configuration updates.
+The HTTP sync provider fetch flags from a remote source and periodically poll the source for flag configuration updates.
 
 ```shell
 flagd start --uri https://my-flag-source.json
