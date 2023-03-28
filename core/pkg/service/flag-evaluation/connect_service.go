@@ -77,8 +77,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 		}
 		return nil
 	})
-	err := g.Wait()
-	if err != nil {
+	if err := g.Wait(); err != nil {
 		return err
 	}
 	return nil
