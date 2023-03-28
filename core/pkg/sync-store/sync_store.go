@@ -253,6 +253,18 @@ func (s *SyncStore) cleanup() {
 	}
 }
 
+func (s *SyncStore) GetActiveSubscriptionsInt64() int64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	syncs := 0
+	for _, v := range s.syncHandlers {
+		syncs += len(v.subs)
+	}
+
+	return int64(syncs)
+}
+
 type SyncBuilderInterface interface {
 	SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error)
 }

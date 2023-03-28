@@ -441,3 +441,28 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 		})
 	}
 }
+
+func Test_syncMetrics(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncMock := newMockSync()
+	syncStore.syncBuilder = &syncBuilderMock{
+		mock: syncMock,
+	}
+
+	subs := syncStore.GetActiveSubscriptionsInt64()
+	if subs != 0 {
+		t.Error("there are no subscriptions registered, active subs should be 0")
+	}
+
+	target := "test-target"
+	syncHandler, _ := newSyncHandler()
+
+	syncStore.syncHandlers[target] = syncHandler
+
+	subs = syncStore.GetActiveSubscriptionsInt64()
+	if subs != 1 {
+		t.Error("active subs metric should equal 1")
+	}
+}
