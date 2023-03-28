@@ -218,7 +218,7 @@ jobs:
    needs: release-please
    runs-on: ubuntu-latest
    # Only run on non-forked flagd releases
-   if: ${{ github.repository_owner == 'openfeature' && needs.release-please.outputs.flagd_tag_name }}
+   if: ${{ github.repository_owner == 'open-feature' && needs.release-please.outputs.flagd_tag_name }}
    steps:
      - uses: mislav/bump-homebrew-formula-action@v2
        with:
