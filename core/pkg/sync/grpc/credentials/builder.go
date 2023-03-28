@@ -5,35 +5,29 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
-	"strings"
 
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	// Prefix for GRPC URL inputs. GRPC does not define a standard prefix. This prefix helps to differentiate remote
-	// URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
-	Prefix       = "grpc://"
-	PrefixSecure = "grpcs://"
-
-	tlsVersion = tls.VersionTLS12
-)
+const tlsVersion = tls.VersionTLS12
 
 type Builder interface {
-	Build(string, string) (credentials.TransportCredentials, error)
+	Build(secure bool, certPath string) (credentials.TransportCredentials, error)
 }
 
 type CredentialBuilder struct{}
 
 // Build is a helper to build grpc credentials.TransportCredentials based on source and cert path
-func (cb *CredentialBuilder) Build(source string, certPath string) (credentials.TransportCredentials, error) {
-	if strings.Contains(source, Prefix) {
-		return insecure.NewCredentials(), nil
-	}
+func (cb *CredentialBuilder) Build(secure bool, certPath string) (credentials.TransportCredentials, error) {
+	if !secure {
+		// check if certificate is set & make this an error so that we do not establish an unwanted insecure connection
+		if certPath != "" {
+			return nil, fmt.Errorf("provided a non empty certificate %s, but requested an insecure connection."+
+				" Please check configurations of the grpc sync source", certPath)
+		}
 
-	if !strings.Contains(source, PrefixSecure) {
-		return nil, fmt.Errorf("invalid source. grpc source must contain prefix %s or %s", Prefix, PrefixSecure)
+		return insecure.NewCredentials(), nil
 	}
 
 	if certPath == "" {

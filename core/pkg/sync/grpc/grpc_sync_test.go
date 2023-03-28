@@ -28,62 +28,43 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-func Test_Init(t *testing.T) {
+func Test_InitWithMockCredentialBuilder(t *testing.T) {
 	tests := []struct {
-		name                string
-		target              string
-		err                 error
-		returnedCredentials credentials.TransportCredentials
-		shouldError         bool
+		name                       string
+		mockCredentials            credentials.TransportCredentials
+		mockCredentialBuilderError error
+		shouldError                bool
 	}{
 		{
-			name:                "happy path",
-			target:              "grpc://localBufCon",
-			err:                 nil,
-			returnedCredentials: insecure.NewCredentials(),
-			shouldError:         false,
+			name:                       "Initializer - happy path",
+			mockCredentialBuilderError: nil,
+			mockCredentials:            insecure.NewCredentials(),
+			shouldError:                false,
 		},
 		{
-			name:                "invalid grpc source",
-			target:              "localBufCon",
-			err:                 nil,
-			returnedCredentials: insecure.NewCredentials(),
-			shouldError:         true,
+			name:                       "Initializer fails on nil credentials",
+			mockCredentialBuilderError: nil,
+			mockCredentials:            nil,
+			shouldError:                true,
 		},
 		{
-			name:                "nil credentials",
-			target:              "grpc://localBufCon",
-			err:                 nil,
-			returnedCredentials: nil,
-			shouldError:         true,
-		},
-		{
-			name:                "could not create transport credentials",
-			target:              "grpc://localBufCon",
-			err:                 errors.New("could not create transport credentials"),
-			returnedCredentials: nil,
-			shouldError:         true,
+			name:                       "Initializer handles credential builder error",
+			mockCredentialBuilderError: errors.New("could not create transport credentials"),
+			mockCredentials:            nil,
+			shouldError:                true,
 		},
 	}
 
 	for _, test := range tests {
-		bufCon := bufconn.Listen(5)
-
-		bufServer := bufferedServer{
-			listener: bufCon,
-		}
-
-		// start server
-		go serve(&bufServer)
-
 		mockCtrl := gomock.NewController(t)
 		mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
 
-		mockCredentialBulder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(test.returnedCredentials, test.err)
+		mockCredentialBulder.EXPECT().
+			Build(gomock.Any(), gomock.Any()).
+			Return(test.mockCredentials, test.mockCredentialBuilderError)
 
 		grpcSync := Sync{
-			URI:               test.target,
-			ProviderID:        "",
+			URI:               "grpc-target",
 			Logger:            logger.NewLogger(nil, false),
 			CredentialBuilder: mockCredentialBulder,
 		}
@@ -91,11 +72,10 @@ func Test_Init(t *testing.T) {
 		err := grpcSync.Init(context.Background())
 
 		if test.shouldError {
-			require.NotNil(t, err)
-			require.Nil(t, grpcSync.client)
+			require.NotNilf(t, err, "%s: expected an error", test.name)
 		} else {
-			require.Nil(t, err)
-			require.NotNil(t, grpcSync.client)
+			require.Nilf(t, err, "%s: expected no error, but got non nil error", test.name)
+			require.NotNilf(t, grpcSync.client, "%s: expected client to be initialized", test.name)
 		}
 	}
 }
@@ -188,65 +168,6 @@ func Test_ReSyncTests(t *testing.T) {
 		if len(syncChan) != 0 {
 			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
 		}
-	}
-}
-
-func TestSourceToGRPCTarget(t *testing.T) {
-	tests := []struct {
-		name string
-		url  string
-		want string
-		ok   bool
-	}{
-		{
-			name: "With Prefix",
-			url:  "grpc://test.com/endpoint",
-			want: "test.com/endpoint",
-			ok:   true,
-		},
-		{
-			name: "With secure Prefix",
-			url:  "grpcs://test.com/endpoint",
-			want: "test.com/endpoint",
-			ok:   true,
-		},
-		{
-			name: "Empty is error",
-			url:  "",
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Invalid is error",
-			url:  "https://test.com/endpoint",
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Prefix is not enough I",
-			url:  Prefix,
-			want: "",
-			ok:   false,
-		},
-		{
-			name: "Prefix is not enough II",
-			url:  PrefixSecure,
-			want: "",
-			ok:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, ok := sourceToGRPCTarget(tt.url)
-
-			if tt.ok != ok {
-				t.Errorf("URLToGRPCTarget() returned = %v, want %v", ok, tt.ok)
-			}
-
-			if got != tt.want {
-				t.Errorf("URLToGRPCTarget() returned = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 

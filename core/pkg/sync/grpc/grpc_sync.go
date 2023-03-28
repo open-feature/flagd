@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	msync "sync"
 	"time"
 
-	credentials2 "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
+	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -44,31 +43,27 @@ type FlagSyncServiceClientResponse interface {
 var once msync.Once
 
 type Sync struct {
-	URI               string
-	ProviderID        string
-	Selector          string
 	CertPath          string
+	CredentialBuilder grpccredential.Builder
 	Logger            *logger.Logger
-	CredentialBuilder credentials2.Builder
+	ProviderID        string
+	Secure            bool
+	Selector          string
+	URI               string
 
 	client FlagSyncServiceClient
 	ready  bool
 }
 
 func (g *Sync) Init(ctx context.Context) error {
-	tCredentials, err := g.CredentialBuilder.Build(g.URI, g.CertPath)
+	tCredentials, err := g.CredentialBuilder.Build(g.Secure, g.CertPath)
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
 		return err
 	}
 
-	target, ok := sourceToGRPCTarget(g.URI)
-	if !ok {
-		return fmt.Errorf("invalid grpc source: %s", g.URI)
-	}
-
 	// Derive reusable client connection
-	rpcCon, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(tCredentials))
+	rpcCon, err := grpc.DialContext(ctx, g.URI, grpc.WithTransportCredentials(tCredentials))
 	if err != nil {
 		g.Logger.Error(fmt.Sprintf("error initiating grpc client connection: %s", err.Error()))
 		return err
@@ -222,27 +217,4 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 			g.Logger.Debug(fmt.Sprintf("received unknown state: %s", data.State.String()))
 		}
 	}
-}
-
-// sourceToGRPCTarget is a helper to derive GRPC target from a provided URL
-// For example, function returns the target localhost:9090 for the input grpc://localhost:9090
-func sourceToGRPCTarget(url string) (string, bool) {
-	var separator string
-
-	switch {
-	case strings.Contains(url, Prefix):
-		separator = Prefix
-	case strings.Contains(url, PrefixSecure):
-		separator = PrefixSecure
-	default:
-		return "", false
-	}
-
-	index := strings.Split(url, separator)
-
-	if len(index) == 2 && len(index[1]) != 0 {
-		return index[1], true
-	}
-
-	return "", false
 }
