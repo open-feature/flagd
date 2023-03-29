@@ -77,10 +77,7 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 		}
 		return nil
 	})
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return g.Wait()
 }
 
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
