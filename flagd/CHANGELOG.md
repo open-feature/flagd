@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/flagd/compare/flagd/v0.4.5...flagd/v0.5.0) (2023-03-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* unify sources configuration handling ([#560](https://github.com/open-feature/flagd/issues/560))
+
+
+### 🐛 Bug Fixes
+
+* benchmark pipeline ([#538](https://github.com/open-feature/flagd/issues/538)) ([62cc0fc](https://github.com/open-feature/flagd/commit/62cc0fcfd6a63a6059352704117dbb78160eb689))
+* **deps:** update module github.com/open-feature/flagd/core to v0.4.5 ([#552](https://github.com/open-feature/flagd/issues/552)) ([41799f6](https://github.com/open-feature/flagd/commit/41799f624c261a84599cdd406cf28f4b33e49851))
+
+
+### 🧹 Chore
+
+* refactor configuration handling for startup ([#551](https://github.com/open-feature/flagd/issues/551)) ([8dfbde5](https://github.com/open-feature/flagd/commit/8dfbde5bbffd16fb66797a750d15f0226edf54a7))
+
 ## [0.4.5](https://github.com/open-feature/flagd/compare/flagd/v0.4.4...flagd/v0.4.5) (2023-03-20)
 
 
