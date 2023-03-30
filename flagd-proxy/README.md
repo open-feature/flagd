@@ -14,14 +14,14 @@ The flagd-proxy API follows the flagd grpc spec, found in the [buf schema regist
 
 ## Deployment
 
-The proxy can be deployed to any namespace, provided that the associated service account has been added to the `flagd-kubernetes-sync` cluster role binding. A sample deployment can be found in `/config/deployments/flagd-proxy` requiring the namespace `kube-proxy` to be deployed.
+The proxy can be deployed to any namespace, provided that the associated service account has been added to the `flagd-kubernetes-sync` cluster role binding. A sample deployment can be found in `/config/deployments/flagd-proxy` requiring the namespace `flagd-proxy` to be deployed.
 
 ```sh
-kubectl create namespace kube-proxy
+kubectl create namespace flagd-proxy
 kubectl apply -f ./config/deployments/flagd-proxy
 ```
 
-Once the kube-proxy has been deployed any flagd instance subscribe to flag changes using the grpc sync, providing the target resource uri using the `selector` configuration field.
+Once the flagd-proxy has been deployed any flagd instance subscribe to flag changes using the grpc sync, providing the target resource uri using the `selector` configuration field.
 
 ```yaml
 apiVersion: v1
@@ -37,7 +37,7 @@ spec:
     args:
     - start
     - --sources
-    - '[{"uri":"grpc://kube-proxy-svc.kube-proxy.svc.cluster.local:8015","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
+    - '[{"uri":"grpc://flagd-proxy-svc.flagd-proxy.svc.cluster.local:8015","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
     - --debug
 ---
 apiVersion: core.openfeature.dev/v1alpha2
