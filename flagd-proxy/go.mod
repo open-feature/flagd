@@ -1,4 +1,4 @@
-module github.com/open-feature/flagd/kube-flagd-proxy
+module github.com/open-feature/flagd/flagd-proxy
 
 go 1.19
 

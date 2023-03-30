@@ -42,7 +42,7 @@ func init() {
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start flagd-kube-proxy",
+	Short: "Start flagd-proxy",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Configure loggers -------------------------------------------------------

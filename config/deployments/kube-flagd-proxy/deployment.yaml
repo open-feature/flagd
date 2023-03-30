@@ -23,8 +23,8 @@ spec:
           openfeature.dev/allowkubernetessync: "true"
     spec:
       containers:
-      - image: ghcr.io/open-feature/kube-flagd-proxy:latest
-        name: kube-flagd-proxy
+      - image: ghcr.io/open-feature/flagd-proxy:latest
+        name: flagd-proxy
         ports:
         - containerPort: 8015
         args:
