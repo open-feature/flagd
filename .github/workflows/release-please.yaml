@@ -5,7 +5,7 @@ on:
 
 env:
   # Stringified list of items that should be published
-  PUBLISHABLE_ITEMS: '["flagd","kube-flagd-proxy"]'
+  PUBLISHABLE_ITEMS: '["flagd","flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
   DEFAULT_GO_VERSION: 1.19
@@ -53,8 +53,8 @@ jobs:
       items_to_publish: ${{ steps.items-to-publish.outputs.result }}
       flagd_version: ${{ steps.release.outputs.flagd--version }}
       flagd_tag_name: ${{ steps.release.outputs.flagd--tag_name }}
-      kube-flagd-proxy_version: ${{ steps.release.outputs.kube-flagd-proxy--version }}
-      kube-flagd-proxy_tag_name: ${{ steps.release.outputs.kube-flagd-proxy--tag_name }}
+      flagd-proxy_version: ${{ steps.release.outputs.flagd-proxy--version }}
+      flagd-proxy_tag_name: ${{ steps.release.outputs.flagd-proxy--tag_name }}
       
   container-release:
     name: Build and push containers to GHCR
@@ -173,7 +173,7 @@ jobs:
         with:
           version: v1
       - name: setup for builds
-        # TODO: The README should also be moved ready for bundling once both kube-flagd-proxy and flagd have package specific READMEs
+        # TODO: The README should also be moved ready for bundling once both flagd-proxy and flagd have package specific READMEs
         run: |
           make workspace-init
           mv ./${{ matrix.path }}/CHANGELOG.md CHANGELOG.md 

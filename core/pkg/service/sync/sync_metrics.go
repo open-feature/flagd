@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	serviceName = "openfeature/kube-flagd-proxy"
+	serviceName = "openfeature/flagd-proxy"
 )
 
 func (s *Server) captureMetrics() error {

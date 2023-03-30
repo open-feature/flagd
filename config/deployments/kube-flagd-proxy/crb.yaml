@@ -15,4 +15,4 @@ subjects:
   namespace: system
 - kind: ServiceAccount
   name: default
-  namespace: kube-proxy
+  namespace: flagd-proxy
