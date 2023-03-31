@@ -13,9 +13,9 @@
         "snap/snapcraft.yaml"
       ]
     },
-    "kube-flagd-proxy": {
+    "flagd-proxy": {
       "release-type": "go",
-      "package-name": "kube-flagd-proxy",
+      "package-name": "flagd-proxy",
       "versioning": "default",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true

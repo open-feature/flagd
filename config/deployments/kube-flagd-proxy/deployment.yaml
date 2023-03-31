@@ -2,29 +2,29 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   creationTimestamp: null
-  namespace: kube-proxy
+  namespace: flagd-proxy
   labels:
-    app: kube-proxy
-  name: kube-proxy
+    app: flagd-proxy
+  name: flagd-proxy
   annotations:
     openfeature.dev/allowkubernetessync: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kube-proxy
+      app: flagd-proxy
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app.kubernetes.io/name: kube-proxy 
-        app: kube-proxy
+        app.kubernetes.io/name: flagd-proxy 
+        app: flagd-proxy
       annotations:
           openfeature.dev/allowkubernetessync: "true"
     spec:
       containers:
-      - image: ghcr.io/open-feature/kube-flagd-proxy:latest
-        name: kube-flagd-proxy
+      - image: ghcr.io/open-feature/flagd-proxy:latest
+        name: flagd-proxy
         ports:
         - containerPort: 8015
         args:
