@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,11 +14,8 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/service"
 
-	"go.opentelemetry.io/otel/exporters/prometheus"
-
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -25,6 +23,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 )
@@ -61,11 +60,13 @@ type SourceConfig struct {
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	ServicePort       uint16
-	MetricsPort       uint16
-	ServiceSocketPath string
-	ServiceCertPath   string
-	ServiceKeyPath    string
+	MetricExporter      string
+	MetricsPort         uint16
+	OtelCollectorTarget string
+	ServiceCertPath     string
+	ServiceKeyPath      string
+	ServicePort         uint16
+	ServiceSocketPath   string
 
 	SyncProviders []SourceConfig
 	CORS          []string
@@ -81,9 +82,10 @@ func init() {
 
 // FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	// build connect service
-	exporter, err := prometheus.New()
+	// setup telemetry globals
+	err := telemetry.SetupGlobal(context.TODO(), svcName, config.MetricExporter, config.OtelCollectorTarget)
 	if err != nil {
+		logger.Error(fmt.Sprintf("failed to setup global telemetry configurations: %v", err))
 		return nil, err
 	}
 
@@ -91,7 +93,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),
-		Metrics: otel.NewOTelRecorder(exporter, svcName),
+		Metrics: telemetry.NewOTelRecorder(svcName),
 	}
 
 	// build flag store

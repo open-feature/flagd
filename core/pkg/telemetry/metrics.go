@@ -1,13 +1,13 @@
-package otel
+package telemetry
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/metric/global"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/unit"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
@@ -69,19 +69,9 @@ func getDurationView(svcName, viewName string, bucket []float64) metric.View {
 	)
 }
 
-func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorder {
-	const requestDurationName = "http_request_duration_seconds"
-	const responseSizeName = "http_response_size_bytes"
+func NewOTelRecorder(serviceName string) *MetricsRecorder {
+	meter := global.Meter(serviceName)
 
-	// create a metric provider with custom bucket size for histograms
-	provider := metric.NewMeterProvider(
-		metric.WithReader(exporter),
-		// for the request duration metric we use the default bucket size which are tailored for response time in seconds
-		metric.WithView(getDurationView(requestDurationName, serviceName, prometheus.DefBuckets)),
-		// for response size we want 8 exponential bucket starting from 100 Bytes
-		metric.WithView(getDurationView(responseSizeName, serviceName, prometheus.ExponentialBuckets(100, 10, 8))),
-	)
-	meter := provider.Meter(serviceName)
 	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
 	hduration, _ := meter.Float64Histogram(
 		requestDurationName,
@@ -90,7 +80,7 @@ func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorde
 	hsize, _ := meter.Float64Histogram(
 		responseSizeName,
 		instrument.WithDescription("The size of the HTTP responses"),
-		instrument.WithUnit(unit.Bytes),
+		instrument.WithUnit("By"),
 	)
 	reqCounter, _ := meter.Int64UpDownCounter(
 		"http_requests_inflight",

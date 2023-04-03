@@ -18,7 +18,9 @@ const (
 	corsFlagName           = "cors-origin"
 	evaluatorFlagName      = "evaluator"
 	logFormatFlagName      = "log-format"
+	metricsExporter        = "metrics-exporter"
 	metricsPortFlagName    = "metrics-port"
+	otelCollectorTarget    = "otel-collector-target"
 	portFlagName           = "port"
 	providerArgsFlagName   = "sync-provider-args"
 	serverCertPathFlagName = "server-cert-path"
@@ -65,12 +67,18 @@ func init() {
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
+	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
+		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollector to be present")
+	flags.StringP(otelCollectorTarget, "o", "", "Set the grpc target of the otel collector for flagd runtime."+
+		" If unset, collector setup will be ignored resulting in ignored traces(NoopTracerProvider)")
 
 	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
+	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
+	_ = viper.BindPFlag(otelCollectorTarget, flags.Lookup(otelCollectorTarget))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
@@ -140,13 +148,15 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricsPort:       viper.GetUint16(metricsPortFlagName),
-			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       viper.GetUint16(portFlagName),
-			ServiceSocketPath: viper.GetString(socketPathFlagName),
-			SyncProviders:     syncProviders,
+			CORS:                viper.GetStringSlice(corsFlagName),
+			MetricExporter:      viper.GetString(metricsExporter),
+			MetricsPort:         viper.GetUint16(metricsPortFlagName),
+			OtelCollectorTarget: viper.GetString(otelCollectorTarget),
+			ServiceCertPath:     viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:      viper.GetString(serverKeyPathFlagName),
+			ServicePort:         viper.GetUint16(portFlagName),
+			ServiceSocketPath:   viper.GetString(socketPathFlagName),
+			SyncProviders:       syncProviders,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())
