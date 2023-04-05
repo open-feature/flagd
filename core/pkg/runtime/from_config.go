@@ -82,10 +82,11 @@ func init() {
 
 // FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	// setup telemetry globals
-	err := telemetry.SetupGlobal(context.TODO(), svcName, config.MetricExporter, config.OtelCollectorTarget)
+	recorder, err := buildTelemetryRecorder(logger, telemetry.Config{
+		MetricsExporter: config.MetricExporter,
+		CollectorTarget: config.OtelCollectorTarget,
+	})
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to setup global telemetry configurations: %v", err))
 		return nil, err
 	}
 
@@ -93,7 +94,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),
-		Metrics: telemetry.NewOTelRecorder(svcName),
+		Metrics: recorder,
 	}
 
 	// build flag store
@@ -126,6 +127,24 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		},
 		SyncImpl: iSyncs,
 	}, nil
+}
+
+// buildTelemetryRecorder is a helper to build telemetry.MetricsRecorder based on configurations
+func buildTelemetryRecorder(logger *logger.Logger, config telemetry.Config) (*telemetry.MetricsRecorder, error) {
+	// Build metric reader based on configurations
+	mReader, err := telemetry.BuildMetricReader(context.TODO(), config)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to setup metric reader: %v", err))
+		return nil, err
+	}
+
+	// Build telemetry resource identifier
+	resource, err := telemetry.BuildResourceFor(context.Background(), svcName)
+	if err != nil {
+		return nil, err
+	}
+
+	return telemetry.NewOTelRecorder(mReader, resource, svcName), nil
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig

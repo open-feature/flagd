@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
@@ -886,6 +888,6 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 
 func getMetricReader() (*telemetry.MetricsRecorder, metric.Reader) {
 	exp := metric.NewManualReader()
-	telemetry.SetupMetricProviderWithCustomReader(exp)
-	return telemetry.NewOTelRecorder("testSvc"), exp
+	rs := resource.NewWithAttributes("testSchema")
+	return telemetry.NewOTelRecorder(exp, rs, "testSvc"), exp
 }
