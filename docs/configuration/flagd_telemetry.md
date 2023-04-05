@@ -77,7 +77,7 @@ receivers:
       grpc:
 exporters:
   prometheus:
-    endpoint: "0.0.0.0:8889"
+    endpoint: "localhost:8889"
     const_labels:
       label1: value1
   jaeger:
@@ -110,4 +110,4 @@ scrape_configs:
 ```
 
 Once, configuration files are ready, use `docker-compose up` to start the local setup. With successful startup, you can
-access metrics through [Prometheus](http://localhost:9090/graph) & traces through [Jaeger](http://127.0.0.1:16686/).
+access metrics through [Prometheus](http://localhost:9090/graph) & traces through [Jaeger](http://localhost:16686/).
