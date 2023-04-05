@@ -68,7 +68,8 @@ func init() {
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
 	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
-		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollector to be present")
+		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorTarget to"+
+		" be present")
 	flags.StringP(otelCollectorTarget, "o", "", "Set the grpc target of the otel collector for flagd runtime."+
 		" If unset, collector setup will be ignored resulting in ignored traces(NoopTracerProvider)")
 

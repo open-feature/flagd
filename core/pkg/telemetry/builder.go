@@ -62,9 +62,10 @@ func BuildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 }
 
 // BuildSpanProcessor builds a span processor based on provided configurations
+// todo - consider fallback mechanism(ex:- to console) if collector is unset
 func BuildSpanProcessor(ctx context.Context, cfg Config) (trace.SpanProcessor, error) {
 	if cfg.CollectorTarget == "" {
-		return nil, fmt.Errorf("otel collector target is essential for span processor")
+		return nil, fmt.Errorf("otel collector target is required for span processor")
 	}
 
 	// Non-blocking, insecure grpc connection
