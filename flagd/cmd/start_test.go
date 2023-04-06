@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"log"
+	"os"
+	"testing"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log"
-	"os"
-	"testing"
 )
 
 func Test_getPort(t *testing.T) {
