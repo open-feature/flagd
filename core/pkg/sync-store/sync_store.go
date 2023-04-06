@@ -138,9 +138,11 @@ func (s *SyncStore) RegisterSubscription(
 			go func() {
 				s.mu.Lock()
 				defer s.mu.Unlock()
-				s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
-				if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
-					errChan <- err
+				if _, ok := s.syncHandlers[target]; ok {
+					s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
+					if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
+						errChan <- err
+					}
 				}
 			}()
 		}
