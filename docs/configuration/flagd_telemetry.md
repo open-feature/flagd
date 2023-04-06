@@ -14,6 +14,10 @@ flagd provides telemetry data out of the box. These telemetry data is compatible
 By default, Prometheus exporter is used for metrics and metrics can be accessed from `/metrics` endpoint. For example,
 with default startup flags, metrics are exposed at `http://localhost:8014/metrics`.
 
+Given below is the current implementation overview of flagd telemetry internals,
+
+<img src="../images/flagd-telemetry.png">
+
 ## Export to OTEL collector
 
 flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup

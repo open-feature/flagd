@@ -82,7 +82,7 @@ func init() {
 
 // FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	recorder, err := buildTelemetryRecorder(logger, telemetry.Config{
+	recorder, err := buildTelemetryRecorder(telemetry.Config{
 		MetricsExporter: config.MetricExporter,
 		CollectorTarget: config.OtelCollectorTarget,
 	})
@@ -130,18 +130,17 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 }
 
 // buildTelemetryRecorder is a helper to build telemetry.MetricsRecorder based on configurations
-func buildTelemetryRecorder(logger *logger.Logger, config telemetry.Config) (*telemetry.MetricsRecorder, error) {
+func buildTelemetryRecorder(config telemetry.Config) (*telemetry.MetricsRecorder, error) {
 	// Build metric reader based on configurations
 	mReader, err := telemetry.BuildMetricReader(context.TODO(), config)
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to setup metric reader: %v", err))
-		return nil, err
+		return nil, fmt.Errorf("failed to setup metric reader: %w", err)
 	}
 
 	// Build telemetry resource identifier
 	resource, err := telemetry.BuildResourceFor(context.Background(), svcName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
 	}
 
 	return telemetry.NewOTelRecorder(mReader, resource, svcName), nil

@@ -76,6 +76,9 @@ func getDurationView(svcName, viewName string, bucket []float64) metric.View {
 	)
 }
 
+// NewOTelRecorder creates a MetricsRecorder based on the provided metric.Reader. Note that, metric.NewMeterProvider is
+// created here but not registered globally as this is the only place we derive a metric.Meter. Consider global provider
+// registration if we need more meters
 func NewOTelRecorder(exporter metric.Reader, resource *resource.Resource, serviceName string) *MetricsRecorder {
 	// create a metric provider with custom bucket size for histograms
 	provider := metric.NewMeterProvider(
