@@ -8,28 +8,27 @@ import (
 	"net/http"
 	"time"
 
-	rpc "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/sync/v1/syncv1connect"
+	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
 	server        *http.Server
 	metricsServer *http.Server
 	Logger        *logger.Logger
-	handler       handler
+	handler       *handler
 	config        iservice.Configuration
 }
 
 func NewServer(ctx context.Context, logger *logger.Logger) *Server {
 	syncStore := syncStore.NewSyncStore(ctx, logger)
 	return &Server{
-		handler: handler{
+		handler: &handler{
 			logger:    logger,
 			syncStore: syncStore,
 		},
@@ -74,21 +73,16 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 func (s *Server) startServer() error {
 	var lis net.Listener
 	var err error
-	mux := http.NewServeMux()
 	address := fmt.Sprintf(":%d", s.config.Port)
 	lis, err = net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
-	path, handler := rpc.NewFlagSyncServiceHandler(&s.handler)
-	mux.Handle(path, handler)
+	grpcServer := grpc.NewServer()
+	rpc.RegisterFlagSyncServiceServer(grpcServer, s.handler)
+	grpcServer.Serve(lis)
 
-	s.server = &http.Server{
-		ReadHeaderTimeout: time.Second,
-		Handler:           h2c.NewHandler(mux, &http2.Server{}),
-	}
-
-	if err := s.server.Serve(
+	if err := grpcServer.Serve(
 		lis,
 	); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
