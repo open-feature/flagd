@@ -16,7 +16,7 @@ type handler struct {
 	logger    *logger.Logger
 }
 
-func (l handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
+func (l *handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse,
 	error,
 ) {
