@@ -154,7 +154,6 @@ func (s *SyncStore) RegisterSubscription(
 			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
 			delete(s.syncHandlers[target].subs, key)
 		}
-
 	}()
 }
 
