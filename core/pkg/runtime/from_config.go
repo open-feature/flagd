@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -60,13 +59,13 @@ type SourceConfig struct {
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter      string
-	MetricsPort         uint16
-	OtelCollectorTarget string
-	ServiceCertPath     string
-	ServiceKeyPath      string
-	ServicePort         uint16
-	ServiceSocketPath   string
+	MetricExporter    string
+	MetricsPort       uint16
+	OtelCollectorURI  string
+	ServiceCertPath   string
+	ServiceKeyPath    string
+	ServicePort       uint16
+	ServiceSocketPath string
 
 	SyncProviders []SourceConfig
 	CORS          []string
@@ -82,9 +81,10 @@ func init() {
 
 // FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	recorder, err := buildTelemetryRecorder(telemetry.Config{
+	// build metrics recorder with startup configurations
+	recorder, err := telemetry.BuildMetricsRecorder(svcName, telemetry.Config{
 		MetricsExporter: config.MetricExporter,
-		CollectorTarget: config.OtelCollectorTarget,
+		CollectorTarget: config.OtelCollectorURI,
 	})
 	if err != nil {
 		return nil, err
@@ -127,23 +127,6 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		},
 		SyncImpl: iSyncs,
 	}, nil
-}
-
-// buildTelemetryRecorder is a helper to build telemetry.MetricsRecorder based on configurations
-func buildTelemetryRecorder(config telemetry.Config) (*telemetry.MetricsRecorder, error) {
-	// Build metric reader based on configurations
-	mReader, err := telemetry.BuildMetricReader(context.TODO(), config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to setup metric reader: %w", err)
-	}
-
-	// Build telemetry resource identifier
-	resource, err := telemetry.BuildResourceFor(context.Background(), svcName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
-	}
-
-	return telemetry.NewOTelRecorder(mReader, resource, svcName), nil
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig

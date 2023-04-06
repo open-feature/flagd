@@ -9,6 +9,17 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 )
 
+func TestBuildMetricsRecorder(t *testing.T) {
+	// Simple happy-path test
+	recorder, err := BuildMetricsRecorder("service", Config{
+		MetricsExporter: "otel",
+		CollectorTarget: "localhost:8080",
+	})
+
+	require.Nil(t, err, "expected no error, but got: %v", err)
+	require.NotNilf(t, recorder, "expected recorder to be non-nil")
+}
+
 func TestBuildMetricReader(t *testing.T) {
 	gCtx := context.TODO()
 
@@ -48,7 +59,7 @@ func TestBuildMetricReader(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		reader, err := BuildMetricReader(gCtx, test.cfg)
+		reader, err := buildMetricReader(gCtx, test.cfg)
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
@@ -98,7 +109,7 @@ func TestBuildSpanProcessor(t *testing.T) {
 func TestBuildResourceFor(t *testing.T) {
 	svc := "testSvc"
 
-	resource, err := BuildResourceFor(context.Background(), svc)
+	resource, err := buildResourceFor(context.Background(), svc)
 	require.Nil(t, err, "expected no error, but got: %v", err)
 
 	attributes := resource.Attributes()
