@@ -34,11 +34,10 @@ func (l *handler) SyncFlags(
 	req *syncv1.SyncFlagsRequest,
 	stream rpc.FlagSyncService_SyncFlagsServer,
 ) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
-	l.syncStore.RegisterSubscription(ctx, req.GetSelector(), req, dataSync, errChan)
+	l.syncStore.RegisterSubscription(stream.Context(), req.GetSelector(), req, dataSync, errChan)
+
 	for {
 		select {
 		case e := <-errChan:
@@ -50,7 +49,7 @@ func (l *handler) SyncFlags(
 			}); err != nil {
 				return err
 			}
-		case <-ctx.Done():
+		case <-stream.Context().Done():
 			return nil
 		}
 	}
