@@ -113,7 +113,7 @@ func (s *SyncStore) RegisterSubscription(
 				target,
 				key,
 			))
-		sh = &syncHandler{
+		s.syncHandlers[target] = &syncHandler{
 			dataSync: make(chan isync.DataSync),
 			subs: map[interface{}]storedChannels{
 				key: {
@@ -123,7 +123,6 @@ func (s *SyncStore) RegisterSubscription(
 			},
 			mu: &sync.RWMutex{},
 		}
-		s.syncHandlers[target] = sh
 		go s.watchResource(target)
 	} else {
 		// register our sub in the map
@@ -132,7 +131,6 @@ func (s *SyncStore) RegisterSubscription(
 			errChan:  errChan,
 			dataSync: dataSync,
 		}
-
 		// access pointer + trigger resync passing the dataSync
 		if sh.syncRef != nil {
 			go func() {
@@ -151,11 +149,12 @@ func (s *SyncStore) RegisterSubscription(
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()
+		defer s.mu.Unlock()
 		if s.syncHandlers[target] != nil && s.syncHandlers[target].subs != nil {
 			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
 			delete(s.syncHandlers[target].subs, key)
 		}
-		s.mu.Unlock()
+
 	}()
 }
 
