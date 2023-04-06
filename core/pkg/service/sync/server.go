@@ -80,7 +80,6 @@ func (s *Server) startServer() error {
 	}
 	grpcServer := grpc.NewServer()
 	rpc.RegisterFlagSyncServiceServer(grpcServer, s.handler)
-	grpcServer.Serve(lis)
 
 	if err := grpcServer.Serve(
 		lis,
