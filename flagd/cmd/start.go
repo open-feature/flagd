@@ -143,11 +143,21 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricsPort:       getPortValueOrDefault(metricsPortFlagName, viper.GetUint16(metricsPortFlagName), defaultMetricsPort, rtLogger),
-			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       getPortValueOrDefault(portFlagName, viper.GetUint16(portFlagName), defaultServicePort, rtLogger),
+			CORS: viper.GetStringSlice(corsFlagName),
+			MetricsPort: getPortValueOrDefault(
+				metricsPortFlagName,
+				viper.GetUint16(metricsPortFlagName),
+				defaultMetricsPort,
+				rtLogger,
+			),
+			ServiceCertPath: viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:  viper.GetString(serverKeyPathFlagName),
+			ServicePort: getPortValueOrDefault(
+				portFlagName,
+				viper.GetUint16(portFlagName),
+				defaultServicePort,
+				rtLogger,
+			),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			SyncProviders:     syncProviders,
 		})
@@ -163,7 +173,8 @@ var startCmd = &cobra.Command{
 
 func getPortValueOrDefault(flagName string, flagValue, defaultValue uint16, logger *logger.Logger) uint16 {
 	if flagValue == 0 {
-		logger.Warn(fmt.Sprintf("Could not parse value for flag '%s'. Falling back to default value %d", flagName, defaultValue))
+		logger.Warn(fmt.Sprintf("Could not parse value for flag '%s'. "+
+			"Falling back to default value %d", flagName, defaultValue))
 		return defaultValue
 	}
 	return flagValue
