@@ -72,7 +72,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			_ = os.Remove(tt.socketPath)
 			ctrl := gomock.NewController(t)
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveBooleanValue(gomock.Any(), gomock.Any(), tt.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,

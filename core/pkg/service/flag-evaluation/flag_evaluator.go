@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/core/pkg/eval"
@@ -22,6 +26,7 @@ type FlagEvaluationService struct {
 	eval                  eval.IEvaluator
 	metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
+	flagEvalTracer        trace.Tracer
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
@@ -33,6 +38,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 		eval:                  eval,
 		metrics:               metricsRecorder,
 		eventingConfiguration: eventingCfg,
+		flagEvalTracer: otel.Tracer("flagEvaluationService"),
 	}
 }
 
@@ -42,13 +48,18 @@ func (s *FlagEvaluationService) ResolveAll(
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
 	reqID := xid.New().String()
 	defer s.logger.ClearFields(reqID)
+
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll")
+	defer span.End()
+
 	res := &schemaV1.ResolveAllResponse{
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
-	values := s.eval.ResolveAllValues(reqID, req.Msg.GetContext())
+	values := s.eval.ResolveAllValues(sCtx, reqID, req.Msg.GetContext())
+	span.SetAttributes(attribute.Int("count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(ctx, value.Error, value.Reason, value.Variant, value.FlagKey)
+		s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
@@ -131,49 +142,15 @@ func (s *FlagEvaluationService) EventStream(
 	}
 }
 
-func resolve[T constraints](
-	goCtx context.Context,
-	logger *logger.Logger,
-	resolver func(reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),
-	flagKey string,
-	ctx *structpb.Struct,
-	resp response[T],
-	metrics *telemetry.MetricsRecorder,
-) error {
-	reqID := xid.New().String()
-	defer logger.ClearFields(reqID)
-
-	logger.WriteFields(
-		reqID,
-		zap.String("flag-key", flagKey),
-		zap.Strings("context-keys", formatContextKeys(ctx)),
-	)
-
-	var evalErrFormatted error
-	result, variant, reason, evalErr := resolver(reqID, flagKey, ctx)
-	if evalErr != nil {
-		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
-		reason = model.ErrorReason
-		evalErrFormatted = errFormat(evalErr)
-	}
-
-	metrics.RecordEvaluation(goCtx, evalErr, reason, variant, flagKey)
-
-	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
-		logger.ErrorWithID(reqID, err.Error())
-		return err
-	}
-
-	return evalErrFormatted
-}
-
 func (s *FlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean")
+	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	err := resolve[bool](
-		ctx,
+		sCtx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
 		req.Msg.GetFlagKey(),
@@ -189,9 +166,12 @@ func (s *FlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveString")
+	defer span.End()
+
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	err := resolve[string](
-		ctx,
+		sCtx,
 		s.logger,
 		s.eval.ResolveStringValue,
 		req.Msg.GetFlagKey(),
@@ -207,9 +187,12 @@ func (s *FlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveInt")
+	defer span.End()
+
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	err := resolve[int64](
-		ctx,
+		sCtx,
 		s.logger,
 		s.eval.ResolveIntValue,
 		req.Msg.GetFlagKey(),
@@ -225,9 +208,12 @@ func (s *FlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveFloat")
+	defer span.End()
+
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	err := resolve[float64](
-		ctx,
+		sCtx,
 		s.logger,
 		s.eval.ResolveFloatValue,
 		req.Msg.GetFlagKey(),
@@ -243,9 +229,12 @@ func (s *FlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveObject")
+	defer span.End()
+
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	err := resolve[map[string]any](
-		ctx,
+		sCtx,
 		s.logger,
 		s.eval.ResolveObjectValue,
 		req.Msg.GetFlagKey(),
@@ -255,6 +244,42 @@ func (s *FlagEvaluationService) ResolveObject(
 	)
 
 	return res, err
+}
+
+// resolve is a generic flag resolver
+func resolve[T constraints](
+	ctx context.Context,
+	logger *logger.Logger,
+	resolver func(context context.Context, reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),
+	flagKey string,
+	evaluationContext *structpb.Struct,
+	resp response[T],
+	metrics *telemetry.MetricsRecorder,
+) error {
+	reqID := xid.New().String()
+	defer logger.ClearFields(reqID)
+
+	logger.WriteFields(
+		reqID,
+		zap.String("flag-key", flagKey),
+		zap.Strings("context-keys", formatContextKeys(evaluationContext)),
+	)
+
+	result, variant, reason, evalErr := resolver(ctx, reqID, flagKey, evaluationContext)
+	if evalErr != nil {
+		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
+		reason = model.ErrorReason
+		evalErr = errFormat(evalErr)
+	} else {
+		metrics.Impressions(ctx, flagKey, variant)
+	}
+
+	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
+		logger.ErrorWithID(reqID, err.Error())
+		return err
+	}
+
+	return evalErr
 }
 
 func formatContextKeys(context *structpb.Struct) []string {

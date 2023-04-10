@@ -72,9 +72,7 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 
 	provider := trace.NewTracerProvider(
 		trace.WithSampler(trace.AlwaysSample()),
-		trace.WithSpanProcessor(trace.NewBatchSpanProcessor(
-			exporter,
-			trace.WithBatchTimeout(exportInterval))),
+		trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
 		trace.WithResource(res))
 
 	otel.SetTracerProvider(provider)
