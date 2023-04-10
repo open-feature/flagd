@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
+
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
@@ -11,7 +13,7 @@ import (
 
 func TestBuildMetricsRecorder(t *testing.T) {
 	// Simple happy-path test
-	recorder, err := BuildMetricsRecorder("service", Config{
+	recorder, err := BuildMetricsRecorder(context.Background(), "service", Config{
 		MetricsExporter: "otel",
 		CollectorTarget: "localhost:8080",
 	})
@@ -87,14 +89,14 @@ func TestBuildSpanProcessor(t *testing.T) {
 			error: false,
 		},
 		{
-			name:  "Invalid configurations result in an error",
+			name:  "Empty configurations does not result in error",
 			cfg:   Config{},
-			error: true,
+			error: false,
 		},
 	}
 
 	for _, test := range tests {
-		spanProcessor, err := BuildSpanProcessor(gCtx, test.cfg)
+		err := BuildTraceProvider(gCtx, logger.NewLogger(nil, false), "", test.cfg)
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
@@ -102,7 +104,6 @@ func TestBuildSpanProcessor(t *testing.T) {
 		}
 
 		require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
-		require.NotNil(t, spanProcessor, "test %s expected non-nil reader", test.name)
 	}
 }
 
