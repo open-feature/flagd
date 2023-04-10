@@ -11,8 +11,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -21,7 +21,7 @@ import (
 type FlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  eval.IEvaluator
-	metrics               *otel.MetricsRecorder
+	metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
 }
 
@@ -31,7 +31,7 @@ type eventingConfiguration struct {
 }
 
 func NewFlagEvaluationService(log *logger.Logger,
-	eval eval.IEvaluator, metricsRecorder *otel.MetricsRecorder,
+	eval eval.IEvaluator, metricsRecorder *telemetry.MetricsRecorder,
 ) *FlagEvaluationService {
 	return &FlagEvaluationService{
 		logger:  log,
@@ -151,7 +151,7 @@ func resolve[T constraints](
 	flagKey string,
 	ctx *structpb.Struct,
 	resp response[T],
-	metrics *otel.MetricsRecorder,
+	metrics *telemetry.MetricsRecorder,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)

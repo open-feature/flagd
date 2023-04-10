@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/telemetry"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/open-feature/flagd/core/pkg/service/middleware"
@@ -17,7 +19,6 @@ import (
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/open-feature/flagd/core/pkg/service"
 	corsmw "github.com/open-feature/flagd/core/pkg/service/middleware/cors"
 	h2cmw "github.com/open-feature/flagd/core/pkg/service/middleware/h2c"
@@ -31,7 +32,7 @@ const ErrorPrefix = "FlagdError:"
 type ConnectService struct {
 	Logger                *logger.Logger
 	Eval                  eval.IEvaluator
-	Metrics               *otel.MetricsRecorder
+	Metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
 	server                *http.Server
 	metricsServer         *http.Server
