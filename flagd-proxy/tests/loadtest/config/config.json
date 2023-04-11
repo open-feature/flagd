@@ -10,7 +10,7 @@
     },
     "tests": [
         {
-            "watchers": 10000,
+            "watchers": 10,
             "repeats": 5,
             "delay": 2000000000 
         }
