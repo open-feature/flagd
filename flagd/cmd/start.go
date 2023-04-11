@@ -29,6 +29,9 @@ const (
 	sourcesFlagName        = "sources"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
+
+	defaultServicePort = 8013
+	defaultMetricsPort = 8014
 )
 
 func init() {
@@ -37,8 +40,8 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-	flags.Int32P(metricsPortFlagName, "m", 8014, "Port to serve metrics on")
-	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
+	flags.Int32P(metricsPortFlagName, "m", defaultMetricsPort, "Port to serve metrics on")
+	flags.Int32P(portFlagName, "p", defaultServicePort, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
@@ -149,13 +152,23 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricExporter:    viper.GetString(metricsExporter),
-			MetricsPort:       viper.GetUint16(metricsPortFlagName),
-			OtelCollectorURI:  viper.GetString(otelCollectorURI),
-			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       viper.GetUint16(portFlagName),
+			CORS:           viper.GetStringSlice(corsFlagName),
+			MetricExporter: viper.GetString(metricsExporter),
+			MetricsPort: getPortValueOrDefault(
+				metricsPortFlagName,
+				viper.GetUint16(metricsPortFlagName),
+				defaultMetricsPort,
+				rtLogger,
+			),
+			OtelCollectorURI: viper.GetString(otelCollectorURI),
+			ServiceCertPath:  viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:   viper.GetString(serverKeyPathFlagName),
+			ServicePort: getPortValueOrDefault(
+				portFlagName,
+				viper.GetUint16(portFlagName),
+				defaultServicePort,
+				rtLogger,
+			),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			SyncProviders:     syncProviders,
 		})
@@ -167,4 +180,13 @@ var startCmd = &cobra.Command{
 			rtLogger.Fatal(err.Error())
 		}
 	},
+}
+
+func getPortValueOrDefault(flagName string, flagValue, defaultValue uint16, logger *logger.Logger) uint16 {
+	if flagValue == 0 {
+		logger.Warn(fmt.Sprintf("Could not parse value for flag '%s'. "+
+			"Falling back to default value %d", flagName, defaultValue))
+		return defaultValue
+	}
+	return flagValue
 }
