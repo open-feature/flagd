@@ -5,6 +5,11 @@ import (
 	"errors"
 	"testing"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
+	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
@@ -12,7 +17,6 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/eval/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -96,7 +100,8 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				t.Errorf("ConnectService.ResolveAll() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
 				return
 			}
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), 1)
@@ -201,7 +206,8 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				t.Errorf("Flag_Evaluation.ResolveBoolean() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
 				return
 			}
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
@@ -256,7 +262,8 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
-				data, err := exp.Collect(context.TODO())
+				var data metricdata.ResourceMetrics
+				err = exp.Collect(context.TODO(), &data)
 				require.Nil(b, err)
 				// the impression metric is registered
 				require.Equal(b, len(data.ScopeMetrics), 1)
@@ -348,7 +355,8 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				t.Errorf("Flag_Evaluation.ResolveString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
@@ -403,7 +411,8 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
-				data, err := exp.Collect(context.TODO())
+				var data metricdata.ResourceMetrics
+				err = exp.Collect(context.TODO(), &data)
 				require.Nil(b, err)
 				// the impression metric is registered
 				require.Equal(b, len(data.ScopeMetrics), 1)
@@ -496,7 +505,8 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
@@ -550,7 +560,8 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
-				data, err := exp.Collect(context.TODO())
+				var data metricdata.ResourceMetrics
+				err = exp.Collect(context.TODO(), &data)
 				require.Nil(b, err)
 				// the impression metric is registered
 				require.Equal(b, len(data.ScopeMetrics), 1)
@@ -643,7 +654,8 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
@@ -697,7 +709,8 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
-				data, err := exp.Collect(context.TODO())
+				var data metricdata.ResourceMetrics
+				err = exp.Collect(context.TODO(), &data)
 				require.Nil(b, err)
 				// the impression metric is registered
 				require.Equal(b, len(data.ScopeMetrics), 1)
@@ -799,7 +812,8 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got.Msg)
-			data, err := exp.Collect(context.TODO())
+			var data metricdata.ResourceMetrics
+			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), tt.mCount)
@@ -862,7 +876,8 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 					return
 				}
 				require.Equal(b, tt.want, got.Msg)
-				data, err := exp.Collect(context.TODO())
+				var data metricdata.ResourceMetrics
+				err = exp.Collect(context.TODO(), &data)
 				require.Nil(b, err)
 				// the impression metric is registered
 				require.Equal(b, len(data.ScopeMetrics), 1)
@@ -871,7 +886,8 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 	}
 }
 
-func getMetricReader() (*otel.MetricsRecorder, metric.Reader) {
+func getMetricReader() (*telemetry.MetricsRecorder, metric.Reader) {
 	exp := metric.NewManualReader()
-	return otel.NewOTelRecorder(exp, "testSvc"), exp
+	rs := resource.NewWithAttributes("testSchema")
+	return telemetry.NewOTelRecorder(exp, rs, "testSvc"), exp
 }
