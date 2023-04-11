@@ -23,7 +23,7 @@ func (f *FilePathTrigger) Setup() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(f.config.TargetFile, dat, 0644)
+	return os.WriteFile(f.config.TargetFile, dat, 0o600)
 }
 
 func (f *FilePathTrigger) Update() error {
@@ -31,7 +31,7 @@ func (f *FilePathTrigger) Update() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(f.config.TargetFile, dat, 0644)
+	return os.WriteFile(f.config.TargetFile, dat, 0o600)
 }
 
 func Cleanup(filename string) error {

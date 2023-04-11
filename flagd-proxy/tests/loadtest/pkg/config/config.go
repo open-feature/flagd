@@ -54,7 +54,7 @@ var defaultTests = []handler.TestConfig{
 type Config struct {
 	TriggerType       TriggerType                   `json:"triggerType"`
 	FileTriggerConfig trigger.FilePathTriggerConfig `json:"fileTriggerConfig"`
-	HandlerConfig     handler.HandlerConfig         `json:"handlerConfig"`
+	HandlerConfig     handler.Config                `json:"handlerConfig"`
 	Tests             []handler.TestConfig
 }
 
@@ -66,7 +66,7 @@ func NewConfig(filepath string) (*Config, error) {
 			EndFile:    defaultEndFile,
 			TargetFile: defaultTargetFile,
 		},
-		HandlerConfig: handler.HandlerConfig{
+		HandlerConfig: handler.Config{
 			FilePath: defaultTargetFileSource,
 			Host:     defaultHost,
 			Port:     defaultPort,

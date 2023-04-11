@@ -8,13 +8,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type ClientConfig struct {
+type Config struct {
 	Host string
 	Port uint16
 }
 
-func NewClient(config ClientConfig) (syncv1.FlagSyncServiceClient, error) {
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", config.Host, config.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewClient(config Config) (syncv1.FlagSyncServiceClient, error) {
+	conn, err := grpc.Dial(
+		fmt.Sprintf(
+			"%s:%d",
+			config.Host,
+			config.Port,
+		),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -16,11 +16,11 @@ import (
 )
 
 type Handler struct {
-	config  HandlerConfig
+	config  Config
 	trigger trigger.Trigger
 }
 
-type HandlerConfig struct {
+type Config struct {
 	FilePath string `json:"filePath"`
 	Host     string `json:"host"`
 	Port     uint16 `json:"port"`
@@ -46,7 +46,7 @@ type ProfilingResults struct {
 	Repeats               int           `json:"repeats"`
 }
 
-func NewHandler(config HandlerConfig, trigger trigger.Trigger) *Handler {
+func NewHandler(config Config, trigger trigger.Trigger) *Handler {
 	return &Handler{
 		config:  config,
 		trigger: trigger,
@@ -85,6 +85,7 @@ func (h *Handler) Profile(ctx context.Context, configs []TestConfig) ([]Profilin
 	return out, h.writeFile(out)
 }
 
+//nolint:funlen
 func (h *Handler) runTest(ctx context.Context, watchers int) TestResult {
 	readyWg := sync.WaitGroup{}
 	readyWg.Add(watchers)
@@ -102,7 +103,7 @@ func (h *Handler) runTest(ctx context.Context, watchers int) TestResult {
 
 	for i := 0; i < watchers; i++ {
 		if i%250 == 0 {
-			c, err = client.NewClient(client.ClientConfig{
+			c, err = client.NewClient(client.Config{
 				Host: h.config.Host,
 				Port: h.config.Port,
 			})
@@ -174,5 +175,5 @@ func (h *Handler) writeFile(results []ProfilingResults) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(h.config.OutFile, resB, 0644)
+	return os.WriteFile(h.config.OutFile, resB, 0o600)
 }
