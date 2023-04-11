@@ -19,7 +19,6 @@ func main() {
 	if len(os.Args) == 2 {
 		configFilepath = os.Args[1]
 	}
-	fmt.Println(os.Args)
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	cfg, err := config.NewConfig(configFilepath)
