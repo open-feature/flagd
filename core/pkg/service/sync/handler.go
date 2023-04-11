@@ -50,7 +50,7 @@ func (l *handler) SyncFlags(
 			}); err != nil {
 				return err
 			}
-		case <-ctx.Done():
+		case <-stream.Context().Done():
 			return nil
 		}
 	}
