@@ -148,7 +148,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	err := resolve[bool](
@@ -162,7 +162,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, fmt.Sprintf("error evaluating flag with key %s", req.Msg.GetFlagKey()))
 	}
 
 	return res, err
@@ -172,7 +172,7 @@ func (s *FlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveString")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveString", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
@@ -187,7 +187,7 @@ func (s *FlagEvaluationService) ResolveString(
 	)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, fmt.Sprintf("error evaluating flag with key %s", req.Msg.GetFlagKey()))
 	}
 
 	return res, err
@@ -197,7 +197,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveInt")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveInt", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
@@ -212,7 +212,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, fmt.Sprintf("error evaluating flag with key %s", req.Msg.GetFlagKey()))
 	}
 
 	return res, err
@@ -222,7 +222,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveFloat")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveFloat", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
@@ -237,7 +237,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, fmt.Sprintf("error evaluating flag with key %s", req.Msg.GetFlagKey()))
 	}
 
 	return res, err
@@ -247,7 +247,7 @@ func (s *FlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveObject")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveObject", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
@@ -262,7 +262,7 @@ func (s *FlagEvaluationService) ResolveObject(
 	)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, fmt.Sprintf("error evaluating flag with key %s", req.Msg.GetFlagKey()))
 	}
 
 	return res, err

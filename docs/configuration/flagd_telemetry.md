@@ -81,7 +81,7 @@ receivers:
       grpc:
 exporters:
   prometheus:
-    endpoint: "localhost:8889"
+    endpoint: "0.0.0.0:8889"
     const_labels:
       label1: value1
   jaeger:
