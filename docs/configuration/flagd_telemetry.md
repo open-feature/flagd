@@ -21,9 +21,9 @@ Given below is the current implementation overview of flagd telemetry internals,
 ## Export to OTEL collector
 
 flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup
-flag `metrics-exporter` to be `otel` and a valid `otel-collector-target`. For example,
+flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For example,
 
-`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-target localhost:4317`
+`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
 
 ### Configure local collector setup
 
