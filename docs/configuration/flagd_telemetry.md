@@ -2,6 +2,8 @@
 
 <!-- TOC -->
 * [Telemetry](#telemetry)
+  * [Metrics](#metrics)
+  * [Traces](#traces)
   * [Export to OTEL collector](#export-to-otel-collector)
     * [Configure local collector setup](#configure-local-collector-setup)
       * [docker-compose.yaml](#docker-composeyaml)
@@ -17,6 +19,23 @@ with default startup flags, metrics are exposed at `http://localhost:8014/metric
 Given below is the current implementation overview of flagd telemetry internals,
 
 <img src="../images/flagd-telemetry.png">
+
+## Metrics
+
+flagd expose following metrics,
+
+* `http_request_duration_seconds`
+* `http_response_size_bytes`
+* `http_requests_inflight`
+* `impressions`
+
+## Traces
+
+flagd expose following traces,
+
+* `flagEvaluationService(resolveX)` - SpanKind server
+  * `jsonEvaluator(resolveX)` - SpanKind internal
+* `jsonEvaluator(setState)` - SpanKind internal
 
 ## Export to OTEL collector
 

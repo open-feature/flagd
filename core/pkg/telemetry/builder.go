@@ -32,7 +32,9 @@ type Config struct {
 }
 
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
-func BuildMetricsRecorder(ctx context.Context, svcName string, config Config) (*MetricsRecorder, error) {
+func BuildMetricsRecorder(
+	ctx context.Context, svcName string, svcVersion string, config Config,
+) (*MetricsRecorder, error) {
 	// Build metric reader based on configurations
 	mReader, err := buildMetricReader(ctx, config)
 	if err != nil {
@@ -40,7 +42,7 @@ func BuildMetricsRecorder(ctx context.Context, svcName string, config Config) (*
 	}
 
 	// Build telemetry resource identifier
-	rsc, err := buildResourceFor(ctx, svcName)
+	rsc, err := buildResourceFor(ctx, svcName, svcVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
 	}
@@ -52,7 +54,7 @@ func BuildMetricsRecorder(ctx context.Context, svcName string, config Config) (*
 // a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to provide the grpc
 // collector target. Providing empty target results in skipping provider registration. This results in tracers having
 // NoopTracerProvider performing no action
-func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, cfg Config) error {
+func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
 		logger.Warn("skipping trace provider setup as collector target is not set." +
 			" Traces will use NoopTracerProvider provider")
@@ -64,7 +66,7 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 		return err
 	}
 
-	res, err := buildResourceFor(ctx, svc)
+	res, err := buildResourceFor(ctx, svc, svcVersion)
 	if err != nil {
 		return err
 	}
@@ -130,13 +132,15 @@ func buildDefaultMetricReader() (metric.Reader, error) {
 }
 
 // buildResourceFor builds a resource identifier with set of resources and service key as attributes
-func buildResourceFor(ctx context.Context, serviceName string) (*resource.Resource, error) {
+func buildResourceFor(ctx context.Context, serviceName string, serviceVersion string) (*resource.Resource, error) {
 	return resource.New(
 		ctx,
 		resource.WithOS(),
 		resource.WithHost(),
 		resource.WithProcessRuntimeVersion(),
 		resource.WithTelemetrySDK(),
-		resource.WithAttributes(semconv.ServiceNameKey.String(serviceName)),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion)),
 	)
 }

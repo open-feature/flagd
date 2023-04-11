@@ -81,20 +81,20 @@ func init() {
 }
 
 // FromConfig builds a runtime from startup configurations
-func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
+func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
 		CollectorTarget: config.OtelCollectorURI,
 	}
 
 	// register trace provider for the runtime
-	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, telCfg)
+	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
 	if err != nil {
 		return nil, err
 	}
 
 	// build metrics recorder with startup configurations
-	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, telCfg)
+	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
 	if err != nil {
 		return nil, err
 	}
