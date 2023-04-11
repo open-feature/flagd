@@ -16,7 +16,7 @@ type handler struct {
 	logger    *logger.Logger
 }
 
-func (l handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
+func (l *handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse,
 	error,
 ) {
@@ -34,10 +34,11 @@ func (l *handler) SyncFlags(
 	req *syncv1.SyncFlagsRequest,
 	stream rpc.FlagSyncService_SyncFlagsServer,
 ) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
-	l.syncStore.RegisterSubscription(stream.Context(), req.GetSelector(), req, dataSync, errChan)
-
+	l.syncStore.RegisterSubscription(ctx, req.GetSelector(), req, dataSync, errChan)
 	for {
 		select {
 		case e := <-errChan:
