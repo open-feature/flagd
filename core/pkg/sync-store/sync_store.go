@@ -134,8 +134,8 @@ func (s *SyncStore) RegisterSubscription(
 		// access pointer + trigger resync passing the dataSync
 		if sh.syncRef != nil {
 			go func() {
-				s.mu.Lock()
-				defer s.mu.Unlock()
+				s.mu.RLock()
+				defer s.mu.RUnlock()
 				if _, ok := s.syncHandlers[target]; ok {
 					s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
 					if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
