@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/codes"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -49,14 +51,14 @@ func (s *FlagEvaluationService) ResolveAll(
 	reqID := xid.New().String()
 	defer s.logger.ClearFields(reqID)
 
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll")
+	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := &schemaV1.ResolveAllResponse{
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
 	values := s.eval.ResolveAllValues(sCtx, reqID, req.Msg.GetContext())
-	span.SetAttributes(attribute.Int("count", len(values)))
+	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
@@ -158,6 +160,10 @@ func (s *FlagEvaluationService) ResolveBoolean(
 		&booleanResponse{res},
 		s.metrics,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	return res, err
 }
@@ -179,6 +185,10 @@ func (s *FlagEvaluationService) ResolveString(
 		&stringResponse{res},
 		s.metrics,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	return res, err
 }
@@ -200,6 +210,10 @@ func (s *FlagEvaluationService) ResolveInt(
 		&intResponse{res},
 		s.metrics,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	return res, err
 }
@@ -221,6 +235,10 @@ func (s *FlagEvaluationService) ResolveFloat(
 		&floatResponse{res},
 		s.metrics,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	return res, err
 }
@@ -242,6 +260,10 @@ func (s *FlagEvaluationService) ResolveObject(
 		&objectResponse{res},
 		s.metrics,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	return res, err
 }

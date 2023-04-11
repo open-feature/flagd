@@ -48,21 +48,19 @@ func BuildMetricsRecorder(ctx context.Context, svcName string, config Config) (*
 	return NewOTelRecorder(mReader, rsc, svcName), nil
 }
 
-// BuildTraceProvider build and register the trace provider for the caller runtime. This method registers a global
-// TracerProvider backed by batch SpanProcessor.Config.CollectorTarget can be used to provide the grpc collector target.
-// Providing empty target results in an empty(nil) exporter, performing no operation. See trace.NewBatchSpanProcessor
-// for more details
+// BuildTraceProvider build and register the trace provider for the caller runtime. This method attempt to register
+// a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to provide the grpc
+// collector target. Providing empty target results in skipping provider registration. This results in tracers having
+// NoopTracerProvider performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, cfg Config) error {
-	var exporter *otlptrace.Exporter
-	var err error
-
 	if cfg.CollectorTarget == "" {
-		logger.Warn("collector target is not set. Falling back to empty(nil) trace exporter performing no action")
-	} else {
-		exporter, err = buildOtlpExporter(ctx, cfg.CollectorTarget)
-		if err != nil {
-			return err
-		}
+		logger.Warn("skipping trace provider setup as collector target is not set")
+		return nil
+	}
+
+	exporter, err := buildOtlpExporter(ctx, cfg.CollectorTarget)
+	if err != nil {
+		return err
 	}
 
 	res, err := buildResourceFor(ctx, svc)
