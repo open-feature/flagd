@@ -11,19 +11,19 @@ This go module contains a profiling tool for the `flagd-proxy`. Starting `n` wat
 1. Wait for all watchers to receive their first configuration change event (which will contain the full configuration object)
 1. Flush the change event channel to ensure there are no previous events
 1. Trigger a configuration change event by writing the end configuration to the target file
-8. Time how long it takes for all watchers to receive the new configuration
+1. Time how long it takes for all watchers to receive the new configuration
 
 ## Example
 
 run the flagd-proxy locally (from the project root):
 
-```
+```sh
 go run flagd-proxy/main.go start --port 8080
 ```
 
 run the flagd-proxy-profiler (from the project root):
 
-```
+```sh
 go run flagd-proxy/tests/loadtest/main.go ./flagd-proxy/tests/loadtest/config/config.json
 ```
 
@@ -31,7 +31,7 @@ Once the tests have been run the results can be found in ./flagd-proxy/tests/loa
 
 ## Sample Configuration
 
-```
+```json
 {
     "triggerType": "filepath",
     "fileTriggerConfig": {
