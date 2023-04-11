@@ -54,7 +54,8 @@ func BuildMetricsRecorder(ctx context.Context, svcName string, config Config) (*
 // NoopTracerProvider performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
-		logger.Warn("skipping trace provider setup as collector target is not set")
+		logger.Warn("skipping trace provider setup as collector target is not set." +
+			" Traces will use NoopTracerProvider provider")
 		return nil
 	}
 
