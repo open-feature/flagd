@@ -152,17 +152,17 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, runtime.Config{
-			CORS: viper.GetStringSlice(corsFlagName),
-      MetricExporter:    viper.GetString(metricsExporter),
+			CORS:           viper.GetStringSlice(corsFlagName),
+			MetricExporter: viper.GetString(metricsExporter),
 			MetricsPort: getPortValueOrDefault(
 				metricsPortFlagName,
 				viper.GetUint16(metricsPortFlagName),
 				defaultMetricsPort,
 				rtLogger,
 			),
-      OtelCollectorURI:  viper.GetString(otelCollectorURI),
-			ServiceCertPath: viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:  viper.GetString(serverKeyPathFlagName),
+			OtelCollectorURI: viper.GetString(otelCollectorURI),
+			ServiceCertPath:  viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:   viper.GetString(serverKeyPathFlagName),
 			ServicePort: getPortValueOrDefault(
 				portFlagName,
 				viper.GetUint16(portFlagName),
