@@ -13,11 +13,8 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/service"
 
-	"go.opentelemetry.io/otel/exporters/prometheus"
-
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -25,6 +22,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 )
@@ -61,11 +59,13 @@ type SourceConfig struct {
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	ServicePort       uint16
+	MetricExporter    string
 	MetricsPort       uint16
-	ServiceSocketPath string
+	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string
+	ServicePort       uint16
+	ServiceSocketPath string
 
 	SyncProviders []SourceConfig
 	CORS          []string
@@ -81,8 +81,11 @@ func init() {
 
 // FromConfig builds a runtime from startup configurations
 func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	// build connect service
-	exporter, err := prometheus.New()
+	// build metrics recorder with startup configurations
+	recorder, err := telemetry.BuildMetricsRecorder(svcName, telemetry.Config{
+		MetricsExporter: config.MetricExporter,
+		CollectorTarget: config.OtelCollectorURI,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +94,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		Logger: logger.WithFields(
 			zap.String("component", "service"),
 		),
-		Metrics: otel.NewOTelRecorder(exporter, svcName),
+		Metrics: recorder,
 	}
 
 	// build flag store

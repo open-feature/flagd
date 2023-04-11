@@ -1,8 +1,12 @@
-package otel
+package telemetry
 
 import (
 	"context"
 	"testing"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
@@ -82,7 +86,8 @@ func TestHTTPAttributes(t *testing.T) {
 
 func TestNewOTelRecorder(t *testing.T) {
 	exp := metric.NewManualReader()
-	rec := NewOTelRecorder(exp, svcName)
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, svcName)
 	require.NotNil(t, rec, "Expected object to be created")
 	require.NotNil(t, rec.httpRequestDurHistogram, "Expected httpRequestDurHistogram to be created")
 	require.NotNil(t, rec.httpResponseSizeHistogram, "Expected httpResponseSizeHistogram to be created")
@@ -91,7 +96,8 @@ func TestNewOTelRecorder(t *testing.T) {
 
 func TestMetrics(t *testing.T) {
 	exp := metric.NewManualReader()
-	rec := NewOTelRecorder(exp, svcName)
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, svcName)
 	ctx := context.TODO()
 	attrs := []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
@@ -136,11 +142,13 @@ func TestMetrics(t *testing.T) {
 			},
 		},
 	}
+
 	i := 0
 	for _, tt := range tests {
 		i++
 		tt.metricFunc()
-		data, err := exp.Collect(context.TODO())
+		var data metricdata.ResourceMetrics
+		err := exp.Collect(context.TODO(), &data)
 		if err != nil {
 			t.Errorf("Got %v", err)
 		}
@@ -150,5 +158,8 @@ func TestMetrics(t *testing.T) {
 		scopeMetrics := data.ScopeMetrics[0]
 		require.Equal(t, svcName, scopeMetrics.Scope.Name)
 		require.Equal(t, i, len(scopeMetrics.Metrics))
+
+		r := data.Resource
+		require.NotEmptyf(t, r.SchemaURL(), "Expected non-empty schema for metric resource")
 	}
 }

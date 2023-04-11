@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 )
 
 type Config struct {
-	MetricRecorder     *otel.MetricsRecorder
+	MetricRecorder     *telemetry.MetricsRecorder
 	Logger             *logger.Logger
 	Service            string
 	GroupedStatus      bool

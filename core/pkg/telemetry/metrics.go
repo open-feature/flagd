@@ -1,17 +1,24 @@
-package otel
+package telemetry
 
 import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
 	"github.com/prometheus/client_golang/prometheus"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/unit"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+)
+
+const (
+	requestDurationName = "http_request_duration_seconds"
+	responseSizeName    = "http_response_size_bytes"
 )
 
 type MetricsRecorder struct {
@@ -69,10 +76,10 @@ func getDurationView(svcName, viewName string, bucket []float64) metric.View {
 	)
 }
 
-func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorder {
-	const requestDurationName = "http_request_duration_seconds"
-	const responseSizeName = "http_response_size_bytes"
-
+// NewOTelRecorder creates a MetricsRecorder based on the provided metric.Reader. Note that, metric.NewMeterProvider is
+// created here but not registered globally as this is the only place we derive a metric.Meter. Consider global provider
+// registration if we need more meters
+func NewOTelRecorder(exporter metric.Reader, resource *resource.Resource, serviceName string) *MetricsRecorder {
 	// create a metric provider with custom bucket size for histograms
 	provider := metric.NewMeterProvider(
 		metric.WithReader(exporter),
@@ -80,8 +87,12 @@ func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorde
 		metric.WithView(getDurationView(requestDurationName, serviceName, prometheus.DefBuckets)),
 		// for response size we want 8 exponential bucket starting from 100 Bytes
 		metric.WithView(getDurationView(responseSizeName, serviceName, prometheus.ExponentialBuckets(100, 10, 8))),
+		// set entity producing telemetry
+		metric.WithResource(resource),
 	)
+
 	meter := provider.Meter(serviceName)
+
 	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
 	hduration, _ := meter.Float64Histogram(
 		requestDurationName,
@@ -90,7 +101,7 @@ func NewOTelRecorder(exporter metric.Reader, serviceName string) *MetricsRecorde
 	hsize, _ := meter.Float64Histogram(
 		responseSizeName,
 		instrument.WithDescription("The size of the HTTP responses"),
-		instrument.WithUnit(unit.Bytes),
+		instrument.WithUnit("By"),
 	)
 	reqCounter, _ := meter.Int64UpDownCounter(
 		"http_requests_inflight",

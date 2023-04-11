@@ -9,6 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
+	"github.com/open-feature/flagd/core/pkg/telemetry"
+
 	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
 
 	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
@@ -17,7 +21,6 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/eval/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -77,7 +80,8 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			).AnyTimes()
 			// configure OTel Metrics
 			exp := metric.NewManualReader()
-			metricRecorder := otel.NewOTelRecorder(exp, tt.name)
+			rs := resource.NewWithAttributes("testSchema")
+			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
 			svc := ConnectService{
 				Logger:  logger.NewLogger(nil, false),
 				Metrics: metricRecorder,
@@ -133,7 +137,8 @@ func TestAddMiddleware(t *testing.T) {
 		}))
 
 	exp := metric.NewManualReader()
-	metricRecorder := otel.NewOTelRecorder(exp, "my-exporter")
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
 	svc := ConnectService{
 		Logger:  logger.NewLogger(nil, false),
