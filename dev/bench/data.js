@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1681093147956,
+  "lastUpdate": 1681179619072,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -23402,6 +23402,178 @@ window.BENCHMARK_DATA = {
             "value": 8277,
             "unit": "ns/op\t    1760 B/op\t      26 allocs/op",
             "extra": "697020 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Kavindu Dodanduwa",
+            "username": "Kavindu-Dodan",
+            "email": "Kavindu-Dodan@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "494bec33dcc1ddf0fa5cd0866f06265618408f5e",
+          "message": "feat: flagd OTEL collector (#586)\n\n## This PR\r\n\r\nFixes #563\r\n\r\nIntroduce configurations for flagd to connect to OTEL collector. Also,\r\nimproves how telemetry configurations are handled.\r\n\r\nChanges include,\r\n\r\n- Package renaming - otel to telemetry - This avoids import conflicts \r\n\r\n- Introduce a telemetry builder - The intention is to have a central\r\nlocation to handle telemetry configurations and build telemetry\r\ncomponents\r\n\r\n- Introduce a span processor builder - Provide groundwork for\r\nhttps://github.com/open-feature/flagd/issues/575 (needs fallback\r\nmechanism)\r\n\r\n\r\n## How to test?\r\n\r\nConsider following this guide - (doc generated from commit)\r\nhttps://github.com/open-feature/flagd/blob/81c66b3c89540b475fe0a46ac89869800f7b74ae/docs/configuration/flagd_telemetry.md\r\n\r\nIn short, \r\n\r\n- create configuration files (docker-compose yaml, collector config\r\nyaml, Prometheus yaml )\r\n- start collector setup (docker-compose up)\r\n- start flagd with otel collector override for metrics (`flagd start\r\n--uri file:/flags.json --metrics-exporter otel --otel-collector-target\r\nlocalhost:4317`)\r\n\r\nMetrics will be available at Prometheus(http://localhost:9090/graph).\r\nTraces are still missing as we have to implement them.\r\n\r\n---------\r\n\r\nSigned-off-by: Kavindu Dodanduwa <kavindudodanduwa@gmail.com>\r\nSigned-off-by: Kavindu Dodanduwa <Kavindu-Dodan@users.noreply.github.com>\r\nCo-authored-by: Giovanni Liva <giovanni.liva@dynatrace.com>",
+          "timestamp": "2023-04-10T14:36:57Z",
+          "url": "https://github.com/open-feature/flagd/commit/494bec33dcc1ddf0fa5cd0866f06265618408f5e"
+        },
+        "date": 1681179617963,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 1736,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "3364864 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 14491,
+            "unit": "ns/op\t    4817 B/op\t      80 allocs/op",
+            "extra": "395554 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1454,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4043547 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1700,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3562533 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1679,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3599222 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 1613,
+            "unit": "ns/op\t     128 B/op\t       6 allocs/op",
+            "extra": "3735345 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 14389,
+            "unit": "ns/op\t    4841 B/op\t      82 allocs/op",
+            "extra": "426078 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1459,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4008622 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1696,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3531324 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1688,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3501086 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 1565,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "3784370 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 13257,
+            "unit": "ns/op\t    4825 B/op\t      80 allocs/op",
+            "extra": "438195 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1474,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4057700 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1694,
+            "unit": "ns/op\t     144 B/op\t       6 allocs/op",
+            "extra": "3587916 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1688,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3604312 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 5697,
+            "unit": "ns/op\t    1392 B/op\t      32 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 18647,
+            "unit": "ns/op\t    6106 B/op\t     104 allocs/op",
+            "extra": "316876 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1449,
+            "unit": "ns/op\t      96 B/op\t       4 allocs/op",
+            "extra": "4153869 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1702,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3619254 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1732,
+            "unit": "ns/op\t     160 B/op\t       6 allocs/op",
+            "extra": "3454831 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveBoolean/happy_path",
+            "value": 8097,
+            "unit": "ns/op\t    1368 B/op\t      20 allocs/op",
+            "extra": "687848 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveString/happy_path",
+            "value": 8295,
+            "unit": "ns/op\t    1384 B/op\t      20 allocs/op",
+            "extra": "696796 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveFloat/happy_path",
+            "value": 8325,
+            "unit": "ns/op\t    1368 B/op\t      20 allocs/op",
+            "extra": "693068 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveInt/happy_path",
+            "value": 8111,
+            "unit": "ns/op\t    1368 B/op\t      20 allocs/op",
+            "extra": "696811 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveObject/happy_path",
+            "value": 10247,
+            "unit": "ns/op\t    1792 B/op\t      27 allocs/op",
+            "extra": "568178 times\n2 procs"
           }
         ]
       }
