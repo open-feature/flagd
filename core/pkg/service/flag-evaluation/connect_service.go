@@ -30,24 +30,35 @@ import (
 const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
-	Logger                *logger.Logger
-	Eval                  eval.IEvaluator
-	Metrics               *telemetry.MetricsRecorder
+	logger                *logger.Logger
+	eval                  eval.IEvaluator
+	metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
-	server                *http.Server
-	metricsServer         *http.Server
+
+	server        *http.Server
+	metricsServer *http.Server
 
 	serverMtx        sync.RWMutex
 	metricsServerMtx sync.RWMutex
 }
 
-func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcConf service.Configuration) error {
-	s.Eval = eval
-	s.eventingConfiguration = &eventingConfiguration{
-		subs: make(map[interface{}]chan service.Notification),
-		mu:   &sync.RWMutex{},
+// NewConnectService creates a ConnectService with provided parameters
+func NewConnectService(
+	logger *logger.Logger, evaluator eval.IEvaluator, mRecorder *telemetry.MetricsRecorder,
+) *ConnectService {
+	return &ConnectService{
+		logger:  logger,
+		eval:    evaluator,
+		metrics: mRecorder,
+		eventingConfiguration: &eventingConfiguration{
+			subs: make(map[interface{}]chan service.Notification),
+			mu:   &sync.RWMutex{},
+		},
 	}
+}
 
+// Serve serves services with provided configuration options
+func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuration) error {
 	g, gCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
@@ -81,6 +92,15 @@ func (s *ConnectService) Serve(ctx context.Context, eval eval.IEvaluator, svcCon
 	return g.Wait()
 }
 
+// Notify emits change event notifications for subscriptions
+func (s *ConnectService) Notify(n service.Notification) {
+	s.eventingConfiguration.mu.RLock()
+	defer s.eventingConfiguration.mu.RUnlock()
+	for _, send := range s.eventingConfiguration.subs {
+		send <- n
+	}
+}
+
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
@@ -95,9 +115,10 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		return nil, err
 	}
 	fes := NewFlagEvaluationService(
-		s.Logger.WithFields(zap.String("component", "flagservice")),
-		s.Eval,
-		s.Metrics,
+		s.logger.WithFields(zap.String("component", "flagservice")),
+		s.eval,
+		s.eventingConfiguration,
+		s.metrics,
 	)
 	path, handler := schemaConnectV1.NewServiceHandler(fes)
 	mux.Handle(path, handler)
@@ -113,8 +134,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
 		Service:        svcConf.ServiceName,
-		MetricRecorder: s.Metrics,
-		Logger:         s.Logger,
+		MetricRecorder: s.metrics,
+		Logger:         s.logger,
 		HandlerID:      "",
 	})
 
@@ -135,20 +156,12 @@ func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
 	s.server.Handler = mw.Handler(s.server.Handler)
 }
 
-func (s *ConnectService) Notify(n service.Notification) {
-	s.eventingConfiguration.mu.RLock()
-	defer s.eventingConfiguration.mu.RUnlock()
-	for _, send := range s.eventingConfiguration.subs {
-		send <- n
-	}
-}
-
 func (s *ConnectService) startServer(svcConf service.Configuration) error {
 	lis, err := s.setupServer(svcConf)
 	if err != nil {
 		return err
 	}
-	s.Logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
+	s.logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
 	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
 		if err := s.server.ServeTLS(
 			lis,
@@ -168,7 +181,7 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 }
 
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
-	s.Logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
+	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
 	s.metricsServerMtx.Lock()
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),

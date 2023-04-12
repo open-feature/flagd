@@ -30,17 +30,15 @@ type eventingConfiguration struct {
 	subs map[interface{}]chan service.Notification
 }
 
+// NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
 func NewFlagEvaluationService(log *logger.Logger,
-	eval eval.IEvaluator, metricsRecorder *telemetry.MetricsRecorder,
+	eval eval.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
 ) *FlagEvaluationService {
 	return &FlagEvaluationService{
-		logger:  log,
-		eval:    eval,
-		metrics: metricsRecorder,
-		eventingConfiguration: &eventingConfiguration{
-			subs: make(map[interface{}]chan service.Notification),
-			mu:   &sync.RWMutex{},
-		},
+		logger:                log,
+		eval:                  eval,
+		metrics:               metricsRecorder,
+		eventingConfiguration: eventingCfg,
 	}
 }
 
