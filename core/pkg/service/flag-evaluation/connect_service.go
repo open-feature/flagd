@@ -94,11 +94,7 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 
 // Notify emits change event notifications for subscriptions
 func (s *ConnectService) Notify(n service.Notification) {
-	s.eventingConfiguration.mu.RLock()
-	defer s.eventingConfiguration.mu.RUnlock()
-	for _, send := range s.eventingConfiguration.subs {
-		send <- n
-	}
+	s.eventingConfiguration.emitToAll(n)
 }
 
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
