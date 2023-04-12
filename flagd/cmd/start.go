@@ -70,8 +70,8 @@ func init() {
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
-	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
-		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to"+
+	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default (if unset) is Prometheus."+
+		" Can be overridden to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to"+
 		" be present")
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
