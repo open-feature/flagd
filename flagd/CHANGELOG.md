@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/open-feature/flagd/compare/flagd/v0.5.0...flagd/v0.5.1) (2023-04-12)
+
+
+### ✨ New Features
+
+* flagd OTEL collector ([#586](https://github.com/open-feature/flagd/issues/586)) ([494bec3](https://github.com/open-feature/flagd/commit/494bec33dcc1ddf0fa5cd0866f06265618408f5e))
+
+
+### 🐛 Bug Fixes
+
+* fall back to default port if env var cannot be parsed ([#591](https://github.com/open-feature/flagd/issues/591)) ([1fda104](https://github.com/open-feature/flagd/commit/1fda10473dba36149e13fa0cb8bb686d6861e568))
+
 ## [0.5.0](https://github.com/open-feature/flagd/compare/flagd/v0.4.5...flagd/v0.5.0) (2023-03-30)
 
 
