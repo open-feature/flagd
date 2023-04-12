@@ -296,6 +296,9 @@ func resolve[T constraints](
 		metrics.Impressions(ctx, flagKey, variant)
 	}
 
+	spanFromContext := trace.SpanFromContext(ctx)
+	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
+
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
 		return err
