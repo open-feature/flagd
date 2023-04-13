@@ -68,7 +68,7 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"setState",
-		trace.WithAttributes(attribute.String("source", payload.Source)))
+		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)))
 	defer span.End()
 
 	var newFlags Flags
