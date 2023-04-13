@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@ee9822ec2c397e8a364d634464339ac43a06e042 # v3
+      - uses: google-github-actions/release-please-action@c078ea33917ab8cfa5300e48f4b7e6b16606aede # v3
         id: release
         with:
           release-type: "go"
@@ -119,7 +119,7 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@8348525c79cd67509c593a9352954618bdc3a862
+        uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919
 
       - name: Sign the image
         run: |

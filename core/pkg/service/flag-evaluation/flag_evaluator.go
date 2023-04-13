@@ -47,8 +47,8 @@ func (s *FlagEvaluationService) ResolveAll(
 	}
 	values := s.eval.ResolveAllValues(reqID, req.Msg.GetContext())
 	for _, value := range values {
-		// register the impression for each flag evaluated
-		s.metrics.Impressions(ctx, value.FlagKey, value.Variant)
+		// register the impression and reason for each flag evaluated
+		s.metrics.RecordEvaluation(ctx, value.Error, value.Reason, value.Variant, value.FlagKey)
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
@@ -149,21 +149,22 @@ func resolve[T constraints](
 		zap.Strings("context-keys", formatContextKeys(ctx)),
 	)
 
+	var evalErrFormatted error
 	result, variant, reason, evalErr := resolver(reqID, flagKey, ctx)
 	if evalErr != nil {
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
-		evalErr = errFormat(evalErr)
-	} else {
-		metrics.Impressions(goCtx, flagKey, variant)
+		evalErrFormatted = errFormat(evalErr)
 	}
+
+	metrics.RecordEvaluation(goCtx, evalErr, reason, variant, flagKey)
 
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
 		return err
 	}
 
-	return evalErr
+	return evalErrFormatted
 }
 
 func (s *FlagEvaluationService) ResolveBoolean(
@@ -270,10 +271,12 @@ func errFormat(err error) error {
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.DisabledReason:
+	case model.FlagDisabledErrorCode:
 		return connect.NewError(connect.CodeUnavailable, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.ParseErrorCode:
 		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+	case model.GeneralErrorCode:
+		return connect.NewError(connect.CodeUnknown, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	}
 
 	return err

@@ -145,9 +145,8 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
-			continue
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey))
+		values = append(values, NewAnyValue(value, variant, reason, flagKey, err))
 	}
 	return values
 }
@@ -238,7 +237,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag: %s, %s", flagKey, err))
-			return "", model.ErrorReason, err
+			return "", model.ErrorReason, errors.New(model.ParseErrorCode)
 		}
 
 		b, err := json.Marshal(context)
@@ -252,7 +251,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))
-			return "", model.ErrorReason, err
+			return "", model.ErrorReason, errors.New(model.ParseErrorCode)
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
