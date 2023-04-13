@@ -10,14 +10,16 @@ type AnyValue struct {
 	Variant string
 	Reason  string
 	FlagKey string
+	Error   error
 }
 
-func NewAnyValue(value interface{}, variant string, reason string, flagKey string) AnyValue {
+func NewAnyValue(value interface{}, variant string, reason string, flagKey string, err error) AnyValue {
 	return AnyValue{
 		Value:   value,
 		Variant: variant,
 		Reason:  reason,
 		FlagKey: flagKey,
+		Error:   err,
 	}
 }
 

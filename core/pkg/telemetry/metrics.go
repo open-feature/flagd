@@ -17,8 +17,13 @@ import (
 )
 
 const (
-	requestDurationName = "http_request_duration_seconds"
-	responseSizeName    = "http_response_size_bytes"
+	requestDurationName      = "http_request_duration_seconds"
+	responseSizeName         = "http_response_size_bytes"
+	FlagdProviderName        = "flagd"
+	FeatureFlagReasonKeyName = "feature_flag.reason"
+	ExceptionTypeKeyName     = "exception.type"
+	FeatureFlagReasonKey     = attribute.Key(FeatureFlagReasonKeyName)
+	ExceptionTypeKey         = attribute.Key(ExceptionTypeKeyName)
 )
 
 type MetricsRecorder struct {
@@ -26,6 +31,7 @@ type MetricsRecorder struct {
 	httpResponseSizeHistogram instrument.Float64Histogram
 	httpRequestsInflight      instrument.Int64UpDownCounter
 	impressions               instrument.Int64Counter
+	reasons                   instrument.Int64Counter
 }
 
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code string) []attribute.KeyValue {
@@ -53,12 +59,31 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 	r.httpRequestsInflight.Add(ctx, -1, attrs...)
 }
 
-func (r MetricsRecorder) Impressions(ctx context.Context, key, variant string) {
+func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
 	r.impressions.Add(ctx, 1, []attribute.KeyValue{
+		semconv.FeatureFlagProviderName(FlagdProviderName),
 		semconv.FeatureFlagKey(key),
 		semconv.FeatureFlagVariant(variant),
-		semconv.FeatureFlagProviderName("flagd"),
+		FeatureFlagReason(reason),
 	}...)
+}
+
+func (r MetricsRecorder) Reasons(ctx context.Context, reason string, err error) {
+	attrs := []attribute.KeyValue{
+		semconv.FeatureFlagProviderName(FlagdProviderName),
+		FeatureFlagReason(reason),
+	}
+	if err != nil {
+		attrs = append(attrs, ExceptionType(err.Error()))
+	}
+	r.reasons.Add(ctx, 1, attrs...)
+}
+
+func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
+	if err == nil {
+		r.Impressions(ctx, reason, variant, key)
+	}
+	r.Reasons(ctx, reason, err)
 }
 
 func getDurationView(svcName, viewName string, bucket []float64) metric.View {
@@ -74,6 +99,14 @@ func getDurationView(svcName, viewName string, bucket []float64) metric.View {
 			Boundaries: bucket,
 		}},
 	)
+}
+
+func FeatureFlagReason(val string) attribute.KeyValue {
+	return FeatureFlagReasonKey.String(val)
+}
+
+func ExceptionType(val string) attribute.KeyValue {
+	return ExceptionTypeKey.String(val)
 }
 
 // NewOTelRecorder creates a MetricsRecorder based on the provided metric.Reader. Note that, metric.NewMeterProvider is
@@ -109,12 +142,17 @@ func NewOTelRecorder(exporter metric.Reader, resource *resource.Resource, servic
 	)
 	impressions, _ := meter.Int64Counter(
 		"impressions",
-		instrument.WithDescription("The number of evaluation for a given flag"),
+		instrument.WithDescription("The number of evaluations for a given flag"),
+	)
+	reasons, _ := meter.Int64Counter(
+		"reasons",
+		instrument.WithDescription("The number of evaluations for a given reason"),
 	)
 	return &MetricsRecorder{
 		httpRequestDurHistogram:   hduration,
 		httpResponseSizeHistogram: hsize,
 		httpRequestsInflight:      reqCounter,
 		impressions:               impressions,
+		reasons:                   reasons,
 	}
 }

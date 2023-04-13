@@ -165,7 +165,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
-			mCount: 0,
+			mCount: 1,
 			evalFields: resolveBooleanEvalFields{
 				result:  true,
 				variant: ":(",
@@ -314,7 +314,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
-			mCount: 0,
+			mCount: 1,
 			evalFields: resolveStringEvalFields{
 				result:  "true",
 				variant: ":(",
@@ -463,7 +463,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
-			mCount: 0,
+			mCount: 1,
 			evalFields: resolveFloatEvalFields{
 				result:  12,
 				variant: ":(",
@@ -612,7 +612,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
-			mCount: 0,
+			mCount: 1,
 			evalFields: resolveIntEvalFields{
 				result:  12,
 				variant: ":(",
@@ -763,7 +763,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 			wantErr: nil,
 		},
 		"eval returns error": {
-			mCount: 0,
+			mCount: 1,
 			evalFields: resolveObjectEvalFields{
 				result: map[string]interface{}{
 					"food": "bars",
