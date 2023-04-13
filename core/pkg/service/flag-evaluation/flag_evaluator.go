@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
@@ -25,22 +24,15 @@ type FlagEvaluationService struct {
 	eventingConfiguration *eventingConfiguration
 }
 
-type eventingConfiguration struct {
-	mu   *sync.RWMutex
-	subs map[interface{}]chan service.Notification
-}
-
+// NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
 func NewFlagEvaluationService(log *logger.Logger,
-	eval eval.IEvaluator, metricsRecorder *telemetry.MetricsRecorder,
+	eval eval.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
 ) *FlagEvaluationService {
 	return &FlagEvaluationService{
-		logger:  log,
-		eval:    eval,
-		metrics: metricsRecorder,
-		eventingConfiguration: &eventingConfiguration{
-			subs: make(map[interface{}]chan service.Notification),
-			mu:   &sync.RWMutex{},
-		},
+		logger:                log,
+		eval:                  eval,
+		metrics:               metricsRecorder,
+		eventingConfiguration: eventingCfg,
 	}
 }
 
@@ -106,14 +98,9 @@ func (s *FlagEvaluationService) EventStream(
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
 	requestNotificationChan := make(chan service.Notification, 1)
-	s.eventingConfiguration.mu.Lock()
-	s.eventingConfiguration.subs[req] = requestNotificationChan
-	s.eventingConfiguration.mu.Unlock()
-	defer func() {
-		s.eventingConfiguration.mu.Lock()
-		delete(s.eventingConfiguration.subs, req)
-		s.eventingConfiguration.mu.Unlock()
-	}()
+	s.eventingConfiguration.subscribe(req, requestNotificationChan)
+	defer s.eventingConfiguration.unSubscribe(req)
+
 	requestNotificationChan <- service.Notification{
 		Type: service.ProviderReady,
 	}

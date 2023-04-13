@@ -79,7 +79,7 @@ func (r *Runtime) Start() error {
 	g.Go(func() error {
 		// Readiness probe rely on the runtime
 		r.ServiceConfig.ReadinessProbe = r.isReady
-		return r.Service.Serve(gCtx, r.Evaluator, r.ServiceConfig)
+		return r.Service.Serve(gCtx, r.ServiceConfig)
 	})
 	<-gCtx.Done()
 	return g.Wait()

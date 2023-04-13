@@ -90,13 +90,6 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		return nil, err
 	}
 
-	connectService := &flageval.ConnectService{
-		Logger: logger.WithFields(
-			zap.String("component", "service"),
-		),
-		Metrics: recorder,
-	}
-
 	// build flag store
 	s := store.NewFlags()
 	sources := []string{}
@@ -104,6 +97,14 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 		sources = append(sources, sync.URI)
 	}
 	s.FlagSources = sources
+
+	// derive evaluator
+	evaluator := eval.NewJSONEvaluator(logger, s)
+	// derive service
+	connectService := flageval.NewConnectService(
+		logger.WithFields(zap.String("component", "service")),
+		evaluator,
+		recorder)
 
 	// build sync providers
 	syncLogger := logger.WithFields(zap.String("component", "sync"))
@@ -114,7 +115,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 
 	return &Runtime{
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: eval.NewJSONEvaluator(logger, s),
+		Evaluator: evaluator,
 		Service:   connectService,
 		ServiceConfig: service.Configuration{
 			Port:        config.ServicePort,
