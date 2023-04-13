@@ -40,7 +40,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 		eval:                  eval,
 		metrics:               metricsRecorder,
 		eventingConfiguration: eventingCfg,
-		flagEvalTracer: otel.Tracer("flagEvaluationService"),
+		flagEvalTracer:        otel.Tracer("flagEvaluationService"),
 	}
 }
 
@@ -287,14 +287,15 @@ func resolve[T constraints](
 		zap.Strings("context-keys", formatContextKeys(evaluationContext)),
 	)
 
+	var evalErrFormatted error
 	result, variant, reason, evalErr := resolver(ctx, reqID, flagKey, evaluationContext)
 	if evalErr != nil {
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
-		evalErr = errFormat(evalErr)
-	} else {
-		metrics.Impressions(ctx, flagKey, variant)
+		evalErrFormatted = errFormat(evalErr)
 	}
+
+	metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey)
 
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
@@ -304,7 +305,7 @@ func resolve[T constraints](
 		return err
 	}
 
-	return evalErr
+	return evalErrFormatted
 }
 
 func formatContextKeys(context *structpb.Struct) []string {

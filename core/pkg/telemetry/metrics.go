@@ -60,7 +60,7 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 }
 
 func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
-	r.impressions.Add(ctx, 1,FeatureFlagReason(reason),  SemConvFeatureFlagAttributes(key, variant)...)
+	r.impressions.Add(ctx, 1, append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))...)
 }
 
 func (r MetricsRecorder) Reasons(ctx context.Context, reason string, err error) {
