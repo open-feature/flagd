@@ -1,0 +1,18 @@
+{
+    "fileTriggerConfig": {
+        "startFile":"./flagd-proxy/tests/loadtest/config/start-spec.json",
+        "endFile":"./flagd-proxy/tests/loadtest/config/end-spec.json",
+        "targetFile":"./flagd-proxy/tests/loadtest/target.json"
+    },
+    "handlerConfig": {
+        "filePath": "./flagd-proxy/tests/loadtest/target.json",
+        "outFile":"./flagd-proxy/tests/loadtest/profiling-results.json"
+    },
+    "tests": [
+        {
+            "watchers": 10,
+            "repeats": 5,
+            "delay": 2000000000 
+        }
+    ]
+}
