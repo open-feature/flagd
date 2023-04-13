@@ -1,8 +1,13 @@
-package otel
+package telemetry
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
@@ -82,7 +87,8 @@ func TestHTTPAttributes(t *testing.T) {
 
 func TestNewOTelRecorder(t *testing.T) {
 	exp := metric.NewManualReader()
-	rec := NewOTelRecorder(exp, svcName)
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, svcName)
 	require.NotNil(t, rec, "Expected object to be created")
 	require.NotNil(t, rec.httpRequestDurHistogram, "Expected httpRequestDurHistogram to be created")
 	require.NotNil(t, rec.httpResponseSizeHistogram, "Expected httpResponseSizeHistogram to be created")
@@ -90,65 +96,113 @@ func TestNewOTelRecorder(t *testing.T) {
 }
 
 func TestMetrics(t *testing.T) {
-	exp := metric.NewManualReader()
-	rec := NewOTelRecorder(exp, svcName)
-	ctx := context.TODO()
 	attrs := []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
 	}
 	const n = 5
-	type MetricF func()
+	type MetricF func(exp metric.Reader)
 	tests := []struct {
 		name       string
 		metricFunc MetricF
+		metricsLen int
 	}{
 		{
 			name: "HTTPRequestDuration",
-			metricFunc: func() {
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.HTTPRequestDuration(ctx, 10, attrs)
+					rec.HTTPRequestDuration(context.TODO(), 10, attrs)
 				}
 			},
+			metricsLen: 1,
 		},
 		{
 			name: "HTTPResponseSize",
-			metricFunc: func() {
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.HTTPResponseSize(ctx, 100, attrs)
+					rec.HTTPResponseSize(context.TODO(), 100, attrs)
 				}
 			},
+			metricsLen: 1,
 		},
 		{
 			name: "InFlightRequestStart",
-			metricFunc: func() {
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				ctx := context.TODO()
 				for i := 0; i < n; i++ {
 					rec.InFlightRequestStart(ctx, attrs)
 					rec.InFlightRequestEnd(ctx, attrs)
 				}
 			},
+			metricsLen: 1,
 		},
 		{
 			name: "Impressions",
-			metricFunc: func() {
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Impressions(ctx, "key", "variant")
+					rec.Impressions(context.TODO(), "reason", "variant", "key")
 				}
 			},
+			metricsLen: 1,
+		},
+		{
+			name: "Reasons",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				for i := 0; i < n; i++ {
+					rec.Reasons(context.TODO(), "reason", nil)
+				}
+				for i := 0; i < n; i++ {
+					rec.Reasons(context.TODO(), "error", fmt.Errorf("err not found"))
+				}
+			},
+			metricsLen: 1,
+		},
+		{
+			name: "RecordEvaluations",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				for i := 0; i < n; i++ {
+					rec.RecordEvaluation(context.TODO(), nil, "reason", "variant", "key")
+				}
+				for i := 0; i < n; i++ {
+					rec.RecordEvaluation(context.TODO(), fmt.Errorf("general"), "error", "variant", "key")
+				}
+				for i := 0; i < n; i++ {
+					rec.RecordEvaluation(context.TODO(), fmt.Errorf("not found"), "error", "variant", "key")
+				}
+			},
+			metricsLen: 2,
 		},
 	}
-	i := 0
+
 	for _, tt := range tests {
-		i++
-		tt.metricFunc()
-		data, err := exp.Collect(context.TODO())
-		if err != nil {
-			t.Errorf("Got %v", err)
-		}
-		if len(data.ScopeMetrics) != 1 {
-			t.Errorf("A single scope is expected, got %d", len(data.ScopeMetrics))
-		}
-		scopeMetrics := data.ScopeMetrics[0]
-		require.Equal(t, svcName, scopeMetrics.Scope.Name)
-		require.Equal(t, i, len(scopeMetrics.Metrics))
+		t.Run(tt.name, func(t *testing.T) {
+			exp := metric.NewManualReader()
+			tt.metricFunc(exp)
+			var data metricdata.ResourceMetrics
+			err := exp.Collect(context.TODO(), &data)
+			if err != nil {
+				t.Errorf("Got %v", err)
+			}
+			if len(data.ScopeMetrics) != 1 {
+				t.Errorf("A single scope is expected, got %d", len(data.ScopeMetrics))
+			}
+			scopeMetrics := data.ScopeMetrics[0]
+			require.Equal(t, svcName, scopeMetrics.Scope.Name)
+			require.Equal(t, tt.metricsLen, len(scopeMetrics.Metrics))
+
+			r := data.Resource
+			require.NotEmptyf(t, r.SchemaURL(), "Expected non-empty schema for metric resource")
+		})
 	}
 }

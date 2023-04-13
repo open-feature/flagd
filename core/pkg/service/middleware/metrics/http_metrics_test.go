@@ -8,8 +8,12 @@ import (
 	"reflect"
 	"testing"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/zap/zapcore"
 )
@@ -17,9 +21,10 @@ import (
 func TestMiddlewareExposesMetrics(t *testing.T) {
 	const svcName = "mySvc"
 	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
 	m := NewHTTPMetric(Config{
-		MetricRecorder: otel.NewOTelRecorder(exp, svcName),
+		MetricRecorder: telemetry.NewOTelRecorder(exp, rs, svcName),
 		Service:        svcName,
 		Logger:         logger.NewLogger(l, true),
 		HandlerID:      "id",
@@ -34,7 +39,9 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 		t.Errorf("Got %v", err)
 	}
 	_, _ = io.ReadAll(resp.Body)
-	data, err := exp.Collect(context.TODO())
+
+	var data metricdata.ResourceMetrics
+	err = exp.Collect(context.TODO(), &data)
 	if err != nil {
 		t.Errorf("Got %v", err)
 	}
@@ -52,6 +59,7 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 
 func TestMeasure(t *testing.T) {
 	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
 
 	next := func() {}
@@ -130,7 +138,7 @@ func TestMeasure(t *testing.T) {
 			// test the middleware correctly
 			rep := tt.rep
 			m := NewHTTPMetric(Config{
-				MetricRecorder:     otel.NewOTelRecorder(exp, tt.name),
+				MetricRecorder:     telemetry.NewOTelRecorder(exp, rs, tt.name),
 				Service:            tt.name,
 				Logger:             logger.NewLogger(l, true),
 				GroupedStatus:      tt.groupStatus,
@@ -193,12 +201,13 @@ func TestNewHttpMetric(t *testing.T) {
 	l, _ := logger.NewZapLogger(zapcore.DebugLevel, "")
 	log := logger.NewLogger(l, true)
 	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
 	const svcName = "mySvc"
 	const groupedStatus = false
 	const disableMeasureSize = false
 
 	mdw := NewHTTPMetric(Config{
-		MetricRecorder:     otel.NewOTelRecorder(exp, svcName),
+		MetricRecorder:     telemetry.NewOTelRecorder(exp, rs, svcName),
 		Logger:             log,
 		Service:            svcName,
 		GroupedStatus:      groupedStatus,

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.5.2](https://github.com/open-feature/flagd/compare/flagd/v0.5.1...flagd/v0.5.2) (2023-04-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.1 ([#579](https://github.com/open-feature/flagd/issues/579)) ([58eed62](https://github.com/open-feature/flagd/commit/58eed62f5021e5c7a01a171067b725bf3ff83965))
+
+
+### ✨ New Features
+
+* otel traces for flag evaluation ([#598](https://github.com/open-feature/flagd/issues/598)) ([1757035](https://github.com/open-feature/flagd/commit/175703548f88469f25d749e320ee48030c9f9074))
+
+## [0.5.1](https://github.com/open-feature/flagd/compare/flagd/v0.5.0...flagd/v0.5.1) (2023-04-12)
+
+
+### ✨ New Features
+
+* flagd OTEL collector ([#586](https://github.com/open-feature/flagd/issues/586)) ([494bec3](https://github.com/open-feature/flagd/commit/494bec33dcc1ddf0fa5cd0866f06265618408f5e))
+
+
+### 🐛 Bug Fixes
+
+* fall back to default port if env var cannot be parsed ([#591](https://github.com/open-feature/flagd/issues/591)) ([1fda104](https://github.com/open-feature/flagd/commit/1fda10473dba36149e13fa0cb8bb686d6861e568))
+
+## [0.5.0](https://github.com/open-feature/flagd/compare/flagd/v0.4.5...flagd/v0.5.0) (2023-03-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* unify sources configuration handling ([#560](https://github.com/open-feature/flagd/issues/560))
+
+
+### 🐛 Bug Fixes
+
+* benchmark pipeline ([#538](https://github.com/open-feature/flagd/issues/538)) ([62cc0fc](https://github.com/open-feature/flagd/commit/62cc0fcfd6a63a6059352704117dbb78160eb689))
+* **deps:** update module github.com/open-feature/flagd/core to v0.4.5 ([#552](https://github.com/open-feature/flagd/issues/552)) ([41799f6](https://github.com/open-feature/flagd/commit/41799f624c261a84599cdd406cf28f4b33e49851))
+
+
+### 🧹 Chore
+
+* refactor configuration handling for startup ([#551](https://github.com/open-feature/flagd/issues/551)) ([8dfbde5](https://github.com/open-feature/flagd/commit/8dfbde5bbffd16fb66797a750d15f0226edf54a7))
+
 ## [0.4.5](https://github.com/open-feature/flagd/compare/flagd/v0.4.4...flagd/v0.4.5) (2023-03-20)
 
 

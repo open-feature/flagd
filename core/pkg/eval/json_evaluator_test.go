@@ -1,6 +1,7 @@
 package eval_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -338,23 +339,23 @@ func TestResolveAllValues(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		vals := evaluator.ResolveAllValues(reqID, apStruct)
+		vals := evaluator.ResolveAllValues(context.TODO(), reqID, apStruct)
 		for _, val := range vals {
 			switch vT := val.Value.(type) {
 			case bool:
-				v, _, reason, _ := evaluator.ResolveBooleanValue(reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 			case string:
-				v, _, reason, _ := evaluator.ResolveStringValue(reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 			case float64:
-				v, _, reason, _ := evaluator.ResolveFloatValue(reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 			case interface{}:
-				v, _, reason, _ := evaluator.ResolveObjectValue(reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 			}
@@ -388,7 +389,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, apStruct)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
@@ -429,7 +430,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveBooleanValue(reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -471,7 +472,7 @@ func TestResolveStringValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -513,7 +514,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveStringValue(reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -555,7 +556,7 @@ func TestResolveFloatValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveFloatValue(reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -597,7 +598,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test: %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -639,7 +640,7 @@ func TestResolveIntValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveIntValue(reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -681,7 +682,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveIntValue(reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -723,7 +724,7 @@ func TestResolveObjectValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		val, _, reason, err := evaluator.ResolveObjectValue(reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -768,7 +769,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveObjectValue(reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, apStruct)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -1122,56 +1123,56 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Add_ResolveAllValues": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				evaluator.ResolveAllValues("", nil)
+				evaluator.ResolveAllValues(context.TODO(), "", nil)
 				return nil
 			},
 		},
 		"Update_ResolveAllValues": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				evaluator.ResolveAllValues("", nil)
+				evaluator.ResolveAllValues(context.TODO(), "", nil)
 				return nil
 			},
 		},
 		"Delete_ResolveAllValues": {
 			dataSyncType: sync.DELETE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				evaluator.ResolveAllValues("", nil)
+				evaluator.ResolveAllValues(context.TODO(), "", nil)
 				return nil
 			},
 		},
 		"Add_ResolveBooleanValue": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveBooleanValue("", StaticBoolFlag, nil)
+				_, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticBoolFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveStringValue": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveBooleanValue("", StaticStringValue, nil)
+				_, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticStringValue, nil)
 				return err
 			},
 		},
 		"Delete_ResolveIntValue": {
 			dataSyncType: sync.DELETE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveIntValue("", StaticIntFlag, nil)
+				_, _, _, err := evaluator.ResolveIntValue(context.TODO(), "", StaticIntFlag, nil)
 				return err
 			},
 		},
 		"Add_ResolveFloatValue": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveFloatValue("", StaticFloatFlag, nil)
+				_, _, _, err := evaluator.ResolveFloatValue(context.TODO(), "", StaticFloatFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveObjectValue": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveObjectValue("", StaticObjectFlag, nil)
+				_, _, _, err := evaluator.ResolveObjectValue(context.TODO(), "", StaticObjectFlag, nil)
 				return err
 			},
 		},

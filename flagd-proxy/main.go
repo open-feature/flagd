@@ -5,7 +5,7 @@ import (
 
 	"github.com/dimiro1/banner"
 	"github.com/mattn/go-colorable"
-	"github.com/open-feature/flagd/kube-flagd-proxy/cmd"
+	"github.com/open-feature/flagd/flagd-proxy/cmd"
 )
 
 var (

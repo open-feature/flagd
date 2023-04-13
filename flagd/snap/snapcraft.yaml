@@ -1,6 +1,6 @@
 name: flagd
 base: core20
-version: "v0.4.5" # x-release-please-version
+version: "v0.5.2" # x-release-please-version
 summary: A feature flag daemon with a Unix philosophy
 description: |
   Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification. 

@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,21 +10,20 @@ import (
 	msync "sync"
 	"time"
 
-	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 
-	"go.opentelemetry.io/otel/exporters/prometheus"
+	"github.com/open-feature/flagd/core/pkg/service"
 
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/otel"
 	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
-	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 )
@@ -53,17 +53,20 @@ type SourceConfig struct {
 
 	BearerToken string `json:"bearerToken,omitempty"`
 	CertPath    string `json:"certPath,omitempty"`
+	TLS         bool   `json:"tls,omitempty"`
 	ProviderID  string `json:"providerID,omitempty"`
 	Selector    string `json:"selector,omitempty"`
 }
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	ServicePort       uint16
+	MetricExporter    string
 	MetricsPort       uint16
-	ServiceSocketPath string
+	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string
+	ServicePort       uint16
+	ServiceSocketPath string
 
 	SyncProviders []SourceConfig
 	CORS          []string
@@ -78,18 +81,22 @@ func init() {
 }
 
 // FromConfig builds a runtime from startup configurations
-func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
-	// build connect service
-	exporter, err := prometheus.New()
+func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
+	telCfg := telemetry.Config{
+		MetricsExporter: config.MetricExporter,
+		CollectorTarget: config.OtelCollectorURI,
+	}
+
+	// register trace provider for the runtime
+	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	connectService := &flageval.ConnectService{
-		Logger: logger.WithFields(
-			zap.String("component", "service"),
-		),
-		Metrics: otel.NewOTelRecorder(exporter, svcName),
+	// build metrics recorder with startup configurations
+	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
+	if err != nil {
+		return nil, err
 	}
 
 	// build flag store
@@ -100,6 +107,14 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 	}
 	s.FlagSources = sources
 
+	// derive evaluator
+	evaluator := eval.NewJSONEvaluator(logger, s)
+	// derive service
+	connectService := flageval.NewConnectService(
+		logger.WithFields(zap.String("component", "service")),
+		evaluator,
+		recorder)
+
 	// build sync providers
 	syncLogger := logger.WithFields(zap.String("component", "sync"))
 	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders)
@@ -109,7 +124,7 @@ func FromConfig(logger *logger.Logger, config Config) (*Runtime, error) {
 
 	return &Runtime{
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: eval.NewJSONEvaluator(logger, s),
+		Evaluator: evaluator,
 		Service:   connectService,
 		ServiceConfig: service.Configuration{
 			Port:        config.ServicePort,
@@ -162,10 +177,11 @@ func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
+		CredentialBuilder: &credentials.CredentialBuilder{},
 		CertPath:          config.CertPath,
 		ProviderID:        config.ProviderID,
+		Secure:            config.TLS,
 		Selector:          config.Selector,
-		CredentialBuilder: &credentials.CredentialBuilder{},
 	}
 }
 
@@ -218,24 +234,19 @@ func ParseSources(sourcesFlag string) ([]SourceConfig, error) {
 	if err := json.Unmarshal([]byte(sourcesFlag), &syncProvidersParsed); err != nil {
 		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
 	}
-	for i, sp := range syncProvidersParsed {
+	for _, sp := range syncProvidersParsed {
 		if sp.URI == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: uri is a required field")
 		}
 		if sp.Provider == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: provider is a required field")
 		}
-		switch uriB := []byte(sp.URI); {
-		case regFile.Match(uriB):
-			syncProvidersParsed[i].URI = regFile.ReplaceAllString(syncProvidersParsed[i].URI, "")
-		case regCrd.Match(uriB):
-			syncProvidersParsed[i].URI = regCrd.ReplaceAllString(syncProvidersParsed[i].URI, "")
-		}
 	}
 	return syncProvidersParsed, nil
 }
 
-// ParseSyncProviderURIs uri flag based sync sources to SourceConfig array. Replaces uri prefixes where necessary
+// ParseSyncProviderURIs uri flag based sync sources to SourceConfig array. Replaces uri prefixes where necessary to
+// derive SourceConfig
 func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
 	syncProvidersParsed := []SourceConfig{}
 
@@ -256,10 +267,16 @@ func ParseSyncProviderURIs(uris []string) ([]SourceConfig, error) {
 				URI:      uri,
 				Provider: syncProviderHTTP,
 			})
-		case regGRPC.Match(uriB), regGRPCSecure.Match(uriB):
+		case regGRPC.Match(uriB):
 			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
-				URI:      uri,
+				URI:      regGRPC.ReplaceAllString(uri, ""),
 				Provider: syncProviderGrpc,
+			})
+		case regGRPCSecure.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, SourceConfig{
+				URI:      regGRPCSecure.ReplaceAllString(uri, ""),
+				Provider: syncProviderGrpc,
+				TLS:      true,
 			})
 		default:
 			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', "+

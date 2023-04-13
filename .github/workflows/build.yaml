@@ -94,7 +94,7 @@ jobs:
       - run: make workspace-init
       - run: make test
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70 # v3
+        uses: codecov/codecov-action@40a12dcee2df644d47232dde008099a3e9e4f865 # v3
 
   docker-local:
     runs-on: ubuntu-latest
@@ -137,7 +137,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@67a35a08586135a9573f4327e904ecbf517a882d # v2
+        uses: github/codeql-action/upload-sarif@d186a2a36cc67bfa1b860e6170d37fb9634742c7 # v2
         with:
           sarif_file: "trivy-results.sarif"
 
