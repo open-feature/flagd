@@ -93,6 +93,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
@@ -199,6 +200,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
@@ -252,6 +254,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
+			&eventingConfiguration{},
 			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -348,6 +351,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
@@ -401,6 +405,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
+			&eventingConfiguration{},
 			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -497,6 +502,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
@@ -550,6 +556,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
+			&eventingConfiguration{},
 			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -646,6 +653,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
@@ -699,6 +707,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
+			&eventingConfiguration{},
 			metrics,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -798,6 +807,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
+				&eventingConfiguration{},
 				metrics,
 			)
 
@@ -859,6 +869,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
+			&eventingConfiguration{},
 			metrics,
 		)
 		if name != "eval returns error" {

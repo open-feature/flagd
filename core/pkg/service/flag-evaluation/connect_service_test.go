@@ -82,10 +82,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			rs := resource.NewWithAttributes("testSchema")
 			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
-			svc := ConnectService{
-				Logger:  logger.NewLogger(nil, false),
-				Metrics: metricRecorder,
-			}
+			svc := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
 			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
@@ -97,7 +94,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			defer cancel()
 
 			go func() {
-				err := svc.Serve(ctx, eval, serveConf)
+				err := svc.Serve(ctx, serveConf)
 				fmt.Println(err)
 			}()
 			conn, err := grpc.Dial(
@@ -140,10 +137,7 @@ func TestAddMiddleware(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	svc := ConnectService{
-		Logger:  logger.NewLogger(nil, false),
-		Metrics: metricRecorder,
-	}
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, metricRecorder)
 
 	serveConf := iservice.Configuration{
 		ReadinessProbe: func() bool {
@@ -156,7 +150,7 @@ func TestAddMiddleware(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		err := svc.Serve(ctx, nil, serveConf)
+		err := svc.Serve(ctx, serveConf)
 		fmt.Println(err)
 	}()
 
@@ -174,4 +168,42 @@ func TestAddMiddleware(t *testing.T) {
 	require.Nil(t, err)
 	// verify that the status we return in the mocked middleware
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestConnectServiceNotify(t *testing.T) {
+	// given
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
+
+	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+
+	sChan := make(chan iservice.Notification, 1)
+	eventing := service.eventingConfiguration
+	eventing.subs["key"] = sChan
+
+	// notification type
+	ofType := iservice.ConfigurationChange
+
+	// emit notification in routine
+	go func() {
+		service.Notify(iservice.Notification{
+			Type: ofType,
+			Data: map[string]interface{}{},
+		})
+	}()
+
+	// wait for notification
+	timeout, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelFunc()
+
+	select {
+	case n := <-sChan:
+		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
+	case <-timeout.Done():
+		t.Error("timeout while waiting for notifications")
+	}
 }

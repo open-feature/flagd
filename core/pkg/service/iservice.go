@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-
-	"github.com/open-feature/flagd/core/pkg/eval"
 )
 
 type NotificationType string
@@ -37,7 +35,7 @@ IFlagEvaluationService implementations define handlers for a particular transpor
 which call the IEvaluator implementation.
 */
 type IFlagEvaluationService interface {
-	Serve(ctx context.Context, eval eval.IEvaluator, svcConf Configuration) error
+	Serve(ctx context.Context, svcConf Configuration) error
 	Notify(n Notification)
 }
 
