@@ -151,7 +151,7 @@ var startCmd = &cobra.Command{
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
 		// Build Runtime -----------------------------------------------------------
-		rt, err := runtime.FromConfig(logger, runtime.Config{
+		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:           viper.GetStringSlice(corsFlagName),
 			MetricExporter: viper.GetString(metricsExporter),
 			MetricsPort: getPortValueOrDefault(

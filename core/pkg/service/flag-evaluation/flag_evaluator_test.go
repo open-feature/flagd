@@ -86,7 +86,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any()).Return(
+			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 				tt.evalRes,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
@@ -190,7 +190,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveBooleanValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -244,7 +244,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveBooleanValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveBooleanValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
@@ -341,7 +341,8 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveStringValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveStringValue(
+				gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -395,7 +396,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveStringValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveStringValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
@@ -492,7 +493,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveFloatValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveFloatValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -546,7 +547,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveFloatValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveFloatValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
@@ -643,7 +644,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveIntValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveIntValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -697,7 +698,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveIntValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveIntValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
@@ -797,7 +798,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
-			eval.EXPECT().ResolveObjectValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+			eval.EXPECT().ResolveObjectValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
@@ -859,7 +860,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 	}
 	for name, tt := range tests {
 		eval := mock.NewMockIEvaluator(ctrl)
-		eval.EXPECT().ResolveObjectValue(gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
+		eval.EXPECT().ResolveObjectValue(gomock.Any(), gomock.Any(), tt.functionArgs.req.FlagKey, gomock.Any()).Return(
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,

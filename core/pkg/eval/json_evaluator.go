@@ -2,12 +2,18 @@ package eval
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"go.opentelemetry.io/otel/attribute"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -28,8 +34,9 @@ func init() {
 }
 
 type JSONEvaluator struct {
-	store  *store.Flags
-	Logger *logger.Logger
+	store          *store.Flags
+	Logger         *logger.Logger
+	jsonEvalTracer trace.Tracer
 }
 
 type constraints interface {
@@ -46,7 +53,8 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
 		),
-		store: s,
+		store:          s,
+		jsonEvalTracer: otel.Tracer("jsonEvaluator"),
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 	return &ev
@@ -57,6 +65,12 @@ func (je *JSONEvaluator) GetState() (string, error) {
 }
 
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
+	_, span := je.jsonEvalTracer.Start(
+		context.Background(),
+		"setState",
+		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)))
+	defer span.End()
+
 	var newFlags Flags
 	err := je.configToFlags(payload.FlagData, &newFlags)
 	if err != nil {
@@ -78,29 +92,10 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 	}
 }
 
-func resolve[T constraints](reqID string, key string, context *structpb.Struct,
-	variantEval func(string, string, *structpb.Struct) (string, string, error),
-	variants map[string]any) (
-	value T,
-	variant string,
-	reason string,
-	err error,
-) {
-	variant, reason, err = variantEval(reqID, key, context)
-	if err != nil {
-		return value, variant, reason, err
-	}
+func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, context *structpb.Struct) []AnyValue {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveAll")
+	defer span.End()
 
-	var ok bool
-	value, ok = variants[variant].(T)
-	if !ok {
-		return value, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
-	}
-
-	return value, variant, reason, nil
-}
-
-func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct) []AnyValue {
 	values := []AnyValue{}
 	var value interface{}
 	var variant string
@@ -151,65 +146,104 @@ func (je *JSONEvaluator) ResolveAllValues(reqID string, context *structpb.Struct
 	return values
 }
 
-func (je *JSONEvaluator) ResolveBooleanValue(reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveBooleanValue(
+	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
 	value bool,
 	variant string,
 	reason string,
 	err error,
 ) {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveBoolean")
+	defer span.End()
+
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
 	flag, _ := je.store.Get(flagKey)
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
-func (je *JSONEvaluator) ResolveStringValue(reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveStringValue(
+	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
 	value string,
 	variant string,
 	reason string,
 	err error,
 ) {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveString")
+	defer span.End()
+
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
 	flag, _ := je.store.Get(flagKey)
 	return resolve[string](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
-func (je *JSONEvaluator) ResolveFloatValue(reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveFloatValue(
+	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
 	value float64,
 	variant string,
 	reason string,
 	err error,
 ) {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveFloat")
+	defer span.End()
+
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
 	flag, _ := je.store.Get(flagKey)
-	value, variant, reason, err = resolve[float64](
-		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	value, variant, reason, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 	return
 }
 
-func (je *JSONEvaluator) ResolveIntValue(reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
 	value int64,
 	variant string,
 	reason string,
 	err error,
 ) {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveInt")
+	defer span.End()
+
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	flag, _ := je.store.Get(flagKey)
 	var val float64
-	val, variant, reason, err = resolve[float64](
-		reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	val, variant, reason, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 	value = int64(val)
 	return
 }
 
-func (je *JSONEvaluator) ResolveObjectValue(reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveObjectValue(
+	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
 	value map[string]any,
 	variant string,
 	reason string,
 	err error,
 ) {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveObject")
+	defer span.End()
+
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
 	flag, _ := je.store.Get(flagKey)
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+}
+
+func resolve[T constraints](reqID string, key string, context *structpb.Struct,
+	variantEval func(string, string, *structpb.Struct) (string, string, error),
+	variants map[string]any) (
+	value T,
+	variant string,
+	reason string,
+	err error,
+) {
+	variant, reason, err = variantEval(reqID, key, context)
+	if err != nil {
+		return value, variant, reason, err
+	}
+
+	var ok bool
+	value, ok = variants[variant].(T)
+	if !ok {
+		return value, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
+	}
+
+	return value, variant, reason, nil
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default

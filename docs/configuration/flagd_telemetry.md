@@ -2,6 +2,8 @@
 
 <!-- TOC -->
 * [Telemetry](#telemetry)
+  * [Metrics](#metrics)
+  * [Traces](#traces)
   * [Export to OTEL collector](#export-to-otel-collector)
     * [Configure local collector setup](#configure-local-collector-setup)
       * [docker-compose.yaml](#docker-composeyaml)
@@ -18,12 +20,29 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 <img src="../images/flagd-telemetry.png">
 
+## Metrics
+
+flagd expose following metrics,
+
+* `http_request_duration_seconds`
+* `http_response_size_bytes`
+* `http_requests_inflight`
+* `impressions`
+
+## Traces
+
+flagd expose following traces,
+
+* `flagEvaluationService(resolveX)` - SpanKind server
+  * `jsonEvaluator(resolveX)` - SpanKind internal
+* `jsonEvaluator(setState)` - SpanKind internal
+
 ## Export to OTEL collector
 
 flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup
-flag `metrics-exporter` to be `otel` and a valid `otel-collector-target`. For example,
+flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For example,
 
-`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-target localhost:4317`
+`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
 
 ### Configure local collector setup
 
@@ -81,7 +100,7 @@ receivers:
       grpc:
 exporters:
   prometheus:
-    endpoint: "localhost:8889"
+    endpoint: "0.0.0.0:8889"
     const_labels:
       label1: value1
   jaeger:
