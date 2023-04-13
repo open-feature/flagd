@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"github.com/open-feature/flagd/core/pkg/logger"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -23,21 +25,24 @@ const (
 	exportInterval      = 2 * time.Second
 )
 
+// Config of the telemetry runtime. These are expected to be mapped to start-up arguments
 type Config struct {
 	MetricsExporter string
 	CollectorTarget string
 }
 
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
-func BuildMetricsRecorder(svcName string, config Config) (*MetricsRecorder, error) {
+func BuildMetricsRecorder(
+	ctx context.Context, svcName string, svcVersion string, config Config,
+) (*MetricsRecorder, error) {
 	// Build metric reader based on configurations
-	mReader, err := buildMetricReader(context.TODO(), config)
+	mReader, err := buildMetricReader(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup metric reader: %w", err)
 	}
 
 	// Build telemetry resource identifier
-	rsc, err := buildResourceFor(context.Background(), svcName)
+	rsc, err := buildResourceFor(ctx, svcName, svcVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
 	}
@@ -45,26 +50,35 @@ func BuildMetricsRecorder(svcName string, config Config) (*MetricsRecorder, erro
 	return NewOTelRecorder(mReader, rsc, svcName), nil
 }
 
-// BuildSpanProcessor builds a span processor based on provided configurations
-// todo - consider fallback mechanism(ex:- to console) if collector is unset
-func BuildSpanProcessor(ctx context.Context, cfg Config) (trace.SpanProcessor, error) {
+// BuildTraceProvider build and register the trace provider for the caller runtime. This method attempt to register
+// a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to provide the grpc
+// collector target. Providing empty target results in skipping provider registration. This results in tracers having
+// NoopTracerProvider performing no action
+func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
-		return nil, fmt.Errorf("otel collector target is required for span processor")
+		logger.Warn("skipping trace provider setup as collector target is not set." +
+			" Traces will use NoopTracerProvider provider")
+		return nil
 	}
 
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.DialContext(ctx, cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	exporter, err := buildOtlpExporter(ctx, cfg.CollectorTarget)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
-	traceExp, err := otlptrace.New(ctx, traceClient)
+	res, err := buildResourceFor(ctx, svc, svcVersion)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return trace.NewBatchSpanProcessor(traceExp), nil
+	provider := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
+		trace.WithResource(res))
+
+	otel.SetTracerProvider(provider)
+
+	return nil
 }
 
 // buildMetricReader builds a metric reader based on provided configurations
@@ -100,19 +114,33 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	return metric.NewPeriodicReader(otelExporter, metric.WithInterval(exportInterval)), nil
 }
 
+// buildOtlpExporter is a helper to build grpc backed otlp trace exporter
+func buildOtlpExporter(ctx context.Context, collectorTarget string) (*otlptrace.Exporter, error) {
+	// Non-blocking, insecure grpc connection
+	conn, err := grpc.DialContext(ctx, collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
+	return otlptrace.New(ctx, traceClient)
+}
+
 // buildDefaultMetricReader provides the default metric reader
 func buildDefaultMetricReader() (metric.Reader, error) {
 	return prometheus.New()
 }
 
 // buildResourceFor builds a resource identifier with set of resources and service key as attributes
-func buildResourceFor(ctx context.Context, serviceName string) (*resource.Resource, error) {
+func buildResourceFor(ctx context.Context, serviceName string, serviceVersion string) (*resource.Resource, error) {
 	return resource.New(
 		ctx,
 		resource.WithOS(),
 		resource.WithHost(),
 		resource.WithProcessRuntimeVersion(),
 		resource.WithTelemetrySDK(),
-		resource.WithAttributes(semconv.ServiceNameKey.String(serviceName)),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion)),
 	)
 }

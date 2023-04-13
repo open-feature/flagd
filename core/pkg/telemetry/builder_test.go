@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
+
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
@@ -11,7 +13,7 @@ import (
 
 func TestBuildMetricsRecorder(t *testing.T) {
 	// Simple happy-path test
-	recorder, err := BuildMetricsRecorder("service", Config{
+	recorder, err := BuildMetricsRecorder(context.Background(), "service", "0.0.1", Config{
 		MetricsExporter: "otel",
 		CollectorTarget: "localhost:8080",
 	})
@@ -87,14 +89,14 @@ func TestBuildSpanProcessor(t *testing.T) {
 			error: false,
 		},
 		{
-			name:  "Invalid configurations result in an error",
+			name:  "Empty configurations does not result in error",
 			cfg:   Config{},
-			error: true,
+			error: false,
 		},
 	}
 
 	for _, test := range tests {
-		spanProcessor, err := BuildSpanProcessor(gCtx, test.cfg)
+		err := BuildTraceProvider(gCtx, logger.NewLogger(nil, false), "svc", "0.0.1", test.cfg)
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
@@ -102,20 +104,24 @@ func TestBuildSpanProcessor(t *testing.T) {
 		}
 
 		require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
-		require.NotNil(t, spanProcessor, "test %s expected non-nil reader", test.name)
 	}
 }
 
 func TestBuildResourceFor(t *testing.T) {
 	svc := "testSvc"
+	svcVersion := "0.0.1"
 
-	resource, err := buildResourceFor(context.Background(), svc)
+	resource, err := buildResourceFor(context.Background(), svc, svcVersion)
 	require.Nil(t, err, "expected no error, but got: %v", err)
 
 	attributes := resource.Attributes()
-	require.GreaterOrEqual(t, len(attributes), 1, "expect attributes to contain at least service name")
+	require.GreaterOrEqual(t, len(attributes), 2, "expect attributes to contain service name, version")
 	require.Containsf(t, attributes, attribute.KeyValue{
 		Key:   semconv.ServiceNameKey,
 		Value: attribute.StringValue(svc),
-	}, "")
+	}, "expected resource to contain service name")
+	require.Containsf(t, attributes, attribute.KeyValue{
+		Key:   semconv.ServiceVersionKey,
+		Value: attribute.StringValue(svcVersion),
+	}, "expected resource to contain service version")
 }

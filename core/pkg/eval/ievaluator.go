@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"context"
+
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -32,26 +34,32 @@ type IEvaluator interface {
 	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
 
 	ResolveBooleanValue(
+		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value bool, variant string, reason string, err error)
 	ResolveStringValue(
+		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value string, variant string, reason string, err error)
 	ResolveIntValue(
+		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value int64, variant string, reason string, err error)
 	ResolveFloatValue(
+		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value float64, variant string, reason string, err error)
 	ResolveObjectValue(
+		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context *structpb.Struct) (value map[string]any, variant string, reason string, err error)
 	ResolveAllValues(
+		ctx context.Context,
 		reqID string,
 		context *structpb.Struct) (values []AnyValue)
 }
