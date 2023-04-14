@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -77,10 +78,10 @@ func NewConfig(filepath string) (*Config, error) {
 	if filepath != "" {
 		b, err := os.ReadFile(filepath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to read config file %s: %w", filepath, err)
 		}
 		if err := json.Unmarshal(b, config); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to unmarshal config: %w", err)
 		}
 	}
 	return config, nil
