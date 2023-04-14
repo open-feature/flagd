@@ -127,7 +127,7 @@ Further documentation including flagd configuration options, fractional evaluati
 Interested in contributing? Great, we'd love your help! To get started, take a look at the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 We also hold regular community meetings that are open to everyone.
-Check the [OpenFeature community page](https://docs.openfeature.dev/community/) for all the ways to get involved.
+Check the [OpenFeature community page](https://openfeature.dev/community/) for all the ways to get involved.
 
 Thanks so much to our contributors.
 

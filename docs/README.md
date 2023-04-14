@@ -59,4 +59,4 @@ This section documents any behavior of flagd which may seem unexpected:
 
 ## Still Stuck?
 
-[Speak to the OpenFeature community](https://docs.openfeature.dev/community) and someone will help.
+[Speak to the OpenFeature community](https://openfeature.dev/community) and someone will help.
