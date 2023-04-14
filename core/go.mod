@@ -10,7 +10,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
-	github.com/open-feature/open-feature-operator v0.2.32
+	github.com/open-feature/open-feature-operator v0.2.34
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron v1.2.0
@@ -27,6 +27,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.37.0
 	go.opentelemetry.io/otel/sdk v1.14.0
 	go.opentelemetry.io/otel/sdk/metric v0.37.0
+	go.opentelemetry.io/otel/trace v1.14.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
@@ -82,7 +83,6 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.37.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
