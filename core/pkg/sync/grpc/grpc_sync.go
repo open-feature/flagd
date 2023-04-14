@@ -105,7 +105,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	err = g.handleFlagSync(syncClient, dataSync)
 	if err == nil {
 		// This should not happen as handleFlagSync expects to return with an error
-		return err
+		return nil
 	}
 
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
