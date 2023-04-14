@@ -14,7 +14,7 @@ require (
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.15.0
 	github.com/robfig/cron v1.2.0
-	github.com/rs/cors v1.8.3
+	github.com/rs/cors v1.9.0
 	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.2
 	github.com/xeipuuv/gojsonschema v1.2.0
