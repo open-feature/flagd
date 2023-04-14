@@ -56,14 +56,16 @@ type Sync struct {
 func (g *Sync) Init(ctx context.Context) error {
 	tCredentials, err := g.CredentialBuilder.Build(g.Secure, g.CertPath)
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
+		err := fmt.Errorf("error building transport credentials: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 
 	// Derive reusable client connection
 	rpcCon, err := grpc.DialContext(ctx, g.URI, grpc.WithTransportCredentials(tCredentials))
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error initiating grpc client connection: %s", err.Error()))
+		err := fmt.Errorf("error initiating grpc client connection: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 
@@ -76,7 +78,8 @@ func (g *Sync) Init(ctx context.Context) error {
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("fetching all flags: %s", err.Error()))
+		err = fmt.Errorf("error fetching all flags: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 	dataSync <- sync.DataSync{
@@ -95,7 +98,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
 	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to sync flags: %w", err)
 	}
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
@@ -173,7 +176,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 	for {
 		data, err := stream.Recv()
 		if err != nil {
-			return err
+			return fmt.Errorf("error receiving payload from stream: %w", err)
 		}
 
 		switch data.State {

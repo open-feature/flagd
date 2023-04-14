@@ -70,7 +70,7 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 		defer s.serverMtx.RUnlock()
 		if s.server != nil {
 			if err := s.server.Shutdown(gCtx); err != nil {
-				return err
+				return fmt.Errorf("error returned from flag evaluation server shutdown: %w", err)
 			}
 		}
 		return nil
@@ -81,12 +81,15 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 		defer s.metricsServerMtx.RUnlock()
 		if s.metricsServer != nil {
 			if err := s.metricsServer.Shutdown(gCtx); err != nil {
-				return err
+				return fmt.Errorf("error returned from metrics server shutdown: %w", err)
 			}
 		}
 		return nil
 	})
-	return g.Wait()
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("errgroup closed with error: %w", err)
+	}
+	return nil
 }
 
 // Notify emits change event notifications for subscriptions
@@ -105,7 +108,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		lis, err = net.Listen("tcp", address)
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating listener for flag evaluation service: %w", err)
 	}
 	fes := NewFlagEvaluationService(
 		s.logger.WithFields(zap.String("component", "flagservice")),
@@ -161,13 +164,13 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 			svcConf.CertPath,
 			svcConf.KeyPath,
 		); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return err
+			return fmt.Errorf("error returned from flag evaluation server: %w", err)
 		}
 	} else {
 		if err := s.server.Serve(
 			lis,
 		); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return err
+			return fmt.Errorf("error returned from flag evaluation server: %w", err)
 		}
 	}
 	return nil
@@ -198,7 +201,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 		}
 	})
 	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+		return fmt.Errorf("error returned from metrics server: %w", err)
 	}
 	return nil
 }

@@ -286,10 +286,14 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISy
 			zap.String("target", "target"),
 		)), nil
 	case regCrd.Match(uriB):
-		return runtime.NewK8s(uri, logger.WithFields(
+		s, err := runtime.NewK8s(uri, logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		))
+		if err != nil {
+			return nil, fmt.Errorf("error creating k8s sync: %w", err)
+		}
+		return s, nil
 	}
 	return nil, fmt.Errorf("unrecognized URI: %s", uri)
 }

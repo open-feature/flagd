@@ -38,7 +38,7 @@ func (cb *CredentialBuilder) Build(secure bool, certPath string) (credentials.Tr
 	// Rely on provided certificate
 	certBytes, err := os.ReadFile(certPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read file %s: %w", certPath, err)
 	}
 
 	cp := x509.NewCertPool()

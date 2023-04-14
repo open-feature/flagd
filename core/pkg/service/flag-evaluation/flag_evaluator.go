@@ -300,7 +300,7 @@ func resolve[T constraints](
 
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
-		return err
+		return fmt.Errorf("error setting response result: %w", err)
 	}
 
 	return evalErrFormatted

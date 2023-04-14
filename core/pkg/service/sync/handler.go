@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
@@ -22,7 +23,7 @@ func (l *handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRe
 ) {
 	data, err := l.syncStore.FetchAllFlags(ctx, req, req.GetSelector())
 	if err != nil {
-		return &syncv1.FetchAllFlagsResponse{}, err
+		return &syncv1.FetchAllFlagsResponse{}, fmt.Errorf("error fetching all flags from sync store: %w", err)
 	}
 
 	return &syncv1.FetchAllFlagsResponse{
@@ -48,7 +49,7 @@ func (l *handler) SyncFlags(
 				FlagConfiguration: d.FlagData,
 				State:             dataSyncToGrpcState(d),
 			}); err != nil {
-				return err
+				return fmt.Errorf("error sending configuration change event: %w", err)
 			}
 		case <-stream.Context().Done():
 			return nil

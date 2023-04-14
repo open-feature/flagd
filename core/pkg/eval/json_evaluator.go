@@ -58,7 +58,11 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 }
 
 func (je *JSONEvaluator) GetState() (string, error) {
-	return je.store.String()
+	s, err := je.store.String()
+	if err != nil {
+		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
+	}
+	return s, nil
 }
 
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
@@ -308,7 +312,7 @@ func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 	if err != nil {
-		return err
+		return fmt.Errorf("error validating json schema: %w", err)
 	} else if !result.Valid() {
 		return fmt.Errorf("JSON schema validation failed: %s", buildErrorString(result.Errors()))
 	}

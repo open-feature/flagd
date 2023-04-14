@@ -88,13 +88,13 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	// register trace provider for the runtime
 	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building trace provider: %w", err)
 	}
 
 	// build metrics recorder with startup configurations
 	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
 
 	// build flag store
@@ -201,7 +201,7 @@ func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	reader, dynamic, err := kubernetes.GetClients()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
 	return kubernetes.NewK8sSync(
 		logger.WithFields(
@@ -230,7 +230,7 @@ func ParseSources(sourcesFlag string) ([]SourceConfig, error) {
 	syncProvidersParsed := []SourceConfig{}
 
 	if err := json.Unmarshal([]byte(sourcesFlag), &syncProvidersParsed); err != nil {
-		return syncProvidersParsed, fmt.Errorf("unable to parse sync providers: %w", err)
+		return syncProvidersParsed, fmt.Errorf("error parsing sync providers: %w", err)
 	}
 	for _, sp := range syncProvidersParsed {
 		if sp.URI == "" {

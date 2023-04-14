@@ -137,7 +137,11 @@ type responseWriterInterceptor struct {
 
 func (w *responseWriterInterceptor) Write(p []byte) (int, error) {
 	w.bytesWritten += len(p)
-	return w.ResponseWriter.Write(p)
+	i, err := w.ResponseWriter.Write(p)
+	if err != nil {
+		return 0, fmt.Errorf("unable to write response: %w", err)
+	}
+	return i, nil
 }
 
 func (w *responseWriterInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -145,7 +149,11 @@ func (w *responseWriterInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error
 	if !ok {
 		return nil, nil, errors.New("type assertion failed http.ResponseWriter not a http.Hijacker")
 	}
-	return h.Hijack()
+	conn, buf, err := h.Hijack()
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to hijack connection: %w", err)
+	}
+	return conn, buf, nil
 }
 
 // Flush need to exist to be compatible with connect-go.
