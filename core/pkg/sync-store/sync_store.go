@@ -1,3 +1,4 @@
+//nolint:contextcheck
 package store
 
 import (
