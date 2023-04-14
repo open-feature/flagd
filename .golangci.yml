@@ -22,7 +22,6 @@ linters:
     - gocritic
     - gocyclo
     - interfacebloat
-    - ireturn
     - gosec
     - lll
     - misspell
