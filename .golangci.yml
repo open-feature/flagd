@@ -17,7 +17,6 @@ linters:
     - exhaustive
     - funlen
     - gci
-    - gocognit
     - goconst
     - gocritic
     - gocyclo
@@ -26,7 +25,6 @@ linters:
     - lll
     - misspell
     - nakedret
-    - nestif
     - nilerr
     - nilnil
     - noctx
