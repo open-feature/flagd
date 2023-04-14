@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"go.opentelemetry.io/otel/sdk/resource"
-
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.13.0"
 )
 

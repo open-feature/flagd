@@ -10,20 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/credentials"
-
-	"golang.org/x/sync/errgroup"
-
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
-
+	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
 	grpcmock "github.com/open-feature/flagd/core/pkg/sync/grpc/mock"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )

@@ -9,11 +9,10 @@ import (
 	"strings"
 	msync "sync"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"gopkg.in/yaml.v3"
 )
 
 type Sync struct {

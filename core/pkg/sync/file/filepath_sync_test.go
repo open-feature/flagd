@@ -10,9 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/core/pkg/sync"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
 const (

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"

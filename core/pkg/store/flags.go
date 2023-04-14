@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 

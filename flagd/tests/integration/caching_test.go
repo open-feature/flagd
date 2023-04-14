@@ -4,10 +4,9 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/cucumber/godog"
 	flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
 	"github.com/open-feature/go-sdk-contrib/tests/flagd/pkg/integration"
-
-	"github.com/cucumber/godog"
 )
 
 const (

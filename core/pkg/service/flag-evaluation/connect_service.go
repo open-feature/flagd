@@ -10,21 +10,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/open-feature/flagd/core/pkg/telemetry"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/open-feature/flagd/core/pkg/service/middleware"
-
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/service/middleware"
 	corsmw "github.com/open-feature/flagd/core/pkg/service/middleware/cors"
 	h2cmw "github.com/open-feature/flagd/core/pkg/service/middleware/h2c"
 	metricsmw "github.com/open-feature/flagd/core/pkg/service/middleware/metrics"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const ErrorPrefix = "FlagdError:"

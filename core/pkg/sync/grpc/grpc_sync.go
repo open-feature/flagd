@@ -7,13 +7,11 @@ import (
 	msync "sync"
 	"time"
 
-	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
-
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	"google.golang.org/grpc"
 )
 

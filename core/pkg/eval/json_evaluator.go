@@ -10,19 +10,16 @@ import (
 	"strconv"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
-	"github.com/open-feature/flagd/core/pkg/store"
-	"github.com/open-feature/flagd/core/pkg/sync"
-
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	schema "github.com/open-feature/schemas/json"
 	"github.com/xeipuuv/gojsonschema"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
