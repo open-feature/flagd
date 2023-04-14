@@ -135,15 +135,15 @@ func (g *Sync) connectWithRetry(
 	for {
 		var sleep time.Duration
 		if iteration >= backOffLimit {
-			sleep = constantBackOffDelay
+			sleep = constantBackOffDelay * time.Second
 		} else {
 			iteration++
-			sleep = time.Duration(math.Pow(backOffBase, float64(iteration)))
+			sleep = time.Duration(math.Pow(backOffBase, float64(iteration))) * time.Second
 		}
 
 		// Block the next connection attempt and check the context
 		select {
-		case <-time.After(sleep * time.Second):
+		case <-time.After(sleep):
 			break
 		case <-ctx.Done():
 			// context done means we shall exit
