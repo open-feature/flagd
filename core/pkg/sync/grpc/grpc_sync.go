@@ -214,6 +214,8 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 			g.Logger.Debug("received a delete payload")
 		case v1.SyncState_SYNC_STATE_PING:
 			g.Logger.Debug("received server ping")
+		case v1.SyncState_SYNC_STATE_UNSPECIFIED:
+			g.Logger.Debug("received unspecified state")
 		default:
 			g.Logger.Debug(fmt.Sprintf("received unknown state: %s", data.State.String()))
 		}
