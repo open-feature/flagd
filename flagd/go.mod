@@ -9,7 +9,7 @@ require (
 	github.com/open-feature/flagd/core v0.5.2
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	go.uber.org/zap v1.24.0
 )
