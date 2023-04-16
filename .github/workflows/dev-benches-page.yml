@@ -33,7 +33,7 @@ jobs:
         with:
           ref: gh-pages
       - name: Setup Pages
-        uses: actions/configure-pages@7110e9e03ffb4a421945e5d0607007b8e9f1f52b # v3
+        uses: actions/configure-pages@f156874f8191504dae5b037505266ed5dda6c382 # v3
       - name: Upload artifact
         uses: actions/upload-pages-artifact@64bcae551a7b18bcb9a09042ddf1960979799187 # v1
         with:
