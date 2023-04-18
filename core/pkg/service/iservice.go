@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+
+	"github.com/bufbuild/connect-go"
 )
 
 type NotificationType string
@@ -28,6 +30,7 @@ type Configuration struct {
 	KeyPath        string
 	SocketPath     string
 	CORS           []string
+	Options        []connect.HandlerOption
 }
 
 /*
