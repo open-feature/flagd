@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"reflect"
 	msync "sync"
-
-	//msync "sync"
 	"testing"
 	"time"
 
