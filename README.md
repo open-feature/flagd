@@ -98,6 +98,13 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
     ```
 
+    For Windows use bash or use the following:
+
+    ```sh
+    set json={"flagKey":"myStringFlag","context":{}}
+    curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveString"
+    ```
+
     Result:
 
     ```json
