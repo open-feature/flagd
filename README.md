@@ -97,6 +97,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
     ```
+
    For Windows we recommend using a [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) terminal.
    Otherwise, use the following with `cmd`:
 
