@@ -22,7 +22,6 @@ const (
 )
 
 func TestSimpleReSync(t *testing.T) {
-
 	fetchDirName := t.TempDir()
 	source := filepath.Join(fetchDirName, fetchFileName)
 	expectedDataSync := sync.DataSync{
