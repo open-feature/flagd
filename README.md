@@ -49,7 +49,8 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     ```
 
     Or use docker:
-   (for Windows use WSL both for the file path and the docker commands. This flagd on docker command WILL NOT WORK on Windows due to the mixed filesystems [#8479](https://github.com/docker/for-win/issues/8479)!! See also [this medium article](https://levelup.gitconnected.com/docker-desktop-on-wsl2-the-problem-with-mixing-file-systems-a8b5dcd79b22) )
+    _Note - In Windows, use WSL system for both the file location and Docker runtime. Mixed file systems does not
+    work and this is a limitation of Docker (https://github.com/docker/for-win/issues/8479)_
 
     ```sh
     docker run \
@@ -74,7 +75,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       --uri file:./example_flags.flagd.json
     ```
 
-    Or use docker (!! this does not work on Windows without using WSL !!):
+    Or use docker ( _Note - In Windows, this require WSL system for both the file location and Docker runtime_):
 
     ```sh
     docker run \
