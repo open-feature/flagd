@@ -75,7 +75,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       --uri file:./example_flags.flagd.json
     ```
 
-    Or use docker ( _Note - In Windows, this require WSL system for both the file location and Docker runtime_):
+    Or use docker ( _Note - In Windows, this requires WSL system for both the file location and Docker runtime_):
 
     ```sh
     docker run \
