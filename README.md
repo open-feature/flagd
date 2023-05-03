@@ -50,7 +50,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
     Or use docker:
     _Note - In Windows, use WSL system for both the file location and Docker runtime. Mixed file systems does not
-    work and this is a [limitation of Docker] (https://github.com/docker/for-win/issues/8479)_
+    work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479)_
 
     ```sh
     docker run \
