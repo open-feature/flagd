@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.2...flagd-proxy/v0.2.3) (2023-05-04)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.2 ([#613](https://github.com/open-feature/flagd/issues/613)) ([218f435](https://github.com/open-feature/flagd/commit/218f435f0212fa24483b2af25e184e154e575eb1))
+* **deps:** update module github.com/spf13/cobra to v1.7.0 ([#587](https://github.com/open-feature/flagd/issues/587)) ([12b3477](https://github.com/open-feature/flagd/commit/12b34773a68f6ae7e7e605aebc9f7075eb819994))
+
+
+### ✨ New Features
+
+* Introduce connect traces ([#624](https://github.com/open-feature/flagd/issues/624)) ([28bac6a](https://github.com/open-feature/flagd/commit/28bac6a54aed79cb8d84a147ffea296c36f5bd51))
+
 ## [0.2.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.1...flagd-proxy/v0.2.2) (2023-04-13)
 
 

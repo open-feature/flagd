@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.3](https://github.com/open-feature/flagd/compare/core/v0.5.2...core/v0.5.3) (2023-05-04)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/bufbuild/connect-go to v1.6.0 ([#585](https://github.com/open-feature/flagd/issues/585)) ([8f2f467](https://github.com/open-feature/flagd/commit/8f2f467af52a3686196a821eec61954d89d3f71d))
+* **deps:** update module github.com/bufbuild/connect-go to v1.7.0 ([#625](https://github.com/open-feature/flagd/issues/625)) ([1b24fc9](https://github.com/open-feature/flagd/commit/1b24fc923a405b337634009831ef0b9792953ce5))
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.2.34 ([#604](https://github.com/open-feature/flagd/issues/604)) ([3e6a84b](https://github.com/open-feature/flagd/commit/3e6a84b455a330f541784b346d3b6199f8b423f7))
+* **deps:** update module github.com/prometheus/client_golang to v1.15.0 ([#608](https://github.com/open-feature/flagd/issues/608)) ([0597a8f](https://github.com/open-feature/flagd/commit/0597a8f23d0914b26f06b1335b49fe7c18ecb4f9))
+* **deps:** update module github.com/rs/cors to v1.9.0 ([#609](https://github.com/open-feature/flagd/issues/609)) ([97066c1](https://github.com/open-feature/flagd/commit/97066c107d14777eaad8a05b3bb051639af3179c))
+* **deps:** update module github.com/rs/xid to v1.5.0 ([#614](https://github.com/open-feature/flagd/issues/614)) ([e3dfbc6](https://github.com/open-feature/flagd/commit/e3dfbc6753bddc9e2f5c4a2633a7010123cf2f97))
+* **deps:** update module golang.org/x/crypto to v0.8.0 ([#595](https://github.com/open-feature/flagd/issues/595)) ([36016d7](https://github.com/open-feature/flagd/commit/36016d7940fa772c01dd61b071b2c9ec753cfb75))
+
+
+### ✨ New Features
+
+* Introduce connect traces ([#624](https://github.com/open-feature/flagd/issues/624)) ([28bac6a](https://github.com/open-feature/flagd/commit/28bac6a54aed79cb8d84a147ffea296c36f5bd51))
+
+
+### 🧹 Chore
+
+* add instructions for windows and fix failing unit tests ([#632](https://github.com/open-feature/flagd/issues/632)) ([6999d67](https://github.com/open-feature/flagd/commit/6999d6722581ab8e2e14bfd4b2d0341fe5216684))
+
 ## [0.5.2](https://github.com/open-feature/flagd/compare/core/v0.5.1...core/v0.5.2) (2023-04-13)
 
 
