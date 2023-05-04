@@ -33,6 +33,13 @@ Command:
 curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"myBoolFlag","context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveBoolean"
+```
+
 Result:
 
 ```sh
@@ -47,6 +54,13 @@ Command:
 curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"myStringFlag","context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveString"
+```
+
 Result:
 
 ```sh
@@ -59,6 +73,13 @@ Command:
 
 ```sh
 curl -X POST "localhost:8013/schema.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+```
+
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"myIntFlag","context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveInt"
 ```
 
 Result:
@@ -77,6 +98,13 @@ Command:
 curl -X POST "localhost:8013/schema.v1.Service/ResolveFloat" -d '{"flagKey":"myFloatFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"myFloatFlag","context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveFloat"
+```
+
 Result:
 
 ```sh
@@ -91,6 +119,13 @@ Command:
 curl -X POST "localhost:8013/schema.v1.Service/ResolveObject" -d '{"flagKey":"myObjectFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"myObjectFlag","context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveObject"
+```
+
 Result:
 
 ```sh
@@ -103,6 +138,13 @@ Command:
 
 ```sh
 curl -X POST "localhost:8013/schema.v1.Service/ResolveBoolean" -d '{"flagKey":"isColorYellow","context":{"color":"yellow"}}' -H "Content-Type: application/json"
+```
+
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"flagKey":"isColorYellow","context":{"color":"yellow"}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveBoolean"
 ```
 
 Result:
@@ -150,6 +192,13 @@ Command:
 
 ```sh
 curl -X POST "localhost:8013/schema.v1.Service/ResolveAll" -d '{"context":{}}' -H "Content-Type: application/json"
+```
+
+For Windows users, open a command prompt and use:
+
+```sh
+set json={"context":{}}
+curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveAll"
 ```
 
 Result:

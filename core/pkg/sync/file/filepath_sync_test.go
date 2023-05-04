@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	msync "sync"
 	"testing"
@@ -16,120 +17,112 @@ import (
 )
 
 const (
-	fetchDirName      = "test"
 	fetchFileName     = "to_fetch.json"
 	fetchFileContents = "fetch me"
 )
 
 func TestSimpleReSync(t *testing.T) {
-	tests := map[string]struct {
-		fileContents     string
-		expectedDataSync sync.DataSync
-	}{
-		"simple-read": {
-			fileContents: "hello",
-			expectedDataSync: sync.DataSync{
-				FlagData: "hello",
-				Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-				Type:     sync.ALL,
-			},
-		},
+	fetchDirName := t.TempDir()
+	source := filepath.Join(fetchDirName, fetchFileName)
+	expectedDataSync := sync.DataSync{
+		FlagData: "hello",
+		Source:   source,
+		Type:     sync.ALL,
 	}
-
 	handler := Sync{
-		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+		URI:    source,
 		Logger: logger.NewLogger(nil, false),
 	}
 
-	for test, tt := range tests {
-		t.Run(test, func(t *testing.T) {
-			defer t.Cleanup(cleanupFilePath)
-			setupDir(t)
-			createFile(t)
-			writeToFile(t, tt.fileContents)
+	createFile(t, fetchDirName)
+	writeToFile(t, fetchDirName, "hello")
+	ctx := context.Background()
+	dataSyncChan := make(chan sync.DataSync, 1)
 
-			ctx := context.Background()
-			dataSyncChan := make(chan sync.DataSync, 1)
+	go func() {
+		err := handler.ReSync(ctx, dataSyncChan)
+		if err != nil {
+			log.Fatalf("Error start sync: %s", err.Error())
+			return
+		}
+	}()
 
-			go func() {
-				err := handler.ReSync(ctx, dataSyncChan)
-				if err != nil {
-					log.Fatalf("Error start sync: %s", err.Error())
-					return
-				}
-			}()
-
-			select {
-			case s := <-dataSyncChan:
-				if !reflect.DeepEqual(tt.expectedDataSync, s) {
-					t.Errorf("resync failed, incorrect datasync value, got %v want %v", s, tt.expectedDataSync)
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("timed out waiting for datasync")
-			}
-		})
+	select {
+	case s := <-dataSyncChan:
+		if !reflect.DeepEqual(expectedDataSync, s) {
+			t.Errorf("resync failed, incorrect datasync value, got %v want %v", s, expectedDataSync)
+		}
+	case <-time.After(5 * time.Second):
+		t.Error("timed out waiting for datasync")
 	}
 }
 
 func TestSimpleSync(t *testing.T) {
+	readDirName := t.TempDir()
+	updateDirName := t.TempDir()
+	deleteDirName := t.TempDir()
 	tests := map[string]struct {
 		manipulationFuncs []func(t *testing.T)
 		expectedDataSync  []sync.DataSync
+		fetchDirName      string
 	}{
 		"simple-read": {
+			fetchDirName: readDirName,
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchFileContents)
+					writeToFile(t, readDirName, fetchFileContents)
 				},
 			},
 			expectedDataSync: []sync.DataSync{
 				{
 					FlagData: fetchFileContents,
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Source:   fmt.Sprintf("%s/%s", readDirName, fetchFileName),
 					Type:     sync.ALL,
 				},
 			},
 		},
 		"update-event": {
+			fetchDirName: updateDirName,
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchFileContents)
+					writeToFile(t, updateDirName, fetchFileContents)
 				},
 				func(t *testing.T) {
-					writeToFile(t, "new content")
+					writeToFile(t, updateDirName, "new content")
 				},
 			},
 			expectedDataSync: []sync.DataSync{
 				{
 					FlagData: fetchFileContents,
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Source:   fmt.Sprintf("%s/%s", updateDirName, fetchFileName),
 					Type:     sync.ALL,
 				},
 				{
 					FlagData: "new content",
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Source:   fmt.Sprintf("%s/%s", updateDirName, fetchFileName),
 					Type:     sync.ALL,
 				},
 			},
 		},
 		"delete-event": {
+			fetchDirName: deleteDirName,
 			manipulationFuncs: []func(t *testing.T){
 				func(t *testing.T) {
-					writeToFile(t, fetchFileContents)
+					writeToFile(t, deleteDirName, fetchFileContents)
 				},
 				func(t *testing.T) {
-					deleteFile(t, fetchDirName, fetchFileName)
+					deleteFile(t, deleteDirName, fetchFileName)
 				},
 			},
 			expectedDataSync: []sync.DataSync{
 				{
 					FlagData: fetchFileContents,
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Source:   fmt.Sprintf("%s/%s", deleteDirName, fetchFileName),
 					Type:     sync.ALL,
 				},
 				{
 					FlagData: defaultState,
-					Source:   fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+					Source:   fmt.Sprintf("%s/%s", deleteDirName, fetchFileName),
 					Type:     sync.DELETE,
 				},
 			},
@@ -138,16 +131,14 @@ func TestSimpleSync(t *testing.T) {
 
 	for test, tt := range tests {
 		t.Run(test, func(t *testing.T) {
-			defer t.Cleanup(cleanupFilePath)
-			setupDir(t)
-			createFile(t)
+			createFile(t, tt.fetchDirName)
 
 			ctx := context.Background()
 
 			dataSyncChan := make(chan sync.DataSync, len(tt.expectedDataSync))
 
 			syncHandler := Sync{
-				URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+				URI:    fmt.Sprintf("%s/%s", tt.fetchDirName, fetchFileName),
 				Logger: logger.NewLogger(nil, false),
 				Mux:    &msync.RWMutex{},
 			}
@@ -199,13 +190,17 @@ func TestSimpleSync(t *testing.T) {
 }
 
 func TestFilePathSync_Fetch(t *testing.T) {
+	successDirName := t.TempDir()
+	falureDirName := t.TempDir()
 	tests := map[string]struct {
 		fpSync         Sync
 		handleResponse func(t *testing.T, fetched string, err error)
+		fetchDirName   string
 	}{
 		"success": {
+			fetchDirName: successDirName,
 			fpSync: Sync{
-				URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
+				URI:    fmt.Sprintf("%s/%s", successDirName, fetchFileName),
 				Logger: logger.NewLogger(nil, false),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
@@ -219,8 +214,9 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			},
 		},
 		"not found": {
+			fetchDirName: falureDirName,
 			fpSync: Sync{
-				URI:    fmt.Sprintf("%s/%s", fetchDirName, "not_found"),
+				URI:    fmt.Sprintf("%s/%s", falureDirName, "not_found"),
 				Logger: logger.NewLogger(nil, false),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
@@ -233,10 +229,8 @@ func TestFilePathSync_Fetch(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			setupDir(t)
-			createFile(t)
-			writeToFile(t, fetchFileContents)
-			defer t.Cleanup(cleanupFilePath)
+			createFile(t, tt.fetchDirName)
+			writeToFile(t, tt.fetchDirName, fetchFileContents)
 
 			data, err := tt.fpSync.fetch(context.Background())
 
@@ -246,16 +240,15 @@ func TestFilePathSync_Fetch(t *testing.T) {
 }
 
 func TestIsReadySyncFlag(t *testing.T) {
+	fetchDirName := t.TempDir()
 	fpSync := Sync{
 		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
 		Logger: logger.NewLogger(nil, false),
 		Mux:    &msync.RWMutex{},
 	}
 
-	setupDir(t)
-	createFile(t)
-	writeToFile(t, fetchFileContents)
-	defer t.Cleanup(cleanupFilePath)
+	createFile(t, fetchDirName)
+	writeToFile(t, fetchDirName, fetchFileContents)
 	if fpSync.IsReady() != false {
 		t.Errorf("expected not to be ready")
 	}
@@ -283,31 +276,25 @@ func TestIsReadySyncFlag(t *testing.T) {
 	}
 }
 
-func cleanupFilePath() {
-	if err := os.RemoveAll(fetchDirName); err != nil {
-		log.Fatalf("rmdir: %v", err)
-	}
-}
-
 func deleteFile(t *testing.T, dirName string, fileName string) {
 	if err := os.Remove(fmt.Sprintf("%s/%s", dirName, fileName)); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func setupDir(t *testing.T) {
-	if err := os.Mkdir(fetchDirName, os.ModePerm); err != nil {
+func createFile(t *testing.T, fetchDirName string) {
+	f, err := os.Create(fmt.Sprintf("%s/%s", fetchDirName, fetchFileName))
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Fatalf("close file: %v", err)
+		}
+	}(f)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func createFile(t *testing.T) {
-	if _, err := os.Create(fmt.Sprintf("%s/%s", fetchDirName, fetchFileName)); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func writeToFile(t *testing.T, fileContents string) {
+func writeToFile(t *testing.T, fetchDirName, fileContents string) {
 	file, err := os.OpenFile(fmt.Sprintf("%s/%s", fetchDirName, fetchFileName), os.O_RDWR, 0o644)
 	if err != nil {
 		t.Fatal(err)
