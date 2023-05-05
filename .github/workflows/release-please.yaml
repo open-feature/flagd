@@ -214,7 +214,7 @@ jobs:
       - name: Build license extraction locations
         id: license-files
         run: |
-          echo "LICENSE_FOLDER=${{ format('{0}-license', matrix.path) }}" >> $GITHUB_OUTPUT
+          echo "LICENSE_FOLDER=${{ format('{0}-third-party-license', matrix.path) }}" >> $GITHUB_OUTPUT
           echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
       - name: Run go-licenses for module ${{ matrix.path }}
         run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
