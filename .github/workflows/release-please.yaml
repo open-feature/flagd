@@ -207,6 +207,18 @@ jobs:
         run: |
           env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.tar.gz ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - name: Install go-licenses
+        run: go install github.com/google/go-licenses@latest
+      - name: Build license extraction locations
+        id: license-files
+        run: |
+          echo "LICENSE_FOLDER=${{ format('{0}-license', matrix.path) }}" >> $GITHUB_OUTPUT
+          echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
+      - name: Run go-licenses for module ${{ matrix.path }}
+        run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
+        continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
+      - name: Bundle license extracts
+        run: tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
@@ -214,6 +226,8 @@ jobs:
           files: |
             ./sbom.xml
             ./*.tar.gz
+            ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz
+            ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
   homebrew:
     name: Bump homebrew-core formula
     needs: release-please
