@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1683426274018,
+  "lastUpdate": 1683512489033,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -28376,6 +28376,208 @@ window.BENCHMARK_DATA = {
             "value": 10161,
             "unit": "ns/op\t    3160 B/op\t      39 allocs/op",
             "extra": "579324 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "41898282+github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ef5af58d1ee96bf866146e41b337f703fae62814",
+          "message": "chore: release main (#615)\n\n:robot: I have created a release *beep* *boop*\r\n---\r\n\r\n\r\n<details><summary>flagd: 0.5.3</summary>\r\n\r\n##\r\n[0.5.3](https://github.com/open-feature/flagd/compare/flagd/v0.5.2...flagd/v0.5.3)\r\n(2023-05-04)\r\n\r\n\r\n### 🐛 Bug Fixes\r\n\r\n* **deps:** update module github.com/open-feature/flagd/core to v0.5.2\r\n([#613](https://github.com/open-feature/flagd/issues/613))\r\n([218f435](https://github.com/open-feature/flagd/commit/218f435f0212fa24483b2af25e184e154e575eb1))\r\n* **deps:** update module github.com/spf13/cobra to v1.7.0\r\n([#587](https://github.com/open-feature/flagd/issues/587))\r\n([12b3477](https://github.com/open-feature/flagd/commit/12b34773a68f6ae7e7e605aebc9f7075eb819994))\r\n\r\n\r\n### ✨ New Features\r\n\r\n* Introduce connect traces\r\n([#624](https://github.com/open-feature/flagd/issues/624))\r\n([28bac6a](https://github.com/open-feature/flagd/commit/28bac6a54aed79cb8d84a147ffea296c36f5bd51))\r\n</details>\r\n\r\n<details><summary>flagd-proxy: 0.2.3</summary>\r\n\r\n##\r\n[0.2.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.2...flagd-proxy/v0.2.3)\r\n(2023-05-04)\r\n\r\n\r\n### 🐛 Bug Fixes\r\n\r\n* **deps:** update module github.com/open-feature/flagd/core to v0.5.2\r\n([#613](https://github.com/open-feature/flagd/issues/613))\r\n([218f435](https://github.com/open-feature/flagd/commit/218f435f0212fa24483b2af25e184e154e575eb1))\r\n* **deps:** update module github.com/spf13/cobra to v1.7.0\r\n([#587](https://github.com/open-feature/flagd/issues/587))\r\n([12b3477](https://github.com/open-feature/flagd/commit/12b34773a68f6ae7e7e605aebc9f7075eb819994))\r\n\r\n\r\n### ✨ New Features\r\n\r\n* Introduce connect traces\r\n([#624](https://github.com/open-feature/flagd/issues/624))\r\n([28bac6a](https://github.com/open-feature/flagd/commit/28bac6a54aed79cb8d84a147ffea296c36f5bd51))\r\n</details>\r\n\r\n<details><summary>core: 0.5.3</summary>\r\n\r\n##\r\n[0.5.3](https://github.com/open-feature/flagd/compare/core/v0.5.2...core/v0.5.3)\r\n(2023-05-04)\r\n\r\n\r\n### 🐛 Bug Fixes\r\n\r\n* **deps:** update module github.com/bufbuild/connect-go to v1.6.0\r\n([#585](https://github.com/open-feature/flagd/issues/585))\r\n([8f2f467](https://github.com/open-feature/flagd/commit/8f2f467af52a3686196a821eec61954d89d3f71d))\r\n* **deps:** update module github.com/bufbuild/connect-go to v1.7.0\r\n([#625](https://github.com/open-feature/flagd/issues/625))\r\n([1b24fc9](https://github.com/open-feature/flagd/commit/1b24fc923a405b337634009831ef0b9792953ce5))\r\n* **deps:** update module github.com/open-feature/open-feature-operator\r\nto v0.2.34 ([#604](https://github.com/open-feature/flagd/issues/604))\r\n([3e6a84b](https://github.com/open-feature/flagd/commit/3e6a84b455a330f541784b346d3b6199f8b423f7))\r\n* **deps:** update module github.com/prometheus/client_golang to v1.15.0\r\n([#608](https://github.com/open-feature/flagd/issues/608))\r\n([0597a8f](https://github.com/open-feature/flagd/commit/0597a8f23d0914b26f06b1335b49fe7c18ecb4f9))\r\n* **deps:** update module github.com/rs/cors to v1.9.0\r\n([#609](https://github.com/open-feature/flagd/issues/609))\r\n([97066c1](https://github.com/open-feature/flagd/commit/97066c107d14777eaad8a05b3bb051639af3179c))\r\n* **deps:** update module github.com/rs/xid to v1.5.0\r\n([#614](https://github.com/open-feature/flagd/issues/614))\r\n([e3dfbc6](https://github.com/open-feature/flagd/commit/e3dfbc6753bddc9e2f5c4a2633a7010123cf2f97))\r\n* **deps:** update module golang.org/x/crypto to v0.8.0\r\n([#595](https://github.com/open-feature/flagd/issues/595))\r\n([36016d7](https://github.com/open-feature/flagd/commit/36016d7940fa772c01dd61b071b2c9ec753cfb75))\r\n\r\n\r\n### ✨ New Features\r\n\r\n* Introduce connect traces\r\n([#624](https://github.com/open-feature/flagd/issues/624))\r\n([28bac6a](https://github.com/open-feature/flagd/commit/28bac6a54aed79cb8d84a147ffea296c36f5bd51))\r\n\r\n\r\n### 🧹 Chore\r\n\r\n* add instructions for windows and fix failing unit tests\r\n([#632](https://github.com/open-feature/flagd/issues/632))\r\n([6999d67](https://github.com/open-feature/flagd/commit/6999d6722581ab8e2e14bfd4b2d0341fe5216684))\r\n</details>\r\n\r\n---\r\nThis PR was generated with [Release\r\nPlease](https://github.com/googleapis/release-please). See\r\n[documentation](https://github.com/googleapis/release-please#release-please).\r\n\r\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2023-05-04T13:43:36Z",
+          "url": "https://github.com/open-feature/flagd/commit/ef5af58d1ee96bf866146e41b337f703fae62814"
+        },
+        "date": 1683512488028,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 1541,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3913767 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 12767,
+            "unit": "ns/op\t    5026 B/op\t      83 allocs/op",
+            "extra": "470024 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1514,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3958563 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1693,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3547342 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1694,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3532858 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 1604,
+            "unit": "ns/op\t     336 B/op\t       9 allocs/op",
+            "extra": "3760579 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 12558,
+            "unit": "ns/op\t    5050 B/op\t      85 allocs/op",
+            "extra": "472712 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1522,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3979962 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1697,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3552663 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1712,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3553885 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticFloatFlag",
+            "value": 1585,
+            "unit": "ns/op\t     320 B/op\t       9 allocs/op",
+            "extra": "3799014 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_targetingFloatFlag",
+            "value": 12630,
+            "unit": "ns/op\t    5050 B/op\t      85 allocs/op",
+            "extra": "471081 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticObjectFlag",
+            "value": 1496,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "4034366 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_missingFlag",
+            "value": 1700,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3553610 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_disabledFlag",
+            "value": 1681,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3567924 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 1546,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3900772 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 11593,
+            "unit": "ns/op\t    5033 B/op\t      83 allocs/op",
+            "extra": "509508 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1500,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3993979 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1685,
+            "unit": "ns/op\t     352 B/op\t       9 allocs/op",
+            "extra": "3571318 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1682,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3580671 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 5396,
+            "unit": "ns/op\t    1600 B/op\t      35 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 16247,
+            "unit": "ns/op\t    6314 B/op\t     107 allocs/op",
+            "extra": "368530 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1527,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3945892 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1697,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3522775 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1709,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3554127 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveBoolean/happy_path",
+            "value": 9044,
+            "unit": "ns/op\t    2736 B/op\t      32 allocs/op",
+            "extra": "670606 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveString/happy_path",
+            "value": 8799,
+            "unit": "ns/op\t    2752 B/op\t      32 allocs/op",
+            "extra": "667465 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveFloat/happy_path",
+            "value": 8823,
+            "unit": "ns/op\t    2736 B/op\t      32 allocs/op",
+            "extra": "670358 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveInt/happy_path",
+            "value": 8769,
+            "unit": "ns/op\t    2736 B/op\t      32 allocs/op",
+            "extra": "676395 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveObject/happy_path",
+            "value": 10784,
+            "unit": "ns/op\t    3160 B/op\t      39 allocs/op",
+            "extra": "548070 times\n2 procs"
           }
         ]
       }
