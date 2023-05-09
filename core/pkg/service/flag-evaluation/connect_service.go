@@ -116,7 +116,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.eventingConfiguration,
 		s.metrics,
 	)
-	path, handler := schemaConnectV1.NewServiceHandler(fes)
+	path, handler := schemaConnectV1.NewServiceHandler(fes, svcConf.Options...)
 	mux.Handle(path, handler)
 
 	s.serverMtx.Lock()

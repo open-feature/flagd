@@ -1,10 +1,10 @@
 # Creating a flagd provider
 
-The provider is responsible for creating an abstraction between `flagd` and the OpenFeature SDK (for the [chosen technology](https://docs.openfeature.dev/docs/reference/technologies/)).
+The provider is responsible for creating an abstraction between `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
 
 Prerequisites:
 
-- Understanding of [general provider concepts](https://docs.openfeature.dev/docs/reference/concepts/provider/)
+- Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
 - Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../usage/flagd_providers.md))
 
 Communication with `flagd` is possible via Protobuf or REST.
@@ -146,5 +146,5 @@ Create a pull request appending the provider to the list [here](../usage/flagd_p
 
 ### Open an issue to document the provider
 
-Create an issue in docs.openfeature.dev [here](https://github.com/open-feature/docs.openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+).
+Create an issue in openfeature.dev [here](https://github.com/open-feature/openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+).
 This will ensure the provider is added to OpenFeature's website.

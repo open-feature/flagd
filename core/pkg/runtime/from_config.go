@@ -132,6 +132,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			CertPath:    config.ServiceCertPath,
 			SocketPath:  config.ServiceSocketPath,
 			CORS:        config.CORS,
+			Options:     telemetry.BuildConnectOptions(telCfg),
 		},
 		SyncImpl: iSyncs,
 	}, nil
