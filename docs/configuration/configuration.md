@@ -71,7 +71,7 @@ invoked with **HTTP GET** request.
 
 ### GRPC provider
 
-The GRPC sync provider stream flag configurations from a grpc sync provider implementation. This stream connection is ruled
+The GRPC sync provider streams flag configurations from a grpc sync provider implementation. This stream connection is ruled
 by
 the [sync service protobuf definition](https://github.com/open-feature/schemas/blob/main/protobuf/sync/v1/sync_service.proto).
 
