@@ -7,7 +7,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230317150644-afd1cc2ef580.1
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230317150644-afd1cc2ef580.1
 	github.com/bufbuild/connect-go v1.7.0
-	github.com/bufbuild/connect-opentelemetry-go v0.1.0
+	github.com/bufbuild/connect-opentelemetry-go v0.2.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
@@ -20,15 +20,15 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
-	go.opentelemetry.io/otel v1.14.0
+	go.opentelemetry.io/otel v1.15.1
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.14.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.37.0
-	go.opentelemetry.io/otel/metric v0.37.0
-	go.opentelemetry.io/otel/sdk v1.14.0
-	go.opentelemetry.io/otel/sdk/metric v0.37.0
-	go.opentelemetry.io/otel/trace v1.14.0
+	go.opentelemetry.io/otel/metric v0.38.0
+	go.opentelemetry.io/otel/sdk v1.15.1
+	go.opentelemetry.io/otel/sdk/metric v0.38.0
+	go.opentelemetry.io/otel/trace v1.15.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.8.0
 	golang.org/x/net v0.10.0
