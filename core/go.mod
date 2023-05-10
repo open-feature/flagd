@@ -13,7 +13,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/open-feature-operator v0.2.34
 	github.com/open-feature/schemas v0.2.8
-	github.com/prometheus/client_golang v1.15.0
+	github.com/prometheus/client_golang v1.15.1
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.9.0
 	github.com/rs/xid v1.5.0
