@@ -7,7 +7,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.5.3
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.9
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.12
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
@@ -49,7 +49,7 @@ require (
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-memdb v1.3.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
