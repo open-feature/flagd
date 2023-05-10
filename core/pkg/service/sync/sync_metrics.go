@@ -5,7 +5,6 @@ import (
 
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	api "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -23,7 +22,7 @@ func (s *Server) captureMetrics() error {
 
 	syncGuage, err := meter.Int64ObservableGauge(
 		"sync_active_streams",
-		instrument.WithDescription("number of open sync subscriptions"),
+		api.WithDescription("number of open sync subscriptions"),
 	)
 	if err != nil {
 		return err
