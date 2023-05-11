@@ -60,28 +60,32 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 	r.httpRequestsInflight.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
+func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
+	if err == nil {
+		r.Impressions(ctx, reason, variant, key)
+	}
+	r.Reasons(ctx, key, reason, err)
+}
+
 func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
 	r.impressions.Add(ctx,
 		1,
 		metric.WithAttributes(append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))...))
 }
 
-func (r MetricsRecorder) Reasons(ctx context.Context, reason string, err error) {
+func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string, err error) {
 	attrs := []attribute.KeyValue{
 		semconv.FeatureFlagProviderName(FlagdProviderName),
 		FeatureFlagReason(reason),
 	}
-	if err != nil {
+	if err == nil {
+		// record flag key only if evaluation is successful
+		attrs = append(attrs, semconv.FeatureFlagKey(key))
+	} else {
 		attrs = append(attrs, ExceptionType(err.Error()))
 	}
-	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
-}
 
-func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
-	if err == nil {
-		r.Impressions(ctx, reason, variant, key)
-	}
-	r.Reasons(ctx, reason, err)
+	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
 func getDurationView(svcName, viewName string, bucket []float64) msdk.View {
