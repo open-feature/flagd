@@ -119,17 +119,21 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync chan<- sync.DataSync) {
 	fs.Logger.Debug(fmt.Sprintf("Configuration %s:  %s", fs.URI, syncType.String()))
 
+	if syncType == sync.DELETE {
+		// Skip fetching and emit default state to avoid EOF errors
+		dataSync <- sync.DataSync{FlagData: defaultState, Source: fs.URI, Type: syncType}
+		return
+	}
+
 	msg := defaultState
-	if syncType != sync.DELETE {
-		m, err := fs.fetch(ctx)
-		if err != nil {
-			fs.Logger.Error(fmt.Sprintf("Error fetching %s: %s", fs.URI, err.Error()))
-		}
-		if m == "" {
-			fs.Logger.Warn(fmt.Sprintf("file %s is empty", fs.URI))
-		} else {
-			msg = m
-		}
+	m, err := fs.fetch(ctx)
+	if err != nil {
+		fs.Logger.Error(fmt.Sprintf("Error fetching %s: %s", fs.URI, err.Error()))
+	}
+	if m == "" {
+		fs.Logger.Warn(fmt.Sprintf("file %s is empty", fs.URI))
+	} else {
+		msg = m
 	}
 
 	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
