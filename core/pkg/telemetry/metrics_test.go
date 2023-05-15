@@ -158,10 +158,10 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Reasons(context.TODO(), "reason", nil)
+					rec.Reasons(context.TODO(), "keyA", "reason", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.Reasons(context.TODO(), "error", fmt.Errorf("err not found"))
+					rec.Reasons(context.TODO(), "keyB", "error", fmt.Errorf("err not found"))
 				}
 			},
 			metricsLen: 1,
