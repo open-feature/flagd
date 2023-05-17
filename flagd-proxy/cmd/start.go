@@ -63,7 +63,7 @@ var startCmd = &cobra.Command{
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 		syncStore := syncStore.NewSyncStore(ctx, logger)
-		s := syncServer.NewServer(ctx, logger, syncStore)
+		s := syncServer.NewServer(logger, syncStore)
 		cfg := service.Configuration{
 			ReadinessProbe: func() bool { return true },
 			Port:           viper.GetUint16(portFlagName),
