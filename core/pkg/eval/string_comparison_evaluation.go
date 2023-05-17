@@ -89,7 +89,7 @@ func (je *JSONEvaluator) endsWithEvaluation(values, _ interface{}) interface{} {
 func parseStringComparisonEvaluationData(values interface{}) (string, string, error) {
 	parsed, ok := values.([]interface{})
 	if !ok {
-		return "", "", errors.New("starts_with evaluation is not an array")
+		return "", "", errors.New("[start/end]s_with evaluation is not an array")
 	}
 
 	if len(parsed) != 2 {
