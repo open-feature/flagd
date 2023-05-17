@@ -25,12 +25,11 @@ type Server struct {
 	config        iservice.Configuration
 }
 
-func NewServer(ctx context.Context, logger *logger.Logger) *Server {
-	syncStore := syncStore.NewSyncStore(ctx, logger)
+func NewServer(ctx context.Context, logger *logger.Logger, store syncStore.ISyncStore) *Server {
 	return &Server{
 		handler: &handler{
 			logger:    logger,
-			syncStore: syncStore,
+			syncStore: store,
 		},
 		Logger: logger,
 	}
