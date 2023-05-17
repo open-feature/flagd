@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/store"
@@ -135,6 +137,39 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											"if": [
 											  {
 												"starts_with": [{"var": "email"}, "nope"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"email": {Kind: &structpb.Value_StringValue{
+					StringValue: "user@faas.com",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"error during parsing - return default": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"starts_with": "no-array"
 											  },
 											  "red", "green"
 											]
@@ -325,6 +360,39 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"error during parsing - return default": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"ends_with": "no-array"
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"email": {Kind: &structpb.Value_StringValue{
+					StringValue: "user@faas.com",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
 	}
 
 	const reqID = "default"
@@ -352,6 +420,90 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			if err != tt.expectedError {
 				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
 			}
+		})
+	}
+}
+
+func Test_parseStringComparisonEvaluationData(t *testing.T) {
+	type args struct {
+		values interface{}
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantProperty    string
+		wantTargetValue string
+		wantErr         assert.ErrorAssertionFunc
+	}{
+		{
+			name: "return two string values",
+			args: args{
+				values: []interface{}{"a", "b"},
+			},
+			wantProperty:    "a",
+			wantTargetValue: "b",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				assert.Nil(t, err)
+				return false
+			},
+		},
+		{
+			name: "provided object is not an array",
+			args: args{
+				values: "not-an-array",
+			},
+			wantProperty:    "",
+			wantTargetValue: "",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				assert.NotNil(t, err)
+				return true
+			},
+		},
+		{
+			name: "provided object does not have two elements",
+			args: args{
+				values: []interface{}{"a"},
+			},
+			wantProperty:    "",
+			wantTargetValue: "",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				assert.NotNil(t, err)
+				return true
+			},
+		},
+		{
+			name: "property is not a string",
+			args: args{
+				values: []interface{}{1, "b"},
+			},
+			wantProperty:    "",
+			wantTargetValue: "",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				assert.NotNil(t, err)
+				return true
+			},
+		},
+		{
+			name: "targetValue is not a string",
+			args: args{
+				values: []interface{}{"a", 1},
+			},
+			wantProperty:    "",
+			wantTargetValue: "",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				assert.NotNil(t, err)
+				return true
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseStringComparisonEvaluationData(tt.args.values)
+			if !tt.wantErr(t, err, fmt.Sprintf("parseStringComparisonEvaluationData(%v)", tt.args.values)) {
+				return
+			}
+			assert.Equalf(t, tt.wantProperty, got, "parseStringComparisonEvaluationData(%v)", tt.args.values)
+			assert.Equalf(t, tt.wantTargetValue, got1, "parseStringComparisonEvaluationData(%v)", tt.args.values)
 		})
 	}
 }

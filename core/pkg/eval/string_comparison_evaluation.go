@@ -25,7 +25,7 @@ import (
 //
 // Note that the 'starts_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
-func (je *JSONEvaluator) startsWithEvaluation(values, data interface{}) interface{} {
+func (je *JSONEvaluator) startsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
@@ -53,7 +53,7 @@ func (je *JSONEvaluator) startsWithEvaluation(values, data interface{}) interfac
 //
 // Note that the 'ends_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
-func (je *JSONEvaluator) endsWithEvaluation(values, data interface{}) interface{} {
+func (je *JSONEvaluator) endsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
