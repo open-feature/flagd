@@ -25,7 +25,7 @@ type Server struct {
 	config        iservice.Configuration
 }
 
-func NewServer(ctx context.Context, logger *logger.Logger, store syncStore.ISyncStore) *Server {
+func NewServer(logger *logger.Logger, store syncStore.ISyncStore) *Server {
 	return &Server{
 		handler: &handler{
 			logger:    logger,
