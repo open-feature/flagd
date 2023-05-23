@@ -39,7 +39,7 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 	return strings.HasPrefix(propertyValue, target)
 }
 
-// EndsWithEvaluation checks if the given property starts with a certain prefix.
+// EndsWithEvaluation checks if the given property ends with a certain prefix.
 // It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
@@ -94,21 +94,21 @@ func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) 
 func parseStringComparisonEvaluationData(values interface{}) (string, string, error) {
 	parsed, ok := values.([]interface{})
 	if !ok {
-		return "", "", errors.New("starts_with evaluation is not an array")
+		return "", "", errors.New("[start/end]s_with evaluation is not an array")
 	}
 
 	if len(parsed) != 2 {
-		return "", "", errors.New("starts_with evaluation must contain a value and a comparison target")
+		return "", "", errors.New("[start/end]s_with evaluation must contain a value and a comparison target")
 	}
 
 	property, ok := parsed[0].(string)
 	if !ok {
-		return "", "", errors.New("starts_with evaluation: property did not resolve to a string value")
+		return "", "", errors.New("[start/end]s_with evaluation: property did not resolve to a string value")
 	}
 
 	targetValue, ok := parsed[1].(string)
 	if !ok {
-		return "", "", errors.New("starts_with evaluation: target value did not resolve to a string value")
+		return "", "", errors.New("[start/end]s_with evaluation: target value did not resolve to a string value")
 	}
 
 	return property, targetValue, nil
