@@ -59,8 +59,12 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 		jsonEvalTracer: otel.Tracer("jsonEvaluator"),
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
-	jsonlogic.AddOperator("starts_with", ev.startsWithEvaluation)
-	jsonlogic.AddOperator("ends_with", ev.endsWithEvaluation)
+
+	sce := StringComparisonEvaluator{
+		Logger: ev.Logger,
+	}
+	jsonlogic.AddOperator("starts_with", sce.StartsWithEvaluation)
+	jsonlogic.AddOperator("ends_with", sce.EndsWithEvaluation)
 	return &ev
 }
 

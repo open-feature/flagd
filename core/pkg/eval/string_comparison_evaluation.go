@@ -3,10 +3,15 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"strings"
 )
 
-// startsWithEvaluation checks if the given property starts with a certain prefix.
+type StringComparisonEvaluator struct {
+	Logger *logger.Logger
+}
+
+// StartsWithEvaluation checks if the given property starts with a certain prefix.
 // It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
@@ -23,18 +28,18 @@ import (
 //
 // { "email": "user@faas.com" }
 //
-// Note that the 'starts_with'  evaluation rule must contain exactly two items, which both resolve to a
+// Note that the 'starts_with' evaluation rule must contain exactly two items, which both resolve to a
 // string value
-func (je *JSONEvaluator) startsWithEvaluation(values, _ interface{}) interface{} {
+func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
+		sce.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
 		return nil
 	}
 	return strings.HasPrefix(propertyValue, target)
 }
 
-// endsWithEvaluation checks if the given property starts with a certain prefix.
+// EndsWithEvaluation checks if the given property starts with a certain prefix.
 // It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
@@ -53,10 +58,10 @@ func (je *JSONEvaluator) startsWithEvaluation(values, _ interface{}) interface{}
 //
 // Note that the 'ends_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
-func (je *JSONEvaluator) endsWithEvaluation(values, _ interface{}) interface{} {
+func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
+		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
 		return nil
 	}
 	return strings.HasSuffix(propertyValue, target)
