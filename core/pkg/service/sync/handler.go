@@ -12,7 +12,7 @@ import (
 
 type handler struct {
 	rpc.UnimplementedFlagSyncServiceServer
-	syncStore *syncStore.SyncStore
+	syncStore syncStore.ISyncStore
 	logger    *logger.Logger
 }
 
