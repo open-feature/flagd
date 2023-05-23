@@ -34,7 +34,7 @@ func (je *JSONEvaluator) startsWithEvaluation(values, _ interface{}) interface{}
 	return strings.HasPrefix(propertyValue, target)
 }
 
-// endsWithEvaluation checks if the given property starts with a certain prefix.
+// endsWithEvaluation checks if the given property ends with a certain prefix.
 // It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
@@ -93,7 +93,7 @@ func parseStringComparisonEvaluationData(values interface{}) (string, string, er
 	}
 
 	if len(parsed) != 2 {
-		return "", "", errors.New("starts_with evaluation must contain a value and a comparison target")
+		return "", "", errors.New("[start/end]s_with evaluation must contain a value and a comparison target")
 	}
 
 	property, ok := parsed[0].(string)
