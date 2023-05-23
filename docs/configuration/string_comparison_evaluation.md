@@ -4,12 +4,6 @@ OpenFeature allows clients to pass contextual information which can then be used
 
 In some scenarios, it is desirable to use that contextual information to segment the user population further and thus return dynamic values.
 
-Look at the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) flag. The `defaultVariant` is `red`, but it contains a [targeting rule](reusable_targeting_rules.md), meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
-
-In this case, `25%` of the email addresses will receive `red`, `25%` will receive `blue`, and so on.
-
-Importantly, the evaluations are "sticky" meaning that the same `email` address will always belong to the same "bucket" and thus always receive the same color.
-
 ## StartsWith/EndsWith Evaluation: Technical Description
 
 The `starts_with`/`ends_with` operation is a custom JsonLogic operation which selects a variant based on
