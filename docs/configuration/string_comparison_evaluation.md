@@ -28,7 +28,7 @@ The `starts_with` evaluation returns a boolean, indicating whether the condition
 ]
 ```
 
-## Example
+## Example for 'starts_with' Evaluation
 
 Flags defined as such:
 
@@ -56,7 +56,7 @@ Flags defined as such:
 }
 ```
 
-will return variant `red`, if the value of the `email` property starts with `user@faas`, and the variant `green` otherwise. 
+will return variant `red`, if the value of the `email` property starts with `user@faas`, and the variant `green` otherwise.
 
 Command:
 
@@ -101,7 +101,7 @@ The `ends_with` evaluation returns a boolean, indicating whether the condition h
 ]
 ```
 
-## Example
+## Example for 'ends_with' Evaluation
 
 Flags defined as such:
 

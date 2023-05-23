@@ -3,8 +3,9 @@ package eval
 import (
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"strings"
+
+	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
 type StringComparisonEvaluator struct {
