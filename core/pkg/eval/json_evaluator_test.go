@@ -346,18 +346,22 @@ func TestResolveAllValues(t *testing.T) {
 				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case string:
 				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case float64:
 				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case interface{}:
 				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			}
 		}
 	}
