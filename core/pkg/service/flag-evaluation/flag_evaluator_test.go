@@ -904,9 +904,9 @@ func getMetricReader() (*telemetry.MetricsRecorder, metric.Reader) {
 	return telemetry.NewOTelRecorder(exp, rs, "testSvc"), exp
 }
 
-// TestFlag_Evaluation_ErrorCodes test validate error mapping from known errors to connect.
-// Code and avoid accidental changes. This is essential as SDK implementations rely on connect.
-// Code to differentiate GRPC errors vs Flag errors. For any change, we must change respective SDK changes
+// TestFlag_Evaluation_ErrorCodes test validate error mapping from known errors to connect.Code and avoid accidental
+// changes. This is essential as SDK implementations rely on connect. Code to differentiate GRPC errors vs Flag errors.
+// For any change in error codes, we must change respective SDK.
 func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 	tests := []struct {
 		err  error
