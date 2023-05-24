@@ -322,11 +322,9 @@ func errFormat(err error) error {
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.FlagDisabledErrorCode:
-		return connect.NewError(connect.CodeUnavailable, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	case model.ParseErrorCode:
 		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
-	case model.GeneralErrorCode:
+	case model.FlagDisabledErrorCode, model.GeneralErrorCode:
 		return connect.NewError(connect.CodeUnknown, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
 	}
 

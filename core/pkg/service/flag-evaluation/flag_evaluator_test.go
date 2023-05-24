@@ -903,3 +903,50 @@ func getMetricReader() (*telemetry.MetricsRecorder, metric.Reader) {
 	rs := resource.NewWithAttributes("testSchema")
 	return telemetry.NewOTelRecorder(exp, rs, "testSvc"), exp
 }
+
+// TestFlag_Evaluation_ErrorCodes test validate error mapping from known errors to connect.
+// Code and avoid accidental changes. This is essential as SDK implementations rely on connect.
+// Code to differentiate GRPC errors vs Flag errors. For any change, we must change respective SDK changes
+func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
+	tests := []struct {
+		err  error
+		code connect.Code
+	}{
+		{
+			err:  errors.New(model.FlagNotFoundErrorCode),
+			code: connect.CodeNotFound,
+		},
+		{
+			err:  errors.New(model.TypeMismatchErrorCode),
+			code: connect.CodeInvalidArgument,
+		},
+		{
+			err:  errors.New(model.ParseErrorCode),
+			code: connect.CodeDataLoss,
+		},
+		{
+			err:  errors.New(model.FlagDisabledErrorCode),
+			code: connect.CodeUnknown,
+		},
+		{
+			err:  errors.New(model.GeneralErrorCode),
+			code: connect.CodeUnknown,
+		},
+	}
+
+	for _, test := range tests {
+		err := errFormat(test.err)
+
+		var connectErr *connect.Error
+		ok := errors.As(err, &connectErr)
+
+		if !ok {
+			t.Error("formatted error is not of type connect.Error")
+		}
+
+		if connectErr.Code() != test.code {
+			t.Errorf("expected code %s, but got code %s for model error %s", test.code, connectErr.Code(),
+				test.err.Error())
+		}
+	}
+}
