@@ -50,7 +50,7 @@ type SemVerComparisonEvaluator struct {
 //	{
 //	  "if": [
 //			{
-//				"sem_ver": [{"var": "version"}, ">=" "1.0.0"]
+//				"sem_ver": [{"var": "version"}, ">=", "1.0.0"]
 //			},
 //			"red", null
 //			]
