@@ -352,6 +352,39 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"error during parsing (wrong number of items in array) - return default": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["not", "enough"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"email": {Kind: &structpb.Value_StringValue{
+					StringValue: "user@faas.com",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
 		"error during parsing (invalid property value) - return default": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
@@ -385,6 +418,39 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"error during parsing (invalid property type) - return default": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": [1.0, ">", "1.0.0"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"email": {Kind: &structpb.Value_StringValue{
+					StringValue: "user@faas.com",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
 		"error during parsing (invalid operator) - return default": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
@@ -401,6 +467,39 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", "invalid", "1.0.0"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"email": {Kind: &structpb.Value_StringValue{
+					StringValue: "user@faas.com",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"error during parsing (invalid operator type) - return default": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["1.0.0", 1, "1.0.0"]
 											  },
 											  "red", "green"
 											]
