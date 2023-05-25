@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1684895069570,
+  "lastUpdate": 1684981376519,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -31810,6 +31810,208 @@ window.BENCHMARK_DATA = {
             "value": 12443,
             "unit": "ns/op\t    3656 B/op\t      42 allocs/op",
             "extra": "444216 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "9490ed62e2fc589af8ae7ee26bfd559797a1f83c",
+          "message": "fix(deps): update module sigs.k8s.io/controller-runtime to v0.15.0 (#665)\n\n[![Mend\nRenovate](https://app.renovatebot.com/images/banner.svg)](https://renovatebot.com)\n\nThis PR contains the following updates:\n\n| Package | Type | Update | Change |\n|---|---|---|---|\n|\n[sigs.k8s.io/controller-runtime](https://togithub.com/kubernetes-sigs/controller-runtime)\n| require | minor | `v0.14.6` -> `v0.15.0` |\n\n---\n\n### Release Notes\n\n<details>\n<summary>kubernetes-sigs/controller-runtime</summary>\n\n###\n[`v0.15.0`](https://togithub.com/kubernetes-sigs/controller-runtime/releases/tag/v0.15.0)\n\n[Compare\nSource](https://togithub.com/kubernetes-sigs/controller-runtime/compare/v0.14.6...v0.15.0)\n\n### Controller Runtime v0.15\n\n> *A note from the maintainers*\n>\n> The following release is probably the largest in the history of the\nproject. Controller Runtime is a foundational piece for almost all\ncontrollers and operators and we're aware that breaking changes are\nnever an ask for our users, especially while running production\nservices.\n>\n> We take breaking changes very seriously and carefully reviewed each\none of these changes to improve the codebase, user experience, and\nfuture maintainability of the project.\n>\n> The v0.15 release is a stepping stone towards maturity.\n>\n> As always, please reach out in Slack in #controller-runtime.\n\n## Changes since v0.14.5\n\n#### :warning: Breaking Changes\n\n- Make `*http.Client` configurable and use/share the same client by\ndefault\n([#&#8203;2122](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2122))\n- When using the default Manager configuration, no immediate changes are\nneeded.\n- `client/apiutil.NewDynamicRESTMapper` signature has changed and now\nrequires an `*http.Client` as parameter.\n- `cluster.Cluster` interface requires `GetHTTPClient()` method which\nmust return an already configured, non-nil, `*http.Client` for the\nCluster. When using `cluster.New` to create Clusters, the client is\ncreated internally if not specified as an `Options` field.\n- `cluster.Options.MapperProvider` field now requires a `*rest.Config`\nand `*http.Client`.\n- Deprecate Component Configuration `config/v1alpha1` types\n([#&#8203;2149](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2149),\n[#&#8203;2200](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2200))\n- The Component Configuration package has been unmaintained for over a\nyear and is no longer actively developed. There are (currently) no plans\nto revive the package, or provide an alternative.\n- Users should migrate to a custom implementation that sets\n`Manager.Options` directly.\n- 👉 Feedback requested: removal of the deprecated types and code is\ntracked in\n[#&#8203;895](https://togithub.com/kubernetes-sigs/controller-runtime/issues/895).\n- Remove dependency injection functions\n([#&#8203;2134](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2134),\n[#&#8203;2120](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2120))\n- The package `pkg/inject` has been removed, this package contained long\ndeprecated injection functions (like `InjectScheme`, `InjectLogger`,\n`InjectConfig`, `InjectClient`, `InjectCache`, etc.).\n- The runtime injection functionality has been deprecated since\nController Runtime 0.10; all of the above fields can be passed from the\n`Manager` to structs or interfaces that need them.\n- Improve `builder` package capabilities and general UX\n([#&#8203;2135](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2135))\n- `builder.Builder.Watches` signature has changed, it now takes a\n`client.Object` instead of a `source.Source` as first argument.\n        -   For `source.Source`, use `WatchesRawSource`.\n- `builder.Builder.WatchesMetadata` has been added to simplify watching\n`PartialObjectMetadata` objects.\n- Refactor cache.Options, deprecate MultiNamespacedCacheBuilder\n([#&#8203;2157](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2157),\n[#&#8203;2166](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2166))\n- `cache.Options.Namespace` has been removed in favor of\n`cache.Options.Namespaces`, a slice.\n    -   `cache.Options.Resync` has been renamed to `SyncPeriod`.\n- `cache.Options.DefaultSelector` has been removed and split in two\nfields:\n        -   `cache.Options.DefaultLabelSelector`\n        -   `cache.Options.DefaultFieldSelector`\n- `cache.Options.DefaultTransform` was added to provide a global\ntransform function.\n- `cache.Options.UnsafeDisableDeepCopy` was added to provide a global\ntoggle to disable DeepCopy of the objects from the cache before\nreturning them to clients.\n    -   The following `[..]ByObject` field have been refactored:\n- `cache.Options.SelectorsByObject` has been removed, use\n`cache.Options.ByObject[Object].Field` and\n`cache.Options.ByObject[Object].Label`\n- `cache.Options.UnsafeDisableDeepCopyByObject` has been removed, use\n`cache.Options.ByObject[Object].UnsafeDisableDeepCopy`.\n- `cache.Options.TransformByObject` has been removed, use\n`cache.Options.ByObject[Object].Transform`.\n- `cache.ObjectAll` has been removed. This type was previously used to\nset selectors or transformation functions for every object, use the\nnewly introduced default global options instead.\n- Add context to EventHandler(s)\n([#&#8203;2139](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2139))\n- `handler.EventHandler` and `handler.Funcs` interfaces require\n`context.Context` as the first parameter for every method.\n- `handler.MapFunc` signature has changed and now requires a\n`context.Context`.\n- Add client.{GroupVersionKindFor, IsObjectNamespaced}\n([#&#8203;2136](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2136))\n- The `client.Client` interface now requires and exposes these helper\nfunctions:\n- `GroupVersionKindFor(Object)` which returns the\n`schema.GroupVersionKind` for the object.\n- `IsObjectNamespaced(Object)` which returns `true` if the object's\nGroupVersionKind is namespaced, or `false` for global ones.\n- Remove DelegatedClient, move all related options in `client.New`\n([#&#8203;2150](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2150))\n- `client.NewDelegatingClient` constructor and\n`client.NewDelegatingClientInput` struct have been removed.\n- The DelegatingClient created a Client backed by a cache, use\n`client.New` and set `client.Options.Cache` to customize the client's\ncaching behavior.\n- `cluster.NewClientFunc` has been moved to `client.NewClientFunc`.\n    -   `cluster.ClientOptions` has been removed.\n    -   `cluster.DefaultNewClient` has been removed.\n    -   `cluster.ClientBuilderWithOptions` has been removed.\n- Expose Manager.Cache/Client options, deprecate older options\n([#&#8203;2199](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2199),\n[#&#8203;2177](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2177))\n- `manager.Options.Cache` is now the preferred way to customize the\ncache options for the manager.\n- Users can also keep using `manager.Options.NewCache`, which has now\nbeen marked as a low level primitive.\n- `manager.Options.Client` is now the preferred way to customize the\nclient options for the manager.\n- Users can also keep using `manager.Options.NewClient`, which has now\nbeen marked as a low level primitive.\n- `manager.Options.SyncPeriod` has been deprecated in favor of\n`manager.Options.Cache.SyncPeriod`.\n- `manager.Options.Namespace` has been deprecated in favor of\n`manager.Options.Cache.Namespaces`.\n- `manager.Options.DryRunClient` has been deprecated in favor of\n`manager.Options.Client.DryRun`.\n- `manager.Options.ClientDisableCacheFor` has been deprecated in favor\nof `manager.Options.Client.Cache.DisableCacheFor`.\n- The following webhook server options have been deprecated, use\n`manager.WebhookServer` instead.\n        -   `manager.Options.Port`\n        -   `manager.Options.Host`\n        -   `manager.Options.CertDir`\n        -   `manager.Options.TLSOpts`\n- Remove `cache.BuilderWithOptions`\n([#&#8203;2300](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2300))\n- Add constructors for `webhook/conversion`, remove\n`webhook/admission.GetDecoder()`\n([#&#8203;2144](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2144))\n- There are two set of changes related to the webhooks and how they're\nexposed. For users using the Manager, there should be minimal to no\nrequired changes.\n- `webhook/admission/Webhook.GetDecoder()` method has been removed, it\nwas unused before and relied on runtime dependency injection.\n- `webhook/conversion.Webhook` struct has been un-exported. Users should\nuse `webhook/conversion.NewWebhookHandler` instead.\n-   `pkg/webhook/admission`:\n- Use `Result.Message` instead of `Result.Reason`\n([#&#8203;1539](https://togithub.com/kubernetes-sigs/controller-runtime/issues/1539))\n- `Validator` and `CustomValidator` interfaces have been modified to\nallow returning warnings\n([#&#8203;2014](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2014))\n- Testing: Fake client status handling\n([#&#8203;2259](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2259))\n- Added a new `WithStatusSubresource` option and pre-populating it with\n        all in-tree resources that have a status subresource\n- `Update` and `Patch` methods now don't change the status for any such\n        resource anymore\n- The status clients `Update` and `Patch` methods now only change the\nstatus\n        for any such resource\n- Remove high cardinality metrics\n([#&#8203;2217](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2217),\n[#&#8203;2298](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2298))\n    -   `rest_client_request_latency_seconds`\n    -   `rest_client_request_duration_seconds`\n    -   `rest_client_request_size_bytes`\n    -   `rest_client_response_size_bytes`\n- Allow passing a custom webhook server\n([#&#8203;2293](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2293),\n[#&#8203;2329](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2329))\n    -   The `webhook.Server` struct is now an interface\n- `webhook.NewServer` can be used to pass in and customize the default\nserver\n- Flatten fields in controller.Options\n([#&#8203;2307](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2307))\n- Update fake client deletionTimestamp behavior\n([#&#8203;2316](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2316))\n- The fake client will panic if initialized with an object that has a\nDeletionTimestamp and no finalizer\n- The fake client will silently ignore a DeletionTimestamp on an object\nin a Create request, matching the behavior of the kube-apiserver\n- Unexport delegating logger, remove async init\n([#&#8203;2317](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2317))\n- `log.DelegatingLogSink` has been unexported, this logger should never\nbe used on its own, and it's only meant to be used within\ncontroller-runtime initialization process.\n- Previously, when the `pkg/log` package was imported, there was an\n`init` function that spawned a goroutine, which set a null logger after\n30 seconds. Now this logic has been removed, and instead incorporated\ninto the delegating logger private implementation.\n- Change webhook request received / response written logs to log level 4\n([#&#8203;2334](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2334))\n- Use and offer a single dynamic lazy RESTMapper\n([#&#8203;2116](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2116),\n[#&#8203;2296](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2296))\n- The following options have been removed: `WithCustomMapper`,\n`WithExperimentalLazyMapper`, `WithLazyDiscovery`, `WithLimiter`.\n    -   The `DynamicRESTMapperOption` type has been removed.\n\n#### :sparkles: New Features\n\n- Add cross-version compatibility with client-go 1.27\n([#&#8203;2223](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2223))\n- Introduce pprof server to manager\n([#&#8203;1943](https://togithub.com/kubernetes-sigs/controller-runtime/issues/1943))\n    -   To enable, use `Manager.Options.PprofBindAddress`.\n- Added interceptor client to intercept calls to a client\n([#&#8203;2248](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2248)\n[#&#8203;2306](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2306))\n- Add `reconcile.TerminalError(...)`\n([#&#8203;2325](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2325))\n- By wrapping an error with the above package-level function, the\ncontroller won't retry the request again in an exponential backoff loop.\n- The error is logged, and the\n`controller_runtime_terminal_reconcile_errors_total` metric is\nincremented.\n\n#### :bug: Bug Fixes\n\n- Use correct context to cancel \"list and watch\" & wait for all\ninformers to complete\n([#&#8203;2121](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2121))\n- Client: use passed in Cache.DisableFor option\n([#&#8203;2303](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2303))\n- Fix race condition in channel source\n([#&#8203;2286](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2286))\n- ForceOwnership should work with subresources\n([#&#8203;2257](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2257))\n- Fix error string in CacheReader.List\n([#&#8203;2256](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2256))\n- Fix a bug in multinamespaced cache implementation\n([#&#8203;2252](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2252))\n- Allow lazy restmapper to work with CRDs created at runtime\n([#&#8203;2208](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2208))\n- Set DeleteStateUnknown in DeleteEvent when obj is\nDeletedFinalStateUnknown\n([#&#8203;2212](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2212))\n- Allow to set GracefulShutdownTimeout to -1, disabling timeouts\n([#&#8203;2169](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2169))\n- pkg/certwatcher: Start should retry for 10s when adding files\n([#&#8203;2160](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2160))\n- Don't share error concurrently in test\n([#&#8203;2158](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2158))\n\n#### :seedling: Others\n\n- Improve unstructured serialisation\n([#&#8203;2147](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2147))\n- Handle TLSOpts.GetCertificate in webhook\n([#&#8203;2291](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2291))\n- Kind source should expose type information on timeout\n([#&#8203;2290](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2290))\n- Fakeclient: Add support for evictions\n([#&#8203;2305](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2305))\n- envtest: set default webhook options for polling\n([#&#8203;2289](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2289))\n- Add client.InNamespace(\"xyz\").AsSelector()\n([#&#8203;2282](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2282))\n- Update golanci-lint script\n([#&#8203;2151](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2151))\n- Preserve unstructured object GVKs in cache.Options.ByObject\n([#&#8203;2246](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2246))\n- Don't call defaultOpts for MultiNamespaceCache twice\n([#&#8203;2234](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2234))\n- GVKForObject should handle multiple GVKs in Scheme gracefully\n([#&#8203;2192](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2192))\n- verify.sh: verify generate & modules (in CI)\n([#&#8203;2186](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2186))\n- code clean for pkg/envtest/server.go\n([#&#8203;2180](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2180))\n- Return an error if no httpClient is provided for\n`NewDynamicRESTMapper`\n([#&#8203;2178](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2178))\n- Use runtime.Unstructured interface instead of Unstructured struct\n([#&#8203;2168](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2168))\n- Return an error if no httpClient is provided\n([#&#8203;2164](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2164))\n- Return the error from rest.HTTPClientFor instead of hiding it\n([#&#8203;2161](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2161))\n- fix default value for cfg.Burst\n([#&#8203;2142](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2142))\n- Add more linters\n([#&#8203;2133](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2133))\n- Remove pkg/patterns\n([#&#8203;2132](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2132))\n- Further cleanup internal/informers\n([#&#8203;2130](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2130))\n- Simplify cache.objectTypeForListObject\n([#&#8203;2131](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2131))\n- Refactor internal cache/informers map impl\n([#&#8203;2103](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2103))\n- client/cache/client_cache.go should be called resources\n([#&#8203;2111](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2111))\n- Remove reviewers which are also approvers\n([#&#8203;2109](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2109))\n- Use HTTPClient to create the API Reader\n([#&#8203;2163](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2163))\n- Update SECURITY_CONTACTS and maintainer list\n([#&#8203;2318](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2318))\n- Update builtin webhook paths\n([#&#8203;2319](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2319))\n- Make metrics and health probe servers be Runnables\n([#&#8203;2275](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2275))\n- Revert: move health probes to runnable\n([#&#8203;2321](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2321))\n- Fix comment on MultiNamespaceCache\n([#&#8203;2323](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2323))\n- Cleanup webhook logging\n([#&#8203;2326](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2326))\n- Add certwatcher callback\n([#&#8203;2301](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2301))\n- Fix a bug in multinamespaced cache implementation\n([#&#8203;2288](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2288))\n\n#### :seedling: Dependencies\n\n- Bump Go to 1.20\n([#&#8203;2279](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2279))\n- Bump github.com/go-logr/logr from v1.2.3 to v1.2.4\n([#&#8203;2262](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2262))\n- Bump github.com/go-logr/zapr from v1.2.3 to v1.2.4\n([#&#8203;2320](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2320))\n- Bump github.com/onsi/ginkgo/v2 from v2.6.1 to v2.9.5\n([#&#8203;2123](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2123)\n[#&#8203;2155](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2155)\n[#&#8203;2194](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2194)\n[#&#8203;2205](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2205)\n[#&#8203;2224](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2224)\n[#&#8203;2233](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2233)\n[#&#8203;2251](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2251)\n[#&#8203;2311](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2311)\n[#&#8203;2328](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2328))\n- Bump github.com/onsi/gomega from v1.24.1 to v1.27.7\n([#&#8203;2106](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2106)\n[#&#8203;2137](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2137)\n[#&#8203;2156](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2156)\n[#&#8203;2206](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2206)\n[#&#8203;2227](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2227)\n[#&#8203;2232](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2232)\n[#&#8203;2260](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2260)\n[#&#8203;2340](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2340))\n- Bump github.com/prometheus/client_golang from v1.14.0 to v1.15.1\n([#&#8203;2280](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2280)\n[#&#8203;2310](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2310))\n- Bump github.com/prometheus/client_model from v0.3.0 to v0.4.0\n([#&#8203;2312](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2312))\n- Bump go.uber.org/goleak from v1.2.0 to v1.2.1\n([#&#8203;2195](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2195))\n- Bump golang.org/x/sys from v0.3.0 to v0.8.0\n([#&#8203;2124](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2124)\n[#&#8203;2225](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2225)\n[#&#8203;2270](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2270)\n[#&#8203;2309](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2309))\n- Bump k8s.io dependencies to 0.27.2\n([#&#8203;2145](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2145)\n[#&#8203;2330](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2330)\n[#&#8203;2333](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2333))\n- Bump k8s.io/klog/v2 from v2.80.1 to v2.90.1\n([#&#8203;2138](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2138)\n[#&#8203;2226](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2226))\n- Bump sigs.k8s.io/controller-tools to v0.11.3 and apidiff to v0.5.0\n([#&#8203;2187](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2187))\n- Use Go 1.19 in golangci-lint action\n([#&#8203;2272](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2272))\n- Bump golangci-lint to v1.52.1\n([#&#8203;2188](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2188)\n[#&#8203;2284](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2284))\n- Bump kubebuilder-release-tools to v0.3.0\n([#&#8203;2126](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2126))\n\n:book: Additionally, there have been 4 contributions to our\ndocumentation and book.\n([#&#8203;2203](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2203),\n[#&#8203;2201](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2201),\n[#&#8203;2162](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2162),\n[#&#8203;2170](https://togithub.com/kubernetes-sigs/controller-runtime/issues/2170))\n\n*Thanks to all our contributors!* 😊\n\n</details>\n\n---\n\n### Configuration\n\n📅 **Schedule**: Branch creation - At any time (no schedule defined),\nAutomerge - At any time (no schedule defined).\n\n🚦 **Automerge**: Enabled.\n\n♻ **Rebasing**: Whenever PR becomes conflicted, or you tick the\nrebase/retry checkbox.\n\n🔕 **Ignore**: Close this PR and you won't be reminded about this update\nagain.\n\n---\n\n- [ ] <!-- rebase-check -->If you want to rebase/retry this PR, check\nthis box\n\n---\n\nThis PR has been generated by [Mend\nRenovate](https://www.mend.io/free-developer-tools/renovate/). View\nrepository job log\n[here](https://app.renovatebot.com/dashboard#github/open-feature/flagd).\n\n<!--renovate-debug:eyJjcmVhdGVkSW5WZXIiOiIzNS45OC40IiwidXBkYXRlZEluVmVyIjoiMzUuOTguNCIsInRhcmdldEJyYW5jaCI6Im1haW4ifQ==-->\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2023-05-24T14:55:39Z",
+          "url": "https://github.com/open-feature/flagd/commit/9490ed62e2fc589af8ae7ee26bfd559797a1f83c"
+        },
+        "date": 1684981373550,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 3329,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "1777278 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 23429,
+            "unit": "ns/op\t    5025 B/op\t      83 allocs/op",
+            "extra": "254271 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 2476,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2363217 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 2852,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2275915 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 2721,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2248204 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 2512,
+            "unit": "ns/op\t     336 B/op\t       9 allocs/op",
+            "extra": "2417606 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 21326,
+            "unit": "ns/op\t    5049 B/op\t      85 allocs/op",
+            "extra": "281160 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 2168,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2722598 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 2274,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2582206 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 2377,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2636209 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticFloatFlag",
+            "value": 2212,
+            "unit": "ns/op\t     320 B/op\t       9 allocs/op",
+            "extra": "2302992 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_targetingFloatFlag",
+            "value": 18879,
+            "unit": "ns/op\t    5049 B/op\t      85 allocs/op",
+            "extra": "346005 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticObjectFlag",
+            "value": 2058,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2863626 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_missingFlag",
+            "value": 2298,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2719674 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_disabledFlag",
+            "value": 2282,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2797338 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 2109,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2810204 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 17931,
+            "unit": "ns/op\t    5033 B/op\t      83 allocs/op",
+            "extra": "327614 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1981,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3024873 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 2218,
+            "unit": "ns/op\t     352 B/op\t       9 allocs/op",
+            "extra": "2758657 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 2378,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2716359 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 8292,
+            "unit": "ns/op\t    1600 B/op\t      35 allocs/op",
+            "extra": "703844 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 27238,
+            "unit": "ns/op\t    6314 B/op\t     107 allocs/op",
+            "extra": "226536 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 2142,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2688912 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 2171,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2387696 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 2186,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2731155 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveBoolean/happy_path",
+            "value": 13178,
+            "unit": "ns/op\t    3232 B/op\t      35 allocs/op",
+            "extra": "447429 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveString/happy_path",
+            "value": 13457,
+            "unit": "ns/op\t    3248 B/op\t      35 allocs/op",
+            "extra": "471313 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveFloat/happy_path",
+            "value": 13663,
+            "unit": "ns/op\t    3232 B/op\t      35 allocs/op",
+            "extra": "400179 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveInt/happy_path",
+            "value": 13751,
+            "unit": "ns/op\t    3232 B/op\t      35 allocs/op",
+            "extra": "449708 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveObject/happy_path",
+            "value": 16707,
+            "unit": "ns/op\t    3656 B/op\t      42 allocs/op",
+            "extra": "330764 times\n2 procs"
           }
         ]
       }
