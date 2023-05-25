@@ -3,9 +3,10 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"golang.org/x/mod/semver"
-	"strings"
 )
 
 type SemVerOperator string
