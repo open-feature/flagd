@@ -19,7 +19,7 @@ const (
 	Greater        SemVerOperator = ">"
 )
 
-func (svo SemVerOperator) Compare(v1, v2 string) (bool, error) {
+func (svo SemVerOperator) compare(v1, v2 string) (bool, error) {
 	cmpRes := semver.Compare(v1, v2)
 	switch svo {
 	case Less:
@@ -43,7 +43,7 @@ type SemVerComparisonEvaluator struct {
 	Logger *logger.Logger
 }
 
-// semVerEvaluation checks if the given property matches a semantic versioning condition.
+// SemVerEvaluation checks if the given property matches a semantic versioning condition.
 // It returns 'true', if the value of the given property meets the condition, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
@@ -64,13 +64,13 @@ type SemVerComparisonEvaluator struct {
 // 1. Target property: this needs which both resolve to a semantic versioning string
 // 2. Operator: One of the following: '=', '!=', '>', '<', '>=', '<='
 // 3. Target value: this needs which both resolve to a semantic versioning string
-func (je *JSONEvaluator) semVerEvaluation(values, _ interface{}) interface{} {
+func (je *SemVerComparisonEvaluator) SemVerEvaluation(values, _ interface{}) interface{} {
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse sem_ver evaluation data: %v", err))
 		return nil
 	}
-	res, err := operator.Compare(actualVersion, targetVersion)
+	res, err := operator.compare(actualVersion, targetVersion)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("sem_ver evaluation: %v", err))
 		return nil
@@ -84,7 +84,7 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", errors.New("sem_ver evaluation is not an array")
 	}
 
-	if len(parsed) != 2 {
+	if len(parsed) != 3 {
 		return "", "", "", errors.New("sem_ver evaluation must contain a value, an operator and a comparison target")
 	}
 

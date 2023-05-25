@@ -65,6 +65,10 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 	}
 	jsonlogic.AddOperator("starts_with", sce.StartsWithEvaluation)
 	jsonlogic.AddOperator("ends_with", sce.EndsWithEvaluation)
+
+	sve := SemVerComparisonEvaluator{Logger: ev.Logger}
+	jsonlogic.AddOperator("sem_ver", sve.SemVerEvaluation)
+
 	return &ev
 }
 
