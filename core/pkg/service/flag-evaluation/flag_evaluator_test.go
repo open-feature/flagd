@@ -926,7 +926,7 @@ func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 		},
 		{
 			err:  errors.New(model.FlagDisabledErrorCode),
-			code: connect.CodeUnknown,
+			code: connect.CodeNotFound,
 		},
 		{
 			err:  errors.New(model.GeneralErrorCode),
