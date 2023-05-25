@@ -341,6 +341,11 @@ func TestResolveAllValues(t *testing.T) {
 		}
 		vals := evaluator.ResolveAllValues(context.TODO(), reqID, apStruct)
 		for _, val := range vals {
+			// disabled flag must be ignored from bulk evaluation
+			if val.FlagKey == DisabledFlag {
+				t.Errorf("disabled flag '%s' is present in evaluation results", DisabledFlag)
+			}
+
 			switch vT := val.Value.(type) {
 			case bool:
 				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, apStruct)
