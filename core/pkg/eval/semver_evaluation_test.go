@@ -1,12 +1,13 @@
 package eval
 
 import (
+	"testing"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
-	"testing"
 )
 
 func TestSemVerOperator_Compare(t *testing.T) {
