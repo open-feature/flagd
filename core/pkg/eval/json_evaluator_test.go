@@ -341,23 +341,32 @@ func TestResolveAllValues(t *testing.T) {
 		}
 		vals := evaluator.ResolveAllValues(context.TODO(), reqID, apStruct)
 		for _, val := range vals {
+			// disabled flag must be ignored from bulk evaluation
+			if val.FlagKey == DisabledFlag {
+				t.Errorf("disabled flag '%s' is present in evaluation results", DisabledFlag)
+			}
+
 			switch vT := val.Value.(type) {
 			case bool:
 				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case string:
 				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case float64:
 				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case interface{}:
 				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, apStruct)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
+				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			}
 		}
 	}
