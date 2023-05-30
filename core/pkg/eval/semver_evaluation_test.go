@@ -162,6 +162,46 @@ func TestSemVerOperator_Compare(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "matching major version",
+			svo:  MatchMajor,
+			args: args{
+				v1: "v1.3.4",
+				v2: "v1.5.3",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "not matching major version",
+			svo:  MatchMajor,
+			args: args{
+				v1: "v2.1.1",
+				v2: "v1.1.1",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "matching minor version",
+			svo:  MatchMinor,
+			args: args{
+				v1: "v1.3.4",
+				v2: "v1.3.1",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "not matching minor version",
+			svo:  MatchMinor,
+			args: args{
+				v1: "v2.2.1",
+				v2: "v2.1.1",
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

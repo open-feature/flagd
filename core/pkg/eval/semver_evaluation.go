@@ -18,6 +18,8 @@ const (
 	LessOrEqual    SemVerOperator = "<="
 	GreaterOrEqual SemVerOperator = ">="
 	Greater        SemVerOperator = ">"
+	MatchMajor     SemVerOperator = "^"
+	MatchMinor     SemVerOperator = "~"
 )
 
 func (svo SemVerOperator) compare(v1, v2 string) (bool, error) {
@@ -35,6 +37,14 @@ func (svo SemVerOperator) compare(v1, v2 string) (bool, error) {
 		return cmpRes == +1 || cmpRes == 0, nil
 	case Greater:
 		return cmpRes == +1, nil
+	case MatchMinor:
+		v1MajorMinor := semver.MajorMinor(v1)
+		v2MajorMinor := semver.MajorMinor(v2)
+		return semver.Compare(v1MajorMinor, v2MajorMinor) == 0, nil
+	case MatchMajor:
+		v1Major := semver.Major(v1)
+		v2Major := semver.Major(v2)
+		return semver.Compare(v1Major, v2Major) == 0, nil
 	default:
 		return false, errors.New("invalid operator")
 	}
@@ -63,7 +73,7 @@ type SemVerComparisonEvaluator struct {
 //
 // Note that the 'sem_ver' evaluation rule must contain exactly three items:
 // 1. Target property: this needs which both resolve to a semantic versioning string
-// 2. Operator: One of the following: '=', '!=', '>', '<', '>=', '<='
+// 2. Operator: One of the following: '=', '!=', '>', '<', '>=', '<=', '~', '^'
 // 3. Target value: this needs which both resolve to a semantic versioning string
 func (je *SemVerComparisonEvaluator) SemVerEvaluation(values, _ interface{}) interface{} {
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)

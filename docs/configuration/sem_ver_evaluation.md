@@ -15,7 +15,7 @@ The `sem_ver` evaluation can be added as part of a targeting definition.
 Note that the 'sem_ver' evaluation rule must contain exactly three items:
 
 1. Target property: this needs which both resolve to a semantic versioning string
-2. Operator: One of the following: `=`, `!=`, `>`, `<`, `>=`, `<=`
+2. Operator: One of the following: `=`, `!=`, `>`, `<`, `>=`, `<=`, `~`, `^`
 3. Target value: this needs which both resolve to a semantic versioning string
 
 The `sem_ver` evaluation returns a boolean, indicating whether the condition has been met.
