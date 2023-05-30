@@ -183,7 +183,6 @@ Evaluation context can be accessed in targeting rules using the `var` property f
 | Or          | Logic: `{"or" : [ true, false ]}`<br>Result: true<br><br>Logic: `{"or" : [ false, false ]}`<br>Result: false                                                                           |
 | And         | Logic: `{"and" : [ true, false ]}`<br>Result: false<br><br>Logic: `{"and" : [ true, true ]}`<br>Result: true                                                                           |
 
-
 #### Operators
 
 | Operator               | Description                                                          | Context type | Example                                                                                                                                              |
