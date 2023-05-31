@@ -36,12 +36,22 @@ flagd offers a functionality called targeting rules which rely on the incoming c
 
 flagd supports [fractional evaluation](configuration/fractional_evaluation.md) meaning an incoming property in the context can be sub-divided at "evaluation time" into "buckets".
 
+[This page](configuration/fractional_evaluation.md) explains the concept and describes the technical implementation in detail.
+
 ## Starts/Ends With Evaluation
 
 flagd supports [starts/ends_with evaluation](configuration/string_comparison_evaluation.md) meaning an incoming property in the context can be used
 to determine whether a certain variant should be returned based on if its value starts or ends with a certain string.
 
-[This page](configuration/fractional_evaluation.md) explains the concept and describes the technical implementation in detail.
+[This page](configuration/string_comparison_evaluation.md) explains the concept and describes the technical implementation in detail.
+
+## SemVer Evaluation
+
+flagd supports [sem_ver evaluation](configuration/sem_ver_evaluation.md) meaning an incoming property
+representing a semantic version in the context can be used to determine whether a certain variant should be returned
+based on if the version meets a certain criteria.
+
+[This page](configuration/sem_ver_evaluation.md) explains the concept and describes the technical implementation in detail.
 
 ## Flag Merging
 
