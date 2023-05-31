@@ -208,7 +208,7 @@ Evaluation context can be accessed in targeting rules using the `var` property f
 
 | Conditional           | Description                               | Example                                                                                                                                                                      |
 | --------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fractional evaluation | A deterministic percentage-based rollout  | A complete example can be found [here](./reusable_targeting_rules.md)                                                                                                        |
+| Fractional evaluation | A deterministic percentage-based rollout  | A complete example can be found [here](./fractional_evaluation.md)                                                                                                        |
 | Starts with           | Attribute starts with the specified value | Logic: `{ "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: true<br><br>Logic: `{ "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: false                       |
 | Ends with             | Attribute ends with the specified value   | Logic: `{ "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: true<br><br>Logic: `{ "ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: false |
 
