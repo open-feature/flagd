@@ -326,6 +326,138 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"versions and major-version operator provided - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["1.2.3", "^", "1.5.6"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"version": {Kind: &structpb.Value_StringValue{
+					StringValue: "1.0.0",
+				}},
+			}},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions and minor-version operator provided - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["1.2.3", "~", "1.2.6"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"version": {Kind: &structpb.Value_StringValue{
+					StringValue: "1.0.0",
+				}},
+			}},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions and major-version operator provided - no match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["2.2.3", "^", "1.2.3"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"version": {Kind: &structpb.Value_StringValue{
+					StringValue: "1.0.0",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions and minor-version operator provided - no match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": ["1.3.3", "~", "1.2.6"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"version": {Kind: &structpb.Value_StringValue{
+					StringValue: "1.0.0",
+				}},
+			}},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
 		"resolve target property using nested operation - no match": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
