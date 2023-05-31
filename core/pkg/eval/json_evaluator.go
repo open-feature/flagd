@@ -126,6 +126,11 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 	var err error
 	allFlags := je.store.GetAll()
 	for flagKey, flag := range allFlags {
+		if flag.State == Disabled {
+			// ignore evaluation of disabled flag
+			continue
+		}
+
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:

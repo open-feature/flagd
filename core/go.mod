@@ -17,7 +17,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.9.0
 	github.com/rs/xid v1.5.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
 	go.opentelemetry.io/otel v1.16.0
