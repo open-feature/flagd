@@ -11,7 +11,7 @@
       - [Evaluation Context](#evaluation-context)
       - [Conditions](#conditions)
       - [Operators](#operators)
-    - [Functions](#functions)
+      - [Functions](#functions)
   - [Shared evaluators](#shared-evaluators)
   - [Examples](#examples)
 
@@ -220,7 +220,7 @@ Operators are used to take action on, or compare properties retrieved from the c
 | In                     | Attribute is in an array of strings                                  | string       | Logic: `{ "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `{ "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
 | Not it                 | Attribute is not in an array of strings                              | string       | Logic: `{ "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `{ "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
 
-### Functions
+#### Functions
 
 Functions can be used to create more advanced targeting rules.
 They are purpose built extensions to JSON logic in order to support popular feature flag use cases.
