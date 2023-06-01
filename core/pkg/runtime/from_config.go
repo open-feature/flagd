@@ -106,7 +106,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	s.FlagSources = sources
 
 	// derive evaluator
-	evaluator := setupJsonEvaluator(logger, s)
+	evaluator := setupJSONEvaluator(logger, s)
 
 	// derive service
 	connectService := flageval.NewConnectService(
@@ -139,7 +139,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}, nil
 }
 
-func setupJsonEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluator {
+func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluator {
 	evaluator := eval.NewJSONEvaluator(
 		logger,
 		s,

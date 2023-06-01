@@ -301,9 +301,9 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 	}
 }
 
-func Test_setupJsonEvaluator(t *testing.T) {
+func Test_setupJSONEvaluator(t *testing.T) {
 	lg := logger.NewLogger(nil, false)
 
-	je := setupJsonEvaluator(lg, store.NewFlags())
+	je := setupJSONEvaluator(lg, store.NewFlags())
 	require.NotNil(t, je)
 }
