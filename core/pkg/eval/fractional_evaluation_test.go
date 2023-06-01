@@ -282,7 +282,14 @@ func TestFractionalEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+			log := logger.NewLogger(nil, false)
+			je := NewJSONEvaluator(
+				log,
+				store.NewFlags(),
+				WithEvaluator([]string{"fractionalEvaluation"},
+					NewFractionalEvaluator(log).FractionalEvaluation,
+				),
+			)
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](
@@ -415,7 +422,14 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	reqID := "test"
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
-			je := JSONEvaluator{store: &store.Flags{Flags: tt.flags.Flags}}
+			log := logger.NewLogger(nil, false)
+			je := NewJSONEvaluator(
+				log,
+				&store.Flags{Flags: tt.flags.Flags},
+				WithEvaluator([]string{"fractionalEvaluation"},
+					NewFractionalEvaluator(log).FractionalEvaluation,
+				),
+			)
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, err := resolve[string](
 					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,

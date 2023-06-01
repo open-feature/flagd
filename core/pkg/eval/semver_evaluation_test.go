@@ -727,7 +727,15 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+			log := logger.NewLogger(nil, false)
+			je := NewJSONEvaluator(
+				log,
+				store.NewFlags(),
+				WithEvaluator(
+					[]string{"sem_ver"},
+					NewSemVerComparisonEvaluator(log).SemVerEvaluation,
+				),
+			)
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](
