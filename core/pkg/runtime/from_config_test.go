@@ -1,10 +1,11 @@
 package runtime
 
 import (
-	"github.com/open-feature/flagd/core/pkg/store"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/stretchr/testify/require"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 )
