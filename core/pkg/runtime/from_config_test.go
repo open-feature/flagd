@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
 
@@ -297,4 +299,11 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_setupJsonEvaluator(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+
+	je := setupJsonEvaluator(lg, store.NewFlags())
+	require.NotNil(t, je)
 }
