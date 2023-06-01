@@ -3,8 +3,9 @@ package eval
 import (
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"math"
+
+	"github.com/open-feature/flagd/core/pkg/logger"
 
 	"github.com/zeebo/xxh3"
 )

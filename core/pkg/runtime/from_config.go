@@ -106,26 +106,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	s.FlagSources = sources
 
 	// derive evaluator
-	evaluator := eval.NewJSONEvaluator(
-		logger,
-		s,
-		eval.WithEvaluator(
-			[]string{"fractionalEvaluation"},
-			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
-		),
-		eval.WithEvaluator(
-			[]string{"starts_with"},
-			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
-		),
-		eval.WithEvaluator(
-			[]string{"ends_with"},
-			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
-		),
-		eval.WithEvaluator(
-			[]string{"sem_ver"},
-			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
-		),
-	)
+	evaluator := setupJsonEvaluator(logger, s)
+
 	// derive service
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
@@ -155,6 +137,30 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		},
 		SyncImpl: iSyncs,
 	}, nil
+}
+
+func setupJsonEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluator {
+	evaluator := eval.NewJSONEvaluator(
+		logger,
+		s,
+		eval.WithEvaluator(
+			[]string{"fractionalEvaluation"},
+			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
+		),
+		eval.WithEvaluator(
+			[]string{"starts_with"},
+			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
+		),
+		eval.WithEvaluator(
+			[]string{"ends_with"},
+			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
+		),
+		eval.WithEvaluator(
+			[]string{"sem_ver"},
+			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
+		),
+	)
+	return evaluator
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig
