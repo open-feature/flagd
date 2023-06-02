@@ -176,7 +176,7 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 }
 ```
 
-The evaluation context can be accessed in targeting rules using the `var` property followed the evaluation context property name.
+The evaluation context can be accessed in targeting rules using the `var` operation followed the evaluation context property name.
 
 | Description                                                    | Example                                       |
 | -------------------------------------------------------------- | --------------------------------------------- |
