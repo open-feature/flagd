@@ -144,19 +144,19 @@ func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluat
 		logger,
 		s,
 		eval.WithEvaluator(
-			[]string{"fractionalEvaluation"},
+			"fractionalEvaluation",
 			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
 		),
 		eval.WithEvaluator(
-			[]string{"starts_with"},
+			"starts_with",
 			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
 		),
 		eval.WithEvaluator(
-			[]string{"ends_with"},
+			"ends_with",
 			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
 		),
 		eval.WithEvaluator(
-			[]string{"sem_ver"},
+			"sem_ver",
 			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
 		),
 	)

@@ -47,11 +47,9 @@ const (
 
 type JSONEvaluatorOption func(je *JSONEvaluator)
 
-func WithEvaluator(aliases []string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
+func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
 	return func(_ *JSONEvaluator) {
-		for _, alias := range aliases {
-			jsonlogic.AddOperator(alias, evalFunc)
-		}
+		jsonlogic.AddOperator(name, evalFunc)
 	}
 }
 

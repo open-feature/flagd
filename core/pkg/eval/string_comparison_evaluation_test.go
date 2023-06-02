@@ -196,7 +196,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				log,
 				store.NewFlags(),
 				WithEvaluator(
-					[]string{"starts_with"},
+					"starts_with",
 					NewStringComparisonEvaluator(log).StartsWithEvaluation,
 				),
 			)
@@ -410,7 +410,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				log,
 				store.NewFlags(),
 				WithEvaluator(
-					[]string{"ends_with"},
+					"ends_with",
 					NewStringComparisonEvaluator(log).EndsWithEvaluation,
 				),
 			)

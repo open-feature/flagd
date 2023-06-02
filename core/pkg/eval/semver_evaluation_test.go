@@ -732,7 +732,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				log,
 				store.NewFlags(),
 				WithEvaluator(
-					[]string{"sem_ver"},
+					"sem_ver",
 					NewSemVerComparisonEvaluator(log).SemVerEvaluation,
 				),
 			)

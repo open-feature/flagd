@@ -285,7 +285,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			je := NewJSONEvaluator(
 				log,
 				store.NewFlags(),
-				WithEvaluator([]string{"fractionalEvaluation"},
+				WithEvaluator(
+					"fractionalEvaluation",
 					NewFractionalEvaluator(log).FractionalEvaluation,
 				),
 			)
@@ -425,7 +426,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			je := NewJSONEvaluator(
 				log,
 				&store.Flags{Flags: tt.flags.Flags},
-				WithEvaluator([]string{"fractionalEvaluation"},
+				WithEvaluator(
+					"fractionalEvaluation",
 					NewFractionalEvaluator(log).FractionalEvaluation,
 				),
 			)
