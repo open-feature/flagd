@@ -7,15 +7,13 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
-
-	"go.opentelemetry.io/otel/propagation"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
