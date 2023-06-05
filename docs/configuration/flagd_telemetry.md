@@ -11,9 +11,9 @@
       * [prometheus.yml](#prometheusyml)
 <!-- TOC -->
 
-flagd provides telemetry data out of the box. These telemetry data is compatible with OpenTelemetry.
+flagd provides telemetry data out of the box. This telemetry data is compatible with OpenTelemetry.
 
-By default, Prometheus exporter is used for metrics and metrics can be accessed from `/metrics` endpoint. For example,
+By default, the Prometheus exporter is used for metrics which can be accessed via the `/metrics` endpoint. For example,
 with default startup flags, metrics are exposed at `http://localhost:8014/metrics`.
 
 Given below is the current implementation overview of flagd telemetry internals,
@@ -28,6 +28,7 @@ flagd expose following metrics,
 * `http_response_size_bytes`
 * `http_requests_inflight`
 * `impressions`
+* `reasons`
 
 ## Traces
 

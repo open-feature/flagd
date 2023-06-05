@@ -38,6 +38,21 @@ flagd supports [fractional evaluation](configuration/fractional_evaluation.md) m
 
 [This page](configuration/fractional_evaluation.md) explains the concept and describes the technical implementation in detail.
 
+## Starts/Ends With Evaluation
+
+flagd supports [starts/ends_with evaluation](configuration/string_comparison_evaluation.md) meaning an incoming property in the context can be used
+to determine whether a certain variant should be returned based on if its value starts or ends with a certain string.
+
+[This page](configuration/string_comparison_evaluation.md) explains the concept and describes the technical implementation in detail.
+
+## SemVer Evaluation
+
+flagd supports [sem_ver evaluation](configuration/sem_ver_evaluation.md) meaning an incoming property
+representing a semantic version in the context can be used to determine whether a certain variant should be returned
+based on if the version meets a certain criteria.
+
+[This page](configuration/sem_ver_evaluation.md) explains the concept and describes the technical implementation in detail.
+
 ## Flag Merging
 
 flagd can retrieve flags from multiple sources simultaneously. [This page](configuration/flag_configuration_merging.md) describes the de-duplication and merging rules that occur if multiple identical flags are found from different flag sources.
@@ -59,4 +74,4 @@ This section documents any behavior of flagd which may seem unexpected:
 
 ## Still Stuck?
 
-[Speak to the OpenFeature community](https://docs.openfeature.dev/community) and someone will help.
+[Speak to the OpenFeature community](https://openfeature.dev/community) and someone will help.

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@c078ea33917ab8cfa5300e48f4b7e6b16606aede # v3
+      - uses: google-github-actions/release-please-action@51ee8ae2605bd5ce1cfdcc5938684908f1cd9f69 # v3
         id: release
         with:
           release-type: "go"
@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "$RELEASE_PLEASE_OUTPUT"
       - name: Determine what should be published
-        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
         id: items-to-publish
         env:
           CHANGED_ITEMS: "${{ steps.release.outputs.paths_released }}"
@@ -76,7 +76,7 @@ jobs:
           ref: ${{ env.TAG }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        uses: docker/login-action@40891eba8c2bcd1309b07ba8b11232f313e86779
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -84,7 +84,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@3f6690a76cbcbe44da6bac853d66df365ab3af27
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
@@ -119,7 +119,7 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919
+        uses: sigstore/cosign-installer@1a22e17968bb5f9192b82a39d3ffb322627f5169
 
       - name: Sign the image
         run: |
@@ -134,7 +134,7 @@ jobs:
         run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
-        uses: anchore/sbom-action@422cb34a0f8b599678c41b21163ea6088edb2624 # v0
+        uses: anchore/sbom-action@4d571ad1038a9cc29d676154ef265ab8f9027042 # v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
@@ -166,7 +166,7 @@ jobs:
         with:
           ref: ${{ env.TAG }}
       - name: Set up Go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4
+        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
       - name: Download cyclonedx-gomod
@@ -199,14 +199,29 @@ jobs:
         run: |
           env GOOS=linux GOARCH=386 go build -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      # Windows artifacts use .zip archive
       - name: build windows x86_64
         run: |
           env GOOS=windows GOARCH=amd64 go build -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.tar.gz ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.zip ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build windows i386
         run: |
           env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.tar.gz ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      # Bundle licenses
+      - name: Install go-licenses
+        run: go install github.com/google/go-licenses@latest
+      - name: Build license extraction locations
+        id: license-files
+        run: |
+          echo "LICENSE_FOLDER=${{ format('{0}-third-party-license', matrix.path) }}" >> $GITHUB_OUTPUT
+          echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
+      - name: Run go-licenses for module ${{ matrix.path }}
+        run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
+        continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
+      - name: Bundle license extracts
+        run: tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
+      # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
@@ -214,6 +229,8 @@ jobs:
           files: |
             ./sbom.xml
             ./*.tar.gz
+            ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz
+            ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
   homebrew:
     name: Bump homebrew-core formula
     needs: release-please

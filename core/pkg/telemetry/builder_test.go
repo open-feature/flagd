@@ -106,6 +106,33 @@ func TestBuildSpanProcessor(t *testing.T) {
 	}
 }
 
+func TestBuildConnectOptions(t *testing.T) {
+	tests := []struct {
+		name        string
+		cfg         Config
+		optionCount int
+	}{
+		{
+			name:        "No options for empty/default configurations",
+			cfg:         Config{},
+			optionCount: 0,
+		},
+		{
+			name: "Connect option is set when telemetry target is set",
+			cfg: Config{
+				CollectorTarget: "localhost:8080",
+			},
+			optionCount: 1,
+		},
+	}
+
+	for _, test := range tests {
+		options := BuildConnectOptions(test.cfg)
+
+		require.Len(t, options, test.optionCount, "option count mismatch for test %s", test.name)
+	}
+}
+
 func TestBuildResourceFor(t *testing.T) {
 	svc := "testSvc"
 	svcVersion := "0.0.1"

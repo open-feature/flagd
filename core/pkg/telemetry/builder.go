@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bufbuild/connect-go"
+	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
+
+	"go.opentelemetry.io/otel/propagation"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -49,14 +54,14 @@ func BuildMetricsRecorder(
 	return NewOTelRecorder(mReader, rsc, svcName), nil
 }
 
-// BuildTraceProvider build and register the trace provider for the caller runtime. This method attempt to register
-// a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to provide the grpc
-// collector target. Providing empty target results in skipping provider registration. This results in tracers having
-// NoopTracerProvider performing no action
+// BuildTraceProvider build and register the trace provider and propagator for the caller runtime. This method
+// attempt to register a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to
+// provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
+// This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
 		logger.Warn("skipping trace provider setup as collector target is not set." +
-			" Traces will use NoopTracerProvider provider")
+			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
 		return nil
 	}
 
@@ -76,8 +81,22 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 		trace.WithResource(res))
 
 	otel.SetTracerProvider(provider)
-
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return nil
+}
+
+// BuildConnectOptions is a helper to build connect options based on telemetry configurations
+func BuildConnectOptions(cfg Config) []connect.HandlerOption {
+	options := []connect.HandlerOption{}
+
+	// add interceptor if configuration is available for collector
+	if cfg.CollectorTarget != "" {
+		options = append(options, connect.WithInterceptors(
+			otelconnect.NewInterceptor(otelconnect.WithTrustRemote()),
+		))
+	}
+
+	return options
 }
 
 // buildMetricReader builds a metric reader based on provided configurations

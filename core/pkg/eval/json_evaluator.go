@@ -10,6 +10,16 @@ import (
 	"strconv"
 	"strings"
 
+	"go.opentelemetry.io/otel/codes"
+
+	"go.opentelemetry.io/otel/attribute"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/sync"
+
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
@@ -54,6 +64,16 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 		jsonEvalTracer: otel.Tracer("jsonEvaluator"),
 	}
 	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
+
+	sce := StringComparisonEvaluator{
+		Logger: ev.Logger,
+	}
+	jsonlogic.AddOperator("starts_with", sce.StartsWithEvaluation)
+	jsonlogic.AddOperator("ends_with", sce.EndsWithEvaluation)
+
+	sve := SemVerComparisonEvaluator{Logger: ev.Logger}
+	jsonlogic.AddOperator("sem_ver", sve.SemVerEvaluation)
+
 	return &ev
 }
 
@@ -68,29 +88,40 @@ func (je *JSONEvaluator) GetState() (string, error) {
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
-		"setState",
-		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)))
+		"flagSync",
+		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
+		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.Type.String())))
 	defer span.End()
 
 	var newFlags Flags
+
 	err := je.configToFlags(payload.FlagData, &newFlags)
 	if err != nil {
+		span.SetStatus(codes.Error, "flagSync error")
+		span.RecordError(err)
 		return nil, false, err
 	}
 
+	var events map[string]interface{}
+	var reSync bool
+
 	switch payload.Type {
 	case sync.ALL:
-		n, resync := je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
-		return n, resync, nil
+		events, reSync = je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
 	case sync.ADD:
-		return je.store.Add(je.Logger, payload.Source, newFlags.Flags), false, nil
+		events = je.store.Add(je.Logger, payload.Source, newFlags.Flags)
 	case sync.UPDATE:
-		return je.store.Update(je.Logger, payload.Source, newFlags.Flags), false, nil
+		events = je.store.Update(je.Logger, payload.Source, newFlags.Flags)
 	case sync.DELETE:
-		return je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags), true, nil
+		events = je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags)
 	default:
 		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
+
+	// Number of events correlates to the number of flags changed through this sync, record it
+	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
+
+	return events, reSync, nil
 }
 
 func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, context *structpb.Struct) []AnyValue {
@@ -104,6 +135,11 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 	var err error
 	allFlags := je.store.GetAll()
 	for flagKey, flag := range allFlags {
+		if flag.State == Disabled {
+			// ignore evaluation of disabled flag
+			continue
+		}
+
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:

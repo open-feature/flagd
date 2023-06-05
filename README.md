@@ -49,6 +49,8 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     ```
 
     Or use docker:
+    _Note - In Windows, use WSL system for both the file location and Docker runtime. Mixed file systems does not
+    work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479)_
 
     ```sh
     docker run \
@@ -73,7 +75,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       --uri file:./example_flags.flagd.json
     ```
 
-    Or use docker:
+    Or use docker ( _Note - In Windows, this requires WSL system for both the file location and Docker runtime_):
 
     ```sh
     docker run \
@@ -96,6 +98,14 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     ```sh
     curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
+    ```
+
+   For Windows we recommend using a [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) terminal.
+   Otherwise, use the following with `cmd`:
+
+    ```sh
+    set json={"flagKey":"myStringFlag","context":{}}
+    curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveString"
     ```
 
     Result:
@@ -127,7 +137,7 @@ Further documentation including flagd configuration options, fractional evaluati
 Interested in contributing? Great, we'd love your help! To get started, take a look at the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 We also hold regular community meetings that are open to everyone.
-Check the [OpenFeature community page](https://docs.openfeature.dev/community/) for all the ways to get involved.
+Check the [OpenFeature community page](https://openfeature.dev/community/) for all the ways to get involved.
 
 Thanks so much to our contributors.
 

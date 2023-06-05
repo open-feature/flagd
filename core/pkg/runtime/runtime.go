@@ -46,7 +46,7 @@ func (r *Runtime) Start() error {
 		for {
 			select {
 			case data := <-dataSync:
-				// resync events are triggered when a delete occurs during flag merges in the store
+				// resync events are triggered when a delete occurs during flag merges in the store
 				// resync events may trigger further resync events, however for a flag to be deleted from the store
 				// its source must match, preventing the opportunity for resync events to snowball
 				if resyncRequired := r.updateWithNotify(data); resyncRequired {
