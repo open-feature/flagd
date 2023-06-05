@@ -10,9 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/open-feature/flagd/core/pkg/store"
-	"github.com/open-feature/flagd/core/pkg/sync"
-
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
