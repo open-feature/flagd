@@ -10,13 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"go.opentelemetry.io/otel/codes"
-
-	"go.opentelemetry.io/otel/attribute"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 
@@ -29,6 +22,7 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"

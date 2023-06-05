@@ -4,13 +4,10 @@ import (
 	"context"
 	"time"
 
-	"go.opentelemetry.io/otel/sdk/instrumentation"
-
-	"go.opentelemetry.io/otel/sdk/resource"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	msdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/resource"
