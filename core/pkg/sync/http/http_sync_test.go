@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/core/pkg/sync"
-
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	syncmock "github.com/open-feature/flagd/core/pkg/sync/http/mock"
 )
 

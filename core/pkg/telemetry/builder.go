@@ -7,19 +7,16 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
-
-	"go.opentelemetry.io/otel/propagation"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/sdk/trace"
-
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -121,13 +118,13 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	// Non-blocking, insecure grpc connection
 	conn, err := grpc.DialContext(ctx, cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
 
 	// Otel metric exporter
 	otelExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
 	}
 
 	return metric.NewPeriodicReader(otelExporter, metric.WithInterval(exportInterval)), nil
@@ -138,21 +135,29 @@ func buildOtlpExporter(ctx context.Context, collectorTarget string) (*otlptrace.
 	// Non-blocking, insecure grpc connection
 	conn, err := grpc.DialContext(ctx, collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
 
 	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
-	return otlptrace.New(ctx, traceClient)
+	exporter, err := otlptrace.New(ctx, traceClient)
+	if err != nil {
+		return nil, fmt.Errorf("error starting otel exporter: %w", err)
+	}
+	return exporter, nil
 }
 
 // buildDefaultMetricReader provides the default metric reader
 func buildDefaultMetricReader() (metric.Reader, error) {
-	return prometheus.New()
+	p, err := prometheus.New()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create default metric reader: %w", err)
+	}
+	return p, nil
 }
 
 // buildResourceFor builds a resource identifier with set of resources and service key as attributes
 func buildResourceFor(ctx context.Context, serviceName string, serviceVersion string) (*resource.Resource, error) {
-	return resource.New(
+	r, err := resource.New(
 		ctx,
 		resource.WithOS(),
 		resource.WithHost(),
@@ -162,4 +167,8 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 			semconv.ServiceNameKey.String(serviceName),
 			semconv.ServiceVersionKey.String(serviceVersion)),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create resource identifier: %w", err)
+	}
+	return r, nil
 }

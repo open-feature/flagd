@@ -9,12 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/sdk/resource"
-
-	"github.com/open-feature/flagd/core/pkg/telemetry"
-
-	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
-
 	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/golang/mock/gomock"
@@ -22,8 +16,11 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
+	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"

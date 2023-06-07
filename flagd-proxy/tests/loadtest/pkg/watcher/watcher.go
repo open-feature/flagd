@@ -35,7 +35,7 @@ func (w *Watcher) StartWatcher(ctx context.Context) error {
 		Selector: fmt.Sprintf("file:%s", w.targetFile),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create stream: %w", err)
 	}
 
 	ready := false
@@ -45,7 +45,7 @@ func (w *Watcher) StartWatcher(ctx context.Context) error {
 			if err == io.EOF {
 				return nil
 			}
-			return err
+			return fmt.Errorf("unable to read payload from stream: %w", err)
 		}
 		w.Stream <- msg.State
 		if !ready {

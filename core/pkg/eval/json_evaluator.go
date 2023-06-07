@@ -10,21 +10,17 @@ import (
 	"strconv"
 	"strings"
 
-	"go.opentelemetry.io/otel/codes"
-
-	"go.opentelemetry.io/otel/attribute"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
-	"github.com/open-feature/flagd/core/pkg/store"
-	"github.com/open-feature/flagd/core/pkg/sync"
-
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/sync"
 	schema "github.com/open-feature/schemas/json"
 	"github.com/xeipuuv/gojsonschema"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -73,7 +69,11 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 }
 
 func (je *JSONEvaluator) GetState() (string, error) {
-	return je.store.String()
+	s, err := je.store.String()
+	if err != nil {
+		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
+	}
+	return s, nil
 }
 
 func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
@@ -339,7 +339,7 @@ func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
 
 	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
 	if err != nil {
-		return err
+		return fmt.Errorf("error validating json schema: %w", err)
 	} else if !result.Valid() {
 		return fmt.Errorf("JSON schema validation failed: %s", buildErrorString(result.Errors()))
 	}

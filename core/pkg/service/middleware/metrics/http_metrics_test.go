@@ -8,13 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"go.opentelemetry.io/otel/sdk/resource"
-
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap/zapcore"
 )
 

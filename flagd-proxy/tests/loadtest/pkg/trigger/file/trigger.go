@@ -1,6 +1,9 @@
 package trigger
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 type FilePathTrigger struct {
 	config FilePathTriggerConfig
@@ -21,19 +24,21 @@ func NewFilePathTrigger(config FilePathTriggerConfig) *FilePathTrigger {
 func (f *FilePathTrigger) Setup() error {
 	dat, err := os.ReadFile(f.config.StartFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read start file at %s: %w", f.config.StartFile, err)
 	}
-	return os.WriteFile(f.config.TargetFile, dat, 0o600)
+	if err = os.WriteFile(f.config.TargetFile, dat, 0o600); err != nil {
+		return fmt.Errorf("unable to write start file: %w", err)
+	}
+	return nil
 }
 
 func (f *FilePathTrigger) Update() error {
 	dat, err := os.ReadFile(f.config.EndFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read end file at %s: %w", f.config.EndFile, err)
 	}
-	return os.WriteFile(f.config.TargetFile, dat, 0o600)
-}
-
-func Cleanup(filename string) error {
-	return os.Remove(filename)
+	if err = os.WriteFile(f.config.TargetFile, dat, 0o600); err != nil {
+		return fmt.Errorf("unable to write end file: %w", err)
+	}
+	return nil
 }

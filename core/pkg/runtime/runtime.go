@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	msync "sync"
@@ -25,7 +26,7 @@ type Runtime struct {
 	mu msync.Mutex
 }
 
-// nolint: funlen
+//nolint:funlen
 func (r *Runtime) Start() error {
 	if r.Service == nil {
 		return errors.New("no service set")
@@ -53,7 +54,11 @@ func (r *Runtime) Start() error {
 						p := s
 						go func() {
 							g.Go(func() error {
-								return p.ReSync(gCtx, dataSync)
+								err := p.ReSync(gCtx, dataSync)
+								if err != nil {
+									return fmt.Errorf("error resyncing sources: %w", err)
+								}
+								return nil
 							})
 						}()
 					}
@@ -66,23 +71,32 @@ func (r *Runtime) Start() error {
 	// Init sync providers
 	for _, s := range r.SyncImpl {
 		if err := s.Init(gCtx); err != nil {
-			return err
+			return fmt.Errorf("sync provider Init returned error: %w", err)
 		}
 	}
 	// Start sync provider
 	for _, s := range r.SyncImpl {
 		p := s
 		g.Go(func() error {
-			return p.Sync(gCtx, dataSync)
+			if err := p.Sync(gCtx, dataSync); err != nil {
+				return fmt.Errorf("sync provider returned error: %w", err)
+			}
+			return nil
 		})
 	}
 	g.Go(func() error {
 		// Readiness probe rely on the runtime
 		r.ServiceConfig.ReadinessProbe = r.isReady
-		return r.Service.Serve(gCtx, r.ServiceConfig)
+		if err := r.Service.Serve(gCtx, r.ServiceConfig); err != nil {
+			return fmt.Errorf("error returned from serving flag evaluation service: %w", err)
+		}
+		return nil
 	})
 	<-gCtx.Done()
-	return g.Wait()
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("errgroup closed with error: %w", err)
+	}
+	return nil
 }
 
 func (r *Runtime) isReady() bool {

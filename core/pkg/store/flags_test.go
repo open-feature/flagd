@@ -3,9 +3,8 @@ package store
 import (
 	"testing"
 
-	"github.com/open-feature/flagd/core/pkg/model"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/stretchr/testify/require"
 )
 
