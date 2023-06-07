@@ -191,7 +191,15 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+			log := logger.NewLogger(nil, false)
+			je := NewJSONEvaluator(
+				log,
+				store.NewFlags(),
+				WithEvaluator(
+					"starts_with",
+					NewStringComparisonEvaluator(log).StartsWithEvaluation,
+				),
+			)
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](
@@ -397,7 +405,16 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			je := NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+			log := logger.NewLogger(nil, false)
+			je := NewJSONEvaluator(
+				log,
+				store.NewFlags(),
+				WithEvaluator(
+					"ends_with",
+					NewStringComparisonEvaluator(log).EndsWithEvaluation,
+				),
+			)
+
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, err := resolve[string](

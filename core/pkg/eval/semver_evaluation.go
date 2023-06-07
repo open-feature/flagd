@@ -54,6 +54,10 @@ type SemVerComparisonEvaluator struct {
 	Logger *logger.Logger
 }
 
+func NewSemVerComparisonEvaluator(log *logger.Logger) *SemVerComparisonEvaluator {
+	return &SemVerComparisonEvaluator{Logger: log}
+}
+
 // SemVerEvaluation checks if the given property matches a semantic versioning condition.
 // It returns 'true', if the value of the given property meets the condition, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
