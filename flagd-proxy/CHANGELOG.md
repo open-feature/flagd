@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.3...flagd-proxy/v0.2.4) (2023-06-07)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.3 ([#634](https://github.com/open-feature/flagd/issues/634)) ([1bc7e99](https://github.com/open-feature/flagd/commit/1bc7e99473bc0c7bcacfb40030562e556d3895d6))
+
+
+### 🧹 Chore
+
+* update otel dependencies ([#649](https://github.com/open-feature/flagd/issues/649)) ([2114e41](https://github.com/open-feature/flagd/commit/2114e41c38951247866c0b408e5f933282902e70))
+
+
+### ✨ New Features
+
+* telemetry improvements ([#653](https://github.com/open-feature/flagd/issues/653)) ([ea02cba](https://github.com/open-feature/flagd/commit/ea02cba24bde982d55956fe54de1e8f27226bfc6))
+
+
+### 🔄 Refactoring
+
+* introduce additional linting rules + fix discrepancies ([#616](https://github.com/open-feature/flagd/issues/616)) ([aef0b90](https://github.com/open-feature/flagd/commit/aef0b9042dcbe5b3f9a7e97960b27366fe50adfe))
+* introduce isyncstore interface ([#660](https://github.com/open-feature/flagd/issues/660)) ([c0e2fa0](https://github.com/open-feature/flagd/commit/c0e2fa00736d46db98f72114a449b2e2bf998e3d))
+
 ## [0.2.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.2...flagd-proxy/v0.2.3) (2023-05-04)
 
 
