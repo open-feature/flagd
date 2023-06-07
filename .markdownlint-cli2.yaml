@@ -8,6 +8,7 @@ config:
       - details
       - summary
       - img
+      - br
   github-admonition: true
   max-one-sentence-per-line: true
 
