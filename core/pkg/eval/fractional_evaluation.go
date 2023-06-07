@@ -6,7 +6,6 @@ import (
 	"math"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-
 	"github.com/zeebo/xxh3"
 )
 

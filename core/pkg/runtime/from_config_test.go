@@ -4,10 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
-
-	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
 func TestParseSource(t *testing.T) {
