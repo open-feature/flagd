@@ -46,7 +46,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 		<-gCtx.Done()
 		if s.server != nil {
 			if err := s.server.Shutdown(gCtx); err != nil {
-				return err
+				return fmt.Errorf("error shutting down flag evaluation server: %w", err)
 			}
 		}
 		return nil
@@ -55,7 +55,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 		<-gCtx.Done()
 		if s.metricsServer != nil {
 			if err := s.metricsServer.Shutdown(gCtx); err != nil {
-				return err
+				return fmt.Errorf("error shutting down metrics server: %w", err)
 			}
 		}
 		return nil
@@ -64,7 +64,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 
 	err := g.Wait()
 	if err != nil {
-		return err
+		return fmt.Errorf("errgroup closed with error: %w", err)
 	}
 	return nil
 }
@@ -75,7 +75,7 @@ func (s *Server) startServer() error {
 	address := fmt.Sprintf(":%d", s.config.Port)
 	lis, err = net.Listen("tcp", address)
 	if err != nil {
-		return err
+		return fmt.Errorf("error setting up listener for address %s: %w", address, err)
 	}
 	grpcServer := grpc.NewServer()
 	rpc.RegisterFlagSyncServiceServer(grpcServer, s.handler)
@@ -83,7 +83,7 @@ func (s *Server) startServer() error {
 	if err := grpcServer.Serve(
 		lis,
 	); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+		return fmt.Errorf("error returned from grpc server: %w", err)
 	}
 
 	return nil
@@ -112,7 +112,7 @@ func (s *Server) startMetricsServer() error {
 		}
 	})
 	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+		return fmt.Errorf("error returned from metrics server: %w", err)
 	}
 	return nil
 }

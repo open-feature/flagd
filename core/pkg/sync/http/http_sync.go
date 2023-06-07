@@ -113,7 +113,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating request for url %s: %w", url, err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -125,7 +125,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	resp, err := hs.Client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error calling endpoint %s: %w", url, err)
 	}
 	defer func() {
 		err = resp.Body.Close()
@@ -136,7 +136,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read body to bytes: %w", err)
 	}
 
 	return body, nil

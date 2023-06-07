@@ -63,11 +63,11 @@ func (s *syncBuilderMock) SyncFromURI(_ string, _ *logger.Logger) (isync.ISync, 
 	return s.mock, s.initError
 }
 
-func newSyncHandler() (*syncHandler, interface{}) {
+func newSyncHandler() (*syncHandler, string) {
 	coreDataSyncChan := make(chan isync.DataSync, 1)
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
-	key := struct{}{}
+	key := "key"
 
 	return &syncHandler{
 		dataSync: coreDataSyncChan,

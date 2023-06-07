@@ -57,7 +57,7 @@ func (h *Handler) Profile(ctx context.Context, configs []TestConfig) ([]Profilin
 	out := []ProfilingResults{}
 	for _, config := range configs {
 		if err := h.trigger.Setup(); err != nil {
-			return []ProfilingResults{}, err
+			return []ProfilingResults{}, fmt.Errorf("unable to setup trigger: %w", err)
 		}
 		results := []TestResult{}
 		for i := 1; i <= config.Repeats; i++ {
@@ -173,7 +173,10 @@ func (h *Handler) runTest(ctx context.Context, watchers int) TestResult {
 func (h *Handler) writeFile(results []ProfilingResults) error {
 	resB, err := json.MarshalIndent(results, "", "    ")
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to marshal profiling results: %w", err)
 	}
-	return os.WriteFile(h.config.OutFile, resB, 0o600)
+	if err = os.WriteFile(h.config.OutFile, resB, 0o600); err != nil {
+		return fmt.Errorf("unable to write output file %s: %w", h.config.OutFile, err)
+	}
+	return nil
 }

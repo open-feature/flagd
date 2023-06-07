@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"sync"
 
 	"go.uber.org/zap"
@@ -188,7 +189,11 @@ func NewZapLogger(level zapcore.Level, logFormat string) (*zap.Logger, error) {
 		},
 		DisableCaller: false,
 	}
-	return cfg.Build()
+	l, err := cfg.Build()
+	if err != nil {
+		return nil, fmt.Errorf("unable to build logger from config: %w", err)
+	}
+	return l, nil
 }
 
 // NewLogger returns the logging wrapper for a given *zap.logger.

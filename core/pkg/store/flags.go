@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 
@@ -61,7 +60,7 @@ func (f *Flags) String() (string, error) {
 	defer f.mx.RUnlock()
 	bytes, err := json.Marshal(f)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to marshal flags: %w", err)
 	}
 
 	return string(bytes), nil

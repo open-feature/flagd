@@ -23,7 +23,7 @@ func NewClient(config Config) (syncv1.FlagSyncServiceClient, error) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create client connection: %w", err)
 	}
 	return syncv1.NewFlagSyncServiceClient(conn), nil
 }

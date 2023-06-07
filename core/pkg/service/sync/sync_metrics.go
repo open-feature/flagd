@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	api "go.opentelemetry.io/otel/metric"
@@ -15,7 +16,7 @@ const (
 func (s *Server) captureMetrics() error {
 	exporter, err := prometheus.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create prometheus exporter: %w", err)
 	}
 	provider := metric.NewMeterProvider(metric.WithReader(exporter))
 	meter := provider.Meter(serviceName)
@@ -25,7 +26,7 @@ func (s *Server) captureMetrics() error {
 		api.WithDescription("number of open sync subscriptions"),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create active subscription metric gauge: %w", err)
 	}
 
 	_, err = meter.RegisterCallback(func(_ context.Context, o api.Observer) error {
@@ -33,7 +34,7 @@ func (s *Server) captureMetrics() error {
 		return nil
 	}, syncGuage)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to register active subscription metric callback: %w", err)
 	}
 
 	return nil
