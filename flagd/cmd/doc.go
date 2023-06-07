@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra/doc"
@@ -15,5 +16,8 @@ func GenerateDoc(path string) error {
 	filePrepender := func(filename string) string {
 		return "<!-- markdownlint-disable-file -->\n"
 	}
-	return doc.GenMarkdownTreeCustom(rootCmd, path, filePrepender, linkHandler)
+	if err := doc.GenMarkdownTreeCustom(rootCmd, path, filePrepender, linkHandler); err != nil {
+		return fmt.Errorf("error generating docs: %w", err)
+	}
+	return nil
 }

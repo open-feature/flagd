@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.opentelemetry.io/otel/codes"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/open-feature/flagd/core/pkg/eval"
@@ -19,6 +13,10 @@ import (
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/rs/xid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -302,7 +300,7 @@ func resolve[T constraints](
 
 	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
-		return err
+		return fmt.Errorf("error setting response result: %w", err)
 	}
 
 	return evalErrFormatted

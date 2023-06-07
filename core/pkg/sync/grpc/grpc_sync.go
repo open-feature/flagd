@@ -7,13 +7,11 @@ import (
 	msync "sync"
 	"time"
 
-	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
-
 	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	"google.golang.org/grpc"
 )
 
@@ -58,14 +56,16 @@ type Sync struct {
 func (g *Sync) Init(ctx context.Context) error {
 	tCredentials, err := g.CredentialBuilder.Build(g.Secure, g.CertPath)
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error building transport credentials: %s", err.Error()))
+		err := fmt.Errorf("error building transport credentials: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 
 	// Derive reusable client connection
 	rpcCon, err := grpc.DialContext(ctx, g.URI, grpc.WithTransportCredentials(tCredentials))
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("error initiating grpc client connection: %s", err.Error()))
+		err := fmt.Errorf("error initiating grpc client connection: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 
@@ -78,7 +78,8 @@ func (g *Sync) Init(ctx context.Context) error {
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
 	if err != nil {
-		g.Logger.Error(fmt.Sprintf("fetching all flags: %s", err.Error()))
+		err = fmt.Errorf("error fetching all flags: %w", err)
+		g.Logger.Error(err.Error())
 		return err
 	}
 	dataSync <- sync.DataSync{
@@ -97,14 +98,14 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
 	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to sync flags: %w", err)
 	}
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)
 	if err == nil {
 		// This should not happen as handleFlagSync expects to return with an error
-		return err
+		return nil
 	}
 
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
@@ -137,15 +138,15 @@ func (g *Sync) connectWithRetry(
 	for {
 		var sleep time.Duration
 		if iteration >= backOffLimit {
-			sleep = constantBackOffDelay
+			sleep = constantBackOffDelay * time.Second
 		} else {
 			iteration++
-			sleep = time.Duration(math.Pow(backOffBase, float64(iteration)))
+			sleep = time.Duration(math.Pow(backOffBase, float64(iteration))) * time.Second
 		}
 
 		// Block the next connection attempt and check the context
 		select {
-		case <-time.After(sleep * time.Second):
+		case <-time.After(sleep):
 			break
 		case <-ctx.Done():
 			// context done means we shall exit
@@ -175,7 +176,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 	for {
 		data, err := stream.Recv()
 		if err != nil {
-			return err
+			return fmt.Errorf("error receiving payload from stream: %w", err)
 		}
 
 		switch data.State {
@@ -213,6 +214,8 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 			g.Logger.Debug("received a delete payload")
 		case v1.SyncState_SYNC_STATE_PING:
 			g.Logger.Debug("received server ping")
+		case v1.SyncState_SYNC_STATE_UNSPECIFIED:
+			g.Logger.Debug("received unspecified state")
 		default:
 			g.Logger.Debug(fmt.Sprintf("received unknown state: %s", data.State.String()))
 		}

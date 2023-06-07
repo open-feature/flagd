@@ -62,12 +62,12 @@ func GetClients() (client.Reader, dynamic.Interface, error) {
 
 	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("unable to create readClient: %w", err)
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("unable to create dynamicClient: %w", err)
 	}
 	return readClient, dynamicClient, nil
 }
@@ -75,7 +75,7 @@ func GetClients() (client.Reader, dynamic.Interface, error) {
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fetch, err := k.fetch(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to fetch flag configuration: %w", err)
 	}
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
 	return nil
@@ -86,11 +86,11 @@ func (k *Sync) Init(_ context.Context) error {
 
 	k.namespace, k.crdName, err = parseURI(k.URI)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to parse uri %s: %w", k.URI, err)
 	}
 
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		return err
+		return fmt.Errorf("unable to v1alpha1 types to scheme: %w", err)
 	}
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
@@ -112,7 +112,8 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
 	fetch, err := k.fetch(ctx)
 	if err != nil {
-		k.logger.Error(fmt.Sprintf("error with the initial fetch: %s", err.Error()))
+		err = fmt.Errorf("error with the initial fetch: %w", err)
+		k.logger.Error(err.Error())
 		return err
 	}
 
@@ -180,7 +181,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	// first check the store - avoid overloading API
 	item, exist, err := k.informer.GetStore().GetByKey(k.URI)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get %s from store: %w", k.URI, err)
 	}
 
 	if exist {
@@ -200,7 +201,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 		Namespace: k.namespace,
 	}, &ff)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to fetch FeatureFlagConfiguration %s/%s: %w", k.namespace, k.crdName, err)
 	}
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
@@ -307,7 +308,7 @@ func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
 	var ffObj v1alpha1.FeatureFlagConfiguration
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to convert unstructured to v1alpha1.FeatureFlagConfiguration: %w", err)
 	}
 
 	return &ffObj, nil
@@ -332,8 +333,14 @@ func k8sClusterConfig() (*rest.Config, error) {
 
 	if cfg != "" {
 		clusterConfig, err = clientcmd.BuildConfigFromFlags("", cfg)
+		if err != nil {
+			err = fmt.Errorf("error building cluster config from flags: %w", err)
+		}
 	} else {
 		clusterConfig, err = rest.InClusterConfig()
+		if err != nil {
+			err = fmt.Errorf("error fetch cluster config: %w", err)
+		}
 	}
 
 	if err != nil {

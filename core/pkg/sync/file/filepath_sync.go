@@ -9,11 +9,10 @@ import (
 	"strings"
 	msync "sync"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"gopkg.in/yaml.v3"
 )
 
 type Sync struct {
@@ -38,12 +37,11 @@ func (fs *Sync) Init(_ context.Context) error {
 	fs.Logger.Info("Starting filepath sync notifier")
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating filepath watcher: %w", err)
 	}
 	fs.watcher = w
-	err = fs.watcher.Add(fs.URI)
-	if err != nil {
-		return err
+	if err = fs.watcher.Add(fs.URI); err != nil {
+		return fmt.Errorf("error adding watcher %s: %w", fs.URI, err)
 	}
 	return nil
 }
@@ -149,7 +147,7 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	}
 	rawFile, err := os.ReadFile(fs.URI)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error reading file %s: %w", fs.URI, err)
 	}
 
 	switch fs.fileType {
