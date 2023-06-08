@@ -170,7 +170,7 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
       - name: Download cyclonedx-gomod
-        uses: CycloneDX/gh-gomod-generate-sbom@d4aee0cf5133055dbd98899978246c10c18c440f # v1
+        uses: CycloneDX/gh-gomod-generate-sbom@efc74245d6802c8cefd925620515442756c70d8f # v2
         with:
           version: v1
       - name: setup for builds
