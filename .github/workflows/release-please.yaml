@@ -119,7 +119,7 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@1a22e17968bb5f9192b82a39d3ffb322627f5169
+        uses: sigstore/cosign-installer@871cdc754496eb3792209f6e81422fac01b793b4
 
       - name: Sign the image
         run: |
