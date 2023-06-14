@@ -22,7 +22,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 var regBrace *regexp.Regexp
@@ -115,7 +114,7 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 	return events, reSync, nil
 }
 
-func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, context *structpb.Struct) []AnyValue {
+func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveAll")
 	defer span.End()
 
@@ -175,7 +174,7 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 }
 
 func (je *JSONEvaluator) ResolveBooleanValue(
-	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
+	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value bool,
 	variant string,
 	reason string,
@@ -190,7 +189,7 @@ func (je *JSONEvaluator) ResolveBooleanValue(
 }
 
 func (je *JSONEvaluator) ResolveStringValue(
-	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
+	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value string,
 	variant string,
 	reason string,
@@ -205,7 +204,7 @@ func (je *JSONEvaluator) ResolveStringValue(
 }
 
 func (je *JSONEvaluator) ResolveFloatValue(
-	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
+	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value float64,
 	variant string,
 	reason string,
@@ -220,7 +219,7 @@ func (je *JSONEvaluator) ResolveFloatValue(
 	return
 }
 
-func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
+func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value int64,
 	variant string,
 	reason string,
@@ -238,7 +237,7 @@ func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flag
 }
 
 func (je *JSONEvaluator) ResolveObjectValue(
-	ctx context.Context, reqID string, flagKey string, context *structpb.Struct) (
+	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value map[string]any,
 	variant string,
 	reason string,
@@ -252,8 +251,8 @@ func (je *JSONEvaluator) ResolveObjectValue(
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
 }
 
-func resolve[T constraints](reqID string, key string, context *structpb.Struct,
-	variantEval func(string, string, *structpb.Struct) (string, string, error),
+func resolve[T constraints](reqID string, key string, context map[string]any,
+	variantEval func(string, string, map[string]any) (string, string, error),
 	variants map[string]any) (
 	value T,
 	variant string,
@@ -278,7 +277,7 @@ func resolve[T constraints](reqID string, key string, context *structpb.Struct,
 func (je *JSONEvaluator) evaluateVariant(
 	reqID string,
 	flagKey string,
-	context *structpb.Struct,
+	context map[string]any,
 ) (variant string, reason string, err error) {
 	flag, ok := je.store.Get(flagKey)
 	if !ok {

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type AnyValue struct {
@@ -37,29 +36,29 @@ type IEvaluator interface {
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value bool, variant string, reason string, err error)
+		context map[string]any) (value bool, variant string, reason string, err error)
 	ResolveStringValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value string, variant string, reason string, err error)
+		context map[string]any) (value string, variant string, reason string, err error)
 	ResolveIntValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value int64, variant string, reason string, err error)
+		context map[string]any) (value int64, variant string, reason string, err error)
 	ResolveFloatValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value float64, variant string, reason string, err error)
+		context map[string]any) (value float64, variant string, reason string, err error)
 	ResolveObjectValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context *structpb.Struct) (value map[string]any, variant string, reason string, err error)
+		context map[string]any) (value map[string]any, variant string, reason string, err error)
 	ResolveAllValues(
 		ctx context.Context,
 		reqID string,
-		context *structpb.Struct) (values []AnyValue)
+		context map[string]any) (values []AnyValue)
 }

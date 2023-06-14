@@ -16,7 +16,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const InvalidFlags = `{
@@ -336,11 +335,8 @@ func TestResolveAllValues(t *testing.T) {
 	}
 	const reqID = "default"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		vals := evaluator.ResolveAllValues(context.TODO(), reqID, apStruct)
+
+		vals := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
 		for _, val := range vals {
 			// disabled flag must be ignored from bulk evaluation
 			if val.FlagKey == DisabledFlag {
@@ -349,22 +345,22 @@ func TestResolveAllValues(t *testing.T) {
 
 			switch vT := val.Value.(type) {
 			case bool:
-				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case string:
-				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case float64:
-				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case interface{}:
-				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, apStruct)
+				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
@@ -395,11 +391,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
@@ -434,13 +426,9 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	}
 	reqID := "test"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			b.Fatal(err)
-		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -478,11 +466,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -518,13 +502,9 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	}
 	reqID := "test"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			b.Fatal(err)
-		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -562,11 +542,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -602,13 +578,9 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	}
 	reqID := "test"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			b.Fatal(err)
-		}
 		b.Run(fmt.Sprintf("test: %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -646,11 +618,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -686,13 +654,9 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	}
 	reqID := "test"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			b.Fatal(err)
-		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -730,11 +694,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			t.Fatal(err)
-		}
-		val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, apStruct)
+		val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -773,13 +733,9 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 	reqID := "test"
 	for _, test := range tests {
-		apStruct, err := structpb.NewStruct(test.context)
-		if err != nil {
-			b.Fatal(err)
-		}
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, apStruct)
+				val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {

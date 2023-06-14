@@ -6,7 +6,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestFractionalEvaluation(t *testing.T) {
@@ -58,7 +57,7 @@ func TestFractionalEvaluation(t *testing.T) {
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
-		context         *structpb.Struct
+		context         map[string]any
 		expectedValue   string
 		expectedVariant string
 		expectedReason  string
@@ -67,11 +66,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		"test@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test@faas.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -79,11 +76,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		"test2@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test2@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test2@faas.com",
+			},
 			expectedVariant: "yellow",
 			expectedValue:   "#FFFF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -91,11 +86,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		"test3@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test3@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test3@faas.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -103,11 +96,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		"test4@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test4@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test4@faas.com",
+			},
 			expectedVariant: "blue",
 			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
@@ -154,11 +145,9 @@ func TestFractionalEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test4@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test4@faas.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -200,7 +189,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				},
 			},
 			flagKey:         "headerColor",
-			context:         &structpb.Struct{},
+			context:         map[string]any{},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
@@ -230,11 +219,9 @@ func TestFractionalEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "foo@foo.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "foo@foo.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
@@ -268,11 +255,9 @@ func TestFractionalEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "foo@foo.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "foo@foo.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
@@ -356,7 +341,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
-		context         *structpb.Struct
+		context         map[string]any
 		expectedValue   string
 		expectedVariant string
 		expectedReason  string
@@ -365,11 +350,9 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		"test@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test@faas.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -377,11 +360,9 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		"test2@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test2@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test2@faas.com",
+			},
 			expectedVariant: "yellow",
 			expectedValue:   "#FFFF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -389,11 +370,9 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		"test3@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test3@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test3@faas.com",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -401,11 +380,9 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		"test4@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "test4@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "test4@faas.com",
+			},
 			expectedVariant: "blue",
 			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
