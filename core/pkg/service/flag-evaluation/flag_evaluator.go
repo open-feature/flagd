@@ -48,10 +48,8 @@ func (s *FlagEvaluationService) ResolveAll(
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
 	reqID := xid.New().String()
 	defer s.logger.ClearFields(reqID)
-
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
-
 	res := &schemaV1.ResolveAllResponse{
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}

@@ -335,7 +335,6 @@ func TestResolveAllValues(t *testing.T) {
 	}
 	const reqID = "default"
 	for _, test := range tests {
-
 		vals := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
 		for _, val := range vals {
 			// disabled flag must be ignored from bulk evaluation
