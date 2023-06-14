@@ -5,18 +5,27 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/zeebo/xxh3"
 )
+
+type FractionalEvaluator struct {
+	Logger *logger.Logger
+}
 
 type fractionalEvaluationDistribution struct {
 	variant    string
 	percentage int
 }
 
-func (je *JSONEvaluator) fractionalEvaluation(values, data interface{}) interface{} {
+func NewFractionalEvaluator(logger *logger.Logger) *FractionalEvaluator {
+	return &FractionalEvaluator{Logger: logger}
+}
+
+func (fe *FractionalEvaluator) FractionalEvaluation(values, data interface{}) interface{} {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))
+		fe.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
 	}
 

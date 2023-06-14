@@ -106,7 +106,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	s.FlagSources = sources
 
 	// derive evaluator
-	evaluator := eval.NewJSONEvaluator(logger, s)
+	evaluator := setupJSONEvaluator(logger, s)
+
 	// derive service
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
@@ -136,6 +137,30 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		},
 		SyncImpl: iSyncs,
 	}, nil
+}
+
+func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluator {
+	evaluator := eval.NewJSONEvaluator(
+		logger,
+		s,
+		eval.WithEvaluator(
+			"fractionalEvaluation",
+			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
+		),
+		eval.WithEvaluator(
+			"starts_with",
+			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
+		),
+		eval.WithEvaluator(
+			"ends_with",
+			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
+		),
+		eval.WithEvaluator(
+			"sem_ver",
+			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
+		),
+	)
+	return evaluator
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig

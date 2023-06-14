@@ -44,7 +44,15 @@ const (
 	Disabled = "DISABLED"
 )
 
-func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
+type JSONEvaluatorOption func(je *JSONEvaluator)
+
+func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
+	return func(_ *JSONEvaluator) {
+		jsonlogic.AddOperator(name, evalFunc)
+	}
+}
+
+func NewJSONEvaluator(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluatorOption) *JSONEvaluator {
 	ev := JSONEvaluator{
 		Logger: logger.WithFields(
 			zap.String("component", "evaluator"),
@@ -53,16 +61,10 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags) *JSONEvaluator {
 		store:          s,
 		jsonEvalTracer: otel.Tracer("jsonEvaluator"),
 	}
-	jsonlogic.AddOperator("fractionalEvaluation", ev.fractionalEvaluation)
 
-	sce := StringComparisonEvaluator{
-		Logger: ev.Logger,
+	for _, o := range opts {
+		o(&ev)
 	}
-	jsonlogic.AddOperator("starts_with", sce.StartsWithEvaluation)
-	jsonlogic.AddOperator("ends_with", sce.EndsWithEvaluation)
-
-	sve := SemVerComparisonEvaluator{Logger: ev.Logger}
-	jsonlogic.AddOperator("sem_ver", sve.SemVerEvaluation)
 
 	return &ev
 }

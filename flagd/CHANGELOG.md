@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.5.4](https://github.com/open-feature/flagd/compare/flagd/v0.5.3...flagd/v0.5.4) (2023-06-07)
+
+
+### 🧹 Chore
+
+* update otel dependencies ([#649](https://github.com/open-feature/flagd/issues/649)) ([2114e41](https://github.com/open-feature/flagd/commit/2114e41c38951247866c0b408e5f933282902e70))
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.3 ([#634](https://github.com/open-feature/flagd/issues/634)) ([1bc7e99](https://github.com/open-feature/flagd/commit/1bc7e99473bc0c7bcacfb40030562e556d3895d6))
+* **deps:** update module github.com/open-feature/go-sdk-contrib/providers/flagd to v0.1.12 ([#635](https://github.com/open-feature/flagd/issues/635)) ([fe88061](https://github.com/open-feature/flagd/commit/fe88061ed6e0f1b6119af4c96a02495c4ff8072b))
+* **deps:** update module github.com/open-feature/go-sdk-contrib/tests/flagd to v1.2.2 ([#651](https://github.com/open-feature/flagd/issues/651)) ([9776973](https://github.com/open-feature/flagd/commit/9776973109a1bb45ab611ede6b2c4d2c01508455))
+
+
+### ✨ New Features
+
+* telemetry improvements ([#653](https://github.com/open-feature/flagd/issues/653)) ([ea02cba](https://github.com/open-feature/flagd/commit/ea02cba24bde982d55956fe54de1e8f27226bfc6))
+
+
+### 🔄 Refactoring
+
+* introduce additional linting rules + fix discrepancies ([#616](https://github.com/open-feature/flagd/issues/616)) ([aef0b90](https://github.com/open-feature/flagd/commit/aef0b9042dcbe5b3f9a7e97960b27366fe50adfe))
+
 ## [0.5.3](https://github.com/open-feature/flagd/compare/flagd/v0.5.2...flagd/v0.5.3) (2023-05-04)
 
 
