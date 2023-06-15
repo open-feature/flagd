@@ -13,7 +13,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/open-feature-operator v0.2.34
 	github.com/open-feature/schemas v0.2.8
-	github.com/prometheus/client_golang v1.15.1
+	github.com/prometheus/client_golang v1.16.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.9.0
 	github.com/rs/xid v1.5.0
@@ -82,7 +82,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
-	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
