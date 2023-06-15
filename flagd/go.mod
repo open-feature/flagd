@@ -7,7 +7,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.5.4
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.12
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.13
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.2
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
@@ -15,7 +15,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230222100723-491ee098dd92.1 // indirect
+	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230317150644-afd1cc2ef580.1 // indirect
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230317150644-afd1cc2ef580.1 // indirect
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230317150644-afd1cc2ef580.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -66,7 +66,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-feature/go-sdk v1.2.0 // indirect
+	github.com/open-feature/go-sdk v1.4.0 // indirect
 	github.com/open-feature/open-feature-operator v0.2.34 // indirect
 	github.com/open-feature/schemas v0.2.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
