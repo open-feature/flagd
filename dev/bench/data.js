@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1686968716297,
+  "lastUpdate": 1687055654526,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -36658,6 +36658,208 @@ window.BENCHMARK_DATA = {
             "value": 14525,
             "unit": "ns/op\t    3672 B/op\t      42 allocs/op",
             "extra": "426848 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b8bedd2b895026eace8204ae4ffcff771f7e8e97",
+          "message": "fix(deps): update module github.com/prometheus/client_golang to v1.16.0 (#709)\n\n[![Mend\nRenovate](https://app.renovatebot.com/images/banner.svg)](https://renovatebot.com)\n\nThis PR contains the following updates:\n\n| Package | Type | Update | Change |\n|---|---|---|---|\n|\n[github.com/prometheus/client_golang](https://togithub.com/prometheus/client_golang)\n| require | minor | `v1.15.1` -> `v1.16.0` |\n\n---\n\n### Release Notes\n\n<details>\n<summary>prometheus/client_golang</summary>\n\n###\n[`v1.16.0`](https://togithub.com/prometheus/client_golang/releases/tag/v1.16.0)\n\n[Compare\nSource](https://togithub.com/prometheus/client_golang/compare/v1.15.1...v1.16.0)\n\n#### What's Changed\n\n- \\[BUGFIX] api: Switch to POST for LabelNames, Series, and\nQueryExemplars.\n[#&#8203;1252](https://togithub.com/prometheus/client_golang/issues/1252)\n- \\[BUGFIX] api: Fix undefined execution order in return statements.\n[#&#8203;1260](https://togithub.com/prometheus/client_golang/issues/1260)\n- \\[BUGFIX] native histograms: Fix bug in bucket key calculation.\n[#&#8203;1279](https://togithub.com/prometheus/client_golang/issues/1279)\n- \\[ENHANCEMENT] Reduce constrainLabels allocations for all metrics.\n[#&#8203;1272](https://togithub.com/prometheus/client_golang/issues/1272)\n- \\[ENHANCEMENT] promhttp: Add process start time header for scrape\nefficiency.\n[#&#8203;1278](https://togithub.com/prometheus/client_golang/issues/1278)\n- \\[ENHANCEMENT] promlint: Improve metricUnits runtime.\n[#&#8203;1286](https://togithub.com/prometheus/client_golang/issues/1286)\n\n<details>\n  <summary> Commits </summary>\n\n- Merge v1.15 to main by\n[@&#8203;bwplotka](https://togithub.com/bwplotka) in\n[https://github.com/prometheus/client_golang/pull/1250](https://togithub.com/prometheus/client_golang/pull/1250)\n- Switch to POST for LabelNames, Series, and QueryExemplars to\nDoGetFallback by [@&#8203;jacksontj](https://togithub.com/jacksontj) in\n[https://github.com/prometheus/client_golang/pull/1252](https://togithub.com/prometheus/client_golang/pull/1252)\n- ✏️ \\[collectors]: fix typo in test assertion by\n[@&#8203;vegerot](https://togithub.com/vegerot) in\n[https://github.com/prometheus/client_golang/pull/1153](https://togithub.com/prometheus/client_golang/pull/1153)\n- Added interactive tutorial \\[kubeCon] by\n[@&#8203;bwplotka](https://togithub.com/bwplotka) in\n[https://github.com/prometheus/client_golang/pull/1255](https://togithub.com/prometheus/client_golang/pull/1255)\n- Fixed tutorial. by [@&#8203;bwplotka](https://togithub.com/bwplotka)\nin\n[https://github.com/prometheus/client_golang/pull/1256](https://togithub.com/prometheus/client_golang/pull/1256)\n- Bump golang.org/x/sys from 0.6.0 to 0.7.0 by\n[@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/prometheus/client_golang/pull/1265](https://togithub.com/prometheus/client_golang/pull/1265)\n- Cleanup proto use in tests by\n[@&#8203;SuperQ](https://togithub.com/SuperQ) in\n[https://github.com/prometheus/client_golang/pull/1264](https://togithub.com/prometheus/client_golang/pull/1264)\n- Fix tutorial on WSL-based systems by\n[@&#8203;marevers](https://togithub.com/marevers) in\n[https://github.com/prometheus/client_golang/pull/1257](https://togithub.com/prometheus/client_golang/pull/1257)\n- Fix undefined execution order in return statements by\n[@&#8203;PiotrLewandowski323](https://togithub.com/PiotrLewandowski323)\nin\n[https://github.com/prometheus/client_golang/pull/1260](https://togithub.com/prometheus/client_golang/pull/1260)\n- Merge release 1.15.1 to main by\n[@&#8203;bwplotka](https://togithub.com/bwplotka) in\n[https://github.com/prometheus/client_golang/pull/1267](https://togithub.com/prometheus/client_golang/pull/1267)\n- GitHub Workflows security hardening by\n[@&#8203;sashashura](https://togithub.com/sashashura) in\n[https://github.com/prometheus/client_golang/pull/1180](https://togithub.com/prometheus/client_golang/pull/1180)\n- add process start time header to client_golang prometheus by\n[@&#8203;logicalhan](https://togithub.com/logicalhan) in\n[https://github.com/prometheus/client_golang/pull/1278](https://togithub.com/prometheus/client_golang/pull/1278)\n- Fix bug in bucket key calculation by\n[@&#8203;beorn7](https://togithub.com/beorn7) in\n[https://github.com/prometheus/client_golang/pull/1279](https://togithub.com/prometheus/client_golang/pull/1279)\n- Bump github.com/prometheus/procfs from 0.9.0 to 0.10.1 by\n[@&#8203;dependabot](https://togithub.com/dependabot) in\n[https://github.com/prometheus/client_golang/pull/1283](https://togithub.com/prometheus/client_golang/pull/1283)\n- Reduce constrainLabels allocations by\n[@&#8203;khasanovbi](https://togithub.com/khasanovbi) in\n[https://github.com/prometheus/client_golang/pull/1272](https://togithub.com/prometheus/client_golang/pull/1272)\n- added circleci as gh action YAML by\n[@&#8203;krishnaduttPanchagnula](https://togithub.com/krishnaduttPanchagnula)\nin\n[https://github.com/prometheus/client_golang/pull/1281](https://togithub.com/prometheus/client_golang/pull/1281)\n- Improve metricUnits runtime by\n[@&#8203;avlitman](https://togithub.com/avlitman) in\n[https://github.com/prometheus/client_golang/pull/1286](https://togithub.com/prometheus/client_golang/pull/1286)\n- Moving fully to GH actions. by\n[@&#8203;bwplotka](https://togithub.com/bwplotka) in\n[https://github.com/prometheus/client_golang/pull/1288](https://togithub.com/prometheus/client_golang/pull/1288)\n- Fix docstring references to renamed native histogram fields /\nfunctions. by [@&#8203;juliusv](https://togithub.com/juliusv) in\n[https://github.com/prometheus/client_golang/pull/1290](https://togithub.com/prometheus/client_golang/pull/1290)\n- Fixed README & CHANGELOG; Added fmt makefile command (+bingo) for\neasier contributions. by\n[@&#8203;bwplotka](https://togithub.com/bwplotka) in\n[https://github.com/prometheus/client_golang/pull/1289](https://togithub.com/prometheus/client_golang/pull/1289)\n-\n\n </details>\n\n#### New Contributors\n* @&#8203;vegerot made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1153](https://togithub.com/prometheus/client_golang/pull/1153)l/1153\n* @&#8203;marevers made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1257](https://togithub.com/prometheus/client_golang/pull/1257)l/1257\n* @&#8203;PiotrLewandowski323 made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1260](https://togithub.com/prometheus/client_golang/pull/1260)l/1260\n* @&#8203;sashashura made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1180](https://togithub.com/prometheus/client_golang/pull/1180)l/1180\n* @&#8203;logicalhan made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1278](https://togithub.com/prometheus/client_golang/pull/1278)l/1278\n* @&#8203;khasanovbi made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1272](https://togithub.com/prometheus/client_golang/pull/1272)l/1272\n* @&#8203;krishnaduttPanchagnula made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1281](https://togithub.com/prometheus/client_golang/pull/1281)l/1281\n* @&#8203;avlitman made their first\ncontributi[https://github.com/prometheus/client_golang/pull/1286](https://togithub.com/prometheus/client_golang/pull/1286)l/1286\n\n**Full Changelog**:\nhttps://github.com/prometheus/client_golang/compare/v1.15.1...v1.16.0\n\n</details>\n\n---\n\n### Configuration\n\n📅 **Schedule**: Branch creation - At any time (no schedule defined),\nAutomerge - At any time (no schedule defined).\n\n🚦 **Automerge**: Enabled.\n\n♻ **Rebasing**: Whenever PR becomes conflicted, or you tick the\nrebase/retry checkbox.\n\n🔕 **Ignore**: Close this PR and you won't be reminded about this update\nagain.\n\n---\n\n- [ ] <!-- rebase-check -->If you want to rebase/retry this PR, check\nthis box\n\n---\n\nThis PR has been generated by [Mend\nRenovate](https://www.mend.io/free-developer-tools/renovate/). View\nrepository job log\n[here](https://app.renovatebot.com/dashboard#github/open-feature/flagd).\n\n<!--renovate-debug:eyJjcmVhdGVkSW5WZXIiOiIzNS4xMTcuMyIsInVwZGF0ZWRJblZlciI6IjM1LjExNy4zIiwidGFyZ2V0QnJhbmNoIjoibWFpbiJ9-->\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2023-06-15T14:17:43Z",
+          "url": "https://github.com/open-feature/flagd/commit/b8bedd2b895026eace8204ae4ffcff771f7e8e97"
+        },
+        "date": 1687055653195,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 1571,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3736699 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 13226,
+            "unit": "ns/op\t    5025 B/op\t      83 allocs/op",
+            "extra": "451975 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1520,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3947106 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1699,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3535420 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1709,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3501396 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 1633,
+            "unit": "ns/op\t     336 B/op\t       9 allocs/op",
+            "extra": "3680221 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 13157,
+            "unit": "ns/op\t    5049 B/op\t      85 allocs/op",
+            "extra": "448734 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1663,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3602973 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1868,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3219954 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1857,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3224265 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticFloatFlag",
+            "value": 1617,
+            "unit": "ns/op\t     320 B/op\t       9 allocs/op",
+            "extra": "3708410 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_targetingFloatFlag",
+            "value": 13077,
+            "unit": "ns/op\t    5049 B/op\t      85 allocs/op",
+            "extra": "448724 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticObjectFlag",
+            "value": 1677,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3612765 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_missingFlag",
+            "value": 1845,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3242721 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_disabledFlag",
+            "value": 1834,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3268330 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 1569,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3824578 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 12055,
+            "unit": "ns/op\t    5033 B/op\t      83 allocs/op",
+            "extra": "486288 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1492,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "4015149 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1680,
+            "unit": "ns/op\t     352 B/op\t       9 allocs/op",
+            "extra": "3552865 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1664,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3612828 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 5409,
+            "unit": "ns/op\t    1600 B/op\t      35 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 16604,
+            "unit": "ns/op\t    6314 B/op\t     107 allocs/op",
+            "extra": "363212 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1523,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3919725 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 1684,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3517684 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1691,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3517422 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveBoolean/happy_path",
+            "value": 9805,
+            "unit": "ns/op\t    3248 B/op\t      35 allocs/op",
+            "extra": "620320 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveString/happy_path",
+            "value": 9566,
+            "unit": "ns/op\t    3264 B/op\t      35 allocs/op",
+            "extra": "621969 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveFloat/happy_path",
+            "value": 9574,
+            "unit": "ns/op\t    3248 B/op\t      35 allocs/op",
+            "extra": "629122 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveInt/happy_path",
+            "value": 9669,
+            "unit": "ns/op\t    3248 B/op\t      35 allocs/op",
+            "extra": "608846 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveObject/happy_path",
+            "value": 11575,
+            "unit": "ns/op\t    3672 B/op\t      42 allocs/op",
+            "extra": "508723 times\n2 procs"
           }
         ]
       }
