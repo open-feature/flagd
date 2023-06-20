@@ -179,8 +179,10 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		data, err := stream.Recv()
 		if err != nil {
 			if status.Code(err) == codes.Unavailable {
-				stream.CloseSend()
-				return fmt.Errorf("error receiving payload from stream: %w, closing stream", err)
+				if err2 := stream.CloseSend(); err2 != nil {
+					return fmt.Errorf("error receiving payload from stream: %w, failed to close the stream: %w", err, err2)
+				}
+				return fmt.Errorf("error receiving payload from stream: %w, stream closed", err)
 			}
 			return fmt.Errorf("error receiving payload from stream: %w", err)
 		}
