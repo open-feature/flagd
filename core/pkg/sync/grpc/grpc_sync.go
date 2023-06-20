@@ -13,6 +13,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -176,6 +178,10 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 	for {
 		data, err := stream.Recv()
 		if err != nil {
+			if status.Code(err) == codes.Unavailable {
+				stream.CloseSend()
+				return fmt.Errorf("error receiving payload from stream: %w, closing stream", err)
+			}
 			return fmt.Errorf("error receiving payload from stream: %w", err)
 		}
 
