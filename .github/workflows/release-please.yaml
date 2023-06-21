@@ -84,7 +84,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@2c0bd771b40637d97bf205cbccdd294a32112176
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
@@ -103,7 +103,7 @@ jobs:
 
       - name: Build
         id: build
-        uses: docker/build-push-action@44ea916f6c540f9302d50c2b1e5a8dc071f15cdf # v4
+        uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4
         with:
           builder: ${{ steps.buildx.outputs.name }}
           context: .
@@ -119,7 +119,7 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ steps.date.outputs.date }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@871cdc754496eb3792209f6e81422fac01b793b4
+        uses: sigstore/cosign-installer@ef0e9691595ea19ec990a46b1a591dcafe568f34
 
       - name: Sign the image
         run: |
@@ -134,7 +134,7 @@ jobs:
         run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
-        uses: anchore/sbom-action@4d571ad1038a9cc29d676154ef265ab8f9027042 # v0
+        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
