@@ -7,7 +7,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestSemVerOperator_Compare(t *testing.T) {
@@ -221,7 +220,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
-		context         *structpb.Struct
+		context         map[string]any
 		expectedValue   string
 		expectedVariant string
 		expectedReason  string
@@ -251,11 +250,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -284,11 +281,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.1",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.1",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -317,11 +312,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -350,11 +343,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -383,11 +374,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -416,11 +405,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -449,11 +436,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "1.0.0",
-				}},
-			}},
+			context: map[string]any{
+				"version": "1.0.0",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -482,11 +467,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"version": {Kind: &structpb.Value_StringValue{
-					StringValue: "0.0.1",
-				}},
-			}},
+			context: map[string]any{
+				"version": "0.0.1",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -515,11 +498,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -548,11 +529,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -581,11 +560,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -614,11 +591,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -647,11 +622,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -680,11 +653,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
@@ -713,11 +684,9 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				},
 			},
 			flagKey: "headerColor",
-			context: &structpb.Struct{Fields: map[string]*structpb.Value{
-				"email": {Kind: &structpb.Value_StringValue{
-					StringValue: "user@faas.com",
-				}},
-			}},
+			context: map[string]any{
+				"email": "user@faas.com",
+			},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,

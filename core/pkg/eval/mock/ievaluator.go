@@ -11,7 +11,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	eval "github.com/open-feature/flagd/core/pkg/eval"
 	sync "github.com/open-feature/flagd/core/pkg/sync"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 // MockIEvaluator is a mock of IEvaluator interface.
@@ -53,7 +52,7 @@ func (mr *MockIEvaluatorMockRecorder) GetState() *gomock.Call {
 }
 
 // ResolveAllValues mocks base method.
-func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context *structpb.Struct) []eval.AnyValue {
+func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []eval.AnyValue {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, context)
 	ret0, _ := ret[0].([]eval.AnyValue)
@@ -67,7 +66,7 @@ func (mr *MockIEvaluatorMockRecorder) ResolveAllValues(ctx, reqID, context inter
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context *structpb.Struct) (bool, string, string, error) {
+func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(bool)
@@ -84,7 +83,7 @@ func (mr *MockIEvaluatorMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, c
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context *structpb.Struct) (float64, string, string, error) {
+func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(float64)
@@ -101,7 +100,7 @@ func (mr *MockIEvaluatorMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, con
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context *structpb.Struct) (int64, string, string, error) {
+func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(int64)
@@ -118,7 +117,7 @@ func (mr *MockIEvaluatorMockRecorder) ResolveIntValue(ctx, reqID, flagKey, conte
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context *structpb.Struct) (map[string]any, string, string, error) {
+func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(map[string]any)
@@ -135,7 +134,7 @@ func (mr *MockIEvaluatorMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, co
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context *structpb.Struct) (string, string, string, error) {
+func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(string)

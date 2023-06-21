@@ -48,14 +48,16 @@ func (s *FlagEvaluationService) ResolveAll(
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
 	reqID := xid.New().String()
 	defer s.logger.ClearFields(reqID)
-
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
-
 	res := &schemaV1.ResolveAllResponse{
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
-	values := s.eval.ResolveAllValues(sCtx, reqID, req.Msg.GetContext())
+	evalCtx := map[string]any{}
+	if e := req.Msg.GetContext(); e != nil {
+		evalCtx = e.AsMap()
+	}
+	values := s.eval.ResolveAllValues(sCtx, reqID, evalCtx)
 	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
@@ -270,7 +272,7 @@ func (s *FlagEvaluationService) ResolveObject(
 func resolve[T constraints](
 	ctx context.Context,
 	logger *logger.Logger,
-	resolver func(context context.Context, reqID, flagKey string, ctx *structpb.Struct) (T, string, string, error),
+	resolver func(context context.Context, reqID, flagKey string, ctx map[string]any) (T, string, string, error),
 	flagKey string,
 	evaluationContext *structpb.Struct,
 	resp response[T],
@@ -286,7 +288,7 @@ func resolve[T constraints](
 	)
 
 	var evalErrFormatted error
-	result, variant, reason, evalErr := resolver(ctx, reqID, flagKey, evaluationContext)
+	result, variant, reason, evalErr := resolver(ctx, reqID, flagKey, evaluationContext.AsMap())
 	if evalErr != nil {
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
