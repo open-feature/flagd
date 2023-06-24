@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1687487713573,
+  "lastUpdate": 1687574079070,
   "repoUrl": "https://github.com/open-feature/flagd",
   "entries": {
     "Go Benchmark": [
@@ -37870,6 +37870,208 @@ window.BENCHMARK_DATA = {
             "value": 13843,
             "unit": "ns/op\t    3720 B/op\t      43 allocs/op",
             "extra": "435525 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c12dad89a8e761154f57739ded594b2783a14f8a",
+          "message": "fix(deps): update opentelemetry-go monorepo (#648)\n\n[![Mend\nRenovate](https://app.renovatebot.com/images/banner.svg)](https://renovatebot.com)\n\nThis PR contains the following updates:\n\n| Package | Type | Update | Change |\n|---|---|---|---|\n|\n[go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc](https://togithub.com/open-telemetry/opentelemetry-go)\n| require | minor | `v0.38.0` -> `v0.39.0` |\n|\n[go.opentelemetry.io/otel/exporters/otlp/otlptrace](https://togithub.com/open-telemetry/opentelemetry-go)\n| require | minor | `v1.15.0` -> `v1.16.0` |\n|\n[go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc](https://togithub.com/open-telemetry/opentelemetry-go)\n| require | minor | `v1.15.0` -> `v1.16.0` |\n|\n[go.opentelemetry.io/otel/exporters/prometheus](https://togithub.com/open-telemetry/opentelemetry-go)\n| require | minor | `v0.38.0` -> `v0.39.0` |\n\n---\n\n### Release Notes\n\n<details>\n<summary>open-telemetry/opentelemetry-go</summary>\n\n###\n[`v1.16.0`](https://togithub.com/open-telemetry/opentelemetry-go/releases/tag/v1.16.0):\n/v0.39.0 -- Stable Metric API\n\n[Compare\nSource](https://togithub.com/open-telemetry/opentelemetry-go/compare/v1.15.1...v1.16.0)\n\nThis release contains the first stable release of the OpenTelemetry Go\n[metric API]. Our project stability guarantees now apply to the\n`go.opentelemetry.io/otel/metric` package. See our [versioning\npolicy](VERSIONING.md) for more information about these stability\nguarantees.\n\n##### What's Changed\n\n##### Added\n\n- The `go.opentelemetry.io/otel/semconv/v1.19.0` package. The package\ncontains semantic conventions from the `v1.19.0` version of the\nOpenTelemetry specification.\n([#&#8203;3848](https://togithub.com/open-telemetry/opentelemetry-go/issues/3848))\n- The `go.opentelemetry.io/otel/semconv/v1.20.0` package. The package\ncontains semantic conventions from the `v1.20.0` version of the\nOpenTelemetry specification.\n([#&#8203;4078](https://togithub.com/open-telemetry/opentelemetry-go/issues/4078))\n\n##### Changed\n\n- Use `strings.Cut()` instead of `string.SplitN()` for better\nreadability and memory use.\n([#&#8203;4049](https://togithub.com/open-telemetry/opentelemetry-go/issues/4049))\n\n##### Removed\n\n- The deprecated `go.opentelemetry.io/otel/metric/instrument` package is\nremoved. Use `go.opentelemetry.io/otel/metric` instead.\n([#&#8203;4055](https://togithub.com/open-telemetry/opentelemetry-go/issues/4055))\n\n##### Fixed\n\n- Fix build for BSD based systems in\n`go.opentelemetry.io/otel/sdk/resource`.\n([#&#8203;4077](https://togithub.com/open-telemetry/opentelemetry-go/issues/4077))\n\n##### New Contributors\n\n- [@&#8203;tsloughter](https://togithub.com/tsloughter) made their first\ncontribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/3848](https://togithub.com/open-telemetry/opentelemetry-go/pull/3848)\n- [@&#8203;Tijmen34](https://togithub.com/Tijmen34) made their first\ncontribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/4074](https://togithub.com/open-telemetry/opentelemetry-go/pull/4074)\n- [@&#8203;ChillOrb](https://togithub.com/ChillOrb) made their first\ncontribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/3677](https://togithub.com/open-telemetry/opentelemetry-go/pull/3677)\n- [@&#8203;ChenX1993](https://togithub.com/ChenX1993) made their first\ncontribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/4043](https://togithub.com/open-telemetry/opentelemetry-go/pull/4043)\n- [@&#8203;andrew-womeldorf](https://togithub.com/andrew-womeldorf) made\ntheir first contribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/4086](https://togithub.com/open-telemetry/opentelemetry-go/pull/4086)\n\n**Full Changelog**:\nhttps://github.com/open-telemetry/opentelemetry-go/compare/v1.15.1...v1.16.0\n\n[metric API]: https://pkg.go.dev/go.opentelemetry.io/otel/metric\n\n###\n[`v1.15.1`](https://togithub.com/open-telemetry/opentelemetry-go/releases/tag/v1.15.1):\n/v0.38.1\n\n[Compare\nSource](https://togithub.com/open-telemetry/opentelemetry-go/compare/v1.15.0...v1.15.1)\n\n##### What's Changed\n\n##### Fixed\n\n- Remove unused imports from `sdk/resource/host_id_bsd.go` which caused\nbuild failures.\n([#&#8203;4040](https://togithub.com/open-telemetry/opentelemetry-go/issues/4040),\n[#&#8203;4041](https://togithub.com/open-telemetry/opentelemetry-go/issues/4041))\n\n##### New Contributors\n\n- [@&#8203;Achooo](https://togithub.com/Achooo) made their first\ncontribution in\n[https://github.com/open-telemetry/opentelemetry-go/pull/4041](https://togithub.com/open-telemetry/opentelemetry-go/pull/4041)\n\n**Full Changelog**:\nhttps://github.com/open-telemetry/opentelemetry-go/compare/v1.15.0...v1.15.1\n\n</details>\n\n---\n\n### Configuration\n\n📅 **Schedule**: Branch creation - At any time (no schedule defined),\nAutomerge - At any time (no schedule defined).\n\n🚦 **Automerge**: Enabled.\n\n♻ **Rebasing**: Whenever PR becomes conflicted, or you tick the\nrebase/retry checkbox.\n\n👻 **Immortal**: This PR will be recreated if closed unmerged. Get\n[config help](https://togithub.com/renovatebot/renovate/discussions) if\nthat's undesired.\n\n---\n\n- [ ] <!-- rebase-check -->If you want to rebase/retry this PR, check\nthis box\n\n---\n\nThis PR has been generated by [Mend\nRenovate](https://www.mend.io/free-developer-tools/renovate/). View\nrepository job log\n[here](https://developer.mend.io/github/open-feature/flagd).\n\n<!--renovate-debug:eyJjcmVhdGVkSW5WZXIiOiIzNS43NS4wIiwidXBkYXRlZEluVmVyIjoiMzUuMTMxLjAiLCJ0YXJnZXRCcmFuY2giOiJtYWluIn0=-->\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2023-06-24T00:02:21Z",
+          "url": "https://github.com/open-feature/flagd/commit/c12dad89a8e761154f57739ded594b2783a14f8a"
+        },
+        "date": 1687574077110,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticBoolFlag",
+            "value": 2036,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "2573908 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_targetingBoolFlag",
+            "value": 12012,
+            "unit": "ns/op\t    4608 B/op\t      74 allocs/op",
+            "extra": "515702 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_staticObjectFlag",
+            "value": 1789,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3427051 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_missingFlag",
+            "value": 1935,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3062676 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveBooleanValue/test_disabledFlag",
+            "value": 1815,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3240859 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticStringFlag",
+            "value": 1825,
+            "unit": "ns/op\t     336 B/op\t       9 allocs/op",
+            "extra": "3197398 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_targetingStringFlag",
+            "value": 11803,
+            "unit": "ns/op\t    4640 B/op\t      76 allocs/op",
+            "extra": "512846 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_staticObjectFlag",
+            "value": 1769,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3557930 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_missingFlag",
+            "value": 1840,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3112717 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveStringValue/test_disabledFlag",
+            "value": 1887,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3144051 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticFloatFlag",
+            "value": 1774,
+            "unit": "ns/op\t     320 B/op\t       9 allocs/op",
+            "extra": "3538908 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_targetingFloatFlag",
+            "value": 11997,
+            "unit": "ns/op\t    4624 B/op\t      76 allocs/op",
+            "extra": "476965 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_staticObjectFlag",
+            "value": 1617,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3568047 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_missingFlag",
+            "value": 1854,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3241588 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveFloatValue/test:_disabledFlag",
+            "value": 1861,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3341982 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticIntFlag",
+            "value": 1837,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3508296 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_targetingNumberFlag",
+            "value": 10340,
+            "unit": "ns/op\t    4608 B/op\t      74 allocs/op",
+            "extra": "526729 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_staticObjectFlag",
+            "value": 1614,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3582624 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_missingFlag",
+            "value": 1850,
+            "unit": "ns/op\t     352 B/op\t       9 allocs/op",
+            "extra": "3245146 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveIntValue/test_disabledFlag",
+            "value": 1954,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "3018520 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticObjectFlag",
+            "value": 5829,
+            "unit": "ns/op\t    1600 B/op\t      35 allocs/op",
+            "extra": "1000000 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_targetingObjectFlag",
+            "value": 15722,
+            "unit": "ns/op\t    5889 B/op\t      98 allocs/op",
+            "extra": "404930 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_staticBoolFlag",
+            "value": 1888,
+            "unit": "ns/op\t     304 B/op\t       7 allocs/op",
+            "extra": "3510612 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_missingFlag",
+            "value": 2019,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2880312 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkResolveObjectValue/test_disabledFlag",
+            "value": 1992,
+            "unit": "ns/op\t     368 B/op\t       9 allocs/op",
+            "extra": "2925483 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveBoolean/happy_path",
+            "value": 10627,
+            "unit": "ns/op\t    3296 B/op\t      36 allocs/op",
+            "extra": "546835 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveString/happy_path",
+            "value": 10494,
+            "unit": "ns/op\t    3312 B/op\t      36 allocs/op",
+            "extra": "556597 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveFloat/happy_path",
+            "value": 10209,
+            "unit": "ns/op\t    3296 B/op\t      36 allocs/op",
+            "extra": "547891 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveInt/happy_path",
+            "value": 11158,
+            "unit": "ns/op\t    3296 B/op\t      36 allocs/op",
+            "extra": "625023 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkFlag_Evaluation_ResolveObject/happy_path",
+            "value": 12199,
+            "unit": "ns/op\t    3720 B/op\t      43 allocs/op",
+            "extra": "437919 times\n2 procs"
           }
         ]
       }
