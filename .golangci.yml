@@ -40,6 +40,7 @@ linters:
     - whitespace
     - wrapcheck
     - gofumpt
+    - tenv
 linters-settings:
   funlen:
     statements: 50
