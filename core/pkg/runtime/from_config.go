@@ -33,7 +33,7 @@ const (
 	syncProviderGrpc       = "grpc"
 	syncProviderKubernetes = "kubernetes"
 	syncProviderHTTP       = "http"
-	svcName                = "openfeature/flagd"
+	svcName                = "flagd"
 )
 
 var (
