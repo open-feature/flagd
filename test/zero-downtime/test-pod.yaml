@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-zd
+spec:
+  containers:
+    - name: test-zd
+      image: curlimages/curl:8.1.2
+      # yamllint disable rule:line-length
+      command:
+        - 'sh'
+        - '-c'
+        - |
+          for i in $(seq 1 3000); do
+              curl -s -X POST flagd-svc.$FLAGD_DEV_NAMESPACE.svc.cluster.local:8013/schema.v1.Service/ResolveString -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json" > ~/out.txt
+              cat ~/out.txt
+              if grep -Fxq "val1" ~/out.txt
+              then
+                echo "\n\nCannot fetch data from flagD, exiting...\n\n"
+                exit 1
+              fi
+              sleep 0.1
+          done
+          exit 0
+      # yamllint enable rule:line-length
