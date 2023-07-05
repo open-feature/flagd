@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: flagd
-        image: ghcr.io/open-feature/flagd:latest
+        image: ${IMG}
         readinessProbe:
           httpGet:
             path: /readyz
