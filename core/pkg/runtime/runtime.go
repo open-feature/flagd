@@ -37,8 +37,7 @@ func (r *Runtime) Start() error {
 	if r.Evaluator == nil {
 		return errors.New("no evaluator set")
 	}
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 	// Initialize DataSync channel watcher
@@ -84,6 +83,13 @@ func (r *Runtime) Start() error {
 			return nil
 		})
 	}
+
+	defer func() {
+		r.Logger.Info("Shutting down server...")
+		r.Service.Shutdown()
+		r.Logger.Info("Server successfully shutdown.")
+	}()
+
 	g.Go(func() error {
 		// Readiness probe rely on the runtime
 		r.ServiceConfig.ReadinessProbe = r.isReady

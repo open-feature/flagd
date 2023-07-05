@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flagd-svc
+spec:
+  selector:
+    app.kubernetes.io/name: flagd
+  ports:
+    - port: 8013
+      targetPort: 8013

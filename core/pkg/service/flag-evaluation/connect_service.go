@@ -37,6 +37,8 @@ type ConnectService struct {
 
 	serverMtx        sync.RWMutex
 	metricsServerMtx sync.RWMutex
+
+	readinessEnabled bool
 }
 
 // NewConnectService creates a ConnectService with provided parameters
@@ -57,6 +59,7 @@ func NewConnectService(
 // Serve serves services with provided configuration options
 func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuration) error {
 	g, gCtx := errgroup.WithContext(ctx)
+	s.readinessEnabled = true
 
 	g.Go(func() error {
 		return s.startServer(svcConf)
@@ -152,6 +155,20 @@ func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
 	s.server.Handler = mw.Handler(s.server.Handler)
 }
 
+func (s *ConnectService) Shutdown() {
+	s.readinessEnabled = false
+	// Disable the readiness probe by shutting down the HTTP server gracefully
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := s.metricsServer.Shutdown(ctx); err != nil {
+		s.logger.Error(fmt.Sprintf("Failed to shut down HTTP metrics-server gracefully: %v", err))
+	}
+
+	if err := s.server.Shutdown(ctx); err != nil {
+		s.logger.Error(fmt.Sprintf("Failed to shut down HTTP server gracefully: %v", err))
+	}
+}
+
 func (s *ConnectService) startServer(svcConf service.Configuration) error {
 	lis, err := s.setupServer(svcConf)
 	if err != nil {
@@ -189,7 +206,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 		case "/healthz":
 			w.WriteHeader(http.StatusOK)
 		case "/readyz":
-			if svcConf.ReadinessProbe() {
+			if s.readinessEnabled && svcConf.ReadinessProbe() {
 				w.WriteHeader(http.StatusOK)
 			} else {
 				w.WriteHeader(http.StatusPreconditionFailed)

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: flagd
+  name: flagd
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: flagd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flagd
+        app: flagd
+    spec:
+      containers:
+      - name: flagd
+        image: ghcr.io/open-feature/flagd:latest
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8014
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8014
+          initialDelaySeconds: 5
+          periodSeconds: 60
+        ports:
+          - containerPort: 8013
+        args:
+          - start
+          - --uri
+          - https://raw.githubusercontent.com/open-feature/flagd/main/samples/example_flags.flagd.json
+          - --debug
