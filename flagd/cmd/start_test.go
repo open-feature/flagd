@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log"
-	"os"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -46,7 +45,7 @@ func Test_getPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("FLAGD_PORT", tt.envVarValue)
+			t.Setenv("FLAGD_PORT", tt.envVarValue)
 			if got := getPortValueOrDefault(tt.args.flagName, tt.args.value, tt.args.defaultValue, logger); got != tt.want {
 				t.Errorf("getPort() = %v, want %v", got, tt.want)
 			}
