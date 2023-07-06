@@ -37,7 +37,8 @@ func (r *Runtime) Start() error {
 	if r.Evaluator == nil {
 		return errors.New("no evaluator set")
 	}
-	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.SyncImpl))
 	// Initialize DataSync channel watcher

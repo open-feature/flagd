@@ -16,7 +16,7 @@ To run the test, execute:
 IMG=your-flagd-image IMG_ZD=your-flagd-image2 make run-zd-test
 ```
 
-Please be aware, you need to build your two custom images with differetn tags for flagD first.
+Please be aware, you need to build your two custom images with different tags for flagD first.
 
 To build your images using Docker execute:
 
