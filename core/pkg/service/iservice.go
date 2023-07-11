@@ -10,6 +10,7 @@ type NotificationType string
 
 const (
 	ConfigurationChange NotificationType = "configuration_change"
+	Shutdown            NotificationType = "provider_shutdown"
 	ProviderReady       NotificationType = "provider_ready"
 	KeepAlive           NotificationType = "keep_alive"
 )

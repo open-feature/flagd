@@ -157,16 +157,10 @@ func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
 
 func (s *ConnectService) Shutdown() {
 	s.readinessEnabled = false
-	// Disable the readiness probe by shutting down the HTTP server gracefully
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := s.metricsServer.Shutdown(ctx); err != nil {
-		s.logger.Error(fmt.Sprintf("Failed to shut down HTTP metrics-server gracefully: %v", err))
-	}
-
-	if err := s.server.Shutdown(ctx); err != nil {
-		s.logger.Error(fmt.Sprintf("Failed to shut down HTTP server gracefully: %v", err))
-	}
+	s.eventingConfiguration.emitToAll(service.Notification{
+		Type: service.Shutdown,
+		Data: map[string]interface{}{},
+	})
 }
 
 func (s *ConnectService) startServer(svcConf service.Configuration) error {
