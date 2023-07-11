@@ -12,14 +12,14 @@ spec:
         - '-c'
         - |
           for i in $(seq 1 3000); do
-              curl -s -X POST flagd-svc.$FLAGD_DEV_NAMESPACE.svc.cluster.local:8013/schema.v1.Service/ResolveString -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json" > ~/out.txt
-              cat ~/out.txt
+              curl -H 'Cache-Control: no-cache, no-store' -X POST flagd-svc.$FLAGD_DEV_NAMESPACE.svc.cluster.local:8013/schema.v1.Service/ResolveString?$RANDOM -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json" > ~/out.txt
               if ! grep -q "val1" ~/out.txt
               then
+                cat ~/out.txt
                 echo "\n\nCannot fetch data from flagD, exiting...\n\n"
                 exit 1
               fi
-              sleep 0.1
+              sleep 1
           done
           exit 0
       # yamllint enable rule:line-length
