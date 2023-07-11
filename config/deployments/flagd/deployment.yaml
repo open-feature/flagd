@@ -69,6 +69,6 @@ data:
             "key2": "val2"
           },
           "defaultVariant": "key1"
-        },
+        }
       }
     }
