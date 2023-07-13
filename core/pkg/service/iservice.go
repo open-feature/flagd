@@ -10,6 +10,7 @@ type NotificationType string
 
 const (
 	ConfigurationChange NotificationType = "configuration_change"
+	Shutdown            NotificationType = "provider_shutdown"
 	ProviderReady       NotificationType = "provider_ready"
 	KeepAlive           NotificationType = "keep_alive"
 )
@@ -40,6 +41,7 @@ which call the IEvaluator implementation.
 type IFlagEvaluationService interface {
 	Serve(ctx context.Context, svcConf Configuration) error
 	Notify(n Notification)
+	Shutdown()
 }
 
 /*

@@ -84,6 +84,13 @@ func (r *Runtime) Start() error {
 			return nil
 		})
 	}
+
+	defer func() {
+		r.Logger.Info("Shutting down server...")
+		r.Service.Shutdown()
+		r.Logger.Info("Server successfully shutdown.")
+	}()
+
 	g.Go(func() error {
 		// Readiness probe rely on the runtime
 		r.ServiceConfig.ReadinessProbe = r.isReady

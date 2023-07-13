@@ -1,7 +1,9 @@
-IMG ?= flagd:latest
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
+
+FLAGD_DEV_NAMESPACE ?= flagd-dev
+ZD_TEST_NAMESPACE ?= flagd-zd-test
 
 workspace-init: workspace-clean
 	go work init
@@ -66,6 +68,22 @@ mockgen: install-mockgen
 	cd core; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go
+
+.PHONY: deploy-dev-env
+export IMG?= ghcr.io/open-feature/flagd:latest
+deploy-dev-env: undeploy-dev-env
+	kubectl create ns "$(FLAGD_DEV_NAMESPACE)"
+	envsubst '$${IMG}' < config/deployments/flagd/deployment.yaml | kubectl apply -f - -n "$(FLAGD_DEV_NAMESPACE)"
+	kubectl apply -f config/deployments/flagd/service.yaml -n "$(FLAGD_DEV_NAMESPACE)"
+	kubectl wait --for=condition=available deployment/flagd -n "$(FLAGD_DEV_NAMESPACE)" --timeout=300s
+
+undeploy-dev-env:
+	kubectl delete ns "$(FLAGD_DEV_NAMESPACE)" --ignore-not-found=true
+
+run-zd-test:
+	kubectl delete ns "$(ZD_TEST_NAMESPACE)" --ignore-not-found=true
+	kubectl create ns "$(ZD_TEST_NAMESPACE)"
+	ZD_TEST_NAMESPACE="$(ZD_TEST_NAMESPACE)" FLAGD_DEV_NAMESPACE=$(FLAGD_DEV_NAMESPACE) IMG="$(IMG)" IMG_ZD="$(IMG_ZD)" ./test/zero-downtime/zd_test.sh
 
 # Markdown lint configuration
 #

@@ -204,3 +204,43 @@ func TestConnectServiceNotify(t *testing.T) {
 		t.Error("timeout while waiting for notifications")
 	}
 }
+
+func TestConnectServiceShutdown(t *testing.T) {
+	// given
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
+
+	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+
+	sChan := make(chan iservice.Notification, 1)
+	eventing := service.eventingConfiguration
+	eventing.subs["key"] = sChan
+
+	// notification type
+	ofType := iservice.Shutdown
+
+	// emit notification in routine
+	go func() {
+		service.Notify(iservice.Notification{
+			Type: ofType,
+			Data: map[string]interface{}{},
+		})
+	}()
+
+	// wait for notification
+	timeout, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelFunc()
+
+	require.False(t, service.readinessEnabled)
+
+	select {
+	case n := <-sChan:
+		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
+	case <-timeout.Done():
+		t.Error("timeout while waiting for notifications")
+	}
+}
