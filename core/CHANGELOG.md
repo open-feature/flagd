@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/flagd/compare/core/v0.5.4...core/v0.6.0) (2023-07-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename metrics and service ([#730](https://github.com/open-feature/flagd/issues/730))
+
+### 🔄 Refactoring
+
+* remove protobuf dependency from eval package ([#701](https://github.com/open-feature/flagd/issues/701)) ([34ffafd](https://github.com/open-feature/flagd/commit/34ffafd9a777da3f11bd3bfa81565e774cc63214))
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.27.3 ([#708](https://github.com/open-feature/flagd/issues/708)) ([5bf3a69](https://github.com/open-feature/flagd/commit/5bf3a69aa4bf95ce77ad08491bcce420620525d3))
+* **deps:** update module github.com/bufbuild/connect-go to v1.9.0 ([#722](https://github.com/open-feature/flagd/issues/722)) ([75223e2](https://github.com/open-feature/flagd/commit/75223e2fc01c4dcd0291b46a0d50b8815b31654c))
+* **deps:** update module github.com/bufbuild/connect-opentelemetry-go to v0.4.0 ([#739](https://github.com/open-feature/flagd/issues/739)) ([713e2a9](https://github.com/open-feature/flagd/commit/713e2a9834546963615046de1b6125e7fa6bf20d))
+* **deps:** update module github.com/prometheus/client_golang to v1.16.0 ([#709](https://github.com/open-feature/flagd/issues/709)) ([b8bedd2](https://github.com/open-feature/flagd/commit/b8bedd2b895026eace8204ae4ffcff771f7e8e97))
+* **deps:** update module golang.org/x/crypto to v0.10.0 ([#647](https://github.com/open-feature/flagd/issues/647)) ([7f1d7e6](https://github.com/open-feature/flagd/commit/7f1d7e66669b88b2c56b32f9cdd9be354ebcfc8e))
+* **deps:** update module golang.org/x/mod to v0.11.0 ([#705](https://github.com/open-feature/flagd/issues/705)) ([42813be](https://github.com/open-feature/flagd/commit/42813bef092ba7fffed0dd94166bfd01ea8a7582))
+* **deps:** update module golang.org/x/mod to v0.12.0 ([#729](https://github.com/open-feature/flagd/issues/729)) ([7b109c7](https://github.com/open-feature/flagd/commit/7b109c705aceb652ac2675bd0ffe82420983798b))
+* **deps:** update module golang.org/x/net to v0.11.0 ([#706](https://github.com/open-feature/flagd/issues/706)) ([27d893f](https://github.com/open-feature/flagd/commit/27d893fe78417f7b8418003edc401ab5a6c21fb9))
+* **deps:** update module golang.org/x/sync to v0.3.0 ([#707](https://github.com/open-feature/flagd/issues/707)) ([7852efb](https://github.com/open-feature/flagd/commit/7852efb84e9f071b2b482b1968d799888b6882dc))
+* **deps:** update module google.golang.org/grpc to v1.56.1 ([#710](https://github.com/open-feature/flagd/issues/710)) ([8f16573](https://github.com/open-feature/flagd/commit/8f165739aee8f28800e200b357203e88a3fd5938))
+* **deps:** update module google.golang.org/grpc to v1.56.2 ([#738](https://github.com/open-feature/flagd/issues/738)) ([521cc30](https://github.com/open-feature/flagd/commit/521cc30cde1971be000ec10d93f6d70b9b2260ee))
+* **deps:** update module google.golang.org/protobuf to v1.31.0 ([#720](https://github.com/open-feature/flagd/issues/720)) ([247239e](https://github.com/open-feature/flagd/commit/247239e76b9de1a619aad9e957ed8b44ae534b77))
+* **deps:** update opentelemetry-go monorepo ([#648](https://github.com/open-feature/flagd/issues/648)) ([c12dad8](https://github.com/open-feature/flagd/commit/c12dad89a8e761154f57739ded594b2783a14f8a))
+
+
+### ✨ New Features
+
+* **flagD:** support zero downtime during upgrades ([#731](https://github.com/open-feature/flagd/issues/731)) ([7df8d39](https://github.com/open-feature/flagd/commit/7df8d3994b75991b5e49a65728ef5e4b24a85dde))
+* rename metrics and service ([#730](https://github.com/open-feature/flagd/issues/730)) ([09c0198](https://github.com/open-feature/flagd/commit/09c0198f76a200b1b6a1f48e9c94ec0547283ca2))
+
 ## [0.5.4](https://github.com/open-feature/flagd/compare/core/v0.5.3...core/v0.5.4) (2023-06-07)
 
 

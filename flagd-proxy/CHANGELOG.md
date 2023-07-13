@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.5](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.4...flagd-proxy/v0.2.5) (2023-07-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.4 ([#693](https://github.com/open-feature/flagd/issues/693)) ([33705a6](https://github.com/open-feature/flagd/commit/33705a67300ec70760ba0baeb610f5a2e931205f))
+* **deps:** update module github.com/spf13/viper to v1.16.0 ([#679](https://github.com/open-feature/flagd/issues/679)) ([798a975](https://github.com/open-feature/flagd/commit/798a975bb1a47420e814b6dd439f1cece1a263e5))
+
+
+### 🔄 Refactoring
+
+* **flagd-proxy:** update build.Dockerfile with buildkit caching ([#725](https://github.com/open-feature/flagd/issues/725)) ([06f3d2e](https://github.com/open-feature/flagd/commit/06f3d2eecbcff16bcf2fdfcab33b24c9e697e849))
+* remove protobuf dependency from eval package ([#701](https://github.com/open-feature/flagd/issues/701)) ([34ffafd](https://github.com/open-feature/flagd/commit/34ffafd9a777da3f11bd3bfa81565e774cc63214))
+
 ## [0.2.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.3...flagd-proxy/v0.2.4) (2023-06-07)
 
 

@@ -1,5 +1,5 @@
 {
-  "flagd": "0.5.4",
-  "flagd-proxy": "0.2.4",
-  "core": "0.5.4"
+  "flagd": "0.5.5",
+  "flagd-proxy": "0.2.5",
+  "core": "0.6.0"
 }
