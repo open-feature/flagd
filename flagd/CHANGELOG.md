@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.5](https://github.com/open-feature/flagd/compare/flagd/v0.5.4...flagd/v0.5.5) (2023-07-13)
+## [0.6.0](https://github.com/open-feature/flagd/compare/flagd/v0.5.4...flagd/v0.6.0) (2023-07-13)
 
 
 ### 🐛 Bug Fixes
