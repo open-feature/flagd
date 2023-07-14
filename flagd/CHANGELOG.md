@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/flagd/compare/flagd/v0.5.4...flagd/v0.6.0) (2023-07-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.5.4 ([#693](https://github.com/open-feature/flagd/issues/693)) ([33705a6](https://github.com/open-feature/flagd/commit/33705a67300ec70760ba0baeb610f5a2e931205f))
+* **deps:** update module github.com/open-feature/go-sdk-contrib/providers/flagd to v0.1.13 ([#697](https://github.com/open-feature/flagd/issues/697)) ([435448f](https://github.com/open-feature/flagd/commit/435448f449044eb5fff88c94e81883cc801c02c4))
+* **deps:** update module github.com/spf13/viper to v1.16.0 ([#679](https://github.com/open-feature/flagd/issues/679)) ([798a975](https://github.com/open-feature/flagd/commit/798a975bb1a47420e814b6dd439f1cece1a263e5))
+
+
+### 🔄 Refactoring
+
+* **flagd:** update build.Dockerfile with buildkit caching ([#724](https://github.com/open-feature/flagd/issues/724)) ([3e9cc1a](https://github.com/open-feature/flagd/commit/3e9cc1a7d697b64690a8772fe0ec8e84e34ebf6c))
+* **flagd:** update profile.Dockerfile with buildkit caching ([#723](https://github.com/open-feature/flagd/issues/723)) ([3f263c6](https://github.com/open-feature/flagd/commit/3f263c65a6fe8f9e1f42d105dfbc89b9497cd080))
+* remove protobuf dependency from eval package ([#701](https://github.com/open-feature/flagd/issues/701)) ([34ffafd](https://github.com/open-feature/flagd/commit/34ffafd9a777da3f11bd3bfa81565e774cc63214))
+
 ## [0.5.4](https://github.com/open-feature/flagd/compare/flagd/v0.5.3...flagd/v0.5.4) (2023-06-07)
 
 
