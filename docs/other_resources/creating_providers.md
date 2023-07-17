@@ -127,12 +127,14 @@ stateDiagram-v2
     [*] --> NOT_READY
     NOT_READY --> READY: initialize(), stream connected
     NOT_READY --> ERROR: initialize(), unable to connect (retry)
-    READY --> ERROR: stream disconnected (flush cache, emit error)
-    READY --> READY: configuration_change (flush cache, emit changed)
-    ERROR --> READY: reconnect successful (emit ready, changed)
+    READY --> ERROR: stream disconnected (flush cache, emit error*)
+    READY --> READY: configuration_change (flush cache, emit changed*)
+    ERROR --> READY: reconnect successful (emit ready*, changed*)
     ERROR --> ERROR: maxEventStreamRetries reached
     ERROR --> [*]: shutdown(), stream disconnected
 ```
+
+\* ready=`PROVIDER_READY`, changed=`PROVIDER_CONFIGURATION_CHANGED`, error=`PROVIDER_ERROR`
 
 ## Configuration
 
