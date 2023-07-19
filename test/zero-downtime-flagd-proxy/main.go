@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	waitSecondsBetweenRequests := getWaitSecondsBetweenRequests()
 	flagDTURL := getURL()
 
@@ -24,7 +23,7 @@ func main() {
 		}
 	}()
 
-	// Wait for the specified duration or until the program completes
+	// The program should run until it receives an error
 	<-errChan
 }
 
