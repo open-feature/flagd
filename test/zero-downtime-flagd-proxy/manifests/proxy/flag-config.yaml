@@ -1,0 +1,20 @@
+---
+# ConfigMap for Flagd OpenFeature provider
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: open-feature-flags
+data:
+  flags: |
+    {
+      "flags": {
+        "myStringFlag": {
+          "state": "ENABLED",
+          "variants": {
+            "key1": "val1",
+            "key2": "val2"
+          },
+          "defaultVariant": "key1"
+        }
+      }
+    }
