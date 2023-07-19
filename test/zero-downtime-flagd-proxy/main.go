@@ -25,10 +25,7 @@ func main() {
 	}()
 
 	// Wait for the specified duration or until the program completes
-	select {
-	case <-errChan:
-		os.Exit(1)
-	}
+	<-errChan
 }
 
 func handleRequests(waitSecondsBetweenRequests int, flagDTURL string) error {
@@ -47,11 +44,7 @@ func handleRequests(waitSecondsBetweenRequests int, flagDTURL string) error {
 		}
 	}()
 
-	if err := doRequests(grpcClient, waitSecondsBetweenRequests); err != nil {
-		return err
-	}
-
-	return nil
+	return doRequests(grpcClient, waitSecondsBetweenRequests)
 }
 
 func getWaitSecondsBetweenRequests() int {
