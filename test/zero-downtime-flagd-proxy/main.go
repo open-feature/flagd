@@ -11,14 +11,14 @@ import (
 
 func main() {
 	waitSecondsBetweenRequests := getWaitSecondsBetweenRequests()
-	flagDTURL := getURL()
+	flagdURL := getURL()
 
 	// Create a channel to receive a signal when the gRPC connection fails
 	errChan := make(chan bool)
 
 	// Use a goroutine to run your program logic
 	go func() {
-		if err := handleRequests(waitSecondsBetweenRequests, flagDTURL); err != nil {
+		if err := handleRequests(waitSecondsBetweenRequests, flagdURL); err != nil {
 			errChan <- true
 		}
 	}()
@@ -27,11 +27,11 @@ func main() {
 	<-errChan
 }
 
-func handleRequests(waitSecondsBetweenRequests int, flagDTURL string) error {
+func handleRequests(waitSecondsBetweenRequests int, flagdURL string) error {
 	var conn *grpc.ClientConn
 	var grpcClient pb.FlagSyncServiceClient
 	// open the connection only once
-	conn, grpcClient = establishGrpcConnection(flagDTURL)
+	conn, grpcClient = establishGrpcConnection(flagdURL)
 
 	defer func() {
 		if conn != nil {
@@ -51,7 +51,7 @@ func getWaitSecondsBetweenRequests() int {
 }
 
 func getURL() string {
-	return getEnvOrDefault("URL", "flagd-proxy-svc.flagdt-dev:8015")
+	return getEnvOrDefault("URL", "flagd-proxy-svc.flagd-dev:8015")
 }
 
 func getEnvVarOrDefault(envVar string, defaultValue int) int {
