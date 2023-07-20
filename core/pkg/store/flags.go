@@ -13,7 +13,12 @@ import (
 type Flags struct {
 	mx          sync.RWMutex
 	Flags       map[string]model.Flag `json:"flags"`
-	FlagSources []string              `json:"flagSources"`
+	FlagSources []SourceDetails       `json:"flagSources"`
+}
+
+type SourceDetails struct {
+	Source   string
+	Selector string
 }
 
 func (f *Flags) hasPriority(stored string, new string) bool {
@@ -21,7 +26,7 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 		return true
 	}
 	for i := len(f.FlagSources) - 1; i >= 0; i-- {
-		switch f.FlagSources[i] {
+		switch f.FlagSources[i].Source {
 		case stored:
 			return false
 		case new:

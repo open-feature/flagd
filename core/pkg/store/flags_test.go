@@ -26,9 +26,9 @@ func TestHasPriority(t *testing.T) {
 		{
 			name: "no priority",
 			currentState: &Flags{
-				FlagSources: []string{
-					"B",
-					"A",
+				FlagSources: []SourceDetails{
+					{Source: "B"},
+					{Source: "A"},
 				},
 			},
 			storedSource: "A",
@@ -38,9 +38,9 @@ func TestHasPriority(t *testing.T) {
 		{
 			name: "priority",
 			currentState: &Flags{
-				FlagSources: []string{
-					"A",
-					"B",
+				FlagSources: []SourceDetails{
+					{Source: "A"},
+					{Source: "B"},
 				},
 			},
 			storedSource: "A",
@@ -50,9 +50,9 @@ func TestHasPriority(t *testing.T) {
 		{
 			name: "not in sources",
 			currentState: &Flags{
-				FlagSources: []string{
-					"A",
-					"B",
+				FlagSources: []SourceDetails{
+					{Source: "A"},
+					{Source: "B"},
 				},
 			},
 			storedSource: "C",
@@ -194,9 +194,13 @@ func TestMergeFlags(t *testing.T) {
 		{
 			name: "no merge priority",
 			current: &Flags{
-				FlagSources: []string{
-					"B",
-					"A",
+				FlagSources: []SourceDetails{
+					{
+						Source: "B",
+					},
+					{
+						Source: "A",
+					},
 				},
 				Flags: map[string]model.Flag{
 					"hello": {
@@ -210,9 +214,13 @@ func TestMergeFlags(t *testing.T) {
 			},
 			newSource: "B",
 			want: &Flags{
-				FlagSources: []string{
-					"B",
-					"A",
+				FlagSources: []SourceDetails{
+					{
+						Source: "B",
+					},
+					{
+						Source: "A",
+					},
 				},
 				Flags: map[string]model.Flag{
 					"hello": {
@@ -469,9 +477,9 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
-				FlagSources: []string{
-					mockSource,
-					mockSource2,
+				FlagSources: []SourceDetails{
+					{Source: mockSource},
+					{Source: mockSource2},
 				},
 			},
 			deleteRequest: map[string]model.Flag{
@@ -482,9 +490,9 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
-				FlagSources: []string{
-					mockSource,
-					mockSource2,
+				FlagSources: []SourceDetails{
+					{Source: mockSource},
+					{Source: mockSource2},
 				},
 			},
 			expectedNotificationKeys: []string{"A"},
@@ -497,9 +505,9 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
-				FlagSources: []string{
-					mockSource,
-					mockSource2,
+				FlagSources: []SourceDetails{
+					{Source: mockSource},
+					{Source: mockSource2},
 				},
 			},
 			deleteRequest: map[string]model.Flag{
@@ -511,9 +519,9 @@ func TestFlags_Delete(t *testing.T) {
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
 				},
-				FlagSources: []string{
-					mockSource,
-					mockSource2,
+				FlagSources: []SourceDetails{
+					{Source: mockSource},
+					{Source: mockSource2},
 				},
 			},
 			expectedNotificationKeys: []string{},

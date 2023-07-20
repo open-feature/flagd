@@ -102,9 +102,12 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// build flag store
 	s := store.NewFlags()
-	sources := []string{}
+	sources := []store.SourceDetails{}
 	for _, sync := range config.SyncProviders {
-		sources = append(sources, sync.URI)
+		sources = append(sources, store.SourceDetails{
+			Source:   sync.URI,
+			Selector: sync.Selector,
+		})
 	}
 	s.FlagSources = sources
 
