@@ -20,6 +20,39 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type evalCommons struct {
+	variant  string
+	reason   string
+	metadata map[string]interface{}
+}
+
+var metadata = map[string]interface{}{
+	"scope": "some-scope",
+}
+
+var responseStruct *structpb.Struct
+
+func init() {
+	pbStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		panic("failure to generate protobuf structure from metadata")
+	}
+
+	responseStruct = pbStruct
+}
+
+var happyCommon = evalCommons{
+	variant:  "on",
+	reason:   model.DefaultReason,
+	metadata: metadata,
+}
+
+var sadCommon = evalCommons{
+	variant:  ":(",
+	reason:   model.ErrorReason,
+	metadata: metadata,
+}
+
 func TestConnectService_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
 		req     *schemaV1.ResolveAllRequest
@@ -133,9 +166,8 @@ type resolveBooleanFunctionArgs struct {
 	req *schemaV1.ResolveBooleanRequest
 }
 type resolveBooleanEvalFields struct {
-	result  bool
-	variant string
-	reason  string
+	result bool
+	evalCommons
 }
 
 func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
@@ -145,9 +177,8 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 		"happy path": {
 			mCount: 1,
 			evalFields: resolveBooleanEvalFields{
-				result:  true,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      true,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -157,18 +188,18 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveBooleanResponse{
-				Value:   true,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    true,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
 		"eval returns error": {
 			mCount: 1,
 			evalFields: resolveBooleanEvalFields{
-				result:  true,
-				variant: ":(",
-				reason:  model.ErrorReason,
+				result:      true,
+				evalCommons: sadCommon,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -178,9 +209,10 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveBooleanResponse{
-				Value:   true,
-				Variant: ":(",
-				Reason:  model.ErrorReason,
+				Value:    true,
+				Variant:  ":(",
+				Reason:   model.ErrorReason,
+				Metadata: responseStruct,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -192,6 +224,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
@@ -221,9 +254,8 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 	tests := map[string]resolveBooleanArgs{
 		"happy path": {
 			evalFields: resolveBooleanEvalFields{
-				result:  true,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      true,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveBooleanFunctionArgs{
 				context.Background(),
@@ -233,9 +265,10 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 				},
 			},
 			want: &schemaV1.ResolveBooleanResponse{
-				Value:   true,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    true,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
@@ -246,6 +279,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
+			tt.evalFields.metadata,
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
@@ -285,9 +319,8 @@ type resolveStringFunctionArgs struct {
 	req *schemaV1.ResolveStringRequest
 }
 type resolveStringEvalFields struct {
-	result  string
-	variant string
-	reason  string
+	result string
+	evalCommons
 }
 
 func TestFlag_Evaluation_ResolveString(t *testing.T) {
@@ -296,9 +329,8 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 		"happy path": {
 			mCount: 1,
 			evalFields: resolveStringEvalFields{
-				result:  "true",
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      "true",
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -308,18 +340,18 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveStringResponse{
-				Value:   "true",
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    "true",
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
 		"eval returns error": {
 			mCount: 1,
 			evalFields: resolveStringEvalFields{
-				result:  "true",
-				variant: ":(",
-				reason:  model.ErrorReason,
+				result:      "true",
+				evalCommons: sadCommon,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -329,9 +361,10 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveStringResponse{
-				Value:   "true",
-				Variant: ":(",
-				Reason:  model.ErrorReason,
+				Value:    "true",
+				Variant:  ":(",
+				Reason:   model.ErrorReason,
+				Metadata: responseStruct,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -344,6 +377,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.wantErr,
 			)
 			metrics, exp := getMetricReader()
@@ -373,9 +407,8 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 	tests := map[string]resolveStringArgs{
 		"happy path": {
 			evalFields: resolveStringEvalFields{
-				result:  "true",
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      "true",
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveStringFunctionArgs{
 				context.Background(),
@@ -385,9 +418,10 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 				},
 			},
 			want: &schemaV1.ResolveStringResponse{
-				Value:   "true",
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    "true",
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
@@ -398,6 +432,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
+			tt.evalFields.metadata,
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
@@ -437,9 +472,8 @@ type resolveFloatFunctionArgs struct {
 	req *schemaV1.ResolveFloatRequest
 }
 type resolveFloatEvalFields struct {
-	result  float64
-	variant string
-	reason  string
+	result float64
+	evalCommons
 }
 
 func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
@@ -448,9 +482,8 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 		"happy path": {
 			mCount: 1,
 			evalFields: resolveFloatEvalFields{
-				result:  12,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      12,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -460,18 +493,18 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveFloatResponse{
-				Value:   12,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    12,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
 		"eval returns error": {
 			mCount: 1,
 			evalFields: resolveFloatEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  model.ErrorReason,
+				result:      12,
+				evalCommons: sadCommon,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -481,9 +514,10 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveFloatResponse{
-				Value:   12,
-				Variant: ":(",
-				Reason:  model.ErrorReason,
+				Value:    12,
+				Variant:  ":(",
+				Reason:   model.ErrorReason,
+				Metadata: responseStruct,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -495,6 +529,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
@@ -524,9 +559,8 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 	tests := map[string]resolveFloatArgs{
 		"happy path": {
 			evalFields: resolveFloatEvalFields{
-				result:  12,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      12,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveFloatFunctionArgs{
 				context.Background(),
@@ -536,9 +570,10 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 				},
 			},
 			want: &schemaV1.ResolveFloatResponse{
-				Value:   12,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    12,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
@@ -549,6 +584,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
+			tt.evalFields.metadata,
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
@@ -588,9 +624,8 @@ type resolveIntFunctionArgs struct {
 	req *schemaV1.ResolveIntRequest
 }
 type resolveIntEvalFields struct {
-	result  int64
-	variant string
-	reason  string
+	result int64
+	evalCommons
 }
 
 func TestFlag_Evaluation_ResolveInt(t *testing.T) {
@@ -599,9 +634,8 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 		"happy path": {
 			mCount: 1,
 			evalFields: resolveIntEvalFields{
-				result:  12,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result:      12,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -611,18 +645,18 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveIntResponse{
-				Value:   12,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    12,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
 		"eval returns error": {
 			mCount: 1,
 			evalFields: resolveIntEvalFields{
-				result:  12,
-				variant: ":(",
-				reason:  model.ErrorReason,
+				result:      12,
+				evalCommons: sadCommon,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -632,9 +666,10 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveIntResponse{
-				Value:   12,
-				Variant: ":(",
-				Reason:  model.ErrorReason,
+				Value:    12,
+				Variant:  ":(",
+				Reason:   model.ErrorReason,
+				Metadata: responseStruct,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -646,6 +681,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
@@ -675,9 +711,11 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 	tests := map[string]resolveIntArgs{
 		"happy path": {
 			evalFields: resolveIntEvalFields{
-				result:  12,
-				variant: "on",
-				reason:  model.DefaultReason,
+				result: 12,
+				evalCommons: evalCommons{
+					variant: "on",
+					reason:  model.DefaultReason,
+				},
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -687,9 +725,10 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 				},
 			},
 			want: &schemaV1.ResolveIntResponse{
-				Value:   12,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    12,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
@@ -739,9 +778,8 @@ type resolveObjectFunctionArgs struct {
 	req *schemaV1.ResolveObjectRequest
 }
 type resolveObjectEvalFields struct {
-	result  map[string]interface{}
-	variant string
-	reason  string
+	result map[string]interface{}
+	evalCommons
 }
 
 func TestFlag_Evaluation_ResolveObject(t *testing.T) {
@@ -753,8 +791,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				result: map[string]interface{}{
 					"food": "bars",
 				},
-				variant: "on",
-				reason:  model.DefaultReason,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -764,9 +801,10 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveObjectResponse{
-				Value:   nil,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    nil,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
@@ -776,8 +814,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				result: map[string]interface{}{
 					"food": "bars",
 				},
-				variant: ":(",
-				reason:  model.ErrorReason,
+				evalCommons: sadCommon,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -787,8 +824,9 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				},
 			},
 			want: &schemaV1.ResolveObjectResponse{
-				Variant: ":(",
-				Reason:  model.ErrorReason,
+				Variant:  ":(",
+				Reason:   model.ErrorReason,
+				Metadata: responseStruct,
 			},
 			wantErr: errors.New("eval interface error"),
 		},
@@ -800,6 +838,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
@@ -838,8 +877,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 				result: map[string]interface{}{
 					"food": "bars",
 				},
-				variant: "on",
-				reason:  model.DefaultReason,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveObjectFunctionArgs{
 				context.Background(),
@@ -862,6 +900,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
+			tt.evalFields.metadata,
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()

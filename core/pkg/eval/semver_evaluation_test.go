@@ -707,9 +707,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, err := resolve[string](
-				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
-			)
+			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)

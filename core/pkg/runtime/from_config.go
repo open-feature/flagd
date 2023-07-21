@@ -100,16 +100,15 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
 
-	// build flag store
+	// build flag store & fill sources details
 	s := store.NewFlags()
-	sources := []store.SourceDetails{}
-	for _, sync := range config.SyncProviders {
-		sources = append(sources, store.SourceDetails{
-			Source:   sync.URI,
-			Selector: sync.Selector,
-		})
+	for _, provider := range config.SyncProviders {
+		s.FlagSources = append(s.FlagSources, provider.URI)
+		s.SourceMetadata[provider.URI] = store.SourceDetails{
+			Source:   provider.URI,
+			Selector: provider.Selector,
+		}
 	}
-	s.FlagSources = sources
 
 	// derive evaluator
 	evaluator := setupJSONEvaluator(logger, s)

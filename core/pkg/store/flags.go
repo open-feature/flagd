@@ -11,9 +11,10 @@ import (
 )
 
 type Flags struct {
-	mx          sync.RWMutex
-	Flags       map[string]model.Flag `json:"flags"`
-	FlagSources []SourceDetails       `json:"flagSources"`
+	mx             sync.RWMutex
+	Flags          map[string]model.Flag `json:"flags"`
+	FlagSources    []string
+	SourceMetadata map[string]SourceDetails
 }
 
 type SourceDetails struct {
@@ -26,7 +27,7 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 		return true
 	}
 	for i := len(f.FlagSources) - 1; i >= 0; i-- {
-		switch f.FlagSources[i].Source {
+		switch f.FlagSources[i] {
 		case stored:
 			return false
 		case new:
@@ -37,7 +38,10 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 }
 
 func NewFlags() *Flags {
-	return &Flags{Flags: map[string]model.Flag{}}
+	return &Flags{
+		Flags:          map[string]model.Flag{},
+		SourceMetadata: map[string]SourceDetails{},
+	}
 }
 
 func (f *Flags) Set(key string, flag model.Flag) {
@@ -52,6 +56,13 @@ func (f *Flags) Get(key string) (model.Flag, bool) {
 	flag, ok := f.Flags[key]
 
 	return flag, ok
+}
+
+func (f *Flags) SelectorForFlag(flag model.Flag) string {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
+	return f.SourceMetadata[flag.Source].Selector
 }
 
 func (f *Flags) Delete(key string) {

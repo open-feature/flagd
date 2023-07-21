@@ -7,20 +7,25 @@ import (
 )
 
 type AnyValue struct {
-	Value   interface{}
-	Variant string
-	Reason  string
-	FlagKey string
-	Error   error
+	Value    interface{}
+	Variant  string
+	Reason   string
+	FlagKey  string
+	Metadata map[string]interface{}
+	Error    error
 }
 
-func NewAnyValue(value interface{}, variant string, reason string, flagKey string, err error) AnyValue {
+func NewAnyValue(
+	value interface{}, variant string, reason string, flagKey string, metadata map[string]interface{},
+	err error,
+) AnyValue {
 	return AnyValue{
-		Value:   value,
-		Variant: variant,
-		Reason:  reason,
-		FlagKey: flagKey,
-		Error:   err,
+		Value:    value,
+		Variant:  variant,
+		Reason:   reason,
+		FlagKey:  flagKey,
+		Metadata: metadata,
+		Error:    err,
 	}
 }
 
@@ -36,27 +41,31 @@ type IEvaluator interface {
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value bool, variant string, reason string, err error)
+		context map[string]any) (value bool, variant string, reason string, metadata map[string]interface{}, err error)
 	ResolveStringValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value string, variant string, reason string, err error)
+		context map[string]any) (
+		value string, variant string, reason string, metadata map[string]interface{}, err error)
 	ResolveIntValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value int64, variant string, reason string, err error)
+		context map[string]any) (
+		value int64, variant string, reason string, metadata map[string]interface{}, err error)
 	ResolveFloatValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value float64, variant string, reason string, err error)
+		context map[string]any) (
+		value float64, variant string, reason string, metadata map[string]interface{}, err error)
 	ResolveObjectValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value map[string]any, variant string, reason string, err error)
+		context map[string]any) (
+		value map[string]any, variant string, reason string, metadata map[string]interface{}, err error)
 	ResolveAllValues(
 		ctx context.Context,
 		reqID string,

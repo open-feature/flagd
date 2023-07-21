@@ -66,14 +66,15 @@ func (mr *MockIEvaluatorMockRecorder) ResolveAllValues(ctx, reqID, context inter
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, error) {
+func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret3, _ := ret[3].(map[string]interface{})
+	ret4, _ := ret[4].(error)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // ResolveBooleanValue indicates an expected call of ResolveBooleanValue.
@@ -83,14 +84,15 @@ func (mr *MockIEvaluatorMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, c
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, error) {
+func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret3, _ := ret[3].(map[string]interface{})
+	ret4, _ := ret[4].(error)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // ResolveFloatValue indicates an expected call of ResolveFloatValue.
@@ -100,14 +102,15 @@ func (mr *MockIEvaluatorMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, con
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, error) {
+func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret3, _ := ret[3].(map[string]interface{})
+	ret4, _ := ret[4].(error)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // ResolveIntValue indicates an expected call of ResolveIntValue.
@@ -117,14 +120,15 @@ func (mr *MockIEvaluatorMockRecorder) ResolveIntValue(ctx, reqID, flagKey, conte
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, error) {
+func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret3, _ := ret[3].(map[string]interface{})
+	ret4, _ := ret[4].(error)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // ResolveObjectValue indicates an expected call of ResolveObjectValue.
@@ -134,14 +138,15 @@ func (mr *MockIEvaluatorMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, co
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, error) {
+func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret3, _ := ret[3].(map[string]interface{})
+	ret4, _ := ret[4].(error)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // ResolveStringValue indicates an expected call of ResolveStringValue.

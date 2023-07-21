@@ -21,6 +21,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type resolverSignature[T constraints] func(context context.Context, reqID, flagKey string, ctx map[string]any) (
+	T, string, string, map[string]interface{}, error)
+
 type FlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  eval.IEvaluator
@@ -269,14 +272,8 @@ func (s *FlagEvaluationService) ResolveObject(
 }
 
 // resolve is a generic flag resolver
-func resolve[T constraints](
-	ctx context.Context,
-	logger *logger.Logger,
-	resolver func(context context.Context, reqID, flagKey string, ctx map[string]any) (T, string, string, error),
-	flagKey string,
-	evaluationContext *structpb.Struct,
-	resp response[T],
-	metrics *telemetry.MetricsRecorder,
+func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], flagKey string,
+	evaluationContext *structpb.Struct, resp response[T], metrics *telemetry.MetricsRecorder,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
@@ -288,7 +285,7 @@ func resolve[T constraints](
 	)
 
 	var evalErrFormatted error
-	result, variant, reason, evalErr := resolver(ctx, reqID, flagKey, evaluationContext.AsMap())
+	result, variant, reason, metadata, evalErr := resolver(ctx, reqID, flagKey, evaluationContext.AsMap())
 	if evalErr != nil {
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
@@ -300,7 +297,7 @@ func resolve[T constraints](
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	if err := resp.SetResult(result, variant, reason); err != nil && evalErr == nil {
+	if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {
 		logger.ErrorWithID(reqID, err.Error())
 		return fmt.Errorf("error setting response result: %w", err)
 	}

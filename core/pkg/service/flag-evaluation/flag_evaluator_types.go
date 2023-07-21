@@ -9,7 +9,7 @@ import (
 )
 
 type response[T constraints] interface {
-	SetResult(value T, variant, reason string) error
+	SetResult(value T, variant, reason string, metadata map[string]interface{}) error
 }
 
 type constraints interface {
@@ -20,10 +20,17 @@ type booleanResponse struct {
 	*connect.Response[schemaV1.ResolveBooleanResponse]
 }
 
-func (r *booleanResponse) SetResult(value bool, variant, reason string) error {
+func (r *booleanResponse) SetResult(value bool, variant, reason string, metadata map[string]interface{}) error {
 	r.Msg.Value = value
 	r.Msg.Variant = variant
 	r.Msg.Reason = reason
+
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+
+	r.Msg.Metadata = newStruct
 	return nil
 }
 
@@ -31,10 +38,17 @@ type stringResponse struct {
 	*connect.Response[schemaV1.ResolveStringResponse]
 }
 
-func (r *stringResponse) SetResult(value, variant, reason string) error {
+func (r *stringResponse) SetResult(value string, variant, reason string, metadata map[string]interface{}) error {
 	r.Msg.Value = value
 	r.Msg.Variant = variant
 	r.Msg.Reason = reason
+
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+
+	r.Msg.Metadata = newStruct
 	return nil
 }
 
@@ -42,10 +56,17 @@ type floatResponse struct {
 	*connect.Response[schemaV1.ResolveFloatResponse]
 }
 
-func (r *floatResponse) SetResult(value float64, variant, reason string) error {
+func (r *floatResponse) SetResult(value float64, variant, reason string, metadata map[string]interface{}) error {
 	r.Msg.Value = value
 	r.Msg.Variant = variant
 	r.Msg.Reason = reason
+
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+
+	r.Msg.Metadata = newStruct
 	return nil
 }
 
@@ -53,10 +74,17 @@ type intResponse struct {
 	*connect.Response[schemaV1.ResolveIntResponse]
 }
 
-func (r *intResponse) SetResult(value int64, variant, reason string) error {
+func (r *intResponse) SetResult(value int64, variant, reason string, metadata map[string]interface{}) error {
 	r.Msg.Value = value
 	r.Msg.Variant = variant
 	r.Msg.Reason = reason
+
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+
+	r.Msg.Metadata = newStruct
 	return nil
 }
 
@@ -64,7 +92,9 @@ type objectResponse struct {
 	*connect.Response[schemaV1.ResolveObjectResponse]
 }
 
-func (r *objectResponse) SetResult(value map[string]any, variant, reason string) error {
+func (r *objectResponse) SetResult(value map[string]any, variant, reason string,
+	metadata map[string]interface{},
+) error {
 	r.Msg.Reason = reason
 	val, err := structpb.NewStruct(value)
 	if err != nil {
@@ -73,5 +103,12 @@ func (r *objectResponse) SetResult(value map[string]any, variant, reason string)
 
 	r.Msg.Value = val
 	r.Msg.Variant = variant
+
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+
+	r.Msg.Metadata = newStruct
 	return nil
 }
