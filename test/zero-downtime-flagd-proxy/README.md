@@ -12,7 +12,7 @@ This will create a flagd-proxy and a job in `flagd-zd-test` namespace,
 where the test will be run.
 
 Please be aware, you need to build your custom image for the zd-client
-and two images for flagD first.
+and two images for flagD-proxy first.
 
 To build your images using [ko](https://github.com/ko-build/ko),
 you need to login to your repository, where the images will be pushed:
