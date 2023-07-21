@@ -5,7 +5,7 @@
 Clone this repository and run the following command:
 
 ```shell
-FLAGD_PROXY_IMG=your-flagd-image FLAGD_PROXY_IMG_ZD=your-flagd-second-image ZD_CLIENT_IMG=your-zd-client-image make run-zd-test
+FLAGD_PROXY_IMG=your-flagd-proxy-image FLAGD_PROXY_IMG_ZD=your-flagd-proxy-second-image ZD_CLIENT_IMG=your-zd-client-image make run-zd-test
 ```
 
 This will create a flagd-proxy and a job in `flagd-zd-test` namespace,
