@@ -31,7 +31,7 @@ The `sem_ver` evaluation returns a boolean, indicating whether the condition has
 }
 ```
 
-## Example for 'starts_with' Evaluation
+## Example for 'sem_ver' Evaluation
 
 Flags defined as such:
 
