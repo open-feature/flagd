@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - feature/workflows
-      - main
+      - not running
     paths-ignore:
       - "README.md"
       - "docs/**"
