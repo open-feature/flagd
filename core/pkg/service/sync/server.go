@@ -18,13 +18,13 @@ import (
 )
 
 type Server struct {
-	server           *http.Server
-	metricsServer    *http.Server
-	Logger           *logger.Logger
-	handler          *handler
-	config           iservice.Configuration
-	grpcServer       *grpc.Server
-	readinessEnabled bool
+	server            *http.Server
+	metricsServer     *http.Server
+	Logger            *logger.Logger
+	handler           *handler
+	config            iservice.Configuration
+	grpcServer        *grpc.Server
+	metricServerReady bool
 }
 
 func NewServer(logger *logger.Logger, store syncStore.ISyncStore) *Server {
@@ -39,7 +39,7 @@ func NewServer(logger *logger.Logger, store syncStore.ISyncStore) *Server {
 
 func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) error {
 	s.config = svcConf
-	s.readinessEnabled = true
+	s.metricServerReady = true
 
 	g, gCtx := errgroup.WithContext(ctx)
 
@@ -73,7 +73,7 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 }
 
 func (s *Server) Shutdown() {
-	s.readinessEnabled = false
+	s.metricServerReady = false
 
 	// Stop the GRPc server gracefully
 	s.grpcServer.GracefulStop()
@@ -110,7 +110,7 @@ func (s *Server) startMetricsServer() error {
 		case "/healthz":
 			w.WriteHeader(http.StatusOK)
 		case "/readyz":
-			if s.readinessEnabled && s.config.ReadinessProbe() {
+			if s.metricServerReady && s.config.ReadinessProbe() {
 				w.WriteHeader(http.StatusOK)
 			} else {
 				w.WriteHeader(http.StatusPreconditionFailed)
