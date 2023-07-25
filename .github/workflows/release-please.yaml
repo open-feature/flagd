@@ -157,7 +157,7 @@ jobs:
     #if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
     strategy:
       matrix:
-        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+        path: ["flagd"]
 
     env:
       TAG: v0.6.0-dev #${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
