@@ -151,7 +151,7 @@ jobs:
 #            ${{ env.PUBLIC_KEY_FILE }}
 #            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
 
-    release-go-binaries:
+  release-go-binaries:
     name: Create and publish binaries to GitHub
     #needs: release-please
     runs-on: ubuntu-latest
