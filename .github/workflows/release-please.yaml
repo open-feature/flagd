@@ -17,48 +17,48 @@ env:
 
 name: Release Please
 jobs:
-  release-please:
-    name: Release Please
-    runs-on: ubuntu-latest
-    # Release-please creates a PR that tracks all changes
-    steps:
-      - uses: google-github-actions/release-please-action@ca6063f4ed81b55db15b8c42d1b6f7925866342d # v3
-        id: release
-        with:
-          release-type: "go"
-          command: manifest
-          token: ${{secrets.GITHUB_TOKEN}}
-          default-branch: main
-
-      - name: Dump Release Please Output
-        env:
-          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
-        run: |
-          echo "$RELEASE_PLEASE_OUTPUT"
-      - name: Determine what should be published
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
-        id: items-to-publish
-        env:
-          CHANGED_ITEMS: "${{ steps.release.outputs.paths_released }}"
-        with:
-          # Release please outputs a string representation of an array under the key paths_released
-          # This script parses the output, and filters each of the changed items (provided as paths to the root of the package, e.g. flagd or core)
-          # to remove any values not present in the PUBLISHABLE_ITEMS array. This filtered array is then stringified and exported as items-to-publish.outputs.result
-          # this can be picked up by subsequent jobs and used in a matrix to loop over the PUBLISHABLE_ITEMS within the release
-          script: |
-            const changedItems = JSON.parse(process.env.CHANGED_ITEMS || '[]');
-            console.log("changed items", changedItems);
-            const eligibleItems = JSON.parse(process.env.PUBLISHABLE_ITEMS || '[]');
-            console.log("eligible items", eligibleItems);
-            const itemsToPublish = changedItems.filter(i => eligibleItems.includes(i));
-            console.log("items to publish", itemsToPublish);
-            return itemsToPublish;
-    outputs:
-      items_to_publish: ${{ steps.items-to-publish.outputs.result }}
-      flagd_version: ${{ steps.release.outputs.flagd--version }}
-      flagd_tag_name: ${{ steps.release.outputs.flagd--tag_name }}
-      flagd-proxy_version: ${{ steps.release.outputs.flagd-proxy--version }}
-      flagd-proxy_tag_name: ${{ steps.release.outputs.flagd-proxy--tag_name }}
+#  release-please:
+#    name: Release Please
+#    runs-on: ubuntu-latest
+#    # Release-please creates a PR that tracks all changes
+#    steps:
+#      - uses: google-github-actions/release-please-action@ca6063f4ed81b55db15b8c42d1b6f7925866342d # v3
+#        id: release
+#        with:
+#          release-type: "go"
+#          command: manifest
+#          token: ${{secrets.GITHUB_TOKEN}}
+#          default-branch: main
+#
+#      - name: Dump Release Please Output
+#        env:
+#          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
+#        run: |
+#          echo "$RELEASE_PLEASE_OUTPUT"
+#      - name: Determine what should be published
+#        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
+#        id: items-to-publish
+#        env:
+#          CHANGED_ITEMS: "${{ steps.release.outputs.paths_released }}"
+#        with:
+#          # Release please outputs a string representation of an array under the key paths_released
+#          # This script parses the output, and filters each of the changed items (provided as paths to the root of the package, e.g. flagd or core)
+#          # to remove any values not present in the PUBLISHABLE_ITEMS array. This filtered array is then stringified and exported as items-to-publish.outputs.result
+#          # this can be picked up by subsequent jobs and used in a matrix to loop over the PUBLISHABLE_ITEMS within the release
+#          script: |
+#            const changedItems = JSON.parse(process.env.CHANGED_ITEMS || '[]');
+#            console.log("changed items", changedItems);
+#            const eligibleItems = JSON.parse(process.env.PUBLISHABLE_ITEMS || '[]');
+#            console.log("eligible items", eligibleItems);
+#            const itemsToPublish = changedItems.filter(i => eligibleItems.includes(i));
+#            console.log("items to publish", itemsToPublish);
+#            return itemsToPublish;
+#    outputs:
+#      items_to_publish: ${{ steps.items-to-publish.outputs.result }}
+#      flagd_version: ${{ steps.release.outputs.flagd--version }}
+#      flagd_tag_name: ${{ steps.release.outputs.flagd--tag_name }}
+#      flagd-proxy_version: ${{ steps.release.outputs.flagd-proxy--version }}
+#      flagd-proxy_tag_name: ${{ steps.release.outputs.flagd-proxy--tag_name }}
 
   container-release:
     name: Build and push containers to GHCR
@@ -152,7 +152,7 @@ jobs:
             ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
   release-go-binaries:
     name: Create and publish binaries to GitHub
-    needs: release-please
+    #needs: release-please
     runs-on: ubuntu-latest
     #if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
     strategy:
@@ -160,9 +160,9 @@ jobs:
         path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
 
     env:
-      TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
-      VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
-      VERSION_NO_PREFIX: ${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
+      TAG: v0.6.0-dev #${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
+      VERSION: v${{ env.TAG }}
+      VERSION_NO_PREFIX: ${{ env.TAG }}
       BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
       - name: Checkout
