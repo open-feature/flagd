@@ -186,6 +186,7 @@ jobs:
           cd ${{ matrix.path }} && cyclonedx-gomod app > ../sbom.xml
       - name: build darwin arm64
         run: |
+          env GOOS=darwin GOARCH=arm64 echo go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           env GOOS=darwin GOARCH=arm64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_arm64.tar.gz ./${{ matrix.path }}_darwin_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
 #      - name: build darwin x86_64
