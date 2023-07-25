@@ -47,7 +47,7 @@ func handleRequests(waitSecondsBetweenRequests int, flagdURL string) error {
 }
 
 func getWaitSecondsBetweenRequests() int {
-	return getEnvVarOrDefault("WAIT_TIME_BETWEEN_REQUESTS_MS", 1)
+	return getEnvVarOrDefault("WAIT_TIME_BETWEEN_REQUESTS_S", 1)
 }
 
 func getURL() string {

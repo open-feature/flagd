@@ -9,5 +9,5 @@ spec:
       env:
         - name: URL
           value: "flagd-proxy-svc:8015"
-        - name: WAIT_TIME_BETWEEN_REQUESTS_MS
+        - name: WAIT_TIME_BETWEEN_REQUESTS_S
           value: "1"
