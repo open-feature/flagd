@@ -60,97 +60,98 @@ jobs:
 #      flagd-proxy_version: ${{ steps.release.outputs.flagd-proxy--version }}
 #      flagd-proxy_tag_name: ${{ steps.release.outputs.flagd-proxy--tag_name }}
 
-  container-release:
-    name: Build and push containers to GHCR
-    needs: release-please
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
-    strategy:
-      matrix:
-        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+#  container-release:
+#    name: Build and push containers to GHCR
+#    needs: release-please
+#    runs-on: ubuntu-latest
+#    if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
+#    strategy:
+#      matrix:
+#        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+#
+#    env:
+#      TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
+#      VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+#        with:
+#          ref: ${{ env.TAG }}
+#
+#      - name: Log in to the Container registry
+#        uses: docker/login-action@a9794064588be971151ec5e7144cb535bcb56e36
+#        with:
+#          registry: ${{ env.REGISTRY }}
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Extract metadata (tags, labels) for Docker
+#        id: meta
+#        uses: docker/metadata-action@35e9aff4f5d665b5aa8a8f2adffaf8a1b5f49cc0
+#        with:
+#          images: ${{ env.REGISTRY }}/${{ matrix.path }}
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@master
+#        with:
+#          platforms: all
+#
+#      - name: Set up Docker Buildx
+#        id: buildx
+#        uses: docker/setup-buildx-action@master
+#
+#      - name: Get current date
+#        id: date
+#        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+#
+#      - name: Build
+#        id: build
+#        uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4
+#        with:
+#          builder: ${{ steps.buildx.outputs.name }}
+#          context: .
+#          file: ./${{ matrix.path }}/build.Dockerfile
+#          platforms: linux/amd64,linux/arm64
+#          push: true
+#          tags: |
+#            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest
+#            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
+#          labels: ${{ steps.meta.outputs.labels }}
+#          build-args: |
+#            VERSION=${{ env.VERSION }}
+#            COMMIT=${{ github.sha }}
+#            DATE=${{ steps.date.outputs.date }}
+#      - name: Install Cosign
+#        uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494
+#
+#      - name: Sign the image
+#        run: |
+#          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}@${{ steps.build.outputs.digest }}
+#          cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
+#        env:
+#          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+#          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
+#
+#      - name: Generate image SBOM file name
+#        id: image-sbom-file-gen
+#        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
+#
+#      - name: SBOM for latest image
+#        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0
+#        with:
+#          image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
+#          artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
+#          output-file: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
+#
+#      - name: Bundle release assets
+#        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+#        with:
+#          tag_name: ${{ env.TAG }}
+#          files: |
+#            ${{ env.PUBLIC_KEY_FILE }}
+#            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
 
-    env:
-      TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
-      VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
-        with:
-          ref: ${{ env.TAG }}
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@a9794064588be971151ec5e7144cb535bcb56e36
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@35e9aff4f5d665b5aa8a8f2adffaf8a1b5f49cc0
-        with:
-          images: ${{ env.REGISTRY }}/${{ matrix.path }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
-        with:
-          platforms: all
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@master
-
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-
-      - name: Build
-        id: build
-        uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          context: .
-          file: ./${{ matrix.path }}/build.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest
-            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{ env.VERSION }}
-            COMMIT=${{ github.sha }}
-            DATE=${{ steps.date.outputs.date }}
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494
-
-      - name: Sign the image
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}@${{ steps.build.outputs.digest }}
-          cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
-        env:
-          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
-
-      - name: Generate image SBOM file name
-        id: image-sbom-file-gen
-        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
-
-      - name: SBOM for latest image
-        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
-          artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-          output-file: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-
-      - name: Bundle release assets
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          tag_name: ${{ env.TAG }}
-          files: |
-            ${{ env.PUBLIC_KEY_FILE }}
-            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-  release-go-binaries:
+    release-go-binaries:
     name: Create and publish binaries to GitHub
     #needs: release-please
     runs-on: ubuntu-latest
