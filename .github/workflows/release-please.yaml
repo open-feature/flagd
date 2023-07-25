@@ -188,44 +188,44 @@ jobs:
         run: |
           env GOOS=darwin GOARCH=arm64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_arm64.tar.gz ./${{ matrix.path }}_darwin_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build darwin x86_64
-        run: |
-          env GOOS=darwin GOARCH=amd64 go build -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_x86_64.tar.gz ./${{ matrix.path }}_darwin_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build linux arm64
-        run: |
-          env GOOS=linux GOARCH=arm64 go build -o ./${{ matrix.path }}_linux_arm64 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_arm64.tar.gz ./${{ matrix.path }}_linux_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build linux x86_64
-        run: |
-          env GOOS=linux GOARCH=amd64 go build -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_x86_64.tar.gz ./${{ matrix.path }}_linux_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build linux i386
-        run: |
-          env GOOS=linux GOARCH=386 go build -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      # Windows artifacts use .zip archive
-      - name: build windows x86_64
-        run: |
-          env GOOS=windows GOARCH=amd64 go build -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
-          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.zip ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build windows i386
-        run: |
-          env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
-          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      # Bundle licenses
-      - name: Install go-licenses
-        run: go install github.com/google/go-licenses@latest
-      - name: Build license extraction locations
-        id: license-files
-        run: |
-          echo "LICENSE_FOLDER=${{ format('{0}-third-party-license', matrix.path) }}" >> $GITHUB_OUTPUT
-          echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
-      - name: Run go-licenses for module ${{ matrix.path }}
-        run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
-        continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
-      - name: Bundle license extracts
-        run: tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
+#      - name: build darwin x86_64
+#        run: |
+#          env GOOS=darwin GOARCH=amd64 go build -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
+#          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_x86_64.tar.gz ./${{ matrix.path }}_darwin_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      - name: build linux arm64
+#        run: |
+#          env GOOS=linux GOARCH=arm64 go build -o ./${{ matrix.path }}_linux_arm64 ./${{ matrix.path }}/main.go
+#          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_arm64.tar.gz ./${{ matrix.path }}_linux_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      - name: build linux x86_64
+#        run: |
+#          env GOOS=linux GOARCH=amd64 go build -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
+#          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_x86_64.tar.gz ./${{ matrix.path }}_linux_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      - name: build linux i386
+#        run: |
+#          env GOOS=linux GOARCH=386 go build -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
+#          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      # Windows artifacts use .zip archive
+#      - name: build windows x86_64
+#        run: |
+#          env GOOS=windows GOARCH=amd64 go build -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
+#          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.zip ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      - name: build windows i386
+#        run: |
+#          env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
+#          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+#      # Bundle licenses
+#      - name: Install go-licenses
+#        run: go install github.com/google/go-licenses@latest
+#      - name: Build license extraction locations
+#        id: license-files
+#        run: |
+#          echo "LICENSE_FOLDER=${{ format('{0}-third-party-license', matrix.path) }}" >> $GITHUB_OUTPUT
+#          echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
+#      - name: Run go-licenses for module ${{ matrix.path }}
+#        run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
+#        continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
+#      - name: Bundle license extracts
+#        run: tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
       # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
