@@ -44,7 +44,7 @@ done
 kubectl wait --for=condition=ready pod/zd-test -n $ZD_TEST_NAMESPACE_FLAGD_PROXY --timeout=30s
 
 # If re-connection was once not successful and another re-connection was, pod might be in a ready state again.
-# Therefore we need to check that the restrt count is equal to zero -> this means every re-connection was ok.
+# Therefore we need to check that the restart count is equal to zero -> this means every re-connection was ok.
 restart_count=$(kubectl get pods zd-test -o=jsonpath='{.status.containerStatuses[0].restartCount}' -n $ZD_TEST_NAMESPACE_FLAGD_PROXY)
 if [ "$restart_count" -ne 0 ]; then
     echo "Restart count of the zd-test pod is not equal to zero."
