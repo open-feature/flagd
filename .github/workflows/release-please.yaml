@@ -151,7 +151,7 @@ jobs:
     name: Create and publish binaries to GitHub
     needs: release-please
     runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
+    #if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
     strategy:
       matrix:
         path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
@@ -231,21 +231,21 @@ jobs:
             ./sbom.xml
             ./*.tar.gz
             ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
-  homebrew:
-    name: Bump homebrew-core formula
-    needs: release-please
-    runs-on: ubuntu-latest
-    # Only run on non-forked flagd releases
-    if: ${{ github.repository_owner == 'open-feature' && needs.release-please.outputs.flagd_tag_name }}
-    steps:
-      - uses: mislav/bump-homebrew-formula-action@v2
-        with:
-          formula-name: flagd
-          tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
-          download-url: https://github.com/${{ github.repository }}.git
-          commit-message: |
-            {{formulaName}} ${{ needs.release-please.outputs.flagd_version }}
-
-            Created by https://github.com/mislav/bump-homebrew-formula-action
-        env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+#  homebrew:
+#    name: Bump homebrew-core formula
+#    needs: release-please
+#    runs-on: ubuntu-latest
+#    # Only run on non-forked flagd releases
+#    if: ${{ github.repository_owner == 'open-feature' && needs.release-please.outputs.flagd_tag_name }}
+#    steps:
+#      - uses: mislav/bump-homebrew-formula-action@v2
+#        with:
+#          formula-name: flagd
+#          tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
+#          download-url: https://github.com/${{ github.repository }}.git
+#          commit-message: |
+#            {{formulaName}} ${{ needs.release-please.outputs.flagd_version }}
+#
+#            Created by https://github.com/mislav/bump-homebrew-formula-action
+#        env:
+#          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
