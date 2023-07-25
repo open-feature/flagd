@@ -162,8 +162,8 @@ jobs:
 
     env:
       TAG: v0.6.0-dev #${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
-      VERSION: v${{ env.TAG }}
-      VERSION_NO_PREFIX: ${{ env.TAG }}
+      VERSION: v0.6.0-dev
+      VERSION_NO_PREFIX: 0.6.0-dev
       BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
       - name: Checkout
