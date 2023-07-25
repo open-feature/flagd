@@ -164,8 +164,12 @@ jobs:
       TAG: ${{ github.ref }} #${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
       VERSION: v0.6.0-dev
       VERSION_NO_PREFIX: 0.6.0-dev
+      COMMIT: ${{ github.ref }}
       BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
         with:
@@ -186,9 +190,13 @@ jobs:
           cd ${{ matrix.path }} && cyclonedx-gomod app > ../sbom.xml
       - name: build darwin arm64
         run: |
-          env GOOS=darwin GOARCH=arm64 echo go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
+          env GOOS=darwin GOARCH=arm64 DATE=${{ steps.date.outputs.date }} echo go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           env GOOS=darwin GOARCH=arm64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_arm64.tar.gz ./${{ matrix.path }}_darwin_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+      - uses: actions/upload-artifact@v3
+        with:
+          name: flagd-test
+          path: ./*.tar.gz
 #      - name: build darwin x86_64
 #        run: |
 #          env GOOS=darwin GOARCH=amd64 go build -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
