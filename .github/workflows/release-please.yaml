@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     # Release-please creates a PR that tracks all changes
     steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - uses: google-github-actions/release-please-action@ca6063f4ed81b55db15b8c42d1b6f7925866342d # v3
         id: release
         with:
@@ -51,6 +54,7 @@ jobs:
             console.log("items to publish", itemsToPublish);
             return itemsToPublish;
     outputs:
+      date: ${{ steps.date.outputs.date }}
       items_to_publish: ${{ steps.items-to-publish.outputs.result }}
       flagd_version: ${{ steps.release.outputs.flagd--version }}
       flagd_tag_name: ${{ steps.release.outputs.flagd--tag_name }}
@@ -97,10 +101,6 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@master
 
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-
       - name: Build
         id: build
         uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4
@@ -117,7 +117,7 @@ jobs:
           build-args: |
             VERSION=${{ env.VERSION }}
             COMMIT=${{ github.sha }}
-            DATE=${{ steps.date.outputs.date }}
+            DATE=${{ needs.release-please.outputs.date }}
       - name: Install Cosign
         uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494
 
@@ -147,6 +147,7 @@ jobs:
           files: |
             ${{ env.PUBLIC_KEY_FILE }}
             ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
+
   release-go-binaries:
     name: Create and publish binaries to GitHub
     needs: release-please
@@ -160,6 +161,9 @@ jobs:
       TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
       VERSION: v${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
       VERSION_NO_PREFIX: ${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
+      COMMIT: ${{ github.sha }}
+      DATE: ${{ needs.release-please.outputs.date }}
+      BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
@@ -181,32 +185,32 @@ jobs:
           cd ${{ matrix.path }} && cyclonedx-gomod app > ../sbom.xml
       - name: build darwin arm64
         run: |
-          env GOOS=darwin GOARCH=arm64 go build -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
+          env GOOS=darwin GOARCH=arm64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_arm64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_arm64.tar.gz ./${{ matrix.path }}_darwin_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build darwin x86_64
         run: |
-          env GOOS=darwin GOARCH=amd64 go build -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
+          env GOOS=darwin GOARCH=amd64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_darwin_x86_64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Darwin_x86_64.tar.gz ./${{ matrix.path }}_darwin_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build linux arm64
         run: |
-          env GOOS=linux GOARCH=arm64 go build -o ./${{ matrix.path }}_linux_arm64 ./${{ matrix.path }}/main.go
+          env GOOS=linux GOARCH=arm64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_linux_arm64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_arm64.tar.gz ./${{ matrix.path }}_linux_arm64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build linux x86_64
         run: |
-          env GOOS=linux GOARCH=amd64 go build -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
+          env GOOS=linux GOARCH=amd64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_x86_64.tar.gz ./${{ matrix.path }}_linux_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build linux i386
         run: |
-          env GOOS=linux GOARCH=386 go build -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
+          env GOOS=linux GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       # Windows artifacts use .zip archive
       - name: build windows x86_64
         run: |
-          env GOOS=windows GOARCH=amd64 go build -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
+          env GOOS=windows GOARCH=amd64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
           zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.zip ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       - name: build windows i386
         run: |
-          env GOOS=windows GOARCH=386 go build -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
+          env GOOS=windows GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
           zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       # Bundle licenses
       - name: Install go-licenses
