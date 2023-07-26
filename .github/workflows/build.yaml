@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - feature/workflows
-      - ignore-me
+      - main
     paths-ignore:
       - "README.md"
       - "docs/**"
   pull_request:
     branches:
-      - ignore-me
+      - main
     paths-ignore:
       - "README.md"
       - "docs/**"
