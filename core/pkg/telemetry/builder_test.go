@@ -194,7 +194,6 @@ func (e *errorExp) Export(ctx context.Context, data *metricdata.ResourceMetrics)
 }
 
 func (e *errorExp) ForceFlush(ctx context.Context) error {
-	// exporter holds no state, nothing to flush.
 	return fmt.Errorf("I am an error")
 }
 
