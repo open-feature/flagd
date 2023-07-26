@@ -3,7 +3,11 @@ PREFIX=/usr/local
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 FLAGD_DEV_NAMESPACE ?= flagd-dev
+ZD_TEST_NAMESPACE_FLAGD_PROXY ?= flagd-proxy-zd-test
 ZD_TEST_NAMESPACE ?= flagd-zd-test
+ZD_CLIENT_IMG ?= zd-client:latest
+FLAGD_PROXY_IMG ?= flagd-proxy:latest
+FLAGD_PROXY_IMG_ZD ?= flagd-proxy:zd
 
 workspace-init: workspace-clean
 	go work init
@@ -84,6 +88,9 @@ run-zd-test:
 	kubectl delete ns "$(ZD_TEST_NAMESPACE)" --ignore-not-found=true
 	kubectl create ns "$(ZD_TEST_NAMESPACE)"
 	ZD_TEST_NAMESPACE="$(ZD_TEST_NAMESPACE)" FLAGD_DEV_NAMESPACE=$(FLAGD_DEV_NAMESPACE) IMG="$(IMG)" IMG_ZD="$(IMG_ZD)" ./test/zero-downtime/zd_test.sh
+
+run-flagd-proxy-zd-test:
+	ZD_TEST_NAMESPACE_FLAGD_PROXY="$(ZD_TEST_NAMESPACE_FLAGD_PROXY)" FLAGD_PROXY_IMG="$(FLAGD_PROXY_IMG)" FLAGD_PROXY_IMG_ZD="$(FLAGD_PROXY_IMG_ZD)" ZD_CLIENT_IMG="$(ZD_CLIENT_IMG)" ./test/zero-downtime-flagd-proxy/zd_test.sh
 
 # Markdown lint configuration
 #
