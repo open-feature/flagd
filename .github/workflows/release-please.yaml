@@ -101,10 +101,6 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@master
 
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-
       - name: Build
         id: build
         uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4
@@ -121,7 +117,7 @@ jobs:
           build-args: |
             VERSION=${{ env.VERSION }}
             COMMIT=${{ github.sha }}
-            DATE=${{ steps.date.outputs.date }}
+            DATE=${{ needs.release-please.outputs.date }}
       - name: Install Cosign
         uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494
 
