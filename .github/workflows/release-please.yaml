@@ -169,7 +169,7 @@ jobs:
       VERSION: v0.6.0-dev
       VERSION_NO_PREFIX: 0.6.0-dev
       COMMIT: ${{ github.sha }}
-      DATE: $${{ needs.release-please.outputs.date }}
+      DATE: ${{ needs.release-please.outputs.date }}
       BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
       - name: Checkout
