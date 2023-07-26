@@ -3,19 +3,19 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/aggregation"
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest/observer"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/aggregation"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestBuildMetricsRecorder(t *testing.T) {
@@ -172,7 +172,8 @@ func TestErrorIntercepted(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	NewOTelRecorder(reader, rs, "testSvc")
 	var data metricdata.ResourceMetrics
-	reader.Collect(context.TODO(), &data)
+	err := reader.Collect(context.TODO(), &data)
+	require.Nil(t, err)
 
 	// we should have some logs that were intercepted
 	require.True(t, observedLogs.FilterField(zap.String("component", "otel")).Len() > 0)
@@ -185,18 +186,18 @@ func (e *errorExp) Temporality(k metric.InstrumentKind) metricdata.Temporality {
 	return metric.DefaultTemporalitySelector(k)
 }
 
-func (e *errorExp) Aggregation(k metric.InstrumentKind) aggregation.Aggregation {
+func (e *errorExp) Aggregation(_ metric.InstrumentKind) aggregation.Aggregation {
 	return nil
 }
 
-func (e *errorExp) Export(ctx context.Context, data *metricdata.ResourceMetrics) error {
+func (e *errorExp) Export(_ context.Context, _ *metricdata.ResourceMetrics) error {
 	return fmt.Errorf("I am an error")
 }
 
-func (e *errorExp) ForceFlush(ctx context.Context) error {
+func (e *errorExp) ForceFlush(_ context.Context) error {
 	return fmt.Errorf("I am an error")
 }
 
-func (e *errorExp) Shutdown(ctx context.Context) error {
+func (e *errorExp) Shutdown(_ context.Context) error {
 	return fmt.Errorf("I am an error")
 }
