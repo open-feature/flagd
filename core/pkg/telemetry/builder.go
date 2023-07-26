@@ -65,7 +65,7 @@ func BuildMetricsRecorder(
 // This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
-		logger.Warn("skipping trace provider setup as collector target is not set." +
+		logger.Debug("skipping trace provider setup as collector target is not set." +
 			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
 		return nil
 	}
