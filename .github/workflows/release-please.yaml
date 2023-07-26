@@ -159,7 +159,7 @@ jobs:
     if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
     strategy:
       matrix:
-        path:  ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
+        path: ${{ fromJSON(needs.release-please.outputs.items_to_publish) }}
 
     env:
       TAG: ${{ needs.release-please.outputs[format('{0}_tag_name', matrix.path)] }}
