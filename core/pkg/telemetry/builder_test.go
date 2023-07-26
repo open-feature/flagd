@@ -2,7 +2,15 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/aggregation"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"testing"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/stretchr/testify/require"
@@ -150,4 +158,46 @@ func TestBuildResourceFor(t *testing.T) {
 		Key:   semconv.ServiceVersionKey,
 		Value: attribute.StringValue(svcVersion),
 	}, "expected resource to contain service version")
+}
+
+func TestErrorIntercepted(t *testing.T) {
+	// register the OTel error handling
+	observedZapCore, observedLogs := observer.New(zap.DebugLevel)
+	observedLogger := zap.New(observedZapCore)
+	log := logger.NewLogger(observedLogger, true)
+	RegisterErrorHandling(log)
+
+	// configure a metric reader with an exporter that only returns error
+	reader := metric.NewPeriodicReader(&errorExp{}, metric.WithInterval(1*time.Millisecond))
+	rs := resource.NewWithAttributes("testSchema")
+	NewOTelRecorder(reader, rs, "testSvc")
+	var data metricdata.ResourceMetrics
+	reader.Collect(context.TODO(), &data)
+
+	// we should have some logs that were intercepted
+	require.True(t, observedLogs.FilterField(zap.String("component", "otel")).Len() > 0)
+}
+
+// errorExp is an exporter that always fails
+type errorExp struct{}
+
+func (e *errorExp) Temporality(k metric.InstrumentKind) metricdata.Temporality {
+	return metric.DefaultTemporalitySelector(k)
+}
+
+func (e *errorExp) Aggregation(k metric.InstrumentKind) aggregation.Aggregation {
+	return nil
+}
+
+func (e *errorExp) Export(ctx context.Context, data *metricdata.ResourceMetrics) error {
+	return fmt.Errorf("I am an error")
+}
+
+func (e *errorExp) ForceFlush(ctx context.Context) error {
+	// exporter holds no state, nothing to flush.
+	return fmt.Errorf("I am an error")
+}
+
+func (e *errorExp) Shutdown(ctx context.Context) error {
+	return fmt.Errorf("I am an error")
 }

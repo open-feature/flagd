@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -34,7 +35,9 @@ type Config struct {
 }
 
 func RegisterErrorHandling(log *logger.Logger) {
-	otel.SetErrorHandler(NewOTelErrorsHandler(log))
+	otel.SetErrorHandler(otelErrorsHandler{
+		logger: log,
+	})
 }
 
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
@@ -175,4 +178,14 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 		return nil, fmt.Errorf("unable to create resource identifier: %w", err)
 	}
 	return r, nil
+}
+
+// OTelErrorsHandler is a custom error interceptor for OpenTelemetry
+type otelErrorsHandler struct {
+	logger *logger.Logger
+}
+
+func (h otelErrorsHandler) Handle(err error) {
+	msg := fmt.Sprintf("OpenTelemetry Error: %s", err.Error())
+	h.logger.WithFields(zap.String("component", "otel")).Debug(msg)
 }
