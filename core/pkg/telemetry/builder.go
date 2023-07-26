@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -19,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
