@@ -33,6 +33,10 @@ type Config struct {
 	CollectorTarget string
 }
 
+func RegisterErrorHandling(log *logger.Logger) {
+	otel.SetErrorHandler(NewOTelErrorsHandler(log))
+}
+
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
 func BuildMetricsRecorder(
 	ctx context.Context, svcName string, svcVersion string, config Config,
