@@ -69,6 +69,7 @@ var startCmd = &cobra.Command{
 			Port:           viper.GetUint16(portFlagName),
 			MetricsPort:    viper.GetUint16(metricsPortFlagName),
 		}
+
 		errChan := make(chan error, 1)
 		go func() {
 			if err := s.Serve(ctx, cfg); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -77,6 +78,13 @@ var startCmd = &cobra.Command{
 		}()
 
 		logger.Info(fmt.Sprintf("listening for connections on %d", cfg.Port))
+
+		defer func() {
+			logger.Info("Shutting down server...")
+			s.Shutdown()
+			logger.Info("Server successfully shutdown.")
+		}()
+
 		select {
 		case <-ctx.Done():
 			return

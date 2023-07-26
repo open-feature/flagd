@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zd-test
+spec:
+  containers:
+    - name: flagd-proxy-zd
+      image: ${ZD_CLIENT_IMG}
+      env:
+        - name: URL
+          value: "flagd-proxy-svc:8015"
+        - name: WAIT_TIME_BETWEEN_REQUESTS_S
+          value: "1"

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flagd-proxy-svc
+spec:
+  selector:
+    app.kubernetes.io/name: flagd-proxy
+  ports:
+    - port: 8015
+      targetPort: 8015

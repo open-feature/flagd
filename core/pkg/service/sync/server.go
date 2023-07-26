@@ -18,11 +18,13 @@ import (
 )
 
 type Server struct {
-	server        *http.Server
-	metricsServer *http.Server
-	Logger        *logger.Logger
-	handler       *handler
-	config        iservice.Configuration
+	server            *http.Server
+	metricsServer     *http.Server
+	Logger            *logger.Logger
+	handler           *handler
+	config            iservice.Configuration
+	grpcServer        *grpc.Server
+	metricServerReady bool
 }
 
 func NewServer(logger *logger.Logger, store syncStore.ISyncStore) *Server {
@@ -37,6 +39,7 @@ func NewServer(logger *logger.Logger, store syncStore.ISyncStore) *Server {
 
 func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) error {
 	s.config = svcConf
+	s.metricServerReady = true
 
 	g, gCtx := errgroup.WithContext(ctx)
 
@@ -69,6 +72,13 @@ func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) erro
 	return nil
 }
 
+func (s *Server) Shutdown() {
+	s.metricServerReady = false
+
+	// Stop the GRPc server gracefully
+	s.grpcServer.GracefulStop()
+}
+
 func (s *Server) startServer() error {
 	var lis net.Listener
 	var err error
@@ -77,10 +87,10 @@ func (s *Server) startServer() error {
 	if err != nil {
 		return fmt.Errorf("error setting up listener for address %s: %w", address, err)
 	}
-	grpcServer := grpc.NewServer()
-	rpc.RegisterFlagSyncServiceServer(grpcServer, s.handler)
+	s.grpcServer = grpc.NewServer()
+	rpc.RegisterFlagSyncServiceServer(s.grpcServer, s.handler)
 
-	if err := grpcServer.Serve(
+	if err := s.grpcServer.Serve(
 		lis,
 	); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error returned from grpc server: %w", err)
@@ -100,7 +110,7 @@ func (s *Server) startMetricsServer() error {
 		case "/healthz":
 			w.WriteHeader(http.StatusOK)
 		case "/readyz":
-			if s.config.ReadinessProbe() {
+			if s.metricServerReady && s.config.ReadinessProbe() {
 				w.WriteHeader(http.StatusOK)
 			} else {
 				w.WriteHeader(http.StatusPreconditionFailed)
