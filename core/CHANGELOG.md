@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.1](https://github.com/open-feature/flagd/compare/core/v0.6.0...core/v0.6.1) (2023-07-27)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.27.4 ([#756](https://github.com/open-feature/flagd/issues/756)) ([dcc10f3](https://github.com/open-feature/flagd/commit/dcc10f33f5fd9a8936241725ea811b90b4f136be))
+* **deps:** update module github.com/bufbuild/connect-go to v1.10.0 ([#771](https://github.com/open-feature/flagd/issues/771)) ([c74103f](https://github.com/open-feature/flagd/commit/c74103faec068f14c87ad3ec227f5b802dbfac43))
+* **deps:** update module google.golang.org/grpc to v1.57.0 ([#773](https://github.com/open-feature/flagd/issues/773)) ([be8bf04](https://github.com/open-feature/flagd/commit/be8bf045093d89099eead2cccb86a5a7275e25d5))
+
+
+### ✨ New Features
+
+* **flagd-proxy:** introduce zero-downtime ([#752](https://github.com/open-feature/flagd/issues/752)) ([ed5e6e5](https://github.com/open-feature/flagd/commit/ed5e6e5f3ee0a923c33dbf1a8bf20f80adec71bd))
+* **flagd:** custom error handling for OTel errors ([#769](https://github.com/open-feature/flagd/issues/769)) ([bda1a92](https://github.com/open-feature/flagd/commit/bda1a92785c4348fe306a1d259b7bea91bd01c41))
+
 ## [0.6.0](https://github.com/open-feature/flagd/compare/core/v0.5.4...core/v0.6.0) (2023-07-13)
 
 

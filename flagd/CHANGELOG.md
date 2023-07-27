@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/open-feature/flagd/compare/flagd/v0.6.0...flagd/v0.6.1) (2023-07-27)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/go-sdk-contrib/tests/flagd to v1.2.3 ([#749](https://github.com/open-feature/flagd/issues/749)) ([cd63e48](https://github.com/open-feature/flagd/commit/cd63e489d681c0998a9c38072410653473ce40fc))
+
 ## [0.6.0](https://github.com/open-feature/flagd/compare/flagd/v0.5.4...flagd/v0.6.0) (2023-07-13)
 
 

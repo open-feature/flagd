@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.5...flagd-proxy/v0.2.6) (2023-07-27)
+
+
+### ✨ New Features
+
+* **flagd-proxy:** introduce zero-downtime ([#752](https://github.com/open-feature/flagd/issues/752)) ([ed5e6e5](https://github.com/open-feature/flagd/commit/ed5e6e5f3ee0a923c33dbf1a8bf20f80adec71bd))
+
 ## [0.2.5](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.4...flagd-proxy/v0.2.5) (2023-07-13)
 
 
