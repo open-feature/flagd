@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -31,6 +32,12 @@ const (
 type Config struct {
 	MetricsExporter string
 	CollectorTarget string
+}
+
+func RegisterErrorHandling(log *logger.Logger) {
+	otel.SetErrorHandler(otelErrorsHandler{
+		logger: log,
+	})
 }
 
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
@@ -58,7 +65,7 @@ func BuildMetricsRecorder(
 // This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorTarget == "" {
-		logger.Warn("skipping trace provider setup as collector target is not set." +
+		logger.Debug("skipping trace provider setup as collector target is not set." +
 			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
 		return nil
 	}
@@ -171,4 +178,14 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 		return nil, fmt.Errorf("unable to create resource identifier: %w", err)
 	}
 	return r, nil
+}
+
+// OTelErrorsHandler is a custom error interceptor for OpenTelemetry
+type otelErrorsHandler struct {
+	logger *logger.Logger
+}
+
+func (h otelErrorsHandler) Handle(err error) {
+	msg := fmt.Sprintf("OpenTelemetry Error: %s", err.Error())
+	h.logger.WithFields(zap.String("component", "otel")).Debug(msg)
 }

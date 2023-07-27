@@ -85,6 +85,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		CollectorTarget: config.OtelCollectorURI,
 	}
 
+	// register error handling for OpenTelemetry
+	telemetry.RegisterErrorHandling(logger)
+
 	// register trace provider for the runtime
 	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
 	if err != nil {
