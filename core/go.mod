@@ -5,7 +5,7 @@ go 1.19
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230222100723-491ee098dd92.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230317150644-afd1cc2ef580.1
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230317150644-afd1cc2ef580.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230720212818-3675556880a1.1
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
