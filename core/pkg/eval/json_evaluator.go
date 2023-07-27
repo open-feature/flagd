@@ -282,7 +282,7 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		return "", map[string]interface{}{}, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 	}
 
 	// add selector to evaluation metadata
