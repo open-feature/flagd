@@ -74,7 +74,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
-				tt.evalFields.metadat,
+				tt.evalFields.metadata,
 				tt.evalFields.err,
 			).AnyTimes()
 			// configure OTel Metrics
