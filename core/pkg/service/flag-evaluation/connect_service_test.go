@@ -31,7 +31,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 		result  bool
 		variant string
 		reason  string
-		metadat map[string]interface{}
+		metadata map[string]interface{}
 		err     error
 	}
 
