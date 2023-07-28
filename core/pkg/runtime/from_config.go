@@ -79,6 +79,7 @@ func init() {
 }
 
 // FromConfig builds a runtime from startup configurations
+// nolint: funlen
 func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,

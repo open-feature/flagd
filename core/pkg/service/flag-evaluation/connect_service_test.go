@@ -28,11 +28,11 @@ import (
 
 func TestConnectService_UnixConnection(t *testing.T) {
 	type evalFields struct {
-		result  bool
-		variant string
-		reason  string
+		result   bool
+		variant  string
+		reason   string
 		metadata map[string]interface{}
-		err     error
+		err      error
 	}
 
 	tests := []struct {
