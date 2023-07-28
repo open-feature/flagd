@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.2](https://github.com/open-feature/flagd/compare/core/v0.6.1...core/v0.6.2) (2023-07-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.3.0-20230720212818-3675556880a1.1 ([#747](https://github.com/open-feature/flagd/issues/747)) ([fb17bc6](https://github.com/open-feature/flagd/commit/fb17bc6a5c715f507b2838c150dc8a2f139a38fb))
+* **deps:** update module golang.org/x/net to v0.12.0 ([#734](https://github.com/open-feature/flagd/issues/734)) ([777b28b](https://github.com/open-feature/flagd/commit/777b28b1d512245b0046d11197f6dfa341b317d2))
+
+
+### ✨ New Features
+
+* grpc selector as scope ([#761](https://github.com/open-feature/flagd/issues/761)) ([7246e6d](https://github.com/open-feature/flagd/commit/7246e6dce648c6445f90d71fc172bbab209d9928))
+
 ## [0.6.1](https://github.com/open-feature/flagd/compare/core/v0.6.0...core/v0.6.1) (2023-07-27)
 
 
