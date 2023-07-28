@@ -344,22 +344,22 @@ func TestResolveAllValues(t *testing.T) {
 
 			switch vT := val.Value.(type) {
 			case bool:
-				v, _, reason, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, test.context)
+				v, _, reason, _, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case string:
-				v, _, reason, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, test.context)
+				v, _, reason, _, _ := evaluator.ResolveStringValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case float64:
-				v, _, reason, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, test.context)
+				v, _, reason, _, _ := evaluator.ResolveFloatValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			case interface{}:
-				v, _, reason, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, test.context)
+				v, _, reason, _, _ := evaluator.ResolveObjectValue(context.TODO(), reqID, val.FlagKey, test.context)
 				assert.Equal(t, v, vT)
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
@@ -390,7 +390,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
+		val, _, reason, _, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.val, val)
@@ -427,7 +427,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	for _, test := range tests {
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
+				val, _, reason, _, err := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -465,7 +465,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
+		val, _, reason, _, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -503,7 +503,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	for _, test := range tests {
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
+				val, _, reason, _, err := evaluator.ResolveStringValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -541,7 +541,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
+		val, _, reason, _, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -579,7 +579,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	for _, test := range tests {
 		b.Run(fmt.Sprintf("test: %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
+				val, _, reason, _, err := evaluator.ResolveFloatValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -617,7 +617,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
+		val, _, reason, _, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -655,7 +655,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	for _, test := range tests {
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
+				val, _, reason, _, err := evaluator.ResolveIntValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -693,7 +693,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
+		val, _, reason, _, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
@@ -734,7 +734,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	for _, test := range tests {
 		b.Run(fmt.Sprintf("test %s", test.flagKey), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				val, _, reason, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
+				val, _, reason, _, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
 
 				if test.errorCode == "" {
 					if assert.NoError(b, err) {
@@ -1073,7 +1073,7 @@ func TestState_Evaluator(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(expectedOutputJSON, gotOutputJSON) {
+			if !reflect.DeepEqual(expectedOutputJSON["flags"], gotOutputJSON["flags"]) {
 				t.Errorf("expected state: %v got state: %v", expectedOutputJSON, gotOutputJSON)
 			}
 		})
@@ -1109,35 +1109,35 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Add_ResolveBooleanValue": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticBoolFlag, nil)
+				_, _, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticBoolFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveStringValue": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticStringValue, nil)
+				_, _, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticStringValue, nil)
 				return err
 			},
 		},
 		"Delete_ResolveIntValue": {
 			dataSyncType: sync.DELETE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveIntValue(context.TODO(), "", StaticIntFlag, nil)
+				_, _, _, _, err := evaluator.ResolveIntValue(context.TODO(), "", StaticIntFlag, nil)
 				return err
 			},
 		},
 		"Add_ResolveFloatValue": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveFloatValue(context.TODO(), "", StaticFloatFlag, nil)
+				_, _, _, _, err := evaluator.ResolveFloatValue(context.TODO(), "", StaticFloatFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveObjectValue": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *eval.JSONEvaluator) error {
-				_, _, _, err := evaluator.ResolveObjectValue(context.TODO(), "", StaticObjectFlag, nil)
+				_, _, _, _, err := evaluator.ResolveObjectValue(context.TODO(), "", StaticObjectFlag, nil)
 				return err
 			},
 		},

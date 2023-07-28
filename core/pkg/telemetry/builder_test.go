@@ -175,8 +175,8 @@ func TestErrorIntercepted(t *testing.T) {
 	err := reader.Collect(context.TODO(), &data)
 	require.Nil(t, err)
 
-	// we should have some logs that were intercepted
-	require.True(t, observedLogs.FilterField(zap.String("component", "otel")).Len() > 0)
+	// we should have some logs that were intercepted, test every 10ms for 1s
+	require.Eventually(t, func() bool { return observedLogs.FilterField(zap.String("component", "otel")).Len() > 0 }, 1000*time.Millisecond, 10*time.Millisecond)
 }
 
 // errorExp is an exporter that always fails

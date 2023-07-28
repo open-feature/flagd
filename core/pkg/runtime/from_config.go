@@ -79,6 +79,7 @@ func init() {
 }
 
 // FromConfig builds a runtime from startup configurations
+// nolint: funlen
 func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
@@ -100,13 +101,15 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
 
-	// build flag store
+	// build flag store & fill sources details
 	s := store.NewFlags()
-	sources := []string{}
-	for _, sync := range config.SyncProviders {
-		sources = append(sources, sync.URI)
+	for _, provider := range config.SyncProviders {
+		s.FlagSources = append(s.FlagSources, provider.URI)
+		s.SourceMetadata[provider.URI] = store.SourceDetails{
+			Source:   provider.URI,
+			Selector: provider.Selector,
+		}
 	}
-	s.FlagSources = sources
 
 	// derive evaluator
 	evaluator := setupJSONEvaluator(logger, s)

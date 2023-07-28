@@ -277,9 +277,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, err := resolve[string](
-				reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
-			)
+			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
@@ -409,9 +407,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 				),
 			)
 			for i := 0; i < b.N; i++ {
-				value, variant, reason, err := resolve[string](
-					reqID, tt.flagKey, tt.context, je.evaluateVariant, je.store.Flags[tt.flagKey].Variants,
-				)
+				value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 				if value != tt.expectedValue {
 					b.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)

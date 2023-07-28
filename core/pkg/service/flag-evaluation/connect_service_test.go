@@ -28,10 +28,11 @@ import (
 
 func TestConnectService_UnixConnection(t *testing.T) {
 	type evalFields struct {
-		result  bool
-		variant string
-		reason  string
-		err     error
+		result   bool
+		variant  string
+		reason   string
+		metadata map[string]interface{}
+		err      error
 	}
 
 	tests := []struct {
@@ -73,6 +74,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 				tt.evalFields.result,
 				tt.evalFields.variant,
 				tt.evalFields.reason,
+				tt.evalFields.metadata,
 				tt.evalFields.err,
 			).AnyTimes()
 			// configure OTel Metrics

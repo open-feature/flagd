@@ -24,11 +24,16 @@ import (
 	"go.uber.org/zap"
 )
 
+const SelectorMetadataKey = "scope"
+
 var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
 }
+
+type variantEvaluator func(string, string, map[string]any) (
+	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
 type JSONEvaluator struct {
 	store          *store.Flags
@@ -124,6 +129,7 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 	var value interface{}
 	var variant string
 	var reason string
+	var metadata map[string]interface{}
 	var err error
 	allFlags := je.store.GetAll()
 	for flagKey, flag := range allFlags {
@@ -135,42 +141,38 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, err = resolve[bool](
+			value, variant, reason, metadata, err = resolve[bool](
 				reqID,
 				flagKey,
 				context,
 				je.evaluateVariant,
-				allFlags[flagKey].Variants,
 			)
 		case string:
-			value, variant, reason, err = resolve[string](
+			value, variant, reason, metadata, err = resolve[string](
 				reqID,
 				flagKey,
 				context,
 				je.evaluateVariant,
-				allFlags[flagKey].Variants,
 			)
 		case float64:
-			value, variant, reason, err = resolve[float64](
+			value, variant, reason, metadata, err = resolve[float64](
 				reqID,
 				flagKey,
 				context,
 				je.evaluateVariant,
-				allFlags[flagKey].Variants,
 			)
 		case map[string]any:
-			value, variant, reason, err = resolve[map[string]any](
+			value, variant, reason, metadata, err = resolve[map[string]any](
 				reqID,
 				flagKey,
 				context,
 				je.evaluateVariant,
-				allFlags[flagKey].Variants,
 			)
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey, err))
+		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
 	}
 	return values
 }
@@ -180,14 +182,14 @@ func (je *JSONEvaluator) ResolveBooleanValue(
 	value bool,
 	variant string,
 	reason string,
+	metadata map[string]interface{},
 	err error,
 ) {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveBoolean")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
-	return resolve[bool](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	return resolve[bool](reqID, flagKey, context, je.evaluateVariant)
 }
 
 func (je *JSONEvaluator) ResolveStringValue(
@@ -195,14 +197,14 @@ func (je *JSONEvaluator) ResolveStringValue(
 	value string,
 	variant string,
 	reason string,
+	metadata map[string]interface{},
 	err error,
 ) {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveString")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
-	return resolve[string](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	return resolve[string](reqID, flagKey, context, je.evaluateVariant)
 }
 
 func (je *JSONEvaluator) ResolveFloatValue(
@@ -210,14 +212,14 @@ func (je *JSONEvaluator) ResolveFloatValue(
 	value float64,
 	variant string,
 	reason string,
+	metadata map[string]interface{},
 	err error,
 ) {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveFloat")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
-	value, variant, reason, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	value, variant, reason, metadata, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant)
 	return
 }
 
@@ -225,15 +227,15 @@ func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flag
 	value int64,
 	variant string,
 	reason string,
+	metadata map[string]interface{},
 	err error,
 ) {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveInt")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
 	var val float64
-	val, variant, reason, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	val, variant, reason, metadata, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant)
 	value = int64(val)
 	return
 }
@@ -243,54 +245,55 @@ func (je *JSONEvaluator) ResolveObjectValue(
 	value map[string]any,
 	variant string,
 	reason string,
+	metadata map[string]interface{},
 	err error,
 ) {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveObject")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
-	flag, _ := je.store.Get(flagKey)
-	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant, flag.Variants)
+	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func resolve[T constraints](reqID string, key string, context map[string]any,
-	variantEval func(string, string, map[string]any) (string, string, error),
-	variants map[string]any) (
-	value T,
-	variant string,
-	reason string,
-	err error,
+func resolve[T constraints](reqID string, key string, context map[string]any, variantEval variantEvaluator) (
+	value T, variant string, reason string, metadata map[string]interface{}, err error,
 ) {
-	variant, reason, err = variantEval(reqID, key, context)
+	variant, variants, reason, metadata, err := variantEval(reqID, key, context)
 	if err != nil {
-		return value, variant, reason, err
+		return value, variant, reason, metadata, err
 	}
 
 	var ok bool
 	value, ok = variants[variant].(T)
 	if !ok {
-		return value, variant, model.ErrorReason, errors.New(model.TypeMismatchErrorCode)
+		return value, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
 	}
 
-	return value, variant, reason, nil
+	return value, variant, reason, metadata, nil
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
-func (je *JSONEvaluator) evaluateVariant(
-	reqID string,
-	flagKey string,
-	context map[string]any,
-) (variant string, reason string, err error) {
+func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context map[string]any) (
+	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
+) {
+	metadata = map[string]interface{}{}
+
 	flag, ok := je.store.Get(flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
-		return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
+		return "", map[string]interface{}{}, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+	}
+
+	// add selector to evaluation metadata
+	selector := je.store.SelectorForFlag(flag)
+	if selector != "" {
+		metadata[SelectorMetadataKey] = selector
 	}
 
 	if flag.State == Disabled {
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
-		return "", model.ErrorReason, errors.New(model.FlagDisabledErrorCode)
+		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
 	}
 
 	// get the targeting logic, if any
@@ -300,28 +303,28 @@ func (je *JSONEvaluator) evaluateVariant(
 		targetingBytes, err := targeting.MarshalJSON()
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag: %s, %s", flagKey, err))
-			return "", model.ErrorReason, errors.New(model.ParseErrorCode)
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
 		b, err := json.Marshal(context)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, context))
 
-			return "", model.ErrorReason, errors.New(model.ErrorReason)
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}
 		var result bytes.Buffer
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))
-			return "", model.ErrorReason, errors.New(model.ParseErrorCode)
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
 
 		// if this is a valid variant, return it
 		if _, ok := flag.Variants[variant]; ok {
-			return variant, model.TargetingMatchReason, nil
+			return variant, flag.Variants, model.TargetingMatchReason, metadata, nil
 		}
 
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey: %s, variant is not valid", flagKey))
@@ -330,7 +333,7 @@ func (je *JSONEvaluator) evaluateVariant(
 		reason = model.StaticReason
 	}
 
-	return flag.DefaultVariant, reason, nil
+	return flag.DefaultVariant, flag.Variants, reason, metadata, nil
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
