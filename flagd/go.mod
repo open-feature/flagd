@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.12.6
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/flagd/core v0.6.1
+	github.com/open-feature/flagd/core v0.6.2
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.13
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.3
 	github.com/spf13/cobra v1.7.0
@@ -15,9 +15,9 @@ require (
 )
 
 require (
-	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.5.2-20230317150644-afd1cc2ef580.1 // indirect
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230317150644-afd1cc2ef580.1 // indirect
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.29.1-20230317150644-afd1cc2ef580.1 // indirect
+	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1 // indirect
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230710190440-2333a9579c1a.1 // indirect
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bufbuild/connect-go v1.10.0 // indirect
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0 // indirect
@@ -103,14 +103,14 @@ require (
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/term v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
