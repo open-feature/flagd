@@ -233,6 +233,7 @@ jobs:
           files: |
             ./sbom.xml
             ./*.tar.gz
+            ./*.zip
             ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
   homebrew:
     name: Bump homebrew-core formula
