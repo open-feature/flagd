@@ -21,7 +21,7 @@ type Sync struct {
 	LastBodySHA string
 	Logger      *logger.Logger
 	BearerToken string
-	Interval    int32
+	Interval    uint32
 	ready       bool
 }
 
@@ -65,7 +65,9 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Set ready state
 	hs.ready = true
 
+	hs.Logger.Debug(fmt.Sprintf("polling %s every %d seconds", hs.URI, hs.Interval))
 	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
+		hs.Logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.URI))
 		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
 		if err != nil {
 			hs.Logger.Error(err.Error())

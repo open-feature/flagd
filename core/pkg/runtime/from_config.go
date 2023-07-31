@@ -54,6 +54,7 @@ type SourceConfig struct {
 	TLS         bool   `json:"tls,omitempty"`
 	ProviderID  string `json:"providerID,omitempty"`
 	Selector    string `json:"selector,omitempty"`
+	Interval    uint32 `json:"interval,omitempty"`
 }
 
 // Config is the configuration structure derived from startup arguments.
@@ -216,6 +217,13 @@ func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 }
 
 func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
+
+	// Default to 5 seconds
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+
 	return &httpSync.Sync{
 		URI: config.URI,
 		Client: &http.Client{
@@ -226,6 +234,7 @@ func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 			zap.String("sync", "remote"),
 		),
 		BearerToken: config.BearerToken,
+		Interval:    interval,
 		Cron:        cron.New(),
 	}
 }

@@ -57,6 +57,7 @@ func TestParseSource(t *testing.T) {
 			in: `[{"uri":"config/samples/example_flags.json","provider":"file"},
             		{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
             		{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
+            		{"uri":"http://site.com","provider":"http","interval":77 },
 					{"uri":"default/my-flag-config","provider":"kubernetes"},
             		{"uri":"grpc-source:8080","provider":"grpc"},
             		{"uri":"my-flag-source:8080","provider":"grpc", "tls":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
@@ -76,6 +77,11 @@ func TestParseSource(t *testing.T) {
 					URI:         "https://secure-remote",
 					Provider:    syncProviderHTTP,
 					BearerToken: "bearer-dji34ld2l",
+				},
+				{
+					URI:      "http://site.com",
+					Provider: syncProviderHTTP,
+					Interval: 77,
 				},
 				{
 					URI:      "default/my-flag-config",
