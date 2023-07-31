@@ -217,7 +217,6 @@ func NewGRPC(config SourceConfig, logger *logger.Logger) *grpc.Sync {
 }
 
 func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
-
 	// Default to 5 seconds
 	var interval uint32 = 5
 	if config.Interval != 0 {
