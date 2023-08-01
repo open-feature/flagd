@@ -23,7 +23,7 @@ It also performs the feature flag evaluations based on evaluation requests comin
 
 The Runtime stays in between these components and coordinates operations.
 
-![](../images/of-flagd-0.png)
+![flagd runtime](../images/of-flagd-0.png)
 
 ## Sync component
 
@@ -37,7 +37,7 @@ The update provided by sync implementation is pushed to the evaluator engine, wh
 Change notifications generated in the
 process gets pushed to event subscribers.
 
-![](../images/of-flagd-1.png)
+![flagd sync logic](../images/of-flagd-1.png)
 
 ## Readiness & Liveness probes
 
