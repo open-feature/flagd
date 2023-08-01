@@ -114,13 +114,13 @@ Your application is responsible for sending the `email` address via OpenFeature'
 ### Pseudo-code of application passing context
 
 ```js
-// The second parameter is the default in case flagd is unavailable
+// Here, we provide an empty context, hence the flag evaluates to false value which is the defaultVariant
 featureAvailable = openFeature.getBooleanValue("isFeatureEnabled", false, {}) // false
 
-// isFeatureEnabled for a logged in user with an email example@gmail.com
+// Here, we provide email for the flag evaluation. Still flag evaluates to defaultVariant of false as email does not end with desired domain
 featureAvailable = openFeature.getBooleanValue("isFeatureEnabled", false, {"email": "example@gmail.com"}) // false
 
-// isFeatureEnabled for a logged in user with an email someone@example.com
+// Here, the flag is evaluated with targeting rule matching, hence the value of true
 featureAvailable = openFeature.getBooleanValue("isFeatureEnabled", false, {"email": "someone@example.com"}) // true
 ```
 

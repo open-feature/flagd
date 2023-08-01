@@ -7,7 +7,7 @@ Flagd is a feature flag daemon. It is a ready-made, open source, [OpenFeature](h
 - Supports multiple data sources simultaneously.
 - Feature Flag updates occur in near real-time.
 - Contains a powerful and flexible rule targeting engine and deterministic percentage-based rollouts.
-- Flag evaluation statistics and metrics are exposed and compatible with Prometheus.
+- Flag evaluation statistics and metrics are exposed and compatible with OpenTelemetry.
 
 ![flagd architecture](images/flagd-logical-architecture.jpg)
 
@@ -24,7 +24,7 @@ Start your flagd learning journey here: [flagd concepts](concepts)
 Now that you know the concepts, it's time to decide how to run flagd.
 
 flagd can run on Kubernetes and in non-k8s environments.
-Choose your operating environment to learn more:
+Choose your mode of deployment to learn more:
 
 - [flagd on Kubernetes](k8s)
 - [flagd running outside of Kubernetes](nonk8s)
