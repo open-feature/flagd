@@ -118,7 +118,7 @@ spec:
 
 ## Pseudo-code of an application interacting with flagd sidecar
 
-```
+```bash
 // From within the pod
 curl --location 'http://localhost:8080/schema.v1.Service/ResolveString' --header 'Content-Type: application/json' --data '{ "flagKey":"foo"}'
 ```

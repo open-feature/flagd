@@ -18,7 +18,7 @@ spec:
         defaultVariant: "bar"
 ```
 
-In the example above, we have defined a `String` type feature flag named `foo` and it is in the `ENABLED` state. 
+In the example above, we have defined a `String` type feature flag named `foo` and it is in the `ENABLED` state.
 It has variants of `bar` and `baz`, referring to respected values of `BAR` and `BAZ`.
 The default variant is set to`bar`.
 

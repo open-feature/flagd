@@ -125,6 +125,7 @@ featureAvailable = openFeature.getBooleanValue("isFeatureEnabled", false, {"emai
 ```
 
 ## Fractional Evaluation
+
 In some scenarios, it is desirable to use contextual information to segment the user population further and thus return dynamic values.
 
 Look at the `headerColor` flag below. The `defaultVariant` is `red`, but the flag contains a targeting rule, meaning a fractional evaluation occurs when a context is passed and a key of `email` contains the value `@example.com`.
@@ -164,6 +165,7 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
 ```
 
 ### Fractional evaluations are sticky
+
 Fractional evaluations are "sticky" and deterministic meaning that the same email address will always belong to the same "bucket" and thus always receive the same color.
 
 This is true even if you run multiple flagd APIs completely independently.

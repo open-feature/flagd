@@ -2,7 +2,7 @@
 
 `FlagSourceConfiguration` support multiple flag sources. Sources are configured as a list and given below are supported sources and their configurations,
 
-### kubernetes aka `FeatureFlagConfiguration`
+## kubernetes aka `FeatureFlagConfiguration`
 
 This is `FeatureFlagConfiguration` custom resource backed flagd feature flag definition.
 Read more on the custom resource at the dedicated documentation of [FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag_configuration.md)
@@ -15,16 +15,16 @@ sources:
     provider: kubernetes        # kubernetes flag source backed by FeatureFlagConfiguration custom resource
 ```
 
-### flagd-proxy
+## flagd-proxy
 
 `flagd-proxy` is an alternative to direct resource access on `FeatureFlagConfiguration` custom resources.
 This source type is useful when there is a need for restricting workload permissions and/or to reduce k8s API load.
 
 Read more about proxy approach to access kubernetes resources: [flagd-proxy](https://github.com/open-feature/open-feature-operator/blob/main/docs/flagd_proxy.md)
 
-### filepath
+## filepath
 
-Injected sidecar can use volume mounted files as flag sources. 
+Injected sidecar can use volume mounted files as flag sources.
 For this, provider type `filepath` is used as below example,
 
 ```yaml
@@ -33,7 +33,7 @@ sources:
     provider: filepath          
 ```
 
-### http
+## http
 
 Feature flags can be sources from a http endpoint using provider type `http`,
 
@@ -44,9 +44,9 @@ sources:
     httpSyncBearerToken: token                  # optional bearer token for the http connection
 ```
 
-### grpc
+## grpc
 
-Given below is an example configuration with provider type `grpc` and supported options, 
+Given below is an example configuration with provider type `grpc` and supported options,
 
 ```yaml
 sources:                        
@@ -74,7 +74,7 @@ Table given below is non-exhaustive list of overriding options,
 
 ## Merging of configurations
 
-The annotation value is a comma separated list of values following one of two patterns: `{NAME}` or `{NAMESPACE}/{NAME}`. 
+The annotation value is a comma separated list of values following one of two patterns: `{NAME}` or `{NAMESPACE}/{NAME}`.
 If no namespace is provided, it is assumed that the CR is within the same namespace as the deployed pod, for example:
 
 ```yaml
@@ -118,14 +118,12 @@ The relevant `FlagSourceConfigurations` are passed to the operator by setting th
 
 ## Configuration Merging
 
-When multiple `FlagSourceConfigurations` are provided, the configurations are merged. The last `CR` takes precedence over the first, with any configuration from the deprecated `FlagDSpec` field of the `FeatureFlagConfiguration` CRD taking the lowest priority. 
-
+When multiple `FlagSourceConfigurations` are provided, the configurations are merged. The last `CR` takes precedence over the first, with any configuration from the deprecated `FlagDSpec` field of the `FeatureFlagConfiguration` CRD taking the lowest priority.
 
 ```mermaid
 flowchart LR
     FlagSourceConfiguration-values  -->|highest priority| environment-variables -->|lowest priority| defaults
 ```
-
 
 An example of this behavior:
 
@@ -159,6 +157,7 @@ spec:
     port: 8000
     tag: main
 ```
+
 Results in the following configuration:
 
 ```yaml

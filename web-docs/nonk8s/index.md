@@ -32,8 +32,6 @@ brew install flagd
 1. Install Go 1.19 or above
 1. Run `go install github.com/open-feature/flagd/flagd@latest`
 
-
-
 ## Systemd service
 
 Documentation for installing flagd as a systemd service can be found [here](systemservice.md)
@@ -94,7 +92,6 @@ docker run \
 Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
 See the [flag merging page](flagmerging.md) for more information.
-
 
 ## Perform flag evaluations
 

@@ -1,3 +1,5 @@
+# flagd
+
 Flagd is a feature flag daemon. It is a ready-made, open source, [OpenFeature](https://openfeature.dev) compliant feature flag backend system.
 
 - OpenFeature compliant and speaks your language.
