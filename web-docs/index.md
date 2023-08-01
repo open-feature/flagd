@@ -24,7 +24,7 @@ Start your flagd learning journey here: [flagd concepts](concepts)
 Now that you know the concepts, it's time to decide how to run flagd.
 
 flagd can run on Kubernetes and in non-k8s environments.
-Choose your operating environment to learn more:
+Choose your mode of deployment to learn more:
 
 - [flagd on Kubernetes](k8s)
 - [flagd running outside of Kubernetes](nonk8s)
