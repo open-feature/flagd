@@ -1,5 +1,6 @@
 site_name: flagd Docs
 theme: readthedocs
+docs_dir: web-docs
 markdown_extensions:
   - toc:
       permalink: '#'
