@@ -7,7 +7,7 @@ Flagd is a feature flag daemon. It is a ready-made, open source, [OpenFeature](h
 - Supports multiple data sources simultaneously.
 - Feature Flag updates occur in near real-time.
 - Contains a powerful and flexible rule targeting engine and deterministic percentage-based rollouts.
-- Flag evaluation statistics and metrics are exposed and compatible with Prometheus.
+- Flag evaluation statistics and metrics are exposed and compatible with OpenTelemetry.
 
 ![flagd architecture](images/flagd-logical-architecture.jpg)
 
