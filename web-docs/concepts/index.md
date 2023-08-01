@@ -77,12 +77,19 @@ Therefore the flags `defaultValue` is set to `off` for all users.
 
 In other words, the new feature is disabled by default.
 
-Now imagine you want to enable the feature, but only when both of these conditions are true:
+Now imagine you want to enable the feature, but only when the following is true:
 
-- Logged in users
-- The user email ends in `@example.com`
+- Logged in users where the user's email ends in `@example.com`
 
 Rather than codifying that in your application, flagd targeting rules can be used. The flag definition below models this behaviour.
+
+When a user logs into your application, your application is responsible for sending the `email` address via OpenFeature's context parameter (see below) and flagd will return the correct flag.
+If the email address of the logged in users contains `@example.com` then flagd will return the `on` variant (ie. `true`).
+All other users receives the `defaultVariant` of `off` (ie. false).
+In this context, "all other users" means:
+
+- Any logged in user whos email does not contain `@example.com`
+- Any logged out user
 
 Your application is responsible for sending the `email` address via OpenFeature's context parameter (see below) and flagd will return the correct flag.
 
