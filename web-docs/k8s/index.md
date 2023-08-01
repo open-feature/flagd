@@ -31,7 +31,7 @@ Next define your feature flag(s) using the `FeatureFlagConfiguration` CRD.
 
 This example specifies one flag called `foo` which has two variants `bar` and `baz`. The `defaultVariant` is `bar`.
 
-If this doesn't make sense, review the [concepts](docs/concepts) section.
+If this doesn't make sense, review the [concepts](../concepts/index.md) section.
 
 ```bash
 kubectl apply -n flags -f - <<EOF

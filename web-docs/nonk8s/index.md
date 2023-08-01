@@ -27,6 +27,14 @@ docker pull ghcr.io/open-feature/flagd:latest
 brew install flagd
 ```
 
+## Snap
+
+[flagd is available on snapcraft](https://snapcraft.io/flagd):
+
+```shell
+sudo snap install flagd
+```
+
 ## Go binary
 
 1. Install Go 1.19 or above

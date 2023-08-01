@@ -6,15 +6,17 @@ markdown_extensions:
       permalink: '#'
 nav:
     - 'Home': 'index.md'
-    - 'flagd concepts': 'concepts/index.md'
-    - 'flagd on Kubernetes':
-        - 'Getting started with flagd on k8s': 'k8s/index.md'
-    - 'flagd on non-kubernetes':
-        - 'Getting started with flagd on non-k8s': 'nonk8s/index.md'
-        - 'flag merging': 'nonk8s/flagmerging.md'
-        - 'flagd as a system service': 'nonk8s/systemservice.md'
+    - 'Concepts':
+        - 'Flagd concepts (start here)': 'concepts/index.md'
+        - 'Flagd architecture': 'concepts/architecture.md'
+    - 'Flagd on Kubernetes':
+        - 'Getting started with flagd on kubernetes': 'k8s/index.md'
+    - 'Flagd outside of kubernetes':
+        - 'Getting started with flagd outside of kubernetes': 'nonk8s/index.md'
+        - 'Flag merging': 'nonk8s/flagmerging.md'
+        - 'Flagd as a system service': 'nonk8s/systemservice.md'
     - 'Kubernetes Custom Resources':
         - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
         - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
-    - 'flagd Telemetry':
-        - 'flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
+    - 'Flagd Telemetry':
+        - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
