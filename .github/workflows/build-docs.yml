@@ -1,0 +1,22 @@
+name: Build mkdocs
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v3
+        
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' 
+      
+      - name: Pip install
+        run: pip install -r requirements.txt
+      
+      - name: Build docs
+        run: |
+          mkdocs build -d build
