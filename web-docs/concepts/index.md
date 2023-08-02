@@ -4,7 +4,7 @@ Your flagd journey will start by defining your feature flags.
 
 flagd will then read those feature flags and make them available to your application.
 
-Your application will interact with flagd via the [OpenFeature SDK](https://example.com) to retrieve flag values via the flagd API.
+Your application will interact with flagd via the [OpenFeature SDK](https://openfeature.dev/docs/reference/concepts/evaluation-api) to retrieve flag values via the flagd API.
 
 ![flagd architecture](../images/flagd-logical-architecture.jpg)
 
