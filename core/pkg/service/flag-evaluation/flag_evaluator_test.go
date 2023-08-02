@@ -711,11 +711,8 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 	tests := map[string]resolveIntArgs{
 		"happy path": {
 			evalFields: resolveIntEvalFields{
-				result: 12,
-				evalCommons: evalCommons{
-					variant: "on",
-					reason:  model.DefaultReason,
-				},
+				result:      12,
+				evalCommons: happyCommon,
 			},
 			functionArgs: resolveIntFunctionArgs{
 				context.Background(),
@@ -739,6 +736,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 			tt.evalFields.result,
 			tt.evalFields.variant,
 			tt.evalFields.reason,
+			tt.evalFields.metadata,
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
@@ -887,9 +885,10 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 				},
 			},
 			want: &schemaV1.ResolveObjectResponse{
-				Value:   nil,
-				Reason:  model.DefaultReason,
-				Variant: "on",
+				Value:    nil,
+				Reason:   model.DefaultReason,
+				Variant:  "on",
+				Metadata: responseStruct,
 			},
 			wantErr: nil,
 		},
