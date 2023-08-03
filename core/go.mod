@@ -3,11 +3,11 @@ module github.com/open-feature/flagd/core
 go 1.19
 
 require (
-	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.11.0-20230720212818-3675556880a1.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230710190440-2333a9579c1a.1
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1
-	github.com/bufbuild/connect-go v1.10.0
-	github.com/bufbuild/connect-opentelemetry-go v0.4.0
+	connectrpc.com/connect v1.11.0
+	connectrpc.com/otelconnect v0.5.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
@@ -89,7 +89,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.39.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
