@@ -22,17 +22,17 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 ## Metrics
 
-flagd expose following metrics,
+flagd exposes the following metrics:
 
-* `http_request_duration_seconds`
-* `http_response_size_bytes`
-* `http_requests_inflight`
-* `impressions`
-* `reasons`
+* `http.server.duration`
+* `http.server.response.size`
+* `http.server.active_requests`
+* `feature_flag.flagd.impression`
+* `feature_flag.flagd.evaluation.reason`
 
 ## Traces
 
-flagd expose following traces,
+flagd exposes the following traces:
 
 * `flagEvaluationService(resolveX)` - SpanKind server
   * `jsonEvaluator(resolveX)` - SpanKind internal

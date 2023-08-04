@@ -62,7 +62,6 @@ flagd can retrieve flags from multiple sources simultaneously. [This page](confi
 This section documents any behavior of flagd which may seem unexpected:
 
 - [HTTP int response](./help/http_int_response.md)
-- [Omitted value from evaluation response](./help/omitted_value_from_response.md)
 
 ## Other Resources
 
