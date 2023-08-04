@@ -100,8 +100,8 @@ func TestJSONCodec_Marshaling(t *testing.T) {
 				t.Errorf("Got error creating message: %v", err.Error())
 			}
 			bytes, err := tt.marshaller(message)
-			if tt.wantErr && err == nil {
-				t.Errorf("Expected error but not none")
+			if tt.wantErr {
+				require.NotNilf(t, err, "Expected error but got none")
 			}
 			//nolint:errcheck
 			json.Unmarshal(bytes, &jsonMap)
