@@ -29,7 +29,7 @@ type jsonCodec struct {
 	marshal   protojson.MarshalOptions
 	unmarshal protojson.UnmarshalOptions
 }
-
+var _ connect.Codec = (*jsonCodec)(nil)
 func (j *jsonCodec) Name() string {
 	return j.name
 }
