@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.3](https://github.com/open-feature/flagd/compare/core/v0.6.2...core/v0.6.3) (2023-08-04)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.3.0 ([#785](https://github.com/open-feature/flagd/issues/785)) ([ee9c54b](https://github.com/open-feature/flagd/commit/ee9c54b6b5cd51b947aae1ff6309ffae07ce89eb))
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.2.35 ([#783](https://github.com/open-feature/flagd/issues/783)) ([9ff0b5b](https://github.com/open-feature/flagd/commit/9ff0b5b1bd3bb95581eab83f944aa60e179b207a))
+* **deps:** update module go.uber.org/zap to v1.25.0 ([#786](https://github.com/open-feature/flagd/issues/786)) ([40d0aa6](https://github.com/open-feature/flagd/commit/40d0aa66cf422db6811206d777b55396a96f330f))
+* **deps:** update module golang.org/x/net to v0.13.0 ([#784](https://github.com/open-feature/flagd/issues/784)) ([f57d023](https://github.com/open-feature/flagd/commit/f57d023174d9cc74b7d8260055f82b84a2bdcc52))
+* metric descriptions match the otel spec ([#789](https://github.com/open-feature/flagd/issues/789)) ([34befcd](https://github.com/open-feature/flagd/commit/34befcdfedc5f0479cb0ae77fe148849c341d33e))
+
+
+### ✨ New Features
+
+* add new configuration "sync-interval" which controls the HTTP polling interval ([#404](https://github.com/open-feature/flagd/issues/404)) ([ace62c7](https://github.com/open-feature/flagd/commit/ace62c7a6ab2b5b5d26642286deb6db406391d8f))
+* include falsy json fields ([#792](https://github.com/open-feature/flagd/issues/792)) ([37d91a0](https://github.com/open-feature/flagd/commit/37d91a09836f07e07b12acd13850ea5c7c9252cd))
+
 ## [0.6.2](https://github.com/open-feature/flagd/compare/core/v0.6.1...core/v0.6.2) (2023-07-28)
 
 
