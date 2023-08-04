@@ -1,22 +1,54 @@
-site_name: flagd Docs
-theme: readthedocs
+site_name: flagd
+theme:
+  name: material
+  palette: 
+      # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  # logo: path/to/file.png
+  # favicon: path/to/file.png
+  icon:
+    repo: fontawesome/brands/github
+  features:
+  #  - navigation.tabs
+   - content.action.edit
+   - content.code.copy
+
 docs_dir: web-docs
+repo_url: https://github.com/open-feature/flagd
+repo_name: open-feature/flagd
+edit_uri: edit/main/web-docs/
 markdown_extensions:
-  - toc:
-      permalink: '#'
+  - pymdownx.highlight:
+      anchor_linenums: true
+      # linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
 nav:
-    - 'Home': 'index.md'
-    - 'Concepts':
-        - 'Flagd concepts (start here)': 'concepts/index.md'
-        - 'Flagd architecture': 'concepts/architecture.md'
-    - 'Flagd on Kubernetes':
-        - 'Getting started with flagd on kubernetes': 'k8s/index.md'
-    - 'Flagd outside of kubernetes':
-        - 'Getting started with flagd outside of kubernetes': 'nonk8s/index.md'
-        - 'Flag merging': 'nonk8s/flagmerging.md'
-        - 'Flagd as a system service': 'nonk8s/systemservice.md'
-    - 'Kubernetes Custom Resources':
-        - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
-        - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
-    - 'Flagd Telemetry':
-        - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
+  - 'Home': 'index.md'
+  - 'Concepts':
+      - 'Flagd concepts (start here)': 'concepts/index.md'
+      - 'Flagd architecture': 'concepts/architecture.md'
+  - 'Flagd on Kubernetes':
+      - 'Getting started with flagd on kubernetes': 'k8s/index.md'
+  - 'Flagd outside of kubernetes':
+      - 'Getting started with flagd outside of kubernetes': 'nonk8s/index.md'
+      - 'Flag merging': 'nonk8s/flagmerging.md'
+      - 'Flagd as a system service': 'nonk8s/systemservice.md'
+  - 'Kubernetes Custom Resources':
+      - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
+      - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
+  - 'Flagd Telemetry':
+      - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'

@@ -15,7 +15,7 @@ Flagd is a feature flag daemon. It is a ready-made, open source, [OpenFeature](h
 
 Whether you choose to run flagd on a Kubernetes cluster or outside of Kubernetes, there are concepts that apply to both equally.
 
-Start your flagd learning journey here: [flagd concepts](concepts)
+Start your flagd learning journey here: [flagd concepts](concepts/index.md)
 
 ## Running flagd
 
@@ -26,5 +26,5 @@ Now that you know the concepts, it's time to decide how to run flagd.
 flagd can run on Kubernetes and in non-k8s environments.
 Choose your mode of deployment to learn more:
 
-- [flagd on Kubernetes](k8s)
-- [flagd running outside of Kubernetes](nonk8s)
+- [flagd on Kubernetes](k8s/index.md)
+- [flagd running outside of Kubernetes](nonk8s/index.md)
