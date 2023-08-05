@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.12.6
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/flagd/core v0.6.2
+	github.com/open-feature/flagd/core v0.6.3
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.13
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.3
 	github.com/spf13/cobra v1.7.0
@@ -28,7 +28,7 @@ require (
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/diegoholiveira/jsonlogic/v3 v3.2.7 // indirect
+	github.com/diegoholiveira/jsonlogic/v3 v3.3.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -67,7 +67,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/open-feature/go-sdk v1.4.0 // indirect
-	github.com/open-feature/open-feature-operator v0.2.34 // indirect
+	github.com/open-feature/open-feature-operator v0.2.35 // indirect
 	github.com/open-feature/schemas v0.2.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -105,7 +105,7 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/net v0.13.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
