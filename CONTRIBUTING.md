@@ -41,7 +41,7 @@ Issues and pull requests following these guidelines are welcome.
 
 PRs are expected to conform to markdown lint rules.
 
-Therefore, run `make markdownlint fix` to auto-fix _most_ issues.
+Therefore, run `make markdownlint-fix` to auto-fix _most_ issues.
 Then commit the results.
 
 For those issues that cannot be auto-fixed, run `make markdownlint`
