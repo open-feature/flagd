@@ -36,3 +36,13 @@ For example: `docs: some PR title here...`
 
 Thanks!
 Issues and pull requests following these guidelines are welcome.
+
+## Markdown Lint and Markdown Lint Fix
+
+PRs are expected to conform to markdown lint rules.
+
+Therefore, run `make markdownlint fix` to auto-fix _most_ issues.
+Then commit the results.
+
+For those issues that cannot be auto-fixed, run `make markdownlint`
+then manually fix whatever it warns about.
