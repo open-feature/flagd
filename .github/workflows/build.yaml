@@ -14,6 +14,7 @@ on:
     paths-ignore:
       - "README.md"
       - "docs/**"
+      - "web-docs/**"
 
 env:
   GO_VERSION: 1.19.3
