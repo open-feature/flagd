@@ -22,11 +22,20 @@ The project uses remote buf packages, changing the remote generation source will
 export GOPRIVATE=buf.build/gen/go
 ```
 
-## Signed Commits
+## DCO Sign-Off
 
-All commits must be signed. Do this by adding the `-s` flag.
+A DCO (Developer Certificate of Origin) sign-off is a line placed at the end of
+a commit message containing a contributor's "signature." In adding this, the
+contributor certifies that they have the right to contribute the material in
+question.
 
-For example: `git commit -sm "a commit message..."`
+Here are the steps to sign your work:
+
+1. Verify the contribution in your commit complies with the
+   [terms of the DCO](https://developercertificate.org/).
+
+1. Add a line like the following to your commit message:
+
 
 ## Conventional PR Titles
 
