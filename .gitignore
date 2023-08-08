@@ -12,3 +12,6 @@ core-coverage.out
 go.work
 go.work.sum
 bin/
+
+# built documentation
+site

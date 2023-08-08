@@ -14,41 +14,12 @@ on:
     paths-ignore:
       - "README.md"
       - "docs/**"
+      - "web-docs/**"
 
 env:
   GO_VERSION: 1.19.3
 
 jobs:
-  benchmark:
-    name: Run Benchmark
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
-
-      - name: Setup go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Workspace init
-        run: make workspace-init
-
-      - name: Run benchmark
-        run: go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee output.txt
-
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          name: Go Benchmark
-          tool: "go"
-          output-file-path: output.txt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: false
-          # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: "130%"
-          comment-on-alert: true
-          fail-on-alert: false
-
   lint:
     runs-on: ubuntu-latest
     env:

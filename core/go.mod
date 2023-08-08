@@ -8,10 +8,10 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0
-	github.com/diegoholiveira/jsonlogic/v3 v3.2.7
+	github.com/diegoholiveira/jsonlogic/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
-	github.com/open-feature/open-feature-operator v0.2.34
+	github.com/open-feature/open-feature-operator v0.2.36
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.16.0
 	github.com/robfig/cron v1.2.0
@@ -29,17 +29,17 @@ require (
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/sdk/metric v0.39.0
 	go.opentelemetry.io/otel/trace v1.16.0
-	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.11.0
+	go.uber.org/zap v1.25.0
+	golang.org/x/crypto v0.12.0
 	golang.org/x/mod v0.12.0
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.14.0
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
-	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/controller-runtime v0.15.1
 )
 
 require (
@@ -90,11 +90,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.39.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
