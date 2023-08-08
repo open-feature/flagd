@@ -36,7 +36,7 @@ Here are the steps to sign your work:
 
 1. Add a line like the following to your commit message:
 
-   ```
+   ```shell
    Signed-off-by: Joe Smith <joe.smith@example.com>
    ```
 
@@ -49,8 +49,8 @@ Here are the steps to sign your work:
     1. Configure your git client appropriately. This is one-time setup.
 
        ```shell
-       $ git config user.name <legal name>
-       $ git config user.email <email address you use for GitHub>
+       git config user.name <legal name>
+       git config user.email <email address you use for GitHub>
        ```
 
        If you work on multiple projects that require a DCO sign-off, you can
@@ -58,28 +58,28 @@ Here are the steps to sign your work:
        for Brigade:
 
        ```shell
-       $ git config --global user.name <legal name>
-       $ git config --global user.email <email address you use for GitHub>
+       git config --global user.name <legal name>
+       git config --global user.email <email address you use for GitHub>
        ```
 
     1. Use the `--signoff` or `-s` (lowercase) flag when making each commit.
        For example:
 
        ```shell
-       $ git commit --message "<commit message>" --signoff
+       git commit --message "<commit message>" --signoff
        ```
 
        If you ever make a commit and forget to use the `--signoff` flag, you
        can amend your commit with this information before pushing:
 
        ```shell
-       $ git commit --amend --signoff
+       git commit --amend --signoff
        ```
 
     1. You can verify the above worked as expected using `git log`. Your latest
        commit should look similar to this one:
 
-       ```
+       ```shell
        Author: Joe Smith <joe.smith@example.com>
        Date:   Thu Feb 2 11:41:15 2018 -0800
 
