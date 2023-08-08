@@ -131,27 +131,27 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 	// we can ignore errors from OpenTelemetry since they could occur if we select the wrong aggregator
 	hduration, _ := meter.Float64Histogram(
 		httpRequestDurationMetric,
-		metric.WithDescription("The latency of the HTTP requests"),
+		metric.WithDescription("Measures the duration of inbound HTTP requests."),
 		metric.WithUnit("s"),
 	)
 	hsize, _ := meter.Float64Histogram(
 		httpResponseSizeMetric,
-		metric.WithDescription("The size of the HTTP responses"),
+		metric.WithDescription("Measures the size of HTTP request messages (compressed)."),
 		metric.WithUnit("By"),
 	)
 	reqCounter, _ := meter.Int64UpDownCounter(
 		httpActiveRequestsMetric,
-		metric.WithDescription("The number of inflight requests being handled at the same time"),
+		metric.WithDescription("Measures the number of concurrent HTTP requests that are currently in-flight."),
 		metric.WithUnit("{request}"),
 	)
 	impressions, _ := meter.Int64Counter(
 		impressionMetric,
-		metric.WithDescription("The number of evaluations for a given flag"),
+		metric.WithDescription("Measures the number of evaluations for a given flag."),
 		metric.WithUnit("{impression}"),
 	)
 	reasons, _ := meter.Int64Counter(
 		reasonMetric,
-		metric.WithDescription("The number of evaluations for a given reason"),
+		metric.WithDescription("Measures the number of evaluations for a given reason."),
 		metric.WithUnit("{reason}"),
 	)
 	return &MetricsRecorder{
