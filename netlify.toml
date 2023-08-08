@@ -1,8 +1,10 @@
 [build]
-publish = "site"
-command = """
-pip3 install -q poetry &&
-poetry config virtualenvs.in-project true &&
-poetry install -v &&
-mkdocs build
-"""
+  publish = "site"
+  # https://docs.netlify.com/configure-builds/ignore-builds/
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml pyproject.toml ./web-docs/"
+  command = """
+    pip3 install -q poetry &&
+    poetry config virtualenvs.in-project true &&
+    poetry install -v &&
+    mkdocs build
+  """
