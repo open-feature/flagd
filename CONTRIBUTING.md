@@ -22,5 +22,17 @@ The project uses remote buf packages, changing the remote generation source will
 export GOPRIVATE=buf.build/gen/go
 ```
 
+## Signed Commits
+
+All commits must be signed. Do this by adding the `-s` flag.
+
+For example: `git commit -sm "a commit message..."`
+
+## Conventional PR Titles
+
+When raising PRs, please format according to [conventional commit standards](https://www.conventionalcommits.org/en/v1.0.0/#summary)
+
+For example: `docs: some PR title here...`
+
 Thanks!
 Issues and pull requests following these guidelines are welcome.
