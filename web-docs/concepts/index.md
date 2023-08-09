@@ -194,4 +194,4 @@ flagd is fully compatible with OpenTelemetry:
 - flagd exposes metrics at `http://localhost:8014/metrics`
 - flagd can export metrics and traces to an OpenTelemetry collector.
 
-See the [flagd OpenTelemetry](opentelemetry.md) page for more information.
+See the [flagd OpenTelemetry](reference/opentelemetry.md) page for more information.
