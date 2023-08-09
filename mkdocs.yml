@@ -50,5 +50,8 @@ nav:
   - 'Kubernetes Custom Resources':
       - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
       - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
+  - 'Reference':
+      - 'Flagd Configuration': 'reference/configuration.md'
+      - 'Flagd Start': 'reference/flagd_start.md'
   - 'Flagd Telemetry':
       - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
