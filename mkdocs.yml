@@ -54,3 +54,5 @@ nav:
       - 'Flagd Configuration': 'reference/configuration.md'
       - 'Flagd Start': 'reference/flagd_start.md'
       - 'Flagd OpenTelemetry Support': 'reference/opentelemetry.md'
+      - 'Flag Syntax': 'reference/flag_syntax.md'
+      - 'Flag Caching': 'reference/caching.md'

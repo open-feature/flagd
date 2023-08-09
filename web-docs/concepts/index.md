@@ -185,7 +185,7 @@ The example above shows the `in` keyword being used, but flagd is also compatibl
 
 - [starts_with](https://github.com/open-feature/flagd/blob/main/docs/configuration/string_comparison_evaluation.md#startswith-evaluation-configuration)
 - [ends_with](https://github.com/open-feature/flagd/blob/main/docs/configuration/string_comparison_evaluation.md#endswith-evaluation-configuration)
-- [sem_ver comparisons](https://github.com/open-feature/flagd/blob/main/docs/configuration/sem_ver_evaluation.md)
+- [sem_ver comparisons](../reference/flag_syntax.md#semver-evaluation)
 
 ## flagd OpenTelemetry
 
