@@ -1,13 +1,5 @@
 # flagd Architecture
 
-```mermaid
-flowchart LR
-    source-A  -->|config-A| store -->|merge|source-A-config-A\nsource-B-config-B
-    source-B  -->|config-B| store
-```
-
-## Component overview
-
 Flagd consists of four main components - Service, Evaluator engine, Runtime and Sync.
 
 The service component exposes the evaluator engine for client libraries.
