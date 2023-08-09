@@ -15,15 +15,10 @@ The config file expects the keys to have the exact naming as startup-flags flags
 Sync providers are a core part of flagd; they are the abstraction that enables different sources for feature flag configurations.
 flagd currently support the following sync providers:
 
-- [Configuration](./#configuration)
-  - [Sync providers](#sync-providers)
-    - [Kubernetes provider](#kubernetes-provider)
-    - [Filepath provider](#filepath-provider)
-    - [Remote provider](#remote-provider)
-    - [GRPC provider](#grpc-provider)
-  - [Sync provider configurations](#sync-provider-configurations)
-    - [URI patterns](#uri-patterns)
-    - [Source Configuration](#source-configuration)
+- [Kubernetes provider](#kubernetes-provider)
+- [Filepath provider](#filepath-provider)
+- [Remote provider](#remote-provider)
+- [GRPC provider](#grpc-provider)
 
 ### Kubernetes provider
 
