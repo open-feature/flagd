@@ -1,7 +1,9 @@
+# flagd Configuration
+
 `flagd` supports configuration via config file, environment variables and start-up flags. In cases of a conflict,
 start-up flags have the highest priority, followed by environment variables and config file.
 
-Supported start-up flags are documented (auto-generated) [here](./flagd_start.md).
+Supported start-up flags are documented (auto-generated) [here](flagd_start.md).
 
 Environment variable keys are uppercase, prefixed with `FLAGD_` and all `-` are replaced with `_`. For example,
 `metrics-port` flag in environment variable form is `FLAGD_METRICS_PORT`.
@@ -13,7 +15,7 @@ The config file expects the keys to have the exact naming as startup-flags flags
 Sync providers are a core part of flagd; they are the abstraction that enables different sources for feature flag configurations.
 flagd currently support the following sync providers:
 
-- [Configuration](#configuration)
+- [Configuration](./#configuration)
   - [Sync providers](#sync-providers)
     - [Kubernetes provider](#kubernetes-provider)
     - [Filepath provider](#filepath-provider)

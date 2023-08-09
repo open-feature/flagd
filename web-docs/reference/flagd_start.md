@@ -1,15 +1,14 @@
-<!-- markdownlint-disable-file -->
-## flagd start
+# flagd start
 
-Start flagd
+Start flagd:
 
-```
+```shell
 flagd start [flags]
 ```
 
-### Options
+## Options
 
-```
+```shell
   -b, --bearer-token string                 DEPRECATED: Superseded by --sources.
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
@@ -30,7 +29,7 @@ flagd start [flags]
 
 ### Options inherited from parent commands
 
-```
+```shell
       --config string   config file (default is $HOME/.agent.yaml)
   -x, --debug           verbose logging
 ```
