@@ -56,3 +56,5 @@ nav:
       - 'Flagd OpenTelemetry Support': 'reference/opentelemetry.md'
       - 'Flag Syntax': 'reference/flag_syntax.md'
       - 'Flag Caching': 'reference/caching.md'
+plugins:
+  - social
