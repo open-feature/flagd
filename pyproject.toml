@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "flagd.dev"
+version = "0.1.0"
+description = "flagd documentation"
+authors = ["OpenFeature Maintainers"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+mkdocs = "^1.5.2"
+mkdocs-material = "^9.1.21"
+pymdown-extensions = "^10.1"
+fontawesome-markdown = "^0.2.6"
+pillow = "^10.0.0"
+cairosvg = "^2.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

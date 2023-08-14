@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const ErrorPrefix = "FlagdError:"
@@ -119,7 +120,14 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.eventingConfiguration,
 		s.metrics,
 	)
-	path, handler := schemaConnectV1.NewServiceHandler(fes, svcConf.Options...)
+
+	marshalOpts := WithJSON(
+		// json parsing configuration - we emit "unpopulated" fields (falsy fields are not dropped)
+		protojson.MarshalOptions{EmitUnpopulated: true},
+		protojson.UnmarshalOptions{DiscardUnknown: true},
+	)
+
+	path, handler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
 	mux.Handle(path, handler)
 
 	s.serverMtx.Lock()

@@ -1,15 +1,4 @@
-# Telemetry
-
-<!-- TOC -->
-* [Telemetry](#telemetry)
-  * [Metrics](#metrics)
-  * [Traces](#traces)
-  * [Export to OTEL collector](#export-to-otel-collector)
-    * [Configure local collector setup](#configure-local-collector-setup)
-      * [docker-compose.yaml](#docker-composeyaml)
-      * [otel-collector-config.yaml](#otel-collector-configyaml)
-      * [prometheus.yml](#prometheusyml)
-<!-- TOC -->
+# OpenTelemetry
 
 flagd provides telemetry data out of the box. This telemetry data is compatible with OpenTelemetry.
 
@@ -18,11 +7,11 @@ with default startup flags, metrics are exposed at `http://localhost:8014/metric
 
 Given below is the current implementation overview of flagd telemetry internals,
 
-<img src="../images/flagd-telemetry.png">
+![flagd telemetry](../images/flagd-telemetry.png)
 
 ## Metrics
 
-flagd exposes the following metrics:
+flagd expose following metrics,
 
 * `http.server.duration`
 * `http.server.response.size`
@@ -32,7 +21,7 @@ flagd exposes the following metrics:
 
 ## Traces
 
-flagd exposes the following traces:
+flagd expose following traces,
 
 * `flagEvaluationService(resolveX)` - SpanKind server
   * `jsonEvaluator(resolveX)` - SpanKind internal
