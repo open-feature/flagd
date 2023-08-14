@@ -149,6 +149,10 @@ Thanks so much to our contributors.
 
 Made with [contrib.rocks](https://contrib.rocks).
 
+## Website Information
+
+For information on how the [flagd website](https://flagd.dev) is built, and how to contribute to it, [go here](docs/WEB_BUILD_INFO.md).
+
 ## License
 
 [Apache License 2.0](LICENSE)
