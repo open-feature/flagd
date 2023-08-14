@@ -171,21 +171,23 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
 }
 ```
 
+More information and further examples of [flagd fractional evaluation](../reference/targeting_rules_specifiers.md) are available here.
+
 ### Fractional evaluations are sticky
 
 Fractional evaluations are "sticky" and deterministic meaning that the same email address will always belong to the same "bucket" and thus always receive the same color.
 
 This is true even if you run multiple flagd APIs completely independently.
 
-See this page for more information on [flagd fractional evaluation logic](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
+See this page for more information on [flagd fractional evaluation logic](../reference/targeting_rules_specifiers.md).
 
 ## Other target specifiers
 
 The example above shows the `in` keyword being used, but flagd is also compatible with:
 
-- [starts_with](https://github.com/open-feature/flagd/blob/main/docs/configuration/string_comparison_evaluation.md#startswith-evaluation-configuration)
-- [ends_with](https://github.com/open-feature/flagd/blob/main/docs/configuration/string_comparison_evaluation.md#endswith-evaluation-configuration)
-- [sem_ver comparisons](https://github.com/open-feature/flagd/blob/main/docs/configuration/sem_ver_evaluation.md)
+- [starts_with](../reference/targeting_rules_specifiers.md#startswith-evaluation-configuration)
+- [ends_with](../reference/targeting_rules_specifiers.md#endswith-evaluation-configuration)
+- [sem_ver comparisons](../reference/targeting_rules_specifiers.md#semver-evaluation)
 
 ## flagd OpenTelemetry
 

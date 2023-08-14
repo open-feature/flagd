@@ -52,5 +52,7 @@ nav:
       - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
   - 'Flagd Telemetry':
       - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
+  - 'Reference':
+      - 'Targeting Rules and Specifiers': 'reference/targeting_rules_specifiers.md'
 plugins:
   - social
