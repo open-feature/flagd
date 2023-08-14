@@ -52,5 +52,7 @@ nav:
       - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
   - 'Flagd Telemetry':
       - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
+  - 'Reference':
+      - 'Fractional Evaluation': 'reference/fractional_evaluation.md'
 plugins:
   - social
