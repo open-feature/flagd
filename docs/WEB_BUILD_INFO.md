@@ -1,6 +1,6 @@
-# How https://flagd.dev is built
+# How [https://flagd.dev](https://flagd.dev) is built
 
-The flagd project has a website at https://flagd.dev
+The flagd project has a website at [https://flagd.dev](https://flagd.dev)
 
 This guide is intended so that potential contributors can understand how, where and when the website comes into being.
 
@@ -16,7 +16,7 @@ The website homepage is powered by the [index.md](../web-docs/index.md) file at 
 
 ## What happens during a Website-Related PR?
 
-Imagine you notice a typo on https://flagd.dev.
+Imagine you notice a typo on [https://flagd.dev](https://flagd.dev).
 
 You find the page inside [/web-docs](../web-docs/) and fix the typo and commit the change (remembering to sign your commit).
 
@@ -58,8 +58,6 @@ What next? What checks run against your change?
 1. The Netlify preview lint is added to the PR.
 1. Netlify will rebuild the site for every new commit.
 
-
 ## How does the site get built and where is it deployed?
 
 @beeme1mr to help author this section.
-
