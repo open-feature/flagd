@@ -51,6 +51,11 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, errors.New("data isn't of type map[string]interface{}")
 	}
 
+	flagKey, ok := dataMap[contextFlagKey].(string)
+	if !ok {
+		flagKey = ""
+	}
+
 	v, ok := dataMap[bucketBy]
 	if !ok {
 		return "", nil, nil
@@ -66,7 +71,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, err
 	}
 
-	return valueToDistribute, feDistributions, nil
+	return fmt.Sprintf("%s$%s", flagKey, valueToDistribute), feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalEvaluationDistribution, error) {
@@ -110,7 +115,7 @@ func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalE
 func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
 	hashValue := xxh3.HashString(value)
 
-	hashRatio := float64(hashValue) / math.Pow(2, 64) // divide the hash value by the largest possible value, integer 2^64
+	hashRatio := float64(hashValue) / math.MaxUint64
 
 	bucket := int(hashRatio * 100) // integer in range [0, 99]
 

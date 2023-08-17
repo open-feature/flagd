@@ -24,7 +24,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const SelectorMetadataKey = "scope"
+const (
+	SelectorMetadataKey = "scope"
+
+	contextFlagKey = "$flagd.__flag_key__"
+)
 
 var regBrace *regexp.Regexp
 
@@ -304,6 +308,15 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag: %s, %s", flagKey, err))
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
+		}
+
+		if context == nil {
+			context = map[string]any{}
+		}
+
+		// Don't overwrite this value if a user has somehow set it.
+		if _, ok := context[contextFlagKey]; !ok {
+			context[contextFlagKey] = flagKey
 		}
 
 		b, err := json.Marshal(context)
