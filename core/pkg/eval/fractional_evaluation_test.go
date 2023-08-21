@@ -69,8 +69,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "rachel@faas.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"phoebe@faas.com": {
@@ -79,8 +79,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "phoebe@faas.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "yellow",
+			expectedValue:   "#FFFF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"monica@faas.com": {
@@ -99,8 +99,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "rossg@faas.com",
 			},
-			expectedVariant: "blue",
-			expectedValue:   "#0000FF",
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"rossg@faas.com with different flag key": {
@@ -116,35 +116,35 @@ func TestFractionalEvaluation(t *testing.T) {
 							"yellow": "#FFFF00",
 						},
 						Targeting: []byte(`{
-													"if": [
-													  {
-														"in": ["@faas.com", {
-																"var": ["email"]
-															  }]
-													  },
-													  {
-														"fractionalEvaluation": [
-														  "email",
-														  [
-															"red",
-															25
-														  ],
-														  [
-															"blue",
-															25
-														  ],
-														  [
-															"green",
-															25
-														  ],
-														  [
-															"yellow",
-															25
-														  ]
-														]
-													  }, null
-													]
-												  }`),
+							"if": [
+								{
+									"in": ["@faas.com", {
+										"var": ["email"]
+									}]
+								},
+								{
+									"fractionalEvaluation": [
+										"email",
+										[
+										"red",
+										25
+									  	],
+									  	[
+										"blue",
+										25
+										],
+										[
+										"green",
+										25
+									  	],
+									  	[
+										"yellow",
+										25
+									  	]
+									]
+								}, null
+							]
+						}`),
 					},
 				},
 			},
@@ -152,8 +152,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "rossg@faas.com",
 			},
-			expectedVariant: "yellow",
-			expectedValue:   "#FFFF00",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {

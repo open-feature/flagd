@@ -27,7 +27,8 @@ import (
 const (
 	SelectorMetadataKey = "scope"
 
-	contextFlagKey = "$flagd.__flag_key__"
+	flagdDataKey     = "$flagd"
+	flagdDataFlagKey = "flag_key"
 )
 
 var regBrace *regexp.Regexp
@@ -310,14 +311,9 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		if context == nil {
-			context = map[string]any{}
-		}
-
-		// Don't overwrite this value if a user has somehow set it.
-		if _, ok := context[contextFlagKey]; !ok {
-			context[contextFlagKey] = flagKey
-		}
+		context = je.addAmbientPropertiesToContext(context, map[string]any{
+			flagdDataFlagKey: flagKey,
+		})
 
 		b, err := json.Marshal(context)
 		if err != nil {
@@ -347,6 +343,23 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 	}
 
 	return flag.DefaultVariant, flag.Variants, reason, metadata, nil
+}
+
+func (je *JSONEvaluator) addAmbientPropertiesToContext(
+	context map[string]any,
+	properties map[string]any,
+) map[string]any {
+	if context == nil {
+		context = map[string]any{}
+	}
+
+	if _, ok := context[flagdDataKey]; ok {
+		je.Logger.Warn("overwriting $flagd properties in the context")
+	}
+
+	context[flagdDataKey] = properties
+
+	return context
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags

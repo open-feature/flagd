@@ -41,7 +41,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, errors.New("fractional evaluation data has length under 2")
 	}
 
-	bucketBy, ok := valuesArray[0].(string)
+	targetingKey, ok := valuesArray[0].(string)
 	if !ok {
 		return "", nil, errors.New("first element of fractional evaluation data isn't of type string")
 	}
@@ -51,12 +51,17 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, errors.New("data isn't of type map[string]interface{}")
 	}
 
-	flagKey, ok := dataMap[contextFlagKey].(string)
+	flagdData, ok := dataMap[flagdDataKey].(map[string]any)
+	if !ok {
+		flagdData = map[string]any{}
+	}
+
+	flagKey, ok := flagdData[flagdDataFlagKey].(string)
 	if !ok {
 		flagKey = ""
 	}
 
-	v, ok := dataMap[bucketBy]
+	v, ok := dataMap[targetingKey]
 	if !ok {
 		return "", nil, nil
 	}
