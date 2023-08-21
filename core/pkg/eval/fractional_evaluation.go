@@ -58,7 +58,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 
 	valueToDistribute, ok := v.(string)
 	if !ok {
-		return "", nil, fmt.Errorf("var: %s isn't of type string", v)
+		return "", nil, fmt.Errorf("var: %v isn't of type string", v)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
