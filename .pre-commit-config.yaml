@@ -5,6 +5,6 @@ repos:
       - id: gofumpt
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.46.2
+    rev: v1.50.1
     hooks:
       - id: golangci-lint
