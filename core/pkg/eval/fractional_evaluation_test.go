@@ -79,8 +79,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "phoebe@faas.com",
 			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"monica@faas.com": {
@@ -89,8 +89,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "monica@faas.com",
 			},
-			expectedVariant: "yellow",
-			expectedValue:   "#FFFF00",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"rossg@faas.com": {

@@ -6,7 +6,7 @@ import (
 	"math"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/zeebo/xxh3"
+	"github.com/twmb/murmur3"
 )
 
 type FractionalEvaluator struct {
@@ -63,7 +63,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 
 	valueToDistribute, ok := v.(string)
 	if !ok {
-		return "", nil, fmt.Errorf("var: %s isn't of type string", bucketBy)
+		return "", nil, fmt.Errorf("var: %v isn't of type string", v)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
@@ -113,7 +113,7 @@ func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalE
 }
 
 func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
-	hashValue := xxh3.HashString(value)
+	hashValue := murmur3.StringSum64(value)
 
 	hashRatio := float64(hashValue) / math.MaxUint64
 
