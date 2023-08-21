@@ -1,24 +1,22 @@
 # Creating an in-process flagd provider
 
-The in-process flagd provider is responsible for creating an abstraction between the (JsonLogic)[https://jsonlogic.com] based evaluation of flag configurations following the [flag configuration scheme](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json) used by `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
+The in-process flagd provider is responsible for creating an abstraction between the [JsonLogic](https://jsonlogic.com) based evaluation of flag configurations following the [flag configuration scheme](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json) used by `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
 
 Prerequisites:
 
 - Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
 - Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../usage/flagd_providers.md))
 
-The Flag Configuration containing the feature flags and JsonLogic based targeting rules shall be retrieved by the in-process flagd provider via a gRPC client connection to a sync server, such as (flagd-proxy)[https://github.com/open-feature/flagd/flagd-proxy].
+The Flag Configuration containing the feature flags and JsonLogic based targeting rules shall be retrieved by the
+in-process flagd provider via a gRPC client connection to a sync server, such as [flagd-proxy](https://github.com/open-feature/flagd/flagd-proxy).
 
-# Sync sources
+## Sync source
 
 An implementation of an in-process flagd-provider must accept the following environment variables which determine the sync source:
 
-- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag configuration. 
-
+- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag configuration.
 - `FLAGD_SOURCE_PROVIDER_TYPE`: The type of the provider. E.g. `grpc` or `kubernetes`.
-
 - `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag configuration of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag configuration within a collection of feature flag configurations.
-
 
 An implementation of an in-process flagd provider should provide a source for retrieving the flag configuration, namely a gRPC source.
 Other sources may be desired eventually, so separation of concerns should be mantained between the abstractions evaluating flags and those retreving confitation.
@@ -65,7 +63,7 @@ An in-process flagd provider should provide the feature set offered by [JsonLogi
 
 In addition to the built-in evaluators provided by JsonLogic, the following custom targeting rules should be implemented by the provider:
 
-- [Fractional evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md): 
+- [Fractional evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md):
 This evaluator allows to split the returned variants of a feature flag into different buckets, where each bucket
 can be assigned a percentage, representing how many requests will resolve to the corresponding variant.
 The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
@@ -112,16 +110,14 @@ func NewProvider(options ...ProviderOption) *Provider {
     // create a store that is responsible for retrieving the flag configurations
     // from the sources that are given to the provider via the options
     s := store.NewFlags()
-	for _, provider := range config.SyncProviders {
-		s.FlagSources = append(s.FlagSources, provider.URI)
-		s.SourceMetadata[provider.URI] = store.SourceDetails{
-			Source:   provider.URI,
-			Selector: provider.Selector,
-		}
-	}
+    s.FlagSources = append(s.FlagSources, os.Getenv("FLAGD_SOURCE_URI"))
+    s.SourceMetadata[provider.URI] = store.SourceDetails{
+        Source:   os.Getenv("FLAGD_SOURCE_URI"),
+        Selector: os.Getenv("FLAGD_SOURCE_SELECTOR")),
+    }
 
     // derive evaluator
-	provider.evaluator := setupJSONEvaluator(logger, s)
+    provider.evaluator := setupJSONEvaluator(logger, s)
  
     return provider
 }

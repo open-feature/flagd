@@ -78,8 +78,8 @@ As a reference, below is a simplified version of the actual implementation of th
 ```go
 
 type fractionalEvaluationDistribution struct {
-	variant    string
-	percentage int
+    variant    string
+    percentage int
 }
 
 /*
@@ -108,104 +108,104 @@ type fractionalEvaluationDistribution struct {
 func FractionalEvaluation(values, data interface{}) interface{} {
     // 1. Check if the values object contains at least two elements:
     valuesArray, ok := values.([]interface{})
-	if !ok {
+    if !ok {
         log.Error("fractional evaluation data is not an array")
-		return nil 
-	}
-	if len(valuesArray) < 2 {
+        return nil
+    }
+    if len(valuesArray) < 2 {
         log.Error("fractional evaluation data has length under 2")
-		return nil
-	}
+        return nil
+    }
 
     // 2. Get the target property used for bucketing the values and retrieve its value from the evaluation context:
     bucketBy, ok := valuesArray[0].(string)
-	if !ok {
+    if !ok {
         log.Error("first element of fractional evaluation data isn't of type string")
-		return nil
-	}
+        return nil
+    }
 
-	dataMap, ok := data.(map[string]interface{})
-	if !ok {
+    dataMap, ok := data.(map[string]interface{})
+    if !ok {
         log.Error("data isn't of type map[string]interface{}")
-		return nil
-	}
+        return nil
+    }
 
-	v, ok := dataMap[bucketBy]
-	if !ok {
+    v, ok := dataMap[bucketBy]
+    if !ok {
         // if the target property is not part of the evaluation context, use an empty string for calculating the hash
-		v = ""
-	}
+        v = ""
+    }
 
     valueToDistribute, ok := v.(string)
-	if !ok {
+    if !ok {
         // the target property must have a string value
         log.Error("var: %s isn't of type string", bucketBy)
-		return nil
-	}
+        return nil
+    }
 
     // 3. Parse the fractionalEvaluation values distribution
     sumOfPercentages := 0
-	var feDistributions []fractionalEvaluationDistribution
+    var feDistributions []fractionalEvaluationDistribution
 
     // start at index 1, as the first item of the values array is the target property
-	for i := 1; i < len(valuesArray); i++ {
-		distributionArray, ok := values[i].([]interface{})
-		if !ok {
+    for i := 1; i < len(valuesArray); i++ {
+        distributionArray, ok := values[i].([]interface{})
+        if !ok {
             log.Error("distribution elements aren't of type []interface{}")
-			return nil
-		}
+            return nil
+        }
 
-		if len(distributionArray) != 2 {
+        if len(distributionArray) != 2 {
             log.Error("distribution element isn't length 2")
-			return nil
-		}
+            return nil
+        }
 
-		variant, ok := distributionArray[0].(string)
-		if !ok {
+        variant, ok := distributionArray[0].(string)
+        if !ok {
             log.Error("first element of distribution element isn't a string")
-			return nil
-		}
+            return nil
+        }
 
-		percentage, ok := distributionArray[1].(float64)
-		if !ok {
+        percentage, ok := distributionArray[1].(float64)
+        if !ok {
             log.Error("second element of distribution element isn't float")
-			return nil
-		}
+            return nil
+        }
 
-		sumOfPercentages += int(percentage)
+        sumOfPercentages += int(percentage)
 
-		feDistributions = append(feDistributions, fractionalEvaluationDistribution{
-			variant:    variant,
-			percentage: int(percentage),
-		})
-	}
+        feDistributions = append(feDistributions, fractionalEvaluationDistribution{
+            variant:    variant,
+            percentage: int(percentage),
+        })
+    }
 
     // check if the sum of percentages adds up to 100, otherwise log an error
-	if sumOfPercentages != 100 {
+    if sumOfPercentages != 100 {
         log.Error("percentages must sum to 100, got: %d", sumOfPercentages)
-		return nil
-	}
+        return nil
+    }
 
-	// 4. Calculate the hash of the target property and map it to a number between [0, 99]
+    // 4. Calculate the hash of the target property and map it to a number between [0, 99]
     hashValue := murmur2.HashString(value)
 
     // divide the hash value by the largest possible value, integer 2^64
-	hashRatio := float64(hashValue) / math.Pow(2, 64)
+    hashRatio := float64(hashValue) / math.Pow(2, 64)
 
     // integer in range [0, 99]
-	bucket := int(hashRatio * 100)
+    bucket := int(hashRatio * 100)
 
     // 5. Iterate through the variant and increment the threshold by the percentage of each variant.
     // return the first variant where the bucket is smaller than the threshold. 
-	rangeEnd := 0
-	for _, dist := range feDistribution {
-		rangeEnd += dist.percentage
-		if bucket < rangeEnd {
+    rangeEnd := 0
+    for _, dist := range feDistribution {
+        rangeEnd += dist.percentage
+        if bucket < rangeEnd {
             // return the matching variant
-			return dist.variant
-		}
-	}
+            return dist.variant
+        }
+    }
 
-	return ""
+    return ""
 }
 ```
