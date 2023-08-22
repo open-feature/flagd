@@ -36,6 +36,7 @@ build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
+.PHONY: test
 test: # default to core
 	make test-core
 test-core:
