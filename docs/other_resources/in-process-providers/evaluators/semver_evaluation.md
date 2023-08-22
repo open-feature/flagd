@@ -39,5 +39,6 @@ C -- Yes --> E{Is targetingRule at index 1 a supported operator?};
 C -- No --> D;
 E -- Yes --> F{Is targetingRule at index 2 a semantic version string?};
 E -- No --> D;
+F -- No --> D;
 F --> G[Compare the two versions using the operator and return a boolean value indicating if they match];
 ```
