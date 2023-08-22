@@ -1222,7 +1222,7 @@ func TestFlagdAmbientProperties(t *testing.T) {
 					},
 					"defaultVariant": "false",
 					"targeting": {
-						"==": [ { "var": "$flagd.flag_key" }, "welcome-banner" ]
+						"==": [ { "var": "$flagd.flagKey" }, "welcome-banner" ]
 					}
 				}
 			}

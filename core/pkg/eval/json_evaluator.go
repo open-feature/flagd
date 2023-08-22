@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
-	"github.com/mitchellh/mapstructure"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
@@ -34,7 +33,7 @@ const (
 var regBrace *regexp.Regexp
 
 type flagdProperties struct {
-	FlagKey string
+	FlagKey string `json:"flagKey"`
 }
 
 func init() {
@@ -372,8 +371,13 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 		return flagdProperties{}, false
 	}
 
+	b, err := json.Marshal(properties)
+	if err != nil {
+		return flagdProperties{}, false
+	}
+
 	var p flagdProperties
-	if err := mapstructure.Decode(properties, &p); err != nil {
+	if err := json.Unmarshal(b, &p); err != nil {
 		return flagdProperties{}, false
 	}
 
