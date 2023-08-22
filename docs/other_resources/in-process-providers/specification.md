@@ -24,7 +24,8 @@ Other sources may be desired eventually, so separation of concerns should be mai
 ## gRPC sources
 
 gRPC sync sources are identified by the `provider` field set to `grpc`.
-When such a sync source is specified, the in-process flagd provider should connect to the gRPC service located at the `uri` of the sync source, and use its `sync` API ([see here](https://github.com/open-feature/schemas)) to retrieve the feature flag configurations. If the `selector` field of the sync source is set, that selector should be passed through to the `Sync` and `FetchAllFlags` requests sent to the gRPC server.
+When such a sync source is specified, the in-process flagd provider should connect to the gRPC service located at the `uri` of the sync source, and use its `sync` API ([see here](https://github.com/open-feature/schemas)) to retrieve the feature flag configurations.
+If the `selector` field of the sync source is set, that selector should be passed through to the `Sync` and `FetchAllFlags` requests sent to the gRPC server.
 
 ### Protobuf
 
