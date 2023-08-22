@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
+	"github.com/mitchellh/mapstructure"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
@@ -27,11 +28,14 @@ import (
 const (
 	SelectorMetadataKey = "scope"
 
-	flagdDataKey     = "$flagd"
-	flagdDataFlagKey = "flag_key"
+	flagdPropertiesKey = "$flagd"
 )
 
 var regBrace *regexp.Regexp
+
+type flagdProperties struct {
+	FlagKey string
+}
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
@@ -311,8 +315,8 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		context = je.addAmbientPropertiesToContext(context, map[string]any{
-			flagdDataFlagKey: flagKey,
+		context = je.setFlagdProperties(context, flagdProperties{
+			FlagKey: flagKey,
 		})
 
 		b, err := json.Marshal(context)
@@ -345,21 +349,35 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 	return flag.DefaultVariant, flag.Variants, reason, metadata, nil
 }
 
-func (je *JSONEvaluator) addAmbientPropertiesToContext(
+func (je *JSONEvaluator) setFlagdProperties(
 	context map[string]any,
-	properties map[string]any,
+	properties flagdProperties,
 ) map[string]any {
 	if context == nil {
 		context = map[string]any{}
 	}
 
-	if _, ok := context[flagdDataKey]; ok {
+	if _, ok := context[flagdPropertiesKey]; ok {
 		je.Logger.Warn("overwriting $flagd properties in the context")
 	}
 
-	context[flagdDataKey] = properties
+	context[flagdPropertiesKey] = properties
 
 	return context
+}
+
+func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
+	properties, ok := context[flagdPropertiesKey]
+	if !ok {
+		return flagdProperties{}, false
+	}
+
+	var p flagdProperties
+	if err := mapstructure.Decode(properties, &p); err != nil {
+		return flagdProperties{}, false
+	}
+
+	return p, true
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags

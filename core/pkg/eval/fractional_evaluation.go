@@ -51,15 +51,9 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, errors.New("data isn't of type map[string]interface{}")
 	}
 
-	flagdData, ok := dataMap[flagdDataKey].(map[string]any)
-	if !ok {
-		flagdData = map[string]any{}
-	}
-
-	flagKey, ok := flagdData[flagdDataFlagKey].(string)
-	if !ok {
-		flagKey = ""
-	}
+	// Ignore the ok as we can't really do anything if the properties are
+	// somehow missing.
+	properties, _ := getFlagdProperties(dataMap)
 
 	v, ok := dataMap[targetingKey]
 	if !ok {
@@ -76,7 +70,7 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s$%s", flagKey, valueToDistribute), feDistributions, nil
+	return fmt.Sprintf("%s$%s", properties.FlagKey, valueToDistribute), feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalEvaluationDistribution, error) {
