@@ -59,7 +59,8 @@ Note that for the in-process provider only the `sync` package will be relevant, 
 
 ## JsonLogic evaluation
 
-An in-process flagd provider should provide the feature set offered by [JsonLogic](https://jsonlogic.com) to evaluate flag resolution requests for a given context. If available, the JsonLogic library for the chosen technology should be used.
+An in-process flagd provider should provide the feature set offered by [JsonLogic](https://jsonlogic.com) to evaluate flag resolution requests for a given context.
+If available, the JsonLogic library for the chosen technology should be used.
 
 ### Custom JsonLogic evaluators
 
