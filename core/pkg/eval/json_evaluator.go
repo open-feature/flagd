@@ -281,6 +281,7 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
+// nolint: funlen
 func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
