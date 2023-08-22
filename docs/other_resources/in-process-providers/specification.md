@@ -19,7 +19,7 @@ An implementation of an in-process flagd-provider must accept the following envi
 - `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag configuration of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag configuration within a collection of feature flag configurations.
 
 An implementation of an in-process flagd provider should provide a source for retrieving the flag configuration, namely a gRPC source.
-Other sources may be desired eventually, so separation of concerns should be mantained between the abstractions evaluating flags and those retreving confitation.
+Other sources may be desired eventually, so separation of concerns should be maintained between the abstractions evaluating flags and those retrieving confirmation.
 
 ## gRPC sources
 
