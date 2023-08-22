@@ -1,4 +1,4 @@
-# Fractional Evaluatior
+# Fractional Evaluation
 
 This evaluator allows to split the returned variants of a feature flag into different buckets,
 where each bucket can be assigned a percentage, representing how many requests will resolve to the corresponding
