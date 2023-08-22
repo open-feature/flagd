@@ -66,7 +66,7 @@ If available, the JsonLogic library for the chosen technology should be used.
 
 In addition to the built-in evaluators provided by JsonLogic, the following custom targeting rules should be implemented by the provider:
 
-- [Fractional evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md):
+- [Fractional evaluation](../../configuration/fractional_evaluation.md):
 This evaluator allows to split the returned variants of a feature flag into different buckets, where each bucket
 can be assigned a percentage, representing how many requests will resolve to the corresponding variant.
 The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
@@ -78,11 +78,11 @@ the [MurmurHash3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHas
 This is to ensure that flag resolution requests yield the same result, regardless of which implementation of
 the in-process flagd provider is being used. For more specific implementation guidelines, please refer to
 [this document](./evaluators/fractional_evaluation.md).
-- [SemVer evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/sem_ver_evaluation.md):
+- [SemVer evaluation](../../configuration/sem_ver_evaluation.md):
 This evaluator checks if the given property within the evaluation context matches a semantic versioning condition.
 It returns 'true', if the value of the given property meets the condition, 'false' if not.
 For more specific implementation guidelines, please refer to [this document](./evaluators/semver_evaluation.md).
-- [StartsWith/EndsWith evaluation](https://github.com/open-feature/flagd/blob/main/docs/configuration/string_comparison_evaluation.md):
+- [StartsWith/EndsWith evaluation](../../configuration/string_comparison_evaluation.md):
 This evaluator selects a variant based on whether the specified property within the evaluation context
 starts/ends with a certain string.
 For more specific implementation guidelines, please refer to [this document](./evaluators/string_comparison_evaluation.md).
