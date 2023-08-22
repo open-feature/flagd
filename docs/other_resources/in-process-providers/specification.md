@@ -8,7 +8,7 @@ Prerequisites:
 - Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../usage/flagd_providers.md))
 
 The Flag Configuration containing the feature flags and JsonLogic based targeting rules shall be retrieved by the
-in-process flagd provider via a gRPC client connection to a sync server, such as [flagd-proxy](https://github.com/open-feature/flagd/flagd-proxy).
+in-process flagd provider via a gRPC client connection to a sync server, such as [flagd-proxy](https://github.com/open-feature/flagd/tree/main/flagd-proxy).
 
 ## Sync source
 
