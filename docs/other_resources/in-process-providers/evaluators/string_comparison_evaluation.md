@@ -35,5 +35,6 @@ B -- Yes --> C{Is targetingRule at index 0 a string?};
 B -- No --> D[Return nil];
 C -- Yes --> E{Is targetingRule at index 1 a string?};
 C -- No --> D;
+E -- No --> D;
 E --> F[Return a boolean value indicating if the first string starts/ends with the second string];
 ```
