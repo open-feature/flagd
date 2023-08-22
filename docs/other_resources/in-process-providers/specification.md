@@ -162,7 +162,7 @@ func (p *Provider) BooleanEvaluation(
 
 ## Provider lifecycle, initialization and shutdown
 
-With the release of the v0.x.0 spec, OpenFeature now outlines a lifecycle for in-process flagd provider initialization and shutdown.
+With the release of the v0.6.0 spec, OpenFeature now outlines a lifecycle for in-process flagd provider initialization and shutdown.
 
 In-process flagd providers should do the following to make use of OpenFeature v0.6.0 features:
 
