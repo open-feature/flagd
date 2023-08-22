@@ -29,7 +29,8 @@ If the `selector` field of the sync source is set, that selector should be passe
 
 ### Protobuf
 
-Protobuf schemas define the contract between a client (flagd or the in-process provider implementation) and server (`flagd-proxy`). `flagd-proxy`'s schemas are defined [here](https://github.com/open-feature/schemas/tree/main/protobuf/sync/v1).
+Protobuf schemas define the contract between a client (flagd or the in-process provider implementation) and server (`flagd-proxy`).
+`flagd-proxy`'s schemas are defined [here](https://github.com/open-feature/schemas/tree/main/protobuf/sync/v1).
 
 #### Code generation for gRPC sync
 
