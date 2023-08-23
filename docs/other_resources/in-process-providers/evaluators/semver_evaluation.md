@@ -9,7 +9,8 @@ The 'sem_ver' evaluation rule contains exactly three items:
 
 1. Target property value: the resolved value of the target property referenced in the targeting rule
 2. Operator: One of the following: `=`, `!=`, `>`, `<`, `>=`, `<=`, `~` (match minor version), `^` (match major version)
-3. Target value: this needs to resolve to a semantic versioning string
+3. Target value: this needs to resolve to a semantic versioning string. If this condition is not met, the evaluator should
+log an appropriate error message and return `nil`
 
 The `sem_ver` evaluation returns a boolean, indicating whether the condition has been met.
 

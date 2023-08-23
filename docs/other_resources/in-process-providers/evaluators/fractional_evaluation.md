@@ -32,7 +32,7 @@ JSON object. Below is an example for a targetingRule containing a `fractionalEva
       "state": "ENABLED",
       "targeting": {
         "fractionalEvaluation": [
-          "email",
+          {"var":"email"},
           [
             "red",
             50
@@ -52,6 +52,10 @@ JSON object. Below is an example for a targetingRule containing a `fractionalEva
 }
 ```
 
+Please note that the implementation of this evaluator can assume that instead of `{"var": "email"}`, it will receive
+the resolved value of that referenced property, as resolving the value will be taken care of by JsonLogic before
+applying the evaluator.
+
 The following flow chart depicts the logic of this evaluator:
 
 ```mermaid
@@ -59,18 +63,15 @@ flowchart TD
 A[Parse targetingRule] --> B{Is an array containing at least two items?};
 B -- Yes --> C{Is targetingRule at index 0 a string?};
 B -- No --> D[Return nil];
-C -- Yes --> E[targetProperty := targetingRule at index 0];
+C -- Yes --> E[targetPropertyValue := targetingRule at index 0];
 C -- No --> D;
-E --> F[targetPropertyValue := evaluationContext at key 'targetProperty', empty string otherwise]
-F --> G{Is targetPropertyValue a string?};
+E -- Yes --> F[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];
+F --> G{Parsing successful?};
 G -- No --> D;
-G -- Yes --> H[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];
-H --> I{Parsing successful?};
-I -- No --> D;
-I -- Yes --> J{Does percentage of variants add up to 100?};
-J -- No --> D;
-J -- Yes --> K[hash := murmur3Hash of targetPropertyValue divided by Int64.MaxValue]
-K --> L[Iterate through the variant and increment the threshold by the percentage of each variant. Return the first variant where the bucket is smaller than the threshold.]
+G -- Yes --> H{Does percentage of variants add up to 100?};
+H -- No --> D;
+H -- Yes --> I[hash := murmur3Hash of targetPropertyValue divided by Int64.MaxValue]
+I --> L[Iterate through the variant and increment the threshold by the percentage of each variant. Return the first variant where the bucket is smaller than the threshold.]
 ```
 
 As a reference, below is a simplified version of the actual implementation of this evaluator in Go.
@@ -85,7 +86,7 @@ type fractionalEvaluationDistribution struct {
 /*
     values: contains the targeting rule object; e.g.:
         [
-          "email",
+          {"var":"email"},
           [
             "red",
             50
@@ -117,29 +118,10 @@ func FractionalEvaluation(values, data interface{}) interface{} {
         return nil
     }
 
-    // 2. Get the target property used for bucketing the values and retrieve its value from the evaluation context:
-    bucketBy, ok := valuesArray[0].(string)
+    // 2. Get the target property value used for bucketing the values
+    valueToDistribute, ok := valuesArray[0].(string)
     if !ok {
         log.Error("first element of fractional evaluation data isn't of type string")
-        return nil
-    }
-
-    dataMap, ok := data.(map[string]interface{})
-    if !ok {
-        log.Error("data isn't of type map[string]interface{}")
-        return nil
-    }
-
-    v, ok := dataMap[bucketBy]
-    if !ok {
-        // if the target property is not part of the evaluation context, use an empty string for calculating the hash
-        v = ""
-    }
-
-    valueToDistribute, ok := v.(string)
-    if !ok {
-        // the target property must have a string value
-        log.Error("var: %s isn't of type string", bucketBy)
         return nil
     }
 
