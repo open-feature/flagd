@@ -5,7 +5,7 @@ Depending on the environment, flagd therefore is usually deployed as a standalon
 or injected as a sidecar container into the pod running the client application,
 as it is done in the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator).
 An in-process flagd provider, on the other hand, is designed to be embedded into the application and therefore
-no communication outside the process of the application is needed. This can be desired by some architectures,
+no communication outside the process of the application for feature flag evaluation is needed. This can be desired by some architectures,
 especially if flag retrievals should not take longer than a certain amount of time.
 
 The in-process flagd provider is responsible for creating an abstraction between the [JsonLogic](https://jsonlogic.com) based evaluation of flag configurations following the [flag configuration scheme](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json) used by `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
