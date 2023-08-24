@@ -11,6 +11,7 @@ import (
 	"time"
 
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/bufbuild/connect-go/schema/v1/schemav1connect"
+	"connectrpc.com/grpchealth"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
@@ -101,6 +102,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	s.eventingConfiguration.emitToAll(n)
 }
 
+// nolint: funlen
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
@@ -129,16 +131,28 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	path, handler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
 	mux.Handle(path, handler)
+	mux.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker(
+		schemaConnectV1.ServiceName,
+	)))
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.readinessEnabled && svcConf.ReadinessProbe() {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusPreconditionFailed)
+		}
+	}))
 
 	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
-		Handler:           handler,
+		Handler:           mux,
 	}
 	s.serverMtx.Unlock()
 
 	// Add middlewares
-
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
 		Service:        svcConf.ServiceName,
 		MetricRecorder: s.metrics,
@@ -206,8 +220,10 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	s.metricsServer.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz":
+			s.logger.Warn(fmt.Sprintf("call to deprecated /healthz endpoint on port %d, use port %d instead", svcConf.MetricsPort, svcConf.Port))
 			w.WriteHeader(http.StatusOK)
 		case "/readyz":
+			s.logger.Warn(fmt.Sprintf("call to deprecated /readyz endpoint on port %d, use port %d instead", svcConf.MetricsPort, svcConf.Port))
 			if s.readinessEnabled && svcConf.ReadinessProbe() {
 				w.WriteHeader(http.StatusOK)
 			} else {

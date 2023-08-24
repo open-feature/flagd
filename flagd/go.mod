@@ -18,6 +18,8 @@ require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1 // indirect
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230710190440-2333a9579c1a.1 // indirect
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1 // indirect
+	connectrpc.com/connect v1.11.0 // indirect
+	connectrpc.com/grpchealth v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bufbuild/connect-go v1.10.0 // indirect
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0 // indirect

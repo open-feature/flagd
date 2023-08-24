@@ -8,6 +8,8 @@ ZD_TEST_NAMESPACE ?= flagd-zd-test
 ZD_CLIENT_IMG ?= zd-client:latest
 FLAGD_PROXY_IMG ?= flagd-proxy:latest
 FLAGD_PROXY_IMG_ZD ?= flagd-proxy:zd
+# the same "status.proto" is supplied by 2 modules, which causes an error we can safely ignore
+export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn
 
 workspace-init: workspace-clean
 	go work init
@@ -35,7 +37,7 @@ docker-push-flagd:
 build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
-	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
+	go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn -X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
 .PHONY: test
 test: # default to core
 	make test-core
