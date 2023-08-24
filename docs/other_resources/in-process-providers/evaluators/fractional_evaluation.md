@@ -12,9 +12,8 @@ regardless of which implementation of the in-process flagd provider is being use
 
 The implementation of this evaluator should accept the object containing the `fractionalEvaluation` evaluator
 configuration, and a `data` object containing the evaluation context. The evaluator configuration should be an
-array containing at least two items, with the first item being a `string`
-value representing the target property to base the distribution of values on, and the remaining items
-being `arrays` with two values, with the first being `string` item representing the name of the variant, and the
+array containing at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
+specifying the target property to base the distribution of values on. If not supplied, a concatination of the `flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flag_key"}, {"var":"user.email"}]}`. The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to
 100.0, otherwise unexpected behavior can occur during the evaluation. The `data` object can be an arbitrary
 JSON object. Below is an example for a targetingRule containing a `fractionalEvaluation`:
