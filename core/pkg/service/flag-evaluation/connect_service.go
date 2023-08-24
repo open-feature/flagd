@@ -129,8 +129,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		protojson.UnmarshalOptions{DiscardUnknown: true},
 	)
 
-	path, handler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
-	mux.Handle(path, handler)
+	mux.Handle(schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...))
 	mux.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker(
 		schemaConnectV1.ServiceName,
 	)))
