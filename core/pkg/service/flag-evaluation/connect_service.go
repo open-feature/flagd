@@ -220,10 +220,12 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	s.metricsServer.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz":
-			s.logger.Warn(fmt.Sprintf("call to deprecated /healthz endpoint on port %d, use port %d instead", svcConf.MetricsPort, svcConf.Port))
+			s.logger.Warn(
+				fmt.Sprintf("/healthz endpoint on port %d is deprecated, use port %d instead", svcConf.MetricsPort, svcConf.Port))
 			w.WriteHeader(http.StatusOK)
 		case "/readyz":
-			s.logger.Warn(fmt.Sprintf("call to deprecated /readyz endpoint on port %d, use port %d instead", svcConf.MetricsPort, svcConf.Port))
+			s.logger.Warn(
+				fmt.Sprintf("/readyz endpoint on port %d is deprecated, use port %d instead", svcConf.MetricsPort, svcConf.Port))
 			if s.readinessEnabled && svcConf.ReadinessProbe() {
 				w.WriteHeader(http.StatusOK)
 			} else {
