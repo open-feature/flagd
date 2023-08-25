@@ -33,13 +33,18 @@ process gets pushed to event subscribers.
 
 ## Readiness & Liveness probes
 
+### HTTP
+
 Flagd exposes HTTP liveness and readiness probes.
 These probes can be used for K8s deployments.
-With default
-start-up configurations, these probes are exposed at the following URLs,
+With default start-up configurations, these probes are exposed on the service port (default: 8013) at the following URLs,
 
-- Liveness: <http://localhost:8014/healthz>
-- Readiness: <http://localhost:8014/readyz>
+- Liveness: <http://localhost:8013/healthz>
+- Readiness: <http://localhost:8013/readyz>
+
+### gRPC
+
+Flagd exposes a [standard gRPC liveness check](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) on the service port (default: 8013).
 
 ### Definition of Liveness
 

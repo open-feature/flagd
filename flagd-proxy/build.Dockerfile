@@ -32,7 +32,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,source=./core,target=./core \
     --mount=type=bind,source=./flagd,target=./flagd \
     --mount=type=bind,source=./flagd-proxy,target=./flagd-proxy \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-proxy flagd-proxy/main.go
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-proxy flagd-proxy/main.go
 
 # # Use distroless as minimal base image to package the manager binary
 # # Refer to https://github.com/GoogleContainerTools/distroless for more details

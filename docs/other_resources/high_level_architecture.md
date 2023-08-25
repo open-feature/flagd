@@ -46,7 +46,7 @@ With default start-up configurations, these probes are exposed on the service po
 
 ### gRPC
 
-Flagd exposes a [standard gRPC health check](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) on the service port (default: 8013).
+Flagd exposes a [standard gRPC liveness check](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) on the service port (default: 8013).
 
 ### Definition of Liveness
 
