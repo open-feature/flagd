@@ -36,6 +36,7 @@ build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
+.PHONY: test
 test: # default to core
 	make test-core
 test-core:
@@ -60,7 +61,8 @@ uninstall:
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
-	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+# pinned to @v1.53.3 until we migrate to go 1.20 (newer versions use incompatible transitive deps)
+	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=5m --timeout=5m $(module)/... || exit;)
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0

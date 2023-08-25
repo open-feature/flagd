@@ -14,7 +14,7 @@ Importantly, the evaluations are "sticky" meaning that the same `email` address 
 
 The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a percentage).
-This works by hashing ([xxHash](https://cyan4973.github.io/xxHash/))
+This works by hashing ([murmur3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp))
 the given data point, converting it into an int in the range [0, 99].
 Whichever range this int falls in decides which variant
 is selected.
