@@ -1207,3 +1207,45 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		})
 	}
 }
+
+func TestFlagdAmbientProperties(t *testing.T) {
+	t.Run("flagKeyIsInTheContext", func(t *testing.T) {
+		evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+
+		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+			"flags": {
+				"welcome-banner": {
+					"state": "ENABLED",
+					"variants": {
+						"true": true,
+						"false": false
+					},
+					"defaultVariant": "false",
+					"targeting": {
+						"==": [ { "var": "$flagd.flagKey" }, "welcome-banner" ]
+					}
+				}
+			}
+		}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		value, variant, reason, _, err := evaluator.ResolveBooleanValue(context.Background(), "default", "welcome-banner", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !value {
+			t.Fatal("expected true, got false")
+		}
+
+		if variant != "true" {
+			t.Fatal("expected true, got false")
+		}
+
+		if reason != model.TargetingMatchReason {
+			t.Fatalf("expected %s, got %s", model.TargetingMatchReason, reason)
+		}
+	})
+}

@@ -24,9 +24,17 @@ import (
 	"go.uber.org/zap"
 )
 
-const SelectorMetadataKey = "scope"
+const (
+	SelectorMetadataKey = "scope"
+
+	flagdPropertiesKey = "$flagd"
+)
 
 var regBrace *regexp.Regexp
+
+type flagdProperties struct {
+	FlagKey string `json:"flagKey"`
+}
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
@@ -273,6 +281,7 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 }
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
+// nolint: funlen
 func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
@@ -306,6 +315,10 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
+		context = je.setFlagdProperties(context, flagdProperties{
+			FlagKey: flagKey,
+		})
+
 		b, err := json.Marshal(context)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, context))
@@ -334,6 +347,42 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 	}
 
 	return flag.DefaultVariant, flag.Variants, reason, metadata, nil
+}
+
+func (je *JSONEvaluator) setFlagdProperties(
+	context map[string]any,
+	properties flagdProperties,
+) map[string]any {
+	if context == nil {
+		context = map[string]any{}
+	}
+
+	if _, ok := context[flagdPropertiesKey]; ok {
+		je.Logger.Warn("overwriting $flagd properties in the context")
+	}
+
+	context[flagdPropertiesKey] = properties
+
+	return context
+}
+
+func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
+	properties, ok := context[flagdPropertiesKey]
+	if !ok {
+		return flagdProperties{}, false
+	}
+
+	b, err := json.Marshal(properties)
+	if err != nil {
+		return flagdProperties{}, false
+	}
+
+	var p flagdProperties
+	if err := json.Unmarshal(b, &p); err != nil {
+		return flagdProperties{}, false
+	}
+
+	return p, true
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags

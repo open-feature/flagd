@@ -63,44 +63,97 @@ func TestFractionalEvaluation(t *testing.T) {
 		expectedReason  string
 		expectedError   error
 	}{
-		"test@faas.com": {
+		"rachel@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test@faas.com",
+				"email": "rachel@faas.com",
 			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"test2@faas.com": {
+		"phoebe@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test2@faas.com",
+				"email": "phoebe@faas.com",
 			},
 			expectedVariant: "yellow",
 			expectedValue:   "#FFFF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"test3@faas.com": {
+		"monica@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test3@faas.com",
+				"email": "monica@faas.com",
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"test4@faas.com": {
+		"rossg@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test4@faas.com",
+				"email": "rossg@faas.com",
 			},
-			expectedVariant: "blue",
-			expectedValue:   "#0000FF",
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"rossg@faas.com with different flag key": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"footerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+							"if": [
+								{
+									"in": ["@faas.com", {
+										"var": ["email"]
+									}]
+								},
+								{
+									"fractionalEvaluation": [
+										"email",
+										[
+										"red",
+										25
+									  	],
+									  	[
+										"blue",
+										25
+										],
+										[
+										"green",
+										25
+									  	],
+									  	[
+										"yellow",
+										25
+									  	]
+									]
+								}, null
+							]
+						}`),
+					},
+				},
+			},
+			flagKey: "footerColor",
+			context: map[string]any{
+				"email": "rossg@faas.com",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {
