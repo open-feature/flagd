@@ -67,7 +67,7 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s$%s", properties.FlagKey, bucketBy), feDistributions, nil
+	return fmt.Sprintf("%s%s", properties.FlagKey, bucketBy), feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
