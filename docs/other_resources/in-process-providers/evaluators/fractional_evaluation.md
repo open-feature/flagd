@@ -62,8 +62,8 @@ flowchart TD
 A[Parse targetingRule] --> B{Is an array containing at least one item?};
 B -- Yes --> C{Is targetingRule at index 0 a string?};
 B -- No --> D[return nil]
-C -- No --> E[targetPropertyValue := default to targetingKey];
-C -- Yes --> F[targetPropertyValue := targetingRule at index 0];
+C -- No --> E[bucketingPropertyValue := default to targetingKey];
+C -- Yes --> F[bucketingPropertyValue := targetingRule at index 0];
 E --> G[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];
 F --> G;
 G --> H{Parsing successful?};
