@@ -12,8 +12,10 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
-const LegacyFractionEvaluationName = "fractionalEvaluation"
-const LegacyFractionEvaluationLink = "https://flagd.dev/concepts/#migrating-from-legacy-fractionalevaluation"
+const (
+	LegacyFractionEvaluationName = "fractionalEvaluation"
+	LegacyFractionEvaluationLink = "https://flagd.dev/concepts/#migrating-from-legacy-fractionalevaluation"
+)
 
 type LegacyFractionalEvaluator struct {
 	Logger *logger.Logger
@@ -44,7 +46,9 @@ func (fe *LegacyFractionalEvaluator) LegacyFractionalEvaluation(values, data int
 	return distributeLegacyValue(valueToDistribute, feDistributions)
 }
 
-func parseLegacyFractionalEvaluationData(values, data interface{}) (string, []legacyFractionalEvaluationDistribution, error) {
+func parseLegacyFractionalEvaluationData(values, data interface{}) (string,
+	[]legacyFractionalEvaluationDistribution, error,
+) {
 	valuesArray, ok := values.([]interface{})
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
@@ -81,7 +85,9 @@ func parseLegacyFractionalEvaluationData(values, data interface{}) (string, []le
 	return valueToDistribute, feDistributions, nil
 }
 
-func parseLegacyFractionalEvaluationDistributions(values []interface{}) ([]legacyFractionalEvaluationDistribution, error) {
+func parseLegacyFractionalEvaluationDistributions(values []interface{}) (
+	[]legacyFractionalEvaluationDistribution, error,
+) {
 	sumOfPercentages := 0
 	var feDistributions []legacyFractionalEvaluationDistribution
 	for i := 1; i < len(values); i++ {
