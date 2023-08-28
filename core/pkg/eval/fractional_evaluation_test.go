@@ -93,17 +93,17 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"rossg@faas.com": {
+		"ross@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "rossg@faas.com",
+				"email": "ross@faas.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"rossg@faas.com with different flag key": {
+		"ross@faas.com with different flag key": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
 					"footerColor": {
@@ -150,10 +150,10 @@ func TestFractionalEvaluation(t *testing.T) {
 			},
 			flagKey: "footerColor",
 			context: map[string]any{
-				"email": "rossg@faas.com",
+				"email": "ross@faas.com",
 			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {
