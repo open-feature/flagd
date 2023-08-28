@@ -70,7 +70,7 @@ G --> H{Parsing successful?};
 H -- No --> D;
 H -- Yes --> I{Does percentage of variants add up to 100?};
 I -- No --> D;
-I -- Yes --> J[hash := murmur3Hash of targetPropertyValue divided by Int64.MaxValue]
+I -- Yes --> J[hash := murmur3Hash of bucketingPropertyValue divided by Int64.MaxValue]
 J --> K[Iterate through the variant and increment the threshold by the percentage of each variant. Return the first variant where the bucket is smaller than the threshold.]
 ```
 
