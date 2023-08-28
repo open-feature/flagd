@@ -177,7 +177,7 @@ Fractional evaluations are "sticky" and deterministic meaning that the same emai
 
 This is true even if you run multiple flagd APIs completely independently.
 
-See this page for more information on [flagd fractional evaluation logic](../../web-docs/reference/fractional_evaluation.md).
+See this page for more information on [flagd fractional evaluation logic](reference/fractional_evaluation.md).
 
 ## Other target specifiers
 
