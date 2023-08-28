@@ -10,9 +10,9 @@ referenced evaluation context property, the [MurmurHash3](https://github.com/aap
 hash function should be used. This is to ensure that flag resolution requests yield the same result,
 regardless of which implementation of the in-process flagd provider is being used.
 
-array containing at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
+The supplied array must contain at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
 specifying the target property to base the distribution of values on. If not supplied, a concatination of the
-`flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flag_key"}, {"var":"user.email"}]}`.
+`flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flagKey"}, {"var":"targetingKey"}]}`.
 The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to
 100.0, otherwise unexpected behavior can occur during the evaluation. The `data` object can be an arbitrary
