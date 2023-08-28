@@ -29,22 +29,22 @@ func TestFractionalEvaluation(t *testing.T) {
 											  },
 											  {
 												"fractionalEvaluation": [
-												  "email",
+												  {"var": "email"},
 												  [
-													"red",
-													25
+												  "red",
+												  25
 												  ],
 												  [
-													"blue",
-													25
+												  "blue",
+												  25
 												  ],
 												  [
-													"green",
-													25
+												  "green",
+												  25
 												  ],
 												  [
-													"yellow",
-													25
+												  "yellow",
+												  25
 												  ]
 												]
 											  }, null
@@ -124,7 +124,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								},
 								{
 									"fractionalEvaluation": [
-										"email",
+										{"var": "email"},
 										[
 										"red",
 										25
@@ -219,7 +219,7 @@ func TestFractionalEvaluation(t *testing.T) {
 						},
 						Targeting: []byte(`{
 							"fractionalEvaluation": [
-								"email",
+								{"var": "email"},
 								[
 								"red",
 								25
@@ -261,7 +261,7 @@ func TestFractionalEvaluation(t *testing.T) {
 						},
 						Targeting: []byte(`{
 							"fractionalEvaluation": [
-								"email",
+								{"var": "email"},
 								[
 								"black",
 								100
@@ -293,7 +293,7 @@ func TestFractionalEvaluation(t *testing.T) {
 						},
 						Targeting: []byte(`{
 							"fractionalEvaluation": [
-								"email",
+								{"var": "email"},
 								[
 								"red",
 								25
