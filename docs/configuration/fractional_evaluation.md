@@ -12,7 +12,7 @@ Importantly, the evaluations are "sticky" meaning that the same `email` address 
 
 ## Fractional Evaluation: Technical Description
 
-The `fractionalEvaluation` operation is a custom JsonLogic operation which deterministically selects a variant based on
+The `fractional` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a percentage).
 This works by hashing ([murmur3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp))
 the given data point, converting it into an int in the range [0, 99].
@@ -22,7 +22,7 @@ As hashing is deterministic we can be sure to get the same result every time for
 
 ## Fractional evaluation configuration
 
-The `fractionalEvaluation` can be added as part of a targeting definition.
+The `fractional` operation can be added as part of a targeting definition.
 The value is an array and the first element is the name of the property to use from the evaluation context.
 This value should typically be something that remains consistent for the duration of a users session (e.g. email or session ID).
 The other elements in the array are nested arrays with the first element representing a variant and the second being the percentage that this option is selected.
@@ -30,9 +30,9 @@ There is no limit to the number of elements but the configured percentages must 
 
 ```js
 // Factional evaluation property name used in a targeting rule
-"fractionalEvaluation": [
+"fractional": [
   // Evaluation context property used to determine the split
-  "email",
+  { "var": "email" },
   // Split definitions contain an array with a variant and percentage
   // Percentages must add up to 100
   [
@@ -66,8 +66,8 @@ Flags defined as such:
       "defaultVariant": "red",
       "state": "ENABLED",
       "targeting": {
-        "fractionalEvaluation": [
-          "email",
+        "fractional": [
+          { "var": "email" },
           [
             "red",
             50
@@ -114,4 +114,28 @@ Result:
 ```
 
 Notice that rerunning either curl command will always return the same variant and value.
-The only way to get a different value is to change the email or update the `fractionalEvaluation` configuration.
+The only way to get a different value is to change the email or update the `fractional` configuration.
+
+### Migrating from legacy fractionalEvaluation
+
+If you are using a legacy fractional evaluation (`fractionalEvaluation`), it's recommended you migrate to `fractional`.
+The new `fractional` evaluator supports nested properties and json-logic expressions.
+To migrate, simple use a json-logic variable declaration for the bucketing property, instead of a string:
+
+old:
+
+```json
+"fractionalEvaluation": [
+    "email",
+    [ "red", 25 ], [ "blue", 25 ], [ "green", 25 ], [ "yellow", 25 ]
+]
+```
+
+new:
+
+```json
+"fractional": [
+    { "var": "email" },
+    [ "red", 25 ], [ "blue", 25 ], [ "green", 25 ], [ "yellow", 25 ]
+]
+```

@@ -160,7 +160,8 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
                     }
                 },
                 {
-                    "fractionalEvaluation": [ "email",
+                    "fractional": [
+                        { "var": "email" },
                         [ "red", 25 ], [ "blue", 25 ], [ "green", 25 ], [ "yellow", 25 ]
                     ]
                 }, null
@@ -173,11 +174,37 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
 
 ### Fractional evaluations are sticky
 
-Fractional evaluations are "sticky" and deterministic meaning that the same email address will always belong to the same "bucket" and thus always receive the same color.
-
+Fractional evaluations are "sticky" (deterministic) meaning that the same email address will always belong to the same "bucket" and thus always receive the same color.
 This is true even if you run multiple flagd APIs completely independently.
 
+Note that the first argument to the `fractional` operator specifies the *bucketing value*.
+This value is used as input to the bucketing algorithm to ensure a deterministic result.
+
 See this page for more information on [flagd fractional evaluation logic](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
+
+### Migrating from legacy fractionalEvaluation
+
+If you are using a legacy fractional evaluation (`fractionalEvaluation`), it's recommended you migrate to `fractional`.
+The new `fractional` evaluator supports nested properties and json-logic expressions.
+To migrate, simple use a json-logic variable declaration for the bucketing property, instead of a string:
+
+old:
+
+```json
+"fractionalEvaluation": [
+    "email",
+    [ "red", 25 ], [ "blue", 25 ], [ "green", 25 ], [ "yellow", 25 ]
+]
+```
+
+new:
+
+```json
+"fractional": [
+    { "var": "email" },
+    [ "red", 25 ], [ "blue", 25 ], [ "green", 25 ], [ "yellow", 25 ]
+]
+```
 
 ## Other target specifiers
 
