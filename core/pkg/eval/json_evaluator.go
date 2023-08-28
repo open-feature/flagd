@@ -28,6 +28,10 @@ const (
 	SelectorMetadataKey = "scope"
 
 	flagdPropertiesKey = "$flagd"
+
+	// targetingKeyKey is used to extract the targetingKey to bucket on in fractional
+	// evaluation if the user did not supply the optional bucketing property.
+	targetingKeyKey = "targetingKey"
 )
 
 var regBrace *regexp.Regexp

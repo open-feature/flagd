@@ -9,8 +9,6 @@ import (
 	"github.com/twmb/murmur3"
 )
 
-const targetingKeyKey = "targetingKey"
-
 type FractionalEvaluator struct {
 	Logger *logger.Logger
 }
@@ -58,7 +56,7 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	} else {
 		bucketBy, ok = dataMap[targetingKeyKey].(string)
 		if !ok {
-			return "", nil, errors.New("targeting key not supplied nor in context")
+			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
 		}
 	}
 
