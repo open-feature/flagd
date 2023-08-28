@@ -9,6 +9,8 @@ import (
 	"github.com/twmb/murmur3"
 )
 
+const targetingKeyKey = "targetingKey"
+
 type FractionalEvaluator struct {
 	Logger *logger.Logger
 }
@@ -41,11 +43,6 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 		return "", nil, errors.New("fractional evaluation data has length under 2")
 	}
 
-	bucketBy, ok := valuesArray[0].(string)
-	if !ok {
-		return "", nil, errors.New("first element of fractional evaluation did not resolve to a string value")
-	}
-
 	dataMap, ok := data.(map[string]any)
 	if !ok {
 		return "", nil, errors.New("data isn't of type map[string]any")
@@ -54,6 +51,16 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	// Ignore the error as we can't really do anything if the properties are
 	// somehow missing.
 	properties, _ := getFlagdProperties(dataMap)
+
+	bucketBy, ok := valuesArray[0].(string)
+	if ok {
+		valuesArray = valuesArray[1:]
+	} else {
+		bucketBy, ok = dataMap[targetingKeyKey].(string)
+		if !ok {
+			return "", nil, errors.New("targeting key not supplied nor in context")
+		}
+	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
 	if err != nil {
@@ -66,7 +73,7 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
 	sumOfPercentages := 0
 	var feDistributions []fractionalEvaluationDistribution
-	for i := 1; i < len(values); i++ {
+	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
 		if !ok {
 			return nil, errors.New("distribution elements aren't of type []any")

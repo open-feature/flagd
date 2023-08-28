@@ -315,6 +315,41 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
 		},
+		"default to targetingKey if no bucket key provided": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+							"fractionalEvaluation": [
+								[
+								"blue",
+								50
+								],
+								[
+								"green",
+								50
+								]
+							]
+							}`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": "foo@foo.com",
+			},
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
+			expectedReason:  model.TargetingMatchReason,
+		},
 	}
 	const reqID = "default"
 	for name, tt := range tests {

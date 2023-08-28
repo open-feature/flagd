@@ -325,6 +325,7 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}
+
 		var result bytes.Buffer
 		// evaluate json-logic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
