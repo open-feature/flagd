@@ -59,18 +59,19 @@ The following flow chart depicts the logic of this evaluator:
 
 ```mermaid
 flowchart TD
-A[Parse targetingRule] --> B{Is an array containing at least two items?};
+A[Parse targetingRule] --> B{Is an array containing at least one item?};
 B -- Yes --> C{Is targetingRule at index 0 a string?};
-B -- No --> D[Return nil];
-C -- Yes --> E[targetPropertyValue := targetingRule at index 0];
-C -- No --> D;
-E -- Yes --> F[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];
-F --> G{Parsing successful?};
-G -- No --> D;
-G -- Yes --> H{Does percentage of variants add up to 100?};
+B -- No --> D[return nil]
+C -- No --> E[targetPropertyValue := default to targetingKey];
+C -- Yes --> F[targetPropertyValue := targetingRule at index 0];
+E --> G[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];
+F --> G;
+G --> H{Parsing successful?};
 H -- No --> D;
-H -- Yes --> I[hash := murmur3Hash of targetPropertyValue divided by Int64.MaxValue]
-I --> L[Iterate through the variant and increment the threshold by the percentage of each variant. Return the first variant where the bucket is smaller than the threshold.]
+H -- Yes --> I{Does percentage of variants add up to 100?};
+I -- No --> D;
+I -- Yes --> J[hash := murmur3Hash of targetPropertyValue divided by Int64.MaxValue]
+J --> K[Iterate through the variant and increment the threshold by the percentage of each variant. Return the first variant where the bucket is smaller than the threshold.]
 ```
 
 As a reference, below is a simplified version of the actual implementation of this evaluator in Go.
