@@ -136,7 +136,7 @@ func (s *Server) startMetricsServer() error {
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.config.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
-		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need ot use h2c to support plaintext HTTP2
+		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}
 	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error returned from metrics server: %w", err)
