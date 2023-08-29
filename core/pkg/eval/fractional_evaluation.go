@@ -22,7 +22,7 @@ func NewFractionalEvaluator(logger *logger.Logger) *FractionalEvaluator {
 	return &FractionalEvaluator{Logger: logger}
 }
 
-func (fe *FractionalEvaluator) FractionalEvaluation(values, data interface{}) interface{} {
+func (fe *FractionalEvaluator) FractionalEvaluation(values, data any) any {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
 		fe.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))
@@ -32,8 +32,8 @@ func (fe *FractionalEvaluator) FractionalEvaluation(values, data interface{}) in
 	return distributeValue(valueToDistribute, feDistributions)
 }
 
-func parseFractionalEvaluationData(values, data interface{}) (string, []fractionalEvaluationDistribution, error) {
-	valuesArray, ok := values.([]interface{})
+func parseFractionalEvaluationData(values, data any) (string, []fractionalEvaluationDistribution, error) {
+	valuesArray, ok := values.([]any)
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
 	}
@@ -41,28 +41,23 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, errors.New("fractional evaluation data has length under 2")
 	}
 
-	bucketBy, ok := valuesArray[0].(string)
+	dataMap, ok := data.(map[string]any)
 	if !ok {
-		return "", nil, errors.New("first element of fractional evaluation data isn't of type string")
+		return "", nil, errors.New("data isn't of type map[string]any")
 	}
 
-	dataMap, ok := data.(map[string]interface{})
-	if !ok {
-		return "", nil, errors.New("data isn't of type map[string]interface{}")
-	}
-
-	// Ignore the ok as we can't really do anything if the properties are
+	// Ignore the error as we can't really do anything if the properties are
 	// somehow missing.
 	properties, _ := getFlagdProperties(dataMap)
 
-	v, ok := dataMap[bucketBy]
-	if !ok {
-		return "", nil, nil
-	}
-
-	valueToDistribute, ok := v.(string)
-	if !ok {
-		return "", nil, fmt.Errorf("var: %v isn't of type string", v)
+	bucketBy, ok := valuesArray[0].(string)
+	if ok {
+		valuesArray = valuesArray[1:]
+	} else {
+		bucketBy, ok = dataMap[targetingKeyKey].(string)
+		if !ok {
+			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
+		}
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
@@ -70,16 +65,16 @@ func parseFractionalEvaluationData(values, data interface{}) (string, []fraction
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s$%s", properties.FlagKey, valueToDistribute), feDistributions, nil
+	return fmt.Sprintf("%s%s", properties.FlagKey, bucketBy), feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
 	sumOfPercentages := 0
 	var feDistributions []fractionalEvaluationDistribution
-	for i := 1; i < len(values); i++ {
-		distributionArray, ok := values[i].([]interface{})
+	for i := 0; i < len(values); i++ {
+		distributionArray, ok := values[i].([]any)
 		if !ok {
-			return nil, errors.New("distribution elements aren't of type []interface{}")
+			return nil, errors.New("distribution elements aren't of type []any")
 		}
 
 		if len(distributionArray) != 2 {
