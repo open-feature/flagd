@@ -175,10 +175,11 @@ In this case, `25%` of the email addresses will receive `red`, `25%` will receiv
 ### Fractional evaluations are sticky
 
 Fractional evaluations are "sticky" (deterministic) meaning that the same email address will always belong to the same "bucket" and thus always receive the same color.
-This is true even if you run multiple flagd APIs completely independently.
+This is true even if you run multiple flagd instances completely independently.
 
-Note that the first argument to the `fractional` operator specifies the *bucketing value*.
+Note that the first argument to the `fractional` operator is an expression specifying the *bucketing value*.
 This value is used as input to the bucketing algorithm to ensure a deterministic result.
+This argument can be omitted, in which case a concatenation of the `targetingKey` and the `flagKey` will be used as the bucketing value.
 
 See this page for more information on [flagd fractional evaluation logic](https://github.com/open-feature/flagd/blob/main/docs/configuration/fractional_evaluation.md).
 
