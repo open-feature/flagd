@@ -1,5 +1,5 @@
-// This evaluation type is deprecated and will be removed before v1
-// Do not enhance it or us it for reference.
+// This evaluation type is deprecated and will be removed before v1.
+// Do not enhance it or use it for reference.
 
 package eval
 
