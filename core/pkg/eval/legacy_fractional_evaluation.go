@@ -17,6 +17,7 @@ const (
 	LegacyFractionEvaluationLink = "https://flagd.dev/concepts/#migrating-from-legacy-fractionalevaluation"
 )
 
+// Deprecated: LegacyFractionalEvaluator is deprecated. This will be removed prior to v1 release.
 type LegacyFractionalEvaluator struct {
 	Logger *logger.Logger
 }
