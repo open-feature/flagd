@@ -120,7 +120,7 @@ The only way to get a different value is to change the email or update the `frac
 
 If you are using a legacy fractional evaluation (`fractionalEvaluation`), it's recommended you migrate to `fractional`.
 The new `fractional` evaluator supports nested properties and json-logic expressions.
-To migrate, simple use a json-logic variable declaration for the bucketing property, instead of a string:
+To migrate, simply use a json-logic variable declaration for the bucketing property, instead of a string:
 
 old:
 
