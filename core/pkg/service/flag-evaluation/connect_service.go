@@ -232,7 +232,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
-		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need ot use h2c to support plaintext HTTP2
+		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}
 	s.metricsServerMtx.Unlock()
 
