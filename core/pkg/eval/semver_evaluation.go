@@ -9,6 +9,8 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+const SemVerEvaluationName = "sem_ver"
+
 type SemVerOperator string
 
 const (

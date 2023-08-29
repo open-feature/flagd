@@ -331,7 +331,7 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 		}
 
 		var result bytes.Buffer
-		// evaluate json-logic rules to determine the variant
+		// evaluate JsonLogic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))

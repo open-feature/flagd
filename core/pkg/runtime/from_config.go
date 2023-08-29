@@ -151,20 +151,25 @@ func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluat
 		logger,
 		s,
 		eval.WithEvaluator(
-			"fractionalEvaluation",
+			eval.FractionEvaluationName,
 			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
 		),
 		eval.WithEvaluator(
-			"starts_with",
+			eval.StartsWithEvaluationName,
 			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
 		),
 		eval.WithEvaluator(
-			"ends_with",
+			eval.EndsWithEvaluationName,
 			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
 		),
 		eval.WithEvaluator(
-			"sem_ver",
+			eval.SemVerEvaluationName,
 			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
+		),
+		// deprecated: will be removed before v1!
+		eval.WithEvaluator(
+			eval.LegacyFractionEvaluationName,
+			eval.NewLegacyFractionalEvaluator(logger).LegacyFractionalEvaluation,
 		),
 	)
 	return evaluator

@@ -9,6 +9,8 @@ import (
 	"github.com/twmb/murmur3"
 )
 
+const FractionEvaluationName = "fractional"
+
 type FractionalEvaluator struct {
 	Logger *logger.Logger
 }
