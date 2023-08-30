@@ -53,5 +53,6 @@ nav:
   - 'Flagd Telemetry':
       - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
   - 'Troubleshooting': 'troubleshooting.md'
+  - 'Ecosystem and Tooling': 'ecosystem.md'
 plugins:
   - social
