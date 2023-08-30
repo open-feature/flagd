@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.4](https://github.com/open-feature/flagd/compare/core/v0.6.3...core/v0.6.4) (2023-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.28.0 ([#841](https://github.com/open-feature/flagd/issues/841)) ([cc195e1](https://github.com/open-feature/flagd/commit/cc195e1dde052d583656d5e5b49caec50f832365))
+* **deps:** update kubernetes packages to v0.28.1 ([#860](https://github.com/open-feature/flagd/issues/860)) ([f3237c2](https://github.com/open-feature/flagd/commit/f3237c2d324fbb15fd5f7fe337a0601af3b537bb))
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.2.36 ([#799](https://github.com/open-feature/flagd/issues/799)) ([fa4da4b](https://github.com/open-feature/flagd/commit/fa4da4b0115e9fb40ab038b996e1e32b9f6a47ab))
+* **deps:** update module golang.org/x/crypto to v0.12.0 ([#797](https://github.com/open-feature/flagd/issues/797)) ([edae3fd](https://github.com/open-feature/flagd/commit/edae3fd466c0be62a0256c268e85cb337c9536f2))
+* **deps:** update module golang.org/x/net to v0.14.0 ([#798](https://github.com/open-feature/flagd/issues/798)) ([92c2f26](https://github.com/open-feature/flagd/commit/92c2f2676163688130737b34a115374cb5631247))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.15.1 ([#795](https://github.com/open-feature/flagd/issues/795)) ([13d62fd](https://github.com/open-feature/flagd/commit/13d62fd0fc4749f19dba0a18e1fda46a723380c5))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.16.0 ([#856](https://github.com/open-feature/flagd/issues/856)) ([88d832a](https://github.com/open-feature/flagd/commit/88d832a9d49a4bc1d6156849a59227ecab07f96e))
+
+
+### ✨ New Features
+
+* add flag key to hash in fractional evaluation ([#847](https://github.com/open-feature/flagd/issues/847)) ([ca6a35f](https://github.com/open-feature/flagd/commit/ca6a35fd72462177f45a116e9009fc30b3588b83))
+* add gRPC healthchecks ([#863](https://github.com/open-feature/flagd/issues/863)) ([da30b7b](https://github.com/open-feature/flagd/commit/da30b7babffd8487c992fa41519787c8d78ebdba))
+* support nested props in fractional evaluator ([#869](https://github.com/open-feature/flagd/issues/869)) ([50ff739](https://github.com/open-feature/flagd/commit/50ff739178fb732e38a220bb6a071260af1f2469))
+
+
+### 🧹 Chore
+
+* deprecate fractionalEvaluation for fractional ([#873](https://github.com/open-feature/flagd/issues/873)) ([243fef9](https://github.com/open-feature/flagd/commit/243fef9e1f0ed00ccf5d9a389e10d9ad6a197fb1))
+* replace xxh3 with murmur3 in bucket algorithm ([#846](https://github.com/open-feature/flagd/issues/846)) ([c3c9e4e](https://github.com/open-feature/flagd/commit/c3c9e4e40aeae7e75b1b9ab13bb9a40264be84e5))
+
 ## [0.6.3](https://github.com/open-feature/flagd/compare/core/v0.6.2...core/v0.6.3) (2023-08-04)
 
 

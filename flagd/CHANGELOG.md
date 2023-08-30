@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.4](https://github.com/open-feature/flagd/compare/flagd/v0.6.3...flagd/v0.6.4) (2023-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/cucumber/godog to v0.13.0 ([#855](https://github.com/open-feature/flagd/issues/855)) ([5b42486](https://github.com/open-feature/flagd/commit/5b4248654f7199afc50663e73609eeb20a3d11ec))
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.3 ([#794](https://github.com/open-feature/flagd/issues/794)) ([9671964](https://github.com/open-feature/flagd/commit/96719649affeb1f8412e8b25f52d7292281d8230))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.21 ([#822](https://github.com/open-feature/flagd/issues/822)) ([effe29d](https://github.com/open-feature/flagd/commit/effe29d50e33e6c06ef40d7f83f1b3f0df6bd1a2))
+
 ## [0.6.3](https://github.com/open-feature/flagd/compare/flagd/v0.6.2...flagd/v0.6.3) (2023-08-04)
 
 
