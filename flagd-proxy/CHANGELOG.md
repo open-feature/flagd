@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.8...flagd-proxy/v0.2.9) (2023-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.3 ([#794](https://github.com/open-feature/flagd/issues/794)) ([9671964](https://github.com/open-feature/flagd/commit/96719649affeb1f8412e8b25f52d7292281d8230))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.21 ([#822](https://github.com/open-feature/flagd/issues/822)) ([effe29d](https://github.com/open-feature/flagd/commit/effe29d50e33e6c06ef40d7f83f1b3f0df6bd1a2))
+
 ## [0.2.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.7...flagd-proxy/v0.2.8) (2023-08-04)
 
 
