@@ -245,6 +245,8 @@ jobs:
       - uses: mislav/bump-homebrew-formula-action@v2
         with:
           formula-name: flagd
+          # https://github.com/mislav/bump-homebrew-formula-action/issues/58
+          formula-path: Formula/f/flagd.rb
           tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
           download-url: https://github.com/${{ github.repository }}.git
           commit-message: |
