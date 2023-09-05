@@ -15,7 +15,7 @@ Choose the method that best serves your requirements to get started.
 
 ### Go binary
 
-1. Install Go 1.19 or above
+1. Install Go 1.20 or above
 1. run `go install github.com/open-feature/flagd/flagd@latest`
 
 ### Release binary
