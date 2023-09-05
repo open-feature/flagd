@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd/flagd
 
-go 1.19
+go 1.20
 
 require (
 	github.com/cucumber/godog v0.13.0

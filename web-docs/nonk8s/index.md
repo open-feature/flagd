@@ -37,7 +37,7 @@ sudo snap install flagd
 
 ## Go binary
 
-1. Install Go 1.19 or above
+1. Install Go 1.20 or above
 1. Run `go install github.com/open-feature/flagd/flagd@latest`
 
 ## Systemd service
