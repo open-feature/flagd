@@ -61,8 +61,7 @@ uninstall:
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
-# pinned to @v1.53.3 until we migrate to go 1.20 (newer versions use incompatible transitive deps)
-	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
+	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=5m --timeout=5m $(module)/... || exit;)
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0

@@ -6,12 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"time"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 const (
 	BOOL   = "boolean"
