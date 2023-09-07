@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd/core
 
-go 1.19
+go 1.20
 
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1
