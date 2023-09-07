@@ -51,6 +51,7 @@ nav:
       - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
       - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
   - 'Reference':
+      - 'Configuration of flags': 'reference/flag_configuration.md'
       - 'Flagd Configuration': 'reference/configuration.md'
       - 'Flagd Start': 'reference/flagd_start.md'
       - 'Flagd OpenTelemetry Support': 'reference/opentelemetry.md'
