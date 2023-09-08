@@ -137,4 +137,4 @@ jobs:
         run: ./bin/flagd start -f file:${{ github.workspace }}/test-harness/symlink_testing-flags.json &
 
       - name: Run evaluation test suite
-        run: go test -cover ./flagd/tests/integration -run TestEvaluation
+        run: go clean -testcache && go test -cover ./flagd/tests/integration -run TestEvaluation
