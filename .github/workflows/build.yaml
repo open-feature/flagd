@@ -134,7 +134,8 @@ jobs:
         run: make build
 
       - name: Run flagd binary in background
-        run: ./bin/flagd start \
+        run: |
+          ./bin/flagd start \
           -f file:${{ github.workspace }}/test-harness/flags/testing-flags.json \
           -f file:${{ github.workspace }}/test-harness/flags/custom-ops.json \
           -f file:${{ github.workspace }}/test-harness/flags/evaluator-refs.json \
