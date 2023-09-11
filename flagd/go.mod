@@ -8,7 +8,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.6.5
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.16
-	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.5-0.20230911141323-0f78059f7c4d
+	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.5-0.20230911154402-48b119f75c6b
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.25.0
