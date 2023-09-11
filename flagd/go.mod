@@ -8,14 +8,12 @@ require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.6.5
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.16
-	github.com/open-feature/go-sdk-contrib/tests/flagd v1.2.5-0.20230911160337-6fbcbafdefe7
+	github.com/open-feature/go-sdk-contrib/tests/flagd v1.3.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.25.0
 
 )
-
-// replace github.com/open-feature/go-sdk-contrib/tests/flagd => /home/todd/git/go-sdk-contrib/tests/flagd
 
 require (
 	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1 // indirect
