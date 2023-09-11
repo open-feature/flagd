@@ -1,3 +1,6 @@
 [submodule "test-harness"]
 	path = test-harness
 	url = https://github.com/open-feature/test-harness.git
+[submodule "spec"]
+	path = spec
+	url = https://github.com/open-feature/spec.git
