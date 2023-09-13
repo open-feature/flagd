@@ -134,7 +134,12 @@ jobs:
         run: make build
 
       - name: Run flagd binary in background
-        run: ./bin/flagd start -f file:${{ github.workspace }}/test-harness/symlink_testing-flags.json &
+        run: |
+          ./bin/flagd start \
+          -f file:${{ github.workspace }}/test-harness/flags/testing-flags.json \
+          -f file:${{ github.workspace }}/test-harness/flags/custom-ops.json \
+          -f file:${{ github.workspace }}/test-harness/flags/evaluator-refs.json \
+          -f file:${{ github.workspace }}/test-harness/flags/zero-flags.json &
 
       - name: Run evaluation test suite
-        run: go clean -testcache && go test -cover ./flagd/tests/integration -run TestEvaluation
+        run: go clean -testcache && go test -cover ./flagd/tests/integration

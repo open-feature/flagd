@@ -41,9 +41,8 @@ test: # default to core
 	make test-core
 test-core:
 	go test -race -covermode=atomic -cover -short ./core/pkg/... -coverprofile=core-coverage.out
-flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/symlink_testing-flags.json
+flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/flags/testing-flags.json -f file:test-harness/flags/custom-ops.json -f file:test-harness/flags/evaluator-refs.json -f file:test-harness/flags/zero-flags.json
 	go test -cover ./flagd/tests/integration $(ARGS)
-	cd test-harness; git restore testing-flags.json # reset testing-flags.json
 run: # default to flagd
 	make run-flagd
 run-flagd:
