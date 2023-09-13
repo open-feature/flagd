@@ -31,6 +31,7 @@ func TestEvaluation(t *testing.T) {
 			Format:   "pretty",
 			Paths:    []string{"../../../test-harness/features/evaluation.feature"},
 			TestingT: t, // Testing instance that will run subtests.
+			Strict:   true,
 		},
 	}
 

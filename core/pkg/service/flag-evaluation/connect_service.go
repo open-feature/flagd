@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,7 +22,12 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -127,18 +133,16 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		protojson.UnmarshalOptions{DiscardUnknown: true},
 	)
 
-	path, handler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
-	mux.Handle(path, handler)
+	mux.Handle(schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...))
 
 	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
-		Handler:           handler,
+		Handler:           mux,
 	}
 	s.serverMtx.Unlock()
 
 	// Add middlewares
-
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
 		Service:        svcConf.ServiceName,
 		MetricRecorder: s.metrics,
@@ -197,28 +201,41 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
 	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
+
+	grpc := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
+
+	mux := http.NewServeMux()
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.readinessEnabled && svcConf.ReadinessProbe() {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusPreconditionFailed)
+		}
+	}))
+	mux.Handle("/metrics", promhttp.Handler())
+
+	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// if this is 'application/grpc' and HTTP2, handle with gRPC, otherwise HTTP.
+		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpc") {
+			grpc.ServeHTTP(writer, request)
+		} else {
+			mux.ServeHTTP(writer, request)
+			return
+		}
+	})
+
 	s.metricsServerMtx.Lock()
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
 		ReadHeaderTimeout: 3 * time.Second,
+		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}
 	s.metricsServerMtx.Unlock()
-	s.metricsServer.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/healthz":
-			w.WriteHeader(http.StatusOK)
-		case "/readyz":
-			if s.readinessEnabled && svcConf.ReadinessProbe() {
-				w.WriteHeader(http.StatusOK)
-			} else {
-				w.WriteHeader(http.StatusPreconditionFailed)
-			}
-		case "/metrics":
-			promhttp.Handler().ServeHTTP(w, r)
-		default:
-			w.WriteHeader(http.StatusNotFound)
-		}
-	})
+
 	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error returned from metrics server: %w", err)
 	}
