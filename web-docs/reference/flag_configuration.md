@@ -1,4 +1,4 @@
-## Flags
+# Flags
 
 `flags` is a **required** property.
 The flags property is a top level property that contains a collection of individual flags and their corresponding flag configurations.
