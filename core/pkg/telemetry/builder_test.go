@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
@@ -186,7 +185,7 @@ func (e *errorExp) Temporality(k metric.InstrumentKind) metricdata.Temporality {
 	return metric.DefaultTemporalitySelector(k)
 }
 
-func (e *errorExp) Aggregation(_ metric.InstrumentKind) aggregation.Aggregation {
+func (e *errorExp) Aggregation(_ metric.InstrumentKind) metric.Aggregation {
 	return nil
 }
 

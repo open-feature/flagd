@@ -28,6 +28,10 @@ const (
 	SelectorMetadataKey = "scope"
 
 	flagdPropertiesKey = "$flagd"
+
+	// targetingKeyKey is used to extract the targetingKey to bucket on in fractional
+	// evaluation if the user did not supply the optional bucketing property.
+	targetingKeyKey = "targetingKey"
 )
 
 var regBrace *regexp.Regexp
@@ -325,8 +329,9 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}
+
 		var result bytes.Buffer
-		// evaluate json-logic rules to determine the variant
+		// evaluate JsonLogic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))

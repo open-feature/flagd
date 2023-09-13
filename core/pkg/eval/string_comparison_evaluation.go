@@ -8,6 +8,11 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
+const (
+	StartsWithEvaluationName = "starts_with"
+	EndsWithEvaluationName   = "ends_with"
+)
+
 type StringComparisonEvaluator struct {
 	Logger *logger.Logger
 }

@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.10](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.9...flagd-proxy/v0.2.10) (2023-09-08)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.4 ([#880](https://github.com/open-feature/flagd/issues/880)) ([ebb543d](https://github.com/open-feature/flagd/commit/ebb543d6eec18134e44ee7fe623fd2a336a1cf8d))
+* **deps:** update opentelemetry-go monorepo ([#868](https://github.com/open-feature/flagd/issues/868)) ([d48317f](https://github.com/open-feature/flagd/commit/d48317f61d7db7ba0398dc9ab7cdd174a0b87555))
+
+
+### 🧹 Chore
+
+* upgrade to go 1.20 ([#891](https://github.com/open-feature/flagd/issues/891)) ([977167f](https://github.com/open-feature/flagd/commit/977167fb8db330b62726097616dcd691267199ad))
+
+## [0.2.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.8...flagd-proxy/v0.2.9) (2023-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.3 ([#794](https://github.com/open-feature/flagd/issues/794)) ([9671964](https://github.com/open-feature/flagd/commit/96719649affeb1f8412e8b25f52d7292281d8230))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.21 ([#822](https://github.com/open-feature/flagd/issues/822)) ([effe29d](https://github.com/open-feature/flagd/commit/effe29d50e33e6c06ef40d7f83f1b3f0df6bd1a2))
+
 ## [0.2.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.7...flagd-proxy/v0.2.8) (2023-08-04)
 
 
