@@ -59,7 +59,7 @@ nav:
       - 'Flag Caching': 'reference/caching.md'
       - 'Flagd Version': 'reference/flagd_version.md'
       - 'Fractional Evaluation': 'reference/fractional_evaluation.md'
-      - 'Targeting Rules and Specifiers: 'reference/targeting_rules_specifiers.md'
+      - 'Targeting Rules and Specifiers': 'reference/targeting_rules_specifiers.md'
   - 'Flagd Telemetry':
       - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
   - 'Troubleshooting': 'troubleshooting.md'
