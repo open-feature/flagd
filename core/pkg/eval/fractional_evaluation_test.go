@@ -79,8 +79,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "monica@faas.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"joey@faas.com": {
@@ -89,8 +89,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "joey@faas.com",
 			},
-			expectedVariant: "blue",
-			expectedValue:   "#0000FF",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com": {
@@ -99,8 +99,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "ross@faas.com",
 			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with different flag key": {
@@ -152,8 +152,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "ross@faas.com",
 			},
-			expectedVariant: "blue",
-			expectedValue:   "#0000FF",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {
@@ -201,8 +201,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "test4@faas.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"fallback to default variant if no email provided": {
@@ -346,8 +346,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "foo@foo.com",
 			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}

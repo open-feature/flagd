@@ -108,12 +108,11 @@ func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluatio
 	return feDistributions, nil
 }
 
+// distributeValue calculate hash for given hash key and find the bucket distributions belongs to
 func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
-	hashValue := murmur3.StringSum64(value)
-
-	hashRatio := float64(hashValue) / math.MaxUint64
-
-	bucket := int(hashRatio * 100) // integer in range [0, 99]
+	hashValue := int32(murmur3.StringSum32(value))
+	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
+	bucket := int(hashRatio * 100) // in range [0, 100]
 
 	rangeEnd := 0
 	for _, dist := range feDistribution {
