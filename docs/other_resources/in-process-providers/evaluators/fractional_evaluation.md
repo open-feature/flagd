@@ -168,13 +168,9 @@ func FractionalEvaluation(values, data interface{}) interface{} {
         return nil
     }
 
-    // 4. Calculate the hash of the target property and map it to a number between [0, 99]
-    hashValue := murmur3.HashString(value)
-
-    // divide the hash value by the largest possible value, integer 2^64
-    hashRatio := float64(hashValue) / math.Pow(2, 64)
-
-    // integer in range [0, 99]
+    // 4. Calculate the hash of the target property and map it to a number between [0, 99] 
+    hashValue := int32(murmur3.StringSum32(value))
+    hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
     bucket := int(hashRatio * 100)
 
     // 5. Iterate through the variant and increment the threshold by the percentage of each variant.
