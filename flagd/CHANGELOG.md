@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.6](https://github.com/open-feature/flagd/compare/flagd/v0.6.5...flagd/v0.6.6) (2023-09-14)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.5 ([#900](https://github.com/open-feature/flagd/issues/900)) ([c2ddcbf](https://github.com/open-feature/flagd/commit/c2ddcbfe49b8507fe463c11eb2b031bbc331792a))
+
+
+### 🧹 Chore
+
+* add new flagd-evaluator e2e suite ([#898](https://github.com/open-feature/flagd/issues/898)) ([37ab55d](https://github.com/open-feature/flagd/commit/37ab55d26a9902935e4f1ddfd1a6af28d3b1cfa4))
+
 ## [0.6.5](https://github.com/open-feature/flagd/compare/flagd/v0.6.4...flagd/v0.6.5) (2023-09-08)
 
 
