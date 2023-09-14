@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.6](https://github.com/open-feature/flagd/compare/core/v0.6.5...core/v0.6.6) (2023-09-14)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.28.2 ([#911](https://github.com/open-feature/flagd/issues/911)) ([2eda6ab](https://github.com/open-feature/flagd/commit/2eda6ab5e528f12a9ce6b6818e08abb0d783b23d))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.16.2 ([#907](https://github.com/open-feature/flagd/issues/907)) ([9976851](https://github.com/open-feature/flagd/commit/9976851d792ff3eb5fde18f19e397738eb7cacaf))
+* **deps:** update opentelemetry-go monorepo ([#906](https://github.com/open-feature/flagd/issues/906)) ([5a41226](https://github.com/open-feature/flagd/commit/5a4122658039aafcf080fcc6655c2a679622ed69))
+* use 32bit murmur calculation (64 is not stable) ([#913](https://github.com/open-feature/flagd/issues/913)) ([db8dca4](https://github.com/open-feature/flagd/commit/db8dca421cb0dba2968d47e5cc162d81401298db))
+
 ## [0.6.5](https://github.com/open-feature/flagd/compare/core/v0.6.4...core/v0.6.5) (2023-09-08)
 
 
