@@ -8,7 +8,7 @@ require (
 	github.com/open-feature/flagd/core v0.6.6
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.26.0
 )
 
 require (
