@@ -60,7 +60,7 @@ type SourceConfig struct {
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
 	MetricExporter    string
-	MetricsPort       uint16
+	ManagementPort    uint16
 	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string

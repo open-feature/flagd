@@ -19,7 +19,7 @@ const (
 	evaluatorFlagName      = "evaluator"
 	logFormatFlagName      = "log-format"
 	metricsExporter        = "metrics-exporter"
-	metricsPortFlagName    = "metrics-port"
+	managementPortFlagName = "management-port"
 	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
 	providerArgsFlagName   = "sync-provider-args"
@@ -30,8 +30,9 @@ const (
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
 
-	defaultServicePort = 8013
-	defaultMetricsPort = 8014
+	defaultServicePort    = 8013
+	defaultMetricsPort    = 8014
+	defaultManagementPort = 8015
 )
 
 func init() {
@@ -40,7 +41,7 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-	flags.Int32P(metricsPortFlagName, "m", defaultMetricsPort, "Port to serve metrics on")
+	flags.Int32P(managementPortFlagName, "M", defaultManagementPort, "Port for management operations")
 	flags.Int32P(portFlagName, "p", defaultServicePort, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
@@ -81,7 +82,7 @@ func init() {
 	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
-	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
+	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
@@ -154,10 +155,10 @@ var startCmd = &cobra.Command{
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:           viper.GetStringSlice(corsFlagName),
 			MetricExporter: viper.GetString(metricsExporter),
-			MetricsPort: getPortValueOrDefault(
-				metricsPortFlagName,
-				viper.GetUint16(metricsPortFlagName),
-				defaultMetricsPort,
+			ManagementPort: getPortValueOrDefault(
+				managementPortFlagName,
+				viper.GetUint16(managementPortFlagName),
+				defaultMetricsPort, // If managementPort is unspecified, it defaults use metricsPort
 				rtLogger,
 			),
 			OtelCollectorURI: viper.GetString(otelCollectorURI),
