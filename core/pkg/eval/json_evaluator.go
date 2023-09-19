@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -362,13 +363,15 @@ func (je *JSONEvaluator) setFlagdProperties(
 		context = map[string]any{}
 	}
 
-	if _, ok := context[flagdPropertiesKey]; ok {
+	newContext := maps.Clone(context)
+
+	if _, ok := newContext[flagdPropertiesKey]; ok {
 		je.Logger.Warn("overwriting $flagd properties in the context")
 	}
 
-	context[flagdPropertiesKey] = properties
+	newContext[flagdPropertiesKey] = properties
 
-	return context
+	return newContext
 }
 
 func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
