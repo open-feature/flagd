@@ -227,7 +227,7 @@ They are purpose built extensions to JSON logic in order to support popular feat
 
 | Function             | Description                                       | Example                                                                                                                                                                                                                                                          |
 | -------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fractionalEvaluation` | Deterministic percentage-based rollout            | Logic: `{ "fractionalEvaluation" : [ "email", [ "red" , 50], [ "green" , 50 ] ] }`<br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./fractional_evaluation.md) |
+| `fractional` | Deterministic percentage-based rollout            | Logic: `{ "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }`<br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./fractional_evaluation.md) |
 | `starts_with`        | Attribute starts with the specified value         | Logic: `{ "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `{ "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`                                                                                                       |
 | `ends_with`          | Attribute ends with the specified value           | Logic: `{ "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `{ ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`                                                                                  |
 | `sem_ver`            | Attribute matches a semantic versioning condition | Logic: `{"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./sem_ver_evaluation.md)                                                                                                                                        |
@@ -276,8 +276,8 @@ Example:
             "$ref": "emailWithFaas"
           },
           {
-            "fractionalEvaluation": [
-              "email",
+            "fractional": [
+              { "var": "email" },
               ["red", 25],
               ["blue", 25],
               ["green", 25],
