@@ -1,20 +1,4 @@
 # Flag Configuration
-
-- [Flag Configuration](#flag-configuration)
-  - [Flags](#flags)
-  - [Flag configuration](#flag-configuration-1)
-  - [Flag properties](#flag-properties)
-    - [State](#state)
-    - [Variants](#variants)
-    - [Default Variant](#default-variant)
-    - [Targeting Rules](#targeting-rules)
-      - [Evaluation Context](#evaluation-context)
-      - [Conditions](#conditions)
-      - [Operations](#operations)
-      - [Custom Operations](#custom-operations)
-  - [Shared evaluators](#shared-evaluators)
-  - [Examples](#examples)
-
 ## Flags
 
 `flags` is a **required** property.
@@ -180,9 +164,9 @@ The evaluation context can be accessed in targeting rules using the `var` operat
 
 | Description                                                    | Example                                       |
 | -------------------------------------------------------------- | --------------------------------------------- |
-| Retrieve property from the evaluation context                  | `{ "var": "email" }`                          |
-| Retrieve property from the evaluation context or use a default | `{ "var": ["email", "noreply@example.com"] }` |
-| Retrieve a nested property from the evaluation context         | `{ "var": "user.email" }`                     |
+| Retrieve property from the evaluation context                  | `#!json { "var": "email" }`                          |
+| Retrieve property from the evaluation context or use a default | `#!json { "var": ["email", "noreply@example.com"] }` |
+| Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
 
 > For more information, see the `var` section in the [JSON Logic documentation](https://jsonlogic.com/operations.html#var).
 
@@ -192,10 +176,10 @@ Conditions can be used to control the logical flow and grouping of targeting rul
 
 | Conditional | Example                                                                                                                                                                                    |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| If          | Logic: `{"if" : [ true, "yes", "no" ]}`<br>Result: `"yes"`<br><br>Logic: `{"if" : [ false, "yes", "no" ]}`<br>Result: `"no"`                                                               |
-| If else     | Logic: `{"if" : [ false, "yes", false, "no", "maybe" ]}`<br>Result: `"maybe"`<br><br>Logic: `{"if" : [ false, "yes", false, "no", false, "maybe", "who knows" ]}`<br>Result: `"who knows"` |
-| Or          | Logic: `{"or" : [ true, false ]}`<br>Result: `true`<br><br>Logic: `{"or" : [ false, false ]}`<br>Result: `false`                                                                           |
-| And         | Logic: `{"and" : [ true, false ]}`<br>Result: `false`<br><br>Logic: `{"and" : [ true, true ]}`<br>Result: `true`                                                                           |
+| If          | Logic: `#!json {"if" : [ true, "yes", "no" ]}`<br>Result: `"yes"`<br><br>Logic: `#!json {"if" : [ false, "yes", "no" ]}`<br>Result: `"no"`                                                               |
+| If else     | Logic: `#!json {"if" : [ false, "yes", false, "no", "maybe" ]}`<br>Result: `"maybe"`<br><br>Logic: `#!json {"if" : [ false, "yes", false, "no", false, "maybe", "who knows" ]}`<br>Result: `"who knows"` |
+| Or          | Logic: `#!json {"or" : [ true, false ]}`<br>Result: `true`<br><br>Logic: `#!json {"or" : [ false, false ]}`<br>Result: `false`                                                                           |
+| And         | Logic: `#!json {"and" : [ true, false ]}`<br>Result: `false`<br><br>Logic: `#!json {"and" : [ true, true ]}`<br>Result: `true`                                                                           |
 
 #### Operations
 
@@ -204,22 +188,22 @@ These are provided out-of-the-box by JsonLogic.
 
 | Operator               | Description                                                          | Context type | Example                                                                                                                                                  |
 | ---------------------- | -------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Equals                 | Attribute equals the specified value, with type coercion.            | any          | Logic: `{ "==" : [1, 1] }`<br>Result: `true`<br><br>Logic: `{ "==" : [1, "1"] }`<br>Result: `true`                                                       |
-| Strict equals          | Attribute equals the specified value, with strict comparison.        | any          | Logic: `{ "===" : [1, 1] }`<br>Result: `true`<br><br>Logic: `{ "===" : [1, "1"] }`<br>Result: `false`                                                    |
-| Not equals             | Attribute doesn't equal the specified value, with type coercion.     | any          | Logic: `{ "!=" : [1, 2] }`<br>Result: `true`<br><br>Logic: `{ "!=" : [1, "1"] }`<br>Result: `false`                                                      |
-| Strict not equal       | Attribute doesn't equal the specified value, with strict comparison. | any          | Logic: `{ "!==" : [1, 2] }`<br>Result: `true`<br><br>Logic: `{ "!==" : [1, "1"] }`<br>Result: `true`                                                     |
-| Exists                 | Attribute is defined                                                 | any          | Logic: `{ "!!": [ "mike" ] }`<br>Result: `true`<br><br>Logic: `{ "!!": [ "" ] }`<br>Result: `false`                                                      |
-| Not exists             | Attribute is not defined                                             | any          | Logic: `{"!": [ "mike" ] }`<br>Result: `false`<br><br>Logic: `{"!": [ "" ] }`<br>Result: `true`                                                          |
-| Greater than           | Attribute is greater than the specified value                        | number       | Logic: `{ ">" : [2, 1] }`<br>Result: `true`<br><br>Logic: `{ ">" : [1, 2] }`<br>Result: `false`                                                          |
-| Greater than or equals | Attribute is greater or equal to the specified value                 | number       | Logic: `{ ">=" : [2, 1] }`<br>Result: `true`<br><br>Logic: `{ ">=" : [1, 1] }`<br>Result: `true`                                                         |
-| Less than              | Attribute is less than the specified value                           | number       | Logic: `{ "<" : [1, 2] }`<br>Result: `true`<br><br>Logic: `{ "<" : [2, 1] }`<br>Result: `false`                                                          |
-| Less than or equals    | Attribute is less or equal to the specified value                    | number       | Logic: `{ "<=" : [1, 1] }`<br>Result: `true`<br><br>Logic: `{ "<=" : [2, 1] }`<br>Result: `false`                                                        |
-| Between                | Attribute between the specified values                               | number       | Logic: `{ "<" : [1, 5, 10]}`<br>Result: `true`<br><br>Logic: `{ "<" : [1, 11, 10] }`<br>Result: `false`                                                  |
-| Between inclusive      | Attribute between or equal to the specified values                   | number       | Logic: `{"<=" : [1, 1, 10] }`<br>Result: `true`<br><br>Logic: `{"<=" : [1, 11, 10] }`<br>Result: `false`                                                 |
-| Contains               | Contains string                                                      | string       | Logic: `{ "in": ["Spring", "Springfield"] }`<br>Result: `true`<br><br>Logic: `{ "in":["Illinois", "Springfield"] }`<br>Result: `false`                   |
-| Not contains           | Does not contain a string                                            | string       | Logic: `{ "!": { "in":["Spring", "Springfield"] } }`<br>Result: `false`<br><br>Logic: `{ "!": { "in":["Illinois", "Springfield"] } }`<br>Result: `true`  |
-| In                     | Attribute is in an array of strings                                  | string       | Logic: `{ "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `{ "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
-| Not it                 | Attribute is not in an array of strings                              | string       | Logic: `{ "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `{ "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
+| Equals                 | Attribute equals the specified value, with type coercion.            | any          | Logic: `#!json { "==" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "==" : [1, "1"] }`<br>Result: `true`                                                       |
+| Strict equals          | Attribute equals the specified value, with strict comparison.        | any          | Logic: `#!json { "===" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "===" : [1, "1"] }`<br>Result: `false`                                                    |
+| Not equals             | Attribute doesn't equal the specified value, with type coercion.     | any          | Logic: `#!json { "!=" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!=" : [1, "1"] }`<br>Result: `false`                                                      |
+| Strict not equal       | Attribute doesn't equal the specified value, with strict comparison. | any          | Logic: `#!json { "!==" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!==" : [1, "1"] }`<br>Result: `true`                                                     |
+| Exists                 | Attribute is defined                                                 | any          | Logic: `#!json { "!!": [ "mike" ] }`<br>Result: `true`<br><br>Logic: `#!json { "!!": [ "" ] }`<br>Result: `false`                                                      |
+| Not exists             | Attribute is not defined                                             | any          | Logic: `#!json {"!": [ "mike" ] }`<br>Result: `false`<br><br>Logic: `#!json {"!": [ "" ] }`<br>Result: `true`                                                          |
+| Greater than           | Attribute is greater than the specified value                        | number       | Logic: `#!json { ">" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">" : [1, 2] }`<br>Result: `false`                                                          |
+| Greater than or equals | Attribute is greater or equal to the specified value                 | number       | Logic: `#!json { ">=" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">=" : [1, 1] }`<br>Result: `true`                                                         |
+| Less than              | Attribute is less than the specified value                           | number       | Logic: `#!json { "<" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "<" : [2, 1] }`<br>Result: `false`                                                          |
+| Less than or equals    | Attribute is less or equal to the specified value                    | number       | Logic: `#!json { "<=" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "<=" : [2, 1] }`<br>Result: `false`                                                        |
+| Between                | Attribute between the specified values                               | number       | Logic: `#!json { "<" : [1, 5, 10]}`<br>Result: `true`<br><br>Logic: `#!json { "<" : [1, 11, 10] }`<br>Result: `false`                                                  |
+| Between inclusive      | Attribute between or equal to the specified values                   | number       | Logic: `#!json {"<=" : [1, 1, 10] }`<br>Result: `true`<br><br>Logic: `#!json {"<=" : [1, 11, 10] }`<br>Result: `false`                                                 |
+| Contains               | Contains string                                                      | string       | Logic: `#!json { "in": ["Spring", "Springfield"] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Illinois", "Springfield"] }`<br>Result: `false`                   |
+| Not contains           | Does not contain a string                                            | string       | Logic: `#!json { "!": { "in":["Spring", "Springfield"] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Illinois", "Springfield"] } }`<br>Result: `true`  |
+| In                     | Attribute is in an array of strings                                  | string       | Logic: `#!json { "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
+| Not it                 | Attribute is not in an array of strings                              | string       | Logic: `#!json { "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
 
 #### Custom Operations
 
@@ -228,10 +212,10 @@ They are purpose built extensions to JsonLogic in order to support common featur
 
 | Function      | Description                                         | Example                                                                                                                                                                                                                                                                    |
 | ------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fractional`  | Deterministic, pseudorandom fractional distribution | Logic: `{ "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }`<br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional.md)   |
-| `starts_with` | Attribute starts with the specified value           | Logic: `{ "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `{ "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md)                      |
-| `ends_with`   | Attribute ends with the specified value             | Logic: `{ "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `{ ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md) |
-| `sem_ver`     | Attribute matches a semantic versioning condition   | Logic: `{"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-comparison.md)                                                                                                             |
+| `fractional`  | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional.md)   |
+| `starts_with` | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md)                      |
+| `ends_with`   | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md) |
+| `sem_ver`     | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-comparison.md)                                                                                                             |
 
 ## Shared evaluators
 
