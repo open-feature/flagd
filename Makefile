@@ -105,4 +105,8 @@ markdownlint:
 	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
 
 markdownlint-fix:
-	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
+	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"
+
+.PHONY: run-web-docs
+run-web-docs: generate-docs
+	docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
