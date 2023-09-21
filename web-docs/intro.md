@@ -15,4 +15,4 @@ With flagd you can:
 
 It doesn't include a UI, management console or a persistence layer.
 It's configurable entirely via a POSIX-style CLI.
-Thanks to it's minimalism, it's _extremely flexible_; you can run flagd as a sidecar alongside your application, or as a central service evaluating thousands of flags per second.
+Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as a sidecar alongside your application, an engine running in your application process, or as a central service evaluating thousands of flags per second.
