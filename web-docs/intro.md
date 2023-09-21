@@ -1,7 +1,7 @@
 # What is flagd?
 
 _flagd_ is a _feature flag evaluation engine_.
-You can think of it as the "guts" of a full-featured flag management solution.
+Think of it as a ready-made, open source, OpenFeature-compliant feature flag backend system.
 It allows you to dynamically evaluate feature flags.
 
 With flagd you can:
