@@ -21,7 +21,7 @@
 
 ## What's flagd?
 
-Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
+Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-made, open source, OpenFeature-compliant feature flag backend system.
 
 ## Features
 

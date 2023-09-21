@@ -1,4 +1,5 @@
 site_name: flagd
+site_description: A feature flag daemon with a Unix philosophy
 theme:
   name: material
   palette: 
@@ -15,44 +16,77 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-  # logo: path/to/file.png
-  # favicon: path/to/file.png
+  logo: assets/logo-white.svg
+  favicon: assets/logo-white.svg
   icon:
     repo: fontawesome/brands/github
   features:
-  #  - navigation.tabs
-   - content.action.edit
-   - content.code.copy
+    - navigation.footer
+    - content.action.edit
+    - content.code.copy
 
-docs_dir: web-docs
+docs_dir: docs
 repo_url: https://github.com/open-feature/flagd
 repo_name: open-feature/flagd
-edit_uri: edit/main/web-docs/
+edit_uri: edit/main/docs/
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
       # linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - attr_list
+  - pymdownx.emoji:
+      # we are using an older emoji extension because the newest (suggested in docs) doesn't work with Python < 3.10
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
 
 nav:
-  - 'Home': 'index.md'
+  - 'Introduction': 'index.md'
+  - 'Quick start': 'quick-start.md'
   - 'Concepts':
-      - 'Flagd concepts (start here)': 'concepts/index.md'
-      - 'Flagd architecture': 'concepts/architecture.md'
-  - 'Flagd on Kubernetes':
-      - 'Getting started with flagd on kubernetes': 'k8s/index.md'
-  - 'Flagd outside of kubernetes':
-      - 'Getting started with flagd outside of kubernetes': 'nonk8s/index.md'
-      - 'Flag merging': 'nonk8s/flagmerging.md'
-      - 'Flagd as a system service': 'nonk8s/systemservice.md'
-  - 'Kubernetes Custom Resources':
-      - 'FlagSourceConfiguration': 'k8s/crds/flagsourceconfiguration.md'
-      - 'FeatureFlagConfiguration': 'k8s/crds/featureflagconfiguration.md'
-  - 'Flagd Telemetry':
-      - 'Flagd OpenTelemetry Support': 'concepts/opentelemetry.md'
+    - 'Feature Flagging': 'concepts/feature-flagging.md'
+    - 'Syncs': 'concepts/syncs.md'
+  - 'Architecture': 'architecture.md'
+  - 'Deployment': 'deployment.md'
+  - 'Reference':
+    - 'CLI':
+      - 'Commands': 'reference/flagd-cli/flagd.md'
+      - '"start" Command': 'reference/flagd-cli/flagd_start.md'
+      - '"version" Command': 'reference/flagd-cli/flagd/flagd_version.md'
+    - 'Sync Configuration': 'reference/sync-configuration.md'
+    - 'Flag Definitions':
+      - 'Definition Overview': 'reference/flag-definitions.md'
+      - 'Custom Operations':
+        - 'Fractional': 'reference/custom-operations/fractional-operation.md'
+        - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
+        - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
+    - 'Providers': 'reference/providers.md'
+    - 'Monitoring': 'reference/monitoring.md'
+    - 'Specifications':
+      - 'RPC Providers': 'reference/specifications/rpc-providers.md'
+      - 'In-Process Providers': 'reference/specifications/in-process-providers.md'
+      - 'Protobuf Schemas': 'reference/specifications/protos.md' 
+      - 'Custom Operations':
+        - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
+        - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'
+        - 'String Comparison Specification': 'reference/specifications/custom-operations/string-comparison-operation-spec.md'
+    - 'OpenFeature Operator':
+      - 'Installation': 'reference/openfeature-operator/installation.md'
+      - 'FeatureFlagConfiguration': 'reference/openfeature-operator/crds/featureflagconfiguration.md'
+      - 'FlagSourceConfiguration': 'reference/openfeature-operator/crds/flagsourceconfiguration.md'
+    - 'Naming': 'reference/naming.md'
+  - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'
-  - 'Ecosystem and Tooling': 'ecosystem.md'
 plugins:
   - social

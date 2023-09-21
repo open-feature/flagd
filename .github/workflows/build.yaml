@@ -8,14 +8,12 @@ on:
     paths-ignore:
       - "README.md"
       - "docs/**"
-      - "web-docs/**"
   pull_request:
     branches:
       - main
     paths-ignore:
       - "README.md"
       - "docs/**"
-      - "web-docs/**"
 
 env:
   GO_VERSION: '1.20'
