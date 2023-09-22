@@ -28,8 +28,7 @@ No matter how you run flagd, you will need to supply it with feature flags.
 The flag definitions supplied to flagd (*sources*) are monitored for changes which will be immediately reflected in flagd's evaluations.
 Currently supported sources include files, HTTP endpoints, Kubernetes custom resources, and proto-compliant gRPC services.
 
-<!-- Should we add some simple diagrams here to illustrate the deployment options and sources? -->
-<!-- Do we want to add links here? or is there value in keeping this entirely self-contained to keep things focused? -->
+<!-- TODO: Link to various deployment sections with grid: https://squidfunk.github.io/mkdocs-material/reference/grids -->
 
 # How to I use flagd?
 
