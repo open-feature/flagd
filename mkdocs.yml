@@ -42,8 +42,7 @@ markdown_extensions:
   - tables
 
 nav:
-  - 'Home': 'index.md'
-  - 'Getting started': 'intro.md'
+  - 'Getting started': 'index.md'
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'OpenFeature Compliance': 'concepts/openfeature-compliance.md'
