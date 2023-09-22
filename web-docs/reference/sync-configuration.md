@@ -10,7 +10,7 @@ it is passed to the correct implementation:
 | Implied Sync Provider | Prefix                 | Example                               |
 | --------------------- | ---------------------- | ------------------------------------- |
 | `kubernetes`          | `core.openfeature.dev` | `core.openfeature.dev/default/my-crd` |
-| `filepath`            | `file:`                | `file:etc/flagd/my-flags.json`        |
+| `file`                | `file:`                | `file:etc/flagd/my-flags.json`        |
 | `http`                | `http(s)://`           | `https://my-flags.com/flags`          |
 | `grpc`                | `grpc(s)://`           | `grpc://my-flags-server`              |
 
@@ -40,15 +40,16 @@ URIs will result in a flagd start-up failure with errors from the respective syn
 
 Given below are example sync providers, startup command and equivalent config file definition:
 
-Sync providers,
+Sync providers:
 
 - `file` - config/samples/example_flags.json
 - `http` - <http://my-flag-source.json/>
+- `https` - <https://my-secure-flag-source.json/>
 - `kubernetes` - default/my-flag-config
 - `grpc`(insecure) - grpc-source:8080
-- `grpc`(secure) - my-flag-source:8080
+- `grpcs`(secure) - my-flag-source:8080
 
-Startup command,
+Startup command:
 
 ```sh
 ./bin/flagd start 
