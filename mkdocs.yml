@@ -50,7 +50,7 @@ nav:
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'OpenFeature Compliance': 'concepts/openfeature-compliance.md'
-    - 'Flag Sources': 'concepts/flag-sources.md'
+    - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
   - 'Deployment': 'deployment.md'
   - 'Reference':
@@ -58,6 +58,7 @@ nav:
       - 'flagd Commands': 'reference/flagd-cli/flagd.md'
       - '"start" Command': 'reference/flagd-cli/flagd_start.md'
       - '"version" Command': 'reference/flagd-cli/flagd/flagd_version.md'
+    - 'Sync Configuration': 'reference/sync-configuration.md'
     - 'Flag Configuration':
       - 'Configuration Overview': 'reference/flag-configuration.md'
       - 'Custom Operations':
