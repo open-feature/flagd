@@ -42,6 +42,7 @@ markdown_extensions:
   - tables
   - attr_list
   - pymdownx.emoji:
+      # we are using an older emoji extension because the newest (suggested in docs) doesn't work with Python < 3.10
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
