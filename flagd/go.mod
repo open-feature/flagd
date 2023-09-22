@@ -7,7 +7,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.6.6
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.16
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.17
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.3.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
