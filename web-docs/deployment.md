@@ -1,19 +1,16 @@
 # Docker
 
-<!-- x-release-please-start-version -->
 :octicons-terminal-24: Install from the command line:
 
 ```shell
-docker pull ghcr.io/open-feature/flagd:v0.6.6
+docker pull ghcr.io/open-feature/flagd:latest
 ```
 
 :octicons-code-square-24: Use as base image in Dockerfile:
 
 ```
-FROM ghcr.io/open-feature/flagd:v0.6.6
+FROM ghcr.io/open-feature/flagd:latest
 ```
-<!-- x-release-please-end -->
-
 ## Kubernetes
 
 flagd was designed with cloud-native paradigms in mind.
@@ -26,11 +23,9 @@ If you're interested in a full-featured solution for using flagd in Kubernetes, 
 
 # Binary
 
-<!-- x-release-please-start-version -->
 :fontawesome-brands-linux::fontawesome-brands-windows::fontawesome-brands-apple: Binaries are available in x86/ARM.
 
-[Latest release](https://github.com/open-feature/flagd/releases/tag/flagd%2Fv0.6.6)
-<!-- x-release-please-end -->
+[Release](https://github.com/open-feature/flagd/releases)
 
 ## systemd
 
