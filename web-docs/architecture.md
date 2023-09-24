@@ -9,7 +9,7 @@ flagd architectures fall into two broad categories: those where the evaluation e
 In RPC-based deployments one or more flagd instances deployed and exposed to client applications in your infrastructure.
 flagd RPC providers use HTTP or gRPC to request flag evaluations from flagd.
 The request payload contains the [flag key](https://openfeature.dev/specification/glossary#flag-key) identifying the flag to be evaluated, as well as the relevant [evaluation context](https://openfeature.dev/specification/glossary#evaluation-context).
-The flagd instance is configured to watch one or many [syncs](./concepts/syncs.md), and merges them to build its set of flags (see [here](./concepts/syncs.md#merging) for more details on flag definition merging).
+The flagd instance is configured to watch one or more [syncs](./concepts/syncs.md), and merges them to build its set of flags (see [here](./concepts/syncs.md#merging) for more details on flag definition merging).
 When sync sources are updated, flagd will send notifications to clients that flags have changed, enabling applications to react to changes by re-evaluating flags.
 
 This architecture is can be leveraged by very simple clients, since no in-process engine is needed; in fact, you can evaluate flags directly from a terminal console using the `cURL` utility.
