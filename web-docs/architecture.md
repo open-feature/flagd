@@ -13,7 +13,7 @@ The flagd instance is configured to watch one or more [syncs](./concepts/syncs.m
 When sync sources are updated, flagd will send notifications to clients that flags have changed, enabling applications to react to changes by re-evaluating flags.
 
 This architecture is can be leveraged by very simple clients, since no in-process engine is needed; in fact, you can evaluate flags directly from a terminal console using the `cURL` utility.
-One disadvantage of this pattern is the latency involved in the remote request (though flagd takes ~10ms for an evaluation, and can evaluate thousands of flags per second).
+One disadvantage of this pattern is the latency involved in the remote request (though flagd typically takes  <10ms for an evaluation, and can evaluate thousands of flags per second).
 
 ```mermaid
 ---
