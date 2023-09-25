@@ -1,8 +1,10 @@
-# Fractional Evaluation
+# Fractional Operation Specification
 
 This evaluator allows to split the returned variants of a feature flag into different buckets,
 where each bucket can be assigned a percentage, representing how many requests will resolve to the corresponding
-variant. The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
+variant.
+
+The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
 from the evaluation context to hash that value and map it to a value between [0, 100]. It is important to note
 that evaluations MUST be sticky, meaning that flag resolution requests containing the same value for the
 referenced property in their context MUST always resolve to the same variant. For calculating the hash value of the
@@ -16,7 +18,7 @@ specifying the bucketing property to base the distribution of values on. If not 
 The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to
 100.0, otherwise unexpected behavior can occur during the evaluation. The `data` object can be an arbitrary
-JSON object. Below is an example for a targetingRule containing a `fractionalEvaluation`:
+JSON object. Below is an example for a targetingRule containing a `fractional`:
 
 ```json
 {
@@ -30,7 +32,7 @@ JSON object. Below is an example for a targetingRule containing a `fractionalEva
       "defaultVariant": "red",
       "state": "ENABLED",
       "targeting": {
-        "fractionalEvaluation": [
+        "fractional": [
           {"var":"email"},
           [
             "red",
@@ -125,7 +127,7 @@ func FractionalEvaluation(values, data interface{}) interface{} {
         return nil
     }
 
-    // 3. Parse the fractionalEvaluation values distribution
+    // 3. Parse the fractional values distribution
     sumOfPercentages := 0
     var feDistributions []fractionalEvaluationDistribution
 

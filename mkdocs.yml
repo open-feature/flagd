@@ -50,7 +50,6 @@ nav:
   - 'Getting started': 'index.md'
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
-    - 'OpenFeature Compliance': 'concepts/openfeature-compliance.md'
     - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
   - 'Deployment': 'deployment.md'
@@ -63,13 +62,20 @@ nav:
     - 'Flag Configuration':
       - 'Configuration Overview': 'reference/flag-configuration.md'
       - 'Custom Operations':
-        - 'Fractional': 'reference/custom-operations/fractional.md'
-        - 'String Comparison': 'reference/custom-operations/string-comparision.md'
-        - 'Semantic Version Comparison': 'reference/custom-operations/semver-comparison.md'
-    - 'Flag Evaluation Protocol': 'reference/flag-evaluation-protocol.md'
-    - 'Flag Sync Protocol': 'reference/flag-sync-protocol.md'
+        - 'Fractional': 'reference/custom-operations/fractional-operation.md'
+        - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
+        - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
     - 'Providers': 'reference/providers.md'
     - 'Monitoring': 'reference/monitoring.md'
+    - 'Specifications':
+      - 'Flag Evaluation Protocol': 'reference/specifications/flag-evaluation-protocol.md'
+      - 'Flag Sync Protocol': 'reference/specifications/flag-sync-protocol.md'
+      - 'RPC Providers': 'reference/specifications/rpc-providers.md'
+      - 'In-Process Providers': 'reference/specifications/in-process-providers.md'
+      - 'Custom Operations':
+        - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
+        - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'
+        - 'String Comparison Specification': 'reference/specifications/custom-operations/string-comparison-operation-spec.md'
   - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'
 plugins:
