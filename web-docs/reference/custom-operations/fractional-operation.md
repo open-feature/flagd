@@ -10,15 +10,15 @@ OpenFeature allows clients to pass contextual information which can then be used
   // Split definitions contain an array with a variant and percentage
   // Percentages must add up to 100
   [
-    // Must match a variant defined in the flag configuration
+    // Must match a variant defined in the flag definition
     "red",
-    // The probability this configuration is selected
+    // The probability this variant is selected
     50
   ],
   [
-    // Must match a variant defined in the flag configuration
+    // Must match a variant defined in the flag definition
     "green",
-    // The probability this configuration is selected
+    // The probability this variant is selected
     50
   ]
 ]

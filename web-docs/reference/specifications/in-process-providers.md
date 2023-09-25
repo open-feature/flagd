@@ -15,24 +15,24 @@ Prerequisites:
 - Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
 - Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../usage/flagd_providers.md))
 
-The Flag Configuration containing the feature flags and JsonLogic based targeting rules shall be retrieved by the
+The Flag definition containing the feature flags and JsonLogic based targeting rules shall be retrieved by the
 in-process flagd provider via a gRPC client connection to a sync server, such as [flagd-proxy](https://github.com/open-feature/flagd/tree/main/flagd-proxy).
 
 ## Sync source
 
 An implementation of an in-process flagd-provider must accept the following environment variables which determine the sync source:
 
-- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag configuration.
+- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag definition.
 - `FLAGD_SOURCE_PROVIDER_TYPE`: The type of the provider. E.g. `grpc` or `kubernetes`.
-- `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag configuration of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag configuration within a collection of feature flag configurations.
+- `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag definition of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag definition within a collection of feature flag definition.
 
-An implementation of an in-process flagd provider should provide a source for retrieving the flag configuration, namely a gRPC source.
+An implementation of an in-process flagd provider should provide a source for retrieving the flag definition, namely a gRPC source.
 Other sources may be desired eventually, so separation of concerns should be maintained between the abstractions evaluating flags and those retrieving confirmation.
 
 ## gRPC sources
 
 gRPC sync sources are identified by the `provider` field set to `grpc`.
-When such a sync source is specified, the in-process flagd provider should connect to the gRPC service located at the `uri` of the sync source, and use its `sync` API ([see here](https://github.com/open-feature/schemas)) to retrieve the feature flag configurations.
+When such a sync source is specified, the in-process flagd provider should connect to the gRPC service located at the `uri` of the sync source, and use its `sync` API ([see here](https://github.com/open-feature/schemas)) to retrieve the feature flag definition.
 If the `selector` field of the sync source is set, that selector should be passed through to the `Sync` and `FetchAllFlags` requests sent to the gRPC server.
 
 ### Protobuf
@@ -175,11 +175,11 @@ With the release of the v0.6.0 spec, OpenFeature now outlines a lifecycle for in
 In-process flagd providers should do the following to make use of OpenFeature v0.6.0 features:
 
 - start in a `NOT_READY` state
-- fetch the flag configurations specified in the sync provider sources and set `state` to `READY` or `ERROR` in the `initialization` function
+- fetch the flag definition specified in the sync provider sources and set `state` to `READY` or `ERROR` in the `initialization` function
   - note that the SDK will automatically emit `PROVIDER_READY`/`PROVIDER_ERROR` according to the termination of the `initialization` function
 - throw an exception or terminate abnormally if a connection cannot be established during `initialization`
 - For gRPC based sources (i.e. flagd-proxy), attempt to restore the streaming connection to flagd-proxy (if the connection cannot be established or is broken):
-  - If flag configurations have been retrieved previously, go into `STALE` state to indicate that flag resolution responsees are based on potentially outdated Flag Configurations.
+  - If flag definition have been retrieved previously, go into `STALE` state to indicate that flag resolution responsees are based on potentially outdated Flag definition.
   - reconnection should be attempted with an exponential back-off, with a max-delay of `maxSyncRetryInterval` (see [configuration](#configuration))
   - reconnection should be attempted up to `maxSyncRetryDelay` times (see [configuration](#configuration))
   - `PROVIDER_READY` and `PROVIDER_CONFIGURATION_CHANGED` should be emitted, in that order, after successful reconnection

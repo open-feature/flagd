@@ -1,4 +1,6 @@
-# Readiness & Liveness probes
+# Monitoring
+
+## Readiness & Liveness probes
 
 ### HTTP
 
@@ -27,7 +29,7 @@ least have one successful data sync.
 The status does not change from there on.
 
 
-# OpenTelemetry
+## OpenTelemetry
 
 flagd provides telemetry data out of the box. This telemetry data is compatible with OpenTelemetry.
 

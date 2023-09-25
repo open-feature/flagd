@@ -1,4 +1,5 @@
-# Flag Configuration
+# Flag Definition
+
 ## Flags
 
 `flags` is a **required** property.
@@ -12,7 +13,7 @@ The flags property is a top level property that contains a collection of individ
 }
 ```
 
-## Flag configuration
+## Flag Definition
 
 `flag key` is a **required** property.
 The flag key **must** uniquely identify a flag so that it can be used during flag evaluation.

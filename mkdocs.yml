@@ -59,8 +59,8 @@ nav:
       - '"start" Command': 'reference/flagd-cli/flagd_start.md'
       - '"version" Command': 'reference/flagd-cli/flagd/flagd_version.md'
     - 'Sync Configuration': 'reference/sync-configuration.md'
-    - 'Flag Configuration':
-      - 'Configuration Overview': 'reference/flag-configuration.md'
+    - 'Flag Definition':
+      - 'Definition Overview': 'reference/flag-definition.md'
       - 'Custom Operations':
         - 'Fractional': 'reference/custom-operations/fractional-operation.md'
         - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
@@ -76,6 +76,7 @@ nav:
         - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
         - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'
         - 'String Comparison Specification': 'reference/specifications/custom-operations/string-comparison-operation-spec.md'
+    - 'Naming': 'reference/naming.md'
   - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'
 plugins:
