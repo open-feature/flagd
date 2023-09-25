@@ -1,4 +1,5 @@
 site_name: flagd
+site_description: A feature flag daemon with a Unix philosophy
 theme:
   name: material
   palette: 
