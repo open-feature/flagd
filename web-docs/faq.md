@@ -3,7 +3,8 @@
 > Why do I need this? Can't I just use environment variables?
 
 Feature flags are not environment variables.
-If you don't need to update your flag values without restarting your application, target specific users, randomly assign values for experimentation, or perform scheduled roll-outs, you don't need feature flags and you can probably use simple static configuration.
+If you need to update your flag values without restarting your application, target specific users, randomly assign values for experimentation, or perform scheduled roll-outs, you should consider using feature flags.
+If the values are always static, an environment variable or static configuration may be sufficient.
 
 For more information on feature-flagging concepts, see [feature-flagging](./concepts/feature-flagging.md).
 
