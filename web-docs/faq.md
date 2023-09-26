@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-> Why do I need this? Can't I just use envronment variables?
+> Why do I need this? Can't I just use environment variables?
 
 Feature-flags are not environment varianles.
 If you don't need to update your flag values without restarting your application, target specific users, randomly assign values for experimentation, or perform scheduled roll-outs, you don't need feature flags and you can probably use simple static configuration.
