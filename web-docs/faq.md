@@ -18,7 +18,7 @@ Please see [naming](./reference/naming.md).
 
 > What is flagd's relationship to OpenFeature?
 
-flagd is fully [OpenFeature-compliant](./concepts/feature-flagging.md#openfeature-compliance).
+flagd is sub-project of OpenFeature and aims to be fully [OpenFeature-compliant](./concepts/feature-flagging.md#openfeature-compliance).
 
 ---
 
