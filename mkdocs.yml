@@ -21,9 +21,9 @@ theme:
   icon:
     repo: fontawesome/brands/github
   features:
-  #  - navigation.tabs
-   - content.action.edit
-   - content.code.copy
+    - navigation.footer
+    - content.action.edit
+    - content.code.copy
 
 docs_dir: web-docs
 repo_url: https://github.com/open-feature/flagd
@@ -33,8 +33,12 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
       # linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
+  - admonition
+  - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -48,7 +52,8 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
 nav:
-  - 'Getting started': 'index.md'
+  - 'Introduction': 'index.md'
+  - 'Quick start': 'quick-start.md'
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'

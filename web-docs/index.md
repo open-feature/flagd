@@ -16,7 +16,7 @@ It doesn't include a UI, management console or a persistence layer.
 It's configurable entirely via a POSIX-style CLI.
 Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as a sidecar alongside your application, an engine running in your application process, or as a central service evaluating thousands of flags per second.
 
-# How can deploy flagd?
+# How do I deploy flagd?
 
 flagd is designed to fit well into a variety of infrastructures, and can run on various architectures.
 It run as a separate process or directly in your application.
@@ -30,7 +30,7 @@ Currently supported sources include files, HTTP endpoints, Kubernetes custom res
 
 <!-- TODO: Link to various deployment sections with grid: https://squidfunk.github.io/mkdocs-material/reference/grids -->
 
-# How to I use flagd?
+# How do I use flagd?
 
 flagd is fully OpenFeature compliant.
 To leverage it in your application you must use the OpenFeature SDK and flagd provider for your language.
