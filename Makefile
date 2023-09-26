@@ -9,6 +9,8 @@ ZD_CLIENT_IMG ?= zd-client:latest
 FLAGD_PROXY_IMG ?= flagd-proxy:latest
 FLAGD_PROXY_IMG_ZD ?= flagd-proxy:zd
 
+DOCS_DIR ?= web-docs
+
 workspace-init: workspace-clean
 	go work init
 	$(foreach module, $(ALL_GO_MOD_DIRS), go work use $(module);)
@@ -107,6 +109,17 @@ markdownlint:
 markdownlint-fix:
 	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"
 
+.PHONY: pull-schemas-submodule
+pull-schemas-submodule:
+	git submodule update schemas
+
+.PHONY: generate-proto-docs
+generate-proto-docs: pull-schemas-submodule
+	docker run --rm -v ${PWD}/$(DOCS_DIR)/reference/specifications:/out -v ${PWD}/schemas/protobuf:/protos pseudomuto/protoc-gen-doc --doc_opt=markdown,protos-with-toc.md schema/v1/schema.proto sync/v1/sync_service.proto \
+	&& echo '<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->' > ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
+	&& sed '/^## Table of Contents/,/#top/d' ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md >> ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
+	&& rm -f ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md
+
 .PHONY: run-web-docs
-run-web-docs: generate-docs
+run-web-docs: generate-docs generate-proto-docs
 	docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material

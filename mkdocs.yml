@@ -69,10 +69,9 @@ nav:
     - 'Providers': 'reference/providers.md'
     - 'Monitoring': 'reference/monitoring.md'
     - 'Specifications':
-      - 'Flag Evaluation Protocol': 'reference/specifications/flag-evaluation-protocol.md'
-      - 'Flag Sync Protocol': 'reference/specifications/flag-sync-protocol.md'
       - 'RPC Providers': 'reference/specifications/rpc-providers.md'
       - 'In-Process Providers': 'reference/specifications/in-process-providers.md'
+      - 'Protobuf schemas': 'reference/specifications/protos.md' 
       - 'Custom Operations':
         - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
         - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'

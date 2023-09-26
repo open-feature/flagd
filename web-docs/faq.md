@@ -1,0 +1,36 @@
+# Frequently Asked Questions
+
+> Why do I need this? Can't I just use envronment variables?
+
+Feature-flags are not environment varianles.
+If you don't need to update your flag values without restarting your application, target specific users, randomly assign values for experimentation, or perform scheduled roll-outs, you don't need feature flags and you can probably use simple static configuration.
+
+For more information on feature-flagging concepts, see [feature-flagging](./concepts/feature-flagging.md).
+
+---
+
+> Why is it called "flagd"?
+
+Please see [naming](./reference/naming.md).
+
+---
+
+> What is flagd's relationship to OpenFeature?
+
+flagd is fully [OpenFeature-compliant](./concepts/feature-flagging.md#openfeature-compliance).
+
+---
+
+> How do I run flagd?
+
+You can run flagd as a standalone application, accessible over HTTP or gRPC, or you can embed it into your application.
+Please see [architecture](./architecture.md) and [deployment](./deployment.md) for more information.
+
+---
+
+> Why doesn't flagd support {_my desired feature_}?
+
+Because you haven't opened a PR or created an issue!
+
+We're always adding new functionality to flagd, and welcome additions and ideas from new contributors.
+Don't hesitate to [open an issue](https://github.com/open-feature/flagd/issues)!
