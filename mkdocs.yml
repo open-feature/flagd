@@ -71,7 +71,7 @@ nav:
     - 'Specifications':
       - 'RPC Providers': 'reference/specifications/rpc-providers.md'
       - 'In-Process Providers': 'reference/specifications/in-process-providers.md'
-      - 'Protobuf schemas': 'reference/specifications/protos.md' 
+      - 'Protobuf Schemas': 'reference/specifications/protos.md' 
       - 'Custom Operations':
         - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
         - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'
