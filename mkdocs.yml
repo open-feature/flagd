@@ -22,8 +22,6 @@ theme:
     repo: fontawesome/brands/github
   features:
     - navigation.footer
-    - navigation.tabs
-    - navigation.tabs.sticky
     - content.action.edit
     - content.code.copy
 
