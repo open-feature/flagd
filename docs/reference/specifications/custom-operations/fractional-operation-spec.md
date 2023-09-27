@@ -18,7 +18,7 @@ specifying the bucketing property to base the distribution of values on. If not 
 The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to
 100.0, otherwise unexpected behavior can occur during the evaluation. The `data` object can be an arbitrary
-JSON object. Below is an example for a targetingRule containing a `fractional`:
+JSON object. Below is an example of a targeting rule containing a `fractional`:
 
 ```json
 {
