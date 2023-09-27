@@ -1,4 +1,4 @@
-# Deployment
+# Installation
 
 ## Docker
 
@@ -38,12 +38,6 @@ A systemd wrapper is available [here](https://github.com/open-feature/flagd/blob
 
 ```shell
 brew install flagd
-```
-
-### Snap
-
-```shell
-sudo snap install flagd
 ```
 
 ### Go binary

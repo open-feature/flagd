@@ -61,7 +61,7 @@ nav:
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
-  - 'Deployment': 'deployment.md'
+  - 'Installation': 'installation.md'
   - 'Reference':
     - 'CLI':
       - 'Commands': 'reference/flagd-cli/flagd.md'

@@ -25,7 +25,7 @@ flagd is sub-project of OpenFeature and aims to be fully [OpenFeature-compliant]
 > How do I run flagd?
 
 You can run flagd as a standalone application, accessible over HTTP or gRPC, or you can embed it into your application.
-Please see [architecture](./architecture.md) and [deployment](./deployment.md) for more information.
+Please see [architecture](./architecture.md) and [installation](./installation.md) for more information.
 
 ---
 
