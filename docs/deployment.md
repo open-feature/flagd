@@ -49,7 +49,7 @@ sudo snap install flagd
 ### Go binary
 
 ```shell
-go install github.com/open-feature/flagd/flagd@latest`
+go install github.com/open-feature/flagd/flagd@latest
 ```
 
 ---
@@ -61,7 +61,7 @@ go install github.com/open-feature/flagd/flagd@latest`
 [flagd-in-process/pkg](https://pkg.go.dev/github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg)
 
 ```shell
-go get github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg@v0.1.1
+go get github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg@latest
 ```
 
 ### :fontawesome-brands-java: Java in-process provider
