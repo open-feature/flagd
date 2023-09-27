@@ -4,7 +4,7 @@ This evaluator allows to split the returned variants of a feature flag into diff
 where each bucket can be assigned a percentage, representing how many requests will resolve to the corresponding
 variant.
 
-The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
+The sum of all weights must be `100`, and the distribution must be performed by using the value of a referenced
 from the evaluation context to hash that value and map it to a value between [0, 100]. It is important to note
 that evaluations MUST be sticky, meaning that flag resolution requests containing the same value for the
 referenced property in their context MUST always resolve to the same variant. For calculating the hash value of the
