@@ -55,4 +55,15 @@ Most editors will cause a few filesystem events on a save, for instance, not jus
 Additionally, most filesystem operations are not atomic and also will result in multiple events.
 Generally speaking, updating a symbolic link will result in only a single event, and may even be atomic on your filesystem/OS.
 In fact, this is how Kubernetes handles changes to mounted ConfigMaps (OpenFeature Operator takes advantage of this fact in it's `file` mode).
-It's recommended if you're using the file sync in production, you use a symbolic link for the watched file, and update its contents by changing its target.
+**It's recommended if you're using the file sync in production, you use a symbolic link for the watched file, and update its contents by changing its target.**
+
+---
+
+## Received unexpected EOS on empty DATA frame from server
+
+This error message indicates that HTTP2 requests are being blocked (gRPC runs over HTTP2).
+You may need to explicitly allow HTTP2 or gRPC in your platform if you're using the [sync gRPC service](./reference/specifications/protos.md#syncv1sync_serviceproto).
+
+!!! note
+
+    HTTP2 _is not_ strictly for the flag [evaluation gRPC service](./reference/specifications/protos.md#schemav1schemaproto), which is exposed both as a gRPC service and a ReSTful HTTP/1.1 service, thanks to the [connect protocol](https://connectrpc.com/docs/protocol/).
