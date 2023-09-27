@@ -57,11 +57,11 @@ markdown_extensions:
 nav:
   - 'Introduction': 'index.md'
   - 'Quick start': 'quick-start.md'
+  - 'Installation': 'installation.md'
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
-  - 'Installation': 'installation.md'
   - 'Reference':
     - 'CLI':
       - 'Commands': 'reference/flagd-cli/flagd.md'
