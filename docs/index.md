@@ -22,7 +22,7 @@ Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as 
 
 flagd is designed to fit well into a variety of infrastructures, and can run on various architectures.
 It run as a separate process or directly in your application (see [architecture](./architecture.md)).
-It's distributed as a binary, container image, and various libraries (see [deployment](./deployment.md)).
+It's distributed as a binary, container image, and various libraries (see [installation](./installation.md)).
 If you're already leveraging containers in your infrastructure, you can extend the docker image with your required configuration.
 You can also run flagd as a service on a VM or a "bare-metal" host.
 If you'd prefer not to run an additional process at all, you can run the flagd evaluation engine directly in your application.
