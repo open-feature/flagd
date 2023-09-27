@@ -21,20 +21,18 @@ Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as 
 ## How do I deploy flagd?
 
 flagd is designed to fit well into a variety of infrastructures, and can run on various architectures.
-It run as a separate process or directly in your application.
-It's distributed as a binary, container image, and various libraries.
+It run as a separate process or directly in your application (see [architecture](./architecture.md)).
+It's distributed as a binary, container image, and various libraries (see [deployment](./deployment.md)).
 If you're already leveraging containers in your infrastructure, you can extend the docker image with your required configuration.
 You can also run flagd as a service on a VM or a "bare-metal" host.
 If you'd prefer not to run an additional process at all, you can run the flagd evaluation engine directly in your application.
 No matter how you run flagd, you will need to supply it with feature flags.
-The flag definitions supplied to flagd (_sources_) are monitored for changes which will be immediately reflected in flagd's evaluations.
-Currently supported sources include files, HTTP endpoints, Kubernetes custom resources, and proto-compliant gRPC services.
-
-<!-- TODO: Link to various deployment sections with grid: https://squidfunk.github.io/mkdocs-material/reference/grids -->
+The [flag definitions](./reference/flag-definitions.md) supplied to flagd are monitored for changes which will be immediately reflected in flagd's evaluations.
+Currently supported sources include files, HTTP endpoints, Kubernetes custom resources, and proto-compliant gRPC services (see [syncs](./concepts/syncs.md), [sync configuration](./reference/sync-configuration.md)).
 
 ## How do I use flagd?
 
-flagd is fully OpenFeature compliant.
+flagd is fully [OpenFeature compliant](./concepts/feature-flagging.md#openfeature-compliance).
 To leverage it in your application you must use the OpenFeature SDK and flagd provider for your language.
 You can configure the provider to connect to a flagd instance you deployed earlier (evaluating flags over gRPC) or use the in-process evaluation engine to do flag evaluations directly in your application.
 Once you've configured the OpenFeature SDK, you can start evaluating the feature flags configured in your flagd definitions.
