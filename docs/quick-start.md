@@ -43,7 +43,7 @@ docker run \
 
 ### Evaluating a feature flag
 
-Test it out
+Test it out by running the following cURL command in a separate terminal:
 
 ```shell
 curl -X POST "http://localhost:8013/schema.v1.Service/ResolveBoolean" \
