@@ -27,6 +27,8 @@ These are commonly used for A/B/(n) testing and experimentation.
 
 ### Start flagd
 
+Run the following command to start flagd using docker. This will expose flagd on port `8013` and read from the `demo.flagd.json` file we downloaded in the previous step.
+
 ```shell
 docker run \
   --rm -it \
