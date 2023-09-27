@@ -55,7 +55,7 @@ the [open-feature-operator](https://github.com/open-feature/open-feature-operato
 spec.
 This configuration is best used in conjunction with the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator).
 
-To use an existing FeatureFlagConfiguration custom resource, start flagD with the following command:
+To use an existing FeatureFlagConfiguration custom resource, start flagd with the following command:
 
 ```shell
 flagd start --uri core.openfeature.dev/default/my_example
