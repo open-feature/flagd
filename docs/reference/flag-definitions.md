@@ -163,8 +163,8 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 
 The evaluation context can be accessed in targeting rules using the `var` operation followed the evaluation context property name.
 
-| Description                                                    | Example                                       |
-| -------------------------------------------------------------- | --------------------------------------------- |
+| Description                                                    | Example                                              |
+| -------------------------------------------------------------- | ---------------------------------------------------- |
 | Retrieve property from the evaluation context                  | `#!json { "var": "email" }`                          |
 | Retrieve property from the evaluation context or use a default | `#!json { "var": ["email", "noreply@example.com"] }` |
 | Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
@@ -175,8 +175,8 @@ The evaluation context can be accessed in targeting rules using the `var` operat
 
 Conditions can be used to control the logical flow and grouping of targeting rules.
 
-| Conditional | Example                                                                                                                                                                                    |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Conditional | Example                                                                                                                                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | If          | Logic: `#!json {"if" : [ true, "yes", "no" ]}`<br>Result: `"yes"`<br><br>Logic: `#!json {"if" : [ false, "yes", "no" ]}`<br>Result: `"no"`                                                               |
 | If else     | Logic: `#!json {"if" : [ false, "yes", false, "no", "maybe" ]}`<br>Result: `"maybe"`<br><br>Logic: `#!json {"if" : [ false, "yes", false, "no", false, "maybe", "who knows" ]}`<br>Result: `"who knows"` |
 | Or          | Logic: `#!json {"or" : [ true, false ]}`<br>Result: `true`<br><br>Logic: `#!json {"or" : [ false, false ]}`<br>Result: `false`                                                                           |
@@ -187,8 +187,8 @@ Conditions can be used to control the logical flow and grouping of targeting rul
 Operations are used to take action on, or compare properties retrieved from the context.
 These are provided out-of-the-box by JsonLogic.
 
-| Operator               | Description                                                          | Context type | Example                                                                                                                                                  |
-| ---------------------- | -------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Operator               | Description                                                          | Context type | Example                                                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Equals                 | Attribute equals the specified value, with type coercion.            | any          | Logic: `#!json { "==" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "==" : [1, "1"] }`<br>Result: `true`                                                       |
 | Strict equals          | Attribute equals the specified value, with strict comparison.        | any          | Logic: `#!json { "===" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "===" : [1, "1"] }`<br>Result: `false`                                                    |
 | Not equals             | Attribute doesn't equal the specified value, with type coercion.     | any          | Logic: `#!json { "!=" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!=" : [1, "1"] }`<br>Result: `false`                                                      |
@@ -211,12 +211,12 @@ These are provided out-of-the-box by JsonLogic.
 These are custom operations specific to flagd and flagd providers.
 They are purpose built extensions to JsonLogic in order to support common feature flag use cases.
 
-| Function      | Description                                         | Example                                                                                                                                                                                                                                                                    |
-| ------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fractional`  | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional.md)   |
-| `starts_with` | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md)                      |
-| `ends_with`   | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparision.md) |
-| `sem_ver`     | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-comparison.md)                                                                                                             |
+| Function                           | Description                                         | Example                                                                                                                                                                                                                                                                                  |
+| ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fractional` (_available v0.6.4+_) | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional-operation.md)         |
+| `starts_with`                      | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md)                      |
+| `ends_with`                        | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md) |
+| `sem_ver`                          | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md)                                                                                                                    |
 
 ## Shared evaluators
 
