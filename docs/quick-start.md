@@ -187,7 +187,7 @@ You should see the updated results:
 
 Let's confirm that employees of Initech are seeing the updated variant.
 
-Run the following cURL command in the terminal.
+Run the following cURL command in the terminal:
 
 ```shell
 curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
