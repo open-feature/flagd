@@ -44,3 +44,15 @@ Result:
 ```sh
 {"value":1.23,"reason":"DEFAULT","variant":"one"}
 ```
+
+---
+
+## Extra/Duplicate Events in File Syncs
+
+When using the file sync, you may notice more events than you'd expect.
+This is attributable to nuances in text editors and the OS/filesystem.
+Most editors will cause a few filesystem events on a save, for instance, not just one as you might expect.
+Additionally, most filesystem operations are not atomic and also will result in multiple events.
+Generally speaking, updating a symbolic link will result in only a single event, and may even be atomic on your filesystem/OS.
+In fact, this is how Kubernetes handles changes to mounted ConfigMaps (OpenFeature Operator takes advantage of this fact in it's `file` mode).
+It's recommended if you're using the file sync in production, you use a symbolic link for the watched file, and update its contents by changing its target.
