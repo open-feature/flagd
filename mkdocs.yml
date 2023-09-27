@@ -24,6 +24,9 @@ theme:
     - navigation.footer
     - content.action.edit
     - content.code.copy
+    - search.suggest
+    - search.highlight
+    - search.share
 
 docs_dir: docs
 repo_url: https://github.com/open-feature/flagd
@@ -90,3 +93,4 @@ nav:
   - 'Troubleshooting': 'troubleshooting.md'
 plugins:
   - social
+  - search
