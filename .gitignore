@@ -15,3 +15,4 @@ bin/
 
 # built documentation
 site
+.cache/

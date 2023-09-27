@@ -21,7 +21,7 @@
 
 ## What's flagd?
 
-Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-made, open source, OpenFeature compliant feature flag backend system.
+Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-made, open source, OpenFeature-compliant feature flag backend system.
 
 ## Features
 
@@ -87,7 +87,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       --uri file:./etc/flagd/example_flags.flagd.json
     ```
 
-    `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](docs/configuration/configuration.md#uri-patterns).
+    `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](./docs/reference/sync-configuration.md#uri-patterns).
 
     Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
@@ -120,7 +120,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
     Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
 
-    flagd also supports boolean, integer, float and object flag types. Read more on the [evaluation examples page](docs/usage/evaluation_examples.md)
+    flagd also supports boolean, integer, float and object flag types.
 
 4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
 
@@ -130,7 +130,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
 ## 📝 Further Documentation
 
-Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found [on this page](docs/README.md).
+Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found at [flagd.dev](https://flagd.dev/), or [in this repository](./docs/index.md).
 
 ## 🫶 Contributing
 

@@ -4,3 +4,6 @@
 [submodule "spec"]
 	path = spec
 	url = https://github.com/open-feature/spec.git
+[submodule "schemas"]
+	path = schemas
+	url = https://github.com/open-feature/schemas.git

@@ -11,9 +11,14 @@ config:
       - br
   github-admonition: true
   max-one-sentence-per-line: true
+  code-block-style: false         # not compatible with mkdocs "details" panes
 
 ignores:
   - "**/CHANGELOG.md"
   - "docs/specification"
   - "node_modules"
   - "tmp"
+  - "**/protos.md"  # auto-generated
+  - "schemas"       # submodule
+  - "spec"          # submodule
+  - "test-harness"  # submodule
