@@ -21,7 +21,7 @@ wget https://raw.githubusercontent.com/open-feature/flagd/main/docs/assets/demo.
 
 The flag definition file includes two feature flags.
 The first one has the flag key `show-welcome-banner` and is a boolean type.
-These types of feature flags are commonly used gate access to a new feature using a conditional in code.
+These types of feature flags are commonly used to gate access to a new feature using a conditional in code.
 The second flag has the key `background-color` and is a multi-variant string.
 These are commonly used for A/B/(n) testing and experimentation.
 
