@@ -1,7 +1,7 @@
 <!-- markdownlint-disable-file -->
 ## flagd version
 
-Print the version number of FlagD
+Print the version number of flagd
 
 ```
 flagd version [flags]
