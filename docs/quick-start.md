@@ -163,7 +163,7 @@ If there isn't a match, the `defaultVariant` is returned.
 
 #### Test as a customer
 
-Let's confirm that customers are still seeing the `red` variant.
+Let's confirm that customers are still seeing the `red` variant by running the following command:
 
 ```shell
 curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
