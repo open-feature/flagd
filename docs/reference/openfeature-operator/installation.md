@@ -27,7 +27,7 @@ Create a namespace to house your flags:
 kubectl create namespace flags
 ```
 
-Next define your feature flag(s) using the [FeatureFlagConfiguration](./crds/featureflagconfiguration.md) CRD.
+Next define your feature flag(s) using the [FeatureFlagConfiguration](./crds/featureflagconfiguration.md) custom resource definition (CRD).
 
 This example specifies one flag called `foo` which has two variants `bar` and `baz`. The `defaultVariant` is `bar`.
 
