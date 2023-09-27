@@ -54,7 +54,7 @@ EOF
 
 Next, tell the OpenFeature operator where to find flags.
 
-Do so by creating a [FlagSourceConfiguration](./crds//flagsourceconfiguration.md) CRD.
+Do so by creating a [FlagSourceConfiguration](./crds/flagsourceconfiguration.md) CRD.
 
 This example specifies that the CRD called `sample-flags` (created above) can be found in the `flags` namespace and that the provider is `kubernetes`.
 
