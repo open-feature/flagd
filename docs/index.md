@@ -15,7 +15,7 @@ With flagd you can:
 * aggregate flag definitions from multiple sources
 
 It doesn't include a UI, management console or a persistence layer.
-It's configurable entirely via a POSIX-style CLI.
+It's configurable entirely via a [POSIX-style CLI](./reference/flagd-cli/flagd.md).
 Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as a sidecar alongside your application, an engine running in your application process, or as a central service evaluating thousands of flags per second.
 
 ## How do I deploy flagd?
