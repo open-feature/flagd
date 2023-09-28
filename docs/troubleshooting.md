@@ -66,4 +66,4 @@ You may need to explicitly allow HTTP2 or gRPC in your platform if you're using 
 
 !!! note
 
-    HTTP2 _is not_ strictly for the flag [evaluation gRPC service](./reference/specifications/protos.md#schemav1schemaproto), which is exposed both as a gRPC service and a ReSTful HTTP/1.1 service, thanks to the [connect protocol](https://connectrpc.com/docs/protocol/).
+    HTTP2 _is not_ strictly for the flag [evaluation gRPC service](./reference/specifications/protos.md#schemav1schemaproto), which is exposed both as a gRPC service and a RESTful HTTP/1.1 service, thanks to the [connect protocol](https://connectrpc.com/docs/protocol/).
