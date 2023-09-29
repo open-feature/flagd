@@ -70,7 +70,7 @@ If available, the JsonLogic library for the chosen technology should be used.
 In addition to the built-in evaluators provided by JsonLogic, the following custom targeting rules should be implemented by the provider:
 
 - [Fractional operation](../../reference/custom-operations/fractional-operation.md):
-This evaluator allows the splitting of the returned variants of a feature flag into different buckets, where each bucket
+This evaluator allows splitting of the returned variants of a feature flag into different buckets, where each bucket
 can be assigned a percentage, representing how many requests will resolve to the corresponding variant.
 The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
 from the evaluation context to hash that value and map it to a value between [0, 100].
