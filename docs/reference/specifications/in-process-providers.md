@@ -1,8 +1,7 @@
 # Creating an in-process flagd provider
 
-An in-process flagd provider, on the other hand, is designed to be embedded into the application, and therefore
-no communication outside the process of the application for feature flag evaluation is needed. This can be desired by some architectures,
-especially if flag retrievals should not take longer than a certain amount of time.
+An in-process flagd provider is designed to be embedded into the application, and therefore no communication outside the process of the application for feature flag evaluation is needed.
+This can be desired by some architectures, especially if flag retrievals should not take longer than a certain amount of time.
 
 The in-process flagd provider is responsible for creating an abstraction between the [JsonLogic](https://jsonlogic.com) based evaluation of flag configurations following the [flag configuration scheme](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json) used by `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
 
