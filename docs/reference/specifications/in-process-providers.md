@@ -1,12 +1,7 @@
 # Creating an in-process flagd provider
 
-By default, **flagd** is a remote service that is accessed via **grpc** by a client application to retrieve feature flags.
-Depending on the environment, flagd therefore is usually deployed as a standalone service, e.g. as a Kubernetes Deployment,
-or injected as a sidecar container into the pod running the client application,
-as it is done in the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator).
-An in-process flagd provider, on the other hand, is designed to be embedded into the application and therefore
-no communication outside the process of the application for feature flag evaluation is needed. This can be desired by some architectures,
-especially if flag retrievals should not take longer than a certain amount of time.
+An in-process flagd provider is designed to be embedded into the application, and therefore no communication outside the process of the application for feature flag evaluation is needed.
+This can be desirable in some cases, particularly if latency is a concern.
 
 The in-process flagd provider is responsible for creating an abstraction between the [JsonLogic](https://jsonlogic.com) based evaluation of flag configurations following the [flag configuration scheme](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json) used by `flagd` and the OpenFeature SDK (for the [chosen technology](https://openfeature.dev/docs/reference/technologies/)).
 
@@ -24,7 +19,7 @@ An implementation of an in-process flagd-provider must accept the following envi
 
 - `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag definition.
 - `FLAGD_SOURCE_PROVIDER_TYPE`: The type of the provider. E.g. `grpc` or `kubernetes`.
-- `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag definition of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag definition within a collection of feature flag definition.
+- `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag definition of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag definition within a collection of feature flag definitions.
 
 An implementation of an in-process flagd provider should provide a source for retrieving the flag definition, namely a gRPC source.
 Other sources may be desired eventually, so separation of concerns should be maintained between the abstractions evaluating flags and those retrieving confirmation.
@@ -42,7 +37,7 @@ Protobuf schemas define the contract between a client (flagd or the in-process p
 
 #### Code generation for gRPC sync
 
-Leverage the [buf CLI](https://docs.buf.build/installation) or protoc to generate a `flagd-proxy` client in the chosen technology:
+Leverage the [buf CLI](https://docs.buf.build/installation) or [protoc](https://grpc.io/docs/protoc-installation/) to generate a `flagd-proxy` client in the chosen technology:
 
 Add the [open-feature schema repository](https://github.com/open-feature/schemas) as a submodule
 
@@ -75,7 +70,7 @@ If available, the JsonLogic library for the chosen technology should be used.
 In addition to the built-in evaluators provided by JsonLogic, the following custom targeting rules should be implemented by the provider:
 
 - [Fractional operation](../../reference/custom-operations/fractional-operation.md):
-This evaluator allows to split the returned variants of a feature flag into different buckets, where each bucket
+This evaluator allows splitting of the returned variants of a feature flag into different buckets, where each bucket
 can be assigned a percentage, representing how many requests will resolve to the corresponding variant.
 The sum of all weights must be 100, and the distribution must be performed by using the value of a referenced
 from the evaluation context to hash that value and map it to a value between [0, 100].
@@ -179,13 +174,13 @@ In-process flagd providers should do the following to make use of OpenFeature v0
   - note that the SDK will automatically emit `PROVIDER_READY`/`PROVIDER_ERROR` according to the termination of the `initialization` function
 - throw an exception or terminate abnormally if a connection cannot be established during `initialization`
 - For gRPC based sources (i.e. flagd-proxy), attempt to restore the streaming connection to flagd-proxy (if the connection cannot be established or is broken):
-  - If flag definition have been retrieved previously, go into `STALE` state to indicate that flag resolution responsees are based on potentially outdated Flag definition.
+  - If flag definition have been retrieved previously, go into `STALE` state to indicate that flag resolution responses are based on potentially outdated Flag definition.
   - reconnection should be attempted with an exponential back-off, with a max-delay of `maxSyncRetryInterval` (see [configuration](#configuration))
   - reconnection should be attempted up to `maxSyncRetryDelay` times (see [configuration](#configuration))
   - `PROVIDER_READY` and `PROVIDER_CONFIGURATION_CHANGED` should be emitted, in that order, after successful reconnection
 - For Kubernetes sync sources, retry to retrieve the FlagConfiguration resource, using an exponential back-off strategy, with a max-delay of `maxSyncRetryInterval` (see [configuration](#configuration))
-- emit `PROVIDER_CONFIGURATION_CHANGED` event and update ruleset when a `configuration_change` message is received on the streaming connection
-- close the streaming connection in the`shutdown` function
+- emit `PROVIDER_CONFIGURATION_CHANGED` event and update the ruleset when a `configuration_change` message is received on the streaming connection
+- close the streaming connection in the `shutdown` function
 
 ```mermaid
 stateDiagram-v2
@@ -243,5 +238,4 @@ The following steps will extend the reach of the newly created provider to other
 
 ### Open an issue to document the provider
 
-Create an issue in openfeature.dev [here](https://github.com/open-feature/openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+).
-This will ensure the provider is added to OpenFeature's website.
+Create an issue [here](https://github.com/open-feature/openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+) for adding the provider to [openfeature.dev](https://openfeature.dev).
