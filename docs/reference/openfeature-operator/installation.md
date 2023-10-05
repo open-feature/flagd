@@ -2,7 +2,7 @@
 
 Use the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator) to install and run flagd on a Kubernetes cluster.
 
-The operator includes flagd (no need to install flagd seperately).
+The operator includes flagd (no need to install flagd separately).
 
 ## Installation
 
@@ -27,11 +27,9 @@ Create a namespace to house your flags:
 kubectl create namespace flags
 ```
 
-Next define your feature flag(s) using the [FeatureFlagConfiguration](./crds/featureflagconfiguration.md) custom resource definition (CRD).
+Next, define your feature flag(s) using the [FeatureFlagConfiguration](./crds/featureflagconfiguration.md) custom resource definition (CRD).
 
 This example specifies one flag called `foo` which has two variants `bar` and `baz`. The `defaultVariant` is `bar`.
-
-If this doesn't make sense, review the [concepts](../concepts/index.md) section.
 
 ```bash
 kubectl apply -n flags -f - <<EOF
@@ -81,9 +79,9 @@ The operator looks for `Deployment` objects annotated with particular annotation
 - `openfeature.dev/enabled: "true"` enables this deployment for flagd
 - `openfeature.dev/flagsourceconfiguration: "flags/flag-source-configuration"` makes the given feature flag sources available to this deployment
 
-When these two annotation are added, the OpenFeature operator will inject a sidecar into your workload.
+When these two annotations are added, the OpenFeature operator will inject a sidecar into your workload.
 
-flagd will then be available via `http://localhost` the port specified in the `FlagSourceConfiguration` (eg. `8080`)
+flagd will then be available via `http://localhost` the port specified in the `FlagSourceConfiguration` (e.g. `8080`)
 
 Your Deployment YAML might look like this:
 
@@ -123,7 +121,7 @@ spec:
 curl --location 'http://localhost:8080/schema.v1.Service/ResolveString' --header 'Content-Type: application/json' --data '{ "flagKey":"foo"}'
 ```
 
-In a real application, rather than `curl`, you would probably use the OpenFeature SDK with the `flagd` provider. // TODO link to a good example here.
+In a real application, rather than `curl`, you would probably use the OpenFeature SDK with the `flagd` provider.
 
 ## What does the operator do?
 
