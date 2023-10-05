@@ -6,15 +6,19 @@ theme:
       # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: custom
+      accent: custom
       toggle:
-        icon: material/brightness-7
+        icon: material/toggle-switch-outline
         name: Switch to dark mode
 
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle:
-        icon: material/brightness-4
+        icon: material/toggle-switch-off      
         name: Switch to light mode
   logo: assets/logo-white.svg
   favicon: assets/logo-white.svg
@@ -27,6 +31,8 @@ theme:
     - search.suggest
     - search.highlight
     - search.share
+extra_css:
+  - assets/extra.css
 
 docs_dir: docs
 repo_url: https://github.com/open-feature/flagd

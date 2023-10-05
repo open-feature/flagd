@@ -1,0 +1,8 @@
+/* same trim colors as openfeature.dev */
+:root {
+  --md-primary-fg-color:        #5d5dff;
+  --md-primary-fg-color--light: #5d5dff;
+  --md-primary-fg-color--dark:  #5d5dff;
+  --md-accent-fg-color:        #8d8dff;
+  --md-accent-fg-color--transparent:rgba(141,141,255,0.1);
+}
