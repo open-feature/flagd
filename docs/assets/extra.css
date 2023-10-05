@@ -6,3 +6,15 @@
   --md-accent-fg-color:        #8d8dff;
   --md-accent-fg-color--transparent:rgba(141,141,255,0.1);
 }
+
+/* override slate (dark) to match openfeature.dev */
+[data-md-color-scheme="slate"] {
+  --md-default-fg-color:             hsla(240, 15%, 90%, 0.82);
+  --md-default-fg-color--light:      hsla(240, 15%, 90%, 0.56);
+  --md-default-fg-color--lighter:    hsla(240, 15%, 90%, 0.32);
+  --md-default-fg-color--lightest:   hsla(240, 15%, 90%, 0.12);
+  --md-default-bg-color:             hsla(240, 4%, 11%);
+  --md-default-bg-color--light:      hsla(240, 4%, 11%, 0.54);
+  --md-default-bg-color--lighter:    hsla(240, 4%, 11%, 0.26);
+  --md-default-bg-color--lightest:   hsla(240, 4%, 11%, 0.07);
+}
