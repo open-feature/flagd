@@ -47,7 +47,7 @@ Result:
 
 ---
 
-## Extra/Duplicate Events in File Syncs
+## Extra (Duplicate) Events in File Syncs
 
 When using the file sync, you may notice more events than you'd expect.
 This is attributable to nuances in text editors and the OS/filesystem.
