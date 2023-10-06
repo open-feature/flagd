@@ -13,7 +13,7 @@ hash function should be used. This is to ensure that flag resolution requests yi
 regardless of which implementation of the in-process flagd provider is being used.
 
 The supplied array must contain at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
-specifying the bucketing property to base the distribution of values on. If not supplied, a concatination of the
+specifying the bucketing property to base the distribution of values on. If not supplied, a concatenation of the
 `flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flagKey"}, {"var":"targetingKey"}]}`.
 The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to

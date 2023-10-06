@@ -1,4 +1,5 @@
 <!-- markdownlint-disable-file -->
+<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->
 ## flagd start
 
 Start flagd
@@ -37,5 +38,5 @@ flagd start [flags]
 
 ### SEE ALSO
 
-* [flagd](flagd)	 - Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.
+* [flagd](flagd.md)	 - Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.
 

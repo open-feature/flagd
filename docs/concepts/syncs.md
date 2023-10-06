@@ -42,7 +42,7 @@ This stream connection is defined by the [sync service protobuf definition](http
 flagd start --uri grpc://grpc-sync-source
 ```
 
-In this example, `grpc-sync-source` is a grpc target implementing [sync.proto](../reference/flag-sync-protocol.md) definition.
+In this example, `grpc-sync-source` is a grpc target implementing [sync.proto](../reference/specifications/protos.md#syncv1sync_serviceproto) definition.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
 ---

@@ -72,7 +72,7 @@ nav:
     - 'CLI':
       - 'Commands': 'reference/flagd-cli/flagd.md'
       - '"start" Command': 'reference/flagd-cli/flagd_start.md'
-      - '"version" Command': 'reference/flagd-cli/flagd/flagd_version.md'
+      - '"version" Command': 'reference/flagd-cli/flagd_version.md'
     - 'Sync Configuration': 'reference/sync-configuration.md'
     - 'Flag Definitions':
       - 'Definition Overview': 'reference/flag-definitions.md'

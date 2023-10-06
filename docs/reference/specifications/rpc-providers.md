@@ -8,13 +8,13 @@ as it is done in the [OpenFeature Operator](https://github.com/open-feature/open
 Prerequisites:
 
 - Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
-- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../usage/flagd_providers.md))
+- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../providers.md))
 
 ## flagd Evaluation API
 
 Fundamentally, RPC providers use the [evaluation schema](./protos.md#schemav1schemaproto) to connect to flagd, initiate evaluation RPCs, and listen for changes in the flag definitions.
 In order to do this, you must generate the gRPC primitives (message types and client) using the protobuf code generation mechanisms available in your language.
-If you are unable to use gRPC code generation, you can also use REST (via the [connect protocol](https://buf.build/blog/connect-a-better-grpc)) to communivate with flagd, though in this case, you will not be able to open a stream to listen for changes.
+If you are unable to use gRPC code generation, you can also use REST (via the [connect protocol](https://buf.build/blog/connect-a-better-grpc)) to communicate with flagd, though in this case, you will not be able to open a stream to listen for changes.
 
 ### Protobuf
 
@@ -39,7 +39,7 @@ cd schemas/protobuf
 buf generate --template buf.gen.{chosen language}.yaml
 ```
 
-As an alternative to buf, use the .proto file directly along with whatever protoc-related tools or plugins avaialble for your language.
+As an alternative to buf, use the .proto file directly along with whatever protoc-related tools or plugins available for your language.
 
 Move the generated code (following convention for the chosen language) and add its location to .gitignore
 
@@ -56,7 +56,7 @@ In-process flagd providers should do the following to make use of OpenFeature v0
   - note that the SDK will automatically emit `PROVIDER_READY`/`PROVIDER_ERROR` according to the termination of the `initialization` function
 - throw an exception or terminate abnormally if a connection cannot be established during `initialization`
 - For gRPC based sources (i.e. flagd-proxy), attempt to restore the streaming connection to flagd-proxy (if the connection cannot be established or is broken):
-  - If flag definition have been retrieved previously, go into `STALE` state to indicate that flag resolution responsees are based on potentially outdated Flag definition.
+  - If flag definition have been retrieved previously, go into `STALE` state to indicate that flag resolution responses are based on potentially outdated Flag definition.
   - reconnection should be attempted with an exponential back-off, with a max-delay of `maxSyncRetryInterval` (see [configuration](#configuration))
   - reconnection should be attempted up to `maxSyncRetryDelay` times (see [configuration](#configuration))
   - `PROVIDER_READY` and `PROVIDER_CONFIGURATION_CHANGED` should be emitted, in that order, after successful reconnection

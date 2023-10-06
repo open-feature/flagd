@@ -15,7 +15,6 @@ config:
 
 ignores:
   - "**/CHANGELOG.md"
-  - "docs/specification"
   - "node_modules"
   - "tmp"
   - "**/protos.md"  # auto-generated

@@ -1,4 +1,5 @@
 <!-- markdownlint-disable-file -->
+<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->
 ## flagd
 
 Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to Open Feature schema for flag definitions.
@@ -13,6 +14,6 @@ Flagd is a simple command line tool for fetching and presenting feature flags to
 
 ### SEE ALSO
 
-* [flagd start](flagd_start)	 - Start flagd
-* [flagd version](flagd_version)	 - Print the version number of flagd
+* [flagd start](flagd_start.md)	 - Start flagd
+* [flagd version](flagd_version.md)	 - Print the version number of flagd
 
