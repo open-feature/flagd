@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -38,7 +39,8 @@ const (
 var regBrace *regexp.Regexp
 
 type flagdProperties struct {
-	FlagKey string `json:"flagKey"`
+	FlagKey   string    `json:"flagKey"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 func init() {
@@ -321,7 +323,8 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 		}
 
 		context = je.setFlagdProperties(context, flagdProperties{
-			FlagKey: flagKey,
+			FlagKey:   flagKey,
+			Timestamp: time.Now(),
 		})
 
 		b, err := json.Marshal(context)
