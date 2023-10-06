@@ -25,7 +25,7 @@ OpenFeature allows clients to pass contextual information which can then be used
 ```
 
 See the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) flag.
-The `defaultVariant` is `red`, but it contains a [targeting rule](reusable_targeting_rules.md), meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
+The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-definitions.md#targeting-rules), meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
 
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
 

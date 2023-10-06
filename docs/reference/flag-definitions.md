@@ -145,7 +145,7 @@ A targeting rule **must** be valid JSON.
 Flagd uses a modified version of [JSON Logic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules.
 The output of the targeting rule **must** match the name of one of the variants defined above.
 If an invalid or null value is returned by the targeting rule, the `defaultVariant` value is used.
-If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](../other_resources/caching.md).
+If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](specifications/rpc-providers.md#caching).
 
 #### Evaluation Context
 

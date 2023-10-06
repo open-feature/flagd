@@ -42,4 +42,4 @@ erDiagram
 ```
 
 <!-- TODO: add link to sync protocol reference entry -->
-<!-- TODO: we might want a dedicated Kubernets section here eventually to talk about the specifics of the K8s implementation -->
+<!-- TODO: we might want a dedicated Kubernetes section here eventually to talk about the specifics of the K8s implementation -->
