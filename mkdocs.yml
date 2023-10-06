@@ -70,9 +70,9 @@ nav:
   - 'Architecture': 'architecture.md'
   - 'Reference':
     - 'CLI':
-      - 'Commands': 'reference/flagd-cli/flagd.md'
-      - '"start" Command': 'reference/flagd-cli/flagd_start.md'
-      - '"version" Command': 'reference/flagd-cli/flagd_version.md'
+      - 'Overview': 'reference/flagd-cli/flagd.md'
+      - 'Start': 'reference/flagd-cli/flagd_start.md'
+      - 'Version': 'reference/flagd-cli/flagd_version.md'
     - 'Sync Configuration': 'reference/sync-configuration.md'
     - 'Flag Definitions':
       - 'Definition Overview': 'reference/flag-definitions.md'
