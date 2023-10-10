@@ -1,3 +1,7 @@
+---
+description: flagd architecture
+---
+
 # Architecture
 
 flagd architectures fall into two broad categories: those where the evaluation engine is deployed in a standalone process to which the client application connects ([RPC](#rpc-evaluation)), and those where the evaluation engine is embedded into the client application ([in-process](#in-process-evaluation)).

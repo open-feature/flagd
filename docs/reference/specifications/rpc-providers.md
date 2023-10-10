@@ -1,3 +1,7 @@
+---
+description: flagd RPC proivider specification
+---
+
 # Creating an RPC flagd provider
 
 By default, **flagd** is a remote service that is accessed via **grpc** by a client application to retrieve feature flags.

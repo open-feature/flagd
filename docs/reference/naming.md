@@ -1,3 +1,7 @@
+---
+description: naming conventions for flagd and associated artifacts
+---
+
 # Naming
 
 _flagd_ was conceived as a simple program with a POSIX-style CLI that's designed to run as a service or [daemon](https://en.wikipedia.org/wiki/Daemon_(computing)).

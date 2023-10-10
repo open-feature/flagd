@@ -1,3 +1,7 @@
+---
+description: troubleshooting flagd
+---
+
 # Troubleshooting flagd
 
 ## Debugging Evaluations

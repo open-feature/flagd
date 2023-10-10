@@ -1,3 +1,7 @@
+---
+description: sync configuration overview for flagd and flagd providers
+---
+
 # Sync configuration
 
 See [syncs](../concepts/syncs.md) for a conceptual overview.
