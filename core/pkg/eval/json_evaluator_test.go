@@ -1262,7 +1262,7 @@ func TestFlagdAmbientProperties(t *testing.T) {
 					},
 					"defaultVariant": "false",
 					"targeting": {
-						"if": [ { "var": ["$flagd.timestamp", false] }, true, false ]
+						"<": [ 1696904426, { "var": "$flagd.timestamp" } ]
 					}
 				}
 			}

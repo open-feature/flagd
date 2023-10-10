@@ -39,8 +39,8 @@ const (
 var regBrace *regexp.Regexp
 
 type flagdProperties struct {
-	FlagKey   string    `json:"flagKey"`
-	Timestamp time.Time `json:"timestamp"`
+	FlagKey   string `json:"flagKey"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 func init() {
@@ -324,7 +324,7 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 
 		context = je.setFlagdProperties(context, flagdProperties{
 			FlagKey:   flagKey,
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Unix(),
 		})
 
 		b, err := json.Marshal(context)
