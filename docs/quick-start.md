@@ -1,3 +1,7 @@
+---
+description: flagd quick start
+---
+
 # Quick Start
 
 Learn the basics of flagd from the comfort of your terminal.

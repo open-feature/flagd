@@ -1,3 +1,7 @@
+---
+description: flagd in-process proivider specification
+---
+
 # Creating an in-process flagd provider
 
 An in-process flagd provider is designed to be embedded into the application, and therefore no communication outside the process of the application for feature flag evaluation is needed.

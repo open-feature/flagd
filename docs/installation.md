@@ -1,3 +1,7 @@
+---
+description: installing flagd
+---
+
 # Installation
 
 ## Docker

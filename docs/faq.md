@@ -1,3 +1,7 @@
+---
+description: flagd faq
+---
+
 # Frequently Asked Questions
 
 > Why do I need this? Can't I just use environment variables?

@@ -1,3 +1,7 @@
+---
+description: flagd fractional custom operation
+---
+
 # Fractional Operation
 
 OpenFeature allows clients to pass contextual information which can then be used during a flag evaluation. For example, a client could pass the email address of the user.
