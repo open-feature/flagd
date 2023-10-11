@@ -1,3 +1,7 @@
+---
+description: monitoring and telemetry flagd and flagd providers
+---
+
 # Monitoring
 
 ## Readiness & Liveness probes
