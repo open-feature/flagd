@@ -231,7 +231,6 @@ Flagd adds the following properties to the evaluation context that can be used i
 | `$flagd.flagKey` | The name of the flag key | v0.6.4 |
 | `$flagd.timestamp`| A unix timestamp (in seconds) of the time of evaluation | unreleased |
 
-
 ## Shared evaluators
 
 `$evaluators` is an **optional** property.
