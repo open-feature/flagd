@@ -98,10 +98,11 @@ For more specific implementation guidelines, please refer to [this document](./c
 ### $flagd properties in the evaluation context
 
 An in-process flagd provider should also add the following properties to the JsonLogic evaluation context so that users can use them in their targeting rules.
+Conflicting properties in the context will be overwritten by the values below.
 
 | Property | Description |
 |----------|-------------|
-| `$flagd.flagKey` | The name of the flag key |
+| `$flagd.flagKey` | The identifier for the flag being evaluated |
 | `$flagd.timestamp`| A unix timestamp (in seconds) of the time of evaluation |
 
 ## Provider construction
