@@ -146,7 +146,7 @@ Example of an invalid configuration:
 
 `targeting` is an **optional** property.
 A targeting rule **must** be valid JSON.
-Flagd uses a modified version of [JSON Logic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules.
+Flagd uses a modified version of [JsonLogic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules.
 The output of the targeting rule **must** match the name of one of the variants defined above.
 If an invalid or null value is returned by the targeting rule, the `defaultVariant` value is used.
 If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](specifications/rpc-providers.md#caching).
@@ -173,7 +173,7 @@ The evaluation context can be accessed in targeting rules using the `var` operat
 | Retrieve property from the evaluation context or use a default | `#!json { "var": ["email", "noreply@example.com"] }` |
 | Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
 
-> For more information, see the `var` section in the [JSON Logic documentation](https://jsonlogic.com/operations.html#var).
+> For more information, see the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var).
 
 #### Conditions
 
@@ -217,10 +217,20 @@ They are purpose built extensions to JsonLogic in order to support common featur
 
 | Function                           | Description                                         | Example                                                                                                                                                                                                                                                                                  |
 | ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fractional` (_available v0.6.4+_) | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional-operation.md)         |
-| `starts_with`                      | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md)                      |
-| `ends_with`                        | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md) |
-| `sem_ver`                          | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md)                                                                                                                    |
+| `fractional` (_available v0.6.4+_) | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional-operation.md).        |
+| `starts_with`                      | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).                     |
+| `ends_with`                        | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).|
+| `sem_ver`                          | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                   |
+
+#### $flagd properties in the evaluation context
+
+Flagd adds the following properties to the evaluation context that can be used in the targeting rules.
+
+| Property | Description | From version |
+|----------|-------------|--------------|
+| `$flagd.flagKey` | The name of the flag key | v0.6.4 |
+| `$flagd.timestamp`| A unix timestamp (in seconds) of the time of evaluation | unreleased |
+
 
 ## Shared evaluators
 
