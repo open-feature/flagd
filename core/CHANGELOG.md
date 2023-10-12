@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.7](https://github.com/open-feature/flagd/compare/core/v0.6.6...core/v0.6.7) (2023-10-12)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_golang to v1.17.0 ([#939](https://github.com/open-feature/flagd/issues/939)) ([9065cba](https://github.com/open-feature/flagd/commit/9065cba599ac07225b613c5acd9403ab24462078))
+* **deps:** update module github.com/rs/cors to v1.10.1 ([#946](https://github.com/open-feature/flagd/issues/946)) ([1c39862](https://github.com/open-feature/flagd/commit/1c39862297746e66189ece87892b6e4694294fb6))
+* **deps:** update module go.uber.org/zap to v1.26.0 ([#917](https://github.com/open-feature/flagd/issues/917)) ([e57e206](https://github.com/open-feature/flagd/commit/e57e206c937d5b11b81d46ee57b3e92cc454dd88))
+* **deps:** update module golang.org/x/mod to v0.13.0 ([#952](https://github.com/open-feature/flagd/issues/952)) ([be61450](https://github.com/open-feature/flagd/commit/be61450ec3fab3c294c9813df193c98e374900aa))
+* **deps:** update module golang.org/x/sync to v0.4.0 ([#949](https://github.com/open-feature/flagd/issues/949)) ([faa24a6](https://github.com/open-feature/flagd/commit/faa24a6c6f34330364e1ba0c3a847943f4e55150))
+* **deps:** update module google.golang.org/grpc to v1.58.1 ([#915](https://github.com/open-feature/flagd/issues/915)) ([06d95de](https://github.com/open-feature/flagd/commit/06d95ded9b69c9c598d08f8a6ef73ec598a817af))
+* **deps:** update module google.golang.org/grpc to v1.58.2 ([#928](https://github.com/open-feature/flagd/issues/928)) ([90f1878](https://github.com/open-feature/flagd/commit/90f1878ae482ea4a684615f733392a38301de68d))
+* **deps:** update module google.golang.org/grpc to v1.58.3 ([#960](https://github.com/open-feature/flagd/issues/960)) ([fee1558](https://github.com/open-feature/flagd/commit/fee1558da4f5418499fb09fe356d16f008423eb7))
+* **deps:** update opentelemetry-go monorepo ([#943](https://github.com/open-feature/flagd/issues/943)) ([e7cee41](https://github.com/open-feature/flagd/commit/e7cee41630e5684999b3689dbf1ab66234c65f6e))
+* erroneous warning about prop overwrite ([#924](https://github.com/open-feature/flagd/issues/924)) ([673b76a](https://github.com/open-feature/flagd/commit/673b76aeff5c27e8e031e59da5f0ed1871d3f749))
+
+
+### ✨ New Features
+
+* add `$flagd.timestamp` to json evaluator ([#958](https://github.com/open-feature/flagd/issues/958)) ([a1b04e7](https://github.com/open-feature/flagd/commit/a1b04e778df4d2f6beb881183a82161018151479))
+
 ## [0.6.6](https://github.com/open-feature/flagd/compare/core/v0.6.5...core/v0.6.6) (2023-09-14)
 
 
