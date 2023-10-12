@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.7](https://github.com/open-feature/flagd/compare/flagd/v0.6.6...flagd/v0.6.7) (2023-10-12)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.6 ([#916](https://github.com/open-feature/flagd/issues/916)) ([1f80e4d](https://github.com/open-feature/flagd/commit/1f80e4db9f8d1ba24884a71f2f8d552499ab5fe2))
+* **deps:** update module github.com/open-feature/go-sdk-contrib/providers/flagd to v0.1.17 ([#759](https://github.com/open-feature/flagd/issues/759)) ([a2a2c3c](https://github.com/open-feature/flagd/commit/a2a2c3c7effd1708136eaac5df00ae02276d5005))
+* **deps:** update module github.com/spf13/viper to v1.17.0 ([#956](https://github.com/open-feature/flagd/issues/956)) ([31d015d](https://github.com/open-feature/flagd/commit/31d015d329ae9c1da3ec13878078371bcbf43fbf))
+* **deps:** update module go.uber.org/zap to v1.26.0 ([#917](https://github.com/open-feature/flagd/issues/917)) ([e57e206](https://github.com/open-feature/flagd/commit/e57e206c937d5b11b81d46ee57b3e92cc454dd88))
+
+
+### 🧹 Chore
+
+* docs rework ([#927](https://github.com/open-feature/flagd/issues/927)) ([27b3193](https://github.com/open-feature/flagd/commit/27b31938210c8930d9cbb31c1c76220d185b3949))
+
+
+### 📚 Documentation
+
+* fixed typos and linting issues ([#957](https://github.com/open-feature/flagd/issues/957)) ([0bade57](https://github.com/open-feature/flagd/commit/0bade574005f8faf977de30b14ac89acbb276472))
+
 ## [0.6.6](https://github.com/open-feature/flagd/compare/flagd/v0.6.5...flagd/v0.6.6) (2023-09-14)
 
 
