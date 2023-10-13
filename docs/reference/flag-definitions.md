@@ -229,7 +229,7 @@ Flagd adds the following properties to the evaluation context that can be used i
 | Property | Description | From version |
 |----------|-------------|--------------|
 | `$flagd.flagKey` | the identifier for the flag being evaluated | v0.6.4 |
-| `$flagd.timestamp`| A unix timestamp (in seconds) of the time of evaluation | v0.6.7 |
+| `$flagd.timestamp`| a unix timestamp (in seconds) of the time of evaluation | v0.6.7 |
 
 ## Shared evaluators
 
