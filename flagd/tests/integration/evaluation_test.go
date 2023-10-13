@@ -7,6 +7,7 @@ import (
 	"github.com/cucumber/godog"
 	flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
 	"github.com/open-feature/go-sdk-contrib/tests/flagd/pkg/integration"
+	"github.com/open-feature/go-sdk/pkg/openfeature"
 )
 
 func TestEvaluation(t *testing.T) {
@@ -25,8 +26,10 @@ func TestEvaluation(t *testing.T) {
 	}
 
 	testSuite := godog.TestSuite{
-		Name:                name,
-		ScenarioInitializer: integration.InitializeEvaluationScenario(providerOptions...),
+		Name: name,
+		ScenarioInitializer: integration.InitializeEvaluationScenario(func() openfeature.FeatureProvider {
+			return flagd.NewProvider(providerOptions...)
+		}),
 		Options: &godog.Options{
 			Format:   "pretty",
 			Paths:    []string{"../../../spec/specification/assets/gherkin/evaluation.feature"},
