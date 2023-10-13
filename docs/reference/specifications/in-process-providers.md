@@ -102,7 +102,7 @@ Conflicting properties in the context will be overwritten by the values below.
 
 | Property | Description |
 |----------|-------------|
-| `$flagd.flagKey` | The identifier for the flag being evaluated |
+| `$flagd.flagKey` | the identifier for the flag being evaluated |
 | `$flagd.timestamp`| A unix timestamp (in seconds) of the time of evaluation |
 
 ## Provider construction
