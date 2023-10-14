@@ -68,6 +68,7 @@ Note that for the in-process provider only the `sync` package will be relevant, 
 
 An in-process flagd provider should provide the feature set offered by [JsonLogic](https://jsonlogic.com) to evaluate flag resolution requests for a given context.
 If available, the JsonLogic library for the chosen technology should be used.
+Additionally, it should also provide the custom JsonLogic evaluators and `$flagd` properties in the evaluation context described below.
 
 ### Custom JsonLogic evaluators
 
@@ -93,6 +94,16 @@ For more specific implementation guidelines, please refer to [this document](../
 This evaluator selects a variant based on whether the specified property within the evaluation context
 starts/ends with a certain string.
 For more specific implementation guidelines, please refer to [this document](./custom-operations/string-comparison-operation-spec.md).
+
+### $flagd properties in the evaluation context
+
+An in-process flagd provider should also add the following properties to the JsonLogic evaluation context so that users can use them in their targeting rules.
+Conflicting properties in the context will be overwritten by the values below.
+
+| Property | Description |
+|----------|-------------|
+| `$flagd.flagKey` | the identifier for the flag being evaluated |
+| `$flagd.timestamp`| a unix timestamp (in seconds) of the time of evaluation |
 
 ## Provider construction
 
