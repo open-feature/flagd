@@ -441,6 +441,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/diegoholiveira/jsonlogic/v3 v3.3.0 h1:XdIxQ+ICFcQB9tVf46cmiCkc5K9MN8Sh/x+XDHL+iXM=
 github.com/diegoholiveira/jsonlogic/v3 v3.3.0/go.mod h1:9oE8z9G+0OMxOoLHF3fhek3KuqD5CBqM0B6XFL08MSg=
+github.com/diegoholiveira/jsonlogic/v3 v3.3.1 h1:XVHpFel6ZTVYiXQlgDrlxJYYDNZoQXP54BR33w2nAJ4=
+github.com/diegoholiveira/jsonlogic/v3 v3.3.1/go.mod h1:9oE8z9G+0OMxOoLHF3fhek3KuqD5CBqM0B6XFL08MSg=
 github.com/emicklei/go-restful/v3 v3.10.1 h1:rc42Y5YTp7Am7CS630D7JmhRjq4UlEUuEKfrDac4bSQ=
 github.com/emicklei/go-restful/v3 v3.10.1/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
