@@ -8,7 +8,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0
-	github.com/diegoholiveira/jsonlogic/v3 v3.3.0
+	github.com/diegoholiveira/jsonlogic/v3 v3.3.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/open-feature-operator v0.2.36
