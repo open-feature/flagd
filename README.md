@@ -25,18 +25,18 @@ Flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-ma
 
 ## Features
 
-- 🌐 OpenFeature compliant and [speaks your language](docs/usage/flagd_providers.md).
-- 🆕 Easy to [extend to new languages](docs/other_resources/creating_providers.md).
+- 🌐 OpenFeature compliant and [speaks your language](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=FlagD).
+- 🆕 Easy to [extend to new languages](https://flagd.dev/reference/providers/).
 - 🔄 Supports multiple data sources simultaneously.
 - 🕒 Feature Flag updates occur in near real-time.
-- 💪 Contains a [powerful and flexible rule targeting engine](docs/configuration/reusable_targeting_rules.md) and [deterministic percentage-based rollouts](docs/configuration/fractional_evaluation.md).
-- 🔦 Flag evaluation statistics and metrics are exposed and compatible with Prometheus.
+- 💪 Contains a [powerful and flexible rule targeting engine](https://flagd.dev/reference/flag-definitions/#targeting-rules) and [deterministic percentage-based rollouts](https://flagd.dev/reference/custom-operations/fractional-operation/).
+- 🔦 Flag evaluation traces and metrics are exposed and compatible with [OpenTelemetry](https://flagd.dev/reference/monitoring/#opentelemetry).
 
 ## ▶️ Quick Start
 
 Experiment with flagd in your browser using [the Killercoda tutorial](https://killercoda.com/open-feature/scenario/flagd-demo) or follow the instructions below to run on your own infrastructure.
 
-1. flagd can be run as a standalone-binary or container. [Download and install flagd or run it as a container](docs/usage/installation_options.md)
+1. flagd can be run as a standalone binary or container. [Download and install flagd or run it as a container](https://flagd.dev/installation/)
 
    Kubernetes-native? flagd can also be run [as part of the Kubernetes Operator](https://github.com/open-feature/open-feature-operator).
 
@@ -49,7 +49,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     ```
 
     Or use docker:
-    _Note - In Windows, use WSL system for both the file location and Docker runtime. Mixed file systems does not
+    _Note - In Windows, use WSL system for both the file location and Docker runtime. Mixed file systems don't
     work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479)_
 
     ```sh
@@ -87,7 +87,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
       --uri file:./etc/flagd/example_flags.flagd.json
     ```
 
-    `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](./docs/reference/sync-configuration.md#uri-patterns).
+    `--uri` can be a local file or any remote endpoint. Use `file:` prefix for local files. eg. `--uri file:/path/to/example_flags.flagd.json`. `gRPC` and `http` have their own requirements. More information can be found [here](https://flagd.dev/concepts/syncs/).
 
     Multiple `--uri` parameters can be specified. In other words, flagd can retrieve flags from multiple sources simultaneously.
 
@@ -118,11 +118,11 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     }
     ```
 
-    Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restarts required.
+    Updates to the underlying flag store (e.g. JSON file) are reflected by flagd in realtime. No restart is required.
 
     flagd also supports boolean, integer, float and object flag types.
 
-4. Now that flagd is running, it is time to integrate into your application. Do this by using [an OpenFeature provider in a language of your choice](https://github.com/open-feature/flagd/blob/main/docs/usage/flagd_providers.md).
+4. Now that flagd is running, it is time to integrate it into your application. Do this by using [an OpenFeature provider in a language of your choice](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=FlagD).
 
 ## 📐 High-level Architecture
 
@@ -130,7 +130,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
 ## 📝 Further Documentation
 
-Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found at [flagd.dev](https://flagd.dev/), or [in this repository](./docs/index.md).
+Further documentation including flagd configuration options, fractional evaluation, targeting rules and flag configuration merging strategies can be found at [flagd.dev](https://flagd.dev/) or [in this repository](./docs/index.md).
 
 ## 🫶 Contributing
 
