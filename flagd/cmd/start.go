@@ -29,7 +29,7 @@ const (
 	sourcesFlagName        = "sources"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
-	docsLinkConfiguration  = "https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md"
+	docsLinkConfiguration  = "https://flagd.dev/reference/flagd-cli/flagd_start/"
 
 	defaultServicePort = 8013
 	defaultMetricsPort = 8014
