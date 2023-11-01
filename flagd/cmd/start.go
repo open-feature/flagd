@@ -29,6 +29,7 @@ const (
 	sourcesFlagName        = "sources"
 	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
+	docsLinkConfiguration  = "https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md"
 
 	defaultServicePort = 8013
 	defaultMetricsPort = 8014
@@ -117,18 +118,18 @@ var startCmd = &cobra.Command{
 		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
 
 		if viper.GetString(syncProviderFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated, see: " +
+				docsLinkConfiguration)
 		}
 
 		if viper.GetString(evaluatorFlagName) != "json" {
-			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated, see: " +
+				docsLinkConfiguration)
 		}
 
 		if viper.GetString(providerArgsFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated. " +
-				"Docs: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md")
+			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated, see: " +
+				docsLinkConfiguration)
 		}
 
 		syncProviders, err := runtime.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))
