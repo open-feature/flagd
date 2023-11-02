@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	mock "github.com/open-feature/flagd/core/pkg/eval/mock"

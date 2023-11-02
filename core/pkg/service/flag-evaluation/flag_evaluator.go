@@ -6,7 +6,7 @@ import (
 	"time"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"

@@ -157,7 +157,7 @@ func (w *responseWriterInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error
 }
 
 // Flush need to exist to be compatible with connect-go.
-// See github.com/bufbuild/connect-go@v1.5.2/protocol_connect.go @ line 135
+// See https://github.com/connectrpc/connect-go/blob/main/protocol_connect.go
 func (w *responseWriterInterceptor) Flush() {
 	f, ok := w.ResponseWriter.(http.Flusher)
 	if !ok {

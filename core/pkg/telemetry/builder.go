@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bufbuild/connect-go"
-	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
+	"connectrpc.com/connect"
+	"connectrpc.com/otelconnect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"

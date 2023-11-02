@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 // WithJSON customizes a connect-go Client or Handler's JSON by exposing MarshalOptions, and UnmarshalOptions
-// See: https://github.com/bufbuild/connect-go/blob/main/codec.go
+// See: https://github.com/connectrpc/connect-go/blob/main/codec.go
 // Heavily inspired by https://github.com/akshayjshah/connectproto
 func WithJSON(marshal protojson.MarshalOptions, unmarshal protojson.UnmarshalOptions) connect.Option {
 	return connect.WithOptions(

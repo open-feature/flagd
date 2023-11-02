@@ -3,11 +3,11 @@ module github.com/open-feature/flagd/core
 go 1.20
 
 require (
-	buf.build/gen/go/open-feature/flagd/bufbuild/connect-go v1.9.0-20230720212818-3675556880a1.1
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.12.0-20231031123731-ac2ec0f39838.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230710190440-2333a9579c1a.1
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20230720212818-3675556880a1.1
-	github.com/bufbuild/connect-go v1.10.0
-	github.com/bufbuild/connect-opentelemetry-go v0.4.0
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20231031123731-ac2ec0f39838.2
+	connectrpc.com/connect v1.12.0
+	connectrpc.com/otelconnect v0.6.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.3.2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
@@ -85,11 +85,9 @@ require (
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
-	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.42.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
