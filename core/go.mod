@@ -9,7 +9,7 @@ require (
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.3.2
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/open-feature-operator v0.2.36
 	github.com/open-feature/schemas v0.2.8
