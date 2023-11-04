@@ -6,7 +6,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.6.7
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
 	go.uber.org/zap v1.26.0
 )
