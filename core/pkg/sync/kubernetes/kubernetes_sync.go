@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
+	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -23,9 +24,9 @@ import (
 )
 
 var (
-	resyncPeriod                     = 1 * time.Minute
-	apiVersion                       = fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version)
-	featureFlagConfigurationResource = v1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	resyncPeriod        = 1 * time.Minute
+	apiVersion          = fmt.Sprintf("%s/%s", v1beta1.GroupVersion.Group, v1beta1.GroupVersion.Version)
+	featureFlagResource = v1beta1.GroupVersion.WithResource("featureflags")
 )
 
 type Sync struct {
@@ -89,7 +90,7 @@ func (k *Sync) Init(_ context.Context) error {
 		return fmt.Errorf("unable to parse uri %s: %w", k.URI, err)
 	}
 
-	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
+	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return fmt.Errorf("unable to v1alpha1 types to scheme: %w", err)
 	}
 
@@ -97,7 +98,7 @@ func (k *Sync) Init(_ context.Context) error {
 	// For more details on resync implications refer to tools/cache/shared_informer.go
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(k.dynamicClient, resyncPeriod, k.namespace, nil)
 
-	k.informer = factory.ForResource(featureFlagConfigurationResource).Informer()
+	k.informer = factory.ForResource(featureFlagResource).Informer()
 
 	return nil
 }
@@ -191,21 +192,29 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 		}
 
 		k.logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
-		return configuration.Spec.FeatureFlagSpec, nil
+		b, err := json.Marshal(configuration.Spec.FlagSpec)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
-	var ff v1alpha1.FeatureFlagConfiguration
+	var ff v1beta1.FeatureFlag
 	err = k.readClient.Get(ctx, client.ObjectKey{
 		Name:      k.crdName,
 		Namespace: k.namespace,
 	}, &ff)
 	if err != nil {
-		return "", fmt.Errorf("unable to fetch FeatureFlagConfiguration %s/%s: %w", k.namespace, k.crdName, err)
+		return "", fmt.Errorf("unable to fetch FeatureFlag %s/%s: %w", k.namespace, k.crdName, err)
 	}
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
-	return ff.Spec.FeatureFlagSpec, nil
+	b, err := json.Marshal(ff.Spec.FlagSpec)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
@@ -299,16 +308,16 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.Obj
 }
 
 // toFFCfg attempts to covert unstructured payload to configurations
-func toFFCfg(object interface{}) (*v1alpha1.FeatureFlagConfiguration, error) {
+func toFFCfg(object interface{}) (*v1beta1.FeatureFlag, error) {
 	u, ok := object.(*unstructured.Unstructured)
 	if !ok {
 		return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
 	}
 
-	var ffObj v1alpha1.FeatureFlagConfiguration
+	var ffObj v1beta1.FeatureFlag
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
 	if err != nil {
-		return nil, fmt.Errorf("unable to convert unstructured to v1alpha1.FeatureFlagConfiguration: %w", err)
+		return nil, fmt.Errorf("unable to convert unstructured to v1beta1.FeatureFlag: %w", err)
 	}
 
 	return &ffObj, nil

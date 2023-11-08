@@ -12,7 +12,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/open-feature-operator/apis/core/v1alpha1"
+	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -26,7 +26,7 @@ import (
 )
 
 var Metadata = v1.TypeMeta{
-	Kind:       "FeatureFlagConfiguration",
+	Kind:       "FeatureFlag",
 	APIVersion: apiVersion,
 }
 
@@ -74,14 +74,14 @@ func Test_parseURI(t *testing.T) {
 }
 
 func Test_toFFCfg(t *testing.T) {
-	validFFCfg := v1alpha1.FeatureFlagConfiguration{
+	validFFCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 	}
 
 	tests := []struct {
 		name    string
 		input   interface{}
-		want    *v1alpha1.FeatureFlagConfiguration
+		want    *v1beta1.FeatureFlag
 		wantErr bool
 	}{
 		{
@@ -120,7 +120,7 @@ func Test_commonHandler(t *testing.T) {
 	cfgNs := "resourceNS"
 	cfgName := "resourceName"
 
-	validFFCfg := v1alpha1.FeatureFlagConfiguration{
+	validFFCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 		ObjectMeta: v1.ObjectMeta{
 			Namespace: cfgNs,
@@ -166,9 +166,9 @@ func Test_commonHandler(t *testing.T) {
 		{
 			name: "simple error - API mismatch",
 			args: args{
-				obj: toUnstructured(t, v1alpha1.FeatureFlagConfiguration{
+				obj: toUnstructured(t, v1beta1.FeatureFlag{
 					TypeMeta: v1.TypeMeta{
-						Kind:       "FeatureFlagConfiguration",
+						Kind:       "FeatureFlag",
 						APIVersion: "someAPIVersion",
 					},
 				}),
@@ -227,7 +227,7 @@ func Test_updateFuncHandler(t *testing.T) {
 	cfgNs := "resourceNS"
 	cfgName := "resourceName"
 
-	validFFCfgOld := v1alpha1.FeatureFlagConfiguration{
+	validFFCfgOld := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 		ObjectMeta: v1.ObjectMeta{
 			Namespace:       cfgNs,
@@ -293,9 +293,9 @@ func Test_updateFuncHandler(t *testing.T) {
 			name: "Simple error - API version mismatch new object",
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
-				newObj: toUnstructured(t, v1alpha1.FeatureFlagConfiguration{
+				newObj: toUnstructured(t, v1beta1.FeatureFlag{
 					TypeMeta: v1.TypeMeta{
-						Kind:       "FeatureFlagConfiguration",
+						Kind:       "FeatureFlag",
 						APIVersion: "someAPIVersion",
 					},
 				}),
@@ -310,9 +310,9 @@ func Test_updateFuncHandler(t *testing.T) {
 		{
 			name: "Simple error - API version mismatch old object",
 			args: args{
-				oldObj: toUnstructured(t, v1alpha1.FeatureFlagConfiguration{
+				oldObj: toUnstructured(t, v1beta1.FeatureFlag{
 					TypeMeta: v1.TypeMeta{
-						Kind:       "FeatureFlagConfiguration",
+						Kind:       "FeatureFlag",
 						APIVersion: "someAPIVersion",
 					},
 				}),
@@ -369,23 +369,25 @@ func Test_updateFuncHandler(t *testing.T) {
 }
 
 func TestSync_fetch(t *testing.T) {
-	flagSpec := "fakeFlagSpec"
+	flagSpec := v1beta1.FlagSpec{
+		Flags: map[string]v1beta1.Flag{},
+	}
 
-	validCfg := v1alpha1.FeatureFlagConfiguration{
+	validCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 		ObjectMeta: v1.ObjectMeta{
 			Namespace:       "resourceNS",
 			Name:            "resourceName",
 			ResourceVersion: "v1",
 		},
-		Spec: v1alpha1.FeatureFlagConfigurationSpec{
-			FeatureFlagSpec: flagSpec,
+		Spec: v1beta1.FeatureFlagSpec{
+			FlagSpec: flagSpec,
 		},
 	}
 
 	type args struct {
 		InformerGetFunc func(key string) (item interface{}, exists bool, err error)
-		ClientResponse  v1alpha1.FeatureFlagConfiguration
+		ClientResponse  v1beta1.FeatureFlag
 		ClientError     error
 	}
 
@@ -403,7 +405,7 @@ func TestSync_fetch(t *testing.T) {
 				},
 			},
 			wantErr: false,
-			want:    flagSpec,
+			want:    `{"flags":{}}`,
 		},
 		{
 			name: "Scenario - get from API if informer cache miss",
@@ -414,7 +416,7 @@ func TestSync_fetch(t *testing.T) {
 				ClientResponse: validCfg,
 			},
 			wantErr: false,
-			want:    flagSpec,
+			want:    `{"flags":{}}`,
 		},
 		{
 			name: "Scenario - error for informer cache read error",
@@ -468,18 +470,20 @@ func TestSync_fetch(t *testing.T) {
 }
 
 func TestSync_watcher(t *testing.T) {
-	flagSpec := "fakeFlagSpec"
+	flagSpec := v1beta1.FeatureFlagSpec{
+		FlagSpec: v1beta1.FlagSpec{
+			Flags: map[string]v1beta1.Flag{},
+		},
+	}
 
-	validCfg := v1alpha1.FeatureFlagConfiguration{
+	validCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 		ObjectMeta: v1.ObjectMeta{
 			Namespace:       "resourceNS",
 			Name:            "resourceName",
 			ResourceVersion: "v1",
 		},
-		Spec: v1alpha1.FeatureFlagConfigurationSpec{
-			FeatureFlagSpec: flagSpec,
-		},
+		Spec: flagSpec,
 	}
 
 	type args struct {
@@ -494,7 +498,7 @@ func TestSync_watcher(t *testing.T) {
 	}{
 		{
 			name: "scenario - create event",
-			want: flagSpec,
+			want: `{"flags":{}}`,
 			args: args{
 				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
 					return toUnstructured(t, validCfg), true, nil
@@ -508,7 +512,7 @@ func TestSync_watcher(t *testing.T) {
 		},
 		{
 			name: "scenario - modify event",
-			want: flagSpec,
+			want: `{"flags":{}}`,
 			args: args{
 				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
 					return toUnstructured(t, validCfg), true, nil
@@ -602,7 +606,7 @@ func TestSync_ReSync(t *testing.T) {
 	ff := &unstructured.Unstructured{}
 	ff.SetUnstructuredContent(getCFG(name, ns))
 	fakeDynamicClient := fake.NewSimpleDynamicClient(s, ff)
-	validFFCfg := &v1alpha1.FeatureFlagConfiguration{
+	validFFCfg := &v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
@@ -727,7 +731,7 @@ func TestNotify(t *testing.T) {
 		"empty": "",
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -740,7 +744,7 @@ func TestNotify(t *testing.T) {
 	old["resourceVersion"] = "newVersion"
 	cfg["metadata"] = old
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -749,7 +753,7 @@ func TestNotify(t *testing.T) {
 		t.Errorf("Expected message %v, got %v", DefaultEventTypeModify, msg)
 	}
 	// delete
-	err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	err = fc.Resource(featureFlagResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -763,7 +767,7 @@ func TestNotify(t *testing.T) {
 		"featureFlagSpec": int64(12), // we expect string here
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -771,11 +775,11 @@ func TestNotify(t *testing.T) {
 		"bump": "1",
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	err = fc.Resource(featureFlagConfigurationResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
+	err = fc.Resource(featureFlagResource).Namespace(ns).Delete(context.TODO(), name, v1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -839,14 +843,14 @@ func Test_NewK8sSync(t *testing.T) {
 }
 
 func newFakeReadClient(objs ...client.Object) client.Client {
-	_ = v1alpha1.AddToScheme(scheme.Scheme)
+	_ = v1beta1.AddToScheme(scheme.Scheme)
 	return fakeClient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
 }
 
 func getCFG(name, namespace string) map[string]interface{} {
 	return map[string]interface{}{
 		"apiVersion": "core.openfeature.dev/v1alpha1",
-		"kind":       "FeatureFlagConfiguration",
+		"kind":       "FeatureFlag",
 		"metadata": map[string]interface{}{
 			"name":      name,
 			"namespace": namespace,
@@ -879,7 +883,7 @@ type MockClient struct {
 	client.Reader
 	clientErr error
 
-	getResponse v1alpha1.FeatureFlagConfiguration
+	getResponse v1beta1.FeatureFlag
 }
 
 func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
@@ -889,9 +893,9 @@ func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object
 	}
 
 	// else try returning response
-	cfg, ok := obj.(*v1alpha1.FeatureFlagConfiguration)
+	cfg, ok := obj.(*v1beta1.FeatureFlag)
 	if !ok {
-		return errors.New("must contain a pointer typed v1alpha1.FeatureFlagConfiguration")
+		return errors.New("must contain a pointer typed v1beta1.FeatureFlag")
 	}
 
 	*cfg = m.getResponse
