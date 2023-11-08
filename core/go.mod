@@ -11,7 +11,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.3.2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
-	github.com/open-feature/open-feature-operator v0.2.37-0.20231107131815-dc5487eb2f21
+	github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.17.0
 	github.com/robfig/cron v1.2.0

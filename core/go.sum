@@ -636,8 +636,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/onsi/ginkgo/v2 v2.11.0 h1:WgqUCUt/lT6yXoQ8Wef0fsNn5cAuMK7+KT9UFRz2tcU=
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
-github.com/open-feature/open-feature-operator v0.2.37-0.20231107131815-dc5487eb2f21 h1:QAm0XXULHhstACLm/eZpDe6f4xqeE6NNe52LLYSpcfg=
-github.com/open-feature/open-feature-operator v0.2.37-0.20231107131815-dc5487eb2f21/go.mod h1:jnqE1ZxGmJ6GsnhBL3IiTvs+5wuKFhfuXzXkj3FsB9Q=
+github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5 h1:ONgFdsDH0uAS3qrmZEQjYqFtqKw/MCkbbQSE33bGBsU=
+github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5/go.mod h1:nM7T4oGQukeGmcAFkQm0uwt8WFdDb5hYPjXkm7pHhX4=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
 github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
