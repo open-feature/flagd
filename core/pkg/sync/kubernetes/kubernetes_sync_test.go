@@ -849,7 +849,7 @@ func newFakeReadClient(objs ...client.Object) client.Client {
 
 func getCFG(name, namespace string) map[string]interface{} {
 	return map[string]interface{}{
-		"apiVersion": "core.openfeature.dev/v1alpha1",
+		"apiVersion": "core.openfeature.dev/v1beta1",
 		"kind":       "FeatureFlag",
 		"metadata": map[string]interface{}{
 			"name":      name,

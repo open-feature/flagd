@@ -26,7 +26,7 @@ flagd start [flags]
   -s, --sources string                      JSON representation of an array of SourceConfig objects. This object contains 2 required fields, uri (string) and provider (string). Documentation for this object: https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation
   -y, --sync-provider string                DEPRECATED: Set a sync provider e.g. filepath or remote
   -a, --sync-provider-args stringToString   DEPRECATED: Sync provider arguments as key values separated by = (default [])
-  -f, --uri .yaml/.yml/.json                Set a sync provider uri to read data from, this can be a filepath,url (http and grpc) or FeatureFlagConfiguration. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
+  -f, --uri .yaml/.yml/.json                Set a sync provider uri to read data from, this can be a filepath,url (http and grpc) or FeatureFlag. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
 
 ### Options inherited from parent commands

@@ -91,7 +91,7 @@ func (k *Sync) Init(_ context.Context) error {
 	}
 
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
-		return fmt.Errorf("unable to v1alpha1 types to scheme: %w", err)
+		return fmt.Errorf("unable to v1beta1 types to scheme: %w", err)
 	}
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
@@ -194,7 +194,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 		k.logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
 		b, err := json.Marshal(configuration.Spec.FlagSpec)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
 		}
 		return string(b), nil
 	}
@@ -212,7 +212,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
 	b, err := json.Marshal(ff.Spec.FlagSpec)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
 	}
 	return string(b), nil
 }
