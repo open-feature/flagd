@@ -40,12 +40,12 @@ spec:
     - '[{"uri":"grpc://flagd-proxy-svc.flagd-proxy.svc.cluster.local:8015","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
     - --debug
 ---
-apiVersion: core.openfeature.dev/v1alpha2
-kind: FeatureFlagConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlag
 metadata:
   name: end-to-end
 spec:
-  featureFlagSpec:
+  flagSpec:
     flags:
       color:
         state: ENABLED
