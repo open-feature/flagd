@@ -13,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -911,4 +912,21 @@ type MockInformer struct {
 
 func (m MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
+}
+
+func TestMeasure(t *testing.T) {
+	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
+		Spec: v1beta1.FeatureFlagSpec{
+			FlagSpec: v1beta1.FlagSpec{
+				Flags: map[string]v1beta1.Flag{
+					"flag": {
+						DefaultVariant: "kubernetes",
+					},
+				},
+			},
+		},
+	})
+
+	require.Nil(t, err)
+	require.Equal(t, "{\"flags\":{\"flag\":{\"state\":\"\",\"variants\":null,\"defaultVariant\":\"kubernetes\"}}}", res)
 }

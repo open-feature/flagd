@@ -192,11 +192,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 		}
 
 		k.logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
-		b, err := json.Marshal(configuration.Spec.FlagSpec)
-		if err != nil {
-			return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
-		}
-		return string(b), nil
+		return marshallFeatureFlagSpec(configuration)
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
@@ -210,11 +206,7 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	}
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
-	b, err := json.Marshal(ff.Spec.FlagSpec)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
-	}
-	return string(b), nil
+	return marshallFeatureFlagSpec(&ff)
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
@@ -357,4 +349,12 @@ func k8sClusterConfig() (*rest.Config, error) {
 	}
 
 	return clusterConfig, nil
+}
+
+func marshallFeatureFlagSpec(ff *v1beta1.FeatureFlag) (string, error) {
+	b, err := json.Marshal(ff.Spec.FlagSpec)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
+	}
+	return string(b), nil
 }
