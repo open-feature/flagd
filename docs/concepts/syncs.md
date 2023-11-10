@@ -50,18 +50,18 @@ See [sync source](../reference/sync-configuration.md#source-configuration) confi
 ### Kubernetes sync
 
 The Kubernetes sync provider allows flagd to connect to a Kubernetes cluster and evaluate flags against a specified
-FeatureFlagConfiguration resource as defined within
-the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1alpha1/featureflagconfiguration_types.go)
+FeatureFlag resource as defined within
+the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1beta1/featureflag_types.go)
 spec.
 This configuration is best used in conjunction with the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator).
 
-To use an existing FeatureFlagConfiguration custom resource, start flagd with the following command:
+To use an existing FeatureFlag custom resource, start flagd with the following command:
 
 ```shell
 flagd start --uri core.openfeature.dev/default/my_example
 ```
 
-In this example, `default/my_example` expected to be a valid FeatureFlagConfiguration resource, where `default` is the
+In this example, `default/my_example` expected to be a valid FeatureFlag resource, where `default` is the
 namespace and `my_example` being the resource name.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 

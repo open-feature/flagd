@@ -27,14 +27,14 @@ Create a namespace to house your flags:
 kubectl create namespace flags
 ```
 
-Next, define your feature flag(s) using the [FeatureFlagConfiguration](./crds/featureflagconfiguration.md) custom resource definition (CRD).
+Next, define your feature flag(s) using the [FeatureFlag](./crds/featureflag.md) custom resource definition (CRD).
 
 This example specifies one flag called `foo` which has two variants `bar` and `baz`. The `defaultVariant` is `bar`.
 
 ```bash
 kubectl apply -n flags -f - <<EOF
-apiVersion: core.openfeature.dev/v1alpha2
-kind: FeatureFlagConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlag
 metadata:
   name: sample-flags
 spec:
@@ -52,7 +52,7 @@ EOF
 
 Next, tell the OpenFeature operator where to find flags.
 
-Do so by creating a [FlagSourceConfiguration](./crds/flagsourceconfiguration.md) CRD.
+Do so by creating a [FeatureFlagSource](./crds/featureflagsource.md) CRD.
 
 This example specifies that the CRD called `sample-flags` (created above) can be found in the `flags` namespace and that the provider is `kubernetes`.
 
@@ -60,10 +60,10 @@ The `port` parameter defines the port on which the flagd API will be made availa
 
 ```bash
 kubectl apply -n flags -f - <<EOF
-apiVersion: core.openfeature.dev/v1alpha3
-kind: FlagSourceConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlagSource
 metadata:
-  name: flag-source-configuration
+  name: feature-flag-source
 spec:
   sources:
   - source: flags/sample-flags
@@ -77,11 +77,11 @@ EOF
 The operator looks for `Deployment` objects annotated with particular annotations.
 
 - `openfeature.dev/enabled: "true"` enables this deployment for flagd
-- `openfeature.dev/flagsourceconfiguration: "flags/flag-source-configuration"` makes the given feature flag sources available to this deployment
+- `openfeature.dev/featureflagsource: "flags/feature-flag-source"` makes the given feature flag sources available to this deployment
 
 When these two annotations are added, the OpenFeature operator will inject a sidecar into your workload.
 
-flagd will then be available via `http://localhost` the port specified in the `FlagSourceConfiguration` (e.g. `8080`)
+flagd will then be available via `http://localhost` the port specified in the `FeatureFlagSource` (e.g. `8080`)
 
 Your Deployment YAML might look like this:
 
@@ -102,7 +102,7 @@ spec:
       annotations:
         # here are the annotations for OpenFeature Operator
         openfeature.dev/enabled: "true"
-        openfeature.dev/flagsourceconfiguration: "flags/flag-source-configuration"
+        openfeature.dev/featureflagsource: "flags/feature-flag-source"
     spec:
       containers:
         - name: busybox

@@ -1,12 +1,12 @@
 # Feature Flag Configuration
 
-The `FeatureFlagConfiguration` version `v1alpha2` CRD defines a CR with the following example structure:
+The `FeatureFlag` version `v1beta1` CRD defines a CR with the following example structure:
 
 ```yaml
 apiVersion: core.openfeature.dev/v1alpha2
-kind: FeatureFlagConfiguration
+kind: FeatureFlag
 metadata:
-  name: featureflagconfiguration-sample
+  name: featureflag-sample
 spec:
   featureFlagSpec:
     flags:
