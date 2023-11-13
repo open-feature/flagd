@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 )
 
 type NotificationType string

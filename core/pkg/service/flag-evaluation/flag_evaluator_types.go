@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
