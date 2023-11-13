@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.6.8](https://github.com/open-feature/flagd/compare/core/v0.6.7...core/v0.6.8) (2023-11-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update golang.org/x/exp digest to 9a3e603 ([#929](https://github.com/open-feature/flagd/issues/929)) ([f8db930](https://github.com/open-feature/flagd/commit/f8db930da22f52ffddd4533bdbaf8188f89250d0))
+* **deps:** update kubernetes packages to v0.28.3 ([#974](https://github.com/open-feature/flagd/issues/974)) ([d7d205f](https://github.com/open-feature/flagd/commit/d7d205f457e46de3385610ee27db6dfd41323cd1))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.3.1 ([#971](https://github.com/open-feature/flagd/issues/971)) ([f1a40b8](https://github.com/open-feature/flagd/commit/f1a40b862e7be69b542ab65a645c29c56b8fe307))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.3.2 ([#975](https://github.com/open-feature/flagd/issues/975)) ([b53c14a](https://github.com/open-feature/flagd/commit/b53c14afabd6b3f2403d9e2ea2bd26c8f1cfe8e4))
+* **deps:** update module github.com/fsnotify/fsnotify to v1.7.0 ([#981](https://github.com/open-feature/flagd/issues/981)) ([727b9d2](https://github.com/open-feature/flagd/commit/727b9d2046ccd998d2ab721df10d88b84445494f))
+* **deps:** update module golang.org/x/mod to v0.14.0 ([#991](https://github.com/open-feature/flagd/issues/991)) ([87bc12d](https://github.com/open-feature/flagd/commit/87bc12dd968e9fcf524eb0b69462222f29c6ba34))
+* **deps:** update module golang.org/x/net to v0.17.0 [security] ([#963](https://github.com/open-feature/flagd/issues/963)) ([7f54bd1](https://github.com/open-feature/flagd/commit/7f54bd1fb3fdbb7dff3a7b097f804ce843bb6e3a))
+* **deps:** update module golang.org/x/net to v0.18.0 ([#1000](https://github.com/open-feature/flagd/issues/1000)) ([e9347cc](https://github.com/open-feature/flagd/commit/e9347cc88a4174c984432571710588ac57665cb7))
+* **deps:** update module golang.org/x/sync to v0.5.0 ([#992](https://github.com/open-feature/flagd/issues/992)) ([bd24536](https://github.com/open-feature/flagd/commit/bd24536722f3c3c99b5946de0b62dba603992ba7))
+* **deps:** update module google.golang.org/grpc to v1.59.0 ([#972](https://github.com/open-feature/flagd/issues/972)) ([7d0f1f2](https://github.com/open-feature/flagd/commit/7d0f1f225ebfe83681c83cf38bf5c253a7b0ebef))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.16.3 ([#976](https://github.com/open-feature/flagd/issues/976)) ([b33c9c9](https://github.com/open-feature/flagd/commit/b33c9c97cf21eb317e4b0b1f452571d85de145b1))
+* **deps:** update opentelemetry-go monorepo ([#1001](https://github.com/open-feature/flagd/issues/1001)) ([9798aeb](https://github.com/open-feature/flagd/commit/9798aeb248764400128048b65ba27baba71b07e6))
+
+
+### 🔄 Refactoring
+
+* migrate to connectrpc/connect-go ([#990](https://github.com/open-feature/flagd/issues/990)) ([7dd5b2b](https://github.com/open-feature/flagd/commit/7dd5b2b4c284481bcba5a9c45bd6c85ad1dc6d33))
+
 ## [0.6.7](https://github.com/open-feature/flagd/compare/core/v0.6.6...core/v0.6.7) (2023-10-12)
 
 
