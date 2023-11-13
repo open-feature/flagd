@@ -140,4 +140,4 @@ jobs:
           -f file:${{ github.workspace }}/test-harness/flags/zero-flags.json &
 
       - name: Run evaluation test suite
-        run: go clean -testcache && go test -cover ./flagd/tests/integration
+        run: go clean -testcache && go test -cover ./test/integration
