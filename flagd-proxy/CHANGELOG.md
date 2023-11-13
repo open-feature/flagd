@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.13](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.12...flagd-proxy/v0.2.13) (2023-11-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.7 ([#966](https://github.com/open-feature/flagd/issues/966)) ([c038a3a](https://github.com/open-feature/flagd/commit/c038a3a3700eee82afa3e2cb2484614ec6ed566c))
+* **deps:** update module github.com/spf13/cobra to v1.8.0 ([#993](https://github.com/open-feature/flagd/issues/993)) ([05c7870](https://github.com/open-feature/flagd/commit/05c7870cc7662117f85e9c6528508327ae320b83))
+
+
+### 🔄 Refactoring
+
+* migrate to connectrpc/connect-go ([#990](https://github.com/open-feature/flagd/issues/990)) ([7dd5b2b](https://github.com/open-feature/flagd/commit/7dd5b2b4c284481bcba5a9c45bd6c85ad1dc6d33))
+
 ## [0.2.12](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.2.11...flagd-proxy/v0.2.12) (2023-10-12)
 
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.8](https://github.com/open-feature/flagd/compare/flagd/v0.6.7...flagd/v0.6.8) (2023-11-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.6.7 ([#966](https://github.com/open-feature/flagd/issues/966)) ([c038a3a](https://github.com/open-feature/flagd/commit/c038a3a3700eee82afa3e2cb2484614ec6ed566c))
+* **deps:** update module github.com/open-feature/go-sdk to v1.8.0 ([#994](https://github.com/open-feature/flagd/issues/994)) ([266cf9f](https://github.com/open-feature/flagd/commit/266cf9f82ee8b4a4ba8ad1c0594388d2987a8c4b))
+* **deps:** update module github.com/open-feature/go-sdk-contrib/tests/flagd to v1.3.1 ([#760](https://github.com/open-feature/flagd/issues/760)) ([30dda72](https://github.com/open-feature/flagd/commit/30dda72145c05de298140f880238ed37be73631a))
+* **deps:** update module github.com/spf13/cobra to v1.8.0 ([#993](https://github.com/open-feature/flagd/issues/993)) ([05c7870](https://github.com/open-feature/flagd/commit/05c7870cc7662117f85e9c6528508327ae320b83))
+
+
+### 🧹 Chore
+
+* fix lint errors ([#987](https://github.com/open-feature/flagd/issues/987)) ([0c3af2d](https://github.com/open-feature/flagd/commit/0c3af2da01f91f6fc6d5ac78a33dd79032537ea9))
+
+
+### 🔄 Refactoring
+
+* migrate to connectrpc/connect-go ([#990](https://github.com/open-feature/flagd/issues/990)) ([7dd5b2b](https://github.com/open-feature/flagd/commit/7dd5b2b4c284481bcba5a9c45bd6c85ad1dc6d33))
+
 ## [0.6.7](https://github.com/open-feature/flagd/compare/flagd/v0.6.6...flagd/v0.6.7) (2023-10-12)
 
 
