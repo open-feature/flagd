@@ -27,7 +27,7 @@ func TestJsonEvaluator(t *testing.T) {
 		}),
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"../../../test-harness/gherkin/flagd-json-evaluator.feature"},
+			Paths:    []string{"../../test-harness/gherkin/flagd-json-evaluator.feature"},
 			TestingT: t, // Testing instance that will run subtests.
 			Strict:   true,
 		},

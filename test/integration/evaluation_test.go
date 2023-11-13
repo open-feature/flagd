@@ -32,7 +32,7 @@ func TestEvaluation(t *testing.T) {
 		}),
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"../../../spec/specification/assets/gherkin/evaluation.feature"},
+			Paths:    []string{"../../spec/specification/assets/gherkin/evaluation.feature"},
 			TestingT: t, // Testing instance that will run subtests.
 			Strict:   true,
 		},
