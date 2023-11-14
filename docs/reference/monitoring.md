@@ -10,14 +10,14 @@ description: monitoring and telemetry flagd and flagd providers
 
 Flagd exposes HTTP liveness and readiness probes.
 These probes can be used for K8s deployments.
-With default start-up configurations, these probes are exposed on the metrics port (default: 8014) at the following URLs,
+With default start-up configurations, these probes are exposed on the management port (default: 8014) at the following URLs,
 
 - Liveness: <http://localhost:8014/healthz>
 - Readiness: <http://localhost:8014/readyz>
 
 ### gRPC
 
-Flagd exposes a [standard gRPC liveness check](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) on the metrics port (default: 8014).
+Flagd exposes a [standard gRPC liveness check](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) on the management port (default: 8014).
 
 ### Definition of Liveness
 

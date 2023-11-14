@@ -105,7 +105,7 @@ func (s *Server) startServer() error {
 }
 
 func (s *Server) startMetricsServer() error {
-	s.Logger.Info(fmt.Sprintf("binding metrics to %d", s.config.MetricsPort))
+	s.Logger.Info(fmt.Sprintf("binding metrics to %d", s.config.ManagementPort))
 
 	grpc := grpc.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
@@ -134,7 +134,7 @@ func (s *Server) startMetricsServer() error {
 	})
 
 	s.metricsServer = &http.Server{
-		Addr:              fmt.Sprintf(":%d", s.config.MetricsPort),
+		Addr:              fmt.Sprintf(":%d", s.config.ManagementPort),
 		ReadHeaderTimeout: 3 * time.Second,
 		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}

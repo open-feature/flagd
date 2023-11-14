@@ -19,7 +19,8 @@ const (
 	evaluatorFlagName      = "evaluator"
 	logFormatFlagName      = "log-format"
 	metricsExporter        = "metrics-exporter"
-	metricsPortFlagName    = "metrics-port"
+	metricsPortFlagName    = "metrics-port" // deprecated
+	managementPortFlagName = "management-port"
 	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
 	providerArgsFlagName   = "sync-provider-args"
@@ -31,8 +32,8 @@ const (
 	uriFlagName            = "uri"
 	docsLinkConfiguration  = "https://flagd.dev/reference/flagd-cli/flagd_start/"
 
-	defaultServicePort = 8013
-	defaultMetricsPort = 8014
+	defaultServicePort    = 8013
+	defaultManagementPort = 8014
 )
 
 func init() {
@@ -41,7 +42,8 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-	flags.Int32P(metricsPortFlagName, "m", defaultMetricsPort, "Port to serve metrics on")
+	flags.Int32(metricsPortFlagName, defaultManagementPort, "DEPRECATED: Superseded by --management-port.")
+	flags.Int32P(managementPortFlagName, "m", defaultManagementPort, "Port for management operations")
 	flags.Int32P(portFlagName, "p", defaultServicePort, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
@@ -70,7 +72,7 @@ func init() {
 			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
 			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
 	)
-	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json ")
+	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
 		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to"+
 		" be present")
@@ -83,6 +85,7 @@ func init() {
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
+	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
@@ -132,6 +135,11 @@ var startCmd = &cobra.Command{
 				docsLinkConfiguration)
 		}
 
+		if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
+			rtLogger.Warn("DEPRECATED: The --metrics-port flag has been deprecated, see: " +
+				docsLinkConfiguration)
+		}
+
 		syncProviders, err := runtime.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))
 		if err != nil {
 			log.Fatal(err)
@@ -151,16 +159,21 @@ var startCmd = &cobra.Command{
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
+		// If --management-port is set use that value. If not and
+		// --metrics-port is set use that value. Otherwise use the default
+		// value.
+		managementPort := uint16(defaultManagementPort)
+		if viper.GetUint16(managementPortFlagName) != defaultManagementPort {
+			managementPort = viper.GetUint16(managementPortFlagName)
+		} else if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
+			managementPort = viper.GetUint16(metricsPortFlagName)
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:           viper.GetStringSlice(corsFlagName),
-			MetricExporter: viper.GetString(metricsExporter),
-			MetricsPort: getPortValueOrDefault(
-				metricsPortFlagName,
-				viper.GetUint16(metricsPortFlagName),
-				defaultMetricsPort,
-				rtLogger,
-			),
+			CORS:             viper.GetStringSlice(corsFlagName),
+			MetricExporter:   viper.GetString(metricsExporter),
+			ManagementPort:   managementPort,
 			OtelCollectorURI: viper.GetString(otelCollectorURI),
 			ServiceCertPath:  viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:   viper.GetString(serverKeyPathFlagName),

@@ -15,9 +15,10 @@ flagd start [flags]
   -C, --cors-origin strings                 CORS allowed origins, * will allow all origins
   -e, --evaluator string                    DEPRECATED: Set an evaluator e.g. json, yaml/yml.Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally) (default "json")
   -h, --help                                help for start
-  -z, --log-format string                   Set the logging format, e.g. console or json  (default "console")
+  -z, --log-format string                   Set the logging format, e.g. console or json (default "console")
+  -m, --management-port int32               Port for management operations (default 8014)
   -t, --metrics-exporter string             Set the metrics exporter. Default(if unset) is Prometheus. Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to be present
-  -m, --metrics-port int32                  Port to serve metrics on (default 8014)
+      --metrics-port int32                  DEPRECATED: Superseded by --management-port. (default 8014)
   -o, --otel-collector-uri string           Set the grpc URI of the OpenTelemetry collector for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.
   -p, --port int32                          Port to listen on (default 8013)
   -c, --server-cert-path string             Server side tls certificate path
