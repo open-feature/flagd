@@ -87,10 +87,10 @@ If no namespace is provided, it is assumed that the CR is within the same namesp
 
 In this example, 2 CRs are being used to configure the injected container (by default the operator uses the `flagd:main` image), `config-A` (which is assumed to be in the namespace `test-ns`) and `config-B` from the `test-ns-2` namespace, with `config-B` taking precedence in the configuration merge.
 
-The `FeatureFlagSource` version `v1alpha3` CRD defines a CR with the following example structure, the documentation for this CRD can be found [here](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagsource):
+The `FeatureFlagSource` version `v1beta1` CRD defines a CR with the following example structure, the documentation for this CRD can be found [here](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagsource):
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha3
+apiVersion: core.openfeature.dev/v1beta1
 kind: FeatureFlagSource
 metadata:
     name: flag-source-sample
@@ -137,7 +137,7 @@ An example of this behavior:
 Config-A:
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha2
+apiVersion: core.openfeature.dev/v1beta1
 kind: FeatureFlagSource
 metadata:
     name: config-A
@@ -149,7 +149,7 @@ spec:
 Config-B:
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha2
+apiVersion: core.openfeature.dev/v1beta1
 kind: FeatureFlagSource
 metadata:
     name: config-B

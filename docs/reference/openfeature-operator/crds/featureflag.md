@@ -3,7 +3,7 @@
 The `FeatureFlag` version `v1beta1` CRD defines a CR with the following example structure:
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha2
+apiVersion: core.openfeature.dev/v1beta1
 kind: FeatureFlag
 metadata:
   name: featureflag-sample
