@@ -92,8 +92,8 @@ nav:
         - 'String Comparison Specification': 'reference/specifications/custom-operations/string-comparison-operation-spec.md'
     - 'OpenFeature Operator':
       - 'Installation': 'reference/openfeature-operator/installation.md'
-      - 'FeatureFlagConfiguration': 'reference/openfeature-operator/crds/featureflagconfiguration.md'
-      - 'FlagSourceConfiguration': 'reference/openfeature-operator/crds/flagsourceconfiguration.md'
+      - 'FeatureFlag': 'reference/openfeature-operator/crds/featureflag.md'
+      - 'FeatureFlagSource': 'reference/openfeature-operator/crds/featureflagsource.md'
     - 'Naming': 'reference/naming.md'
   - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'

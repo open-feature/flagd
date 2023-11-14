@@ -2,7 +2,7 @@
 
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
-The kube flagd proxy acts as a pub sub for deployed flagd sidecar containers to subscribe to change events in FeatureFlagConfiguration CRs.
+The kube flagd proxy acts as a pub sub for deployed flagd sidecar containers to subscribe to change events in FeatureFlag CRs.
 <!-- markdownlint-disable MD033 -->
 <p align="center">
     <img src="../images/flagd-proxy.png" width="650">
@@ -40,12 +40,12 @@ spec:
     - '[{"uri":"grpc://flagd-proxy-svc.flagd-proxy.svc.cluster.local:8015","provider":"grpc","selector":"core.openfeature.dev/NAMESPACE/NAME"}]'
     - --debug
 ---
-apiVersion: core.openfeature.dev/v1alpha2
-kind: FeatureFlagConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlag
 metadata:
   name: end-to-end
 spec:
-  featureFlagSpec:
+  flagSpec:
     flags:
       color:
         state: ENABLED

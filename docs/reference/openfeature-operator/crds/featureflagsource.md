@@ -1,23 +1,23 @@
-# FlagSourceConfigurations
+# FeatureFlagSources
 
-`FlagSourceConfiguration` support multiple flag sources. Sources are configured as a list and given below are supported sources and their configurations,
+`FeatureFlagSource` support multiple flag sources. Sources are configured as a list and given below are supported sources and their configurations,
 
-## kubernetes aka `FeatureFlagConfiguration`
+## kubernetes aka `FeatureFlag`
 
-This is `FeatureFlagConfiguration` custom resource backed flagd feature flag definition.
-Read more on the custom resource at the dedicated documentation of [FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag_configuration.md)
+This is `FeatureFlag` custom resource backed flagd feature flag definition.
+Read more on the custom resource at the dedicated documentation of [FeatureFlag](https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag_configuration.md)
 
-To refer this custom resource in `FlagSourceConfiguration`, provider type `kubernetes` is used as below example,
+To refer this custom resource in `FlagSource`, provider type `kubernetes` is used as below example,
 
 ```yaml
 sources:                        
-  - source: flags/sample-flags  # FeatureFlagConfiguration - namespace/custom_resource_name
-    provider: kubernetes        # kubernetes flag source backed by FeatureFlagConfiguration custom resource
+  - source: flags/sample-flags  # FeatureFlag - namespace/custom_resource_name
+    provider: kubernetes        # kubernetes flag source backed by FeatureFlag custom resource
 ```
 
 ## flagd-proxy
 
-`flagd-proxy` is an alternative to direct resource access on `FeatureFlagConfiguration` custom resources.
+`flagd-proxy` is an alternative to direct resource access on `FeatureFlag` custom resources.
 This source type is useful when there is a need for restricting workload permissions and/or to reduce k8s API load.
 
 Read more about proxy approach to access kubernetes resources: [flagd-proxy](https://github.com/open-feature/open-feature-operator/blob/main/docs/flagd_proxy.md)
@@ -60,7 +60,7 @@ sources:
 
 ## Sidecar configurations
 
-`FlagSourceConfiguration` further allows to provide configurations to the injected flagd sidecar.
+`FeatureFlagSource` further allows to provide configurations to the injected flagd sidecar.
 Table given below is non-exhaustive list of overriding options,
 
 | Configuration | Explanation                   | Default                    |
@@ -82,16 +82,16 @@ If no namespace is provided, it is assumed that the CR is within the same namesp
         namespace: test-ns
         annotations:
             openfeature.dev/enabled: "true"
-            openfeature.dev/flagsourceconfiguration: "config-A, test-ns-2/config-B"
+            openfeature.dev/featureflagsource: "config-A, test-ns-2/config-B"
 ```
 
 In this example, 2 CRs are being used to configure the injected container (by default the operator uses the `flagd:main` image), `config-A` (which is assumed to be in the namespace `test-ns`) and `config-B` from the `test-ns-2` namespace, with `config-B` taking precedence in the configuration merge.
 
-The `FlagSourceConfiguration` version `v1alpha3` CRD defines a CR with the following example structure, the documentation for this CRD can be found [here](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#flagsourceconfiguration):
+The `FeatureFlagSource` version `v1beta1` CRD defines a CR with the following example structure, the documentation for this CRD can be found [here](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagsource):
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha3
-kind: FlagSourceConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlagSource
 metadata:
     name: flag-source-sample
 spec:
@@ -114,15 +114,15 @@ spec:
     debugLogging: false
 ```
 
-The relevant `FlagSourceConfigurations` are passed to the operator by setting the `openfeature.dev/flagsourceconfiguration` annotation, and is responsible for providing the full configuration of the injected sidecar.
+The relevant `FeatureFlagSources` are passed to the operator by setting the `openfeature.dev/featureflagsource` annotation, and is responsible for providing the full configuration of the injected sidecar.
 
 ## Configuration Merging
 
-When multiple `FlagSourceConfigurations` are provided, the configurations are merged. The last `CR` takes precedence over the first, with any configuration from the deprecated `FlagDSpec` field of the `FeatureFlagConfiguration` CRD taking the lowest priority.
+When multiple `FeatureFlagSources` are provided, the configurations are merged. The last `CR` takes precedence over the first, with any configuration from the deprecated `FlagDSpec` field of the `FeatureFlag` CRD taking the lowest priority.
 
 ```mermaid
 flowchart LR
-    FlagSourceConfiguration-values  -->|highest priority| environment-variables -->|lowest priority| defaults
+    FeatureFlagSource-values  -->|highest priority| environment-variables -->|lowest priority| defaults
 ```
 
 An example of this behavior:
@@ -131,14 +131,14 @@ An example of this behavior:
     metadata:
         annotations:
             openfeature.dev/enabled: "true"
-            openfeature.dev/flagsourceconfiguration:"config-A, config-B"
+            openfeature.dev/featureflagsource:"config-A, config-B"
 ```
 
 Config-A:
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha2
-kind: FlagSourceConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlagSource
 metadata:
     name: config-A
 spec:
@@ -149,8 +149,8 @@ spec:
 Config-B:
 
 ```yaml
-apiVersion: core.openfeature.dev/v1alpha2
-kind: FlagSourceConfiguration
+apiVersion: core.openfeature.dev/v1beta1
+kind: FeatureFlagSource
 metadata:
     name: config-B
 spec:

@@ -21,7 +21,7 @@ in-process flagd provider via a gRPC client connection to a sync server, such as
 
 An implementation of an in-process flagd-provider must accept the following environment variables which determine the sync source:
 
-- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1alpha2.FeatureFlagConfiguration](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflagconfiguration-1) Custom Resource containing the flag definition.
+- `FLAGD_SOURCE_URI`: The URI identifying the sync source. Depending on the sync provider type, this can be the URI of a gRPC service providing the `sync` API required by the in-process flagd provider, or the name of a [core.openfeature.dev/v1beta1.FeatureFlag](https://github.com/open-feature/open-feature-operator/blob/main/docs/crds.md#featureflag-1) Custom Resource containing the flag definition.
 - `FLAGD_SOURCE_PROVIDER_TYPE`: The type of the provider. E.g. `grpc` or `kubernetes`.
 - `FLAGD_SOURCE_SELECTOR`: Optional selector for the feature flag definition of interest. This is used as a `selector` for the flagd-proxie's sync API to identify a flag definition within a collection of feature flag definitions.
 
