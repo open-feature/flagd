@@ -200,7 +200,7 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 }
 
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
-	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.MetricsPort))
+	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.ManagementPort))
 
 	grpc := grpc.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
@@ -230,7 +230,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 
 	s.metricsServerMtx.Lock()
 	s.metricsServer = &http.Server{
-		Addr:              fmt.Sprintf(":%d", svcConf.MetricsPort),
+		Addr:              fmt.Sprintf(":%d", svcConf.ManagementPort),
 		ReadHeaderTimeout: 3 * time.Second,
 		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}
