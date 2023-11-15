@@ -64,6 +64,10 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l, Debug)
 
+		if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
+			logger.Warn("DEPRECATED: The --metrics-port flag has been deprecated and is superseded by --management-port.")
+		}
+
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 		syncStore := syncStore.NewSyncStore(ctx, logger)
