@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-feature/flagd/compare/core/v0.6.8...core/v0.7.0) (2023-11-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* OFO APIs were updated to version v1beta1, since they are more stable now. Resources of the alpha versions are no longer supported in flagd or flagd-proxy.
+
+### ✨ New Features
+
+* support OFO v1beta1 API ([#997](https://github.com/open-feature/flagd/issues/997)) ([bb6f5bf](https://github.com/open-feature/flagd/commit/bb6f5bf0fc382ade75d80a34d209beaa2edc459d))
+
 ## [0.6.8](https://github.com/open-feature/flagd/compare/core/v0.6.7...core/v0.6.8) (2023-11-13)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-feature/flagd/compare/flagd/v0.6.8...flagd/v0.7.0) (2023-11-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* OFO APIs were updated to version v1beta1, since they are more stable now. Resources of the alpha versions are no longer supported in flagd or flagd-proxy.
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/go-sdk-contrib/providers/flagd to v0.1.18 ([#1011](https://github.com/open-feature/flagd/issues/1011)) ([90d4e4e](https://github.com/open-feature/flagd/commit/90d4e4e7d9db9e21fa38d96fdecb81ab78868732))
+
+
+### ✨ New Features
+
+* support OFO v1beta1 API ([#997](https://github.com/open-feature/flagd/issues/997)) ([bb6f5bf](https://github.com/open-feature/flagd/commit/bb6f5bf0fc382ade75d80a34d209beaa2edc459d))
+
+
+### 🧹 Chore
+
+* move e2e tests to test ([#1005](https://github.com/open-feature/flagd/issues/1005)) ([a94b639](https://github.com/open-feature/flagd/commit/a94b6399e529ca03c6034eb86ec4028d7e8c2a82))
+
 ## [0.6.8](https://github.com/open-feature/flagd/compare/flagd/v0.6.7...flagd/v0.6.8) (2023-11-13)
 
 

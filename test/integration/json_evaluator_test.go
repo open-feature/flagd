@@ -10,7 +10,7 @@ import (
 	"github.com/open-feature/go-sdk/pkg/openfeature"
 )
 
-func TestEvaluation(t *testing.T) {
+func TestJsonEvaluator(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -18,21 +18,16 @@ func TestEvaluation(t *testing.T) {
 	flag.Parse()
 
 	var providerOptions []flagd.ProviderOption
-	name := "evaluation.feature"
-
-	if tls == "true" {
-		name = "evaluation_tls.feature"
-		providerOptions = []flagd.ProviderOption{flagd.WithTLS(certPath)}
-	}
+	name := "flagd-json-evaluator.feature"
 
 	testSuite := godog.TestSuite{
 		Name: name,
-		ScenarioInitializer: integration.InitializeEvaluationScenario(func() openfeature.FeatureProvider {
+		ScenarioInitializer: integration.InitializeFlagdJsonScenario(func() openfeature.FeatureProvider {
 			return flagd.NewProvider(providerOptions...)
 		}),
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"../../../spec/specification/assets/gherkin/evaluation.feature"},
+			Paths:    []string{"../../test-harness/gherkin/flagd-json-evaluator.feature"},
 			TestingT: t, // Testing instance that will run subtests.
 			Strict:   true,
 		},
