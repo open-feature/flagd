@@ -12,6 +12,7 @@ config:
   github-admonition: true
   max-one-sentence-per-line: true
   code-block-style: false         # not compatible with mkdocs "details" panes
+  no-alt-text: false
 
 ignores:
   - "**/CHANGELOG.md"
