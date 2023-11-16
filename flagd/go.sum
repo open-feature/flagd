@@ -659,8 +659,12 @@ github.com/onsi/ginkgo/v2 v2.11.0 h1:WgqUCUt/lT6yXoQ8Wef0fsNn5cAuMK7+KT9UFRz2tcU
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
 github.com/open-feature/flagd/core v0.6.8 h1:hGgQi5/FSrIV+3E1hK0T1veRfeuDjWQ4dozaRbYBlTg=
 github.com/open-feature/flagd/core v0.6.8/go.mod h1:fxWilCV52+Me+jZK1lPesUJwPzmJty+4y7O5txropq8=
+github.com/open-feature/flagd/core v0.7.0 h1:dTUWCoX0Z8pgFGcv5xg2aZbqdmG1WDbD9vaRp7BTSQ8=
+github.com/open-feature/flagd/core v0.7.0/go.mod h1:lwyUOrkoY3YXxNwhYrmjT8+0/M7iAdS37bdNs2BKTaA=
 github.com/open-feature/open-feature-operator v0.2.36 h1:dzyZh9JSIRvXkfpM9ynYplNk7vjQFLs9sd5aHhF48z4=
 github.com/open-feature/open-feature-operator v0.2.36/go.mod h1:nM7T4oGQukeGmcAFkQm0uwt8WFdDb5hYPjXkm7pHhX4=
+github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5 h1:ONgFdsDH0uAS3qrmZEQjYqFtqKw/MCkbbQSE33bGBsU=
+github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5/go.mod h1:nM7T4oGQukeGmcAFkQm0uwt8WFdDb5hYPjXkm7pHhX4=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
 github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
 github.com/pelletier/go-toml/v2 v2.1.0 h1:FnwAJ4oYMvbT/34k9zzHuZNrhlz48GB3/s6at6/MHO4=
