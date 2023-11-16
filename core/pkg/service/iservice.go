@@ -25,7 +25,7 @@ type ReadinessProbe func() bool
 type Configuration struct {
 	ReadinessProbe ReadinessProbe
 	Port           uint16
-	MetricsPort    uint16
+	ManagementPort uint16
 	ServiceName    string
 	CertPath       string
 	KeyPath        string

@@ -60,7 +60,7 @@ type SourceConfig struct {
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
 	MetricExporter    string
-	MetricsPort       uint16
+	ManagementPort    uint16
 	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string
@@ -133,14 +133,14 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		Evaluator: evaluator,
 		Service:   connectService,
 		ServiceConfig: service.Configuration{
-			Port:        config.ServicePort,
-			MetricsPort: config.MetricsPort,
-			ServiceName: svcName,
-			KeyPath:     config.ServiceKeyPath,
-			CertPath:    config.ServiceCertPath,
-			SocketPath:  config.ServiceSocketPath,
-			CORS:        config.CORS,
-			Options:     telemetry.BuildConnectOptions(telCfg),
+			Port:           config.ServicePort,
+			ManagementPort: config.ManagementPort,
+			ServiceName:    svcName,
+			KeyPath:        config.ServiceKeyPath,
+			CertPath:       config.ServiceCertPath,
+			SocketPath:     config.ServiceSocketPath,
+			CORS:           config.CORS,
+			Options:        telemetry.BuildConnectOptions(telCfg),
 		},
 		SyncImpl: iSyncs,
 	}, nil

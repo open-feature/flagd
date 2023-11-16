@@ -63,14 +63,14 @@ sources:
 `FeatureFlagSource` further allows to provide configurations to the injected flagd sidecar.
 Table given below is non-exhaustive list of overriding options,
 
-| Configuration | Explanation                   | Default                    |
-|---------------|-------------------------------|----------------------------|
-| port          | Flag evaluation endpoint port | 8013                       |
-| metricsPort   | Metrics port                  | 8014                       |
-| evaluator     | Evaluator to use              | json                       |
-| image         | flagD image                   | ghcr.io/open-feature/flagd |
-| tag           | flagD image tag               | Latest tag                 |
-| probesEnabled | Enable/Disable health probes  | true                       |
+| Configuration  | Explanation                   | Default                    |
+|----------------|-------------------------------|----------------------------|
+| port           | Flag evaluation endpoint port | 8013                       |
+| managementPort | Management port               | 8014                       |
+| evaluator      | Evaluator to use              | json                       |
+| image          | flagD image                   | ghcr.io/open-feature/flagd |
+| tag            | flagD image tag               | Latest tag                 |
+| probesEnabled  | Enable/Disable health probes  | true                       |
 
 ## Merging of configurations
 
@@ -95,7 +95,7 @@ kind: FeatureFlagSource
 metadata:
     name: flag-source-sample
 spec:
-    metricsPort: 8080
+    managementPort: 8080
     Port: 80
     evaluator: json
     image: my-custom-sidecar-image
@@ -142,7 +142,7 @@ kind: FeatureFlagSource
 metadata:
     name: config-A
 spec:
-    metricsPort: 8080
+    managementPort: 8080
     tag: latest
 ```
 
@@ -162,7 +162,7 @@ Results in the following configuration:
 
 ```yaml
 spec:
-    metricsPort: 8080
+    managementPort: 8080
     port: 8000
     tag: main
 ```
