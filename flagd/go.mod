@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/flagd/core v0.6.8
+	github.com/open-feature/flagd/core v0.7.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
 	go.uber.org/zap v1.26.0
@@ -56,7 +56,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-feature/open-feature-operator v0.2.36 // indirect
+	github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5 // indirect
 	github.com/open-feature/schemas v0.2.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
