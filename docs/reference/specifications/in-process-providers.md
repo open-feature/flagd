@@ -12,7 +12,7 @@ The in-process flagd provider is responsible for creating an abstraction between
 Prerequisites:
 
 - Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
-- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=FlagD))
+- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=flagd))
 
 The Flag definition containing the feature flags and JsonLogic based targeting rules shall be retrieved by the
 in-process flagd provider via a gRPC client connection to a sync server, such as [flagd-proxy](https://github.com/open-feature/flagd/tree/main/flagd-proxy).
