@@ -4,6 +4,7 @@
 ## Installation
 
 {%
-  include "https://github.com/open-feature/js-sdk-contrib/blob/main/libs/providers/flagd-web/README.md"
+  include "https://raw.githubusercontent.com/open-feature/js-sdk-contrib/main/libs/providers/flagd-web/README.md"
   start="## Installation"
+  end="## Building"
 %}
