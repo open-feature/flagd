@@ -57,8 +57,11 @@ go install github.com/open-feature/flagd/flagd@latest
 Leverage flagd in your application using [OpenFeature](https://openfeature.dev/) and a flagd [provider](https://openfeature.dev/docs/reference/concepts/provider).
 Use the table below to see what provides are available.
 
-| Technology                                               | RPC              | in-process       |
-| -------------------------------------------------------- | ---------------- | ---------------- |
-| :fontawesome-brands-golang: [Go](./providers/go.md) | :material-check: | :material-check: |
-| :fontawesome-brands-java: [Java](./providers/java.md) | :material-check: | :material-check: |
+| Technology                                                    | RPC              | in-process       |
+| ------------------------------------------------------------- | ---------------- | ---------------- |
+| :fontawesome-brands-golang: [Go](./providers/go.md)           | :material-check: | :material-check: |
+| :fontawesome-brands-java: [Java](./providers/java.md)         | :material-check: | :material-check: |
 | :fontawesome-brands-node-js: [Node.JS](./providers/nodejs.md) | :material-check: | :material-check: |
+| :simple-php: [PHP](./providers/php.md)                        | :material-check: | :material-close: |
+| :simple-dotnet: [.NET](./providers/dotnet.md)                 | :material-check: | :material-close: |
+| :material-web: [Web](./providers/web.md)                      | :material-check: | :material-close: |
