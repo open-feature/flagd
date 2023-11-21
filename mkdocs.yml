@@ -45,7 +45,8 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      url_download: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences:
@@ -70,6 +71,13 @@ nav:
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
+  - 'Providers':
+    - 'Go': 'providers/go.md'
+    - 'Java': 'providers/java.md'
+    - 'Node.JS': 'providers/nodejs.md'
+    - 'PHP': 'providers/php.md'
+    - '.NET': 'providers/dotnet.md'
+    - 'Web': 'providers/web.md'
   - 'Reference':
     - 'CLI':
       - 'Overview': 'reference/flagd-cli/flagd.md'
@@ -102,3 +110,5 @@ nav:
 plugins:
   - social
   - search
+  # https://github.com/mondeja/mkdocs-include-markdown-plugin
+  - include-markdown

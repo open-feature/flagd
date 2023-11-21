@@ -52,29 +52,13 @@ go install github.com/open-feature/flagd/flagd@latest
 
 ---
 
-## In-Process
+## flagd Providers for OpenFeature
 
-### :fontawesome-brands-golang: Go in-process provider
+Leverage flagd in your application using [OpenFeature](https://openfeature.dev/) and a flagd [provider](https://openfeature.dev/docs/reference/concepts/provider).
+Use the table below to see what provides are available.
 
-[flagd-in-process/pkg](https://pkg.go.dev/github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg)
-
-```shell
-go get github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg@latest
-```
-
-### :fontawesome-brands-java: Java in-process provider
-
-#### Maven
-
-```xml
-<dependency>
-  <groupId>dev.openfeature.contrib.providers</groupId>
-  <artifactId>flagd</artifactId>
-</dependency>
-```
-
-#### Gradle
-
-```gradle
-implementation 'dev.openfeature.contrib.providers:flagd'
-```
+| Technology                                               | RPC              | in-process       |
+| -------------------------------------------------------- | ---------------- | ---------------- |
+| :fontawesome-brands-golang: [Go](./providers/go.md) | :material-check: | :material-check: |
+| :fontawesome-brands-java: [Java](./providers/java.md) | :material-check: | :material-check: |
+| :fontawesome-brands-node-js: [Node.JS](./providers/nodejs.md) | :material-check: | :material-check: |
