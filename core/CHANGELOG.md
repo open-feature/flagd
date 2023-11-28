@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/flagd/compare/core/v0.7.0...core/v0.7.1) (2023-11-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.28.4 ([#1016](https://github.com/open-feature/flagd/issues/1016)) ([ae470e3](https://github.com/open-feature/flagd/commit/ae470e37f3368c81484f0c54366ccf059ea2cea6))
+* **deps:** update opentelemetry-go monorepo ([#1019](https://github.com/open-feature/flagd/issues/1019)) ([23ae555](https://github.com/open-feature/flagd/commit/23ae555ad73128dff46e911fccfef76306f5c550))
+
+
+### 🔄 Refactoring
+
+* Rename metrics-port to management-port ([#1012](https://github.com/open-feature/flagd/issues/1012)) ([5635e38](https://github.com/open-feature/flagd/commit/5635e38703cae835a53e9cce83d5bc42d00091e2))
+
 ## [0.7.0](https://github.com/open-feature/flagd/compare/core/v0.6.8...core/v0.7.0) (2023-11-15)
 
 
