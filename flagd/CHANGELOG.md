@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/flagd/compare/flagd/v0.7.0...flagd/v0.7.1) (2023-11-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.7.0 ([#1014](https://github.com/open-feature/flagd/issues/1014)) ([deec49e](https://github.com/open-feature/flagd/commit/deec49e99ef52f62adbf278a8f58936acbb86b9d))
+
+
+### 🔄 Refactoring
+
+* Rename metrics-port to management-port ([#1012](https://github.com/open-feature/flagd/issues/1012)) ([5635e38](https://github.com/open-feature/flagd/commit/5635e38703cae835a53e9cce83d5bc42d00091e2))
+
 ## [0.7.0](https://github.com/open-feature/flagd/compare/flagd/v0.6.8...flagd/v0.7.0) (2023-11-15)
 
 
