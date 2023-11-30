@@ -190,6 +190,8 @@ Conditions can be used to control the logical flow and grouping of targeting rul
 
 Operations are used to take action on, or compare properties retrieved from the context.
 These are provided out-of-the-box by JsonLogic.
+It's worth noting that JsonLogic operators never throw exceptions or abnormally terminate due to invalid input.
+As long as a JsonLogic operator is structurally valid, it will return a falsy/nullish value.
 
 | Operator               | Description                                                          | Context type | Example                                                                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -214,6 +216,7 @@ These are provided out-of-the-box by JsonLogic.
 
 These are custom operations specific to flagd and flagd providers.
 They are purpose built extensions to JsonLogic in order to support common feature flag use cases.
+Consistent with build-in JsonLogic operators, flagd's custom operators return falsy/nullish values with invalid inputs.
 
 | Function                           | Description                                         | Example                                                                                                                                                                                                                                                                                  |
 | ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
