@@ -1,4 +1,4 @@
-package store
+package subscriptions
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	isync "github.com/open-feature/flagd/core/pkg/sync"
 )
 
-// ISyncStore defines the interface for the sync store
-type ISyncStore interface {
+// IManager defines the interface for the sync store
+type IManager interface {
 	FetchAllFlags(
 		ctx context.Context,
 		key interface{},

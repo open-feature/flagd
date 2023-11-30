@@ -25,6 +25,14 @@ type Sync struct {
 	Mux      *msync.RWMutex
 }
 
+func NewFileSync(uri string, logger *logger.Logger) *Sync {
+	return &Sync{
+		URI:    uri,
+		Logger: logger,
+		Mux:    &msync.RWMutex{},
+	}
+}
+
 // default state is used to prevent EOF errors when handling filepath delete events + empty files
 const defaultState = "{}"
 

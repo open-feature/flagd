@@ -7,13 +7,13 @@ import (
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	syncStore "github.com/open-feature/flagd/core/pkg/subscriptions"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
 )
 
 type handler struct {
 	rpc.UnimplementedFlagSyncServiceServer
-	syncStore syncStore.ISyncStore
+	syncStore syncStore.IManager
 	logger    *logger.Logger
 }
 

@@ -1,6 +1,8 @@
 package sync
 
-import "context"
+import (
+	"context"
+)
 
 type Type int
 

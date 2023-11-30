@@ -1,4 +1,4 @@
-package store
+package subscriptions
 
 import (
 	"context"
@@ -63,13 +63,13 @@ func (s *syncBuilderMock) SyncFromURI(_ string, _ *logger.Logger) (isync.ISync, 
 	return s.mock, s.initError
 }
 
-func newSyncHandler() (*syncHandler, string) {
+func newSyncHandler() (*multiplexer, string) {
 	coreDataSyncChan := make(chan isync.DataSync, 1)
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	key := "key"
 
-	return &syncHandler{
+	return &multiplexer{
 		dataSync: coreDataSyncChan,
 		subs: map[interface{}]storedChannels{
 			key: {
@@ -83,7 +83,7 @@ func newSyncHandler() (*syncHandler, string) {
 
 func Test_watchResource(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 	syncStore.syncBuilder = &syncBuilderMock{
 		mock: syncMock,
@@ -92,7 +92,7 @@ func Test_watchResource(t *testing.T) {
 	target := "test-target"
 	syncHandler, key := newSyncHandler()
 
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 
 	go syncStore.watchResource(target)
 
@@ -128,17 +128,17 @@ func Test_watchResource(t *testing.T) {
 	// no context cancellation should have occurred, and there should still be registered sync sub
 	syncStore.mu.Lock()
 	if len(syncHandler.subs) != 1 {
-		t.Error("incorrect number of subs in syncHandler", syncHandler.subs)
+		t.Error("incorrect number of subs in multiplexer", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 
-	// cancellation of context will result in the syncHandler being deleted
+	// cancellation of context will result in the multiplexer being deleted
 	cancel()
 	// allow for the goroutine to catch the lock first
 	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
-	if syncStore.syncHandlers[target] != nil {
-		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	if syncStore.multiplexers[target] != nil {
+		t.Error("multiplexer has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 }
@@ -146,7 +146,7 @@ func Test_watchResource(t *testing.T) {
 func Test_watchResource_initFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
 	// return an error on startup
@@ -158,7 +158,7 @@ func Test_watchResource_initFail(t *testing.T) {
 	target := "test-target"
 	syncHandler, key := newSyncHandler()
 
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 
 	go syncStore.watchResource(target)
 
@@ -175,8 +175,8 @@ func Test_watchResource_initFail(t *testing.T) {
 	// this should then close the internal context and the watcher should be removed
 	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
-	if syncStore.syncHandlers[target] != nil {
-		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	if syncStore.multiplexers[target] != nil {
+		t.Error("multiplexer has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 }
@@ -184,7 +184,7 @@ func Test_watchResource_initFail(t *testing.T) {
 func Test_watchResource_SyncFromURIFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
 	// return an error on startup
@@ -197,7 +197,7 @@ func Test_watchResource_SyncFromURIFail(t *testing.T) {
 	target := "test-target"
 	syncHandler, key := newSyncHandler()
 
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 
 	go syncStore.watchResource(target)
 
@@ -214,8 +214,8 @@ func Test_watchResource_SyncFromURIFail(t *testing.T) {
 	// this should then close the internal context and the watcher should be removed
 	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
-	if syncStore.syncHandlers[target] != nil {
-		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	if syncStore.multiplexers[target] != nil {
+		t.Error("multiplexer has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 }
@@ -223,7 +223,7 @@ func Test_watchResource_SyncFromURIFail(t *testing.T) {
 func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
 	// return an error on startup
@@ -235,7 +235,7 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 	target := "test-target"
 	syncHandler, key := newSyncHandler()
 
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 
 	go syncStore.watchResource(target)
 	cancel()
@@ -252,8 +252,8 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 	// this should then close the internal context and the watcher should be removed
 	time.Sleep(1 * time.Second)
 	syncStore.mu.Lock()
-	if syncStore.syncHandlers[target] != nil {
-		t.Error("syncHandler has not been closed down after cancellation", syncHandler.subs)
+	if syncStore.multiplexers[target] != nil {
+		t.Error("multiplexer has not been closed down after cancellation", syncHandler.subs)
 	}
 	syncStore.mu.Unlock()
 }
@@ -261,7 +261,7 @@ func Test_watchResource_SyncErrorOnClose(t *testing.T) {
 func Test_watchResource_SyncHandlerDoesNotExist(_ *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
 	// return an error on startup
@@ -279,7 +279,7 @@ func Test_watchResource_SyncHandlerDoesNotExist(_ *testing.T) {
 func Test_watchResource_Cleanup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
 	// return an error on startup
@@ -297,7 +297,7 @@ func Test_watchResource_Cleanup(t *testing.T) {
 		doneChan <- struct{}{}
 	}
 	syncStore.mu.Lock()
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 	syncStore.mu.Unlock()
 	go func() {
 		syncStore.cleanup()
@@ -307,7 +307,7 @@ func Test_watchResource_Cleanup(t *testing.T) {
 	case <-doneChan:
 		return
 	case <-time.After(10 * time.Second):
-		t.Error("syncHandlers not being cleaned up, timed out after 10 seconds")
+		t.Error("multiplexers not being cleaned up, timed out after 10 seconds")
 	}
 }
 
@@ -351,7 +351,7 @@ func Test_FetchAllFlags(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+			syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 			syncMock := newMockSync()
 			syncMock.resyncData = tt.mockData
 			syncMock.resyncError = tt.mockError
@@ -365,7 +365,7 @@ func Test_FetchAllFlags(t *testing.T) {
 				syncHandler.syncRef = syncMock
 			}
 			if tt.setHandler {
-				syncStore.syncHandlers[target] = syncHandler
+				syncStore.multiplexers[target] = syncHandler
 			}
 
 			data, err := syncStore.FetchAllFlags(ctx, key, target)
@@ -406,7 +406,7 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+			syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 
 			syncMock := newMockSync()
 			syncMock.resyncData = tt.data
@@ -420,7 +420,7 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 			syncHandler, _ := newSyncHandler()
 			syncHandler.syncRef = syncMock
 			key := struct{}{}
-			syncStore.syncHandlers[target] = syncHandler
+			syncStore.multiplexers[target] = syncHandler
 			dataChan := make(chan isync.DataSync, 1)
 			errChan := make(chan error, 1)
 
@@ -445,7 +445,7 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 func Test_syncMetrics(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	syncStore := NewSyncStore(ctx, logger.NewLogger(nil, false))
+	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 	syncStore.syncBuilder = &syncBuilderMock{
 		mock: syncMock,
@@ -459,7 +459,7 @@ func Test_syncMetrics(t *testing.T) {
 	target := "test-target"
 	syncHandler, _ := newSyncHandler()
 
-	syncStore.syncHandlers[target] = syncHandler
+	syncStore.multiplexers[target] = syncHandler
 
 	subs = syncStore.GetActiveSubscriptionsInt64()
 	if subs != 1 {

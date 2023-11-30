@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"net/http"
 	"regexp"
 	msync "sync"
@@ -244,9 +245,9 @@ func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 }
 
 func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
-	reader, dynamic, err := kubernetes.GetClients()
+	reader, dynamicClient, err := syncbuilder.KubernetesClientBuilder{}.GetK8sClients()
 	if err != nil {
-		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
+		return nil, err
 	}
 	return kubernetes.NewK8sSync(
 		logger.WithFields(
@@ -255,7 +256,7 @@ func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 		),
 		regCrd.ReplaceAllString(uri, ""),
 		reader,
-		dynamic,
+		dynamicClient,
 	), nil
 }
 
