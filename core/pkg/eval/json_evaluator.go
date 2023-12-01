@@ -341,16 +341,21 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
+
+		// string here are still
+		trimmed := strings.TrimSpace(result.String())
+
 		// strip whitespace and quotes from the variant
-		variant = strings.ReplaceAll(strings.TrimSpace(result.String()), "\"", "")
+		variant = strings.ReplaceAll(trimmed, "\"", "")
 
 		// if this is a valid variant, return it
+		// TODO: explicit null handling?
 		if _, ok := flag.Variants[variant]; ok {
 			return variant, flag.Variants, model.TargetingMatchReason, metadata, nil
+		} else {
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
-
-		je.Logger.DebugWithID(reqID, fmt.Sprintf("returning default variant for flagKey: %s, variant is not valid", flagKey))
-		reason = model.DefaultReason
 	} else {
 		reason = model.StaticReason
 	}
