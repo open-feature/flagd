@@ -2,6 +2,8 @@ package builder
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -9,7 +11,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSyncBuilder_SyncFromURI(t *testing.T) {

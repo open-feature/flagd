@@ -2,6 +2,9 @@ package builder
 
 import (
 	"fmt"
+	"os"
+	"regexp"
+
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
@@ -11,8 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

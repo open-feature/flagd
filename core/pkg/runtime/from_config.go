@@ -247,7 +247,7 @@ func NewHTTP(config SourceConfig, logger *logger.Logger) *httpSync.Sync {
 func NewK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
 	reader, dynamicClient, err := syncbuilder.KubernetesClientBuilder{}.GetK8sClients()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not get Kubernetes config: %w", err)
 	}
 	return kubernetes.NewK8sSync(
 		logger.WithFields(
