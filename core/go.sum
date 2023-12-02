@@ -640,6 +640,8 @@ github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d33646
 github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5/go.mod h1:nM7T4oGQukeGmcAFkQm0uwt8WFdDb5hYPjXkm7pHhX4=
 github.com/open-feature/open-feature-operator v0.5.0 h1:SPdU520R0ILUnFI544De5yHdAe7TtHLxcNHXlkSPOik=
 github.com/open-feature/open-feature-operator v0.5.0/go.mod h1:ZCiRtyjZlAxd5cz5uG20zP4eiyIH6nuOjRJL/hjp7RM=
+github.com/open-feature/open-feature-operator v0.5.1 h1:AbS5mRTJJ6/1AuB7otG485558pazcimJrHXKgrYwIYw=
+github.com/open-feature/open-feature-operator v0.5.1/go.mod h1:ZCiRtyjZlAxd5cz5uG20zP4eiyIH6nuOjRJL/hjp7RM=
 github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906 h1:OUZVFPJgFytNSi3nxqy8nCKAlOlqdrqF4+eIGOaLSl8=
 github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906/go.mod h1:YtdYEXJHo9iKwmchxbwGGsmu33FbugMQ8lKGarA9UYM=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
