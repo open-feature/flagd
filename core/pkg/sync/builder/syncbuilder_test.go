@@ -2,8 +2,6 @@ package builder
 
 import (
 	"errors"
-	"github.com/open-feature/flagd/core/pkg/sync/grpc"
-	"github.com/open-feature/flagd/core/pkg/sync/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +9,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	buildermock "github.com/open-feature/flagd/core/pkg/sync/builder/mock"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
+	"github.com/open-feature/flagd/core/pkg/sync/grpc"
+	"github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/stretchr/testify/require"
 )
