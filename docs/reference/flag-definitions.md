@@ -346,7 +346,7 @@ For example, this:
 }
 ```
 
-can be shorted to this:
+can be shortened to this:
 
 ```json
 {
