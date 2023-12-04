@@ -354,13 +354,12 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 		// if this is a valid variant, return it
 		if _, ok := flag.Variants[variant]; ok {
 			return variant, flag.Variants, model.TargetingMatchReason, metadata, nil
-		} else {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
-			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
-	} else {
-		return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
+		je.Logger.ErrorWithID(reqID,
+			fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
+		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 	}
+	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
 }
 
 func (je *JSONEvaluator) setFlagdProperties(

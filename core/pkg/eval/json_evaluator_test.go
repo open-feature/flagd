@@ -1346,6 +1346,7 @@ func TestTargetingVariantBehavior(t *testing.T) {
 	t.Run("match booleans", func(t *testing.T) {
 		evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
 
+		//nolint:dupword
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
 			"flags": {
 				"match-boolean": {
