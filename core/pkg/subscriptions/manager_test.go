@@ -59,6 +59,10 @@ type syncBuilderMock struct {
 	initError error
 }
 
+func (s *syncBuilderMock) SyncsFromConfig(_ []isync.SourceConfig, _ *logger.Logger) ([]isync.ISync, error) {
+	return nil, nil
+}
+
 func (s *syncBuilderMock) SyncFromURI(_ string, _ *logger.Logger) (isync.ISync, error) {
 	return s.mock, s.initError
 }

@@ -13,6 +13,25 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 )
 
+// IManager defines the interface for the sync store
+type IManager interface {
+	FetchAllFlags(
+		ctx context.Context,
+		key interface{},
+		target string,
+	) (isync.DataSync, error)
+	RegisterSubscription(
+		ctx context.Context,
+		target string,
+		key interface{},
+		dataSync chan isync.DataSync,
+		errChan chan error,
+	)
+
+	// metrics hooks
+	GetActiveSubscriptionsInt64() int64
+}
+
 // Manager coordinates subscriptions by aggregating subscribers for the same target, and keeping them up to date
 // for any updates that have happened for those targets.
 type Manager struct {
@@ -164,7 +183,7 @@ func (s *Manager) watchResource(target string) {
 			case <-ctx.Done():
 				return
 			case d := <-sh.dataSync:
-				sh.writeData(s.logger, d)
+				sh.broadcastData(s.logger, d)
 			}
 		}
 	}()
@@ -172,14 +191,14 @@ func (s *Manager) watchResource(target string) {
 	syncSource, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = syncSource.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 		return
 	}
 	// syncSource ref is used to trigger a resync on a single channel when a new subscription is started
@@ -188,7 +207,7 @@ func (s *Manager) watchResource(target string) {
 	err = syncSource.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 	}
 }
 
