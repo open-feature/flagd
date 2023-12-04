@@ -1281,3 +1281,97 @@ func TestFlagdAmbientProperties(t *testing.T) {
 		}
 	})
 }
+
+func TestTargetingVariantBehavior(t *testing.T) {
+	t.Run("missing variant error", func(t *testing.T) {
+		evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+
+		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+			"flags": {
+				"missing-variant": {
+					"state": "ENABLED",
+					"variants": {
+						"foo": true,
+						"bar": false
+					},
+					"defaultVariant": "foo",
+					"targeting": {
+						"if": [ true, "buz", "baz"]
+					}
+				}
+			}
+		}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, _, _, _, err = evaluator.ResolveBooleanValue(context.Background(), "default", "missing-variant", nil)
+		if err == nil {
+			t.Fatal("missing variant did not result in error")
+		}
+	})
+
+	t.Run("null fallback", func(t *testing.T) {
+		evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+
+		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+			"flags": {
+				"null-fallback": {
+					"state": "ENABLED",
+					"variants": {
+						"foo": true,
+						"bar": false
+					},
+					"defaultVariant": "foo",
+					"targeting": {
+						"if": [ true, null, "baz"]
+					}
+				}
+			}
+		}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		value, variant, reason, _, err := evaluator.ResolveBooleanValue(context.Background(), "default", "null-fallback", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !value || variant != "foo" || reason != model.DefaultReason {
+			t.Fatal("did not fallback to defaultValue")
+		}
+	})
+
+	t.Run("match booleans", func(t *testing.T) {
+		evaluator := eval.NewJSONEvaluator(logger.NewLogger(nil, false), store.NewFlags())
+
+		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+			"flags": {
+				"match-boolean": {
+					"state": "ENABLED",
+					"variants": {
+						"false": 1,
+						"true": 2
+					},
+					"defaultVariant": "false",
+					"targeting": {
+						"if": [ true, true, false]
+					}
+				}
+			}
+		}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		value, variant, reason, _, err := evaluator.ResolveIntValue(context.Background(), "default", "match-boolean", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if value != 2 || variant != "true" || reason != model.TargetingMatchReason {
+			t.Fatal("did not map to stringified boolean")
+		}
+	})
+}

@@ -55,13 +55,13 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		flags           Flags
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
+		flags             Flags
+		flagKey           string
+		context           map[string]any
+		expectedValue     string
+		expectedVariant   string
+		expectedReason    string
+		expectedErrorCode string
 	}{
 		"test@faas.com": {
 			flags:   flags,
@@ -188,11 +188,12 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 					},
 				},
 			},
-			flagKey:         "headerColor",
-			context:         map[string]any{},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
-			expectedReason:  model.DefaultReason,
+			flagKey:           "headerColor",
+			context:           map[string]any{},
+			expectedVariant:   "",
+			expectedValue:     "",
+			expectedReason:    model.ErrorReason,
+			expectedErrorCode: model.ParseErrorCode,
 		},
 		"fallback to default variant if invalid variant as result of fractional evaluation": {
 			flags: Flags{
@@ -222,9 +223,10 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "foo@foo.com",
 			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
-			expectedReason:  model.DefaultReason,
+			expectedVariant:   "",
+			expectedValue:     "",
+			expectedReason:    model.ErrorReason,
+			expectedErrorCode: model.ParseErrorCode,
 		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
@@ -291,8 +293,11 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
 			}
 
-			if err != tt.expectedError {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
+			if err != nil {
+				errorCode := err.Error()
+				if errorCode != tt.expectedErrorCode {
+					t.Errorf("expected err '%v', got '%v'", tt.expectedErrorCode, err)
+				}
 			}
 		})
 	}
