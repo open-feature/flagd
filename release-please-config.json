@@ -1,5 +1,5 @@
 {
-  "monorepo-tags": true,
+  "include-component-in-tag": true,
   "tag-separator": "/",
   "last-release-sha": "4f7b3cf32d6abbf91bd002abbfe851e84fc3dac5",
   "packages": {
