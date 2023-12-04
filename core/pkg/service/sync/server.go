@@ -32,7 +32,7 @@ type Server struct {
 	metricServerReady bool
 }
 
-func NewServer(logger *logger.Logger, store syncStore.IManager) *Server {
+func NewServer(logger *logger.Logger, store syncStore.Manager) *Server {
 	return &Server{
 		handler: &handler{
 			logger:    logger,

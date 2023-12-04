@@ -13,8 +13,8 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 )
 
-// IManager defines the interface for the sync store
-type IManager interface {
+// Manager defines the interface for the subscription management
+type Manager interface {
 	FetchAllFlags(
 		ctx context.Context,
 		key interface{},
@@ -32,9 +32,9 @@ type IManager interface {
 	GetActiveSubscriptionsInt64() int64
 }
 
-// Manager coordinates subscriptions by aggregating subscribers for the same target, and keeping them up to date
+// Coordinator coordinates subscriptions by aggregating subscribers for the same target, and keeping them up to date
 // for any updates that have happened for those targets.
-type Manager struct {
+type Coordinator struct {
 	ctx          context.Context
 	multiplexers map[string]*multiplexer
 	logger       *logger.Logger
@@ -48,8 +48,8 @@ type storedChannels struct {
 }
 
 // NewManager returns a new subscription manager
-func NewManager(ctx context.Context, logger *logger.Logger) *Manager {
-	mgr := Manager{
+func NewManager(ctx context.Context, logger *logger.Logger) *Coordinator {
+	mgr := Coordinator{
 		ctx:          ctx,
 		multiplexers: map[string]*multiplexer{},
 		logger:       logger,
@@ -60,9 +60,9 @@ func NewManager(ctx context.Context, logger *logger.Logger) *Manager {
 	return &mgr
 }
 
-// FetchAllFlags returns a DataSync containing the full set of flag configurations from the Manager.
+// FetchAllFlags returns a DataSync containing the full set of flag configurations from the Coordinator.
 // This will either occur via triggering a resync, or through setting up a new subscription to the resource
-func (s *Manager) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
+func (s *Coordinator) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
 	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
@@ -96,7 +96,7 @@ func (s *Manager) FetchAllFlags(ctx context.Context, key interface{}, target str
 
 // RegisterSubscription starts a new subscription to the target resource.
 // Once the subscription is set an ALL sync event will be received via the DataSync chan.
-func (s *Manager) RegisterSubscription(
+func (s *Coordinator) RegisterSubscription(
 	ctx context.Context,
 	target string,
 	key interface{},
@@ -159,7 +159,7 @@ func (s *Manager) RegisterSubscription(
 	}()
 }
 
-func (s *Manager) watchResource(target string) {
+func (s *Coordinator) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
@@ -211,7 +211,7 @@ func (s *Manager) watchResource(target string) {
 	}
 }
 
-func (s *Manager) cleanup() {
+func (s *Coordinator) cleanup() {
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -231,7 +231,7 @@ func (s *Manager) cleanup() {
 	}
 }
 
-func (s *Manager) GetActiveSubscriptionsInt64() int64 {
+func (s *Coordinator) GetActiveSubscriptionsInt64() int64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

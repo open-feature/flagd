@@ -66,13 +66,7 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (sync.ISyn
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
-		return file.NewFileSync(
-			uri,
-			logger.WithFields(
-				zap.String("component", "sync"),
-				zap.String("sync", "filepath"),
-			),
-		), nil
+		return sb.newFile(uri, logger), nil
 	case regCrd.Match(uriB):
 		return sb.newK8s(uri, logger)
 	}
