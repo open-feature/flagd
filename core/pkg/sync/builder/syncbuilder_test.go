@@ -2,6 +2,8 @@ package builder
 
 import (
 	"errors"
+	"github.com/open-feature/flagd/core/pkg/sync/grpc"
+	"github.com/open-feature/flagd/core/pkg/sync/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -114,8 +116,7 @@ func Test_k8sClusterConfig(t *testing.T) {
 	})
 }
 
-// Note - K8s configuration require K8s client, hence do not use K8s sync provider in this test
-func Test_syncProvidersFromConfig(t *testing.T) {
+func Test_SyncsFromFromConfig(t *testing.T) {
 	lg := logger.NewLogger(nil, false)
 
 	type args struct {
@@ -124,10 +125,11 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		args      args
-		wantSyncs int // simply check the count of ISync providers yield from configurations
-		wantErr   bool
+		name       string
+		args       args
+		injectFunc func(builder *SyncBuilder)
+		wantSyncs  []sync.ISync
+		wantErr    bool
 	}{
 		{
 			name: "Empty",
@@ -135,7 +137,7 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 				logger:  lg,
 				sources: []sync.SourceConfig{},
 			},
-			wantSyncs: 0,
+			wantSyncs: nil,
 			wantErr:   false,
 		},
 		{
@@ -149,7 +151,7 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			wantSyncs: 0,
+			wantSyncs: nil,
 			wantErr:   true,
 		},
 		{
@@ -166,11 +168,21 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 					},
 				},
 			},
-			wantSyncs: 1,
-			wantErr:   false,
+			wantSyncs: []sync.ISync{
+				&grpc.Sync{},
+			},
+			wantErr: false,
 		},
 		{
 			name: "combined",
+			injectFunc: func(builder *SyncBuilder) {
+				ctrl := gomock.NewController(t)
+
+				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
+				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil, nil)
+
+				builder.k8sClientBuilder = mockClientBuilder
+			},
 			args: args{
 				logger: lg,
 				sources: []sync.SourceConfig{
@@ -190,22 +202,38 @@ func Test_syncProvidersFromConfig(t *testing.T) {
 						URI:      "/tmp/flags.json",
 						Provider: syncProviderFile,
 					},
+					{
+						URI:      "my-namespace/my-flags",
+						Provider: syncProviderKubernetes,
+					},
 				},
 			},
-			wantSyncs: 3,
-			wantErr:   false,
+			wantSyncs: []sync.ISync{
+				&grpc.Sync{},
+				&http.Sync{},
+				&file.Sync{},
+				&kubernetes.Sync{},
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sb := NewSyncBuilder()
+
+			if tt.injectFunc != nil {
+				tt.injectFunc(sb)
+			}
 			syncs, err := sb.SyncsFromConfig(tt.args.sources, tt.args.logger)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("syncProvidersFromConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantSyncs != len(syncs) {
-				t.Errorf("syncProvidersFromConfig() yielded = %v, but expected %v", len(syncs), tt.wantSyncs)
+			require.Len(t, syncs, len(tt.wantSyncs))
+
+			// check if we got the expected sync types
+			for index, wantType := range tt.wantSyncs {
+				require.IsType(t, wantType, syncs[index])
 			}
 		})
 	}
