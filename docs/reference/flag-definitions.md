@@ -7,7 +7,7 @@ description: flagd flag definition
 ## Flags
 
 `flags` is a **required** property.
-The flags property is a top level property that contains a collection of individual flags and their corresponding flag configurations.
+The flags property is a top-level property that contains a collection of individual flags and their corresponding flag configurations.
 
 ```json
 {
@@ -20,7 +20,7 @@ The flags property is a top level property that contains a collection of individ
 ## Flag Definition
 
 `flag key` is a **required** property.
-The flag key **must** uniquely identify a flag so that it can be used during flag evaluation.
+The flag key **must** uniquely identify a flag so it can be used during flag evaluation.
 The flag key **should** convey the intent of the flag.
 
 ```json
@@ -46,10 +46,10 @@ A fully configured flag may look like this.
         "on": true,
         "off": false
       },
-      "defaultVariant": "false",
+      "defaultVariant": "off",
       "targeting": { 
         "if": [
-          { "in": ["@example.com", { "var": "email" }] },
+          { "ends_with": [{ "var": "email" }, "@example.com"] },
           "on",
           "off"
         ]
@@ -80,7 +80,7 @@ It is an object containing the possible variations supported by the flag.
 All the values of the object **must** be the same type (e.g. boolean, numbers, string, JSON).
 The type used as the variant value will correspond directly affects how the flag is accessed.
 For example, to use a flag configured with boolean values the `/schema.v1.Service/ResolveBoolean` path should be used.
-If another path such as `/schema.v1.Service/ResolveString` is called, a type mismatch occurred and an error is returned.
+If another path, such as `/schema.v1.Service/ResolveString` is called, a type mismatch occurs and an error is returned.
 
 Example:
 
@@ -179,7 +179,7 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 }
 ```
 
-The evaluation context can be accessed in targeting rules using the `var` operation followed the evaluation context property name.
+The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
 
 | Description                                                    | Example                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------- |
@@ -202,7 +202,7 @@ Conditions can be used to control the logical flow and grouping of targeting rul
 
 #### Operations
 
-Operations are used to take action on, or compare properties retrieved from the context.
+Operations are used to take action on or compare properties retrieved from the context.
 These are provided out-of-the-box by JsonLogic.
 It's worth noting that JsonLogic operators never throw exceptions or abnormally terminate due to invalid input.
 As long as a JsonLogic operator is structurally valid, it will return a falsy/nullish value.
@@ -229,7 +229,7 @@ As long as a JsonLogic operator is structurally valid, it will return a falsy/nu
 #### Custom Operations
 
 These are custom operations specific to flagd and flagd providers.
-They are purpose built extensions to JsonLogic in order to support common feature flag use cases.
+They are purpose-built extensions to JsonLogic in order to support common feature flag use cases.
 Consistent with build-in JsonLogic operators, flagd's custom operators return falsy/nullish values with invalid inputs.
 
 | Function                           | Description                                         | Context attribute type                       | Example                                                                                                                                                                                                                                                                                            |
@@ -246,7 +246,7 @@ Flagd adds the following properties to the evaluation context that can be used i
 | Property           | Description                                             | From version |
 | ------------------ | ------------------------------------------------------- | ------------ |
 | `$flagd.flagKey`   | the identifier for the flag being evaluated             | v0.6.4       |
-| `$flagd.timestamp` | a unix timestamp (in seconds) of the time of evaluation | v0.6.7       |
+| `$flagd.timestamp` | a Unix timestamp (in seconds) of the time of evaluation | v0.6.7       |
 
 ## Shared evaluators
 
@@ -336,7 +336,7 @@ For example, this:
       "defaultVariant": "false",
       "targeting": { 
         "if": [
-          { "in": ["@example.com", { "var": "email" }] },
+          { "ends_with": [{ "var": "email" }, "@example.com"] },
           "true",
           "false"
         ]
@@ -359,7 +359,7 @@ can be shortened to this:
       },
       "defaultVariant": "false",
       "targeting": { 
-        { "in": ["@example.com", { "var": "email" }] }
+        "ends_with": [{ "var": "email" }, "@example.com"]
       }
     }
   }
