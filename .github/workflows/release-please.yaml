@@ -25,8 +25,6 @@ jobs:
       - uses: google-github-actions/release-please-action@a6d1fd9854c8c40688a72f7e4b072a1e965860a0 # v4
         id: release
         with:
-          release-type: "go"
-          command: manifest
           token: ${{secrets.GITHUB_TOKEN}}
           default-branch: main
 
@@ -88,7 +86,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@e6428a5c4e294a61438ed7f43155db912025b6b3
+        uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
@@ -134,7 +132,7 @@ jobs:
         run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
-        uses: anchore/sbom-action@fd74a6fb98a204a1ad35bbfae0122c1a302ff88b # v0
+        uses: anchore/sbom-action@5ecf649a417b8ae17dc8383dc32d46c03f2312df # v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
