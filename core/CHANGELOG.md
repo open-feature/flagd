@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.2](https://github.com/open-feature/flagd/compare/core/v0.7.1...core/v0.7.2) (2023-12-05)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.5.0 ([#1039](https://github.com/open-feature/flagd/issues/1039)) ([eb128d9](https://github.com/open-feature/flagd/commit/eb128d97ecb8b6916f9c5a32c21c698207f82be5))
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.5.1 ([#1046](https://github.com/open-feature/flagd/issues/1046)) ([0321935](https://github.com/open-feature/flagd/commit/0321935992ef50c2fc62bd659d8858c25c88efa7))
+* **deps:** update module golang.org/x/crypto to v0.16.0 ([#1033](https://github.com/open-feature/flagd/issues/1033)) ([b79aaf2](https://github.com/open-feature/flagd/commit/b79aaf2c2ca5fe9c43c1460d6cab349d5d68b7e1))
+* **deps:** update module golang.org/x/net to v0.19.0 ([#1034](https://github.com/open-feature/flagd/issues/1034)) ([c6426b2](https://github.com/open-feature/flagd/commit/c6426b20fa241066fc844a2a000812015790cf12))
+* various edge cases in targeting ([#1041](https://github.com/open-feature/flagd/issues/1041)) ([ca38c16](https://github.com/open-feature/flagd/commit/ca38c165c606ffa4517872f170375dde37f4ac5b))
+
 ## [0.7.1](https://github.com/open-feature/flagd/compare/core/v0.7.0...core/v0.7.1) (2023-11-28)
 
 
