@@ -21,7 +21,7 @@ The 'sem_ver' evaluation rule contains exactly three items:
 1. Target property value: the resolved value of the target property referenced in the targeting rule
 2. Operator: One of the following: `=`, `!=`, `>`, `<`, `>=`, `<=`, `~` (match minor version), `^` (match major version)
 3. Target value: this needs to resolve to a semantic versioning string. If this condition is not met, the evaluator should
-log an appropriate error message and return `nil`
+log an appropriate error message and return `false`
 
 The `sem_ver` evaluation returns a boolean, indicating whether the condition has been met.
 
@@ -35,7 +35,7 @@ The following flow chart depicts the logic of this evaluator:
 flowchart TD
 A[Parse targetingRule] --> B{Is an array containing exactly three items?};
 B -- Yes --> C{Is targetingRule at index 0 a semantic version string?};
-B -- No --> D[Return nil];
+B -- No --> D[Return false];
 C -- Yes --> E{Is targetingRule at index 1 a supported operator?};
 C -- No --> D;
 E -- Yes --> F{Is targetingRule at index 2 a semantic version string?};

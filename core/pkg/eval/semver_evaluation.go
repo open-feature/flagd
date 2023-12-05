@@ -85,12 +85,12 @@ func (je *SemVerComparisonEvaluator) SemVerEvaluation(values, _ interface{}) int
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse sem_ver evaluation data: %v", err))
-		return nil
+		return false
 	}
 	res, err := operator.compare(actualVersion, targetVersion)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("sem_ver evaluation: %v", err))
-		return nil
+		return false
 	}
 	return res
 }

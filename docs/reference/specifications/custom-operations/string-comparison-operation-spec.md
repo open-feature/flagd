@@ -32,7 +32,7 @@ The following flow chart depicts the logic of this evaluator:
 flowchart TD
 A[Parse targetingRule] --> B{Is an array containing exactly two items?};
 B -- Yes --> C{Is targetingRule at index 0 a string?};
-B -- No --> D[Return nil];
+B -- No --> D[Return false];
 C -- Yes --> E{Is targetingRule at index 1 a string?};
 C -- No --> D;
 E -- No --> D;

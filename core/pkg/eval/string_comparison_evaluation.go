@@ -72,7 +72,7 @@ func (sce StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) i
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
 		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
-		return nil
+		return false
 	}
 	return strings.HasSuffix(propertyValue, target)
 }
