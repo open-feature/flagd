@@ -1,16 +1,17 @@
 name: flagd
 base: core20
-version: "v0.7.1" # x-release-please-version
+version: 0.7.2
 summary: A feature flag daemon with a Unix philosophy
-description: |
-  Flagd is a simple command line tool for fetching and evaluating feature flags for services. It is designed to conform with the OpenFeature specification. 
-grade: stable # must be 'stable' to release into candidate/stable channels
+description: >
+  Flagd is a simple command line tool for fetching and evaluating feature flags
+  for services. It is designed to conform with the OpenFeature specification. 
+grade: stable
 confinement: strict
 architectures:
- - build-on: amd64
- - build-on: arm64
+  - build-on: amd64
+  - build-on: arm64
 apps:
-  flagd: 
+  flagd:
     command: bin/flagd
     plugs:
       - home
@@ -18,7 +19,6 @@ apps:
       - network-bind
 parts:
   home:
-    # See 'snapcraft plugins'
     plugin: go
     source-type: git
     source: https://github.com/open-feature/flagd.git
