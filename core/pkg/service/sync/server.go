@@ -12,7 +12,7 @@ import (
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
-	syncStore "github.com/open-feature/flagd/core/pkg/subscriptions"
+	"github.com/open-feature/flagd/core/pkg/subscriptions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -32,7 +32,7 @@ type Server struct {
 	metricServerReady bool
 }
 
-func NewServer(logger *logger.Logger, store syncStore.Manager) *Server {
+func NewServer(logger *logger.Logger, store subscriptions.Manager) *Server {
 	return &Server{
 		handler: &handler{
 			logger:    logger,
