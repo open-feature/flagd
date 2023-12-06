@@ -11,7 +11,8 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.3.2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
-	github.com/open-feature/open-feature-operator v0.2.37-0.20231108054703-a97d336468d5
+	github.com/open-feature/open-feature-operator v0.5.1
+	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.17.0
 	github.com/robfig/cron v1.2.0
@@ -31,10 +32,10 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.21.0
 	go.opentelemetry.io/otel/trace v1.21.0
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.15.0
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+	golang.org/x/crypto v0.16.0
+	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	golang.org/x/mod v0.14.0
-	golang.org/x/net v0.18.0
+	golang.org/x/net v0.19.0
 	golang.org/x/sync v0.5.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
@@ -90,8 +91,8 @@ require (
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

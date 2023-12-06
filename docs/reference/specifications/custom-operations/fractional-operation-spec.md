@@ -13,7 +13,7 @@ hash function should be used. This is to ensure that flag resolution requests yi
 regardless of which implementation of the in-process flagd provider is being used.
 
 The supplied array must contain at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
-specifying the bucketing property to base the distribution of values on. If not supplied, a concatenation of the
+specifying the bucketing property to base the distribution of values on. If the bucketing property expression doesn't return a string, a concatenation of the
 `flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flagKey"}, {"var":"targetingKey"}]}`.
 The remaining items are `arrays`, each with two values, with the first being `string` item representing the name of the variant, and the
 second being a `float` item representing the percentage for that variant. The percentages of all items must add up to
@@ -62,8 +62,8 @@ The following flow chart depicts the logic of this evaluator:
 ```mermaid
 flowchart TD
 A[Parse targetingRule] --> B{Is an array containing at least one item?};
-B -- Yes --> C{Is targetingRule at index 0 a string?};
-B -- No --> D[return nil]
+B -- Yes --> C{Does expression at index 0 return a string?};
+B -- No --> D[return null]
 C -- No --> E[bucketingPropertyValue := default to targetingKey];
 C -- Yes --> F[bucketingPropertyValue := targetingRule at index 0];
 E --> G[Iterate through the remaining elements of the targetingRule array and parse the variants and their percentages];

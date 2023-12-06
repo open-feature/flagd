@@ -55,13 +55,13 @@ func TestFractionalEvaluation(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		flags           Flags
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
+		flags             Flags
+		flagKey           string
+		context           map[string]any
+		expectedValue     string
+		expectedVariant   string
+		expectedReason    string
+		expectedErrorCode string
 	}{
 		"rachel@faas.com": {
 			flags:   flags,
@@ -247,38 +247,6 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
 		},
-		"fallback to default variant if invalid variant as result of fractional evaluation": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
-							"fractional": [
-								{"var": "email"},
-								[
-								"black",
-								100
-								]
-							]
-							}`),
-					},
-				},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "foo@foo.com",
-			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
-			expectedReason:  model.DefaultReason,
-		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
@@ -379,8 +347,11 @@ func TestFractionalEvaluation(t *testing.T) {
 				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
 			}
 
-			if err != tt.expectedError {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
+			if err != nil {
+				errorCode := err.Error()
+				if errorCode != tt.expectedErrorCode {
+					t.Errorf("expected err '%v', got '%v'", tt.expectedErrorCode, err)
+				}
 			}
 		})
 	}
@@ -433,13 +404,13 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	}
 
 	tests := map[string]struct {
-		flags           Flags
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
+		flags             Flags
+		flagKey           string
+		context           map[string]any
+		expectedValue     string
+		expectedVariant   string
+		expectedReason    string
+		expectedErrorCode string
 	}{
 		"test@faas.com": {
 			flags:   flags,
@@ -509,8 +480,11 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 					b.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
 				}
 
-				if err != tt.expectedError {
-					b.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
+				if err != nil {
+					errorCode := err.Error()
+					if errorCode != tt.expectedErrorCode {
+						b.Errorf("expected err '%v', got '%v'", tt.expectedErrorCode, err)
+					}
 				}
 			}
 		})

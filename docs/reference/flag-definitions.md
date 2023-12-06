@@ -7,7 +7,7 @@ description: flagd flag definition
 ## Flags
 
 `flags` is a **required** property.
-The flags property is a top level property that contains a collection of individual flags and their corresponding flag configurations.
+The flags property is a top-level property that contains a collection of individual flags and their corresponding flag configurations.
 
 ```json
 {
@@ -20,7 +20,7 @@ The flags property is a top level property that contains a collection of individ
 ## Flag Definition
 
 `flag key` is a **required** property.
-The flag key **must** uniquely identify a flag so that it can be used during flag evaluation.
+The flag key **must** uniquely identify a flag so it can be used during flag evaluation.
 The flag key **should** convey the intent of the flag.
 
 ```json
@@ -43,11 +43,17 @@ A fully configured flag may look like this.
     "new-welcome-banner": {
       "state": "ENABLED",
       "variants": {
-        "true": true,
-        "false": false
+        "on": true,
+        "off": false
       },
-      "defaultVariant": "false",
-      "targeting": { "in": ["@example.com", { "var": "email" }] }
+      "defaultVariant": "off",
+      "targeting": { 
+        "if": [
+          { "ends_with": [{ "var": "email" }, "@example.com"] },
+          "on",
+          "off"
+        ]
+      }
     }
   }
 }
@@ -74,7 +80,7 @@ It is an object containing the possible variations supported by the flag.
 All the values of the object **must** be the same type (e.g. boolean, numbers, string, JSON).
 The type used as the variant value will correspond directly affects how the flag is accessed.
 For example, to use a flag configured with boolean values the `/schema.v1.Service/ResolveBoolean` path should be used.
-If another path such as `/schema.v1.Service/ResolveString` is called, a type mismatch occurred and an error is returned.
+If another path, such as `/schema.v1.Service/ResolveString` is called, a type mismatch occurs and an error is returned.
 
 Example:
 
@@ -147,9 +153,17 @@ Example of an invalid configuration:
 `targeting` is an **optional** property.
 A targeting rule **must** be valid JSON.
 Flagd uses a modified version of [JsonLogic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules.
-The output of the targeting rule **must** match the name of one of the variants defined above.
-If an invalid or null value is returned by the targeting rule, the `defaultVariant` value is used.
 If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](specifications/rpc-providers.md#caching).
+
+#### Variants Returned From Targeting Rules
+
+The output of the targeting rule **must** match the name of one of the defined variants.
+One exception to the above is that rules may return `true` or `false` which will map to the variant indexed by the equivalent string (`"true"`, `"false"`).
+If a null value is returned by the targeting rule, the `defaultVariant` is used.
+This can be useful for conditionally "exiting" targeting rules and falling back to the default (in this case the returned reason will be `DEFAULT`).
+If an invalid variant is returned (not a string, `true`, or `false`, or a string that is not in the set of variants) the evaluation is considered erroneous.
+
+See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
 #### Evaluation Context
 
@@ -165,7 +179,7 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 }
 ```
 
-The evaluation context can be accessed in targeting rules using the `var` operation followed the evaluation context property name.
+The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
 
 | Description                                                    | Example                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------- |
@@ -188,48 +202,51 @@ Conditions can be used to control the logical flow and grouping of targeting rul
 
 #### Operations
 
-Operations are used to take action on, or compare properties retrieved from the context.
+Operations are used to take action on or compare properties retrieved from the context.
 These are provided out-of-the-box by JsonLogic.
+It's worth noting that JsonLogic operators never throw exceptions or abnormally terminate due to invalid input.
+As long as a JsonLogic operator is structurally valid, it will return a falsy/nullish value.
 
-| Operator               | Description                                                          | Context type | Example                                                                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Equals                 | Attribute equals the specified value, with type coercion.            | any          | Logic: `#!json { "==" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "==" : [1, "1"] }`<br>Result: `true`                                                       |
-| Strict equals          | Attribute equals the specified value, with strict comparison.        | any          | Logic: `#!json { "===" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "===" : [1, "1"] }`<br>Result: `false`                                                    |
-| Not equals             | Attribute doesn't equal the specified value, with type coercion.     | any          | Logic: `#!json { "!=" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!=" : [1, "1"] }`<br>Result: `false`                                                      |
-| Strict not equal       | Attribute doesn't equal the specified value, with strict comparison. | any          | Logic: `#!json { "!==" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!==" : [1, "1"] }`<br>Result: `true`                                                     |
-| Exists                 | Attribute is defined                                                 | any          | Logic: `#!json { "!!": [ "mike" ] }`<br>Result: `true`<br><br>Logic: `#!json { "!!": [ "" ] }`<br>Result: `false`                                                      |
-| Not exists             | Attribute is not defined                                             | any          | Logic: `#!json {"!": [ "mike" ] }`<br>Result: `false`<br><br>Logic: `#!json {"!": [ "" ] }`<br>Result: `true`                                                          |
-| Greater than           | Attribute is greater than the specified value                        | number       | Logic: `#!json { ">" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">" : [1, 2] }`<br>Result: `false`                                                          |
-| Greater than or equals | Attribute is greater or equal to the specified value                 | number       | Logic: `#!json { ">=" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">=" : [1, 1] }`<br>Result: `true`                                                         |
-| Less than              | Attribute is less than the specified value                           | number       | Logic: `#!json { "<" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "<" : [2, 1] }`<br>Result: `false`                                                          |
-| Less than or equals    | Attribute is less or equal to the specified value                    | number       | Logic: `#!json { "<=" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "<=" : [2, 1] }`<br>Result: `false`                                                        |
-| Between                | Attribute between the specified values                               | number       | Logic: `#!json { "<" : [1, 5, 10]}`<br>Result: `true`<br><br>Logic: `#!json { "<" : [1, 11, 10] }`<br>Result: `false`                                                  |
-| Between inclusive      | Attribute between or equal to the specified values                   | number       | Logic: `#!json {"<=" : [1, 1, 10] }`<br>Result: `true`<br><br>Logic: `#!json {"<=" : [1, 11, 10] }`<br>Result: `false`                                                 |
-| Contains               | Contains string                                                      | string       | Logic: `#!json { "in": ["Spring", "Springfield"] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Illinois", "Springfield"] }`<br>Result: `false`                   |
-| Not contains           | Does not contain a string                                            | string       | Logic: `#!json { "!": { "in":["Spring", "Springfield"] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Illinois", "Springfield"] } }`<br>Result: `true`  |
-| In                     | Attribute is in an array of strings                                  | string       | Logic: `#!json { "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
-| Not it                 | Attribute is not in an array of strings                              | string       | Logic: `#!json { "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
+| Operator               | Description                                                          | Context attribute type | Example                                                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Equals                 | Attribute equals the specified value, with type coercion.            | any                    | Logic: `#!json { "==" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "==" : [1, "1"] }`<br>Result: `true`                                                       |
+| Strict equals          | Attribute equals the specified value, with strict comparison.        | any                    | Logic: `#!json { "===" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "===" : [1, "1"] }`<br>Result: `false`                                                    |
+| Not equals             | Attribute doesn't equal the specified value, with type coercion.     | any                    | Logic: `#!json { "!=" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!=" : [1, "1"] }`<br>Result: `false`                                                      |
+| Strict not equal       | Attribute doesn't equal the specified value, with strict comparison. | any                    | Logic: `#!json { "!==" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "!==" : [1, "1"] }`<br>Result: `true`                                                     |
+| Exists                 | Attribute is defined                                                 | any                    | Logic: `#!json { "!!": [ "mike" ] }`<br>Result: `true`<br><br>Logic: `#!json { "!!": [ "" ] }`<br>Result: `false`                                                      |
+| Not exists             | Attribute is not defined                                             | any                    | Logic: `#!json {"!": [ "mike" ] }`<br>Result: `false`<br><br>Logic: `#!json {"!": [ "" ] }`<br>Result: `true`                                                          |
+| Greater than           | Attribute is greater than the specified value                        | number                 | Logic: `#!json { ">" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">" : [1, 2] }`<br>Result: `false`                                                          |
+| Greater than or equals | Attribute is greater or equal to the specified value                 | number                 | Logic: `#!json { ">=" : [2, 1] }`<br>Result: `true`<br><br>Logic: `#!json { ">=" : [1, 1] }`<br>Result: `true`                                                         |
+| Less than              | Attribute is less than the specified value                           | number                 | Logic: `#!json { "<" : [1, 2] }`<br>Result: `true`<br><br>Logic: `#!json { "<" : [2, 1] }`<br>Result: `false`                                                          |
+| Less than or equals    | Attribute is less or equal to the specified value                    | number                 | Logic: `#!json { "<=" : [1, 1] }`<br>Result: `true`<br><br>Logic: `#!json { "<=" : [2, 1] }`<br>Result: `false`                                                        |
+| Between                | Attribute between the specified values                               | number                 | Logic: `#!json { "<" : [1, 5, 10]}`<br>Result: `true`<br><br>Logic: `#!json { "<" : [1, 11, 10] }`<br>Result: `false`                                                  |
+| Between inclusive      | Attribute between or equal to the specified values                   | number                 | Logic: `#!json {"<=" : [1, 1, 10] }`<br>Result: `true`<br><br>Logic: `#!json {"<=" : [1, 11, 10] }`<br>Result: `false`                                                 |
+| Contains               | Contains string                                                      | string                 | Logic: `#!json { "in": ["Spring", "Springfield"] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Illinois", "Springfield"] }`<br>Result: `false`                   |
+| Not contains           | Does not contain a string                                            | string                 | Logic: `#!json { "!": { "in":["Spring", "Springfield"] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Illinois", "Springfield"] } }`<br>Result: `true`  |
+| In                     | Attribute is in an array of strings                                  | string                 | Logic: `#!json { "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
+| Not it                 | Attribute is not in an array of strings                              | string                 | Logic: `#!json { "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
 
 #### Custom Operations
 
 These are custom operations specific to flagd and flagd providers.
-They are purpose built extensions to JsonLogic in order to support common feature flag use cases.
+They are purpose-built extensions to JsonLogic in order to support common feature flag use cases.
+Consistent with build-in JsonLogic operators, flagd's custom operators return falsy/nullish values with invalid inputs.
 
-| Function                           | Description                                         | Example                                                                                                                                                                                                                                                                                  |
-| ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fractional` (_available v0.6.4+_) | Deterministic, pseudorandom fractional distribution | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional-operation.md).        |
-| `starts_with`                      | Attribute starts with the specified value           | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).                     |
-| `ends_with`                        | Attribute ends with the specified value             | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).|
-| `sem_ver`                          | Attribute matches a semantic versioning condition   | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                   |
+| Function                           | Description                                         | Context attribute type                       | Example                                                                                                                                                                                                                                                                                            |
+| ---------------------------------- | --------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fractional` (_available v0.6.4+_) | Deterministic, pseudorandom fractional distribution | string (bucketing value)                     | Logic: `#!json { "fractional" : [ { "var": "email" }, [ "red" , 50], [ "green" , 50 ] ] }` <br>Result: Pseudo randomly `red` or `green` based on the evaluation context property `email`.<br><br>Additional documentation can be found [here](./custom-operations/fractional-operation.md).        |
+| `starts_with`                      | Attribute starts with the specified value           | string                                       | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).                      |
+| `ends_with`                        | Attribute ends with the specified value             | string                                       | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md). |
+| `sem_ver`                          | Attribute matches a semantic versioning condition   | string (valid [semver](https://semver.org/)) | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                              |
 
 #### $flagd properties in the evaluation context
 
 Flagd adds the following properties to the evaluation context that can be used in the targeting rules.
 
-| Property | Description | From version |
-|----------|-------------|--------------|
-| `$flagd.flagKey` | the identifier for the flag being evaluated | v0.6.4 |
-| `$flagd.timestamp`| a unix timestamp (in seconds) of the time of evaluation | v0.6.7 |
+| Property           | Description                                             | From version |
+| ------------------ | ------------------------------------------------------- | ------------ |
+| `$flagd.flagKey`   | the identifier for the flag being evaluated             | v0.6.4       |
+| `$flagd.timestamp` | a Unix timestamp (in seconds) of the time of evaluation | v0.6.7       |
 
 ## Shared evaluators
 
@@ -296,6 +313,54 @@ Example:
           "var": ["email"]
         }
       ]
+    }
+  }
+}
+```
+
+## Boolean Variant Shorthand
+
+Since rules that return `true` or `false` map to the variant indexed by the equivalent string (`"true"`, `"false"`), you can use shorthand for these cases.
+
+For example, this:
+
+```json
+{
+  "flags": {
+    "new-welcome-banner": {
+      "state": "ENABLED",
+      "variants": {
+        "true": true,
+        "false": false
+      },
+      "defaultVariant": "false",
+      "targeting": { 
+        "if": [
+          { "ends_with": [{ "var": "email" }, "@example.com"] },
+          "true",
+          "false"
+        ]
+      }
+    }
+  }
+}
+```
+
+can be shortened to this:
+
+```json
+{
+  "flags": {
+    "new-welcome-banner": {
+      "state": "ENABLED",
+      "variants": {
+        "true": true,
+        "false": false
+      },
+      "defaultVariant": "false",
+      "targeting": { 
+        "ends_with": [{ "var": "email" }, "@example.com"]
+      }
     }
   }
 }
