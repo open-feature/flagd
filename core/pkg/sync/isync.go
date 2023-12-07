@@ -1,6 +1,8 @@
 package sync
 
-import "context"
+import (
+	"context"
+)
 
 type Type int
 
@@ -56,4 +58,17 @@ type DataSync struct {
 	FlagData string
 	Source   string
 	Type
+}
+
+// SourceConfig is configuration option for flagd. This maps to startup parameter sources
+type SourceConfig struct {
+	URI      string `json:"uri"`
+	Provider string `json:"provider"`
+
+	BearerToken string `json:"bearerToken,omitempty"`
+	CertPath    string `json:"certPath,omitempty"`
+	TLS         bool   `json:"tls,omitempty"`
+	ProviderID  string `json:"providerID,omitempty"`
+	Selector    string `json:"selector,omitempty"`
+	Interval    uint32 `json:"interval,omitempty"`
 }

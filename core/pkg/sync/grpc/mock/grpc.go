@@ -160,7 +160,7 @@ func (mr *MockFlagSyncServiceClientResponseMockRecorder) Recv() *gomock.Call {
 }
 
 // RecvMsg mocks base method.
-func (m_2 *MockFlagSyncServiceClientResponse) RecvMsg(m interface{}) error {
+func (m_2 *MockFlagSyncServiceClientResponse) RecvMsg(m any) error {
 	m_2.ctrl.T.Helper()
 	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
 	ret0, _ := ret[0].(error)
@@ -174,7 +174,7 @@ func (mr *MockFlagSyncServiceClientResponseMockRecorder) RecvMsg(m interface{}) 
 }
 
 // SendMsg mocks base method.
-func (m_2 *MockFlagSyncServiceClientResponse) SendMsg(m interface{}) error {
+func (m_2 *MockFlagSyncServiceClientResponse) SendMsg(m any) error {
 	m_2.ctrl.T.Helper()
 	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
 	ret0, _ := ret[0].(error)

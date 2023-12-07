@@ -1,44 +1,45 @@
 //nolint:contextcheck
-package store
+package subscriptions
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"sync"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/runtime"
 	isync "github.com/open-feature/flagd/core/pkg/sync"
-	"go.uber.org/zap"
+	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 )
 
-var (
-	regCrd  *regexp.Regexp
-	regFile *regexp.Regexp
-)
+// Manager defines the interface for the subscription management
+type Manager interface {
+	FetchAllFlags(
+		ctx context.Context,
+		key interface{},
+		target string,
+	) (isync.DataSync, error)
+	RegisterSubscription(
+		ctx context.Context,
+		target string,
+		key interface{},
+		dataSync chan isync.DataSync,
+		errChan chan error,
+	)
 
-func init() {
-	regCrd = regexp.MustCompile("^core.openfeature.dev/")
-	regFile = regexp.MustCompile("^file:")
+	// metrics hooks
+	GetActiveSubscriptionsInt64() int64
 }
 
-type SyncStore struct {
+// Coordinator coordinates subscriptions by aggregating subscribers for the same target, and keeping them up to date
+// for any updates that have happened for those targets.
+type Coordinator struct {
 	ctx          context.Context
-	syncHandlers map[string]*syncHandler
+	multiplexers map[string]*multiplexer
 	logger       *logger.Logger
 	mu           *sync.RWMutex
-	syncBuilder  SyncBuilderInterface
-}
-
-type syncHandler struct {
-	subs       map[interface{}]storedChannels
-	dataSync   chan isync.DataSync
-	cancelFunc context.CancelFunc
-	syncRef    isync.ISync
-	mu         *sync.RWMutex
+	syncBuilder  syncbuilder.ISyncBuilder
 }
 
 type storedChannels struct {
@@ -46,27 +47,27 @@ type storedChannels struct {
 	dataSync chan isync.DataSync
 }
 
-// NewSyncStore returns a new sync store
-func NewSyncStore(ctx context.Context, logger *logger.Logger) *SyncStore {
-	ss := SyncStore{
+// NewManager returns a new subscription manager
+func NewManager(ctx context.Context, logger *logger.Logger) *Coordinator {
+	mgr := Coordinator{
 		ctx:          ctx,
-		syncHandlers: map[string]*syncHandler{},
+		multiplexers: map[string]*multiplexer{},
 		logger:       logger,
 		mu:           &sync.RWMutex{},
-		syncBuilder:  &SyncBuilder{},
+		syncBuilder:  &syncbuilder.SyncBuilder{},
 	}
-	go ss.cleanup()
-	return &ss
+	go mgr.cleanup()
+	return &mgr
 }
 
-// FetchAllFlags returns a DataSync containing the full set of flag configurations from the SyncStore.
+// FetchAllFlags returns a DataSync containing the full set of flag configurations from the Coordinator.
 // This will either occur via triggering a resync, or through setting up a new subscription to the resource
-func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
+func (s *Coordinator) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
 	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	s.mu.RLock()
-	syncHandler, ok := s.syncHandlers[target]
+	syncHandler, ok := s.multiplexers[target]
 	s.mu.RUnlock()
 	if !ok {
 		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
@@ -95,7 +96,7 @@ func (s *SyncStore) FetchAllFlags(ctx context.Context, key interface{}, target s
 
 // RegisterSubscription starts a new subscription to the target resource.
 // Once the subscription is set an ALL sync event will be received via the DataSync chan.
-func (s *SyncStore) RegisterSubscription(
+func (s *Coordinator) RegisterSubscription(
 	ctx context.Context,
 	target string,
 	key interface{},
@@ -105,16 +106,16 @@ func (s *SyncStore) RegisterSubscription(
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// is there a currently active subscription for this target?
-	sh, ok := s.syncHandlers[target]
+	sh, ok := s.multiplexers[target]
 	if !ok {
 		// we need to start a sync for this
 		s.logger.Debug(
 			fmt.Sprintf(
-				"sync handler does not exist for target %s, registering syncHandler with sub %p",
+				"sync handler does not exist for target %s, registering multiplexer with sub %p",
 				target,
 				key,
 			))
-		s.syncHandlers[target] = &syncHandler{
+		s.multiplexers[target] = &multiplexer{
 			dataSync: make(chan isync.DataSync),
 			subs: map[interface{}]storedChannels{
 				key: {
@@ -137,7 +138,7 @@ func (s *SyncStore) RegisterSubscription(
 			go func() {
 				s.mu.RLock()
 				defer s.mu.RUnlock()
-				if _, ok := s.syncHandlers[target]; ok {
+				if _, ok := s.multiplexers[target]; ok {
 					s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
 					if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
 						errChan <- err
@@ -151,28 +152,28 @@ func (s *SyncStore) RegisterSubscription(
 		<-ctx.Done()
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if s.syncHandlers[target] != nil && s.syncHandlers[target].subs != nil {
+		if s.multiplexers[target] != nil && s.multiplexers[target].subs != nil {
 			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
-			delete(s.syncHandlers[target].subs, key)
+			delete(s.multiplexers[target].subs, key)
 		}
 	}()
 }
 
-func (s *SyncStore) watchResource(target string) {
+func (s *Coordinator) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
-	sh, ok := s.syncHandlers[target]
+	sh, ok := s.multiplexers[target]
 	if !ok {
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
-	// this cancel is accessed by the cleanup method shutdown the listener + delete the syncHandler
+	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
 	sh.cancelFunc = cancel
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()
-		delete(s.syncHandlers, target)
+		delete(s.multiplexers, target)
 		s.mu.Unlock()
 	}()
 	// broadcast any data passed through the core channel to all subscribing channels
@@ -182,73 +183,47 @@ func (s *SyncStore) watchResource(target string) {
 			case <-ctx.Done():
 				return
 			case d := <-sh.dataSync:
-				sh.writeData(s.logger, d)
+				sh.broadcastData(s.logger, d)
 			}
 		}
 	}()
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
-	sync, err := s.syncBuilder.SyncFromURI(target, s.logger)
+	syncSource, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
-	err = sync.Init(ctx)
+	err = syncSource.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 		return
 	}
-	// sync ref is used to trigger a resync on a single channel when a new subscription is started
+	// syncSource ref is used to trigger a resync on a single channel when a new subscription is started
 	// but the associated SyncHandler already exists, i.e. this function is not run
-	sh.syncRef = sync
-	err = sync.Sync(ctx, sh.dataSync)
+	sh.syncRef = syncSource
+	err = syncSource.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		sh.writeError(s.logger, err)
+		sh.broadcastError(s.logger, err)
 	}
 }
 
-func (h *syncHandler) writeError(logger *logger.Logger, err error) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	for k, ec := range h.subs {
-		select {
-		case ec.errChan <- err:
-			continue
-		default:
-			logger.Error(fmt.Sprintf("unable to write error to channel for key %p", k))
-		}
-	}
-}
-
-func (h *syncHandler) writeData(logger *logger.Logger, data isync.DataSync) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	for k, ds := range h.subs {
-		select {
-		case ds.dataSync <- data:
-			continue
-		default:
-			logger.Error(fmt.Sprintf("unable to write data to channel for key %p", k))
-		}
-	}
-}
-
-func (s *SyncStore) cleanup() {
+func (s *Coordinator) cleanup() {
 	for {
 		select {
 		case <-s.ctx.Done():
 			return
 		case <-time.After(5 * time.Second):
 			s.mu.Lock()
-			for k, v := range s.syncHandlers {
-				// delete any syncHandlers with 0 active subscriptions through cancelling its context
-				s.logger.Debug(fmt.Sprintf("syncHandler for target %s has %d subscriptions", k, len(v.subs)))
+			for k, v := range s.multiplexers {
+				// delete any multiplexers with 0 active subscriptions through cancelling its context
+				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, len(v.subs)))
 				if len(v.subs) == 0 {
-					s.logger.Debug(fmt.Sprintf("shutting down syncHandler %s", k))
-					s.syncHandlers[k].cancelFunc()
+					s.logger.Debug(fmt.Sprintf("shutting down multiplexer %s", k))
+					s.multiplexers[k].cancelFunc()
 				}
 			}
 			s.mu.Unlock()
@@ -256,45 +231,14 @@ func (s *SyncStore) cleanup() {
 	}
 }
 
-func (s *SyncStore) GetActiveSubscriptionsInt64() int64 {
+func (s *Coordinator) GetActiveSubscriptionsInt64() int64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	syncs := 0
-	for _, v := range s.syncHandlers {
+	for _, v := range s.multiplexers {
 		syncs += len(v.subs)
 	}
 
 	return int64(syncs)
-}
-
-type SyncBuilderInterface interface {
-	SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error)
-}
-
-type SyncBuilder struct{}
-
-// SyncFromURI builds an ISync interface from the input uri string
-func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (isync.ISync, error) {
-	switch uriB := []byte(uri); {
-	// filepath may be used for debugging, not recommended in deployment
-	case regFile.Match(uriB):
-		return runtime.NewFile(runtime.SourceConfig{
-			URI: regFile.ReplaceAllString(uri, ""),
-		}, logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "filepath"),
-			zap.String("target", "target"),
-		)), nil
-	case regCrd.Match(uriB):
-		s, err := runtime.NewK8s(uri, logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "kubernetes"),
-		))
-		if err != nil {
-			return nil, fmt.Errorf("error creating k8s sync: %w", err)
-		}
-		return s, nil
-	}
-	return nil, fmt.Errorf("unrecognized URI: %s", uri)
 }

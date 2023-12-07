@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	msync "sync"
 	"time"
@@ -17,9 +16,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,6 +25,8 @@ var (
 	apiVersion          = fmt.Sprintf("%s/%s", v1beta1.GroupVersion.Group, v1beta1.GroupVersion.Version)
 	featureFlagResource = v1beta1.GroupVersion.WithResource("featureflags")
 )
+
+type SyncOption func(s *Sync)
 
 type Sync struct {
 	URI string
@@ -45,32 +44,14 @@ func NewK8sSync(
 	logger *logger.Logger,
 	uri string,
 	reader client.Reader,
-	dynamic dynamic.Interface,
+	dynamicClient dynamic.Interface,
 ) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,
 		readClient:    reader,
-		dynamicClient: dynamic,
+		dynamicClient: dynamicClient,
 	}
-}
-
-func GetClients() (client.Reader, dynamic.Interface, error) {
-	clusterConfig, err := k8sClusterConfig()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create readClient: %w", err)
-	}
-
-	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create dynamicClient: %w", err)
-	}
-	return readClient, dynamicClient, nil
 }
 
 func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -323,32 +304,6 @@ func parseURI(uri string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid resource uri format, expected <namespace>/<crdName> but got: %s", uri)
 	}
 	return s[0], s[1], nil
-}
-
-// k8sClusterConfig build K8s connection config based available configurations
-func k8sClusterConfig() (*rest.Config, error) {
-	cfg := os.Getenv("KUBECONFIG")
-
-	var clusterConfig *rest.Config
-	var err error
-
-	if cfg != "" {
-		clusterConfig, err = clientcmd.BuildConfigFromFlags("", cfg)
-		if err != nil {
-			err = fmt.Errorf("error building cluster config from flags: %w", err)
-		}
-	} else {
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			err = fmt.Errorf("error fetch cluster config: %w", err)
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return clusterConfig, nil
 }
 
 func marshallFeatureFlagSpec(ff *v1beta1.FeatureFlag) (string, error) {

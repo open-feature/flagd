@@ -13,7 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	syncServer "github.com/open-feature/flagd/core/pkg/service/sync"
-	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
+	"github.com/open-feature/flagd/core/pkg/subscriptions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
@@ -70,7 +70,7 @@ var startCmd = &cobra.Command{
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-		syncStore := syncStore.NewSyncStore(ctx, logger)
+		syncStore := subscriptions.NewManager(ctx, logger)
 		s := syncServer.NewServer(logger, syncStore)
 
 		// If --management-port is set use that value. If not and
