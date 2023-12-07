@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"errors"
@@ -52,12 +52,12 @@ func (svo SemVerOperator) compare(v1, v2 string) (bool, error) {
 	}
 }
 
-type SemVerComparisonEvaluator struct {
+type SemVerComparison struct {
 	Logger *logger.Logger
 }
 
-func NewSemVerComparisonEvaluator(log *logger.Logger) *SemVerComparisonEvaluator {
-	return &SemVerComparisonEvaluator{Logger: log}
+func NewSemVerComparison(log *logger.Logger) *SemVerComparison {
+	return &SemVerComparison{Logger: log}
 }
 
 // SemVerEvaluation checks if the given property matches a semantic versioning condition.
@@ -81,7 +81,7 @@ func NewSemVerComparisonEvaluator(log *logger.Logger) *SemVerComparisonEvaluator
 // 1. Target property: this needs which both resolve to a semantic versioning string
 // 2. Operator: One of the following: '=', '!=', '>', '<', '>=', '<=', '~', '^'
 // 3. Target value: this needs which both resolve to a semantic versioning string
-func (je *SemVerComparisonEvaluator) SemVerEvaluation(values, _ interface{}) interface{} {
+func (je *SemVerComparison) SemVerEvaluation(values, _ interface{}) interface{} {
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse sem_ver evaluation data: %v", err))

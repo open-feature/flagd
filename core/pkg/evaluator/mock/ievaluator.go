@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	eval "github.com/open-feature/flagd/core/pkg/eval"
+	eval "github.com/open-feature/flagd/core/pkg/evaluator"
 	sync "github.com/open-feature/flagd/core/pkg/sync"
 )
 
