@@ -96,7 +96,7 @@ metadata:
     name: flag-source-sample
 spec:
     managementPort: 8080
-    Port: 80
+    port: 80
     evaluator: json
     image: my-custom-sidecar-image
     defaultSyncProvider: filepath
