@@ -116,7 +116,7 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 }
 
 func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
-	restClient, dynamicClient, err := sb.k8sClientBuilder.GetK8sClients()
+	dynamicClient, err := sb.k8sClientBuilder.GetK8sClients()
 	if err != nil {
 		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
@@ -127,7 +127,6 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 			zap.String("sync", "kubernetes"),
 		),
 		regCrd.ReplaceAllString(uri, ""),
-		restClient,
 		dynamicClient,
 	), nil
 }
@@ -170,27 +169,22 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 }
 
 type IK8sClientBuilder interface {
-	GetK8sClients() (rest.Interface, dynamic.Interface, error)
+	GetK8sClients() (dynamic.Interface, error)
 }
 
 type KubernetesClientBuilder struct{}
 
-func (kcb KubernetesClientBuilder) GetK8sClients() (rest.Interface, dynamic.Interface, error) {
+func (kcb KubernetesClientBuilder) GetK8sClients() (dynamic.Interface, error) {
 	clusterConfig, err := k8sClusterConfig()
 	if err != nil {
-		return nil, nil, err
-	}
-
-	restClient, err := rest.UnversionedRESTClientFor(clusterConfig)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create restClient: %w", err)
+		return nil, err
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create dynamicClient: %w", err)
+		return nil, fmt.Errorf("unable to create dynamicClient: %w", err)
 	}
-	return restClient, dynamicClient, nil
+	return dynamicClient, nil
 }
 
 // k8sClusterConfig build K8s connection config based available configurations

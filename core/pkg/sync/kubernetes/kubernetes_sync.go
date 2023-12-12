@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/client-go/rest"
 	"strings"
 	msync "sync"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -36,7 +36,6 @@ type Sync struct {
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
-	client        rest.Interface
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
 }
@@ -44,13 +43,11 @@ type Sync struct {
 func NewK8sSync(
 	logger *logger.Logger,
 	uri string,
-	client rest.Interface,
 	dynamicClient dynamic.Interface,
 ) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,
-		client:        client,
 		dynamicClient: dynamicClient,
 	}
 }
@@ -178,15 +175,22 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
-	var ff v1beta1.FeatureFlag
 
-	err = k.client.Get().Resource(k.crdName).Namespace(k.namespace).Do(ctx).Into(&ff)
+	ffObj, err := k.dynamicClient.
+		Resource(featureFlagResource).
+		Namespace(k.namespace).
+		Get(ctx, k.crdName, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch FeatureFlag %s/%s: %w", k.namespace, k.crdName, err)
 	}
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
-	return marshallFeatureFlagSpec(&ff)
+
+	ff, err := toFFCfg(ffObj)
+	if err != nil {
+		return "", fmt.Errorf("unable to convert object %s/%s to FeatureFlag: %w", k.namespace, k.crdName, err)
+	}
+	return marshallFeatureFlagSpec(ff)
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {

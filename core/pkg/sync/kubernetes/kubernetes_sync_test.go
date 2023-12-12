@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
-	fakeRest "k8s.io/client-go/rest/fake"
-	"k8s.io/client-go/util/flowcontrol"
-	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -26,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes/scheme"
+	testing2 "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
@@ -398,10 +393,11 @@ func TestSync_fetch(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name          string
+		args          args
+		injectionFunc func(s *Sync)
+		want          string
+		wantErr       bool
 	}{
 		{
 			name: "Scenario - get from informer cache",
@@ -409,6 +405,12 @@ func TestSync_fetch(t *testing.T) {
 				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
 					return toUnstructured(t, validCfg), true, nil
 				},
+			},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				err := s.Init(context.Background())
+				require.Nil(t, err)
 			},
 			wantErr: false,
 			want:    `{"flags":{}}`,
@@ -421,15 +423,26 @@ func TestSync_fetch(t *testing.T) {
 				},
 				ClientResponse: validCfg,
 			},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				err := s.Init(context.Background())
+				require.Nil(t, err)
+			},
 			wantErr: false,
 			want:    `{"flags":{}}`,
 		},
 		{
 			name: "Scenario - error for informer cache read error",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, errors.New("mock error")
-				},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.informer = &MockInformer{
+					fakeStore: cache.FakeCustomStore{
+						GetByKeyFunc: func(key string) (item interface{}, exists bool, err error) {
+							return nil, false, errors.New("mock error")
+						},
+					},
+				}
 			},
 			wantErr: true,
 		},
@@ -441,6 +454,16 @@ func TestSync_fetch(t *testing.T) {
 				},
 				ClientError: errors.New("mock error"),
 			},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				fakeClient := fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				fakeClient.PrependReactor("get", "featureflags", func(action testing2.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("could not get ff config")
+				})
+				s.dynamicClient = fakeClient
+				err := s.Init(context.Background())
+				require.Nil(t, err)
+			},
 			wantErr: true,
 		},
 	}
@@ -448,16 +471,11 @@ func TestSync_fetch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup with args
 			k := &Sync{
-				informer: &MockInformer{
-					fakeStore: cache.FakeCustomStore{
-						GetByKeyFunc: tt.args.InformerGetFunc,
-					},
-				},
-				client: &MockClient{
-					getResponse: tt.args.ClientResponse,
-					clientErr:   tt.args.ClientError,
-				},
 				logger: logger.NewLogger(nil, false),
+			}
+
+			if tt.injectionFunc != nil {
+				tt.injectionFunc(k)
 			}
 
 			// Test fetch
@@ -612,20 +630,7 @@ func TestSync_ReSync(t *testing.T) {
 	ff := &unstructured.Unstructured{}
 	ff.SetUnstructuredContent(getCFG(name, ns))
 	fakeDynamicClient := fake.NewSimpleDynamicClient(s, ff)
-	validFFCfg := &v1beta1.FeatureFlag{
-		TypeMeta: Metadata,
-		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-	}
-	jsonContent, _ := validFFCfg.Marshal()
-	fakeRestClient := &fakeRest.RESTClient{
-		Resp: &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(jsonContent)),
-		},
-	}
+
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -642,7 +647,6 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				client:        fakeRestClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -654,7 +658,6 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				client:        fakeRestClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -804,12 +807,10 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	const uri = "myURI"
 	log := logger.NewLogger(l, true)
-	rc := &fakeRest.RESTClient{}
 	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
 		log,
 		uri,
-		rc,
 		dc,
 	)
 	if k == nil {
@@ -820,9 +821,6 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	if k.logger != log {
 		t.Errorf("Object not initialized with the right logger")
-	}
-	if k.client != rc {
-		t.Errorf("Object not initialized with the right K8s client")
 	}
 	if k.dynamicClient != dc {
 		t.Errorf("Object not initialized with the right K8s dynamic client")
@@ -866,46 +864,6 @@ type MockClient struct {
 	clientErr error
 
 	getResponse v1beta1.FeatureFlag
-}
-
-func (m MockClient) GetRateLimiter() flowcontrol.RateLimiter {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Verb(verb string) *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Post() *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Put() *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Patch(pt types.PatchType) *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Get() *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) Delete() *rest.Request {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m MockClient) APIVersion() schema.GroupVersion {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
