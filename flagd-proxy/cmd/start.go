@@ -23,10 +23,8 @@ import (
 
 const (
 	logFormatFlagName      = "log-format"
-	metricsPortFlagName    = "metrics-port" // deprecated
 	managementPortFlagName = "management-port"
 	portFlagName           = "port"
-	defaultManagementPort  = 8016
 )
 
 func init() {
@@ -34,12 +32,10 @@ func init() {
 
 	// allows environment variables to use _ instead of -
 	flags.Int32P(portFlagName, "p", 8015, "Port to listen on")
-	flags.Int32(metricsPortFlagName, defaultManagementPort, "DEPRECATED: Superseded by --management-port.")
-	flags.Int32P(managementPortFlagName, "m", defaultManagementPort, "Management port")
+	flags.Int32P(managementPortFlagName, "m", 8016, "Management port")
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
-	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 }
@@ -64,29 +60,15 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l, Debug)
 
-		if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
-			logger.Warn("DEPRECATED: The --metrics-port flag has been deprecated and is superseded by --management-port.")
-		}
-
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 		syncStore := subscriptions.NewManager(ctx, logger)
 		s := syncServer.NewServer(logger, syncStore)
 
-		// If --management-port is set use that value. If not and
-		// --metrics-port is set use that value. Otherwise use the default
-		// value.
-		managementPort := uint16(defaultManagementPort)
-		if viper.GetUint16(managementPortFlagName) != defaultManagementPort {
-			managementPort = viper.GetUint16(managementPortFlagName)
-		} else if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
-			managementPort = viper.GetUint16(metricsPortFlagName)
-		}
-
 		cfg := service.Configuration{
 			ReadinessProbe: func() bool { return true },
 			Port:           viper.GetUint16(portFlagName),
-			ManagementPort: managementPort,
+			ManagementPort: viper.GetUint16(managementPortFlagName),
 		}
 
 		errChan := make(chan error, 1)
