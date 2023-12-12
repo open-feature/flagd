@@ -396,6 +396,8 @@ cloud.google.com/go/workflows v1.8.0/go.mod h1:ysGhmEajwZxGn1OhGOGKsTXc5PyxOc0vf
 cloud.google.com/go/workflows v1.9.0/go.mod h1:ZGkj1aFIOd9c8Gerkjjq7OW7I5+l6cSvT3ujaO/WwSA=
 connectrpc.com/connect v1.12.0 h1:HwKdOY0lGhhoHdsza+hW55aqHEC64pYpObRNoAgn70g=
 connectrpc.com/connect v1.12.0/go.mod h1:3AGaO6RRGMx5IKFfqbe3hvK1NqLosFNP2BxDYTPmNPo=
+connectrpc.com/connect v1.13.0 h1:lGs5maZZzWOOD+PFFiOt5OncKmMsk9ZdPwpy5jcmaYg=
+connectrpc.com/connect v1.13.0/go.mod h1:uHAFHtYgeSZJxXrkN1IunDpKghnTXhYbVh0wW4StPW0=
 connectrpc.com/otelconnect v0.6.0 h1:VJAdQL9+sgdUw9+7+J+jq8pQo/h1S7tSFv2+vDcR7bU=
 connectrpc.com/otelconnect v0.6.0/go.mod h1:jdcs0uiwXQVmSMgTJ2dAaWR5VbpNd7QKNkuoH7n86RA=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
