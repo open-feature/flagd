@@ -54,7 +54,7 @@ func NewManager(ctx context.Context, logger *logger.Logger) *Coordinator {
 		multiplexers: map[string]*multiplexer{},
 		logger:       logger,
 		mu:           &sync.RWMutex{},
-		syncBuilder:  &syncbuilder.SyncBuilder{},
+		syncBuilder:  syncbuilder.NewSyncBuilder(),
 	}
 	go mgr.cleanup()
 	return &mgr

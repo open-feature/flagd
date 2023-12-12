@@ -11,7 +11,7 @@ import (
 	logger "github.com/open-feature/flagd/core/pkg/logger"
 	sync "github.com/open-feature/flagd/core/pkg/sync"
 	dynamic "k8s.io/client-go/dynamic"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
+	rest "k8s.io/client-go/rest"
 )
 
 // MockISyncBuilder is a mock of ISyncBuilder interface.
@@ -91,10 +91,10 @@ func (m *MockIK8sClientBuilder) EXPECT() *MockIK8sClientBuilderMockRecorder {
 }
 
 // GetK8sClients mocks base method.
-func (m *MockIK8sClientBuilder) GetK8sClients() (client.Reader, dynamic.Interface, error) {
+func (m *MockIK8sClientBuilder) GetK8sClients() (rest.Interface, dynamic.Interface, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetK8sClients")
-	ret0, _ := ret[0].(client.Reader)
+	ret0, _ := ret[0].(rest.Interface)
 	ret1, _ := ret[1].(dynamic.Interface)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2

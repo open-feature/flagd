@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/client-go/rest"
 	"strings"
 	msync "sync"
 	"time"
@@ -35,7 +36,7 @@ type Sync struct {
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
-	readClient    client.Reader
+	client        rest.Interface
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
 }
@@ -43,13 +44,13 @@ type Sync struct {
 func NewK8sSync(
 	logger *logger.Logger,
 	uri string,
-	reader client.Reader,
+	client rest.Interface,
 	dynamicClient dynamic.Interface,
 ) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,
-		readClient:    reader,
+		client:        client,
 		dynamicClient: dynamicClient,
 	}
 }
@@ -178,10 +179,8 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
 	var ff v1beta1.FeatureFlag
-	err = k.readClient.Get(ctx, client.ObjectKey{
-		Name:      k.crdName,
-		Namespace: k.namespace,
-	}, &ff)
+
+	err = k.client.Get().Resource(k.crdName).Namespace(k.namespace).Do(ctx).Into(&ff)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch FeatureFlag %s/%s: %w", k.namespace, k.crdName, err)
 	}

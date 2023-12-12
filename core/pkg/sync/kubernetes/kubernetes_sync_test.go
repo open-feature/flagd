@@ -5,6 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	fakeRest "k8s.io/client-go/rest/fake"
+	"k8s.io/client-go/util/flowcontrol"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,10 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	fakeClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
 )
 
@@ -448,7 +453,7 @@ func TestSync_fetch(t *testing.T) {
 						GetByKeyFunc: tt.args.InformerGetFunc,
 					},
 				},
-				readClient: &MockClient{
+				client: &MockClient{
 					getResponse: tt.args.ClientResponse,
 					clientErr:   tt.args.ClientError,
 				},
@@ -614,7 +619,13 @@ func TestSync_ReSync(t *testing.T) {
 			Namespace: ns,
 		},
 	}
-	fakeReadClient := newFakeReadClient(validFFCfg)
+	jsonContent, _ := validFFCfg.Marshal()
+	fakeRestClient := &fakeRest.RESTClient{
+		Resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(jsonContent)),
+		},
+	}
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -631,7 +642,7 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				readClient:    fakeReadClient,
+				client:        fakeRestClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -643,7 +654,7 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				readClient:    fakeReadClient,
+				client:        fakeRestClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -793,7 +804,7 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	const uri = "myURI"
 	log := logger.NewLogger(l, true)
-	rc := newFakeReadClient()
+	rc := &fakeRest.RESTClient{}
 	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
 		log,
@@ -810,17 +821,12 @@ func Test_NewK8sSync(t *testing.T) {
 	if k.logger != log {
 		t.Errorf("Object not initialized with the right logger")
 	}
-	if k.readClient != rc {
+	if k.client != rc {
 		t.Errorf("Object not initialized with the right K8s client")
 	}
 	if k.dynamicClient != dc {
 		t.Errorf("Object not initialized with the right K8s dynamic client")
 	}
-}
-
-func newFakeReadClient(objs ...client.Object) client.Client {
-	_ = v1beta1.AddToScheme(scheme.Scheme)
-	return fakeClient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
 }
 
 func getCFG(name, namespace string) map[string]interface{} {
@@ -860,6 +866,46 @@ type MockClient struct {
 	clientErr error
 
 	getResponse v1beta1.FeatureFlag
+}
+
+func (m MockClient) GetRateLimiter() flowcontrol.RateLimiter {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Verb(verb string) *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Post() *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Put() *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Patch(pt types.PatchType) *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Get() *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) Delete() *rest.Request {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m MockClient) APIVersion() schema.GroupVersion {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {

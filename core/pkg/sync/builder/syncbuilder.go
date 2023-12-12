@@ -18,10 +18,8 @@ import (
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -118,7 +116,7 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 }
 
 func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
-	reader, dynamicClient, err := sb.k8sClientBuilder.GetK8sClients()
+	restClient, dynamicClient, err := sb.k8sClientBuilder.GetK8sClients()
 	if err != nil {
 		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
@@ -129,7 +127,7 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 			zap.String("sync", "kubernetes"),
 		),
 		regCrd.ReplaceAllString(uri, ""),
-		reader,
+		restClient,
 		dynamicClient,
 	), nil
 }
@@ -172,27 +170,27 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 }
 
 type IK8sClientBuilder interface {
-	GetK8sClients() (client.Reader, dynamic.Interface, error)
+	GetK8sClients() (rest.Interface, dynamic.Interface, error)
 }
 
 type KubernetesClientBuilder struct{}
 
-func (kcb KubernetesClientBuilder) GetK8sClients() (client.Reader, dynamic.Interface, error) {
+func (kcb KubernetesClientBuilder) GetK8sClients() (rest.Interface, dynamic.Interface, error) {
 	clusterConfig, err := k8sClusterConfig()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	readClient, err := client.New(clusterConfig, client.Options{Scheme: scheme.Scheme})
+	restClient, err := rest.UnversionedRESTClientFor(clusterConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create readClient: %w", err)
+		return nil, nil, fmt.Errorf("unable to create restClient: %w", err)
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(clusterConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create dynamicClient: %w", err)
 	}
-	return readClient, dynamicClient, nil
+	return restClient, dynamicClient, nil
 }
 
 // k8sClusterConfig build K8s connection config based available configurations
