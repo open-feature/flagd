@@ -30,7 +30,7 @@ func (s *Server) captureMetrics() error {
 	}
 
 	_, err = meter.RegisterCallback(func(_ context.Context, o api.Observer) error {
-		o.ObserveInt64(syncGuage, s.handler.syncStore.GetActiveSubscriptionsInt64())
+		o.ObserveInt64(syncGuage, s.oldHandler.syncStore.GetActiveSubscriptionsInt64())
 		return nil
 	}, syncGuage)
 	if err != nil {

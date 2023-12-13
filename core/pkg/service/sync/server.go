@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	syncv1 "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
@@ -26,20 +27,27 @@ type Server struct {
 	server            *http.Server
 	metricsServer     *http.Server
 	Logger            *logger.Logger
-	handler           *handler
+	oldHandler        *handler
+	newHandler        *newHandler
 	config            iservice.Configuration
 	grpcServer        *grpc.Server
 	metricServerReady bool
 }
 
 func NewServer(logger *logger.Logger, store subscriptions.Manager) *Server {
-	return &Server{
-		handler: &handler{
-			logger:    logger,
-			syncStore: store,
-		},
-		Logger: logger,
+	oldHandler := &handler{
+		logger:    logger,
+		syncStore: store,
 	}
+	theNewHandler := &newHandler{
+		oldHandler: oldHandler,
+	}
+	return &Server{
+		oldHandler: oldHandler,
+		newHandler: theNewHandler,
+		Logger:     logger,
+	}
+
 }
 
 func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) error {
@@ -92,8 +100,10 @@ func (s *Server) startServer() error {
 	if err != nil {
 		return fmt.Errorf("error setting up listener for address %s: %w", address, err)
 	}
+
 	s.grpcServer = grpc.NewServer()
-	rpc.RegisterFlagSyncServiceServer(s.grpcServer, s.handler)
+	rpc.RegisterFlagSyncServiceServer(s.grpcServer, s.oldHandler)
+	syncv1.RegisterFlagSyncServiceServer(s.grpcServer, s.newHandler)
 
 	if err := s.grpcServer.Serve(
 		lis,
@@ -107,8 +117,8 @@ func (s *Server) startServer() error {
 func (s *Server) startMetricsServer() error {
 	s.Logger.Info(fmt.Sprintf("binding metrics to %d", s.config.ManagementPort))
 
-	grpc := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
+	grpcServer := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -124,9 +134,9 @@ func (s *Server) startMetricsServer() error {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		// if this is 'application/grpc' and HTTP2, handle with gRPC, otherwise HTTP.
-		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpc") {
-			grpc.ServeHTTP(writer, request)
+		// if this is 'application/grpcServer' and HTTP2, handle with gRPC, otherwise HTTP.
+		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpcServer") {
+			grpcServer.ServeHTTP(writer, request)
 		} else {
 			mux.ServeHTTP(writer, request)
 			return

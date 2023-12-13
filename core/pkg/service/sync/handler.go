@@ -4,12 +4,52 @@ import (
 	"context"
 	"fmt"
 
+	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	syncv12 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/subscriptions"
 	"github.com/open-feature/flagd/core/pkg/sync"
 )
+
+type newHandler struct {
+	syncv1grpc.UnimplementedFlagSyncServiceServer
+	oldHandler *handler
+}
+
+func (nh *newHandler) SyncFlags(request *syncv12.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errChan := make(chan error)
+	dataSync := make(chan sync.DataSync)
+	nh.oldHandler.syncStore.RegisterSubscription(ctx, request.GetSelector(), request, dataSync, errChan)
+	for {
+		select {
+		case e := <-errChan:
+			return e
+		case d := <-dataSync:
+			if err := server.Send(&syncv12.SyncFlagsResponse{
+				FlagConfiguration: d.FlagData,
+			}); err != nil {
+				return err
+			}
+		case <-server.Context().Done():
+			return nil
+		}
+	}
+}
+
+func (nh *newHandler) FetchAllFlags(ctx context.Context, request *syncv12.FetchAllFlagsRequest) (*syncv12.FetchAllFlagsResponse, error) {
+	data, err := nh.oldHandler.syncStore.FetchAllFlags(ctx, request, request.GetSelector())
+	if err != nil {
+		return &syncv12.FetchAllFlagsResponse{}, err
+	}
+
+	return &syncv12.FetchAllFlagsResponse{
+		FlagConfiguration: data.FlagData,
+	}, nil
+}
 
 type handler struct {
 	rpc.UnimplementedFlagSyncServiceServer

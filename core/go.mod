@@ -4,14 +4,13 @@ go 1.20
 
 require (
 	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.12.0-20231031123731-ac2ec0f39838.1
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20230710190440-2333a9579c1a.1
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20231031123731-ac2ec0f39838.2
 	connectrpc.com/connect v1.13.0
 	connectrpc.com/otelconnect v0.6.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
-	github.com/open-feature/open-feature-operator v0.5.2
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
 	github.com/open-feature/schemas v0.2.8
 	github.com/prometheus/client_golang v1.17.0
