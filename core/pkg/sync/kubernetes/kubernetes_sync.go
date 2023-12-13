@@ -14,11 +14,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -194,10 +194,11 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
-	objectKey := client.ObjectKey{
+	objectKey := types.NamespacedName{
 		Name:      k.crdName,
 		Namespace: k.namespace,
 	}
+
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
@@ -231,7 +232,7 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 }
 
 // commonHandler emits the desired event if and only if handler receive an object matching apiVersion and resource name
-func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEventType, c chan<- INotify) error {
+func commonHandler(obj interface{}, object types.NamespacedName, emitEvent DefaultEventType, c chan<- INotify) error {
 	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
@@ -253,7 +254,7 @@ func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEv
 }
 
 // updateFuncHandler handles updates. Event is emitted if and only if resource name, apiVersion of old & new are equal
-func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- INotify) error {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.NamespacedName, c chan<- INotify) error {
 	ffOldObj, err := toFFCfg(oldObj)
 	if err != nil {
 		return err

@@ -18,12 +18,11 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	testing2 "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
 )
 
 var Metadata = v1.TypeMeta{
@@ -131,7 +130,7 @@ func Test_commonHandler(t *testing.T) {
 
 	type args struct {
 		obj    interface{}
-		object client.ObjectKey
+		object types.NamespacedName
 	}
 	tests := []struct {
 		name      string
@@ -144,7 +143,7 @@ func Test_commonHandler(t *testing.T) {
 			name: "simple success",
 			args: args{
 				obj: toUnstructured(t, validFFCfg),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -156,7 +155,7 @@ func Test_commonHandler(t *testing.T) {
 			name: "simple scenario - only notify if resource name matches",
 			args: args{
 				obj: toUnstructured(t, validFFCfg),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -173,7 +172,7 @@ func Test_commonHandler(t *testing.T) {
 						APIVersion: "someAPIVersion",
 					},
 				}),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -243,7 +242,7 @@ func Test_updateFuncHandler(t *testing.T) {
 	type args struct {
 		oldObj interface{}
 		newObj interface{}
-		object client.ObjectKey
+		object types.NamespacedName
 	}
 	tests := []struct {
 		name      string
@@ -256,7 +255,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -269,7 +268,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -282,7 +281,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgOld),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -300,7 +299,7 @@ func Test_updateFuncHandler(t *testing.T) {
 						APIVersion: "someAPIVersion",
 					},
 				}),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -318,7 +317,7 @@ func Test_updateFuncHandler(t *testing.T) {
 					},
 				}),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -858,38 +857,14 @@ func toUnstructured(t *testing.T, obj interface{}) interface{} {
 
 // Mock implementations
 
-// MockClient contains an embedded client.Reader for desired method overriding
-type MockClient struct {
-	client.Reader
-	clientErr error
-
-	getResponse v1beta1.FeatureFlag
-}
-
-func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-	// return error if error is set
-	if m.clientErr != nil {
-		return m.clientErr
-	}
-
-	// else try returning response
-	cfg, ok := obj.(*v1beta1.FeatureFlag)
-	if !ok {
-		return errors.New("must contain a pointer typed v1beta1.FeatureFlag")
-	}
-
-	*cfg = m.getResponse
-	return nil
-}
-
 // MockInformer contains an embedded controllertest.FakeInformer for desired method overriding
 type MockInformer struct {
-	controllertest.FakeInformer
-
+	cache.SharedInformer
+	fake.FakeDynamicClient
 	fakeStore cache.FakeCustomStore
 }
 
-func (m MockInformer) GetStore() cache.Store {
+func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
 }
 
