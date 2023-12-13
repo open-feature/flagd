@@ -386,9 +386,8 @@ func TestSync_fetch(t *testing.T) {
 	}
 
 	type args struct {
-		InformerGetFunc func(key string) (item interface{}, exists bool, err error)
-		ClientResponse  v1beta1.FeatureFlag
-		ClientError     error
+		ClientResponse v1beta1.FeatureFlag
+		ClientError    error
 	}
 
 	tests := []struct {
@@ -400,11 +399,6 @@ func TestSync_fetch(t *testing.T) {
 	}{
 		{
 			name: "Scenario - get from informer cache",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return toUnstructured(t, validCfg), true, nil
-				},
-			},
 			injectionFunc: func(s *Sync) {
 				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
 				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
@@ -416,12 +410,6 @@ func TestSync_fetch(t *testing.T) {
 		},
 		{
 			name: "Scenario - get from API if informer cache miss",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, nil
-				},
-				ClientResponse: validCfg,
-			},
 			injectionFunc: func(s *Sync) {
 				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
 				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
@@ -447,12 +435,6 @@ func TestSync_fetch(t *testing.T) {
 		},
 		{
 			name: "Scenario - error for API get error",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, nil
-				},
-				ClientError: errors.New("mock error"),
-			},
 			injectionFunc: func(s *Sync) {
 				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
 				fakeClient := fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
