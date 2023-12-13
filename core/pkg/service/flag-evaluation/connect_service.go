@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	evaluationV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v1/evaluationv1connect"
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/schema/v1/schemav1connect"
 	"github.com/open-feature/flagd/core/pkg/eval"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -31,7 +32,26 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-const ErrorPrefix = "FlagdError:"
+const (
+	ErrorPrefix = "FlagdError:"
+
+	flagdSchemaPrefix = "/flagd"
+)
+
+// bufSwitchHandler combines the handlers of the old and new evaluation schema and combines them into one
+// this way we support both the new and the (deprecated) old schemas until only the new schema is supported
+type bufSwitchHandler struct {
+	old http.Handler
+	new http.Handler
+}
+
+func (b bufSwitchHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if strings.HasPrefix(request.URL.Path, flagdSchemaPrefix) {
+		b.new.ServeHTTP(writer, request)
+	} else {
+		b.old.ServeHTTP(writer, request)
+	}
+}
 
 type ConnectService struct {
 	logger                *logger.Logger
@@ -120,6 +140,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	if err != nil {
 		return nil, fmt.Errorf("error creating listener for flag evaluation service: %w", err)
 	}
+
+	// register handler for old flag evaluation schema
 	fes := NewFlagEvaluationService(
 		s.logger.WithFields(zap.String("component", "flagservice")),
 		s.eval,
@@ -133,12 +155,26 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		protojson.UnmarshalOptions{DiscardUnknown: true},
 	)
 
-	mux.Handle(schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...))
+	oldPath, oldHandler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
+
+	// TODO check if mux.Handle is needed
+	mux.Handle(oldPath, oldHandler)
+
+	// register handler for new flag evaluation schema
+
+	newFes := NewFlagEvaluationService2(fes)
+	newPath, newHandler := evaluationV1.NewServiceHandler(newFes, svcConf.Options...)
+	mux.Handle(newPath, newHandler)
+
+	bs := bufSwitchHandler{
+		old: oldHandler,
+		new: newHandler,
+	}
 
 	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
-		Handler:           mux,
+		Handler:           bs,
 	}
 	s.serverMtx.Unlock()
 
