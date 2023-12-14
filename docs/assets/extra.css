@@ -18,3 +18,16 @@
   --md-default-bg-color--lighter:    hsla(240, 4%, 11%, 0.26);
   --md-default-bg-color--lightest:   hsla(240, 4%, 11%, 0.07);
 }
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+.output {
+  transition: opacity .5s ease-in-out;
+  opacity: 0;
+}
+
+.output.visible {
+  opacity: 1;
+}

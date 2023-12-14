@@ -124,3 +124,15 @@ generate-proto-docs: pull-schemas-submodule
 .PHONY: run-web-docs
 run-web-docs: generate-docs generate-proto-docs
 	docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
+
+.PHONY: playground-dev
+playground-dev:
+	cd playground-app && npm ci && npm run dev
+
+.PHONY: playground-build
+playground-build:
+	cd playground-app && npm ci && npm run build
+
+.PHONY: playground-publish
+playground-publish: playground-build
+	cp playground-app/dist/assets/index-*.js docs/playground/playground.js
