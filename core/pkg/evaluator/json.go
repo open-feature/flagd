@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func init() {
 type variantEvaluator func(string, string, map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
-type JSONEvaluator struct {
+type JSON struct {
 	store          *store.Flags
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
@@ -64,16 +64,16 @@ const (
 	Disabled = "DISABLED"
 )
 
-type JSONEvaluatorOption func(je *JSONEvaluator)
+type JSONEvaluatorOption func(je *JSON)
 
 func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
-	return func(_ *JSONEvaluator) {
+	return func(_ *JSON) {
 		jsonlogic.AddOperator(name, evalFunc)
 	}
 }
 
-func NewJSONEvaluator(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluatorOption) *JSONEvaluator {
-	ev := JSONEvaluator{
+func NewJSON(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluatorOption) *JSON {
+	ev := JSON{
 		Logger: logger.WithFields(
 			zap.String("component", "evaluator"),
 			zap.String("evaluator", "json"),
@@ -89,7 +89,7 @@ func NewJSONEvaluator(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluat
 	return &ev
 }
 
-func (je *JSONEvaluator) GetState() (string, error) {
+func (je *JSON) GetState() (string, error) {
 	s, err := je.store.String()
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
@@ -97,7 +97,7 @@ func (je *JSONEvaluator) GetState() (string, error) {
 	return s, nil
 }
 
-func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
+func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"flagSync",
@@ -136,7 +136,7 @@ func (je *JSONEvaluator) SetState(payload sync.DataSync) (map[string]interface{}
 	return events, reSync, nil
 }
 
-func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
+func (je *JSON) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveAll")
 	defer span.End()
 
@@ -192,7 +192,7 @@ func (je *JSONEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 	return values
 }
 
-func (je *JSONEvaluator) ResolveBooleanValue(
+func (je *JSON) ResolveBooleanValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value bool,
 	variant string,
@@ -207,7 +207,7 @@ func (je *JSONEvaluator) ResolveBooleanValue(
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func (je *JSONEvaluator) ResolveStringValue(
+func (je *JSON) ResolveStringValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value string,
 	variant string,
@@ -222,7 +222,7 @@ func (je *JSONEvaluator) ResolveStringValue(
 	return resolve[string](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func (je *JSONEvaluator) ResolveFloatValue(
+func (je *JSON) ResolveFloatValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value float64,
 	variant string,
@@ -238,7 +238,7 @@ func (je *JSONEvaluator) ResolveFloatValue(
 	return
 }
 
-func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context map[string]any) (
+func (je *JSON) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value int64,
 	variant string,
 	reason string,
@@ -255,7 +255,7 @@ func (je *JSONEvaluator) ResolveIntValue(ctx context.Context, reqID string, flag
 	return
 }
 
-func (je *JSONEvaluator) ResolveObjectValue(
+func (je *JSON) ResolveObjectValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value map[string]any,
 	variant string,
@@ -289,7 +289,7 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 
 // runs the rules (if defined) to determine the variant, otherwise falling through to the default
 // nolint: funlen
-func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context map[string]any) (
+func (je *JSON) evaluateVariant(reqID string, flagKey string, context map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 	metadata = map[string]interface{}{}
@@ -362,7 +362,7 @@ func (je *JSONEvaluator) evaluateVariant(reqID string, flagKey string, context m
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
 }
 
-func (je *JSONEvaluator) setFlagdProperties(
+func (je *JSON) setFlagdProperties(
 	context map[string]any,
 	properties flagdProperties,
 ) map[string]any {
@@ -401,7 +401,7 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
-func (je *JSONEvaluator) configToFlags(config string, newFlags *Flags) error {
+func (je *JSON) configToFlags(config string, newFlags *Flags) error {
 	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	flagStringLoader := gojsonschema.NewStringLoader(config)
 
@@ -438,7 +438,7 @@ func validateDefaultVariants(flags *Flags) error {
 	return nil
 }
 
-func (je *JSONEvaluator) transposeEvaluators(state string) (string, error) {
+func (je *JSON) transposeEvaluators(state string) (string, error) {
 	var evaluators Evaluators
 	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
 		return "", fmt.Errorf("unmarshal: %w", err)

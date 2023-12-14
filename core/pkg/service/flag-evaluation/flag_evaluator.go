@@ -7,7 +7,7 @@ import (
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
-	"github.com/open-feature/flagd/core/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service"
@@ -26,7 +26,7 @@ type resolverSignature[T constraints] func(context context.Context, reqID, flagK
 
 type FlagEvaluationService struct {
 	logger                *logger.Logger
-	eval                  eval.IEvaluator
+	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
 	flagEvalTracer        trace.Tracer
@@ -34,7 +34,7 @@ type FlagEvaluationService struct {
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
 func NewFlagEvaluationService(log *logger.Logger,
-	eval eval.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
+	eval evaluator.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
 ) *FlagEvaluationService {
 	return &FlagEvaluationService{
 		logger:                log,

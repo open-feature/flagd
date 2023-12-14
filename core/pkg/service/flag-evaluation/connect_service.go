@@ -12,7 +12,7 @@ import (
 	"time"
 
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/schema/v1/schemav1connect"
-	"github.com/open-feature/flagd/core/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/service/middleware"
@@ -35,7 +35,7 @@ const ErrorPrefix = "FlagdError:"
 
 type ConnectService struct {
 	logger                *logger.Logger
-	eval                  eval.IEvaluator
+	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
 	eventingConfiguration *eventingConfiguration
 
@@ -50,7 +50,7 @@ type ConnectService struct {
 
 // NewConnectService creates a ConnectService with provided parameters
 func NewConnectService(
-	logger *logger.Logger, evaluator eval.IEvaluator, mRecorder *telemetry.MetricsRecorder,
+	logger *logger.Logger, evaluator evaluator.IEvaluator, mRecorder *telemetry.MetricsRecorder,
 ) *ConnectService {
 	return &ConnectService{
 		logger:  logger,

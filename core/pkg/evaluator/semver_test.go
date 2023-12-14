@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"testing"
@@ -697,12 +697,12 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				store.NewFlags(),
 				WithEvaluator(
 					SemVerEvaluationName,
-					NewSemVerComparisonEvaluator(log).SemVerEvaluation,
+					NewSemVerComparison(log).SemVerEvaluation,
 				),
 			)
 			je.store.Flags = tt.flags.Flags

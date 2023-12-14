@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 
 const FractionEvaluationName = "fractional"
 
-type FractionalEvaluator struct {
+type Fractional struct {
 	Logger *logger.Logger
 }
 
@@ -20,11 +20,11 @@ type fractionalEvaluationDistribution struct {
 	percentage int
 }
 
-func NewFractionalEvaluator(logger *logger.Logger) *FractionalEvaluator {
-	return &FractionalEvaluator{Logger: logger}
+func NewFractional(logger *logger.Logger) *Fractional {
+	return &Fractional{Logger: logger}
 }
 
-func (fe *FractionalEvaluator) FractionalEvaluation(values, data any) any {
+func (fe *Fractional) Evaluate(values, data any) any {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
 		fe.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))

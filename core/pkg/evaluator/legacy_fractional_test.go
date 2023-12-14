@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"testing"
@@ -269,12 +269,12 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				store.NewFlags(),
 				WithEvaluator(
 					"fractionalEvaluation",
-					NewLegacyFractionalEvaluator(log).LegacyFractionalEvaluation,
+					NewLegacyFractional(log).LegacyFractionalEvaluation,
 				),
 			)
 			je.store.Flags = tt.flags.Flags

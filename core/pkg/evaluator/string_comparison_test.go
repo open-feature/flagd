@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"fmt"
@@ -181,7 +181,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				store.NewFlags(),
 				WithEvaluator(
@@ -383,7 +383,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				store.NewFlags(),
 				WithEvaluator(
