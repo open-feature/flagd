@@ -90,9 +90,9 @@ func (m *MockIK8sClientBuilder) EXPECT() *MockIK8sClientBuilderMockRecorder {
 }
 
 // GetK8sClients mocks base method.
-func (m *MockIK8sClientBuilder) GetK8sClients() (dynamic.Interface, error) {
+func (m *MockIK8sClientBuilder) GetK8sClient() (dynamic.Interface, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetK8sClients")
+	ret := m.ctrl.Call(m, "GetK8sClient")
 	ret0, _ := ret[0].(dynamic.Interface)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -101,5 +101,5 @@ func (m *MockIK8sClientBuilder) GetK8sClients() (dynamic.Interface, error) {
 // GetK8sClients indicates an expected call of GetK8sClients.
 func (mr *MockIK8sClientBuilderMockRecorder) GetK8sClients() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK8sClients", reflect.TypeOf((*MockIK8sClientBuilder)(nil).GetK8sClients))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK8sClient", reflect.TypeOf((*MockIK8sClientBuilder)(nil).GetK8sClient))
 }

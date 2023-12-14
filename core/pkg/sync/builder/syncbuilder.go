@@ -116,7 +116,7 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 }
 
 func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
-	dynamicClient, err := sb.k8sClientBuilder.GetK8sClients()
+	dynamicClient, err := sb.k8sClientBuilder.GetK8sClient()
 	if err != nil {
 		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
@@ -169,12 +169,12 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 }
 
 type IK8sClientBuilder interface {
-	GetK8sClients() (dynamic.Interface, error)
+	GetK8sClient() (dynamic.Interface, error)
 }
 
 type KubernetesClientBuilder struct{}
 
-func (kcb KubernetesClientBuilder) GetK8sClients() (dynamic.Interface, error) {
+func (kcb KubernetesClientBuilder) GetK8sClient() (dynamic.Interface, error) {
 	clusterConfig, err := k8sClusterConfig()
 	if err != nil {
 		return nil, err
