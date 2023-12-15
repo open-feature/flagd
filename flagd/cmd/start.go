@@ -16,26 +16,18 @@ import (
 )
 
 const (
-	bearerTokenFlagName    = "bearer-token"
 	corsFlagName           = "cors-origin"
-	evaluatorFlagName      = "evaluator"
 	logFormatFlagName      = "log-format"
 	metricsExporter        = "metrics-exporter"
-	metricsPortFlagName    = "metrics-port" // deprecated
 	managementPortFlagName = "management-port"
 	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
-	providerArgsFlagName   = "sync-provider-args"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
 	sourcesFlagName        = "sources"
-	syncProviderFlagName   = "sync-provider"
 	uriFlagName            = "uri"
 	docsLinkConfiguration  = "https://flagd.dev/reference/flagd-cli/flagd_start/"
-
-	defaultServicePort    = 8013
-	defaultManagementPort = 8014
 )
 
 func init() {
@@ -44,18 +36,13 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
-	flags.Int32(metricsPortFlagName, defaultManagementPort, "DEPRECATED: Superseded by --management-port.")
-	flags.Int32P(managementPortFlagName, "m", defaultManagementPort, "Port for management operations")
-	flags.Int32P(portFlagName, "p", defaultServicePort, "Port to listen on")
+	flags.Int32P(managementPortFlagName, "m", 8014, "Port for management operations")
+	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(evaluatorFlagName, "e", "json", "DEPRECATED: Set an evaluator e.g. json, yaml/yml."+
-		"Please note that yaml/yml and json evaluations work the same (yaml/yml files are converted to json internally)")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
-	flags.StringToStringP(providerArgsFlagName,
-		"a", nil, "DEPRECATED: Sync provider arguments as key values separated by =")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
 			" URL (HTTP and gRPC) or FeatureFlag custom resource. When flag keys are duplicated across multiple providers the "+
@@ -63,12 +50,7 @@ func init() {
 			"lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. "+
 			"Please note that if you are using filepath, flagd only supports files with `.yaml/.yml/.json` extension.",
 	)
-	flags.StringP(
-		bearerTokenFlagName, "b", "", "DEPRECATED: Superseded by --sources.")
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
-	flags.StringP(
-		syncProviderFlagName, "y", "", "DEPRECATED: Set a sync provider e.g. filepath or remote",
-	)
 	flags.StringP(
 		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
 			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
@@ -81,20 +63,15 @@ func init() {
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
 
-	_ = viper.BindPFlag(bearerTokenFlagName, flags.Lookup(bearerTokenFlagName))
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
-	_ = viper.BindPFlag(evaluatorFlagName, flags.Lookup(evaluatorFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
-	_ = viper.BindPFlag(metricsPortFlagName, flags.Lookup(metricsPortFlagName))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
-	_ = viper.BindPFlag(providerArgsFlagName, flags.Lookup(providerArgsFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
-	_ = viper.BindPFlag(syncProviderFlagName, flags.Lookup(syncProviderFlagName))
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 }
@@ -122,26 +99,6 @@ var startCmd = &cobra.Command{
 
 		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
 
-		if viper.GetString(syncProviderFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider flag has been deprecated, see: " +
-				docsLinkConfiguration)
-		}
-
-		if viper.GetString(evaluatorFlagName) != "json" {
-			rtLogger.Warn("DEPRECATED: The --evaluator flag has been deprecated, see: " +
-				docsLinkConfiguration)
-		}
-
-		if viper.GetString(providerArgsFlagName) != "" {
-			rtLogger.Warn("DEPRECATED: The --sync-provider-args flag has been deprecated, see: " +
-				docsLinkConfiguration)
-		}
-
-		if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
-			rtLogger.Warn("DEPRECATED: The --metrics-port flag has been deprecated, see: " +
-				docsLinkConfiguration)
-		}
-
 		syncProviders, err := syncbuilder.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))
 		if err != nil {
 			log.Fatal(err)
@@ -161,30 +118,15 @@ var startCmd = &cobra.Command{
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
-		// If --management-port is set use that value. If not and
-		// --metrics-port is set use that value. Otherwise use the default
-		// value.
-		managementPort := uint16(defaultManagementPort)
-		if viper.GetUint16(managementPortFlagName) != defaultManagementPort {
-			managementPort = viper.GetUint16(managementPortFlagName)
-		} else if viper.GetUint16(metricsPortFlagName) != defaultManagementPort {
-			managementPort = viper.GetUint16(metricsPortFlagName)
-		}
-
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:             viper.GetStringSlice(corsFlagName),
-			MetricExporter:   viper.GetString(metricsExporter),
-			ManagementPort:   managementPort,
-			OtelCollectorURI: viper.GetString(otelCollectorURI),
-			ServiceCertPath:  viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:   viper.GetString(serverKeyPathFlagName),
-			ServicePort: getPortValueOrDefault(
-				portFlagName,
-				viper.GetUint16(portFlagName),
-				defaultServicePort,
-				rtLogger,
-			),
+			CORS:              viper.GetStringSlice(corsFlagName),
+			MetricExporter:    viper.GetString(metricsExporter),
+			ManagementPort:    viper.GetUint16(managementPortFlagName),
+			OtelCollectorURI:  viper.GetString(otelCollectorURI),
+			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
+			ServicePort:       viper.GetUint16(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
 			SyncProviders:     syncProviders,
 		})
@@ -196,13 +138,4 @@ var startCmd = &cobra.Command{
 			rtLogger.Fatal(err.Error())
 		}
 	},
-}
-
-func getPortValueOrDefault(flagName string, flagValue, defaultValue uint16, logger *logger.Logger) uint16 {
-	if flagValue == 0 {
-		logger.Warn(fmt.Sprintf("Could not parse value for flag '%s'. "+
-			"Falling back to default value %d", flagName, defaultValue))
-		return defaultValue
-	}
-	return flagValue
 }
