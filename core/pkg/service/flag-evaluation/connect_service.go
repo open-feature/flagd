@@ -130,7 +130,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
-	mux := http.NewServeMux()
+
 	if svcConf.SocketPath != "" {
 		lis, err = net.Listen("unix", svcConf.SocketPath)
 	} else {
@@ -155,10 +155,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		protojson.UnmarshalOptions{DiscardUnknown: true},
 	)
 
-	oldPath, oldHandler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
-
-	// TODO check if mux.Handle is needed
-	mux.Handle(oldPath, oldHandler)
+	_, oldHandler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
 
 	// register handler for new flag evaluation schema
 
@@ -168,8 +165,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.metrics,
 	)
 
-	newPath, newHandler := evaluationV1.NewServiceHandler(newFes, svcConf.Options...)
-	mux.Handle(newPath, newHandler)
+	_, newHandler := evaluationV1.NewServiceHandler(newFes, svcConf.Options...)
 
 	bs := bufSwitchHandler{
 		old: oldHandler,
