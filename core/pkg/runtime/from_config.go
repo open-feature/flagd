@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-feature/flagd/core/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
@@ -100,30 +100,30 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}, nil
 }
 
-func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *eval.JSONEvaluator {
-	evaluator := eval.NewJSONEvaluator(
+func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *evaluator.JSON {
+	evaluator := evaluator.NewJSON(
 		logger,
 		s,
-		eval.WithEvaluator(
-			eval.FractionEvaluationName,
-			eval.NewFractionalEvaluator(logger).FractionalEvaluation,
+		evaluator.WithEvaluator(
+			evaluator.FractionEvaluationName,
+			evaluator.NewFractional(logger).Evaluate,
 		),
-		eval.WithEvaluator(
-			eval.StartsWithEvaluationName,
-			eval.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
+		evaluator.WithEvaluator(
+			evaluator.StartsWithEvaluationName,
+			evaluator.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
 		),
-		eval.WithEvaluator(
-			eval.EndsWithEvaluationName,
-			eval.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
+		evaluator.WithEvaluator(
+			evaluator.EndsWithEvaluationName,
+			evaluator.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
 		),
-		eval.WithEvaluator(
-			eval.SemVerEvaluationName,
-			eval.NewSemVerComparisonEvaluator(logger).SemVerEvaluation,
+		evaluator.WithEvaluator(
+			evaluator.SemVerEvaluationName,
+			evaluator.NewSemVerComparison(logger).SemVerEvaluation,
 		),
 		// deprecated: will be removed before v1!
-		eval.WithEvaluator(
-			eval.LegacyFractionEvaluationName,
-			eval.NewLegacyFractionalEvaluator(logger).LegacyFractionalEvaluation,
+		evaluator.WithEvaluator(
+			evaluator.LegacyFractionEvaluationName,
+			evaluator.NewLegacyFractional(logger).LegacyFractionalEvaluation,
 		),
 	)
 	return evaluator

@@ -11,13 +11,14 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -35,7 +36,6 @@ type Sync struct {
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
-	readClient    client.Reader
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
 }
@@ -43,13 +43,11 @@ type Sync struct {
 func NewK8sSync(
 	logger *logger.Logger,
 	uri string,
-	reader client.Reader,
 	dynamicClient dynamic.Interface,
 ) *Sync {
 	return &Sync{
 		logger:        logger,
 		URI:           uri,
-		readClient:    reader,
 		dynamicClient: dynamicClient,
 	}
 }
@@ -177,24 +175,30 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
-	var ff v1beta1.FeatureFlag
-	err = k.readClient.Get(ctx, client.ObjectKey{
-		Name:      k.crdName,
-		Namespace: k.namespace,
-	}, &ff)
+
+	ffObj, err := k.dynamicClient.
+		Resource(featureFlagResource).
+		Namespace(k.namespace).
+		Get(ctx, k.crdName, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch FeatureFlag %s/%s: %w", k.namespace, k.crdName, err)
 	}
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
-	return marshallFeatureFlagSpec(&ff)
+
+	ff, err := toFFCfg(ffObj)
+	if err != nil {
+		return "", fmt.Errorf("unable to convert object %s/%s to FeatureFlag: %w", k.namespace, k.crdName, err)
+	}
+	return marshallFeatureFlagSpec(ff)
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
-	objectKey := client.ObjectKey{
+	objectKey := types.NamespacedName{
 		Name:      k.crdName,
 		Namespace: k.namespace,
 	}
+
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			k.logger.Info(fmt.Sprintf("kube sync notifier event: add: %s %s", objectKey.Namespace, objectKey.Name))
@@ -228,7 +232,7 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 }
 
 // commonHandler emits the desired event if and only if handler receive an object matching apiVersion and resource name
-func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEventType, c chan<- INotify) error {
+func commonHandler(obj interface{}, object types.NamespacedName, emitEvent DefaultEventType, c chan<- INotify) error {
 	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
@@ -250,7 +254,7 @@ func commonHandler(obj interface{}, object client.ObjectKey, emitEvent DefaultEv
 }
 
 // updateFuncHandler handles updates. Event is emitted if and only if resource name, apiVersion of old & new are equal
-func updateFuncHandler(oldObj interface{}, newObj interface{}, object client.ObjectKey, c chan<- INotify) error {
+func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.NamespacedName, c chan<- INotify) error {
 	ffOldObj, err := toFFCfg(oldObj)
 	if err != nil {
 		return err

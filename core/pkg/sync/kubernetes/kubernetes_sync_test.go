@@ -18,12 +18,11 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	testing2 "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	fakeClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllertest"
 )
 
 var Metadata = v1.TypeMeta{
@@ -131,7 +130,7 @@ func Test_commonHandler(t *testing.T) {
 
 	type args struct {
 		obj    interface{}
-		object client.ObjectKey
+		object types.NamespacedName
 	}
 	tests := []struct {
 		name      string
@@ -144,7 +143,7 @@ func Test_commonHandler(t *testing.T) {
 			name: "simple success",
 			args: args{
 				obj: toUnstructured(t, validFFCfg),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -156,7 +155,7 @@ func Test_commonHandler(t *testing.T) {
 			name: "simple scenario - only notify if resource name matches",
 			args: args{
 				obj: toUnstructured(t, validFFCfg),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -173,7 +172,7 @@ func Test_commonHandler(t *testing.T) {
 						APIVersion: "someAPIVersion",
 					},
 				}),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -243,7 +242,7 @@ func Test_updateFuncHandler(t *testing.T) {
 	type args struct {
 		oldObj interface{}
 		newObj interface{}
-		object client.ObjectKey
+		object types.NamespacedName
 	}
 	tests := []struct {
 		name      string
@@ -256,7 +255,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -269,7 +268,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -282,7 +281,7 @@ func Test_updateFuncHandler(t *testing.T) {
 			args: args{
 				oldObj: toUnstructured(t, validFFCfgOld),
 				newObj: toUnstructured(t, validFFCfgOld),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      "SomeOtherResource",
 				},
@@ -300,7 +299,7 @@ func Test_updateFuncHandler(t *testing.T) {
 						APIVersion: "someAPIVersion",
 					},
 				}),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -318,7 +317,7 @@ func Test_updateFuncHandler(t *testing.T) {
 					},
 				}),
 				newObj: toUnstructured(t, validFFCfgNew),
-				object: client.ObjectKey{
+				object: types.NamespacedName{
 					Namespace: cfgNs,
 					Name:      cfgName,
 				},
@@ -387,54 +386,64 @@ func TestSync_fetch(t *testing.T) {
 	}
 
 	type args struct {
-		InformerGetFunc func(key string) (item interface{}, exists bool, err error)
-		ClientResponse  v1beta1.FeatureFlag
-		ClientError     error
+		ClientResponse v1beta1.FeatureFlag
+		ClientError    error
 	}
 
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name          string
+		args          args
+		injectionFunc func(s *Sync)
+		want          string
+		wantErr       bool
 	}{
 		{
 			name: "Scenario - get from informer cache",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return toUnstructured(t, validCfg), true, nil
-				},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				err := s.Init(context.Background())
+				require.Nil(t, err)
 			},
 			wantErr: false,
 			want:    `{"flags":{}}`,
 		},
 		{
 			name: "Scenario - get from API if informer cache miss",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, nil
-				},
-				ClientResponse: validCfg,
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.dynamicClient = fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				err := s.Init(context.Background())
+				require.Nil(t, err)
 			},
 			wantErr: false,
 			want:    `{"flags":{}}`,
 		},
 		{
 			name: "Scenario - error for informer cache read error",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, errors.New("mock error")
-				},
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				s.informer = &MockInformer{
+					fakeStore: cache.FakeCustomStore{
+						GetByKeyFunc: func(key string) (item interface{}, exists bool, err error) {
+							return nil, false, errors.New("mock error")
+						},
+					},
+				}
 			},
 			wantErr: true,
 		},
 		{
 			name: "Scenario - error for API get error",
-			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
-					return nil, false, nil
-				},
-				ClientError: errors.New("mock error"),
+			injectionFunc: func(s *Sync) {
+				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
+				fakeClient := fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
+				fakeClient.PrependReactor("get", "featureflags", func(action testing2.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("could not get ff config")
+				})
+				s.dynamicClient = fakeClient
+				err := s.Init(context.Background())
+				require.Nil(t, err)
 			},
 			wantErr: true,
 		},
@@ -443,16 +452,11 @@ func TestSync_fetch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup with args
 			k := &Sync{
-				informer: &MockInformer{
-					fakeStore: cache.FakeCustomStore{
-						GetByKeyFunc: tt.args.InformerGetFunc,
-					},
-				},
-				readClient: &MockClient{
-					getResponse: tt.args.ClientResponse,
-					clientErr:   tt.args.ClientError,
-				},
 				logger: logger.NewLogger(nil, false),
+			}
+
+			if tt.injectionFunc != nil {
+				tt.injectionFunc(k)
 			}
 
 			// Test fetch
@@ -607,14 +611,7 @@ func TestSync_ReSync(t *testing.T) {
 	ff := &unstructured.Unstructured{}
 	ff.SetUnstructuredContent(getCFG(name, ns))
 	fakeDynamicClient := fake.NewSimpleDynamicClient(s, ff)
-	validFFCfg := &v1beta1.FeatureFlag{
-		TypeMeta: Metadata,
-		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-	}
-	fakeReadClient := newFakeReadClient(validFFCfg)
+
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -631,7 +628,6 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				readClient:    fakeReadClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -643,7 +639,6 @@ func TestSync_ReSync(t *testing.T) {
 			k: Sync{
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
-				readClient:    fakeReadClient,
 				namespace:     ns,
 				logger:        logger.NewLogger(l, true),
 			},
@@ -793,12 +788,10 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	const uri = "myURI"
 	log := logger.NewLogger(l, true)
-	rc := newFakeReadClient()
 	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
 		log,
 		uri,
-		rc,
 		dc,
 	)
 	if k == nil {
@@ -810,17 +803,9 @@ func Test_NewK8sSync(t *testing.T) {
 	if k.logger != log {
 		t.Errorf("Object not initialized with the right logger")
 	}
-	if k.readClient != rc {
-		t.Errorf("Object not initialized with the right K8s client")
-	}
 	if k.dynamicClient != dc {
 		t.Errorf("Object not initialized with the right K8s dynamic client")
 	}
-}
-
-func newFakeReadClient(objs ...client.Object) client.Client {
-	_ = v1beta1.AddToScheme(scheme.Scheme)
-	return fakeClient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
 }
 
 func getCFG(name, namespace string) map[string]interface{} {
@@ -854,38 +839,14 @@ func toUnstructured(t *testing.T, obj interface{}) interface{} {
 
 // Mock implementations
 
-// MockClient contains an embedded client.Reader for desired method overriding
-type MockClient struct {
-	client.Reader
-	clientErr error
-
-	getResponse v1beta1.FeatureFlag
-}
-
-func (m MockClient) Get(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-	// return error if error is set
-	if m.clientErr != nil {
-		return m.clientErr
-	}
-
-	// else try returning response
-	cfg, ok := obj.(*v1beta1.FeatureFlag)
-	if !ok {
-		return errors.New("must contain a pointer typed v1beta1.FeatureFlag")
-	}
-
-	*cfg = m.getResponse
-	return nil
-}
-
 // MockInformer contains an embedded controllertest.FakeInformer for desired method overriding
 type MockInformer struct {
-	controllertest.FakeInformer
-
+	cache.SharedInformer
+	fake.FakeDynamicClient
 	fakeStore cache.FakeCustomStore
 }
 
-func (m MockInformer) GetStore() cache.Store {
+func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
 }
 

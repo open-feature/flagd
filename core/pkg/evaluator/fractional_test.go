@@ -1,4 +1,4 @@
-package eval
+package evaluator
 
 import (
 	"testing"
@@ -323,12 +323,12 @@ func TestFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				store.NewFlags(),
 				WithEvaluator(
 					FractionEvaluationName,
-					NewFractionalEvaluator(log).FractionalEvaluation,
+					NewFractional(log).Evaluate,
 				),
 			)
 			je.store.Flags = tt.flags.Flags
@@ -457,12 +457,12 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSONEvaluator(
+			je := NewJSON(
 				log,
 				&store.Flags{Flags: tt.flags.Flags},
 				WithEvaluator(
 					FractionEvaluationName,
-					NewFractionalEvaluator(log).FractionalEvaluation,
+					NewFractional(log).Evaluate,
 				),
 			)
 			for i := 0; i < b.N; i++ {
