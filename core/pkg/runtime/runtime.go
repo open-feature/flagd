@@ -9,7 +9,7 @@ import (
 	msync "sync"
 	"syscall"
 
-	"github.com/open-feature/flagd/core/pkg/eval"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -17,7 +17,7 @@ import (
 )
 
 type Runtime struct {
-	Evaluator     eval.IEvaluator
+	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration

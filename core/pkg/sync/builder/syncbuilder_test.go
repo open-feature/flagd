@@ -37,7 +37,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil, nil)
+				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil)
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},
@@ -54,7 +54,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil, errors.New("oops"))
+				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, errors.New("oops"))
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},
@@ -179,7 +179,7 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil, nil)
+				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil)
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},

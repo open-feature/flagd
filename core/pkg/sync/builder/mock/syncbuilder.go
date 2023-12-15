@@ -11,7 +11,6 @@ import (
 	logger "github.com/open-feature/flagd/core/pkg/logger"
 	sync "github.com/open-feature/flagd/core/pkg/sync"
 	dynamic "k8s.io/client-go/dynamic"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // MockISyncBuilder is a mock of ISyncBuilder interface.
@@ -91,17 +90,16 @@ func (m *MockIK8sClientBuilder) EXPECT() *MockIK8sClientBuilderMockRecorder {
 }
 
 // GetK8sClients mocks base method.
-func (m *MockIK8sClientBuilder) GetK8sClients() (client.Reader, dynamic.Interface, error) {
+func (m *MockIK8sClientBuilder) GetK8sClient() (dynamic.Interface, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetK8sClients")
-	ret0, _ := ret[0].(client.Reader)
-	ret1, _ := ret[1].(dynamic.Interface)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret := m.ctrl.Call(m, "GetK8sClient")
+	ret0, _ := ret[0].(dynamic.Interface)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetK8sClients indicates an expected call of GetK8sClients.
 func (mr *MockIK8sClientBuilderMockRecorder) GetK8sClients() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK8sClients", reflect.TypeOf((*MockIK8sClientBuilder)(nil).GetK8sClients))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK8sClient", reflect.TypeOf((*MockIK8sClientBuilder)(nil).GetK8sClient))
 }

@@ -8,8 +8,8 @@ import (
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
 	"github.com/golang/mock/gomock"
-	"github.com/open-feature/flagd/core/pkg/eval"
-	mock "github.com/open-feature/flagd/core/pkg/eval/mock"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
+	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
@@ -56,13 +56,13 @@ var sadCommon = evalCommons{
 func TestConnectService_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
 		req     *schemaV1.ResolveAllRequest
-		evalRes []eval.AnyValue
+		evalRes []evaluator.AnyValue
 		wantErr error
 		wantRes *schemaV1.ResolveAllResponse
 	}{
 		"happy-path": {
 			req: &schemaV1.ResolveAllRequest{},
-			evalRes: []eval.AnyValue{
+			evalRes: []evaluator.AnyValue{
 				{
 					Value:   true,
 					Variant: "bool-true",

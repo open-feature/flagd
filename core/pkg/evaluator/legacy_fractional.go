@@ -1,7 +1,7 @@
 // This evaluation type is deprecated and will be removed before v1.
 // Do not enhance it or use it for reference.
 
-package eval
+package evaluator
 
 import (
 	"errors"
@@ -17,8 +17,8 @@ const (
 	LegacyFractionEvaluationLink = "https://flagd.dev/concepts/#migrating-from-legacy-fractionalevaluation"
 )
 
-// Deprecated: LegacyFractionalEvaluator is deprecated. This will be removed prior to v1 release.
-type LegacyFractionalEvaluator struct {
+// Deprecated: LegacyFractional is deprecated. This will be removed prior to v1 release.
+type LegacyFractional struct {
 	Logger *logger.Logger
 }
 
@@ -27,11 +27,11 @@ type legacyFractionalEvaluationDistribution struct {
 	percentage int
 }
 
-func NewLegacyFractionalEvaluator(logger *logger.Logger) *LegacyFractionalEvaluator {
-	return &LegacyFractionalEvaluator{Logger: logger}
+func NewLegacyFractional(logger *logger.Logger) *LegacyFractional {
+	return &LegacyFractional{Logger: logger}
 }
 
-func (fe *LegacyFractionalEvaluator) LegacyFractionalEvaluation(values, data interface{}) interface{} {
+func (fe *LegacyFractional) LegacyFractionalEvaluation(values, data interface{}) interface{} {
 	fe.Logger.Warn(
 		fmt.Sprintf("%s is deprecated, please use %s, see: %s",
 			LegacyFractionEvaluationName,
