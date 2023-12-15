@@ -1,88 +1,43 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMedia } from "react-use";
 import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
-
-type Template = {
-  [template: string]: {
-    flagDefinition: string;
-    flagKey: string;
-    returnType: string;
-    context: string;
-  };
-};
-
-const templates = {
-  "Email ends with": {
-    flagDefinition: JSON.stringify(
-      JSON.parse(
-        '{"flags":{"new-welcome-banner":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"off","targeting":{"if":[{"ends_with":[{"var":"email"},"@example.com"]},"on","off"]}}}}'
-      ),
-      null,
-      2
-    ),
-    flagKey: "new-welcome-banner",
-    returnType: "boolean",
-    context: JSON.stringify(
-      JSON.parse('{ "email": "test@example.com" }'),
-      null,
-      2
-    ),
-  },
-  "Shared evaluators": {
-    flagDefinition: JSON.stringify(
-      JSON.parse(
-        '{"flags":{"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"headerColor":{"variants":{"red":"#FF0000","blue":"#0000FF","green":"#00FF00","yellow":"#FFFF00"},"defaultVariant":"red","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},{"fractional":[{"var":"email"},["red",25],["blue",25],["green",25],["yellow",25]]},null]}}},"$evaluators":{"emailWithFaas":{"ends_with":[{"var": "email"}, "@faas.com"]}}}'
-      ),
-      null,
-      2
-    ),
-    flagKey: "fibAlgo",
-    returnType: "string",
-    context: JSON.stringify(
-      JSON.parse('{ "email": "mike@faas.com" }'),
-      null,
-      2
-    ),
-  },
-  Empty: {
-    flagDefinition: "",
-    flagKey: "",
-    returnType: "boolean",
-    context: "",
-  },
-  // Add more templates here...
-} satisfies Template;
-
-type TemplateName = keyof typeof templates;
-
-// const flagKeys = ["new-welcome-banner", "test", "test2", "test3"];
+import { ScenarioName, scenarios } from "./scenarios";
+import type { FlagValueType } from "@openfeature/core";
+import { getString, isValidJson } from "./utils";
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
-    useState<TemplateName>("Email ends with");
+    useState<ScenarioName>("Basic boolean flag");
   const [featureDefinition, setFeatureDefinition] = useState(
-    templates[selectedTemplate].flagDefinition
+    scenarios[selectedTemplate].flagDefinition
   );
-  const [flagKey, setFlagKey] = useState(templates[selectedTemplate].flagKey);
+  const [flagKey, setFlagKey] = useState(scenarios[selectedTemplate].flagKey);
   const [returnType, setReturnType] = useState(
-    templates[selectedTemplate].returnType
+    scenarios[selectedTemplate].returnType
   );
   const [evaluationContext, setEvaluationContext] = useState(
-    templates[selectedTemplate].context
+    getString(scenarios[selectedTemplate].context)
   );
   const [showOutput, setShowOutput] = useState(false);
   const [output, setOutput] = useState("");
   const [autocompleteFlagKeys, setAutocompleteFlagKeys] = useState<string[]>(
     []
   );
+  const [description, setDescription] = useState(
+    scenarios[selectedTemplate].description
+  );
+  const [status, setStatus] = useState<"success" | "failure">("success");
 
   const resetInputs = useCallback(() => {
     setOutput("");
     setShowOutput(false);
-    const template = templates[selectedTemplate];
+    const template = scenarios[selectedTemplate];
     setFeatureDefinition(template.flagDefinition);
     setFlagKey(template.flagKey);
     setReturnType(template.returnType);
-    setEvaluationContext(template.context);
+    setEvaluationContext(getString(template.context));
+    setDescription(template.description);
+    setStatus("success");
   }, [
     selectedTemplate,
     setOutput,
@@ -91,6 +46,7 @@ function App() {
     setFlagKey,
     setReturnType,
     setEvaluationContext,
+    setStatus,
   ]);
 
   useEffect(() => {
@@ -98,24 +54,19 @@ function App() {
   }, [selectedTemplate, resetInputs]);
 
   const flagStorage = useMemo(() => new MemoryStorage(), []);
-  const flagdCore = useMemo(() => new FlagdCore(flagStorage), [flagStorage]);
-
-  const isValidJson = (jsonString: string) => {
-    try {
-      JSON.parse(jsonString);
-      return true;
-    } catch {
-      return false;
-    }
-  };
+  const flagdCore = useMemo(
+    () => new FlagdCore(flagStorage, console),
+    [flagStorage]
+  );
 
   useEffect(() => {
     if (isValidJson(featureDefinition)) {
-      const flagDefinition = JSON.parse(featureDefinition);
-      if (typeof flagDefinition.flags === "object") {
-        setAutocompleteFlagKeys(Object.keys(flagDefinition.flags));
+      try {
+        flagdCore.setConfigurations(featureDefinition);
+        setAutocompleteFlagKeys(Array.from(flagdCore.getFlags().keys()));
+      } catch (err) {
+        console.error("Invalid flagd configuration", err);
       }
-      flagdCore.setConfigurations(featureDefinition);
     }
   }, [featureDefinition, flagdCore]);
 
@@ -158,9 +109,11 @@ function App() {
           );
           break;
       }
+      setStatus("success");
       setOutput(JSON.stringify(result, null, 2));
     } catch (error) {
       console.error("Invalid JSON input", error);
+      setStatus("failure");
       setOutput((error as Error).message);
     }
   };
@@ -173,61 +126,111 @@ function App() {
     }
   }, [output]);
 
-  const admonitionTitle =
-    typeof parsedOutput === "object" ? "Success" : "Failure";
-  const admonitionClass =
-    typeof parsedOutput === "object" ? "success" : "failure";
+  const isCompact = useMedia("(max-width: 1220px)");
 
   return (
-    <div>
-      <div style={{ marginBlock: "10px" }}>
-        <label style={{ display: "block", marginBottom: "5px" }}>
-          Select a template
-        </label>
-        <select
+    <div
+      style={{
+        maxWidth: "825px",
+      }}
+    >
+      <div>
+        <p
           style={{
-            width: "200px",
-            padding: "10px",
-            boxSizing: "border-box",
+            // Moves content closer to the page header for more screen real estate
+            margin: "-32px 0 0 0",
+            lineHeight: "1.4",
+            fontSize: "medium",
           }}
-          value={selectedTemplate}
-          onChange={(e) => setSelectedTemplate(e.target.value as TemplateName)}
         >
-          {Object.keys(templates).map((templateName) => (
-            <option key={templateName} value={templateName}>
-              {templateName}
-            </option>
-          ))}
-        </select>
+          Explore flagd flag definitions in your browser. Begin by selecting an
+          example below; these are merely starting points, so customize the flag
+          definition as you wish. Find an overview of the flag definition
+          structure <a href="/reference/flag-definitions/">here</a>.
+        </p>
       </div>
-
-      <div style={{ display: "flex", marginBottom: "10px" }}>
-        <div style={{ flex: "1", marginRight: "20px", textAlign: "left" }}>
-          <label style={{ display: "block", marginBottom: "5px" }}>
-            Feature Definition
-          </label>
-          <textarea
-            style={{
-              width: "500px",
-              height: "500px",
-              minWidth: "450px",
-              maxWidth: "800px",
-              minHeight: "400px",
-              padding: "10px",
-            }}
-            name="feature-definition"
-            value={featureDefinition}
-            onChange={(e) => setFeatureDefinition(e.target.value)}
-          />
+      <div>
+        <h4>Select a scenario</h4>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isCompact ? "column" : "row",
+            textAlign: "left",
+            gap: "16px",
+            height: "100%",
+          }}
+        >
+          <div style={{ flex: "2" }}>
+            <select
+              style={{
+                width: "100%",
+                minWidth: "250px",
+                padding: "8px",
+              }}
+              value={selectedTemplate}
+              onChange={(e) =>
+                setSelectedTemplate(e.target.value as ScenarioName)
+              }
+            >
+              {Object.keys(scenarios).map((templateName) => (
+                <option key={templateName} value={templateName}>
+                  {templateName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: "3" }}>
+            <p
+              style={{
+                lineHeight: "1.4",
+                margin: "-4px 0 0 0",
+                fontSize: "small",
+              }}
+            >
+              {description}
+            </p>
+          </div>
         </div>
-        <div style={{ flex: "1" }}>
-          <div style={{ marginBottom: "10px", textAlign: "left" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Flag Key
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isCompact ? "column" : "row",
+            textAlign: "left",
+            gap: "16px",
+            height: "100%",
+          }}
+        >
+          <div
+            style={{
+              flex: "3",
+            }}
+          >
+            <h4>Feature definition</h4>
+            <textarea
+              style={{
+                width: "100%",
+                minHeight: "500px",
+                boxSizing: "border-box",
+                resize: "vertical",
+                padding: "8px",
+              }}
+              name="feature-definition"
+              value={featureDefinition}
+              onChange={(e) => setFeatureDefinition(e.target.value)}
+            />
+          </div>
+          <div
+            style={{
+              flex: "2",
+            }}
+          >
+            <div>
+              <h4>Flag key</h4>
               <input
                 style={{
                   width: "100%",
-                  padding: "10px",
+                  maxWidth: "800px",
+                  padding: "8px",
                   boxSizing: "border-box",
                   border: "1px solid",
                 }}
@@ -241,77 +244,73 @@ function App() {
                   <option key={index} value={key} />
                 ))}
               </datalist>
-            </label>
-          </div>
-          <div style={{ marginBottom: "10px", textAlign: "left" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Return Type
+            </div>
+            <div>
+              <h4>Return type</h4>
               <select
                 style={{
                   width: "100%",
-                  padding: "10px",
-                  boxSizing: "border-box",
+                  padding: "8px 0 8px 0",
                 }}
                 value={returnType}
-                onChange={(e) => setReturnType(e.target.value)}
+                onChange={(e) => setReturnType(e.target.value as FlagValueType)}
               >
                 <option value="boolean">boolean</option>
                 <option value="string">string</option>
                 <option value="number">number</option>
                 <option value="object">object</option>
               </select>
-            </label>
-          </div>
-          <div style={{ marginBottom: "10px", textAlign: "left" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Evaluation Context
+            </div>
+            <div>
+              <h4>Evaluation context</h4>
               <textarea
                 style={{
                   width: "100%",
-                  minHeight: "100px",
-                  maxHeight: "300px",
-                  padding: "10px",
+                  minHeight: "80px",
                   boxSizing: "border-box",
                   resize: "vertical",
+                  padding: "8px",
                 }}
                 name="evaluation-context"
                 value={evaluationContext}
                 onChange={(e) => setEvaluationContext(e.target.value)}
               />
-            </label>
-          </div>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              className="md-button md-button--primary"
-              onClick={evaluate}
-              disabled={
-                !isValidJson(featureDefinition) ||
-                (!isValidJson(evaluationContext) && evaluationContext !== "")
-              }
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                className="md-button md-button--primary"
+                onClick={evaluate}
+                disabled={
+                  !isValidJson(featureDefinition) ||
+                  (!isValidJson(evaluationContext) && evaluationContext !== "")
+                }
+              >
+                Evaluate
+              </button>
+              <button className="md-button" onClick={resetInputs}>
+                Reset
+              </button>
+            </div>
+            <div
+              className={`output ${showOutput ? "visible" : ""} admonition ${
+                status === "success" ? "success" : "failure"
+              }`}
             >
-              Evaluate
-            </button>
-            <button className="md-button" onClick={resetInputs}>
-              Reset
-            </button>
-          </div>
-          <div
-            className={`output ${
-              showOutput ? "visible" : ""
-            } admonition ${admonitionClass}`}
-          >
-            <p className="admonition-title">{admonitionTitle}</p>
-            {typeof parsedOutput === "object" ? (
-              <div>
-                {Object.entries(parsedOutput).map(([key, value]) => (
-                  <div key={key}>
-                    <strong>{key}:</strong> {JSON.stringify(value)}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>{parsedOutput}</p>
-            )}
+              <p className="admonition-title">
+                {status === "success" ? "Success" : "Failure"}
+              </p>
+              {typeof parsedOutput === "object" ? (
+                <div>
+                  {Object.entries(parsedOutput).map(([key, value]) => (
+                    <div key={key}>
+                      <strong>{key}:</strong> {JSON.stringify(value)}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>{parsedOutput}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -39,13 +39,3 @@ Because you haven't opened a PR or created an issue!
 
 We're always adding new functionality to flagd, and welcome additions and ideas from new contributors.
 Don't hesitate to [open an issue](https://github.com/open-feature/flagd/issues)!
-
-
-<div class="grid cards" markdown>
-
-- :fontawesome-brands-html5: __HTML__ for content and structure
-- :fontawesome-brands-js: __JavaScript__ for interactivity
-- :fontawesome-brands-css3: __CSS__ for text running out of boxes
-- :fontawesome-brands-internet-explorer: __Internet Explorer__ ... huh?
-
-</div>
