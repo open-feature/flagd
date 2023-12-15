@@ -16,9 +16,12 @@ config:
 
 ignores:
   - "**/CHANGELOG.md"
+  - ".venv"
   - "node_modules"
+  - "playground-app/node_modules"
   - "tmp"
-  - "**/protos.md"  # auto-generated
-  - "schemas"       # submodule
-  - "spec"          # submodule
-  - "test-harness"  # submodule
+  - "**/protos.md"     # auto-generated
+  - "docs/playground"  # auto-generated
+  - "schemas"          # submodule
+  - "spec"             # submodule
+  - "test-harness"     # submodule
