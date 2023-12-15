@@ -15,6 +15,7 @@ export const basicNumber: Scenario = {
           "1": 1,
           "2": 2,
         },
+        targeting: {},
       },
     },
   }),

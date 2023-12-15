@@ -26,6 +26,8 @@ function App() {
   const [description, setDescription] = useState(
     scenarios[selectedTemplate].description
   );
+  const [validFeatureDefinition, setValidFeatureDefinition] = useState(true);
+  const [validEvaluationContext, setValidEvaluationContext] = useState(true);
   const [status, setStatus] = useState<"success" | "failure">("success");
 
   const resetInputs = useCallback(() => {
@@ -37,17 +39,10 @@ function App() {
     setReturnType(template.returnType);
     setEvaluationContext(getString(template.context));
     setDescription(template.description);
+    setValidFeatureDefinition(true);
+    setValidEvaluationContext(true);
     setStatus("success");
-  }, [
-    selectedTemplate,
-    setOutput,
-    setShowOutput,
-    setFeatureDefinition,
-    setFlagKey,
-    setReturnType,
-    setEvaluationContext,
-    setStatus,
-  ]);
+  }, [selectedTemplate]);
 
   useEffect(() => {
     resetInputs();
@@ -64,17 +59,29 @@ function App() {
       try {
         flagdCore.setConfigurations(featureDefinition);
         setAutocompleteFlagKeys(Array.from(flagdCore.getFlags().keys()));
+        setValidFeatureDefinition(true);
       } catch (err) {
         console.error("Invalid flagd configuration", err);
+        setValidFeatureDefinition(false);
       }
     }
   }, [featureDefinition, flagdCore]);
 
+  useEffect(() => {
+    try {
+      JSON.parse(evaluationContext);
+      setValidEvaluationContext(true);
+    } catch (err) {
+      console.error("Invalid JSON input", err);
+      setValidEvaluationContext(false);
+    }
+  }, [evaluationContext]);
+
   const evaluate = () => {
     setShowOutput(true);
     try {
-      const context = evaluationContext ? JSON.parse(evaluationContext) : {};
       let result;
+      const context = JSON.parse(evaluationContext);
       switch (returnType) {
         case "boolean":
           result = flagdCore.resolveBooleanEvaluation(
@@ -280,10 +287,7 @@ function App() {
               <button
                 className="md-button md-button--primary"
                 onClick={evaluate}
-                disabled={
-                  !isValidJson(featureDefinition) ||
-                  (!isValidJson(evaluationContext) && evaluationContext !== "")
-                }
+                disabled={!validFeatureDefinition || !validEvaluationContext}
               >
                 Evaluate
               </button>

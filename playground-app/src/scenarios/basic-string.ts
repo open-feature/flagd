@@ -15,6 +15,7 @@ export const basicString: Scenario = {
           foo: "foo",
           bar: "bar",
         },
+        targeting: {},
       },
     },
   }),

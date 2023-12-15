@@ -15,6 +15,7 @@ export const basicBoolean: Scenario = {
           true: true,
           false: false,
         },
+        targeting: {},
       },
     },
   }),
