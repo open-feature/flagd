@@ -19,7 +19,6 @@ export const basicObject: Scenario = {
             bar: "bar",
           },
         },
-        targeting: {},
       },
     },
   }),
