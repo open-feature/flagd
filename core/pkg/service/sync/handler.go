@@ -18,7 +18,10 @@ type newHandler struct {
 	oldHandler *handler
 }
 
-func (nh *newHandler) SyncFlags(request *syncv12.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
+func (nh *newHandler) SyncFlags(
+	request *syncv12.SyncFlagsRequest,
+	server syncv1grpc.FlagSyncService_SyncFlagsServer,
+) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	errChan := make(chan error)
@@ -32,7 +35,7 @@ func (nh *newHandler) SyncFlags(request *syncv12.SyncFlagsRequest, server syncv1
 			if err := server.Send(&syncv12.SyncFlagsResponse{
 				FlagConfiguration: d.FlagData,
 			}); err != nil {
-				return err
+				return fmt.Errorf("error sending configuration change event: %w", err)
 			}
 		case <-server.Context().Done():
 			return nil
@@ -40,10 +43,13 @@ func (nh *newHandler) SyncFlags(request *syncv12.SyncFlagsRequest, server syncv1
 	}
 }
 
-func (nh *newHandler) FetchAllFlags(ctx context.Context, request *syncv12.FetchAllFlagsRequest) (*syncv12.FetchAllFlagsResponse, error) {
+func (nh *newHandler) FetchAllFlags(
+	ctx context.Context,
+	request *syncv12.FetchAllFlagsRequest,
+) (*syncv12.FetchAllFlagsResponse, error) {
 	data, err := nh.oldHandler.syncStore.FetchAllFlags(ctx, request, request.GetSelector())
 	if err != nil {
-		return &syncv12.FetchAllFlagsResponse{}, err
+		return &syncv12.FetchAllFlagsResponse{}, fmt.Errorf("error fetching all flags from sync store: %w", err)
 	}
 
 	return &syncv12.FetchAllFlagsResponse{

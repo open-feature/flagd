@@ -1,10 +1,12 @@
 package service
 
 import (
-	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
-	"connectrpc.com/connect"
 	"context"
 	"fmt"
+	"time"
+
+	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
@@ -15,7 +17,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/structpb"
-	"time"
 )
 
 type FlagEvaluationServiceV2 struct {
