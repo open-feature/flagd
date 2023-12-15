@@ -162,7 +162,12 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	// register handler for new flag evaluation schema
 
-	newFes := NewFlagEvaluationService2(fes)
+	newFes := NewFlagEvaluationServiceV2(s.logger.WithFields(zap.String("component", "flagd.evaluation.v1")),
+		s.eval,
+		s.eventingConfiguration,
+		s.metrics,
+	)
+
 	newPath, newHandler := evaluationV1.NewServiceHandler(newFes, svcConf.Options...)
 	mux.Handle(newPath, newHandler)
 
