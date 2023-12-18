@@ -29,7 +29,10 @@ type FlagEvaluationServiceV2 struct {
 
 // NewFlagEvaluationServiceV2 creates a FlagEvaluationService with provided parameters
 func NewFlagEvaluationServiceV2(log *logger.Logger,
-	eval evaluator.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder) *FlagEvaluationServiceV2 {
+	eval evaluator.IEvaluator,
+	eventingCfg *eventingConfiguration,
+	metricsRecorder *telemetry.MetricsRecorder,
+) *FlagEvaluationServiceV2 {
 	return &FlagEvaluationServiceV2{
 		logger:                log,
 		eval:                  eval,
@@ -39,6 +42,7 @@ func NewFlagEvaluationServiceV2(log *logger.Logger,
 	}
 }
 
+// nolint:dupl,funlen
 func (s *FlagEvaluationServiceV2) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveAllRequest],

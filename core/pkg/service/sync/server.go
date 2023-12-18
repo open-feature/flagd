@@ -47,7 +47,6 @@ func NewServer(logger *logger.Logger, store subscriptions.Manager) *Server {
 		newHandler: theNewHandler,
 		Logger:     logger,
 	}
-
 }
 
 func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) error {

@@ -45,6 +45,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 	}
 }
 
+// nolint:dupl
 func (s *FlagEvaluationService) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],

@@ -127,6 +127,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	s.eventingConfiguration.emitToAll(n)
 }
 
+// nolint: funlen
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
