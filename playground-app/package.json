@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@openfeature/flagd-core": "^0.1.5",
+    "@openfeature/flagd-core": "^0.1.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-use": "^17.4.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

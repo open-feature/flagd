@@ -125,14 +125,20 @@ generate-proto-docs: pull-schemas-submodule
 run-web-docs: generate-docs generate-proto-docs
 	docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
 
+# Run the playground app in dev mode
+# See the readme in the playground-app folder for more details
 .PHONY: playground-dev
 playground-dev:
 	cd playground-app && npm ci && npm run dev
 
+# Build the playground app
+# See the readme in the playground-app folder for more details
 .PHONY: playground-build
 playground-build:
 	cd playground-app && npm ci && npm run build
 
+# Publish the playground app to the docs folder
+# See the readme in the playground-app folder for more details
 .PHONY: playground-publish
 playground-publish: playground-build
 	cp playground-app/dist/assets/index-*.js docs/playground/playground.js

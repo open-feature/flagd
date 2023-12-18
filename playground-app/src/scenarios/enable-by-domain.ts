@@ -5,13 +5,13 @@ export const enableByDomain: Scenario = {
   description: [
     'In this scenario, we have a feature flag with the key "enable-mainframe-access" that is enabled and has two variants: true and false.',
     'This flag has a targeting rule defined that enables the flag for users with an email address that ends with "@ingen.com".',
-    "Try changing the email address in the context to something else and see what happens.",
+    'Experiment with changing the email address in the context or in the targeting rule.',
   ].join(" "),
   flagDefinition: featureDefinitionToPrettyJson({
     flags: {
       "enable-mainframe-access": {
         state: "ENABLED",
-        defaultVariant: "true",
+        defaultVariant: "false",
         variants: {
           true: true,
           false: false,

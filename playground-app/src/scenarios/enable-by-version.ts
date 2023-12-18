@@ -5,7 +5,7 @@ export const enableByVersion: Scenario = {
   description: [
     'In this scenario, we have a feature flag with the key "enable-performance-mode" that is enabled and has two variants: true and false.',
     'This rule looks for the evaluation context "version". If the version is greater or equal to "1.7.0" the feature is enabled.',
-    'Otherwise, the "defaultVariant" is return. Try changing the version in the context to something else and see what happens.',
+    'Otherwise, the "defaultVariant" is return. Experiment by changing the version in the context.',
   ].join(" "),
   flagDefinition: featureDefinitionToPrettyJson({
     flags: {
