@@ -135,6 +135,14 @@ function App() {
 
   const isCompact = useMedia("(max-width: 1220px)");
 
+  const codeStyle = {
+    border: 'none',
+    backgroundColor: 'var(--md-code-bg-color)',
+    color: 'var(--md-code-fg-color)',
+    fontFeatureSettings: 'kern',
+    fontFamily: 'var(--md-code-font-family)'
+  };
+
   return (
     <div
       style={{
@@ -173,6 +181,7 @@ function App() {
                 width: "100%",
                 minWidth: "250px",
                 padding: "8px",
+                ...codeStyle,
               }}
               value={selectedTemplate}
               onChange={(e) =>
@@ -220,6 +229,7 @@ function App() {
                 boxSizing: "border-box",
                 resize: "vertical",
                 padding: "8px",
+                ...codeStyle,
               }}
               name="feature-definition"
               value={featureDefinition}
@@ -239,7 +249,7 @@ function App() {
                   maxWidth: "800px",
                   padding: "8px",
                   boxSizing: "border-box",
-                  border: "1px solid",
+                  ...codeStyle,
                 }}
                 name="flag-key"
                 list="flag-keys"
@@ -258,6 +268,7 @@ function App() {
                 style={{
                   width: "100%",
                   padding: "8px 0 8px 0",
+                  ...codeStyle,
                 }}
                 value={returnType}
                 onChange={(e) => setReturnType(e.target.value as FlagValueType)}
@@ -277,6 +288,7 @@ function App() {
                   boxSizing: "border-box",
                   resize: "vertical",
                   padding: "8px",
+                  ...codeStyle,
                 }}
                 name="evaluation-context"
                 value={evaluationContext}
@@ -304,7 +316,7 @@ function App() {
                 {status === "success" ? "Success" : "Failure"}
               </p>
               {typeof parsedOutput === "object" ? (
-                <div>
+                <div style={{ margin: '0.6rem 0 0.6rem 0' }} >
                   {Object.entries(parsedOutput).map(([key, value]) => (
                     <div key={key}>
                       <strong>{key}:</strong> {JSON.stringify(value)}
