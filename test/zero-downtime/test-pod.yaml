@@ -12,7 +12,7 @@ spec:
         - '-c'
         - |
           for i in $(seq 1 3000); do
-              curl -H 'Cache-Control: no-cache, no-store' -X POST flagd-svc.$FLAGD_DEV_NAMESPACE.svc.cluster.local:8013/schema.v1.Service/ResolveString?$RANDOM -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json" > ~/out.txt
+              curl -H 'Cache-Control: no-cache, no-store' -X POST flagd-svc.$FLAGD_DEV_NAMESPACE.svc.cluster.local:8013/flagd.evaluation.v1.Service/ResolveString?$RANDOM -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json" > ~/out.txt
               if ! grep -q "val1" ~/out.txt
               then
                 cat ~/out.txt

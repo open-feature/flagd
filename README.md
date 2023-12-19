@@ -96,7 +96,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
     Retrieve a `String` value:
 
     ```sh
-    curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
+    curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
       -d '{"flagKey":"myStringFlag","context":{}}' -H "Content-Type: application/json"
     ```
 
@@ -105,7 +105,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 
     ```sh
     set json={"flagKey":"myStringFlag","context":{}}
-    curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/schema.v1.Service/ResolveString"
+    curl -i -X POST -H "Content-Type: application/json" -d %json:"=\"% "localhost:8013/flagd.evaluation.v1.Service/ResolveString"
     ```
 
     Result:

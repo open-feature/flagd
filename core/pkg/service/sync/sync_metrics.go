@@ -21,7 +21,7 @@ func (s *Server) captureMetrics() error {
 	provider := metric.NewMeterProvider(metric.WithReader(exporter))
 	meter := provider.Meter(serviceName)
 
-	syncGuage, err := meter.Int64ObservableGauge(
+	syncGauge, err := meter.Int64ObservableGauge(
 		"sync_active_streams",
 		api.WithDescription("number of open sync subscriptions"),
 	)
@@ -30,9 +30,9 @@ func (s *Server) captureMetrics() error {
 	}
 
 	_, err = meter.RegisterCallback(func(_ context.Context, o api.Observer) error {
-		o.ObserveInt64(syncGuage, s.oldHandler.syncStore.GetActiveSubscriptionsInt64())
+		o.ObserveInt64(syncGauge, s.handler.syncStore.GetActiveSubscriptionsInt64())
 		return nil
-	}, syncGuage)
+	}, syncGauge)
 	if err != nil {
 		return fmt.Errorf("unable to register active subscription metric callback: %w", err)
 	}

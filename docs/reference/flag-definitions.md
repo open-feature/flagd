@@ -79,8 +79,8 @@ Example:
 It is an object containing the possible variations supported by the flag.
 All the values of the object **must** be the same type (e.g. boolean, numbers, string, JSON).
 The type used as the variant value will correspond directly affects how the flag is accessed.
-For example, to use a flag configured with boolean values the `/schema.v1.Service/ResolveBoolean` path should be used.
-If another path, such as `/schema.v1.Service/ResolveString` is called, a type mismatch occurs and an error is returned.
+For example, to use a flag configured with boolean values the `/flagd.evaluation.v1.Service/ResolveBoolean` path should be used.
+If another path, such as `/flagd.evaluation.v1.Service/ResolveString` is called, a type mismatch occurs and an error is returned.
 
 Example:
 

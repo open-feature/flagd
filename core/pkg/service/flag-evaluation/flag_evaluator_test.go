@@ -121,7 +121,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				tt.evalRes,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -228,7 +228,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -283,7 +283,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewFlagEvaluationService(
+		s := NewOldFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -381,7 +381,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				tt.wantErr,
 			)
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -436,7 +436,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewFlagEvaluationService(
+		s := NewOldFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -533,7 +533,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -588,7 +588,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewFlagEvaluationService(
+		s := NewOldFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -685,7 +685,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -740,7 +740,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewFlagEvaluationService(
+		s := NewOldFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -840,7 +840,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
+			s := NewOldFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -903,7 +903,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewFlagEvaluationService(
+		s := NewOldFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},

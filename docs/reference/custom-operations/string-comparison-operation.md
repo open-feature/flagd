@@ -59,7 +59,7 @@ will return variant `red`, if the value of the `email` property starts with `use
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "user@faas.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "user@faas.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -71,7 +71,7 @@ Result:
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@bar.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@bar.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -132,7 +132,7 @@ will return variant `red`, if the value of the `email` property ends with `faas.
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "user@faas.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "user@faas.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -144,7 +144,7 @@ Result:
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@bar.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@bar.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:

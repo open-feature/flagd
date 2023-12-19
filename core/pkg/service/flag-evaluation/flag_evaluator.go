@@ -24,7 +24,9 @@ import (
 type resolverSignature[T constraints] func(context context.Context, reqID, flagKey string, ctx map[string]any) (
 	T, string, string, map[string]interface{}, error)
 
-type FlagEvaluationService struct {
+// OldFlagEvaluationService implements the methods required for the soon-to-be deprecated flag evaluation schema
+// this can be removed as a part of https://github.com/open-feature/flagd/issues/1088
+type OldFlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
@@ -32,11 +34,11 @@ type FlagEvaluationService struct {
 	flagEvalTracer        trace.Tracer
 }
 
-// NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
-func NewFlagEvaluationService(log *logger.Logger,
+// NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
+func NewOldFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
-) *FlagEvaluationService {
-	return &FlagEvaluationService{
+) *OldFlagEvaluationService {
+	return &OldFlagEvaluationService{
 		logger:                log,
 		eval:                  eval,
 		metrics:               metricsRecorder,
@@ -46,7 +48,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 }
 
 // nolint:dupl
-func (s *FlagEvaluationService) ResolveAll(
+func (s *OldFlagEvaluationService) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],
 ) (*connect.Response[schemaV1.ResolveAllResponse], error) {
@@ -109,7 +111,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	return connect.NewResponse(res), nil
 }
 
-func (s *FlagEvaluationService) EventStream(
+func (s *OldFlagEvaluationService) EventStream(
 	ctx context.Context,
 	req *connect.Request[schemaV1.EventStreamRequest],
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
@@ -148,7 +150,7 @@ func (s *FlagEvaluationService) EventStream(
 	}
 }
 
-func (s *FlagEvaluationService) ResolveBoolean(
+func (s *OldFlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
 ) (*connect.Response[schemaV1.ResolveBooleanResponse], error) {
@@ -172,7 +174,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	return res, err
 }
 
-func (s *FlagEvaluationService) ResolveString(
+func (s *OldFlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
 ) (*connect.Response[schemaV1.ResolveStringResponse], error) {
@@ -197,7 +199,7 @@ func (s *FlagEvaluationService) ResolveString(
 	return res, err
 }
 
-func (s *FlagEvaluationService) ResolveInt(
+func (s *OldFlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
 ) (*connect.Response[schemaV1.ResolveIntResponse], error) {
@@ -222,7 +224,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	return res, err
 }
 
-func (s *FlagEvaluationService) ResolveFloat(
+func (s *OldFlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
 ) (*connect.Response[schemaV1.ResolveFloatResponse], error) {
@@ -247,7 +249,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	return res, err
 }
 
-func (s *FlagEvaluationService) ResolveObject(
+func (s *OldFlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],
 ) (*connect.Response[schemaV1.ResolveObjectResponse], error) {

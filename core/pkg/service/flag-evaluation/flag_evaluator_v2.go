@@ -19,7 +19,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type FlagEvaluationServiceV2 struct {
+type FlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
@@ -27,13 +27,13 @@ type FlagEvaluationServiceV2 struct {
 	flagEvalTracer        trace.Tracer
 }
 
-// NewFlagEvaluationServiceV2 creates a FlagEvaluationService with provided parameters
-func NewFlagEvaluationServiceV2(log *logger.Logger,
+// NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
+func NewFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator,
 	eventingCfg *eventingConfiguration,
 	metricsRecorder *telemetry.MetricsRecorder,
-) *FlagEvaluationServiceV2 {
-	return &FlagEvaluationServiceV2{
+) *FlagEvaluationService {
+	return &FlagEvaluationService{
 		logger:                log,
 		eval:                  eval,
 		metrics:               metricsRecorder,
@@ -43,7 +43,7 @@ func NewFlagEvaluationServiceV2(log *logger.Logger,
 }
 
 // nolint:dupl,funlen
-func (s *FlagEvaluationServiceV2) ResolveAll(
+func (s *FlagEvaluationService) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveAllRequest],
 ) (*connect.Response[evalV1.ResolveAllResponse], error) {
@@ -110,7 +110,7 @@ func (s *FlagEvaluationServiceV2) ResolveAll(
 	return connect.NewResponse(res), nil
 }
 
-func (s *FlagEvaluationServiceV2) EventStream(
+func (s *FlagEvaluationService) EventStream(
 	ctx context.Context,
 	req *connect.Request[evalV1.EventStreamRequest],
 	stream *connect.ServerStream[evalV1.EventStreamResponse],
@@ -149,7 +149,7 @@ func (s *FlagEvaluationServiceV2) EventStream(
 	}
 }
 
-func (s *FlagEvaluationServiceV2) ResolveBoolean(
+func (s *FlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveBooleanRequest],
 ) (*connect.Response[evalV1.ResolveBooleanResponse], error) {
@@ -173,7 +173,7 @@ func (s *FlagEvaluationServiceV2) ResolveBoolean(
 	return res, err
 }
 
-func (s *FlagEvaluationServiceV2) ResolveString(
+func (s *FlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveStringRequest],
 ) (*connect.Response[evalV1.ResolveStringResponse], error) {
@@ -198,7 +198,7 @@ func (s *FlagEvaluationServiceV2) ResolveString(
 	return res, err
 }
 
-func (s *FlagEvaluationServiceV2) ResolveInt(
+func (s *FlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveIntRequest],
 ) (*connect.Response[evalV1.ResolveIntResponse], error) {
@@ -223,7 +223,7 @@ func (s *FlagEvaluationServiceV2) ResolveInt(
 	return res, err
 }
 
-func (s *FlagEvaluationServiceV2) ResolveFloat(
+func (s *FlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveFloatRequest],
 ) (*connect.Response[evalV1.ResolveFloatResponse], error) {
@@ -248,7 +248,7 @@ func (s *FlagEvaluationServiceV2) ResolveFloat(
 	return res, err
 }
 
-func (s *FlagEvaluationServiceV2) ResolveObject(
+func (s *FlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveObjectRequest],
 ) (*connect.Response[evalV1.ResolveObjectResponse], error) {

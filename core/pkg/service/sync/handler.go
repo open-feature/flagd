@@ -13,12 +13,13 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
-type newHandler struct {
+type handler struct {
 	syncv1grpc.UnimplementedFlagSyncServiceServer
-	oldHandler *handler
+	syncStore subscriptions.Manager
+	logger    *logger.Logger
 }
 
-func (nh *newHandler) SyncFlags(
+func (nh *handler) SyncFlags(
 	request *syncv12.SyncFlagsRequest,
 	server syncv1grpc.FlagSyncService_SyncFlagsServer,
 ) error {
@@ -26,7 +27,7 @@ func (nh *newHandler) SyncFlags(
 	defer cancel()
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
-	nh.oldHandler.syncStore.RegisterSubscription(ctx, request.GetSelector(), request, dataSync, errChan)
+	nh.syncStore.RegisterSubscription(ctx, request.GetSelector(), request, dataSync, errChan)
 	for {
 		select {
 		case e := <-errChan:
@@ -43,11 +44,11 @@ func (nh *newHandler) SyncFlags(
 	}
 }
 
-func (nh *newHandler) FetchAllFlags(
+func (nh *handler) FetchAllFlags(
 	ctx context.Context,
 	request *syncv12.FetchAllFlagsRequest,
 ) (*syncv12.FetchAllFlagsResponse, error) {
-	data, err := nh.oldHandler.syncStore.FetchAllFlags(ctx, request, request.GetSelector())
+	data, err := nh.syncStore.FetchAllFlags(ctx, request, request.GetSelector())
 	if err != nil {
 		return &syncv12.FetchAllFlagsResponse{}, fmt.Errorf("error fetching all flags from sync store: %w", err)
 	}
@@ -57,13 +58,15 @@ func (nh *newHandler) FetchAllFlags(
 	}, nil
 }
 
-type handler struct {
+// oldHandler is the implementation of the old sync schema.
+// this will not be required anymore when it is time to work on https://github.com/open-feature/flagd/issues/1088
+type oldHandler struct {
 	rpc.UnimplementedFlagSyncServiceServer
 	syncStore subscriptions.Manager
 	logger    *logger.Logger
 }
 
-func (l *handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
+func (l *oldHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse,
 	error,
 ) {
@@ -77,7 +80,7 @@ func (l *handler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRe
 	}, nil
 }
 
-func (l *handler) SyncFlags(
+func (l *oldHandler) SyncFlags(
 	req *syncv1.SyncFlagsRequest,
 	stream rpc.FlagSyncService_SyncFlagsServer,
 ) error {

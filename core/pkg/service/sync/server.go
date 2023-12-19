@@ -24,27 +24,29 @@ import (
 )
 
 type Server struct {
-	server            *http.Server
-	metricsServer     *http.Server
-	Logger            *logger.Logger
-	oldHandler        *handler
-	newHandler        *newHandler
+	server        *http.Server
+	metricsServer *http.Server
+	Logger        *logger.Logger
+	// oldHandler will not be required anymore when https://github.com/open-feature/flagd/issues/1088 is being worked on
+	oldHandler        *oldHandler
+	handler           *handler
 	config            iservice.Configuration
 	grpcServer        *grpc.Server
 	metricServerReady bool
 }
 
 func NewServer(logger *logger.Logger, store subscriptions.Manager) *Server {
-	oldHandler := &handler{
+	theOldHandler := &oldHandler{
 		logger:    logger,
 		syncStore: store,
 	}
-	theNewHandler := &newHandler{
-		oldHandler: oldHandler,
+	theNewHandler := &handler{
+		logger:    logger,
+		syncStore: store,
 	}
 	return &Server{
-		oldHandler: oldHandler,
-		newHandler: theNewHandler,
+		oldHandler: theOldHandler,
+		handler:    theNewHandler,
 		Logger:     logger,
 	}
 }
@@ -102,7 +104,7 @@ func (s *Server) startServer() error {
 
 	s.grpcServer = grpc.NewServer()
 	rpc.RegisterFlagSyncServiceServer(s.grpcServer, s.oldHandler)
-	syncv1.RegisterFlagSyncServiceServer(s.grpcServer, s.newHandler)
+	syncv1.RegisterFlagSyncServiceServer(s.grpcServer, s.handler)
 
 	if err := s.grpcServer.Serve(
 		lis,

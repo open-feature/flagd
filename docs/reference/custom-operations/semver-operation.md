@@ -62,7 +62,7 @@ will return variant `red`, if the value of the `version` is a semantic version t
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"version": "1.0.1"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"version": "1.0.1"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -74,7 +74,7 @@ Result:
 Command:
 
 ```shell
-curl -X POST "localhost:8013/schema.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"version": "0.1.0"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"version": "0.1.0"}}' -H "Content-Type: application/json"
 ```
 
 Result:

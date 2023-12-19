@@ -40,6 +40,7 @@ const (
 
 // bufSwitchHandler combines the handlers of the old and new evaluation schema and combines them into one
 // this way we support both the new and the (deprecated) old schemas until only the new schema is supported
+// NOTE: this will not be required anymore when it is time to work on https://github.com/open-feature/flagd/issues/1088
 type bufSwitchHandler struct {
 	old http.Handler
 	new http.Handler
@@ -143,7 +144,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	}
 
 	// register handler for old flag evaluation schema
-	fes := NewFlagEvaluationService(
+	// can be removed as a part of https://github.com/open-feature/flagd/issues/1088
+	fes := NewOldFlagEvaluationService(
 		s.logger.WithFields(zap.String("component", "flagservice")),
 		s.eval,
 		s.eventingConfiguration,
@@ -160,7 +162,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	// register handler for new flag evaluation schema
 
-	newFes := NewFlagEvaluationServiceV2(s.logger.WithFields(zap.String("component", "flagd.evaluation.v1")),
+	newFes := NewFlagEvaluationService(s.logger.WithFields(zap.String("component", "flagd.evaluation.v1")),
 		s.eval,
 		s.eventingConfiguration,
 		s.metrics,
