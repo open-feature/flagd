@@ -18,7 +18,7 @@ theme:
       primary: custom
       accent: custom
       toggle:
-        icon: material/toggle-switch-off      
+        icon: material/toggle-switch-off
         name: Switch to light mode
   logo: assets/logo-white.svg
   favicon: assets/logo-white.svg
@@ -55,6 +55,7 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - tables
   - attr_list
+  - md_in_html
   - pymdownx.emoji:
       # we are using an older emoji extension because the newest (suggested in docs) doesn't work with Python < 3.10
       emoji_index: !!python/name:materialx.emoji.twemoji
@@ -64,6 +65,7 @@ nav:
   - 'Introduction': 'index.md'
   - 'Quick start': 'quick-start.md'
   - 'Installation': 'installation.md'
+  - 'Playground': 'playground/index.md'
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'

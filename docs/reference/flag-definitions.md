@@ -230,7 +230,7 @@ As long as a JsonLogic operator is structurally valid, it will return a falsy/nu
 
 These are custom operations specific to flagd and flagd providers.
 They are purpose-built extensions to JsonLogic in order to support common feature flag use cases.
-Consistent with build-in JsonLogic operators, flagd's custom operators return falsy/nullish values with invalid inputs.
+Consistent with built-in JsonLogic operators, flagd's custom operators return falsy/nullish values with invalid inputs.
 
 | Function                           | Description                                         | Context attribute type                       | Example                                                                                                                                                                                                                                                                                            |
 | ---------------------------------- | --------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

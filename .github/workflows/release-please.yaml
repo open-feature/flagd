@@ -22,7 +22,7 @@ jobs:
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - uses: google-github-actions/release-please-action@a2d8d683f209466ee8c695cd994ae2cf08b1642d # v4
+      - uses: google-github-actions/release-please-action@cc61a07e2da466bebbc19b3a7dd01d6aecb20d1e # v4
         id: release
         with:
           token: ${{secrets.GITHUB_TOKEN}}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4
+        uses: docker/metadata-action@9dc751fe249ad99385a2583ee0d084c400eee04e
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
@@ -117,7 +117,7 @@ jobs:
             COMMIT=${{ github.sha }}
             DATE=${{ needs.release-please.outputs.date }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149
+        uses: sigstore/cosign-installer@b18d21aaa20ef40c4e681202a598b7591d5be577
 
       - name: Sign the image
         run: |

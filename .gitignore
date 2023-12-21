@@ -12,6 +12,7 @@ core-coverage.out
 go.work
 go.work.sum
 bin/
+node_modules/
 
 # built documentation
 site
