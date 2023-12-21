@@ -35,8 +35,8 @@ export default function () {
 export function genUrl(type) {
     switch (type) {
         case "boolean":
-            return "http://localhost:8013/schema.v1.Service/ResolveBoolean"
+            return "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean"
         case "string":
-            return "http://localhost:8013/schema.v1.Service/ResolveString"
+            return "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString"
     }
 }

@@ -5,63 +5,27 @@ import (
 	"errors"
 	"testing"
 
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
 	"connectrpc.com/connect"
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type evalCommons struct {
-	variant  string
-	reason   string
-	metadata map[string]interface{}
-}
-
-var metadata = map[string]interface{}{
-	"scope": "some-scope",
-}
-
-var responseStruct *structpb.Struct
-
-func init() {
-	pbStruct, err := structpb.NewStruct(metadata)
-	if err != nil {
-		panic("failure to generate protobuf structure from metadata")
-	}
-
-	responseStruct = pbStruct
-}
-
-var happyCommon = evalCommons{
-	variant:  "on",
-	reason:   model.DefaultReason,
-	metadata: metadata,
-}
-
-var sadCommon = evalCommons{
-	variant:  ":(",
-	reason:   model.ErrorReason,
-	metadata: metadata,
-}
-
-func TestConnectService_ResolveAll(t *testing.T) {
+func TestConnectServiceV2_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
-		req     *schemaV1.ResolveAllRequest
+		req     *evalV1.ResolveAllRequest
 		evalRes []evaluator.AnyValue
 		wantErr error
-		wantRes *schemaV1.ResolveAllResponse
+		wantRes *evalV1.ResolveAllResponse
 	}{
 		"happy-path": {
-			req: &schemaV1.ResolveAllRequest{},
+			req: &evalV1.ResolveAllRequest{},
 			evalRes: []evaluator.AnyValue{
 				{
 					Value:   true,
@@ -89,22 +53,22 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-			wantRes: &schemaV1.ResolveAllResponse{
-				Flags: map[string]*schemaV1.AnyFlag{
+			wantRes: &evalV1.ResolveAllResponse{
+				Flags: map[string]*evalV1.AnyFlag{
 					"bool": {
-						Value: &schemaV1.AnyFlag_BoolValue{
+						Value: &evalV1.AnyFlag_BoolValue{
 							BoolValue: true,
 						},
 						Reason: "STATIC",
 					},
 					"float": {
-						Value: &schemaV1.AnyFlag_DoubleValue{
+						Value: &evalV1.AnyFlag_DoubleValue{
 							DoubleValue: float64(12.12),
 						},
 						Reason: "STATIC",
 					},
 					"string": {
-						Value: &schemaV1.AnyFlag_StringValue{
+						Value: &evalV1.AnyFlag_StringValue{
 							StringValue: "hello",
 						},
 						Reason: "STATIC",
@@ -121,7 +85,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				tt.evalRes,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -140,13 +104,13 @@ func TestConnectService_ResolveAll(t *testing.T) {
 			for _, flag := range tt.evalRes {
 				switch v := flag.Value.(type) {
 				case bool:
-					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_BoolValue)
+					val := got.Msg.Flags[flag.FlagKey].Value.(*evalV1.AnyFlag_BoolValue)
 					require.Equal(t, v, val.BoolValue)
 				case string:
-					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_StringValue)
+					val := got.Msg.Flags[flag.FlagKey].Value.(*evalV1.AnyFlag_StringValue)
 					require.Equal(t, v, val.StringValue)
 				case float64:
-					val := got.Msg.Flags[flag.FlagKey].Value.(*schemaV1.AnyFlag_DoubleValue)
+					val := got.Msg.Flags[flag.FlagKey].Value.(*evalV1.AnyFlag_DoubleValue)
 					require.Equal(t, v, val.DoubleValue)
 				}
 			}
@@ -154,40 +118,40 @@ func TestConnectService_ResolveAll(t *testing.T) {
 	}
 }
 
-type resolveBooleanArgs struct {
-	evalFields   resolveBooleanEvalFields
-	functionArgs resolveBooleanFunctionArgs
-	want         *schemaV1.ResolveBooleanResponse
+type resolveBooleanArgsV2 struct {
+	evalFields   resolveBooleanEvalFieldsV2
+	functionArgs resolveBooleanFunctionArgsV2
+	want         *evalV1.ResolveBooleanResponse
 	wantErr      error
 	mCount       int
 }
-type resolveBooleanFunctionArgs struct {
+type resolveBooleanFunctionArgsV2 struct {
 	ctx context.Context
-	req *schemaV1.ResolveBooleanRequest
+	req *evalV1.ResolveBooleanRequest
 }
-type resolveBooleanEvalFields struct {
+type resolveBooleanEvalFieldsV2 struct {
 	result bool
 	evalCommons
 }
 
-func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
+func TestFlag_EvaluationV2_ResolveBoolean(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	tests := map[string]resolveBooleanArgs{
+	tests := map[string]resolveBooleanArgsV2{
 		"happy path": {
 			mCount: 1,
-			evalFields: resolveBooleanEvalFields{
+			evalFields: resolveBooleanEvalFieldsV2{
 				result:      true,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveBooleanFunctionArgs{
+			functionArgs: resolveBooleanFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveBooleanRequest{
+				&evalV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveBooleanResponse{
+			want: &evalV1.ResolveBooleanResponse{
 				Value:    true,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -197,18 +161,18 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 		},
 		"eval returns error": {
 			mCount: 1,
-			evalFields: resolveBooleanEvalFields{
+			evalFields: resolveBooleanEvalFieldsV2{
 				result:      true,
 				evalCommons: sadCommon,
 			},
-			functionArgs: resolveBooleanFunctionArgs{
+			functionArgs: resolveBooleanFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveBooleanRequest{
+				&evalV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveBooleanResponse{
+			want: &evalV1.ResolveBooleanResponse{
 				Value:    true,
 				Variant:  ":(",
 				Reason:   model.ErrorReason,
@@ -228,7 +192,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -249,22 +213,22 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 	}
 }
 
-func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
+func BenchmarkFlag_EvaluationV2_ResolveBoolean(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	tests := map[string]resolveBooleanArgs{
+	tests := map[string]resolveBooleanArgsV2{
 		"happy path": {
-			evalFields: resolveBooleanEvalFields{
+			evalFields: resolveBooleanEvalFieldsV2{
 				result:      true,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveBooleanFunctionArgs{
+			functionArgs: resolveBooleanFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveBooleanRequest{
+				&evalV1.ResolveBooleanRequest{
 					FlagKey: "bool",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveBooleanResponse{
+			want: &evalV1.ResolveBooleanResponse{
 				Value:    true,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -283,7 +247,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewOldFlagEvaluationService(
+		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -307,39 +271,39 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 	}
 }
 
-type resolveStringArgs struct {
-	evalFields   resolveStringEvalFields
-	functionArgs resolveStringFunctionArgs
-	want         *schemaV1.ResolveStringResponse
+type resolveStringArgsV2 struct {
+	evalFields   resolveStringEvalFieldsV2
+	functionArgs resolveStringFunctionArgsV2
+	want         *evalV1.ResolveStringResponse
 	wantErr      error
 	mCount       int
 }
-type resolveStringFunctionArgs struct {
+type resolveStringFunctionArgsV2 struct {
 	ctx context.Context
-	req *schemaV1.ResolveStringRequest
+	req *evalV1.ResolveStringRequest
 }
-type resolveStringEvalFields struct {
+type resolveStringEvalFieldsV2 struct {
 	result string
 	evalCommons
 }
 
-func TestFlag_Evaluation_ResolveString(t *testing.T) {
+func TestFlag_EvaluationV2_ResolveString(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tests := map[string]resolveStringArgs{
+	tests := map[string]resolveStringArgsV2{
 		"happy path": {
 			mCount: 1,
-			evalFields: resolveStringEvalFields{
+			evalFields: resolveStringEvalFieldsV2{
 				result:      "true",
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveStringFunctionArgs{
+			functionArgs: resolveStringFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveStringRequest{
+				&evalV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveStringResponse{
+			want: &evalV1.ResolveStringResponse{
 				Value:    "true",
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -349,18 +313,18 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 		},
 		"eval returns error": {
 			mCount: 1,
-			evalFields: resolveStringEvalFields{
+			evalFields: resolveStringEvalFieldsV2{
 				result:      "true",
 				evalCommons: sadCommon,
 			},
-			functionArgs: resolveStringFunctionArgs{
+			functionArgs: resolveStringFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveStringRequest{
+				&evalV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveStringResponse{
+			want: &evalV1.ResolveStringResponse{
 				Value:    "true",
 				Variant:  ":(",
 				Reason:   model.ErrorReason,
@@ -381,7 +345,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				tt.wantErr,
 			)
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -402,22 +366,22 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 	}
 }
 
-func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
+func BenchmarkFlag_EvaluationV2_ResolveString(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	tests := map[string]resolveStringArgs{
+	tests := map[string]resolveStringArgsV2{
 		"happy path": {
-			evalFields: resolveStringEvalFields{
+			evalFields: resolveStringEvalFieldsV2{
 				result:      "true",
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveStringFunctionArgs{
+			functionArgs: resolveStringFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveStringRequest{
+				&evalV1.ResolveStringRequest{
 					FlagKey: "string",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveStringResponse{
+			want: &evalV1.ResolveStringResponse{
 				Value:    "true",
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -436,7 +400,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewOldFlagEvaluationService(
+		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -460,39 +424,39 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 	}
 }
 
-type resolveFloatArgs struct {
-	evalFields   resolveFloatEvalFields
-	functionArgs resolveFloatFunctionArgs
-	want         *schemaV1.ResolveFloatResponse
+type resolveFloatArgsV2 struct {
+	evalFields   resolveFloatEvalFieldsV2
+	functionArgs resolveFloatFunctionArgsV2
+	want         *evalV1.ResolveFloatResponse
 	wantErr      error
 	mCount       int
 }
-type resolveFloatFunctionArgs struct {
+type resolveFloatFunctionArgsV2 struct {
 	ctx context.Context
-	req *schemaV1.ResolveFloatRequest
+	req *evalV1.ResolveFloatRequest
 }
-type resolveFloatEvalFields struct {
+type resolveFloatEvalFieldsV2 struct {
 	result float64
 	evalCommons
 }
 
-func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
+func TestFlag_EvaluationV2_ResolveFloat(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tests := map[string]resolveFloatArgs{
+	tests := map[string]resolveFloatArgsV2{
 		"happy path": {
 			mCount: 1,
-			evalFields: resolveFloatEvalFields{
+			evalFields: resolveFloatEvalFieldsV2{
 				result:      12,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveFloatFunctionArgs{
+			functionArgs: resolveFloatFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveFloatRequest{
+				&evalV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveFloatResponse{
+			want: &evalV1.ResolveFloatResponse{
 				Value:    12,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -502,18 +466,18 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 		},
 		"eval returns error": {
 			mCount: 1,
-			evalFields: resolveFloatEvalFields{
+			evalFields: resolveFloatEvalFieldsV2{
 				result:      12,
 				evalCommons: sadCommon,
 			},
-			functionArgs: resolveFloatFunctionArgs{
+			functionArgs: resolveFloatFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveFloatRequest{
+				&evalV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveFloatResponse{
+			want: &evalV1.ResolveFloatResponse{
 				Value:    12,
 				Variant:  ":(",
 				Reason:   model.ErrorReason,
@@ -533,7 +497,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -554,22 +518,22 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 	}
 }
 
-func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
+func BenchmarkFlag_EvaluationV2_ResolveFloat(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	tests := map[string]resolveFloatArgs{
+	tests := map[string]resolveFloatArgsV2{
 		"happy path": {
-			evalFields: resolveFloatEvalFields{
+			evalFields: resolveFloatEvalFieldsV2{
 				result:      12,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveFloatFunctionArgs{
+			functionArgs: resolveFloatFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveFloatRequest{
+				&evalV1.ResolveFloatRequest{
 					FlagKey: "float",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveFloatResponse{
+			want: &evalV1.ResolveFloatResponse{
 				Value:    12,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -588,7 +552,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewOldFlagEvaluationService(
+		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -612,39 +576,39 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 	}
 }
 
-type resolveIntArgs struct {
-	evalFields   resolveIntEvalFields
-	functionArgs resolveIntFunctionArgs
-	want         *schemaV1.ResolveIntResponse
+type resolveIntArgsV2 struct {
+	evalFields   resolveIntEvalFieldsV2
+	functionArgs resolveIntFunctionArgsV2
+	want         *evalV1.ResolveIntResponse
 	wantErr      error
 	mCount       int
 }
-type resolveIntFunctionArgs struct {
+type resolveIntFunctionArgsV2 struct {
 	ctx context.Context
-	req *schemaV1.ResolveIntRequest
+	req *evalV1.ResolveIntRequest
 }
-type resolveIntEvalFields struct {
+type resolveIntEvalFieldsV2 struct {
 	result int64
 	evalCommons
 }
 
-func TestFlag_Evaluation_ResolveInt(t *testing.T) {
+func TestFlag_EvaluationV2_ResolveInt(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tests := map[string]resolveIntArgs{
+	tests := map[string]resolveIntArgsV2{
 		"happy path": {
 			mCount: 1,
-			evalFields: resolveIntEvalFields{
+			evalFields: resolveIntEvalFieldsV2{
 				result:      12,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveIntFunctionArgs{
+			functionArgs: resolveIntFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveIntRequest{
+				&evalV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveIntResponse{
+			want: &evalV1.ResolveIntResponse{
 				Value:    12,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -654,18 +618,18 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 		},
 		"eval returns error": {
 			mCount: 1,
-			evalFields: resolveIntEvalFields{
+			evalFields: resolveIntEvalFieldsV2{
 				result:      12,
 				evalCommons: sadCommon,
 			},
-			functionArgs: resolveIntFunctionArgs{
+			functionArgs: resolveIntFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveIntRequest{
+				&evalV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveIntResponse{
+			want: &evalV1.ResolveIntResponse{
 				Value:    12,
 				Variant:  ":(",
 				Reason:   model.ErrorReason,
@@ -685,7 +649,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -706,22 +670,22 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 	}
 }
 
-func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
+func BenchmarkFlag_EvaluationV2_ResolveInt(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	tests := map[string]resolveIntArgs{
+	tests := map[string]resolveIntArgsV2{
 		"happy path": {
-			evalFields: resolveIntEvalFields{
+			evalFields: resolveIntEvalFieldsV2{
 				result:      12,
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveIntFunctionArgs{
+			functionArgs: resolveIntFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveIntRequest{
+				&evalV1.ResolveIntRequest{
 					FlagKey: "int",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveIntResponse{
+			want: &evalV1.ResolveIntResponse{
 				Value:    12,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -740,7 +704,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewOldFlagEvaluationService(
+		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -764,41 +728,41 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 	}
 }
 
-type resolveObjectArgs struct {
-	evalFields   resolveObjectEvalFields
-	functionArgs resolveObjectFunctionArgs
-	want         *schemaV1.ResolveObjectResponse
+type resolveObjectArgsV2 struct {
+	evalFields   resolveObjectEvalFieldsV2
+	functionArgs resolveObjectFunctionArgsV2
+	want         *evalV1.ResolveObjectResponse
 	wantErr      error
 	mCount       int
 }
-type resolveObjectFunctionArgs struct {
+type resolveObjectFunctionArgsV2 struct {
 	ctx context.Context
-	req *schemaV1.ResolveObjectRequest
+	req *evalV1.ResolveObjectRequest
 }
-type resolveObjectEvalFields struct {
+type resolveObjectEvalFieldsV2 struct {
 	result map[string]interface{}
 	evalCommons
 }
 
-func TestFlag_Evaluation_ResolveObject(t *testing.T) {
+func TestFlag_EvaluationV2_ResolveObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tests := map[string]resolveObjectArgs{
+	tests := map[string]resolveObjectArgsV2{
 		"happy path": {
 			mCount: 1,
-			evalFields: resolveObjectEvalFields{
+			evalFields: resolveObjectEvalFieldsV2{
 				result: map[string]interface{}{
 					"food": "bars",
 				},
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveObjectFunctionArgs{
+			functionArgs: resolveObjectFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveObjectRequest{
+				&evalV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveObjectResponse{
+			want: &evalV1.ResolveObjectResponse{
 				Value:    nil,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -808,20 +772,20 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 		},
 		"eval returns error": {
 			mCount: 1,
-			evalFields: resolveObjectEvalFields{
+			evalFields: resolveObjectEvalFieldsV2{
 				result: map[string]interface{}{
 					"food": "bars",
 				},
 				evalCommons: sadCommon,
 			},
-			functionArgs: resolveObjectFunctionArgs{
+			functionArgs: resolveObjectFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveObjectRequest{
+				&evalV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveObjectResponse{
+			want: &evalV1.ResolveObjectResponse{
 				Variant:  ":(",
 				Reason:   model.ErrorReason,
 				Metadata: responseStruct,
@@ -840,7 +804,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				tt.wantErr,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
-			s := NewOldFlagEvaluationService(
+			s := NewFlagEvaluationService(
 				logger.NewLogger(nil, false),
 				eval,
 				&eventingConfiguration{},
@@ -867,24 +831,24 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 	}
 }
 
-func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
+func BenchmarkFlag_EvaluationV2_ResolveObject(b *testing.B) {
 	ctrl := gomock.NewController(b)
-	tests := map[string]resolveObjectArgs{
+	tests := map[string]resolveObjectArgsV2{
 		"happy path": {
-			evalFields: resolveObjectEvalFields{
+			evalFields: resolveObjectEvalFieldsV2{
 				result: map[string]interface{}{
 					"food": "bars",
 				},
 				evalCommons: happyCommon,
 			},
-			functionArgs: resolveObjectFunctionArgs{
+			functionArgs: resolveObjectFunctionArgsV2{
 				context.Background(),
-				&schemaV1.ResolveObjectRequest{
+				&evalV1.ResolveObjectRequest{
 					FlagKey: "object",
 					Context: &structpb.Struct{},
 				},
 			},
-			want: &schemaV1.ResolveObjectResponse{
+			want: &evalV1.ResolveObjectResponse{
 				Value:    nil,
 				Reason:   model.DefaultReason,
 				Variant:  "on",
@@ -903,7 +867,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 			tt.wantErr,
 		).AnyTimes()
 		metrics, exp := getMetricReader()
-		s := NewOldFlagEvaluationService(
+		s := NewFlagEvaluationService(
 			logger.NewLogger(nil, false),
 			eval,
 			&eventingConfiguration{},
@@ -934,16 +898,10 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 	}
 }
 
-func getMetricReader() (*telemetry.MetricsRecorder, metric.Reader) {
-	exp := metric.NewManualReader()
-	rs := resource.NewWithAttributes("testSchema")
-	return telemetry.NewOTelRecorder(exp, rs, "testSvc"), exp
-}
-
-// TestFlag_Evaluation_ErrorCodes test validate error mapping from known errors to connect.Code and avoid accidental
+// TestFlag_EvaluationV2_ErrorCodes test validate error mapping from known errors to connect.Code and avoid accidental
 // changes. This is essential as SDK implementations rely on connect. Code to differentiate GRPC errors vs Flag errors.
 // For any change in error codes, we must change respective SDK.
-func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
+func TestFlag_EvaluationV2_ErrorCodes(t *testing.T) {
 	tests := []struct {
 		err  error
 		code connect.Code

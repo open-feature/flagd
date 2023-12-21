@@ -154,7 +154,7 @@ func TestAddMiddleware(t *testing.T) {
 	}()
 
 	require.Eventually(t, func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/schema.v1.Service/ResolveAll", port))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
 		// with the default http handler we should get a method not allowed (405) when attempting a GET request
 		return err == nil && resp.StatusCode == http.StatusMethodNotAllowed
 	}, 3*time.Second, 100*time.Millisecond)
@@ -162,7 +162,7 @@ func TestAddMiddleware(t *testing.T) {
 	svc.AddMiddleware(mwMock)
 
 	// with the injected middleware, the GET method should work
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/schema.v1.Service/ResolveAll", port))
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
 
 	require.Nil(t, err)
 	// verify that the status we return in the mocked middleware

@@ -48,7 +48,7 @@ docker run \
 Test it out by running the following cURL command in a separate terminal:
 
 ```shell
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveBoolean" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean" \
   -d '{"flagKey":"show-welcome-banner","context":{}}' -H "Content-Type: application/json"
 ```
 
@@ -70,7 +70,7 @@ Open the `demo.flagd.json` file in a text editor and change the `defaultVariant`
 Save and rerun the following cURL command:
 
 ```shell
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveBoolean" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean" \
   -d '{"flagKey":"show-welcome-banner","context":{}}' -H "Content-Type: application/json"
 ```
 
@@ -98,7 +98,7 @@ In this section, we'll talk about a multi-variant feature flag can be used to co
 Save and rerun the following cURL command:
 
 ```shell
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{}}' -H "Content-Type: application/json"
 ```
 
@@ -168,7 +168,7 @@ If there isn't a match, the `defaultVariant` is returned.
 Let's confirm that customers are still seeing the `red` variant by running the following command:
 
 ```shell
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{"company": "stark industries"}}' -H "Content-Type: application/json"
 ```
 
@@ -190,7 +190,7 @@ Let's confirm that employees of Initech are seeing the updated variant.
 Run the following cURL command in the terminal:
 
 ```shell
-curl -X POST "http://localhost:8013/schema.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{"company": "initech"}}' -H "Content-Type: application/json"
 ```
 

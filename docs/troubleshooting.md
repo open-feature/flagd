@@ -24,7 +24,7 @@ Why is my `int` response a `string`?
 Command:
 
 ```sh
-curl -X POST "localhost:8013/schema.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -40,7 +40,7 @@ If a number value is required, and none of the provided SDK's can be used, then 
 Command:
 
 ```sh
-curl -X POST "localhost:8013/schema.v1.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:

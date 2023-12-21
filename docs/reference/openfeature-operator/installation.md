@@ -118,7 +118,7 @@ spec:
 
 ```bash
 // From within the pod
-curl --location 'http://localhost:8080/schema.v1.Service/ResolveString' --header 'Content-Type: application/json' --data '{ "flagKey":"foo"}'
+curl --location 'http://localhost:8080/flagd.evaluation.v1.Service/ResolveString' --header 'Content-Type: application/json' --data '{ "flagKey":"foo"}'
 ```
 
 In a real application, rather than `curl`, you would probably use the OpenFeature SDK with the `flagd` provider.
