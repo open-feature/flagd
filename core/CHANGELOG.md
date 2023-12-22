@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/flagd/compare/core/v0.7.2...core/v0.7.3) (2023-12-22)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update golang.org/x/exp digest to 6522937 ([#1032](https://github.com/open-feature/flagd/issues/1032)) ([78b23d2](https://github.com/open-feature/flagd/commit/78b23d25fcd2ea49675fc96963565afbdf0acf25))
+* **deps:** update module connectrpc.com/connect to v1.13.0 ([#1070](https://github.com/open-feature/flagd/issues/1070)) ([63f86ea](https://github.com/open-feature/flagd/commit/63f86ea699ff1f25639101a36e4fc25c76c94c1e))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.4.0 ([#1068](https://github.com/open-feature/flagd/issues/1068)) ([5c5d5ab](https://github.com/open-feature/flagd/commit/5c5d5abc38540277deb4e11f41f79ff49273d659))
+* **deps:** update module github.com/open-feature/open-feature-operator to v0.5.2 ([#1059](https://github.com/open-feature/flagd/issues/1059)) ([cefea3e](https://github.com/open-feature/flagd/commit/cefea3ee035726940ee5ac51e8f7fc92cc0eeac3))
+* **deps:** update module google.golang.org/grpc to v1.60.0 ([#1074](https://github.com/open-feature/flagd/issues/1074)) ([bf3e9d8](https://github.com/open-feature/flagd/commit/bf3e9d82b40afdc89edc519f40bc0f67af48f1bf))
+* **deps:** update module google.golang.org/grpc to v1.60.1 ([#1092](https://github.com/open-feature/flagd/issues/1092)) ([5bf1368](https://github.com/open-feature/flagd/commit/5bf1368e68012937b57bf27168646e784524ae9b))
+* make sure sync builder is initialized to avoid nil pointer access ([#1076](https://github.com/open-feature/flagd/issues/1076)) ([ebcd616](https://github.com/open-feature/flagd/commit/ebcd616e0df1ab56fd11bcf4f53fa7cf13f5e1d6))
+
+
+### ✨ New Features
+
+* support new flagd.evaluation and flagd.sync schemas ([#1083](https://github.com/open-feature/flagd/issues/1083)) ([e9728aa](https://github.com/open-feature/flagd/commit/e9728aae8352e77e6564a88e37d13f87021526ef))
+
+
+### 🧹 Chore
+
+* refactoring component structure ([#1044](https://github.com/open-feature/flagd/issues/1044)) ([0c7f78a](https://github.com/open-feature/flagd/commit/0c7f78a95fa4ad2a8b2afe2f6023b9c6d4fd48ed))
+* renaming of evaluation components ([#1064](https://github.com/open-feature/flagd/issues/1064)) ([d39f31d](https://github.com/open-feature/flagd/commit/d39f31d65b57a9b033a4976e5cea8fdab716769d))
+* use client-go library for retrieving FeatureFlag CRs ([#1077](https://github.com/open-feature/flagd/issues/1077)) ([c86dff0](https://github.com/open-feature/flagd/commit/c86dff0bd058ca65f4ccd34c0bc5c0a4ad5b11a6))
+
 ## [0.7.2](https://github.com/open-feature/flagd/compare/core/v0.7.1...core/v0.7.2) (2023-12-05)
 
 

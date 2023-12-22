@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-feature/flagd/compare/flagd/v0.7.2...flagd/v0.8.0) (2023-12-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove deprecated flags ([#1075](https://github.com/open-feature/flagd/issues/1075))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.7.2 ([#1056](https://github.com/open-feature/flagd/issues/1056)) ([81e83ea](https://github.com/open-feature/flagd/commit/81e83ea0a4aa78d853ea7700cb06bb2a0f329619))
+* **deps:** update module github.com/spf13/viper to v1.18.0 ([#1060](https://github.com/open-feature/flagd/issues/1060)) ([9dfa689](https://github.com/open-feature/flagd/commit/9dfa6899ed3a25a5c34f8b0ebd152b01b1097dec))
+
+
+### 🧹 Chore
+
+* refactoring component structure ([#1044](https://github.com/open-feature/flagd/issues/1044)) ([0c7f78a](https://github.com/open-feature/flagd/commit/0c7f78a95fa4ad2a8b2afe2f6023b9c6d4fd48ed))
+* remove deprecated flags ([#1075](https://github.com/open-feature/flagd/issues/1075)) ([49f6fe5](https://github.com/open-feature/flagd/commit/49f6fe5679425b31b1e1cf39a2a2e4767b2e1db9))
+
 ## [0.7.2](https://github.com/open-feature/flagd/compare/flagd/v0.7.1...flagd/v0.7.2) (2023-12-05)
 
 
