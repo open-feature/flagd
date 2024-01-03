@@ -168,7 +168,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.metrics,
 	)
 
-	_, newHandler := evaluationV1.NewServiceHandler(newFes, svcConf.Options...)
+	_, newHandler := evaluationV1.NewServiceHandler(newFes, append(svcConf.Options, marshalOpts)...)
 
 	bs := bufSwitchHandler{
 		old: oldHandler,
