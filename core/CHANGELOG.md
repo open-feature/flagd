@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.4](https://github.com/open-feature/flagd/compare/core/v0.7.3...core/v0.7.4) (2024-01-04)
+
+
+### 🐛 Bug Fixes
+
+* add custom marshalling options ([#1117](https://github.com/open-feature/flagd/issues/1117)) ([e8e49de](https://github.com/open-feature/flagd/commit/e8e49de909fba6791a26e73a59d5b7ab54284499))
+* **deps:** update kubernetes packages to v0.29.0 ([#1082](https://github.com/open-feature/flagd/issues/1082)) ([751a79a](https://github.com/open-feature/flagd/commit/751a79a16571bea943aa1297c9828d1149d0c319))
+* **deps:** update module connectrpc.com/connect to v1.14.0 ([#1108](https://github.com/open-feature/flagd/issues/1108)) ([0a41aca](https://github.com/open-feature/flagd/commit/0a41acae082e65b2f0b1e1f36304556f77eba72a))
+* **deps:** update module github.com/prometheus/client_golang to v1.18.0 ([#1110](https://github.com/open-feature/flagd/issues/1110)) ([745bbb0](https://github.com/open-feature/flagd/commit/745bbb079af50f8fdb870e2234edd70c7a7a52f9))
+* **deps:** update module golang.org/x/crypto to v0.17.0 [security] ([#1090](https://github.com/open-feature/flagd/issues/1090)) ([26681de](https://github.com/open-feature/flagd/commit/26681ded7389ca4ecb3d9612aedad8c700796dc9))
+* **deps:** update module google.golang.org/protobuf to v1.32.0 ([#1106](https://github.com/open-feature/flagd/issues/1106)) ([e0d3b34](https://github.com/open-feature/flagd/commit/e0d3b34aa2fad5435a296dda896c9d430563b6ea))
+
 ## [0.7.3](https://github.com/open-feature/flagd/compare/core/v0.7.2...core/v0.7.3) (2023-12-22)
 
 
