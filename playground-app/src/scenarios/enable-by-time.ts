@@ -34,8 +34,5 @@ export const enableByTime: Scenario = {
     }),
   flagKey: "enable-announcement-banner",
   returnType: "boolean",
-  context: () =>
-    contextToPrettyJson({
-      targetingKey: "sessionId-123",
-    }),
+  context: () => contextToPrettyJson({}),
 };
