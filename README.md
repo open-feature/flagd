@@ -117,6 +117,7 @@ Experiment with flagd in your browser using [the Killercoda tutorial](https://ki
 ## 📐 High-level Architecture
 
 ![logical architecture of flagd](docs/images/flagd-logical-architecture.jpg "High level, logical architecture of flagd")
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopen-feature%2Fflagd.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopen-feature%2Fflagd?ref=badge_shield)
 
 ## 📝 Further Documentation
 
@@ -142,3 +143,6 @@ Made with [contrib.rocks](https://contrib.rocks).
 ## License
 
 [Apache License 2.0](LICENSE)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopen-feature%2Fflagd.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopen-feature%2Fflagd?ref=badge_large)
