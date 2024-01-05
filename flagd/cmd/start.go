@@ -54,7 +54,7 @@ func init() {
 	flags.StringP(
 		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
 			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
-			"https://github.com/open-feature/flagd/blob/main/docs/configuration/configuration.md#sync-provider-customisation",
+			"https://flagd.dev/reference/sync-configuration/#source-configuration",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
