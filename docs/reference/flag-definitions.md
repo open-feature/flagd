@@ -224,7 +224,7 @@ As long as a JsonLogic operator is structurally valid, it will return a falsy/nu
 | Contains               | Contains string                                                      | string                 | Logic: `#!json { "in": ["Spring", "Springfield"] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Illinois", "Springfield"] }`<br>Result: `false`                   |
 | Not contains           | Does not contain a string                                            | string                 | Logic: `#!json { "!": { "in":["Spring", "Springfield"] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Illinois", "Springfield"] } }`<br>Result: `true`  |
 | In                     | Attribute is in an array of strings                                  | string                 | Logic: `#!json { "in" : [ "Mike", ["Bob", "Mike"]] }`<br>Result: `true`<br><br>Logic: `#!json { "in":["Todd", ["Bob", "Mike"]] }`<br>Result: `false`                   |
-| Not it                 | Attribute is not in an array of strings                              | string                 | Logic: `#!json { "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
+| Not in                 | Attribute is not in an array of strings                              | string                 | Logic: `#!json { "!": { "in" : [ "Mike", ["Bob", "Mike"]] } }`<br>Result: `false`<br><br>Logic: `#!json { "!": { "in":["Todd", ["Bob", "Mike"]] } }`<br>Result: `true` |
 
 #### Custom Operations
 
