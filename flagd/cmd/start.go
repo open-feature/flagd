@@ -18,9 +18,7 @@ import (
 const (
 	corsFlagName           = "cors-origin"
 	logFormatFlagName      = "log-format"
-	metricsExporter        = "metrics-exporter"
 	managementPortFlagName = "management-port"
-	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
@@ -57,17 +55,10 @@ func init() {
 			"https://flagd.dev/reference/sync-configuration/#source-configuration",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
-	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
-		" Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to"+
-		" be present")
-	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
-		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
-	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
-	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
@@ -121,9 +112,7 @@ var startCmd = &cobra.Command{
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricExporter:    viper.GetString(metricsExporter),
 			ManagementPort:    viper.GetUint16(managementPortFlagName),
-			OtelCollectorURI:  viper.GetString(otelCollectorURI),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetUint16(portFlagName),
