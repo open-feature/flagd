@@ -13,6 +13,7 @@ go.work
 go.work.sum
 bin/
 node_modules/
+.venv
 
 # built documentation
 site
