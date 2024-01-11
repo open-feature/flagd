@@ -7,7 +7,7 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9"
 mkdocs = "^1.5.2"
 mkdocs-material = "^9.5.3"
 pymdown-extensions = "^10.1"
