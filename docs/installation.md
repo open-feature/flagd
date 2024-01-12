@@ -49,3 +49,8 @@ brew install flagd
 ```shell
 go install github.com/open-feature/flagd/flagd@latest
 ```
+
+## Summary
+
+Once flagd is installed, you can start using it within your application.
+Check out the [OpenFeature providers page](./providers/index.md) to learn more.
