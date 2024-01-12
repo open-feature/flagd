@@ -18,7 +18,7 @@ docker pull ghcr.io/open-feature/flagd:latest
 FROM ghcr.io/open-feature/flagd:latest
 ```
 
-### Kubernetes
+## Kubernetes
 
 flagd was designed with cloud-native paradigms in mind.
 You can run it as a sidecar, or as a central service in your cluster.
@@ -50,31 +50,7 @@ brew install flagd
 go install github.com/open-feature/flagd/flagd@latest
 ```
 
----
+## Summary
 
-## In-Process
-
-### :fontawesome-brands-golang: Go in-process provider
-
-[flagd-in-process/pkg](https://pkg.go.dev/github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg)
-
-```shell
-go get github.com/open-feature/go-sdk-contrib/providers/flagd-in-process/pkg@latest
-```
-
-### :fontawesome-brands-java: Java in-process provider
-
-#### Maven
-
-```xml
-<dependency>
-  <groupId>dev.openfeature.contrib.providers</groupId>
-  <artifactId>flagd</artifactId>
-</dependency>
-```
-
-#### Gradle
-
-```gradle
-implementation 'dev.openfeature.contrib.providers:flagd'
-```
+Once flagd is installed, you can start using it within your application.
+Check out the [OpenFeature providers page](./providers/index.md) to learn more.

@@ -123,7 +123,8 @@ generate-proto-docs: pull-schemas-submodule
 
 .PHONY: run-web-docs
 run-web-docs: generate-docs generate-proto-docs
-	docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
+	docker build -t squidfunk/mkdocs-material . \
+	&& docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
 
 # Run the playground app in dev mode
 # See the readme in the playground-app folder for more details

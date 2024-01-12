@@ -1,5 +1,5 @@
 ---
-description: flagd RPC proivider specification
+description: flagd RPC provider specification
 ---
 
 # Creating an RPC flagd provider
@@ -12,7 +12,7 @@ as it is done in the [OpenFeature Operator](https://github.com/open-feature/open
 Prerequisites:
 
 - Understanding of [general provider concepts](https://openfeature.dev/docs/reference/concepts/provider/)
-- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../providers.md))
+- Proficiency in the chosen programming language (check the language isn't already covered by the [existing providers](../../providers/index.md))
 
 ## flagd Evaluation API
 

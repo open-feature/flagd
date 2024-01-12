@@ -31,6 +31,10 @@ theme:
     - search.suggest
     - search.highlight
     - search.share
+    - content.tooltips
+    - navigation.instant
+    - navigation.tracking
+    - navigation.indexes
 extra_css:
   - assets/extra.css
 
@@ -45,7 +49,8 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      url_download: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences:
@@ -57,9 +62,8 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - pymdownx.emoji:
-      # we are using an older emoji extension because the newest (suggested in docs) doesn't work with Python < 3.10
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 nav:
   - 'Introduction': 'index.md'
@@ -70,6 +74,14 @@ nav:
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
   - 'Architecture': 'architecture.md'
+  - 'OpenFeature Providers':
+    - 'providers/index.md'
+    - 'Go': 'providers/go.md'
+    - 'Java': 'providers/java.md'
+    - 'Node.JS': 'providers/nodejs.md'
+    - 'PHP': 'providers/php.md'
+    - '.NET': 'providers/dotnet.md'
+    - 'Web': 'providers/web.md'
   - 'Reference':
     - 'CLI':
       - 'Overview': 'reference/flagd-cli/flagd.md'
@@ -82,7 +94,6 @@ nav:
         - 'Fractional': 'reference/custom-operations/fractional-operation.md'
         - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
         - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
-    - 'Providers': 'reference/providers.md'
     - 'Monitoring': 'reference/monitoring.md'
     - 'Specifications':
       - 'RPC Providers': 'reference/specifications/rpc-providers.md'
@@ -102,3 +113,9 @@ nav:
 plugins:
   - social
   - search
+  # https://github.com/mondeja/mkdocs-include-markdown-plugin
+  - include-markdown
+  # https://github.com/mkdocs/mkdocs-redirects
+  - redirects:
+      redirect_maps:
+        'reference/providers.md': 'providers/index.md'
