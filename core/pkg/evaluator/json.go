@@ -411,8 +411,6 @@ func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
 	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
 	if err != nil {
-		fmt.Println("error compiling schema: ", err)
-
 		je.Logger.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
 	}
 
@@ -427,11 +425,8 @@ func (je *JSON) configToFlags(config string, newFlags *Flags) error {
 
 	result, err := compiledSchema.Validate(flagStringLoader)
 	if err != nil {
-		fmt.Println("error validating schema: ", err)
 		je.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
 	} else if !result.Valid() {
-		fmt.Printf("error validating JSON: %s", buildErrorString(result.Errors()))
-
 		je.Logger.Warn(fmt.Sprintf(
 			"JSON data does not conform to the schema. Validation errors: %s", buildErrorString(result.Errors()),
 		))
