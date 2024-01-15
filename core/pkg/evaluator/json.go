@@ -400,39 +400,41 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-func loadAndCompileSchema() (*gojsonschema.Schema, error) {
+func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
 	schemaLoader := gojsonschema.NewSchemaLoader()
 
 	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.Targeting)
 	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
-		return nil, fmt.Errorf("error adding Targeting schema: %w", err)
+		je.Logger.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
 	}
 
 	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
 	if err != nil {
-		return nil, fmt.Errorf("error compiling FlagdDefinitions schema: %w", err)
+		fmt.Println("error compiling schema: ", err)
+
+		je.Logger.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
 	}
 
-	return compiledSchema, nil
+	return compiledSchema
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
 func (je *JSON) configToFlags(config string, newFlags *Flags) error {
-	compiledSchema, err := loadAndCompileSchema()
-	if err != nil {
-		return fmt.Errorf("error loading and compiling schema: %w", err)
-	}
+	compiledSchema := je.loadAndCompileSchema()
 
 	flagStringLoader := gojsonschema.NewStringLoader(config)
 
 	result, err := compiledSchema.Validate(flagStringLoader)
 	if err != nil {
-		return fmt.Errorf("failed to execute JSON schema validation: %w", err)
+		fmt.Println("error validating schema: ", err)
+		je.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
 	} else if !result.Valid() {
-		return fmt.Errorf(
+		fmt.Printf("error validating JSON: %s", buildErrorString(result.Errors()))
+
+		je.Logger.Warn(fmt.Sprintf(
 			"JSON data does not conform to the schema. Validation errors: %s", buildErrorString(result.Errors()),
-		)
+		))
 	}
 
 	transposedConfig, err := je.transposeEvaluators(config)
