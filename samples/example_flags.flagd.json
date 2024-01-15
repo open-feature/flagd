@@ -56,9 +56,7 @@
           {
             "==": [
               {
-                "var": [
-                  "color"
-                ]
+                "var": ["color"]
               },
               "yellow"
             ]
@@ -81,7 +79,9 @@
         "if": [
           {
             "$ref": "emailWithFaas"
-          }, "binet", null
+          },
+          "binet",
+          null
         ]
       }
     },
@@ -100,35 +100,27 @@
             "$ref": "emailWithFaas"
           },
           {
-            "fractionalEvaluation": [
-              "email",
-              [
-                "red",
-                25
-              ],
-              [
-                "blue",
-                25
-              ],
-              [
-                "green",
-                25
-              ],
-              [
-                "yellow",
-                25
-              ]
+            "fractional": [
+              { "var": "email" },
+              ["red", 25],
+              ["blue", 25],
+              ["green", 25],
+              ["yellow", 25]
             ]
-          }, null
+          },
+          null
         ]
       }
     }
   },
   "$evaluators": {
     "emailWithFaas": {
-      "in": ["@faas.com", {
-        "var": ["email"]
-      }]
+      "in": [
+        "@faas.com",
+        {
+          "var": ["email"]
+        }
+      ]
     }
   }
 }
