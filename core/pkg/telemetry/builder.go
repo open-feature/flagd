@@ -3,15 +3,15 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"time"
+	"os"
 
-	"connectrpc.com/connect"
-	"connectrpc.com/otelconnect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -19,20 +19,28 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
-	metricsExporterOtel = "otel"
-	exportInterval      = 2 * time.Second
+	otelMetricsExporter = "OTEL_METRICS_EXPORTER"
+	otelTracesExporter  = "OTEL_TRACES_EXPORTER"
+
+	otelExporterOtlpProtocol        = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	otelExporterOtlpMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
+	otelExporterOtlpTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
+
+	otelExporterNone       = "none"
+	otelExporterOtlp       = "otlp"
+	otelExporterPrometheus = "prometheus"
+
+	otelExporterOtlpProtocolGrpc         = "grpc"
+	otelExporterOtlpProtocolHTTPProtobuf = "http/protobuf"
 )
 
-// Config of the telemetry runtime. These are expected to be mapped to start-up arguments
-type Config struct {
-	MetricsExporter string
-	CollectorTarget string
-}
+var (
+	nilReader       metric.Reader
+	nilSpanExporter trace.SpanExporter
+)
 
 func RegisterErrorHandling(log *logger.Logger) {
 	otel.SetErrorHandler(otelErrorsHandler{
@@ -42,10 +50,10 @@ func RegisterErrorHandling(log *logger.Logger) {
 
 // BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
 func BuildMetricsRecorder(
-	ctx context.Context, svcName string, svcVersion string, config Config,
+	ctx context.Context, logger *logger.Logger, svcName string, svcVersion string,
 ) (*MetricsRecorder, error) {
 	// Build metric reader based on configurations
-	mReader, err := buildMetricReader(ctx, config)
+	mReader, err := buildMetricReader(ctx, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup metric reader: %w", err)
 	}
@@ -55,22 +63,13 @@ func BuildMetricsRecorder(
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
 	}
-
 	return NewOTelRecorder(mReader, rsc, svcName), nil
 }
 
 // BuildTraceProvider build and register the trace provider and propagator for the caller runtime. This method
-// attempt to register a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to
-// provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
-// This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
-func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
-	if cfg.CollectorTarget == "" {
-		logger.Debug("skipping trace provider setup as collector target is not set." +
-			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
-		return nil
-	}
-
-	exporter, err := buildOtlpExporter(ctx, cfg.CollectorTarget)
+// attempt to register a global TracerProvider backed by batch SpanProcessor.Config.
+func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string) error {
+	exporter, err := buildOtlpExporter(ctx, logger)
 	if err != nil {
 		return err
 	}
@@ -90,71 +89,83 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 	return nil
 }
 
-// BuildConnectOptions is a helper to build connect options based on telemetry configurations
-func BuildConnectOptions(cfg Config) []connect.HandlerOption {
-	options := []connect.HandlerOption{}
-
-	// add interceptor if configuration is available for collector
-	if cfg.CollectorTarget != "" {
-		options = append(options, connect.WithInterceptors(
-			otelconnect.NewInterceptor(otelconnect.WithTrustRemote()),
-		))
-	}
-
-	return options
-}
-
 // buildMetricReader builds a metric reader based on provided configurations
-func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
-	if cfg.MetricsExporter == "" {
-		return buildDefaultMetricReader()
+func buildMetricReader(ctx context.Context, logger *logger.Logger) (metric.Reader, error) {
+	switch k, v := getOtelExporter(logger, otelMetricsExporter); v {
+	case otelExporterNone:
+		logger.Debug(fmt.Sprintf("skipping setup for metrics due to %s=%s", k, v))
+		return nilReader, nil
+	case otelExporterOtlp:
+		logger.Debug(fmt.Sprintf("setting up metrics based on %s=%s", k, v))
+		return buildMetricReaderOtlp(ctx, logger)
+	case otelExporterPrometheus:
+		logger.Debug(fmt.Sprintf("setting up metrics based on %s=%s", k, v))
+		return buildMetricReaderPrometheus()
+	default:
+		logger.Debug(fmt.Sprintf("skipping unsupported value for %s=%s", k, v))
+		return nilReader, nil
 	}
-
-	// Handle metric reader override
-	if cfg.MetricsExporter != metricsExporterOtel {
-		return nil, fmt.Errorf("provided metrics operator %s is not supported. currently only support %s",
-			cfg.MetricsExporter, metricsExporterOtel)
-	}
-
-	// Otel override require target configuration
-	if cfg.CollectorTarget == "" {
-		return nil, fmt.Errorf("metric exporter is set(%s) without providing otel collector target."+
-			" collector target is required for this option", cfg.MetricsExporter)
-	}
-
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.DialContext(ctx, cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
-	}
-
-	// Otel metric exporter
-	otelExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
-	if err != nil {
-		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
-	}
-
-	return metric.NewPeriodicReader(otelExporter, metric.WithInterval(exportInterval)), nil
 }
 
 // buildOtlpExporter is a helper to build grpc backed otlp trace exporter
-func buildOtlpExporter(ctx context.Context, collectorTarget string) (*otlptrace.Exporter, error) {
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.DialContext(ctx, collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
+func buildOtlpExporter(ctx context.Context, logger *logger.Logger) (trace.SpanExporter, error) {
+	switch k, v := getOtelExporter(logger, otelTracesExporter); v {
+	case otelExporterNone:
+		logger.Debug(fmt.Sprintf("skipping setup for traces due to %s=%s", k, v))
+		return nilSpanExporter, nil
+	case otelExporterOtlp:
+		break
+	default:
+		logger.Debug(fmt.Sprintf("skipping unsupported value for %s=%s", k, v))
+		return nilSpanExporter, nil
 	}
 
-	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
-	exporter, err := otlptrace.New(ctx, traceClient)
+	var client otlptrace.Client
+	var err error
+
+	switch k, v := getOtelExporterProtocol(logger, otelExporterOtlpTracesProtocol, otelExporterOtlpProtocol); v {
+	case otelExporterOtlpProtocolGrpc:
+		client = otlptracegrpc.NewClient()
+	case otelExporterOtlpProtocolHTTPProtobuf:
+		client = otlptracehttp.NewClient()
+	default:
+		logger.Debug(fmt.Sprintf("skipping unsupported value %s for %s", v, k))
+		return nilSpanExporter, nil
+	}
+
+	exporter, err := otlptrace.New(ctx, client)
 	if err != nil {
-		return nil, fmt.Errorf("error starting otel exporter: %w", err)
+		return nil, fmt.Errorf("error starting otel v: %w", err)
 	}
 	return exporter, nil
 }
 
-// buildDefaultMetricReader provides the default metric reader
-func buildDefaultMetricReader() (metric.Reader, error) {
+// buildMetricReaderOtlp provides an OTLP metric reader
+func buildMetricReaderOtlp(ctx context.Context, logger *logger.Logger) (metric.Reader, error) {
+	var exporter metric.Exporter
+	var err error
+
+	switch k, v := getOtelExporterProtocol(logger, otelExporterOtlpMetricsProtocol, otelExporterOtlpProtocol); v {
+	case otelExporterOtlpProtocolGrpc:
+		if exporter, err = otlpmetricgrpc.New(ctx); err == nil {
+			return metric.NewPeriodicReader(exporter), nil
+		} else {
+			return nil, fmt.Errorf("error creating otel metric exporter based on %s=%s: %w", k, v, err)
+		}
+	case otelExporterOtlpProtocolHTTPProtobuf:
+		if exporter, err = otlpmetrichttp.New(ctx); err == nil {
+			return metric.NewPeriodicReader(exporter), nil
+		} else {
+			return nil, fmt.Errorf("error creating otel metric exporter based on %s=%s: %w", k, v, err)
+		}
+	default:
+		logger.Debug(fmt.Sprintf("skipping unsupported value %s for %s", v, k))
+		return nilReader, nil
+	}
+}
+
+// buildMetricReaderPrometheus provides a prometheus metric reader
+func buildMetricReaderPrometheus() (metric.Reader, error) {
 	p, err := prometheus.New()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create default metric reader: %w", err)
@@ -188,4 +199,24 @@ type otelErrorsHandler struct {
 func (h otelErrorsHandler) Handle(err error) {
 	msg := fmt.Sprintf("OpenTelemetry Error: %s", err.Error())
 	h.logger.WithFields(zap.String("component", "otel")).Debug(msg)
+}
+
+func getOtelExporter(logger *logger.Logger, signalEnvVar string) (string, string) {
+	if v := os.Getenv(signalEnvVar); v != "" {
+		logger.Debug(fmt.Sprintf("resolved %s=%s", signalEnvVar, v))
+		return signalEnvVar, v
+	}
+	return "", otelExporterOtlp
+}
+
+func getOtelExporterProtocol(logger *logger.Logger, signalEnvVar string, commonEnvVar string) (string, string) {
+	if v := os.Getenv(signalEnvVar); v != "" {
+		logger.Debug(fmt.Sprintf("resolved %s=%s", signalEnvVar, v))
+		return signalEnvVar, v
+	}
+	if v := os.Getenv(commonEnvVar); v != "" {
+		logger.Debug(fmt.Sprintf("resolved %s=%s", commonEnvVar, v))
+		return commonEnvVar, v
+	}
+	return "", otelExporterOtlpProtocolGrpc
 }

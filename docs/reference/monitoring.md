@@ -63,10 +63,16 @@ flagd expose following traces,
 
 ## Export to OTEL collector
 
-flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup
-flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For example,
+flagd can be configured to export telemetry to the [OpenTelemetry (OTel) Collector](https://opentelemetry.io/docs/collector/) using standard
+[OTel SDK environment variables](https://opentelemetry.io/docs/concepts/sdk-configuration/otlp-exporter-configuration). For example,
 
-`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
+```shell
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_METRICS_EXPORTER=otlp
+
+flagd start --uri file:/flags.json
+```
 
 ### Configure local collector setup
 

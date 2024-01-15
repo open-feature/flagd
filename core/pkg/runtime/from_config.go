@@ -21,9 +21,7 @@ const svcName = "flagd"
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter    string
 	ManagementPort    uint16
-	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string
 	ServicePort       uint16
@@ -36,22 +34,17 @@ type Config struct {
 // FromConfig builds a runtime from startup configurations
 // nolint: funlen
 func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
-	telCfg := telemetry.Config{
-		MetricsExporter: config.MetricExporter,
-		CollectorTarget: config.OtelCollectorURI,
-	}
-
 	// register error handling for OpenTelemetry
 	telemetry.RegisterErrorHandling(logger)
 
 	// register trace provider for the runtime
-	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
+	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version)
 	if err != nil {
 		return nil, fmt.Errorf("error building trace provider: %w", err)
 	}
 
 	// build metrics recorder with startup configurations
-	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
+	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), logger, svcName, version)
 	if err != nil {
 		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
@@ -94,7 +87,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			CertPath:       config.ServiceCertPath,
 			SocketPath:     config.ServiceSocketPath,
 			CORS:           config.CORS,
-			Options:        telemetry.BuildConnectOptions(telCfg),
 		},
 		SyncImpl: iSyncs,
 	}, nil

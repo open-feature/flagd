@@ -3,11 +3,13 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -19,10 +21,7 @@ import (
 
 func TestBuildMetricsRecorder(t *testing.T) {
 	// Simple happy-path test
-	recorder, err := BuildMetricsRecorder(context.Background(), "service", "0.0.1", Config{
-		MetricsExporter: "otel",
-		CollectorTarget: "localhost:8080",
-	})
+	recorder, err := BuildMetricsRecorder(context.Background(), logger.NewLogger(nil, false), "service", "0.0.1")
 
 	require.Nil(t, err, "expected no error, but got: %v", err)
 	require.NotNilf(t, recorder, "expected recorder to be non-nil")
@@ -31,112 +30,148 @@ func TestBuildMetricsRecorder(t *testing.T) {
 func TestBuildMetricReader(t *testing.T) {
 	gCtx := context.TODO()
 
+	container, cleanup := startOtelContainer(gCtx)
+	defer cleanup(gCtx, container)
+
 	tests := []struct {
 		name  string
-		cfg   Config
+		env   map[string]string
 		error bool
 	}{
 		{
 			name:  "Default configurations produce default reader",
-			cfg:   Config{},
+			env:   map[string]string{},
 			error: false,
 		},
 		{
-			name: "Metric exporter overriding require valid overriding parameter",
-			cfg: Config{
-				MetricsExporter: "unsupported",
-			},
-			error: true,
-		},
-		{
-			name: "Metric exporter overriding require valid configuration combination",
-			cfg: Config{
-				MetricsExporter: metricsExporterOtel,
-				CollectorTarget: "", // collector target is unset
-			},
-			error: true,
-		},
-		{
 			name: "Metric exporter overriding with valid configurations",
-			cfg: Config{
-				MetricsExporter: metricsExporterOtel,
-				CollectorTarget: "localhost:8080",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+				"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+				"OTEL_METRICS_EXPORTER":       "otlp",
 			},
 			error: false,
 		},
 	}
 
 	for _, test := range tests {
-		reader, err := buildMetricReader(gCtx, test.cfg)
+		for k, v := range test.env {
+			_ = os.Setenv(k, v)
+		}
+
+		reader, err := buildMetricReader(gCtx, logger.NewLogger(nil, false))
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
-			continue
+		} else {
+			require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
+			require.NotNil(t, reader, "test %s expected non-nil reader", test.name)
 		}
 
-		require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
-		require.NotNil(t, reader, "test %s expected non-nil reader", test.name)
+		for k := range test.env {
+			_ = os.Unsetenv(k)
+		}
 	}
 }
 
 func TestBuildSpanProcessor(t *testing.T) {
 	gCtx := context.TODO()
 
+	container, cleanup := startOtelContainer(gCtx)
+	defer cleanup(gCtx, container)
+
 	tests := []struct {
 		name  string
-		cfg   Config
+		env   map[string]string
 		error bool
 	}{
 		{
+			name:  "Valid configurations yield a valid processor",
+			env:   map[string]string{},
+			error: false,
+		},
+		{
 			name: "Valid configurations yield a valid processor",
-			cfg: Config{
-				CollectorTarget: "localhost:8080",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+				"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
 			},
 			error: false,
 		},
 		{
-			name:  "Empty configurations does not result in error",
-			cfg:   Config{},
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+				"OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4317",
+				"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "grpc",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4318",
+				"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "http/protobuf",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT":        "http://localhost:4317",
+				"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "grpc",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT":        "http://localhost:4318",
+				"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "http/protobuf",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_PROTOCOL":        "grpc",
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4317",
+			},
+			error: false,
+		},
+		{
+			name: "Valid configurations yield a valid processor",
+			env: map[string]string{
+				"OTEL_EXPORTER_OTLP_PROTOCOL":        "http/protobuf",
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4318",
+			},
 			error: false,
 		},
 	}
 
 	for _, test := range tests {
-		err := BuildTraceProvider(gCtx, logger.NewLogger(nil, false), "svc", "0.0.1", test.cfg)
+		for k, v := range test.env {
+			_ = os.Setenv(k, v)
+		}
+
+		err := BuildTraceProvider(gCtx, logger.NewLogger(nil, false), "svc", "0.0.1")
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
-			continue
+		} else {
+			require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
 		}
 
-		require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
-	}
-}
-
-func TestBuildConnectOptions(t *testing.T) {
-	tests := []struct {
-		name        string
-		cfg         Config
-		optionCount int
-	}{
-		{
-			name:        "No options for empty/default configurations",
-			cfg:         Config{},
-			optionCount: 0,
-		},
-		{
-			name: "Connect option is set when telemetry target is set",
-			cfg: Config{
-				CollectorTarget: "localhost:8080",
-			},
-			optionCount: 1,
-		},
-	}
-
-	for _, test := range tests {
-		options := BuildConnectOptions(test.cfg)
-
-		require.Len(t, options, test.optionCount, "option count mismatch for test %s", test.name)
+		for k := range test.env {
+			_ = os.Unsetenv(k)
+		}
 	}
 }
 
@@ -199,4 +234,23 @@ func (e *errorExp) ForceFlush(_ context.Context) error {
 
 func (e *errorExp) Shutdown(_ context.Context) error {
 	return fmt.Errorf("I am an error")
+}
+
+func startOtelContainer(ctx context.Context) (testcontainers.Container, func(context.Context, testcontainers.Container)) {
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector",
+			ExposedPorts: []string{"4317/tcp", "4318/tcp"},
+		},
+		Started: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return container, func(ctx context.Context, container testcontainers.Container) {
+		if err := container.Terminate(ctx); err != nil {
+			panic(err)
+		}
+	}
 }
