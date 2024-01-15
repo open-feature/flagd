@@ -1,6 +1,8 @@
 module github.com/open-feature/flagd/core
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.12.0-20231031123731-ac2ec0f39838.1
@@ -12,7 +14,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
-	github.com/open-feature/schemas v0.2.8
+	github.com/open-feature/schemas v0.2.9-0.20240115143711-4a0be4f48816
 	github.com/prometheus/client_golang v1.18.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.10.1

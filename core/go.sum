@@ -640,6 +640,8 @@ github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a
 github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906/go.mod h1:YtdYEXJHo9iKwmchxbwGGsmu33FbugMQ8lKGarA9UYM=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
 github.com/open-feature/schemas v0.2.8/go.mod h1:vj+rfTsOLlh5PtGGkAbitnJmFPYuTHXTjOy13kzNgKQ=
+github.com/open-feature/schemas v0.2.9-0.20240115143711-4a0be4f48816 h1:8F+uUDbw/Qa192HXfxfoLf/RkVAhFLImTH6uYzhaLz8=
+github.com/open-feature/schemas v0.2.9-0.20240115143711-4a0be4f48816/go.mod h1:5tZlsJkdP1CiBHWrGUbDQxpCAVNTG851yAbmUrfji1M=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
