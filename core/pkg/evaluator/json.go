@@ -430,7 +430,9 @@ func (je *JSON) configToFlags(config string, newFlags *Flags) error {
 	if err != nil {
 		return fmt.Errorf("failed to execute JSON schema validation: %w", err)
 	} else if !result.Valid() {
-		return fmt.Errorf("JSON data does not conform to the schema. Validation errors: %s", buildErrorString(result.Errors()))
+		return fmt.Errorf(
+			"JSON data does not conform to the schema. Validation errors: %s", buildErrorString(result.Errors()),
+		)
 	}
 
 	transposedConfig, err := je.transposeEvaluators(config)
