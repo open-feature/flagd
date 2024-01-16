@@ -400,16 +400,38 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
+func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
+	schemaLoader := gojsonschema.NewSchemaLoader()
+
+	// compile dependency schema
+	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.Targeting)
+	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
+		je.Logger.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
+	}
+
+	// compile root schema
+	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
+	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
+	if err != nil {
+		je.Logger.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
+	}
+
+	return compiledSchema
+}
+
 // configToFlags convert string configurations to flags and store them to pointer newFlags
 func (je *JSON) configToFlags(config string, newFlags *Flags) error {
-	schemaLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
+	compiledSchema := je.loadAndCompileSchema()
+
 	flagStringLoader := gojsonschema.NewStringLoader(config)
 
-	result, err := gojsonschema.Validate(schemaLoader, flagStringLoader)
+	result, err := compiledSchema.Validate(flagStringLoader)
 	if err != nil {
-		return fmt.Errorf("error validating json schema: %w", err)
+		je.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
 	} else if !result.Valid() {
-		return fmt.Errorf("JSON schema validation failed: %s", buildErrorString(result.Errors()))
+		je.Logger.Warn(fmt.Sprintf(
+			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
+		))
 	}
 
 	transposedConfig, err := je.transposeEvaluators(config)
