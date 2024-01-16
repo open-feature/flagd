@@ -123,7 +123,7 @@ generate-proto-docs: pull-schemas-submodule
 	&& rm -f ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md
 
 # Update the schema at flagd.dev
-# PUBLIC_JSON_SCHEMA_DIR above controls the dir (and therefor major version)
+# PUBLIC_JSON_SCHEMA_DIR above controls the dir (and therefore major version)
 .PHONY: update-public-schema
 update-public-schema: pull-schemas-submodule
 	rm -f $(PUBLIC_JSON_SCHEMA_DIR)*.json
