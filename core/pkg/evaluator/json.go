@@ -403,11 +403,13 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
 	schemaLoader := gojsonschema.NewSchemaLoader()
 
+        // compile dependency schema
 	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.Targeting)
 	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
 		je.Logger.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
 	}
 
+        // compile root schema
 	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
 	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
 	if err != nil {
@@ -428,7 +430,7 @@ func (je *JSON) configToFlags(config string, newFlags *Flags) error {
 		je.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
 	} else if !result.Valid() {
 		je.Logger.Warn(fmt.Sprintf(
-			"JSON data does not conform to the schema. Validation errors: %s", buildErrorString(result.Errors()),
+			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
 		))
 	}
 
