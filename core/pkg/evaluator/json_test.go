@@ -973,6 +973,112 @@ func TestState_Evaluator(t *testing.T) {
 			inputSyncType: sync.ALL,
 			expectedError: true,
 		},
+		"invalid targeting": {
+			inputState: `
+			{
+					"flags": {
+					"fibAlgo": {
+						"variants": {
+						"recursive": "recursive",
+						"memo": "memo",
+						"loop": "loop",
+						"binet": "binet"
+						},
+						"defaultVariant": "recursive",
+						"state": "ENABLED",
+						"source":"",
+						"targeting": {
+						"if": [
+							{
+							"in": ["@faas.com", {
+							"var": ["email"]
+							}]
+							}, "binet", "null", "loop"
+						]
+						}
+						},
+					"isColorYellow": {
+						"state": "ENABLED",
+						"variants": {
+							"on": true,
+							"off": false
+						},
+						"defaultVariant": "off",
+						"source":"",
+						"targeting": {
+							"if": [
+								{
+									"==": [
+										{
+											"varr": ["color"]
+										},
+										"yellow"
+									]
+								},
+								"on",
+								"off",
+								"none"
+							]
+						}
+					}
+				},
+				"flagSources":null
+			}
+		`,
+			inputSyncType: sync.ALL,
+			expectedError: false,
+			expectedOutputState: `
+			{
+					"flags": {
+					"fibAlgo": {
+						"variants": {
+						"recursive": "recursive",
+						"memo": "memo",
+						"loop": "loop",
+						"binet": "binet"
+						},
+						"defaultVariant": "recursive",
+						"state": "ENABLED",
+						"source":"",
+						"targeting": {
+						"if": [
+							{
+							"in": ["@faas.com", {
+							"var": ["email"]
+							}]
+							}, "binet", "null", "loop"
+						]
+						}
+						},
+					"isColorYellow": {
+						"state": "ENABLED",
+						"variants": {
+							"on": true,
+							"off": false
+						},
+						"defaultVariant": "off",
+						"source":"",
+						"targeting": {
+							"if": [
+								{
+									"==": [
+										{
+											"varr": ["color"]
+										},
+										"yellow"
+									]
+								},
+								"on",
+								"off",
+								"none"
+							]
+						}
+					}
+				},
+				"flagSources":null
+			}
+		`,
+		},
 		"empty evaluator": {
 			inputState: `
 				{
