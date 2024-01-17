@@ -1,5 +1,6 @@
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
+PUBLIC_JSON_SCHEMA_DIR=docs/schema/v0/
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 FLAGD_DEV_NAMESPACE ?= flagd-dev
@@ -120,6 +121,13 @@ generate-proto-docs: pull-schemas-submodule
 	&& echo '<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->' > ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
 	&& sed '/^## Table of Contents/,/#top/d' ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md >> ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
 	&& rm -f ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md
+
+# Update the schema at flagd.dev
+# PUBLIC_JSON_SCHEMA_DIR above controls the dir (and therefore major version)
+.PHONY: update-public-schema
+update-public-schema: pull-schemas-submodule
+	rm -f $(PUBLIC_JSON_SCHEMA_DIR)*.json
+	cp schemas/json/*.json $(PUBLIC_JSON_SCHEMA_DIR)
 
 .PHONY: run-web-docs
 run-web-docs: generate-docs generate-proto-docs
