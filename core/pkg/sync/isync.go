@@ -66,6 +66,7 @@ type SourceConfig struct {
 	Provider string `json:"provider"`
 
 	BearerToken string `json:"bearerToken,omitempty"`
+	AuthHeader  string `json:"authHeader,omitempty"`
 	CertPath    string `json:"certPath,omitempty"`
 	TLS         bool   `json:"tls,omitempty"`
 	ProviderID  string `json:"providerID,omitempty"`
