@@ -189,6 +189,29 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	}
 }
 
+func TestSync_Init(t *testing.T) {
+	tests := []struct {
+		name        string
+		bearerToken string
+	}{
+		{"with bearerToken", "bearer-1234"},
+		{"without bearerToken", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpSync := Sync{
+				BearerToken: tt.bearerToken,
+				Logger:      logger.NewLogger(nil, false),
+			}
+
+			if err := httpSync.Init(context.Background()); err != nil {
+				t.Errorf("Init() error = %v", err)
+			}
+		})
+	}
+}
+
 func TestHTTPSync_Resync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 

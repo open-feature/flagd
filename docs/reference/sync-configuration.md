@@ -39,7 +39,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                       |
 | certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                      |
 
-### Important Notes:
+### Important Notes
 
 - **Mutual Exclusivity**: `authHeader` and `bearerToken` cannot be used simultaneously. Setting both fields in the configuration
   results in an error, preventing the application from starting.
