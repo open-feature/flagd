@@ -147,7 +147,7 @@
       "properties": {
         "if": {
           "title": "If Operator",
-          "description": "The if statement takes 3 arguments: a condition (if), what to do if its true (then), and what to do if its false (else, optional). Note that the form accepting more than 3 arguments (if/else) is not supported in flagd; use nesting instead.",
+          "description": "The if statement takes 2-3 arguments: a condition (if), what to do if its true (then), and what to do if its false (else, optional). Note that the form accepting more than 3 arguments (if/else) is not supported in flagd; use nesting instead.",
           "$ref": "#/$defs/binaryOrTernaryOp"
         },
         "substr": {

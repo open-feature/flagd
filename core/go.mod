@@ -11,8 +11,8 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/mock v1.6.0
+	github.com/open-feature/flagd-schemas v0.2.9-0.20240118204143-b98a826737c8
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
-	github.com/open-feature/schemas v0.2.9-0.20240115143711-4a0be4f48816
 	github.com/prometheus/client_golang v1.18.0
 	github.com/robfig/cron v1.2.0
 	github.com/rs/cors v1.10.1
@@ -71,7 +71,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
