@@ -148,6 +148,7 @@ func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) 
 			zap.String("sync", "remote"),
 		),
 		BearerToken: config.BearerToken,
+		AuthHeader:  config.AuthHeader,
 		Interval:    interval,
 		Cron:        cron.New(),
 	}

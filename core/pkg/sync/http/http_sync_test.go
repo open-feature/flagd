@@ -62,6 +62,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		setup          func(t *testing.T, client *syncmock.MockClient)
 		uri            string
 		bearerToken    string
+		authHeader     string
 		lastBodySHA    string
 		handleResponse func(*testing.T, Sync, string, error)
 	}{
@@ -111,13 +112,46 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 			},
 		},
-		"authorization header": {
+		"authorization with bearerToken": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
-				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Body: io.NopCloser(strings.NewReader("test response")),
-				}, nil)
+				expectedToken := "bearer-1234"
+				client.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					actualAuthHeader := req.Header.Get("Authorization")
+					if actualAuthHeader != "Bearer "+expectedToken {
+						t.Fatalf("expected Authorization header to be 'Bearer %s', got %s", expectedToken, actualAuthHeader)
+					}
+					return &http.Response{Body: io.NopCloser(strings.NewReader("test response"))}, nil
+				})
 			},
 			uri:         "http://localhost",
+			bearerToken: "bearer-1234",
+			lastBodySHA: "",
+			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+				if err != nil {
+					t.Fatalf("fetch: %v", err)
+				}
+
+				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
+				if httpSync.LastBodySHA != expectedLastBodySHA {
+					t.Errorf(
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+					)
+				}
+			},
+		},
+		"authorization with authHeader": {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
+				expectedHeader := "Basic dXNlcjpwYXNz"
+				client.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					actualAuthHeader := req.Header.Get("Authorization")
+					if actualAuthHeader != expectedHeader {
+						t.Fatalf("expected Authorization header to be '%s', got %s", expectedHeader, actualAuthHeader)
+					}
+					return &http.Response{Body: io.NopCloser(strings.NewReader("test response"))}, nil
+				})
+			},
+			uri:         "http://localhost",
+			authHeader:  "Basic dXNlcjpwYXNz",
 			lastBodySHA: "",
 			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
 				if err != nil {
@@ -144,12 +178,36 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				URI:         tt.uri,
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
+				AuthHeader:  tt.authHeader,
 				LastBodySHA: tt.lastBodySHA,
 				Logger:      logger.NewLogger(nil, false),
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
 			tt.handleResponse(t, httpSync, fetched, err)
+		})
+	}
+}
+
+func TestSync_Init(t *testing.T) {
+	tests := []struct {
+		name        string
+		bearerToken string
+	}{
+		{"with bearerToken", "bearer-1234"},
+		{"without bearerToken", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpSync := Sync{
+				BearerToken: tt.bearerToken,
+				Logger:      logger.NewLogger(nil, false),
+			}
+
+			if err := httpSync.Init(context.Background()); err != nil {
+				t.Errorf("Init() error = %v", err)
+			}
 		})
 	}
 }

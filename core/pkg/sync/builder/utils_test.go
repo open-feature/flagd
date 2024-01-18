@@ -52,14 +52,17 @@ func TestParseSource(t *testing.T) {
 			},
 		},
 		"multiple-syncs-with-options": {
-			in: `[{"uri":"config/samples/example_flags.json","provider":"file"},
-            		{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
-            		{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
-            		{"uri":"http://site.com","provider":"http","interval":77 },
-					{"uri":"default/my-flag-config","provider":"kubernetes"},
-            		{"uri":"grpc-source:8080","provider":"grpc"},
-            		{"uri":"my-flag-source:8080","provider":"grpc", "tls":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}]
-				`,
+			in: `[
+				{"uri":"config/samples/example_flags.json","provider":"file"},
+				{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
+				{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
+				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
+				{"uri":"https://secure-remote","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
+				{"uri":"http://site.com","provider":"http","interval":77 },
+				{"uri":"default/my-flag-config","provider":"kubernetes"},
+				{"uri":"grpc-source:8080","provider":"grpc"},
+				{"uri":"my-flag-source:8080","provider":"grpc", "tls":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}
+			]`,
 			expectErr: false,
 			out: []sync.SourceConfig{
 				{
@@ -75,6 +78,16 @@ func TestParseSource(t *testing.T) {
 					URI:         "https://secure-remote",
 					Provider:    syncProviderHTTP,
 					BearerToken: "bearer-dji34ld2l",
+				},
+				{
+					URI:        "https://secure-remote",
+					Provider:   syncProviderHTTP,
+					AuthHeader: "Bearer bearer-dji34ld2l",
+				},
+				{
+					URI:        "https://secure-remote",
+					Provider:   syncProviderHTTP,
+					AuthHeader: "Basic dXNlcjpwYXNz",
 				},
 				{
 					URI:      "http://site.com",
@@ -96,6 +109,22 @@ func TestParseSource(t *testing.T) {
 					CertPath:   "/certs/ca.cert",
 					ProviderID: "flagd-weatherapp-sidecar",
 					Selector:   "source=database,app=weatherapp",
+				},
+			},
+		},
+		"multiple-auth-options": {
+			in: `[
+				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l","bearerToken":"bearer-dji34ld2l"}
+			]`,
+			expectErr: true,
+			out: []sync.SourceConfig{
+				{
+					URI:         "https://secure-remote",
+					Provider:    syncProviderHTTP,
+					AuthHeader:  "Bearer bearer-dji34ld2l",
+					BearerToken: "bearer-dji34ld2l",
+					TLS:         false,
+					Interval:    0,
 				},
 			},
 		},

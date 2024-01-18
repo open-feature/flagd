@@ -21,6 +21,7 @@ type Sync struct {
 	LastBodySHA string
 	Logger      *logger.Logger
 	BearerToken string
+	AuthHeader  string
 	Interval    uint32
 	ready       bool
 }
@@ -47,7 +48,9 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 }
 
 func (hs *Sync) Init(_ context.Context) error {
-	// noop
+	if hs.BearerToken != "" {
+		hs.Logger.Warn("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
+	}
 	return nil
 }
 
@@ -120,7 +123,9 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	req.Header.Add("Accept", "application/json")
 
-	if hs.BearerToken != "" {
+	if hs.AuthHeader != "" {
+		req.Header.Set("Authorization", hs.AuthHeader)
+	} else if hs.BearerToken != "" {
 		bearer := fmt.Sprintf("Bearer %s", hs.BearerToken)
 		req.Header.Set("Authorization", bearer)
 	}
