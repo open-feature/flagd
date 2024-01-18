@@ -49,7 +49,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 
 func (hs *Sync) Init(_ context.Context) error {
 	if hs.BearerToken != "" {
-		hs.Logger.Info("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
+		hs.Logger.Warn("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
 	}
 	return nil
 }
