@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
+	schema "github.com/open-feature/flagd-schemas/json"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	schema "github.com/open-feature/schemas/json"
 	"github.com/xeipuuv/gojsonschema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -404,13 +404,13 @@ func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
 	schemaLoader := gojsonschema.NewSchemaLoader()
 
 	// compile dependency schema
-	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.Targeting)
+	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.TargetingSchema)
 	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
 		je.Logger.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
 	}
 
 	// compile root schema
-	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagdDefinitions)
+	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagSchema)
 	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
 	if err != nil {
 		je.Logger.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
