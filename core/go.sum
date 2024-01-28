@@ -1,6 +1,7 @@
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/grpc/go v1.3.0-20220906183531-bc28b723cd77.2/go.mod h1:9Ec7rvBnjfZvU/TnWjtcSGgiLQ4B+U3B+6SnZgVTA7A=
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.28.1-20220906183531-bc28b723cd77.4/go.mod h1:92ejKVTiuvnKoAtRlpJpIxKfloI935DDqhs0NCRx+KM=
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.31.0-20220906183531-bc28b723cd77.2/go.mod h1:/j/LOrpev/FdyGhdj/sOc0peUf2KR0y4nMmLp4t1g14=
+buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.32.0-20220906183531-bc28b723cd77.1/go.mod h1:XdxZqtnJr4q2vF8RLEhC903d6Nxxtz1vEMTyTAyvSUs=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.12.0-20231031123731-ac2ec0f39838.1 h1:wgTgPwRPfD+xXJW6bD+Hcn9KhyPTewy3uOOnpYbeA0c=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.12.0-20231031123731-ac2ec0f39838.1/go.mod h1:l+36EM5Mg5mkmpPNCaIdAt4hvbwYRJKcOe/8ZP/383M=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2 h1:DCww6WQNaepShZVh/jDVpIfCHQy5QwrpKl8iYAZeaV8=
@@ -8,6 +9,8 @@ buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20231031123731-ac2ec0f39838.4/go.mod h1:+Bnrjo56uVn/aBcLWchTveR8UeCj+KSJN4fE0xSmBNc=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20231031123731-ac2ec0f39838.2 h1:oYhz5yXOku2FUOFil3hlKp3phfLBinKyUMHkml267kI=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.31.0-20231031123731-ac2ec0f39838.2/go.mod h1:QXsT/9pJTFDRE9VnNkVgkfJFAAEVwkTp7/f5JBjyw2Y=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1 h1:3lJuvwwH33XzkBJiLTNDfRHd5lc/MtQzXjCTQFLr8pU=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1/go.mod h1:dDONV5ZtaBXX8FrzzvKWRAiSp6eTyhGXJ/+6POKBnMY=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
