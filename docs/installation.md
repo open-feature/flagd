@@ -24,7 +24,7 @@ flagd was designed with cloud-native paradigms in mind.
 You can run it as a sidecar, or as a central service in your cluster.
 If you're interested in a full-featured solution for using flagd in Kubernetes, consider the [OpenFeature operator](https://github.com/open-feature/open-feature-operator).
 
-For more information, see [OpenFeature Operator](./reference/openfeature-operator/installation.md).
+For more information, see [OpenFeature Operator](./reference/openfeature-operator/overview.md).
 
 ---
 
