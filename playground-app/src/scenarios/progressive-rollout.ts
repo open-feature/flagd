@@ -51,11 +51,15 @@ export const progressRollout: Scenario = {
                           ["phase2Disabled", 75],
                         ],
                       },
-                      { ">": [{ var: "$flagd.timestamp" }, phase1] },
                       {
-                        fractional: [
-                          ["phase1Enabled", 10],
-                          ["phase1Disabled", 90],
+                        if: [
+                          { ">": [{ var: "$flagd.timestamp" }, phase1] },
+                          {
+                            fractional: [
+                              ["phase1Enabled", 10],
+                              ["phase1Disabled", 90],
+                            ],
+                          },
                         ],
                       },
                     ],
