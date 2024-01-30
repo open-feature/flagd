@@ -13,7 +13,7 @@ _Additionally, most IDEs will automatically validate JSON documents if the docum
 
 The example below is automatically validated in most IDEs:
 
-```json
+```json hl_lines="2"
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
