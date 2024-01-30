@@ -35,6 +35,7 @@ Flags defined as such:
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "headerColor": {
       "variants": {

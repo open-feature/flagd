@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://flagd.dev/schema/v0/flags.json
 flags:
   myBoolFlag:
     state: ENABLED
