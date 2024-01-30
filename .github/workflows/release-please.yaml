@@ -25,9 +25,10 @@ jobs:
       - uses: google-github-actions/release-please-action@v3
         id: release
         with:
+          command: manifest
           token: ${{secrets.GITHUB_TOKEN}}
           default-branch: main
-
+          signoff: "OpenFeature Bot <109696520+openfeaturebot@users.noreply.github.com>"
       - name: Dump Release Please Output
         env:
           RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
