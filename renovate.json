@@ -4,7 +4,7 @@
     "go": "1.20"
   },
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "packageRules": [
     {
