@@ -8,7 +8,7 @@ Flag evaluation API
 
 This proto forms the basis of a flag-evaluation API.
 It supports single and bulk evaluation RPCs, and flags of various types, as well as establishing a stream for getting notifications about changes in a flag definition.
-It supports the inclusion of a &#34;context&#34; with each evaluation, which may contain arbitraty attributes relevant to flag evaluation.
+It supports the inclusion of a &#34;context&#34; with each evaluation, which may contain arbitrary attributes relevant to flag evaluation.
 
 
 <a name="schema-v1-AnyFlag"></a>
