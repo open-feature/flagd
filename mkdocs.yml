@@ -103,10 +103,7 @@ nav:
         - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
         - 'Semantic Version Specification': 'reference/specifications/custom-operations/semver-operation-spec.md'
         - 'String Comparison Specification': 'reference/specifications/custom-operations/string-comparison-operation-spec.md'
-    - 'OpenFeature Operator':
-      - 'Installation': 'reference/openfeature-operator/installation.md'
-      - 'FeatureFlag': 'reference/openfeature-operator/crds/featureflag.md'
-      - 'FeatureFlagSource': 'reference/openfeature-operator/crds/featureflagsource.md'
+    - 'OpenFeature Operator': 'reference/openfeature-operator/overview.md'
     - 'Naming': 'reference/naming.md'
   - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'
@@ -119,3 +116,6 @@ plugins:
   - redirects:
       redirect_maps:
         'reference/providers.md': 'providers/index.md'
+        'reference/openfeature-operator/installation.md': 'https://github.com/open-feature/open-feature-operator/blob/main/docs/installation.md'
+        'reference/openfeature-operator/crds/featureflag.md': 'https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag.md'
+        'reference/openfeature-operator/crds/featureflagsource.md': https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag_source.md
