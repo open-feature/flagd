@@ -22,12 +22,13 @@ jobs:
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - uses: google-github-actions/release-please-action@cc61a07e2da466bebbc19b3a7dd01d6aecb20d1e # v4
+      - uses: google-github-actions/release-please-action@v3
         id: release
         with:
+          command: manifest
           token: ${{secrets.GITHUB_TOKEN}}
           default-branch: main
-
+          signoff: "OpenFeature Bot <109696520+openfeaturebot@users.noreply.github.com>"
       - name: Dump Release Please Output
         env:
           RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
@@ -86,7 +87,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@dbef88086f6cef02e264edb7dbf63250c17cef6c
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
@@ -132,7 +133,7 @@ jobs:
         run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
-        uses: anchore/sbom-action@c6aed38a4323b393d05372c58a74c39ae8386d02 # v0
+        uses: anchore/sbom-action@767b08fd8822486ad890abb8f1d31721bebd651c # v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}

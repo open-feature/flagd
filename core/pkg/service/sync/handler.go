@@ -17,6 +17,8 @@ type handler struct {
 	syncv1grpc.UnimplementedFlagSyncServiceServer
 	syncStore subscriptions.Manager
 	logger    *logger.Logger
+	// ctx is used to handle SIG[INT|TERM]
+	ctx context.Context
 }
 
 func (nh *handler) SyncFlags(
@@ -39,6 +41,8 @@ func (nh *handler) SyncFlags(
 				return fmt.Errorf("error sending configuration change event: %w", err)
 			}
 		case <-server.Context().Done():
+			return nil
+		case <-nh.ctx.Done():
 			return nil
 		}
 	}
@@ -64,6 +68,8 @@ type oldHandler struct {
 	rpc.UnimplementedFlagSyncServiceServer
 	syncStore subscriptions.Manager
 	logger    *logger.Logger
+	// ctx is used to handle SIG[INT|TERM]
+	ctx context.Context
 }
 
 func (l *oldHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
@@ -101,6 +107,8 @@ func (l *oldHandler) SyncFlags(
 				return fmt.Errorf("error sending configuration change event: %w", err)
 			}
 		case <-stream.Context().Done():
+			return nil
+		case <-l.ctx.Done():
 			return nil
 		}
 	}

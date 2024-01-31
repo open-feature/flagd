@@ -35,14 +35,16 @@ type Server struct {
 	metricServerReady bool
 }
 
-func NewServer(logger *logger.Logger, store subscriptions.Manager) *Server {
+func NewServer(ctx context.Context, logger *logger.Logger, store subscriptions.Manager) *Server {
 	theOldHandler := &oldHandler{
 		logger:    logger,
 		syncStore: store,
+		ctx:       ctx,
 	}
 	theNewHandler := &handler{
 		logger:    logger,
 		syncStore: store,
+		ctx:       ctx,
 	}
 	return &Server{
 		oldHandler: theOldHandler,
