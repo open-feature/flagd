@@ -134,7 +134,10 @@ func TestBuildConnectOptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		options := BuildConnectOptions(test.cfg)
+		options, err := BuildConnectOptions(test.cfg)
+		if err != nil {
+			t.Fatalf("error building connection options : %v", err)
+		}
 
 		require.Len(t, options, test.optionCount, "option count mismatch for test %s", test.name)
 	}
