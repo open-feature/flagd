@@ -98,7 +98,7 @@ func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	if cfg.CollectorTarget != "" {
 		interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error creating interceptor, %w", err)
 		}
 
 		options = append(options, connect.WithInterceptors(interceptor))

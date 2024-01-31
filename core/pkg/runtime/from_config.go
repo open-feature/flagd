@@ -84,7 +84,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	options, err := telemetry.BuildConnectOptions(telCfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build connect options, %w", err)
 	}
 
 	return &Runtime{
