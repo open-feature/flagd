@@ -63,7 +63,7 @@ var startCmd = &cobra.Command{
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 		syncStore := subscriptions.NewManager(ctx, logger)
-		s := syncServer.NewServer(logger, syncStore)
+		s := syncServer.NewServer(ctx, logger, syncStore)
 
 		cfg := service.Configuration{
 			ReadinessProbe: func() bool { return true },
