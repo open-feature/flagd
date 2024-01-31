@@ -6,6 +6,12 @@
   "extends": [
     "config:recommended"
   ],
+  "includePaths": [
+    "flagd/**",
+    "flagd-proxy/**",
+    "core/**",
+    "test/**"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
