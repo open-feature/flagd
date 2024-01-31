@@ -1,7 +1,7 @@
 import type { Scenario } from "../types";
 import { contextToPrettyJson, featureDefinitionToPrettyJson } from "../utils";
 
-export const sharedEvaluator: Scenario = {
+export const sharedEvaluators: Scenario = {
   description: [
     "In this scenario, we have two feature flags that share targeting rule logic.",
     "This is accomplished by defining a $evaluators object in the feature flag definition and referencing it by name in a targeting rule.",

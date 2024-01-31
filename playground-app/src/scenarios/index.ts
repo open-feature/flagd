@@ -10,7 +10,7 @@ import { enableByTime } from "./enable-by-time";
 import { enableByVersion } from "./enable-by-version";
 import { pseudoRandomSplit } from "./fraction-string";
 import { progressRollout } from "./progressive-rollout";
-import { sharedEvaluator } from "./share-evaluators";
+import { sharedEvaluators } from "./share-evaluators";
 
 export const scenarios = {
   "Basic boolean flag": basicBoolean,
@@ -23,8 +23,8 @@ export const scenarios = {
   "Enable based on the current time": enableByTime,
   "Multi-variant experiment": pseudoRandomSplit,
   "Progressive rollout": progressRollout,
-  "Shared evaluators": sharedEvaluator,
-  "Boolean shorthand": booleanShorthand,
+  "Shared evaluators": sharedEvaluators,
+  "Boolean variant shorthand": booleanShorthand,
 } satisfies { [name: string]: Scenario };
 
 export type ScenarioName = keyof typeof scenarios;
