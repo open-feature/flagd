@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cucumber/godog v0.14.0
 	github.com/open-feature/go-sdk v1.9.0
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.21
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.22
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.4.0
 )
 
