@@ -22,9 +22,10 @@ func TestJsonEvaluator(t *testing.T) {
 
 	testSuite := godog.TestSuite{
 		Name: name,
-		ScenarioInitializer: integration.InitializeFlagdJsonScenario(func() openfeature.FeatureProvider {
+		TestSuiteInitializer: integration.InitializeFlagdJsonTestSuite(func() openfeature.FeatureProvider {
 			return flagd.NewProvider(providerOptions...)
 		}),
+		ScenarioInitializer: integration.InitializeFlagdJsonScenario,
 		Options: &godog.Options{
 			Format:   "pretty",
 			Paths:    []string{"../../test-harness/gherkin/flagd-json-evaluator.feature"},

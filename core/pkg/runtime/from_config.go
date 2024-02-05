@@ -82,6 +82,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, err
 	}
 
+	options, err := telemetry.BuildConnectOptions(telCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build connect options, %w", err)
+	}
+
 	return &Runtime{
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
 		Evaluator: evaluator,
@@ -94,7 +99,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			CertPath:       config.ServiceCertPath,
 			SocketPath:     config.ServiceSocketPath,
 			CORS:           config.CORS,
-			Options:        telemetry.BuildConnectOptions(telCfg),
+			Options:        options,
 		},
 		SyncImpl: iSyncs,
 	}, nil

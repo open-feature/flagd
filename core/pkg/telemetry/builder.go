@@ -91,17 +91,20 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 }
 
 // BuildConnectOptions is a helper to build connect options based on telemetry configurations
-func BuildConnectOptions(cfg Config) []connect.HandlerOption {
+func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	options := []connect.HandlerOption{}
 
 	// add interceptor if configuration is available for collector
 	if cfg.CollectorTarget != "" {
-		options = append(options, connect.WithInterceptors(
-			otelconnect.NewInterceptor(otelconnect.WithTrustRemote()),
-		))
+		interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
+		if err != nil {
+			return nil, fmt.Errorf("error creating interceptor, %w", err)
+		}
+
+		options = append(options, connect.WithInterceptors(interceptor))
 	}
 
-	return options
+	return options, nil
 }
 
 // buildMetricReader builds a metric reader based on provided configurations

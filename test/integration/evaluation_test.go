@@ -27,9 +27,10 @@ func TestEvaluation(t *testing.T) {
 
 	testSuite := godog.TestSuite{
 		Name: name,
-		ScenarioInitializer: integration.InitializeEvaluationScenario(func() openfeature.FeatureProvider {
+		TestSuiteInitializer: integration.InitializeTestSuite(func() openfeature.FeatureProvider {
 			return flagd.NewProvider(providerOptions...)
 		}),
+		ScenarioInitializer: integration.InitializeEvaluationScenario,
 		Options: &godog.Options{
 			Format:   "pretty",
 			Paths:    []string{"../../spec/specification/assets/gherkin/evaluation.feature"},
