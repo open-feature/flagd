@@ -123,6 +123,7 @@ Open the `demo.flagd.json` file in a text editor and extend the `background-colo
 
 ``` json hl_lines="19-32"
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "show-welcome-banner": {
       "state": "ENABLED",

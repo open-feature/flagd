@@ -11,6 +11,7 @@ The flags property is a top-level property that contains a collection of individ
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     ...
   }
@@ -25,6 +26,7 @@ The flag key **should** convey the intent of the flag.
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "new-welcome-banner": {
       ...
@@ -39,6 +41,7 @@ A fully configured flag may look like this.
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "new-welcome-banner": {
       "state": "ENABLED",
@@ -257,6 +260,7 @@ Example:
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "fibAlgo": {
       "variants": {
@@ -326,6 +330,7 @@ For example, this:
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "new-welcome-banner": {
       "state": "ENABLED",
@@ -350,6 +355,7 @@ can be shortened to this:
 
 ```json
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "new-welcome-banner": {
       "state": "ENABLED",

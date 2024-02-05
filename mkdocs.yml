@@ -94,6 +94,7 @@ nav:
         - 'Fractional': 'reference/custom-operations/fractional-operation.md'
         - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
         - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
+      - 'Schema': 'reference/schema.md'
     - 'Monitoring': 'reference/monitoring.md'
     - 'Specifications':
       - 'RPC Providers': 'reference/specifications/rpc-providers.md'

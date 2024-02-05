@@ -1,4 +1,5 @@
 {
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "show-welcome-banner": {
       "state": "ENABLED",
