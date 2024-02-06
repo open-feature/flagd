@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.2](https://github.com/open-feature/flagd/compare/flagd/v0.8.1...flagd/v0.8.2) (2024-02-05)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.7.4 ([#1119](https://github.com/open-feature/flagd/issues/1119)) ([e998e41](https://github.com/open-feature/flagd/commit/e998e41f7c6fc8007458dff08e66aa19c7b7b0e7))
+* use correct link in sources flag helper text in start cmd ([#1126](https://github.com/open-feature/flagd/issues/1126)) ([b9d30e0](https://github.com/open-feature/flagd/commit/b9d30e0a52eaf50553e1ce4c65f60bc67d931ea6))
+
 ## [0.8.1](https://github.com/open-feature/flagd/compare/flagd/v0.8.0...flagd/v0.8.1) (2024-01-04)
 
 

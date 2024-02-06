@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.4.1...flagd-proxy/v0.4.2) (2024-02-05)
+
+
+### 🐛 Bug Fixes
+
+* add signal handling to SyncFlags grpc ([#1176](https://github.com/open-feature/flagd/issues/1176)) ([5c8ed7c](https://github.com/open-feature/flagd/commit/5c8ed7c6dd29ffe43c1f1f0e2843683570873443))
+* **deps:** update module github.com/open-feature/flagd/core to v0.7.4 ([#1119](https://github.com/open-feature/flagd/issues/1119)) ([e998e41](https://github.com/open-feature/flagd/commit/e998e41f7c6fc8007458dff08e66aa19c7b7b0e7))
+
 ## [0.4.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.4.0...flagd-proxy/v0.4.1) (2024-01-04)
 
 

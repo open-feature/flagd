@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.7.5](https://github.com/open-feature/flagd/compare/core/v0.7.4...core/v0.7.5) (2024-02-05)
+
+
+### 🐛 Bug Fixes
+
+* add signal handling to SyncFlags grpc ([#1176](https://github.com/open-feature/flagd/issues/1176)) ([5c8ed7c](https://github.com/open-feature/flagd/commit/5c8ed7c6dd29ffe43c1f1f0e2843683570873443))
+* **deps:** update kubernetes packages to v0.29.1 ([#1156](https://github.com/open-feature/flagd/issues/1156)) ([899e6b5](https://github.com/open-feature/flagd/commit/899e6b505abe63b7b599858a0d55e6a69be08993))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.14.0-20231031123731-ac2ec0f39838.1 ([#1170](https://github.com/open-feature/flagd/issues/1170)) ([8b3c8d6](https://github.com/open-feature/flagd/commit/8b3c8d6c87cbebd6f324771cb8aa1f6990a74cf4))
+* **deps:** update module golang.org/x/crypto to v0.18.0 ([#1138](https://github.com/open-feature/flagd/issues/1138)) ([53569d9](https://github.com/open-feature/flagd/commit/53569d9cd88de1073a7e49b1a835adee4b0e8ef2))
+* **deps:** update module golang.org/x/net to v0.20.0 ([#1139](https://github.com/open-feature/flagd/issues/1139)) ([fdb1d0c](https://github.com/open-feature/flagd/commit/fdb1d0c909373e23a8c8fca435ef77205526f730))
+* **deps:** update module google.golang.org/grpc to v1.61.0 ([#1164](https://github.com/open-feature/flagd/issues/1164)) ([11ccecd](https://github.com/open-feature/flagd/commit/11ccecd5ac2e23991ac76ee079630f527559db1d))
+* **deps:** update opentelemetry-go monorepo ([#1155](https://github.com/open-feature/flagd/issues/1155)) ([436fefe](https://github.com/open-feature/flagd/commit/436fefedf67afda1cbf97ff12f7c3071cb833d9a))
+
+
+### ✨ New Features
+
+* add targeting validation ([#1146](https://github.com/open-feature/flagd/issues/1146)) ([b727dd0](https://github.com/open-feature/flagd/commit/b727dd00c561c27e54dbe4bafff0ca2d82487a42))
+* **core:** support any auth scheme in HTTP-sync auth header ([#1152](https://github.com/open-feature/flagd/issues/1152)) ([df65966](https://github.com/open-feature/flagd/commit/df6596634e1ca960592d5e4825985aeee781a25d))
+
+
+### 🧹 Chore
+
+* update test dependencies, fix for otel api change and update renovate configuration ([#1188](https://github.com/open-feature/flagd/issues/1188)) ([3270346](https://github.com/open-feature/flagd/commit/32703464d5c637dbb06c2c857070e9f038977c01))
+
+
+### 📚 Documentation
+
+* update schemas ([#1158](https://github.com/open-feature/flagd/issues/1158)) ([396c618](https://github.com/open-feature/flagd/commit/396c618bac13c5c8eb2aadc29bb126a83fec1b56))
+
 ## [0.7.4](https://github.com/open-feature/flagd/compare/core/v0.7.3...core/v0.7.4) (2024-01-04)
 
 
