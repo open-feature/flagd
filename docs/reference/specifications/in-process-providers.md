@@ -95,6 +95,10 @@ This evaluator selects a variant based on whether the specified property within 
 starts/ends with a certain string.
 For more specific implementation guidelines, please refer to [this document](./custom-operations/string-comparison-operation-spec.md).
 
+### Targeting key
+
+An in-process provider should map the [targeting-key](https://openfeature.dev/specification/glossary#targeting-key) into a top level property of the context used in rules, with the key `"targetingKey"`.
+
 ### $flagd properties in the evaluation context
 
 An in-process flagd provider should also add the following properties to the JsonLogic evaluation context so that users can use them in their targeting rules.

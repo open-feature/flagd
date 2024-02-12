@@ -157,3 +157,8 @@ The following steps will extend the reach of the newly created provider to other
 
 Create an issue in openfeature.dev [here](https://github.com/open-feature/openfeature.dev/issues/new?assignees=&labels=provider&template=document-provider.yaml&title=%5BProvider%5D%3A+).
 This will ensure the provider is added to OpenFeature's website.
+
+## Serialization of the evaluation context
+
+An RPC provider should serialize the OpenFeature context for use in the `evaluation.proto`.
+It should map the [targeting-key](https://openfeature.dev/specification/glossary#targeting-key) into a top level property of the context, with the key `"targetingKey"`
