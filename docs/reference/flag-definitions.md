@@ -242,6 +242,20 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 | `ends_with`                        | Attribute ends with the specified value             | string                                       | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md). |
 | `sem_ver`                          | Attribute matches a semantic versioning condition   | string (valid [semver](https://semver.org/)) | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                              |
 
+#### Targeting key
+
+flagd and flagd providers map the [targeting key](https://openfeature.dev/specification/glossary#targeting-key) into the `"targetingKey"` property of the context used in rules.
+For example, if the targeting key for a particular evaluation was set to `"5c3d8535-f81a-4478-a6d3-afaa4d51199e"`, the following expression would evaluate to `true`:
+
+```json
+"==": [
+    {
+        "var": "targetingKey"
+    },
+    "5c3d8535-f81a-4478-a6d3-afaa4d51199e"
+]
+```
+
 #### $flagd properties in the evaluation context
 
 Flagd adds the following properties to the evaluation context that can be used in the targeting rules.

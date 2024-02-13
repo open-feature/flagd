@@ -11,6 +11,7 @@ import { enableByVersion } from "./enable-by-version";
 import { pseudoRandomSplit } from "./fraction-string";
 import { progressRollout } from "./progressive-rollout";
 import { sharedEvaluators } from "./share-evaluators";
+import { targetingKey } from "./targeting-key";
 
 export const scenarios = {
   "Basic boolean flag": basicBoolean,
@@ -25,6 +26,7 @@ export const scenarios = {
   "Progressive rollout": progressRollout,
   "Shared evaluators": sharedEvaluators,
   "Boolean variant shorthand": booleanShorthand,
+  "Targeting key": targetingKey,
 } satisfies { [name: string]: Scenario };
 
 export type ScenarioName = keyof typeof scenarios;
