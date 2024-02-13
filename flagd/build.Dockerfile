@@ -1,6 +1,6 @@
 # Main Dockerfile for flagd builds
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
 
 WORKDIR /src
 
