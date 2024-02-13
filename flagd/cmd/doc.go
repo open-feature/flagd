@@ -12,7 +12,7 @@ func GenerateDoc(path string) error {
 		return name
 	}
 
-	filePrepender := func(filename string) string {
+	filePrepender := func(_ string) string {
 		return "<!-- markdownlint-disable-file -->\n<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->\n"
 	}
 

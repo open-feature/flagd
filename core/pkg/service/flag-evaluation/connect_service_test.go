@@ -128,7 +128,7 @@ func TestAddMiddleware(t *testing.T) {
 	mwMock := middlewaremock.NewMockIMiddleware(ctrl)
 
 	mwMock.EXPECT().Handler(gomock.Any()).Return(
-		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		}))
 

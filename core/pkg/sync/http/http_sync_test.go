@@ -21,7 +21,7 @@ func TestSimpleSync(t *testing.T) {
 	resp := "test response"
 
 	mockCron := syncmock.NewMockCron(ctrl)
-	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
+	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, _ func()) error {
 		return nil
 	})
 	mockCron.EXPECT().Start().Times(1)
@@ -67,7 +67,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		handleResponse func(*testing.T, Sync, string, error)
 	}{
 		"success": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {
+			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -84,15 +84,15 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 		},
 		"return an error if no uri": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {},
-			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+			setup: func(_ *testing.T, _ *syncmock.MockClient) {},
+			handleResponse: func(t *testing.T, _ Sync, _ string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}
 			},
 		},
 		"update last body sha": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {
+			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -225,7 +225,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 		wantNotifications []sync.DataSync
 	}{
 		"success": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {
+			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
@@ -250,8 +250,8 @@ func TestHTTPSync_Resync(t *testing.T) {
 			},
 		},
 		"error response": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {},
-			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+			setup: func(_ *testing.T, _ *syncmock.MockClient) {},
+			handleResponse: func(t *testing.T, _ Sync, _ string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}

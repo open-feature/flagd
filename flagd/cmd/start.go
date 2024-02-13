@@ -81,7 +81,7 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start flagd",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		// Configure loggers -------------------------------------------------------
 		var level zapcore.Level
 		var err error

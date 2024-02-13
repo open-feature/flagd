@@ -61,7 +61,7 @@ func TestJSONCodec_Marshaling(t *testing.T) {
 			message: func() (any, error) {
 				return map[string]interface{}{}, nil
 			},
-			marshaller: func(message any) ([]byte, error) {
+			marshaller: func(_ any) ([]byte, error) {
 				jsonCodec := jsonCodec{}
 				return jsonCodec.Marshal(nil)
 			},
@@ -72,7 +72,7 @@ func TestJSONCodec_Marshaling(t *testing.T) {
 			message: func() (any, error) {
 				return map[string]interface{}{}, nil
 			},
-			marshaller: func(message any) ([]byte, error) {
+			marshaller: func(_ any) ([]byte, error) {
 				jsonCodec := jsonCodec{}
 				return jsonCodec.MarshalStable(nil)
 			},
@@ -83,7 +83,7 @@ func TestJSONCodec_Marshaling(t *testing.T) {
 			message: func() (any, error) {
 				return map[string]interface{}{}, nil
 			},
-			marshaller: func(message any) ([]byte, error) {
+			marshaller: func(_ any) ([]byte, error) {
 				jsonCodec := jsonCodec{}
 				return jsonCodec.MarshalAppend(nil, nil)
 			},

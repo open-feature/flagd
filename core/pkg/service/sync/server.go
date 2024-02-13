@@ -124,10 +124,10 @@ func (s *Server) startMetricsServer() error {
 	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
 
 	mux := http.NewServeMux()
-	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if s.metricServerReady && s.config.ReadinessProbe() {
 			w.WriteHeader(http.StatusOK)
 		} else {

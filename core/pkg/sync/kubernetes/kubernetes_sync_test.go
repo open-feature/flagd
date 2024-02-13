@@ -425,7 +425,7 @@ func TestSync_fetch(t *testing.T) {
 				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
 				s.informer = &MockInformer{
 					fakeStore: cache.FakeCustomStore{
-						GetByKeyFunc: func(key string) (item interface{}, exists bool, err error) {
+						GetByKeyFunc: func(_ string) (item interface{}, exists bool, err error) {
 							return nil, false, errors.New("mock error")
 						},
 					},
@@ -438,7 +438,7 @@ func TestSync_fetch(t *testing.T) {
 			injectionFunc: func(s *Sync) {
 				s.URI = fmt.Sprintf("%s/%s", validCfg.Namespace, validCfg.Name)
 				fakeClient := fake.NewSimpleDynamicClient(scheme.Scheme, &validCfg)
-				fakeClient.PrependReactor("get", "featureflags", func(action testing2.Action) (handled bool, ret runtime.Object, err error) {
+				fakeClient.PrependReactor("get", "featureflags", func(_ testing2.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("could not get ff config")
 				})
 				s.dynamicClient = fakeClient
@@ -505,7 +505,7 @@ func TestSync_watcher(t *testing.T) {
 			name: "scenario - create event",
 			want: `{"flags":{}}`,
 			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+				InformerGetFunc: func(_ string) (item interface{}, exists bool, err error) {
 					return toUnstructured(t, validCfg), true, nil
 				},
 				notification: &Notifier{
@@ -519,7 +519,7 @@ func TestSync_watcher(t *testing.T) {
 			name: "scenario - modify event",
 			want: `{"flags":{}}`,
 			args: args{
-				InformerGetFunc: func(key string) (item interface{}, exists bool, err error) {
+				InformerGetFunc: func(_ string) (item interface{}, exists bool, err error) {
 					return toUnstructured(t, validCfg), true, nil
 				},
 				notification: &Notifier{

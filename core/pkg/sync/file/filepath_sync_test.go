@@ -218,7 +218,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 				URI:    fmt.Sprintf("%s/%s", falureDirName, "not_found"),
 				Logger: logger.NewLogger(nil, false),
 			},
-			handleResponse: func(t *testing.T, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ string, err error) {
 				if err == nil {
 					t.Error("expected an error, got nil")
 				}

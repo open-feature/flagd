@@ -124,7 +124,7 @@ func Test_ReSyncTests(t *testing.T) {
 
 		// initialize client
 		dial, err := grpc.Dial(target,
-			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
 				return bufCon.Dial()
 			}),
 			grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -188,7 +188,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 	}{
 		{
 			name: "State All maps to Sync All",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+			setup: func(_ *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -208,7 +208,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Add maps to Sync Add",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+			setup: func(_ *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -228,7 +228,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Update maps to Sync Update",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+			setup: func(_ *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -248,7 +248,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "State Delete maps to Sync Delete",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+			setup: func(_ *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
@@ -268,7 +268,7 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		},
 		{
 			name: "Error during flag sync",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+			setup: func(_ *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				clientResponse.EXPECT().Recv().Return(
 					nil,
@@ -426,7 +426,7 @@ func Test_StreamListener(t *testing.T) {
 
 		// initialize client
 		dial, err := grpc.Dial(target,
-			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
 				return bufCon.Dial()
 			}),
 			grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -485,7 +485,7 @@ func Test_ConnectWithRetry(t *testing.T) {
 
 	// generate a client connection backed with bufconn
 	clientConn, err := grpc.Dial(target,
-		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
 			return bufListener.DialContext(ctx)
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -563,7 +563,7 @@ func Test_SyncRetry(t *testing.T) {
 
 	// generate a client connection backed by bufListener
 	clientConn, err := grpc.Dial(target,
-		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
 			return bufListener.DialContext(ctx)
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))

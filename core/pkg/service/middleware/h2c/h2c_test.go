@@ -15,7 +15,7 @@ func TestMiddleware(t *testing.T) {
 	mockMw := middlewaremock.NewMockIMiddleware(ctrl)
 
 	handlerFunc := http.HandlerFunc(
-		func(writer http.ResponseWriter, request *http.Request) {
+		func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		},
 	)

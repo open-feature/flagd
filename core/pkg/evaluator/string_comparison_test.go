@@ -433,7 +433,7 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			},
 			wantProperty:    "a",
 			wantTargetValue: "b",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				assert.Nil(t, err)
 				return false
 			},
@@ -445,7 +445,7 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			},
 			wantProperty:    "",
 			wantTargetValue: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				assert.NotNil(t, err)
 				return true
 			},
@@ -457,7 +457,7 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			},
 			wantProperty:    "",
 			wantTargetValue: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				assert.NotNil(t, err)
 				return true
 			},
@@ -469,7 +469,7 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			},
 			wantProperty:    "",
 			wantTargetValue: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				assert.NotNil(t, err)
 				return true
 			},
@@ -481,7 +481,7 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			},
 			wantProperty:    "",
 			wantTargetValue: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				assert.NotNil(t, err)
 				return true
 			},

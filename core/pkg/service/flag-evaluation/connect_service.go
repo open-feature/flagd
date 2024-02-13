@@ -246,10 +246,10 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
 
 	mux := http.NewServeMux()
-	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/readyz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if s.readinessEnabled && svcConf.ReadinessProbe() {
 			w.WriteHeader(http.StatusOK)
 		} else {

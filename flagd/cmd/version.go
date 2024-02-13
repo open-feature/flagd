@@ -12,7 +12,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of flagd",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if Version == "dev" {
 			details, ok := debug.ReadBuildInfo()
 			if ok && details.Main.Version != "" && details.Main.Version != "(devel)" {
