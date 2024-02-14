@@ -10,7 +10,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v1"
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/eval"

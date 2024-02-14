@@ -9,8 +9,8 @@ import (
 
 	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"

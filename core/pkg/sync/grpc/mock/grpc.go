@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"

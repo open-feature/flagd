@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
 	"github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/types/known/structpb"
 )

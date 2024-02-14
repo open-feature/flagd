@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"

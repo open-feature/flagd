@@ -3,8 +3,8 @@ package sync
 import (
 	"context"
 
-	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncStore "github.com/open-feature/flagd/core/pkg/sync-store"
@@ -46,7 +46,6 @@ func (l *handler) SyncFlags(
 		case d := <-dataSync:
 			if err := stream.Send(&syncv1.SyncFlagsResponse{
 				FlagConfiguration: d.FlagData,
-				State:             dataSyncToGrpcState(d),
 			}); err != nil {
 				return err
 			}
@@ -54,8 +53,4 @@ func (l *handler) SyncFlags(
 			return nil
 		}
 	}
-}
-
-func dataSyncToGrpcState(s sync.DataSync) syncv1.SyncState {
-	return syncv1.SyncState(s.Type + 1)
 }
