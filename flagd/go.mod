@@ -14,9 +14,9 @@ require (
 )
 
 require (
-	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20231031123731-ac2ec0f39838.1 // indirect
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2 // indirect
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1 // indirect
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1 // indirect
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.2 // indirect
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1 // indirect
 	connectrpc.com/connect v1.14.0 // indirect
 	connectrpc.com/otelconnect v0.7.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

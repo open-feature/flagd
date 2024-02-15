@@ -566,12 +566,5 @@ func (b *bufferedServer) FetchAllFlags(_ context.Context, _ *v1.FetchAllFlagsReq
 }
 
 func (b *bufferedServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
-	return &v1.GetMetadataResponse{
-		Metadata: []*v1.KeyValue{
-			{
-				Key:   "scope",
-				Value: fmt.Sprintf("%v", "mock"),
-			},
-		},
-	}, nil
+	return &v1.GetMetadataResponse{}, nil
 }
