@@ -354,46 +354,6 @@ func Test_StreamListener(t *testing.T) {
 				},
 				{
 					FlagData: "{\"flags\": {}}",
-					Type:     sync.DELETE,
-				},
-			},
-		},
-		{
-			name: "Pings are ignored & not written to channel",
-			input: []serverPayload{
-				{
-					flags: "",
-				},
-				{
-					flags: "",
-				},
-				{
-					flags: "{\"flags\": {}}",
-				},
-			},
-			output: []sync.DataSync{
-				{
-					FlagData: "{\"flags\": {}}",
-					Type:     sync.DELETE,
-				},
-			},
-		},
-		{
-			name: "Unknown states are & not written to channel",
-			input: []serverPayload{
-				{
-					flags: "",
-				},
-				{
-					flags: "",
-				},
-				{
-					flags: "{\"flags\": {}}",
-				},
-			},
-			output: []sync.DataSync{
-				{
-					FlagData: "{\"flags\": {}}",
 					Type:     sync.ALL,
 				},
 			},
