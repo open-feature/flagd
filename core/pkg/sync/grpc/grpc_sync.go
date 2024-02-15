@@ -185,6 +185,5 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		}
 
 		g.Logger.Debug("received full configuration payload")
-
 	}
 }
