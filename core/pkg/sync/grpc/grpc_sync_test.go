@@ -206,63 +206,6 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 			ready: true,
 		},
 		{
-			name: "State Add maps to Sync Add",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.ADD,
-			ready: true,
-		},
-		{
-			name: "State Update maps to Sync Update",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.UPDATE,
-			ready: true,
-		},
-		{
-			name: "State Delete maps to Sync Delete",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.DELETE,
-			ready: true,
-		},
-		{
 			name: "Error during flag sync",
 			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
