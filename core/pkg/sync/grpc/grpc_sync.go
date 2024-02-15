@@ -168,57 +168,23 @@ func (g *Sync) connectWithRetry(
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
 func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
-	// Set ready state once only
-	//once.Do(func() {
-	//	g.ready = true
-	//})
-	//
-	//for {
-	//	data, err := stream.Recv()
-	//	if err != nil {
-	//		return fmt.Errorf("error receiving payload from stream: %w", err)
-	//	}
-	//
-	//	switch data.State {
-	//	case v1.SyncState_SYNC_STATE_ALL:
-	//		dataSync <- sync.DataSync{
-	//			FlagData: data.FlagConfiguration,
-	//			Source:   g.URI,
-	//			Type:     sync.ALL,
-	//		}
-	//
-	//		g.Logger.Debug("received full configuration payload")
-	//	case v1.SyncState_SYNC_STATE_ADD:
-	//		dataSync <- sync.DataSync{
-	//			FlagData: data.FlagConfiguration,
-	//			Source:   g.URI,
-	//			Type:     sync.ADD,
-	//		}
-	//
-	//		g.Logger.Debug("received an add payload")
-	//	case v1.SyncState_SYNC_STATE_UPDATE:
-	//		dataSync <- sync.DataSync{
-	//			FlagData: data.FlagConfiguration,
-	//			Source:   g.URI,
-	//			Type:     sync.UPDATE,
-	//		}
-	//
-	//		g.Logger.Debug("received an update payload")
-	//	case v1.SyncState_SYNC_STATE_DELETE:
-	//		dataSync <- sync.DataSync{
-	//			FlagData: data.FlagConfiguration,
-	//			Source:   g.URI,
-	//			Type:     sync.DELETE,
-	//		}
-	//
-	//		g.Logger.Debug("received a delete payload")
-	//	case v1.SyncState_SYNC_STATE_PING:
-	//		g.Logger.Debug("received server ping")
-	//	case v1.SyncState_SYNC_STATE_UNSPECIFIED:
-	//		g.Logger.Debug("received unspecified state")
-	//	default:
-	//		g.Logger.Debug(fmt.Sprintf("received unknown state: %s", data.State.String()))
-	//	}
-	//}
-	return nil
+	once.Do(func() {
+		g.ready = true
+	})
+
+	for {
+		data, err := stream.Recv()
+		if err != nil {
+			return fmt.Errorf("error receiving payload from stream: %w", err)
+		}
+
+		dataSync <- sync.DataSync{
+			FlagData: data.FlagConfiguration,
+			Source:   g.URI,
+			Type:     sync.ALL,
+		}
+
+		g.Logger.Debug("received full configuration payload")
+
+	}
 }
