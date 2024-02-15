@@ -3,11 +3,15 @@ buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.28.1-20220906
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.32.0-20220906183531-bc28b723cd77.1/go.mod h1:XdxZqtnJr4q2vF8RLEhC903d6Nxxtz1vEMTyTAyvSUs=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20231031123731-ac2ec0f39838.1 h1:c1oUgM/UOaKpS1tEFxEYnVenVldjHtlPm4xNW1b8EXk=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20231031123731-ac2ec0f39838.1/go.mod h1:LMa+/rhxrynk31aFr53Gj/7PAtZHYKdMAxj4dlo/SJA=
+buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1 h1:FW3e0eXbLvttDmhs3ODIz384HtTr5kxTw0pg5v8ylnM=
+buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1/go.mod h1:lxKwNl2jMSIuJmGQrh8c+8unObi5GIbvJKO2MMX0lmU=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2 h1:DCww6WQNaepShZVh/jDVpIfCHQy5QwrpKl8iYAZeaV8=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2/go.mod h1:NmrKm2OIzFV3sUPs9cWMCmbYeCM3xVEzt4YzFgY5HO4=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20231031123731-ac2ec0f39838.4/go.mod h1:+Bnrjo56uVn/aBcLWchTveR8UeCj+KSJN4fE0xSmBNc=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1 h1:3lJuvwwH33XzkBJiLTNDfRHd5lc/MtQzXjCTQFLr8pU=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1/go.mod h1:dDONV5ZtaBXX8FrzzvKWRAiSp6eTyhGXJ/+6POKBnMY=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1 h1:odWOLm01QNxg+8rqXCeGEeg8fQtAsDFw44Q1EP0EdQo=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1/go.mod h1:dDONV5ZtaBXX8FrzzvKWRAiSp6eTyhGXJ/+6POKBnMY=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=

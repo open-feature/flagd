@@ -3,9 +3,9 @@ module github.com/open-feature/flagd/core
 go 1.20
 
 require (
-	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20231031123731-ac2ec0f39838.1
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20231031123731-ac2ec0f39838.2
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20231031123731-ac2ec0f39838.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1
 	connectrpc.com/connect v1.14.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.4.0
