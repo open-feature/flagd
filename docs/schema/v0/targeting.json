@@ -133,6 +133,22 @@
         }
       }
     },
+    "ifRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "if": {
+          "title": "If Operator",
+          "description": "The if statement takes 1-3 arguments: a condition (\"if\"), what to do if its true (\"then\", optional, defaults to returning true), and what to do if its false (\"else\", optional, defaults to returning false). Note that the form accepting more than 3 arguments (else-if) is not supported in flagd; use nesting instead.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/args"
+          }
+        }
+      }
+    },
     "binaryOrTernaryOp": {
       "type": "array",
       "minItems": 2,
@@ -145,11 +161,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "if": {
-          "title": "If Operator",
-          "description": "The if statement takes 2-3 arguments: a condition (if), what to do if its true (then), and what to do if its false (else, optional). Note that the form accepting more than 3 arguments (if/else) is not supported in flagd; use nesting instead.",
-          "$ref": "#/$defs/binaryOrTernaryOp"
-        },
         "substr": {
           "title": "Substring Operation",
           "description": "Get a portion of a string. Give a positive start position to return everything beginning at that index. Give a negative start position to work backwards from the end of the string, then return everything. Give a positive length to express how many characters to return.",
@@ -547,6 +558,9 @@
         },
         {
           "$ref": "#/$defs/missingSomeRule"
+        },
+        {
+          "$ref": "#/$defs/ifRule"
         },
         {
           "$ref": "#/$defs/binaryRule"
