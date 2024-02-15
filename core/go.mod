@@ -1,6 +1,8 @@
 module github.com/open-feature/flagd/core
 
-go 1.20
+go 1.21
+
+toolchain go1.21.4
 
 require (
 	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20231031123731-ac2ec0f39838.1

@@ -1,6 +1,8 @@
 module github.com/open-feature/flagd/flagd-proxy
 
-go 1.20
+go 1.21
+
+toolchain go1.21.4
 
 require (
 	github.com/dimiro1/banner v1.1.0

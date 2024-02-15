@@ -630,6 +630,7 @@ github.com/open-feature/go-sdk v1.9.0 h1:1Nyj+XNHfL0rRGZgGCbZ29CHDD57PQJL7Q/2ZbW
 github.com/open-feature/go-sdk v1.9.0/go.mod h1:n5BM4DfvIiKaWWquZnL/yVihcGM5aLsz7rNYE3BkXAM=
 github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.21 h1:HUth7VWAIMBT13DlKbAD/EJBpOswiYqX5F1XbvfyGLg=
 github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.21/go.mod h1:UV9p0/wypc1bxQarBiEdu+WgIcudT9c7qZ8wgFQUCnI=
+github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.22/go.mod h1:zCBA9yu0W3BSv++VlFv6IW7JhdE40ldoG5jbPNuBExQ=
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.4.0 h1:jeW3EY5p3PAs67YzwcsHE/A7GfmntOu7+1pV5R6lc2g=
 github.com/open-feature/go-sdk-contrib/tests/flagd v1.4.0/go.mod h1:6UNdd5nC4507WHLADDIfyhjP7XmfkBeBtN4ZpSSCjhg=
 github.com/open-feature/schemas v0.2.8 h1:oA75hJXpOd9SFgmNI2IAxWZkwzQPUDm7Jyyh3q489wM=
@@ -734,6 +735,7 @@ golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EH
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
 golang.org/x/exp v0.0.0-20231127185646-65229373498e h1:Gvh4YaCaXNs6dKTlfgismwWZKyjVZXwOPfIyUaqU3No=
 golang.org/x/exp v0.0.0-20231127185646-65229373498e/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
+golang.org/x/exp v0.0.0-20240119083558-1b970713d09a/go.mod h1:idGWGoKP1toJGkd5/ig9ZLuPcZBC3ewk7SzmH0uou08=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
