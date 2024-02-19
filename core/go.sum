@@ -1,11 +1,6 @@
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/grpc/go v1.3.0-20220906183531-bc28b723cd77.2/go.mod h1:9Ec7rvBnjfZvU/TnWjtcSGgiLQ4B+U3B+6SnZgVTA7A=
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.28.1-20220906183531-bc28b723cd77.4/go.mod h1:92ejKVTiuvnKoAtRlpJpIxKfloI935DDqhs0NCRx+KM=
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.32.0-20220906183531-bc28b723cd77.1/go.mod h1:XdxZqtnJr4q2vF8RLEhC903d6Nxxtz1vEMTyTAyvSUs=
-buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1 h1:FW3e0eXbLvttDmhs3ODIz384HtTr5kxTw0pg5v8ylnM=
-buf.build/gen/go/open-feature/flagd/connectrpc/go v1.14.0-20240215170432-1e611e2999cc.1/go.mod h1:lxKwNl2jMSIuJmGQrh8c+8unObi5GIbvJKO2MMX0lmU=
-buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.2 h1:CVXDGFFCbKvCZGTINLgzEfVSo4O99xEnskbxYm3fHjU=
-buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.2/go.mod h1:w6OZGD9znwVaPAz4wWi89GUMseHXzr4Fh+TS1SNz6JI=
-buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.28.1-20240215170432-1e611e2999cc.4/go.mod h1:+Bnrjo56uVn/aBcLWchTveR8UeCj+KSJN4fE0xSmBNc=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1 h1:odWOLm01QNxg+8rqXCeGEeg8fQtAsDFw44Q1EP0EdQo=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1/go.mod h1:dDONV5ZtaBXX8FrzzvKWRAiSp6eTyhGXJ/+6POKBnMY=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
@@ -396,6 +391,8 @@ cloud.google.com/go/workflows v1.8.0/go.mod h1:ysGhmEajwZxGn1OhGOGKsTXc5PyxOc0vf
 cloud.google.com/go/workflows v1.9.0/go.mod h1:ZGkj1aFIOd9c8Gerkjjq7OW7I5+l6cSvT3ujaO/WwSA=
 connectrpc.com/connect v1.14.0 h1:PDS+J7uoz5Oui2VEOMcfz6Qft7opQM9hPiKvtGC01pA=
 connectrpc.com/connect v1.14.0/go.mod h1:uoAq5bmhhn43TwhaKdGKN/bZcGtzPW1v+ngDTn5u+8s=
+connectrpc.com/connect v1.15.0 h1:lFdeCbZrVVDydAqwr4xGV2y+ULn+0Z73s5JBj2LikWo=
+connectrpc.com/connect v1.15.0/go.mod h1:bQmjpDY8xItMnttnurVgOkHUBMRT9cpsNi2O4AjKhmA=
 connectrpc.com/otelconnect v0.7.0 h1:ZH55ZZtcJOTKWWLy3qmL4Pam4RzRWBJFOqTPyAqCXkY=
 connectrpc.com/otelconnect v0.7.0/go.mod h1:Bt2ivBymHZHqxvo4HkJ0EwHuUzQN6k2l0oH+mp/8nwc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
