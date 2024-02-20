@@ -133,17 +133,17 @@
       "defaultVariant": "first",
       "state": "ENABLED",
       "targeting": {
-        "if": [{
-            "in": ["@openfeature.dev", {
-              "var": "email"
-            }]
-          }, "second",
+        "if": [
           {
-            "in": ["Chrome", {
-              "var": "userAgent"
-            }]
-          }, "third",
-          null
+            "in": [
+              "@openfeature.dev",
+              {
+                "var": "email"
+              }
+            ]
+          },
+          "second",
+          "first"
         ]
       }
     }
