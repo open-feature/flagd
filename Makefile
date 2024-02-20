@@ -66,12 +66,12 @@ lint:
 	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --deadline=5m --timeout=5m $(module)/... || exit;)
 install-mockgen:
-	go install github.com/golang/mock/mockgen@v1.6.0
+	go install go.uber.org/mock/mockgen@v0.4.0
 mockgen: install-mockgen
 	cd core; mockgen -source=pkg/sync/http/http_sync.go -destination=pkg/sync/http/mock/http.go -package=syncmock
 	cd core; mockgen -source=pkg/sync/grpc/grpc_sync.go -destination=pkg/sync/grpc/mock/grpc.go -package=grpcmock
 	cd core; mockgen -source=pkg/sync/grpc/credentials/builder.go -destination=pkg/sync/grpc/credentials/mock/builder.go -package=credendialsmock
-	cd core; mockgen -source=pkg/eval/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
+	cd core; mockgen -source=pkg/evaluator/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
 	cd core; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
 	cd core; mockgen -source=pkg/sync/builder/syncbuilder.go -destination=pkg/sync/builder/mock/syncbuilder.go -package=middlewaremocksyncbuildermock
 generate-docs:

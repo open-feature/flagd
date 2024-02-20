@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -194,7 +194,6 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 					clientResponse.EXPECT().Recv().Return(
 						&v1.SyncFlagsResponse{
 							FlagConfiguration: "{}",
-							State:             v1.SyncState_SYNC_STATE_ALL,
 						},
 						nil,
 					),
@@ -204,66 +203,6 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 				)
 			},
 			want:  sync.ALL,
-			ready: true,
-		},
-		{
-			name: "State Add maps to Sync Add",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-							State:             v1.SyncState_SYNC_STATE_ADD,
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.ADD,
-			ready: true,
-		},
-		{
-			name: "State Update maps to Sync Update",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-							State:             v1.SyncState_SYNC_STATE_UPDATE,
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.UPDATE,
-			ready: true,
-		},
-		{
-			name: "State Delete maps to Sync Delete",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-							State:             v1.SyncState_SYNC_STATE_DELETE,
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.DELETE,
 			ready: true,
 		},
 		{
@@ -332,7 +271,6 @@ func Test_StreamListener(t *testing.T) {
 			input: []serverPayload{
 				{
 					flags: "{\"flags\": {}}",
-					state: v1.SyncState_SYNC_STATE_ALL,
 				},
 			},
 			output: []sync.DataSync{
@@ -347,11 +285,9 @@ func Test_StreamListener(t *testing.T) {
 			input: []serverPayload{
 				{
 					flags: "{}",
-					state: v1.SyncState_SYNC_STATE_ALL,
 				},
 				{
 					flags: "{\"flags\": {}}",
-					state: v1.SyncState_SYNC_STATE_DELETE,
 				},
 			},
 			output: []sync.DataSync{
@@ -359,52 +295,6 @@ func Test_StreamListener(t *testing.T) {
 					FlagData: "{}",
 					Type:     sync.ALL,
 				},
-				{
-					FlagData: "{\"flags\": {}}",
-					Type:     sync.DELETE,
-				},
-			},
-		},
-		{
-			name: "Pings are ignored & not written to channel",
-			input: []serverPayload{
-				{
-					flags: "",
-					state: v1.SyncState_SYNC_STATE_PING,
-				},
-				{
-					flags: "",
-					state: v1.SyncState_SYNC_STATE_PING,
-				},
-				{
-					flags: "{\"flags\": {}}",
-					state: v1.SyncState_SYNC_STATE_DELETE,
-				},
-			},
-			output: []sync.DataSync{
-				{
-					FlagData: "{\"flags\": {}}",
-					Type:     sync.DELETE,
-				},
-			},
-		},
-		{
-			name: "Unknown states are & not written to channel",
-			input: []serverPayload{
-				{
-					flags: "",
-					state: 42,
-				},
-				{
-					flags: "",
-					state: -1,
-				},
-				{
-					flags: "{\"flags\": {}}",
-					state: v1.SyncState_SYNC_STATE_ALL,
-				},
-			},
-			output: []sync.DataSync{
 				{
 					FlagData: "{\"flags\": {}}",
 					Type:     sync.ALL,
@@ -557,7 +447,6 @@ func Test_SyncRetry(t *testing.T) {
 	bServer := bufferedServer{listener: bufListener, mockResponses: []serverPayload{
 		{
 			flags: "{}",
-			state: v1.SyncState_SYNC_STATE_ALL,
 		},
 	}}
 
@@ -648,7 +537,6 @@ func serve(bServer *bufferedServer) {
 
 type serverPayload struct {
 	flags string
-	state v1.SyncState
 }
 
 // bufferedServer - a mock grpc service backed by buffered connection
@@ -663,7 +551,6 @@ func (b *bufferedServer) SyncFlags(_ *v1.SyncFlagsRequest, stream syncv1grpc.Fla
 	for _, response := range b.mockResponses {
 		err := stream.Send(&v1.SyncFlagsResponse{
 			FlagConfiguration: response.flags,
-			State:             response.state,
 		})
 		if err != nil {
 			fmt.Printf("Error with stream: %s", err.Error())
@@ -676,4 +563,8 @@ func (b *bufferedServer) SyncFlags(_ *v1.SyncFlagsRequest, stream syncv1grpc.Fla
 
 func (b *bufferedServer) FetchAllFlags(_ context.Context, _ *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
 	return b.fetchAllFlagsResponse, b.fetchAllFlagsError
+}
+
+func (b *bufferedServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
+	return &v1.GetMetadataResponse{}, nil
 }
