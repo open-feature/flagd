@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-feature/flagd/compare/core/v0.7.5...core/v0.8.0) (2024-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* new proto (flagd.sync.v1) for sync sources ([#1214](https://github.com/open-feature/flagd/issues/1214))
+
+### 🐛 Bug Fixes
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 8c72c14 ([#1212](https://github.com/open-feature/flagd/issues/1212)) ([4add9fd](https://github.com/open-feature/flagd/commit/4add9fd1c47e3e3dea818a6b262273fadb7edb81))
+* **deps:** update kubernetes packages to v0.29.2 ([#1213](https://github.com/open-feature/flagd/issues/1213)) ([b0c805f](https://github.com/open-feature/flagd/commit/b0c805f7f58979f927e60c22c94c0448af459c7d))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.15.0-20240215170432-1e611e2999cc.1 ([#1219](https://github.com/open-feature/flagd/issues/1219)) ([4c4f08a](https://github.com/open-feature/flagd/commit/4c4f08afabf7d646973768500db028ab0b4c7d68))
+* **deps:** update module golang.org/x/crypto to v0.19.0 ([#1203](https://github.com/open-feature/flagd/issues/1203)) ([f0ff317](https://github.com/open-feature/flagd/commit/f0ff3177f67c832d62694cdf44b766344da5483f))
+* **deps:** update module golang.org/x/mod to v0.15.0 ([#1202](https://github.com/open-feature/flagd/issues/1202)) ([6ca8e6d](https://github.com/open-feature/flagd/commit/6ca8e6d33f6646698605fb4b5b99f8a3ee1ddbed))
+* **deps:** update module golang.org/x/net to v0.21.0 ([#1204](https://github.com/open-feature/flagd/issues/1204)) ([bccf365](https://github.com/open-feature/flagd/commit/bccf365fa2e5f443208ec70b1244bdb4f07ced04))
+* **deps:** update module google.golang.org/grpc to v1.61.1 ([#1210](https://github.com/open-feature/flagd/issues/1210)) ([10cc63e](https://github.com/open-feature/flagd/commit/10cc63e7992b4ae8d861f5296afcc78417e645cb))
+* **deps:** update opentelemetry-go monorepo ([#1199](https://github.com/open-feature/flagd/issues/1199)) ([422ebaa](https://github.com/open-feature/flagd/commit/422ebaa30b8bb0246bcdf8c0cc2be0a5870eb9e9))
+
+
+### ✨ New Features
+
+* new proto (flagd.sync.v1) for sync sources ([#1214](https://github.com/open-feature/flagd/issues/1214)) ([544234e](https://github.com/open-feature/flagd/commit/544234ebd9f9be5f54c2865a866575a7869a56c0))
+
 ## [0.7.5](https://github.com/open-feature/flagd/compare/core/v0.7.4...core/v0.7.5) (2024-02-05)
 
 
