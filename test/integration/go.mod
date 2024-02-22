@@ -1,10 +1,12 @@
 module tests.integration
 
-go 1.19
+go 1.21
+
+toolchain go1.21.4
 
 require (
 	github.com/cucumber/godog v0.14.0
-	github.com/open-feature/go-sdk v1.9.0
+	github.com/open-feature/go-sdk v1.10.0
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.22
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.4.0
 )
@@ -49,7 +51,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/exp v0.0.0-20231127185646-65229373498e // indirect
+	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
