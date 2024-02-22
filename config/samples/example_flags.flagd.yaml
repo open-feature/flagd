@@ -94,11 +94,8 @@ if:
   - "@openfeature.dev"
   - var: email
 - second
-- in:
-  - Chrome
-  - var: userAgent
-- third
--
+- first
+
 "$evaluators":
   emailWithFaas:
     in:

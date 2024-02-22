@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.4.2...flagd-proxy/v0.5.0) (2024-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* new proto (flagd.sync.v1) for sync sources ([#1214](https://github.com/open-feature/flagd/issues/1214))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.7.5 ([#1198](https://github.com/open-feature/flagd/issues/1198)) ([ce38845](https://github.com/open-feature/flagd/commit/ce388458b9c8a686a7b6ff38b532c941d43d842c))
+
+
+### ✨ New Features
+
+* new proto (flagd.sync.v1) for sync sources ([#1214](https://github.com/open-feature/flagd/issues/1214)) ([544234e](https://github.com/open-feature/flagd/commit/544234ebd9f9be5f54c2865a866575a7869a56c0))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.22 ([#1201](https://github.com/open-feature/flagd/issues/1201)) ([d14c69e](https://github.com/open-feature/flagd/commit/d14c69e93e56d32a37b2428f1db2d4ac79563597))
+
 ## [0.4.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.4.1...flagd-proxy/v0.4.2) (2024-02-05)
 
 

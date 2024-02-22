@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"
@@ -56,6 +56,26 @@ func (mr *MockFlagSyncServiceClientMockRecorder) FetchAllFlags(ctx, in interface
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAllFlags", reflect.TypeOf((*MockFlagSyncServiceClient)(nil).FetchAllFlags), varargs...)
+}
+
+// GetMetadata mocks base method.
+func (m *MockFlagSyncServiceClient) GetMetadata(ctx context.Context, in *syncv1.GetMetadataRequest, opts ...grpc.CallOption) (*syncv1.GetMetadataResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMetadata", varargs...)
+	ret0, _ := ret[0].(*syncv1.GetMetadataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMetadata indicates an expected call of GetMetadata.
+func (mr *MockFlagSyncServiceClientMockRecorder) GetMetadata(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadata", reflect.TypeOf((*MockFlagSyncServiceClient)(nil).GetMetadata), varargs...)
 }
 
 // SyncFlags mocks base method.
