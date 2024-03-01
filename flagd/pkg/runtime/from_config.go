@@ -12,6 +12,7 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
+	flag_sync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"go.uber.org/zap"
 )
 
@@ -56,24 +57,33 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
 
-	// build flag store & fill sources details
+	// build flag store, collect flag sources & fill sources details
 	s := store.NewFlags()
+	var sources []string
+
 	for _, provider := range config.SyncProviders {
 		s.FlagSources = append(s.FlagSources, provider.URI)
 		s.SourceMetadata[provider.URI] = store.SourceDetails{
 			Source:   provider.URI,
 			Selector: provider.Selector,
 		}
+		sources = append(sources, provider.URI)
 	}
 
 	// derive evaluator
 	evaluator := setupJSONEvaluator(logger, s)
 
-	// derive service
+	// derive services
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
 		evaluator,
 		recorder)
+
+	// todo - port as parameter and disable sync service by default
+	flagSyncService := flag_sync.NewSyncService(sources, flag_sync.SvcConfigurations{
+		Port:   8015,
+		Logger: logger.WithFields(zap.String("component", "FlagSyncService")),
+	})
 
 	// build sync providers
 	syncLogger := logger.WithFields(zap.String("component", "sync"))
@@ -90,6 +100,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	return &Runtime{
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
 		Evaluator: evaluator,
+		FlagSync:  flagSyncService,
 		Service:   connectService,
 		ServiceConfig: service.Configuration{
 			Port:           config.ServicePort,
