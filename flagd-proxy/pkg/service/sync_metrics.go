@@ -1,4 +1,4 @@
-package sync
+package service
 
 import (
 	"context"

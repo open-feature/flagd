@@ -1,4 +1,4 @@
-package sync
+package service
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	syncv1 "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	rpc "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	iservice "github.com/open-feature/flagd/core/pkg/service"
-	"github.com/open-feature/flagd/core/pkg/subscriptions"
+	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -30,7 +30,7 @@ type Server struct {
 	// oldHandler will not be required anymore when https://github.com/open-feature/flagd/issues/1088 is being worked on
 	oldHandler        *oldHandler
 	handler           *handler
-	config            iservice.Configuration
+	config            service.Configuration
 	grpcServer        *grpc.Server
 	metricServerReady bool
 }
@@ -53,7 +53,7 @@ func NewServer(ctx context.Context, logger *logger.Logger, store subscriptions.M
 	}
 }
 
-func (s *Server) Serve(ctx context.Context, svcConf iservice.Configuration) error {
+func (s *Server) Serve(ctx context.Context, svcConf service.Configuration) error {
 	s.config = svcConf
 	s.metricServerReady = true
 

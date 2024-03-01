@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	middlewaremock "github.com/open-feature/flagd/core/pkg/service/middleware/mock"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
 	"github.com/stretchr/testify/require"
 )
 
