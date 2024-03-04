@@ -2,7 +2,7 @@
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "myBoolFlag": {
-      "state": "ENABLED",
+      "state": "DISABLED",
       "variants": {
         "on": true,
         "off": false
