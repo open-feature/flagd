@@ -59,7 +59,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// build flag store, collect flag sources & fill sources details
 	s := store.NewFlags()
-	var sources []string
+	sources := []string{}
 
 	for _, provider := range config.SyncProviders {
 		s.FlagSources = append(s.FlagSources, provider.URI)
@@ -80,10 +80,15 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		recorder)
 
 	// todo - port as parameter and disable sync service by default
-	flagSyncService := flag_sync.NewSyncService(sources, flag_sync.SvcConfigurations{
-		Port:   8015,
-		Logger: logger.WithFields(zap.String("component", "FlagSyncService")),
+	flagSyncService, err := flag_sync.NewSyncService(flag_sync.SvcConfigurations{
+		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:    8015,
+		Sources: sources,
+		Store:   s,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating sync service: %w", err)
+	}
 
 	// build sync providers
 	syncLogger := logger.WithFields(zap.String("component", "sync"))

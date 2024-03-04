@@ -20,7 +20,7 @@ import (
 type Runtime struct {
 	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
-	FlagSync      flag_sync.SyncService
+	FlagSync      *flag_sync.Service
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration
 	SyncImpl      []sync.ISync
@@ -88,6 +88,7 @@ func (r *Runtime) Start() error {
 	defer func() {
 		r.Logger.Info("Shutting down server...")
 		r.Service.Shutdown()
+		r.FlagSync.Shutdown()
 		r.Logger.Info("Server successfully shutdown.")
 	}()
 
@@ -101,7 +102,12 @@ func (r *Runtime) Start() error {
 	})
 
 	g.Go(func() error {
-		return r.FlagSync.Serve()
+		err := r.FlagSync.Serve()
+		if err != nil {
+			return fmt.Errorf("error from server: %w", err)
+		}
+
+		return nil
 	})
 
 	<-gCtx.Done()
@@ -138,6 +144,11 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 			"flags": notifications,
 		},
 	})
+
+	// Emit flag syncs only when re-syncs are not needed
+	if !resyncRequired {
+		r.FlagSync.Emit()
+	}
 
 	return resyncRequired
 }

@@ -1,58 +1,69 @@
-package flag_sync
+package sync
 
 import (
-	"buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/sync/v1/syncv1connect"
-	"context"
 	"fmt"
-	"net/http"
+	"net"
 
+	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/store"
+	"google.golang.org/grpc"
 )
 
-// Service wrapper
-
 type SvcConfigurations struct {
-	Logger *logger.Logger
-	Port   uint16
+	Logger  *logger.Logger
+	Port    uint16
+	Sources []string
+	Store   *store.Flags
 }
 
-type SyncService struct {
-	logger  *logger.Logger
-	server  *http.Server
-	sources []string
+type Service struct {
+	logger   *logger.Logger
+	server   *grpc.Server
+	listener net.Listener
+	mux      *syncMultiplexer
 }
 
-func NewSyncService(sources []string, cfg SvcConfigurations) SyncService {
+func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	l := cfg.Logger
-	path, h := syncv1connect.NewFlagSyncServiceHandler(&syncHandler{})
-	l.Info(fmt.Sprintf("serving flag syncs at %s", path))
+	mux := newMux(cfg.Store, cfg.Sources)
 
-	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: h,
+	server := grpc.NewServer()
+	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
+		mux: mux,
+		log: l,
+	})
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	if err != nil {
+		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
-	return SyncService{
+	return &Service{
 		l,
-		&server,
-		sources,
-	}
+		server,
+		listener,
+		mux,
+	}, nil
 }
 
-func (s *SyncService) Serve() error {
-	err := s.server.ListenAndServe()
+func (s *Service) Serve() error {
+	err := s.server.Serve(s.listener)
 	if err != nil {
-		return err
+		return fmt.Errorf("error from server: %w", err)
 	}
 
 	return nil
 }
 
-func (s *SyncService) Shutdown() error {
-	err := s.server.Shutdown(context.Background())
+func (s *Service) Emit() {
+	err := s.mux.pushUpdates()
 	if err != nil {
-		return err
+		s.logger.Warn(fmt.Sprintf("error: %v", err))
+		return
 	}
+}
 
-	return nil
+func (s *Service) Shutdown() {
+	s.server.Stop()
 }
