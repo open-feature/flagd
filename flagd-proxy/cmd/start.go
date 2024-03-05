@@ -11,9 +11,9 @@ import (
 	"syscall"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/service"
-	syncServer "github.com/open-feature/flagd/core/pkg/service/sync"
-	"github.com/open-feature/flagd/core/pkg/subscriptions"
+	iService "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/flagd-proxy/pkg/service"
+	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
@@ -63,9 +63,9 @@ var startCmd = &cobra.Command{
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 		syncStore := subscriptions.NewManager(ctx, logger)
-		s := syncServer.NewServer(ctx, logger, syncStore)
+		s := service.NewServer(ctx, logger, syncStore)
 
-		cfg := service.Configuration{
+		cfg := iService.Configuration{
 			ReadinessProbe: func() bool { return true },
 			Port:           viper.GetUint16(portFlagName),
 			ManagementPort: viper.GetUint16(managementPortFlagName),

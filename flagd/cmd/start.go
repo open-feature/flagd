@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/core/pkg/runtime"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
+	"github.com/open-feature/flagd/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

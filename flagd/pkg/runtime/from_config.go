@@ -7,11 +7,11 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
-	flageval "github.com/open-feature/flagd/core/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
 	"go.uber.org/zap"
 )
 
