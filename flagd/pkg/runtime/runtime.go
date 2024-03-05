@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	msync "sync"
 	"syscall"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -20,7 +21,7 @@ import (
 type Runtime struct {
 	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
-	FlagSync      *flag_sync.Service
+	FlagSync      flag_sync.ISyncService
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration
 	SyncImpl      []sync.ISync
@@ -102,6 +103,9 @@ func (r *Runtime) Start() error {
 	})
 
 	g.Go(func() error {
+		// startup delay - allow all sync sources to finish the initial sync
+		<-time.After(5 * time.Second)
+
 		err := r.FlagSync.Serve()
 		if err != nil {
 			return fmt.Errorf("error from server: %w", err)

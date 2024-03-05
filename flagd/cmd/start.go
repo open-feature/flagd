@@ -18,16 +18,17 @@ import (
 const (
 	corsFlagName           = "cors-origin"
 	logFormatFlagName      = "log-format"
-	metricsExporter        = "metrics-exporter"
 	managementPortFlagName = "management-port"
+	metricsExporter        = "metrics-exporter"
 	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
 	sourcesFlagName        = "sources"
+	syncEnabledFlagName    = "syncEnabled"
+	syncPortFlagName       = "syncPort"
 	uriFlagName            = "uri"
-	docsLinkConfiguration  = "https://flagd.dev/reference/flagd-cli/flagd_start/"
 )
 
 func init() {
@@ -36,8 +37,11 @@ func init() {
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
+
 	flags.Int32P(managementPortFlagName, "m", 8014, "Port for management operations")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
+	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
+
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
@@ -63,6 +67,9 @@ func init() {
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
 
+	flags.BoolP(syncEnabledFlagName, "e", false, "Set true to enable gRPC sync service from flagd. "+
+		"This is disabled by default")
+
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
@@ -74,6 +81,8 @@ func init() {
 	_ = viper.BindPFlag(socketPathFlagName, flags.Lookup(socketPathFlagName))
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
+	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
+	_ = viper.BindPFlag(syncEnabledFlagName, flags.Lookup(syncEnabledFlagName))
 }
 
 // startCmd represents the start command
@@ -128,6 +137,8 @@ var startCmd = &cobra.Command{
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetUint16(portFlagName),
 			ServiceSocketPath: viper.GetString(socketPathFlagName),
+			SyncServicePort:   viper.GetUint16(syncPortFlagName),
+			WithSyncService:   viper.GetBool(syncEnabledFlagName),
 			SyncProviders:     syncProviders,
 		})
 		if err != nil {

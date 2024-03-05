@@ -10,6 +10,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+type ISyncService interface {
+	Serve() error
+	Emit()
+	Shutdown()
+}
+
 type SvcConfigurations struct {
 	Logger  *logger.Logger
 	Port    uint16
@@ -18,10 +24,10 @@ type SvcConfigurations struct {
 }
 
 type Service struct {
-	logger   *logger.Logger
-	server   *grpc.Server
 	listener net.Listener
+	logger   *logger.Logger
 	mux      *syncMultiplexer
+	server   *grpc.Server
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
@@ -40,10 +46,10 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	}
 
 	return &Service{
-		l,
-		server,
-		listener,
-		mux,
+		listener: listener,
+		logger:   l,
+		mux:      mux,
+		server:   server,
 	}, nil
 }
 
@@ -66,4 +72,20 @@ func (s *Service) Emit() {
 
 func (s *Service) Shutdown() {
 	s.server.Stop()
+}
+
+// NoopSyncService as a filler implementation of the sync service
+type NoopSyncService struct{}
+
+func (n *NoopSyncService) Serve() error {
+	// NOOP
+	return nil
+}
+
+func (n *NoopSyncService) Emit() {
+	// NOOP
+}
+
+func (n *NoopSyncService) Shutdown() {
+	// NOOP
 }

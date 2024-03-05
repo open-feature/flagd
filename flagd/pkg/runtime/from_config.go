@@ -29,6 +29,8 @@ type Config struct {
 	ServiceKeyPath    string
 	ServicePort       uint16
 	ServiceSocketPath string
+	SyncServicePort   uint16
+	WithSyncService   bool
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -74,20 +76,25 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	evaluator := setupJSONEvaluator(logger, s)
 
 	// derive services
+
+	// connect service
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
 		evaluator,
 		recorder)
 
-	// todo - port as parameter and disable sync service by default
-	flagSyncService, err := flag_sync.NewSyncService(flag_sync.SvcConfigurations{
-		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:    8015,
-		Sources: sources,
-		Store:   s,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error creating sync service: %w", err)
+	// flag sync service
+	var flagSyncService flag_sync.ISyncService = &flag_sync.NoopSyncService{}
+	if config.WithSyncService {
+		flagSyncService, err = flag_sync.NewSyncService(flag_sync.SvcConfigurations{
+			Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
+			Port:    config.SyncServicePort,
+			Sources: sources,
+			Store:   s,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error creating sync service: %w", err)
+		}
 	}
 
 	// build sync providers
