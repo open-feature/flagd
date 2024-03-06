@@ -6,15 +6,11 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/store"
 )
 
 func TestRegistration(t *testing.T) {
 	// given
-	mux := NewMux(getSimpleFlagStore())
-	err := mux.reFill()
+	mux, err := NewMux(getSimpleFlagStore())
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -93,8 +89,7 @@ func TestRegistration(t *testing.T) {
 
 func TestUpdateAndRemoval(t *testing.T) {
 	// given
-	mux := NewMux(getSimpleFlagStore())
-	err := mux.reFill()
+	mux, err := NewMux(getSimpleFlagStore())
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -149,8 +144,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 
 func TestGetAllFlags(t *testing.T) {
 	// given
-	mux := NewMux(getSimpleFlagStore())
-	err := mux.reFill()
+	mux, err := NewMux(getSimpleFlagStore())
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -179,30 +173,4 @@ func TestGetAllFlags(t *testing.T) {
 		t.Fatal("expected flags to be scoped")
 		return
 	}
-}
-
-// getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B
-func getSimpleFlagStore() (*store.Flags, []string) {
-	variants := map[string]any{
-		"true":  true,
-		"false": false,
-	}
-
-	flagStore := store.NewFlags()
-
-	flagStore.Set("flagA", model.Flag{
-		State:          "ENABLED",
-		DefaultVariant: "false",
-		Variants:       variants,
-		Source:         "A",
-	})
-
-	flagStore.Set("flagB", model.Flag{
-		State:          "ENABLED",
-		DefaultVariant: "true",
-		Variants:       variants,
-		Source:         "B",
-	})
-
-	return flagStore, []string{"A", "B"}
 }

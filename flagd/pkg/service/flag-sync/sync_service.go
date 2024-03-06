@@ -32,7 +32,10 @@ type Service struct {
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	l := cfg.Logger
-	mux := NewMux(cfg.Store, cfg.Sources)
+	mux, err := NewMux(cfg.Store, cfg.Sources)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing multiplexer: %w", err)
+	}
 
 	server := grpc.NewServer()
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
@@ -40,6 +43,7 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		log: l,
 	})
 
+	l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		return nil, fmt.Errorf("error creating listener: %w", err)
@@ -71,6 +75,10 @@ func (s *Service) Emit() {
 }
 
 func (s *Service) Shutdown() {
+	err := s.listener.Close()
+	if err != nil {
+		s.logger.Warn(fmt.Sprintf("error closing the listener: %v", err))
+	}
 	s.server.Stop()
 }
 

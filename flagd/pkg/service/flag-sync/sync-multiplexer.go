@@ -36,14 +36,16 @@ type payload struct {
 }
 
 // NewMux creates a new sync multiplexer
-func NewMux(store *store.Flags, sources []string) *Multiplexer {
-	return &Multiplexer{
+func NewMux(store *store.Flags, sources []string) (*Multiplexer, error) {
+	m := &Multiplexer{
 		store:         store,
 		sources:       sources,
 		subs:          map[interface{}]subscription{},
 		selectorSubs:  map[string]map[interface{}]subscription{},
 		selectorFlags: map[string]string{},
 	}
+
+	return m, m.reFill()
 }
 
 // Register a subscription
@@ -56,7 +58,6 @@ func (r *Multiplexer) Register(id interface{}, source string, con chan payload) 
 	}
 
 	var initSync string
-	var err error
 
 	if source == "" {
 		// subscribe for flags from all source
@@ -65,10 +66,7 @@ func (r *Multiplexer) Register(id interface{}, source string, con chan payload) 
 			channel: con,
 		}
 
-		initSync, err = r.store.String()
-		if err != nil {
-			return fmt.Errorf("errpr getting all flags: %w", err)
-		}
+		initSync = r.allFlags
 	} else {
 		// subscribe for specific source
 		s, ok := r.selectorSubs[source]
@@ -138,12 +136,12 @@ func (r *Multiplexer) Unregister(id interface{}, selector string) {
 
 // GetALlFlags per specific source
 func (r *Multiplexer) GetALlFlags(source string) (string, error) {
-	if source != "" && !slices.Contains(r.sources, source) {
-		return "", fmt.Errorf("no flag watcher setup for source %s", source)
-	}
-
 	if source == "" {
 		return r.allFlags, nil
+	}
+
+	if !slices.Contains(r.sources, source) {
+		return "", fmt.Errorf("no flag watcher setup for source %s", source)
 	}
 
 	return r.selectorFlags[source], nil
@@ -154,7 +152,7 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return strings.Join(r.store.FlagSources, ",")
+	return strings.Join(r.sources, ",")
 }
 
 // reFill local configuration values
