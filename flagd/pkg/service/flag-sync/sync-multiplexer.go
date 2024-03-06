@@ -152,7 +152,7 @@ func (r *syncMultiplexer) extract() error {
 	clear(r.selectorFlags)
 
 	all := r.store.GetAll()
-	bytes, err := json.Marshal(all)
+	bytes, err := json.Marshal(map[string]interface{}{"flags": all})
 	if err != nil {
 		return fmt.Errorf("error from marshallin: %w", err)
 	}
@@ -173,7 +173,7 @@ func (r *syncMultiplexer) extract() error {
 	}
 
 	for source, flags := range collector {
-		bytes, err := json.Marshal(flags)
+		bytes, err := json.Marshal(map[string]interface{}{"flags": flags})
 		if err != nil {
 			return fmt.Errorf("unable to marshal flags: %w", err)
 		}
