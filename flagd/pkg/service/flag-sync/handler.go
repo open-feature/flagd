@@ -12,7 +12,7 @@ import (
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	mux *syncMultiplexer
+	mux *Multiplexer
 	log *logger.Logger
 }
 
@@ -22,7 +22,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 
 	ctx := server.Context()
 
-	err := s.mux.register(ctx, selector, muxPayload)
+	err := s.mux.Register(ctx, selector, muxPayload)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				return fmt.Errorf("error sending stream response: %w", err)
 			}
 		case <-ctx.Done():
-			s.mux.unregister(ctx, selector)
+			s.mux.Unregister(ctx, selector)
 			s.log.Debug("context done, exiting stream request")
 			return nil
 		}
@@ -46,7 +46,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
-	flags, err := s.mux.getALlFlags(req.GetSelector())
+	flags, err := s.mux.GetALlFlags(req.GetSelector())
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest
 	*syncv1.GetMetadataResponse, error,
 ) {
 	metadata, err := structpb.NewStruct(map[string]interface{}{
-		"sources": s.mux.sourcesAsMetadata(),
+		"sources": s.mux.SourcesAsMetadata(),
 	})
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))

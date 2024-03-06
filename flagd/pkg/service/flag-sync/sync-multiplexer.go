@@ -11,7 +11,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-type syncMultiplexer struct {
+// Multiplexer abstract subscription handling and storage processing.
+// Flag configurations will be lazy loaded using reFill logic upon the calls to publish.
+type Multiplexer struct {
 	store   *store.Flags
 	sources []string
 
@@ -19,7 +21,7 @@ type syncMultiplexer struct {
 	selectorSubs map[string]map[interface{}]subscription // source specific subscriptions
 
 	allFlags      string            // pre-calculated all flags in store as a string
-	selectorFlags map[string]string // pre-calculated selector scoped flags
+	selectorFlags map[string]string // pre-calculated selector scoped flags in store as strings
 
 	mu sync.Mutex
 }
@@ -33,8 +35,9 @@ type payload struct {
 	flags string
 }
 
-func newMux(store *store.Flags, sources []string) *syncMultiplexer {
-	return &syncMultiplexer{
+// NewMux creates a new sync multiplexer
+func NewMux(store *store.Flags, sources []string) *Multiplexer {
+	return &Multiplexer{
 		store:         store,
 		sources:       sources,
 		subs:          map[interface{}]subscription{},
@@ -43,7 +46,8 @@ func newMux(store *store.Flags, sources []string) *syncMultiplexer {
 	}
 }
 
-func (r *syncMultiplexer) register(id interface{}, source string, con chan payload) error {
+// Register a subscription
+func (r *Multiplexer) Register(id interface{}, source string, con chan payload) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -90,11 +94,13 @@ func (r *syncMultiplexer) register(id interface{}, source string, con chan paylo
 	return nil
 }
 
-func (r *syncMultiplexer) pushUpdates() error {
+// Publish sync updates to subscriptions
+func (r *Multiplexer) Publish() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	err := r.extract()
+	// perform a refill prior to publishing
+	err := r.reFill()
 	if err != nil {
 		return err
 	}
@@ -114,7 +120,8 @@ func (r *syncMultiplexer) pushUpdates() error {
 	return nil
 }
 
-func (r *syncMultiplexer) unregister(id interface{}, selector string) {
+// Unregister a subscription
+func (r *Multiplexer) Unregister(id interface{}, selector string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -129,7 +136,8 @@ func (r *syncMultiplexer) unregister(id interface{}, selector string) {
 	delete(from, id)
 }
 
-func (r *syncMultiplexer) getALlFlags(source string) (string, error) {
+// GetALlFlags per specific source
+func (r *Multiplexer) GetALlFlags(source string) (string, error) {
 	if source != "" && !slices.Contains(r.sources, source) {
 		return "", fmt.Errorf("no flag watcher setup for source %s", source)
 	}
@@ -141,14 +149,16 @@ func (r *syncMultiplexer) getALlFlags(source string) (string, error) {
 	return r.selectorFlags[source], nil
 }
 
-func (r *syncMultiplexer) sourcesAsMetadata() string {
+// SourcesAsMetadata returns all known sources, comma separated to be used as service metadata
+func (r *Multiplexer) SourcesAsMetadata() string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	return strings.Join(r.store.FlagSources, ",")
 }
 
-func (r *syncMultiplexer) extract() error {
+// reFill local configuration values
+func (r *Multiplexer) reFill() error {
 	clear(r.selectorFlags)
 
 	all := r.store.GetAll()

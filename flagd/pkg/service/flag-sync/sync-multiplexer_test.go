@@ -13,8 +13,8 @@ import (
 
 func TestRegistration(t *testing.T) {
 	// given
-	mux := newMux(getSimpleFlagStore())
-	err := mux.extract()
+	mux := NewMux(getSimpleFlagStore())
+	err := mux.reFill()
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -57,7 +57,7 @@ func TestRegistration(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			// when
-			err := mux.register(test.id, test.source, test.connection)
+			err := mux.Register(test.id, test.source, test.connection)
 
 			// then
 			if !test.expectError && err != nil {
@@ -93,8 +93,8 @@ func TestRegistration(t *testing.T) {
 
 func TestUpdateAndRemoval(t *testing.T) {
 	// given
-	mux := newMux(getSimpleFlagStore())
-	err := mux.extract()
+	mux := NewMux(getSimpleFlagStore())
+	err := mux.reFill()
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -102,7 +102,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 
 	identifier := context.Background()
 	channel := make(chan payload, 1)
-	err = mux.register(identifier, "", channel)
+	err = mux.Register(identifier, "", channel)
 	if err != nil {
 		t.Fatal("error during subscription registration")
 		return
@@ -116,7 +116,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 	}
 
 	// when - updates are triggered
-	err = mux.pushUpdates()
+	err = mux.Publish()
 	if err != nil {
 		t.Fatal("failure to trigger update request on multiplexer")
 		return
@@ -131,8 +131,8 @@ func TestUpdateAndRemoval(t *testing.T) {
 	}
 
 	// when - subscription removed & update triggered
-	mux.unregister(identifier, "")
-	err = mux.pushUpdates()
+	mux.Unregister(identifier, "")
+	err = mux.Publish()
 	if err != nil {
 		t.Fatal("failure to trigger update request on multiplexer")
 		return
@@ -149,15 +149,15 @@ func TestUpdateAndRemoval(t *testing.T) {
 
 func TestGetAllFlags(t *testing.T) {
 	// given
-	mux := newMux(getSimpleFlagStore())
-	err := mux.extract()
+	mux := NewMux(getSimpleFlagStore())
+	err := mux.reFill()
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
 	}
 
 	// when - get all with open scope
-	flags, err := mux.getALlFlags("")
+	flags, err := mux.GetALlFlags("")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return
@@ -169,7 +169,7 @@ func TestGetAllFlags(t *testing.T) {
 	}
 
 	// when - get all with a scope
-	flags, err = mux.getALlFlags("A")
+	flags, err = mux.GetALlFlags("A")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return

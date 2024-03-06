@@ -26,13 +26,13 @@ type SvcConfigurations struct {
 type Service struct {
 	listener net.Listener
 	logger   *logger.Logger
-	mux      *syncMultiplexer
+	mux      *Multiplexer
 	server   *grpc.Server
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	l := cfg.Logger
-	mux := newMux(cfg.Store, cfg.Sources)
+	mux := NewMux(cfg.Store, cfg.Sources)
 
 	server := grpc.NewServer()
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
@@ -63,7 +63,7 @@ func (s *Service) Serve() error {
 }
 
 func (s *Service) Emit() {
-	err := s.mux.pushUpdates()
+	err := s.mux.Publish()
 	if err != nil {
 		s.logger.Warn(fmt.Sprintf("error: %v", err))
 		return
