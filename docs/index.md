@@ -13,6 +13,7 @@ With flagd you can:
 * perform pseudorandom assignments for experimentation
 * perform progressive roll-outs of new features
 * aggregate flag definitions from multiple sources
+* expose aggregated flags as a gRPC stream to be used by in-process providers
 
 It doesn't include a UI, management console or a persistence layer.
 It's configurable entirely via a [POSIX-style CLI](./reference/flagd-cli/flagd.md).
