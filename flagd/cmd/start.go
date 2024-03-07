@@ -67,7 +67,7 @@ func init() {
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
 
-	flags.BoolP(syncEnabledFlagName, "e", false, "Set true to enable gRPC sync service from flagd. "+
+	flags.BoolP(syncEnabledFlagName, "e", false, "Enables the gRPC sync service from flagd. "+
 		"This is disabled by default")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
