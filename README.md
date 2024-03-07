@@ -25,7 +25,7 @@ flagd is a feature flag daemon with a Unix philosophy. Think of it as a ready-ma
 
 ## Features
 
-- 🌐 OpenFeature compliant and [speaks your language](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=FlagD).
+- 🌐 OpenFeature compliant and [speaks your language](https://openfeature.dev/ecosystem?instant_search%5BrefinementList%5D%5Bvendor%5D%5B0%5D=flagd).
 - 🆕 Easy to [extend to new languages](https://flagd.dev/reference/providers/).
 - 🔄 Supports multiple data sources simultaneously.
 - 🕒 Feature Flag updates occur in near real-time.
