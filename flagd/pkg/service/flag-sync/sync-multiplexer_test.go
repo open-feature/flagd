@@ -151,7 +151,7 @@ func TestGetAllFlags(t *testing.T) {
 	}
 
 	// when - get all with open scope
-	flags, err := mux.GetALlFlags("")
+	flags, err := mux.GetAllFlags("")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return
@@ -163,7 +163,7 @@ func TestGetAllFlags(t *testing.T) {
 	}
 
 	// when - get all with a scope
-	flags, err = mux.GetALlFlags("A")
+	flags, err = mux.GetAllFlags("A")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return

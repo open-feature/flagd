@@ -26,8 +26,8 @@ const (
 	serverKeyPathFlagName  = "server-key-path"
 	socketPathFlagName     = "socket-path"
 	sourcesFlagName        = "sources"
-	syncEnabledFlagName    = "syncEnabled"
-	syncPortFlagName       = "syncPort"
+	syncEnabledFlagName    = "sync-enabled"
+	syncPortFlagName       = "sync-port"
 	uriFlagName            = "uri"
 )
 

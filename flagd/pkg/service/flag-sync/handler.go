@@ -46,7 +46,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
-	flags, err := s.mux.GetALlFlags(req.GetSelector())
+	flags, err := s.mux.GetAllFlags(req.GetSelector())
 	if err != nil {
 		return nil, err
 	}

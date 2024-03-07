@@ -14,14 +14,14 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	flag_sync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
+	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {
 	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
-	FlagSync      flag_sync.ISyncService
+	FlagSync      flagsync.ISyncService
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration
 	SyncImpl      []sync.ISync

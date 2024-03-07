@@ -12,7 +12,7 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
-	flag_sync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
+	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"go.uber.org/zap"
 )
 
@@ -84,9 +84,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		recorder)
 
 	// flag sync service
-	var flagSyncService flag_sync.ISyncService = &flag_sync.NoopSyncService{}
+	var flagSyncService flagsync.ISyncService = &flagsync.NoopSyncService{}
 	if config.WithSyncService {
-		flagSyncService, err = flag_sync.NewSyncService(flag_sync.SvcConfigurations{
+		flagSyncService, err = flagsync.NewSyncService(flagsync.SvcConfigurations{
 			Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
 			Port:    config.SyncServicePort,
 			Sources: sources,

@@ -134,8 +134,8 @@ func (r *Multiplexer) Unregister(id interface{}, selector string) {
 	delete(from, id)
 }
 
-// GetALlFlags per specific source
-func (r *Multiplexer) GetALlFlags(source string) (string, error) {
+// GetAllFlags per specific source
+func (r *Multiplexer) GetAllFlags(source string) (string, error) {
 	if source == "" {
 		return r.allFlags, nil
 	}
