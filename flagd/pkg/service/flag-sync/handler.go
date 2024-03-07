@@ -37,7 +37,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 			}
 		case <-ctx.Done():
 			s.mux.Unregister(ctx, selector)
-			s.log.Debug("context done, exiting stream request")
+			s.log.Debug("context complete and exiting stream request")
 			return nil
 		}
 	}
@@ -64,7 +64,7 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest
 	})
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
-		return nil, fmt.Errorf("error constructing response")
+		return nil, fmt.Errorf("error constructing metadata response")
 	}
 
 	return &syncv1.GetMetadataResponse{

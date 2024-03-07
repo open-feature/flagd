@@ -106,7 +106,7 @@ func (r *Runtime) Start() error {
 		// startup delay - allow all sync sources to finish the initial sync
 		<-time.After(5 * time.Second)
 
-		err := r.FlagSync.Serve()
+		err := r.FlagSync.Start()
 		if err != nil {
 			return fmt.Errorf("error from server: %w", err)
 		}

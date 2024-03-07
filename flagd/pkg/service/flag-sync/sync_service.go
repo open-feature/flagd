@@ -11,8 +11,11 @@ import (
 )
 
 type ISyncService interface {
-	Serve() error
+	// Start the sync service
+	Start() error
+	// Emit updates for sync listeners
 	Emit()
+	// Shutdown the sync service
 	Shutdown()
 }
 
@@ -57,10 +60,10 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Serve() error {
+func (s *Service) Start() error {
 	err := s.server.Serve(s.listener)
 	if err != nil {
-		return fmt.Errorf("error from server: %w", err)
+		return fmt.Errorf("error from server start: %w", err)
 	}
 
 	return nil
@@ -69,7 +72,7 @@ func (s *Service) Serve() error {
 func (s *Service) Emit() {
 	err := s.mux.Publish()
 	if err != nil {
-		s.logger.Warn(fmt.Sprintf("error: %v", err))
+		s.logger.Warn(fmt.Sprintf("error while publishing sync streams: %v", err))
 		return
 	}
 }
@@ -82,10 +85,11 @@ func (s *Service) Shutdown() {
 	s.server.Stop()
 }
 
-// NoopSyncService as a filler implementation of the sync service
+// NoopSyncService as a filler implementation of the sync service.
+// This can be used as a default implementation and avoid unnecessary null checks or service enabled checks in runtime.
 type NoopSyncService struct{}
 
-func (n *NoopSyncService) Serve() error {
+func (n *NoopSyncService) Start() error {
 	// NOOP
 	return nil
 }

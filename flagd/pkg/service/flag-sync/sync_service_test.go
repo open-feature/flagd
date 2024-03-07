@@ -32,14 +32,14 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 
 	group, ctx := errgroup.WithContext(context.Background())
 	group.Go(func() error {
-		err := service.Serve()
+		err := service.Start()
 		if err != nil {
 			return err
 		}
 		return nil
 	})
 
-	// when - dial the server
+	// when - derive a client for sync service
 	con, err := grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatal(fmt.Printf("error creating grpc dial ctx: %v", err))
@@ -96,6 +96,8 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 	if asMap["sources"] != "A,B" {
 		t.Fatal("incorrect sources entry in metadata")
 	}
+
+	//
 
 	// validate shutdown
 	go func() {
