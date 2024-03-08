@@ -6,7 +6,7 @@ description: flagd as a gRPC sync service
 
 flagd can expose a gRPC sync service, allowing in-process providers to obtain their flag definitions.
 This mode is **disabled** by default, and you can enable it by using startup flag `--sync-enabled` (or `-e` shorthand flag).
-The gRPC sync stream contains flag configurations currently configured at flagd as [sync-configurations](./sync-configuration.md).
+The gRPC sync stream contains flag definitions currently configured at flagd as [sync-configurations](./sync-configuration.md).
 
 ```mermaid
 ---
