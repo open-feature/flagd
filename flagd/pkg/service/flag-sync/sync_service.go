@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"slices"
+	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -15,8 +17,9 @@ import (
 type ISyncService interface {
 	// Start the sync service
 	Start(context.Context) error
+
 	// Emit updates for sync listeners
-	Emit()
+	Emit(isResync bool, source string)
 }
 
 type SvcConfigurations struct {
@@ -31,6 +34,8 @@ type Service struct {
 	logger   *logger.Logger
 	mux      *Multiplexer
 	server   *grpc.Server
+
+	startupTracker syncTracker
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
@@ -57,6 +62,10 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		logger:   l,
 		mux:      mux,
 		server:   server,
+		startupTracker: syncTracker{
+			sources:  slices.Clone(cfg.Sources),
+			doneChan: make(chan interface{}),
+		},
 	}, nil
 }
 
@@ -65,6 +74,16 @@ func (s *Service) Start(ctx context.Context) error {
 	g, lCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
+		// delay server start until we see all syncs from known sync sources OR timeout
+		select {
+		case <-time.After(5 * time.Second):
+			s.logger.Warn("timeout waiting for all sync sources to complete their initial sync. " +
+				"continuing sync service")
+			break
+		case <-s.startupTracker.done():
+			break
+		}
+
 		err := s.server.Serve(s.listener)
 		if err != nil {
 			s.logger.Info(fmt.Sprintf("error from sync server start: %v", err))
@@ -87,11 +106,15 @@ func (s *Service) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) Emit() {
-	err := s.mux.Publish()
-	if err != nil {
-		s.logger.Warn(fmt.Sprintf("error while publishing sync streams: %v", err))
-		return
+func (s *Service) Emit(isResync bool, source string) {
+	s.startupTracker.trackAndUpdate(source)
+
+	if !isResync {
+		err := s.mux.Publish()
+		if err != nil {
+			s.logger.Warn(fmt.Sprintf("error while publishing sync streams: %v", err))
+			return
+		}
 	}
 }
 
@@ -103,6 +126,30 @@ func (s *Service) shutdown() {
 	s.server.Stop()
 }
 
+// syncTracker is a helper to track sync payloads at the startup
+// It simply starts with known set of sync sources and remove
+type syncTracker struct {
+	sources  []string
+	doneChan chan interface{}
+}
+
+func (t *syncTracker) done() <-chan interface{} {
+	return t.doneChan
+}
+
+func (t *syncTracker) trackAndUpdate(source string) {
+	index := slices.Index(t.sources, source)
+	if index < 0 {
+		return
+	}
+
+	t.sources = slices.Delete(t.sources, index, index+1)
+
+	if len(t.sources) == 0 {
+		close(t.doneChan)
+	}
+}
+
 // NoopSyncService as a filler implementation of the sync service.
 // This can be used as a default implementation and avoid unnecessary null checks or service enabled checks in runtime.
 type NoopSyncService struct{}
@@ -112,6 +159,6 @@ func (n *NoopSyncService) Start(context.Context) error {
 	return nil
 }
 
-func (n *NoopSyncService) Emit() {
+func (n *NoopSyncService) Emit(bool, string) {
 	// NOOP
 }

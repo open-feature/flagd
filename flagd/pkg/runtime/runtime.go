@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	msync "sync"
 	"syscall"
-	"time"
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -102,9 +101,6 @@ func (r *Runtime) Start() error {
 	})
 
 	g.Go(func() error {
-		// startup delay - allow all sync sources to finish the initial sync
-		<-time.After(5 * time.Second)
-
 		err := r.FlagSync.Start(gCtx)
 		if err != nil {
 			return fmt.Errorf("error from sync server: %w", err)
@@ -147,10 +143,7 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 		},
 	})
 
-	// Emit flag syncs only when re-syncs are not needed
-	if !resyncRequired {
-		r.FlagSync.Emit()
-	}
+	r.FlagSync.Emit(resyncRequired, payload.Source)
 
 	return resyncRequired
 }

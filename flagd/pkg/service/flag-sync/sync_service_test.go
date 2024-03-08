@@ -38,6 +38,11 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		close(doneChan)
 	}()
 
+	// trigger manual emits matching sources, so that service can start
+	for _, source := range sources {
+		service.Emit(false, source)
+	}
+
 	// when - derive a client for sync service
 	con, err := grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -49,7 +54,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 
 	// then
 
-	// sync flags
+	// sync flags request
 	flags, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{})
 	if err != nil {
 		t.Fatal(fmt.Printf("error from sync request: %v", err))
@@ -64,6 +69,37 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 
 	if len(syncRsp.GetFlagConfiguration()) == 0 {
 		t.Error("expected non empty sync response, but got empty")
+	}
+
+	// validate emits
+	dataReceived := make(chan interface{})
+	go func() {
+		_, err := flags.Recv()
+		if err != nil {
+			return
+		}
+
+		dataReceived <- nil
+	}()
+
+	// Emit as a resync
+	service.Emit(true, "A")
+
+	select {
+	case <-dataReceived:
+		t.Fatal("expected no data as this is a resync")
+	case <-time.After(1 * time.Second):
+		break
+	}
+
+	// Emit as a resync
+	service.Emit(false, "A")
+
+	select {
+	case <-dataReceived:
+		break
+	case <-time.After(1 * time.Second):
+		t.Fatal("expected data but timeout waiting for sync")
 	}
 
 	// fetch all flags
