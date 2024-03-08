@@ -27,8 +27,10 @@ You can read more about the merge strategy in our dedicated [concepts guide on s
 
 If you specify a `selector` in the gRPC sync request, the gRPC service will attempt match the provided selector value to a source, and stream just the flags identified in that source.
 For example, if `selector` is set to `myFlags.json`, service will stream flags observed from `myFlags.json` file.
+Note that, to observe flags from `myFlags.json` file, you may use startup option `uri` like `--uri myFlags.json` or `source` option `--sources='[{"uri":"myFlags.json", provider":"file"}]`.
 And the request will fail if there is no flag source matching the requested `selector`.
-flagd provider implementations expose the ability to define the `selector` value.
+
+flagd provider implementations expose the ability to define the `selector` value. Please consider below example for Java,
 
 ```java
 final FlagdProvider flagdProvider =
