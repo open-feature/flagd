@@ -25,7 +25,7 @@ You may change the default port of the service using startup flag `--sync-port` 
 By default, the gRPC stream exposes all the flag configurations, with conflicting flag keys merged following flag's standard merge strategy.
 You can read more about the merge strategy in our dedicated [concepts guide on syncs](../concepts/syncs.md).
 
-If you specify a `selector` in the gRPC sync request, the gRPC service will attempt match the provided selector valur to a source and stream specific flags.
+If you specify a `selector` in the gRPC sync request, the gRPC service will attempt match the provided selector value to a source, and stream just the flags identified in that source.
 For example, if `selector` is set to `myFlags.json`, service will stream flags observed from `myFlags.json` file.
 And the request will fail if there is no flag source matching the requested `selector`.
 flagd provider implementations expose the ability to define the `selector` value.
