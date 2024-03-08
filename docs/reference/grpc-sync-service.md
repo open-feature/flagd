@@ -22,7 +22,7 @@ erDiagram
 
 You may change the default port of the service using startup flag `--sync-port` (or `-g` shothand flag).
 
-By default, the gRPC stream expose all the flag configurations merged following merge strategy of flagd.
+By default, the gRPC stream exposes all the flag configurations, with conflicting flag keys merged following flag's standard merge strategy.
 You can read more about the merge strategy in our dedicated [concepts guide on syncs](../concepts/syncs.md).
 
 If you specify a `selector` in the gRPC sync request, the gRPC service will attempt match the provided selector valur to a source and stream specific flags.
