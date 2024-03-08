@@ -89,7 +89,6 @@ func (r *Runtime) Start() error {
 	defer func() {
 		r.Logger.Info("Shutting down server...")
 		r.Service.Shutdown()
-		r.FlagSync.Shutdown()
 		r.Logger.Info("Server successfully shutdown.")
 	}()
 
@@ -106,15 +105,14 @@ func (r *Runtime) Start() error {
 		// startup delay - allow all sync sources to finish the initial sync
 		<-time.After(5 * time.Second)
 
-		err := r.FlagSync.Start()
+		err := r.FlagSync.Start(gCtx)
 		if err != nil {
-			return fmt.Errorf("error from server: %w", err)
+			return fmt.Errorf("error from sync server: %w", err)
 		}
 
 		return nil
 	})
 
-	<-gCtx.Done()
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("errgroup closed with error: %w", err)
 	}

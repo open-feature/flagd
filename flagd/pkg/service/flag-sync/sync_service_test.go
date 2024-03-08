@@ -9,7 +9,6 @@ import (
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -30,14 +29,14 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		return
 	}
 
-	group, ctx := errgroup.WithContext(context.Background())
-	group.Go(func() error {
-		err := service.Start()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	doneChan := make(chan interface{})
+
+	go func() {
+		// error ignored, tests will fail if start is not successful
+		_ = service.Start(ctx)
+		close(doneChan)
+	}()
 
 	// when - derive a client for sync service
 	con, err := grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -97,15 +96,14 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		t.Fatal("incorrect sources entry in metadata")
 	}
 
-	//
-
-	// validate shutdown
+	// validate shutdown from context cancellation
 	go func() {
-		service.Shutdown()
+		cancelFunc()
 	}()
 
 	select {
-	case <-ctx.Done():
+	case <-doneChan:
+		// exit successful
 		return
 	case <-time.After(2 * time.Second):
 		t.Fatal("service did not exist within sufficient timeframe")
