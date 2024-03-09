@@ -4,6 +4,18 @@ import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
 import { getString, isValidJson } from "./utils";
+import { Editor } from "@monaco-editor/react";
+import { Observable } from "react-use/lib/useObservable";
+
+declare global {
+  var component$: Observable<{ ref: HTMLElement}>;
+}
+
+// see: https://github.com/squidfunk/mkdocs-material/discussions/3429
+const BODY_COLOR_SCHEME_ATTR = 'data-md-color-scheme';
+const PALETTE_SWITCH_SELECTOR = '[data-md-component=palette]';
+const getPalette = () => document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
+  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== 'default' ? 'custom-dark' : 'custom';
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
@@ -29,6 +41,7 @@ function App() {
   const [validFeatureDefinition, setValidFeatureDefinition] = useState(true);
   const [validEvaluationContext, setValidEvaluationContext] = useState(true);
   const [status, setStatus] = useState<"success" | "failure">("success");
+  const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(getPalette());
 
   const resetInputs = useCallback(() => {
     setOutput("");
@@ -76,6 +89,19 @@ function App() {
       setValidEvaluationContext(false);
     }
   }, [evaluationContext]);
+
+  useEffect(() => {
+    // update the monaco theme based on the mkdocs theme, see: https://github.com/squidfunk/mkdocs-material/discussions/3429
+    const ref = document.querySelector(PALETTE_SWITCH_SELECTOR);
+    const subscription = window.component$?.subscribe((component) => {
+      if (component?.ref === ref) {
+        updateEditorTheme(getPalette());
+      }
+    });
+    return () => {
+      subscription?.unsubscribe();
+    };
+  });
 
   const evaluate = () => {
     setShowOutput(true);
@@ -222,19 +248,49 @@ function App() {
             }}
           >
             <h4>Feature definition</h4>
-            <textarea
-              style={{
-                width: "100%",
-                minHeight: "500px",
-                boxSizing: "border-box",
-                resize: "vertical",
-                padding: "8px",
-                ...codeStyle,
-              }}
-              name="feature-definition"
-              value={featureDefinition}
-              onChange={(e) => setFeatureDefinition(e.target.value)}
-            />
+            <div style={{ backgroundColor: codeStyle.backgroundColor }} >
+              <Editor
+                theme={editorTheme}
+                width="100%"
+                height="500px"
+                defaultLanguage="json"
+                value={featureDefinition}
+                options={{
+                  minimap: { enabled: false }
+                }}
+                beforeMount={(monaco) => {
+                  // inherent from the normal vs/vs-dark themes, but with transparent backgrounds
+                  // so our CSS variables can be used for that (css vars cant be used in the editor theme directly)
+                  monaco?.editor.defineTheme('custom-dark', {
+                    base: 'vs-dark', // inherent all the normal "dark" syntax highlighting
+                    inherit: true,
+                    rules: [],
+                    colors: {
+                      "editor.foreground": "#00000000",
+                      "editor.background": "#00000000",
+                    }
+                  });
+                  monaco?.editor.defineTheme('custom', {
+                    base: 'vs', // inherent all the normal "light" syntax highlighting
+                    inherit: true,
+                    rules: [],
+                    colors: {
+                      "editor.foreground": "#00000000",
+                      "editor.background": "#00000000",
+                    }
+                  });
+                  monaco?.languages.json.jsonDefaults.setDiagnosticsOptions({
+                    enableSchemaRequest: true,
+                    allowComments: true,
+                  });
+                }}
+                onChange={(value) => {
+                  if (value) {
+                    setFeatureDefinition(value);
+                  }
+                }}
+              />
+            </div>
           </div>
           <div
             style={{
@@ -317,7 +373,7 @@ function App() {
               </p>
               {typeof parsedOutput === "object" ? (
                 <div style={{ margin: '0.6rem 0 0.6rem 0' }} >
-                  {Object.entries(parsedOutput).map(([key, value]) => (
+                {Object.entries(parsedOutput).map(([key, value]) => (
                     <div key={key}>
                       <strong>{key}:</strong> {JSON.stringify(value)}
                     </div>
