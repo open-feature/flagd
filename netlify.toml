@@ -9,3 +9,9 @@
     poetry install -v &&
     mkdocs build
   """
+
+[[headers]]
+  # Relax cross origin restrictions for schemas, so they can be requested by front-end apps.
+  for = "/schema/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
