@@ -1,6 +1,10 @@
 import { FeatureDefinition } from "./types";
 import type { EvaluationContext } from "@openfeature/core";
 
+const schemaMixin = {
+  $schema: "https://flagd.dev/schema/v0/flags.json",
+};
+
 export function prettyPrintJson(json: string): string {
   return JSON.stringify(JSON.parse(json), null, 2);
 }
@@ -8,7 +12,7 @@ export function prettyPrintJson(json: string): string {
 export function featureDefinitionToPrettyJson(
   definition: FeatureDefinition
 ): string {
-  return prettyPrintJson(JSON.stringify(definition));
+  return prettyPrintJson(JSON.stringify({ ...schemaMixin, ...definition }));
 }
 
 export function contextToPrettyJson(context: EvaluationContext) {
