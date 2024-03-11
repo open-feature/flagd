@@ -171,6 +171,10 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 // yamlToJSON is a generic helper function to convert
 // yaml to json
 func yamlToJSON(rawFile []byte) (string, error) {
+	if len(rawFile) == 0 {
+		return "", nil
+	}
+
 	var ms map[string]interface{}
 	// yaml.Unmarshal unmarshals to map[interface]interface{}
 	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
