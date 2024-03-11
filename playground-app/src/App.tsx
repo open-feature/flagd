@@ -266,7 +266,6 @@ function App() {
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.foreground": "#00000000",
                       "editor.background": "#00000000",
                     }
                   });
@@ -275,7 +274,6 @@ function App() {
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.foreground": "#00000000",
                       "editor.background": "#00000000",
                     }
                   });
