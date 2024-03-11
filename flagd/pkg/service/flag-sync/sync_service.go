@@ -149,16 +149,3 @@ func (t *syncTracker) trackAndUpdate(source string) {
 		close(t.doneChan)
 	}
 }
-
-// NoopSyncService as a filler implementation of the sync service.
-// This can be used as a default implementation and avoid unnecessary null checks or service enabled checks in runtime.
-type NoopSyncService struct{}
-
-func (n *NoopSyncService) Start(context.Context) error {
-	// NOOP
-	return nil
-}
-
-func (n *NoopSyncService) Emit(bool, string) {
-	// NOOP
-}

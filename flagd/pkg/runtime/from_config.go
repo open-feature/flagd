@@ -30,7 +30,6 @@ type Config struct {
 	ServicePort       uint16
 	ServiceSocketPath string
 	SyncServicePort   uint16
-	WithSyncService   bool
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -84,17 +83,14 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		recorder)
 
 	// flag sync service
-	var flagSyncService flagsync.ISyncService = &flagsync.NoopSyncService{}
-	if config.WithSyncService {
-		flagSyncService, err = flagsync.NewSyncService(flagsync.SvcConfigurations{
-			Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
-			Port:    config.SyncServicePort,
-			Sources: sources,
-			Store:   s,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("error creating sync service: %w", err)
-		}
+	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
+		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:    config.SyncServicePort,
+		Sources: sources,
+		Store:   s,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating sync service: %w", err)
 	}
 
 	// build sync providers
