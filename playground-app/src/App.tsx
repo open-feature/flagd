@@ -4,18 +4,45 @@ import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
 import { getString, isValidJson } from "./utils";
-import { Editor } from "@monaco-editor/react";
+import { BeforeMount, Editor } from "@monaco-editor/react";
 import { Observable } from "react-use/lib/useObservable";
 
 declare global {
-  var component$: Observable<{ ref: HTMLElement}>;
+  var component$: Observable<{ ref: HTMLElement }>;
 }
 
 // see: https://github.com/squidfunk/mkdocs-material/discussions/3429
-const BODY_COLOR_SCHEME_ATTR = 'data-md-color-scheme';
-const PALETTE_SWITCH_SELECTOR = '[data-md-component=palette]';
-const getPalette = () => document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
-  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== 'default' ? 'custom-dark' : 'custom';
+const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
+const PALETTE_SWITCH_SELECTOR = "[data-md-component=palette]";
+const getPalette = () =>
+  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
+  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
+    ? "custom-dark"
+    : "custom";
+const monacoBeforeMount: BeforeMount = (monaco) => {
+  // inherent from the normal vs/vs-dark themes, but with transparent backgrounds
+  // so our CSS variables can be used for that (css vars cant be used in the editor theme directly)
+  monaco?.editor.defineTheme("custom-dark", {
+    base: "vs-dark", // inherent all the normal "dark" syntax highlighting
+    inherit: true,
+    rules: [],
+    colors: {
+      "editor.background": "#00000000",
+    },
+  });
+  monaco?.editor.defineTheme("custom", {
+    base: "vs", // inherent all the normal "light" syntax highlighting
+    inherit: true,
+    rules: [],
+    colors: {
+      "editor.background": "#00000000",
+    },
+  });
+  monaco?.languages.json.jsonDefaults.setDiagnosticsOptions({
+    enableSchemaRequest: true,
+    allowComments: false, // we don't support JSON comments in flagd
+  });
+};
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
@@ -41,7 +68,9 @@ function App() {
   const [validFeatureDefinition, setValidFeatureDefinition] = useState(true);
   const [validEvaluationContext, setValidEvaluationContext] = useState(true);
   const [status, setStatus] = useState<"success" | "failure">("success");
-  const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(getPalette());
+  const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
+    getPalette()
+  );
 
   const resetInputs = useCallback(() => {
     setOutput("");
@@ -162,11 +191,11 @@ function App() {
   const isCompact = useMedia("(max-width: 1220px)");
 
   const codeStyle = {
-    border: 'none',
-    backgroundColor: 'var(--md-code-bg-color)',
-    color: 'var(--md-code-fg-color)',
-    fontFeatureSettings: 'kern',
-    fontFamily: 'var(--md-code-font-family)'
+    border: "none",
+    backgroundColor: "var(--md-code-bg-color)",
+    color: "var(--md-code-fg-color)",
+    fontFeatureSettings: "kern",
+    fontFamily: "var(--md-code-font-family)",
   };
 
   return (
@@ -248,40 +277,18 @@ function App() {
             }}
           >
             <h4>Feature definition</h4>
-            <div style={{ backgroundColor: codeStyle.backgroundColor }} >
+            <div style={{ backgroundColor: codeStyle.backgroundColor }}>
               <Editor
                 theme={editorTheme}
                 width="100%"
                 height="500px"
-                defaultLanguage="json"
+                language="json"
                 value={featureDefinition}
                 options={{
-                  minimap: { enabled: false }
+                  minimap: { enabled: false },
+                  lineNumbers: "off",
                 }}
-                beforeMount={(monaco) => {
-                  // inherent from the normal vs/vs-dark themes, but with transparent backgrounds
-                  // so our CSS variables can be used for that (css vars cant be used in the editor theme directly)
-                  monaco?.editor.defineTheme('custom-dark', {
-                    base: 'vs-dark', // inherent all the normal "dark" syntax highlighting
-                    inherit: true,
-                    rules: [],
-                    colors: {
-                      "editor.background": "#00000000",
-                    }
-                  });
-                  monaco?.editor.defineTheme('custom', {
-                    base: 'vs', // inherent all the normal "light" syntax highlighting
-                    inherit: true,
-                    rules: [],
-                    colors: {
-                      "editor.background": "#00000000",
-                    }
-                  });
-                  monaco?.languages.json.jsonDefaults.setDiagnosticsOptions({
-                    enableSchemaRequest: true,
-                    allowComments: true,
-                  });
-                }}
+                beforeMount={monacoBeforeMount}
                 onChange={(value) => {
                   if (value) {
                     setFeatureDefinition(value);
@@ -335,19 +342,26 @@ function App() {
             </div>
             <div>
               <h4>Evaluation context</h4>
-              <textarea
-                style={{
-                  width: "100%",
-                  minHeight: "80px",
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                  padding: "8px",
-                  ...codeStyle,
-                }}
-                name="evaluation-context"
-                value={evaluationContext}
-                onChange={(e) => setEvaluationContext(e.target.value)}
-              />
+              <div style={{ backgroundColor: codeStyle.backgroundColor }}>
+                <Editor
+                  theme={editorTheme}
+                  width="100%"
+                  height="80px"
+                  language="json"
+                  options={{
+                    minimap: { enabled: false },
+                    lineNumbers: "off",
+                    folding: false,
+                  }}
+                  beforeMount={monacoBeforeMount}
+                  value={evaluationContext}
+                  onChange={(value) => {
+                    if (value) {
+                      setEvaluationContext(value);
+                    }
+                  }}
+                />
+              </div>
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
               <button
@@ -370,8 +384,8 @@ function App() {
                 {status === "success" ? "Success" : "Failure"}
               </p>
               {typeof parsedOutput === "object" ? (
-                <div style={{ margin: '0.6rem 0 0.6rem 0' }} >
-                {Object.entries(parsedOutput).map(([key, value]) => (
+                <div style={{ margin: "0.6rem 0 0.6rem 0" }}>
+                  {Object.entries(parsedOutput).map(([key, value]) => (
                     <div key={key}>
                       <strong>{key}:</strong> {JSON.stringify(value)}
                     </div>
