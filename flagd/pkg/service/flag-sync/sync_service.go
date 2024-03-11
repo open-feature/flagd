@@ -107,7 +107,7 @@ func (s *Service) Start(ctx context.Context) error {
 }
 
 func (s *Service) Emit(isResync bool, source string) {
-	s.startupTracker.trackAndUpdate(source)
+	s.startupTracker.trackAndRemove(source)
 
 	if !isResync {
 		err := s.mux.Publish()
@@ -137,7 +137,8 @@ func (t *syncTracker) done() <-chan interface{} {
 	return t.doneChan
 }
 
-func (t *syncTracker) trackAndUpdate(source string) {
+// trackAndRemove tracks sources and remove channel if all sources that are tracking are complete.
+func (t *syncTracker) trackAndRemove(source string) {
 	index := slices.Index(t.sources, source)
 	if index < 0 {
 		return
