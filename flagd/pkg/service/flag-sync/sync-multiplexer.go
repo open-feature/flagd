@@ -23,7 +23,7 @@ type Multiplexer struct {
 	allFlags      string            // pre-calculated all flags in store as a string
 	selectorFlags map[string]string // pre-calculated selector scoped flags in store as strings
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 type subscription struct {
@@ -136,6 +136,9 @@ func (r *Multiplexer) Unregister(id interface{}, selector string) {
 
 // GetAllFlags per specific source
 func (r *Multiplexer) GetAllFlags(source string) (string, error) {
+	r.mu.RLocker()
+	defer r.mu.RUnlock()
+
 	if source == "" {
 		return r.allFlags, nil
 	}
@@ -149,8 +152,8 @@ func (r *Multiplexer) GetAllFlags(source string) (string, error) {
 
 // SourcesAsMetadata returns all known sources, comma separated to be used as service metadata
 func (r *Multiplexer) SourcesAsMetadata() string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mu.RLocker()
+	defer r.mu.RUnlock()
 
 	return strings.Join(r.sources, ",")
 }

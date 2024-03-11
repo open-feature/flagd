@@ -77,7 +77,7 @@ func (s *Service) Start(ctx context.Context) error {
 		// delay server start until we see all syncs from known sync sources OR timeout
 		select {
 		case <-time.After(5 * time.Second):
-			s.logger.Warn("timeout waiting for all sync sources to complete their initial sync. " +
+			s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
 				"continuing sync service")
 			break
 		case <-s.startupTracker.done():
