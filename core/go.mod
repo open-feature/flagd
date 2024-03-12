@@ -11,7 +11,6 @@ require (
 	connectrpc.com/otelconnect v0.7.0
 	github.com/diegoholiveira/jsonlogic/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/golang/mock v1.6.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240215170351-8c72c14eebff
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
 	github.com/prometheus/client_golang v1.18.0
@@ -29,6 +28,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.23.1
 	go.opentelemetry.io/otel/sdk/metric v1.23.1
 	go.opentelemetry.io/otel/trace v1.23.1
+	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.19.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e

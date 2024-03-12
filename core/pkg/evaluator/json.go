@@ -57,7 +57,7 @@ type JSON struct {
 }
 
 type constraints interface {
-	bool | string | map[string]any | float64
+	bool | string | map[string]any | float64 | interface{}
 }
 
 const (
@@ -268,6 +268,20 @@ func (je *JSON) ResolveObjectValue(
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant)
+}
+
+func (je *JSON) ResolveAsAnyValue(
+	ctx context.Context,
+	reqID string,
+	flagKey string,
+	context map[string]any,
+) AnyValue {
+	_, span := je.jsonEvalTracer.Start(ctx, "resolveAnyValue")
+	defer span.End()
+
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating as any flag for key: %s", flagKey))
+	value, variant, reason, meta, err := resolve[interface{}](reqID, flagKey, context, je.evaluateVariant)
+	return NewAnyValue(value, variant, reason, flagKey, meta, err)
 }
 
 func resolve[T constraints](reqID string, key string, context map[string]any, variantEval variantEvaluator) (

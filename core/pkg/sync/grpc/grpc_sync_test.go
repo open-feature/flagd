@@ -13,12 +13,12 @@ import (
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
-	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
 	grpcmock "github.com/open-feature/flagd/core/pkg/sync/grpc/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

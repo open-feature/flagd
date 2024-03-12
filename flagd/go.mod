@@ -10,7 +10,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.32.0-20240215170432-1e611e2999cc.1
 	connectrpc.com/connect v1.15.0
 	github.com/dimiro1/banner v1.1.0
-	github.com/golang/mock v1.6.0
+	github.com/gorilla/mux v1.8.1
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.8.0
 	github.com/prometheus/client_golang v1.19.0
@@ -23,6 +23,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.24.0
 	go.opentelemetry.io/otel/sdk/metric v1.24.0
 	go.opentelemetry.io/otel/trace v1.24.0
+	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.21.0
 	golang.org/x/sync v0.6.0
@@ -47,6 +48,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.4 // indirect
 	github.com/go-openapi/swag v0.22.9 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect

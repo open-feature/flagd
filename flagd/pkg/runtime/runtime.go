@@ -13,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep"
 	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"golang.org/x/sync/errgroup"
 )
@@ -21,6 +22,7 @@ type Runtime struct {
 	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
 	FlagSync      flagsync.ISyncService
+	OfrepService  ofrep.IOfrepService
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration
 	SyncImpl      []sync.ISync
@@ -97,6 +99,15 @@ func (r *Runtime) Start() error {
 		if err := r.Service.Serve(gCtx, r.ServiceConfig); err != nil {
 			return fmt.Errorf("error returned from serving flag evaluation service: %w", err)
 		}
+		return nil
+	})
+
+	g.Go(func() error {
+		err := r.OfrepService.Start(gCtx)
+		if err != nil {
+			return fmt.Errorf("error from ofrep server: %w", err)
+		}
+
 		return nil
 	})
 

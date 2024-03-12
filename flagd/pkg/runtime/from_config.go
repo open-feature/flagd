@@ -12,6 +12,7 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
+	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep"
 	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"go.uber.org/zap"
 )
@@ -82,6 +83,16 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		evaluator,
 		recorder)
 
+	// todo register this from connect service
+	// ofrep service
+	ofrepService, err := ofrep.NewOfrepService(evaluator, ofrep.SvcConfiguration{
+		Logger: logger.WithFields(zap.String("component", "OFREPService")),
+		Port:   8016,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating ofrep service")
+	}
+
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
 		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
@@ -106,10 +117,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	return &Runtime{
-		Logger:    logger.WithFields(zap.String("component", "runtime")),
-		Evaluator: evaluator,
-		FlagSync:  flagSyncService,
-		Service:   connectService,
+		Logger:       logger.WithFields(zap.String("component", "runtime")),
+		Evaluator:    evaluator,
+		FlagSync:     flagSyncService,
+		OfrepService: ofrepService,
+		Service:      connectService,
 		ServiceConfig: service.Configuration{
 			Port:           config.ServicePort,
 			ManagementPort: config.ManagementPort,
