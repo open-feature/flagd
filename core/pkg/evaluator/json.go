@@ -279,7 +279,7 @@ func (je *JSON) ResolveAsAnyValue(
 	_, span := je.jsonEvalTracer.Start(ctx, "resolveAnyValue")
 	defer span.End()
 
-	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating as any flag for key: %s", flagKey))
+	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating flag ` %s` as a generic flag", flagKey))
 	value, variant, reason, meta, err := resolve[interface{}](reqID, flagKey, context, je.evaluateVariant)
 	return NewAnyValue(value, variant, reason, flagKey, meta, err)
 }
