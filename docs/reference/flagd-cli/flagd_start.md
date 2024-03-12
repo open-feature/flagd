@@ -22,6 +22,7 @@ flagd start [flags]
   -k, --server-key-path string      Server side tls key path
   -d, --socket-path string          Flagd socket path. With grpc the service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
   -s, --sources string              JSON representation of an array of SourceConfig objects. This object contains 2 required fields, uri (string) and provider (string). Documentation for this object: https://flagd.dev/reference/sync-configuration/#source-configuration
+  -g, --sync-port int32             gRPC Sync port (default 8015)
   -f, --uri .yaml/.yml/.json        Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC) or FeatureFlag custom resource. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
 

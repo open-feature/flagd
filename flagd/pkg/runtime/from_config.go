@@ -12,6 +12,7 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
+	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"go.uber.org/zap"
 )
 
@@ -28,6 +29,7 @@ type Config struct {
 	ServiceKeyPath    string
 	ServicePort       uint16
 	ServiceSocketPath string
+	SyncServicePort   uint16
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -56,24 +58,40 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error building metrics recorder: %w", err)
 	}
 
-	// build flag store & fill sources details
+	// build flag store, collect flag sources & fill sources details
 	s := store.NewFlags()
+	sources := []string{}
+
 	for _, provider := range config.SyncProviders {
 		s.FlagSources = append(s.FlagSources, provider.URI)
 		s.SourceMetadata[provider.URI] = store.SourceDetails{
 			Source:   provider.URI,
 			Selector: provider.Selector,
 		}
+		sources = append(sources, provider.URI)
 	}
 
 	// derive evaluator
 	evaluator := setupJSONEvaluator(logger, s)
 
-	// derive service
+	// derive services
+
+	// connect service
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
 		evaluator,
 		recorder)
+
+	// flag sync service
+	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
+		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:    config.SyncServicePort,
+		Sources: sources,
+		Store:   s,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating sync service: %w", err)
+	}
 
 	// build sync providers
 	syncLogger := logger.WithFields(zap.String("component", "sync"))
@@ -90,6 +108,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	return &Runtime{
 		Logger:    logger.WithFields(zap.String("component", "runtime")),
 		Evaluator: evaluator,
+		FlagSync:  flagSyncService,
 		Service:   connectService,
 		ServiceConfig: service.Configuration{
 			Port:           config.ServicePort,

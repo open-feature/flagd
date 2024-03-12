@@ -13,12 +13,14 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
 	"golang.org/x/sync/errgroup"
 )
 
 type Runtime struct {
 	Evaluator     evaluator.IEvaluator
 	Logger        *logger.Logger
+	FlagSync      flagsync.ISyncService
 	Service       service.IFlagEvaluationService
 	ServiceConfig service.Configuration
 	SyncImpl      []sync.ISync
@@ -49,18 +51,16 @@ func (r *Runtime) Start() error {
 				// resync events are triggered when a delete occurs during flag merges in the store
 				// resync events may trigger further resync events, however for a flag to be deleted from the store
 				// its source must match, preventing the opportunity for resync events to snowball
-				if resyncRequired := r.updateWithNotify(data); resyncRequired {
+				if resyncRequired := r.updateAndEmit(data); resyncRequired {
 					for _, s := range r.SyncImpl {
 						p := s
-						go func() {
-							g.Go(func() error {
-								err := p.ReSync(gCtx, dataSync)
-								if err != nil {
-									return fmt.Errorf("error resyncing sources: %w", err)
-								}
-								return nil
-							})
-						}()
+						g.Go(func() error {
+							err := p.ReSync(gCtx, dataSync)
+							if err != nil {
+								return fmt.Errorf("error resyncing sources: %w", err)
+							}
+							return nil
+						})
 					}
 				}
 			case <-gCtx.Done():
@@ -99,7 +99,16 @@ func (r *Runtime) Start() error {
 		}
 		return nil
 	})
-	<-gCtx.Done()
+
+	g.Go(func() error {
+		err := r.FlagSync.Start(gCtx)
+		if err != nil {
+			return fmt.Errorf("error from sync server: %w", err)
+		}
+
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("errgroup closed with error: %w", err)
 	}
@@ -116,8 +125,8 @@ func (r *Runtime) isReady() bool {
 	return true
 }
 
-// updateWithNotify helps to update state and notify listeners
-func (r *Runtime) updateWithNotify(payload sync.DataSync) bool {
+// updateAndEmit helps to update state, notify changes and trigger sync updates
+func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -133,6 +142,8 @@ func (r *Runtime) updateWithNotify(payload sync.DataSync) bool {
 			"flags": notifications,
 		},
 	})
+
+	r.FlagSync.Emit(resyncRequired, payload.Source)
 
 	return resyncRequired
 }
