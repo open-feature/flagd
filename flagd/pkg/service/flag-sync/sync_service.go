@@ -80,7 +80,7 @@ func (s *Service) Start(ctx context.Context) error {
 			s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
 				"continuing sync service")
 			break
-		case <-s.startupTracker.done():
+		case <-s.startupTracker.getDone():
 			break
 		}
 
@@ -133,7 +133,7 @@ type syncTracker struct {
 	doneChan chan interface{}
 }
 
-func (t *syncTracker) done() <-chan interface{} {
+func (t *syncTracker) getDone() <-chan interface{} {
 	return t.doneChan
 }
 
