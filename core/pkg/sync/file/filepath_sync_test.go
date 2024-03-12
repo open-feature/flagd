@@ -309,3 +309,31 @@ func writeToFile(t *testing.T, fetchDirName, fileContents string) {
 		t.Fatal(err)
 	}
 }
+
+func TestFilePathSync_yamlToJSON(t *testing.T) {
+	tests := map[string]struct {
+		input          []byte
+		handleResponse func(t *testing.T, output string, err error)
+	}{
+		"empty": {
+			input: []byte(""),
+			handleResponse: func(t *testing.T, output string, err error) {
+				if err != nil {
+					t.Fatalf("expect no err, got err = %v", err)
+				}
+
+				if output != "" {
+					t.Fatalf("expect output = '', got output = '%v'", output)
+				}
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := yamlToJSON(tt.input)
+
+			tt.handleResponse(t, output, err)
+		})
+	}
+}
