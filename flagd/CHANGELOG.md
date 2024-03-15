@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.1](https://github.com/open-feature/flagd/compare/flagd/v0.9.0...flagd/v0.9.1) (2024-03-15)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module google.golang.org/protobuf to v1.33.0 [security] ([#1248](https://github.com/open-feature/flagd/issues/1248)) ([b2b0fa1](https://github.com/open-feature/flagd/commit/b2b0fa19a6254c02c81ef44828b643a5a25ea5b5))
+* update protobuff CVE-2024-24786 ([#1249](https://github.com/open-feature/flagd/issues/1249)) ([fd81c23](https://github.com/open-feature/flagd/commit/fd81c235fb4a09dfc42289ac316ac3a1d7eff58c))
+
+
+### ✨ New Features
+
+* serve sync.proto on port 8015 ([#1237](https://github.com/open-feature/flagd/issues/1237)) ([7afdc0c](https://github.com/open-feature/flagd/commit/7afdc0cda47d080575cb87a94b35cfe051f88422))
+
+
+### 🧹 Chore
+
+* move packaging & isolate service implementations  ([#1234](https://github.com/open-feature/flagd/issues/1234)) ([b58fab3](https://github.com/open-feature/flagd/commit/b58fab3df030ef7e9e10eafa7a0141c05aa05bbd))
+
 ## [0.9.0](https://github.com/open-feature/flagd/compare/flagd/v0.8.2...flagd/v0.9.0) (2024-02-20)
 
 

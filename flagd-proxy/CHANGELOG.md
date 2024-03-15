@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.5.0...flagd-proxy/v0.5.1) (2024-03-15)
+
+
+### 🐛 Bug Fixes
+
+* update protobuff CVE-2024-24786 ([#1249](https://github.com/open-feature/flagd/issues/1249)) ([fd81c23](https://github.com/open-feature/flagd/commit/fd81c235fb4a09dfc42289ac316ac3a1d7eff58c))
+
+
+### 🧹 Chore
+
+* move packaging & isolate service implementations  ([#1234](https://github.com/open-feature/flagd/issues/1234)) ([b58fab3](https://github.com/open-feature/flagd/commit/b58fab3df030ef7e9e10eafa7a0141c05aa05bbd))
+
 ## [0.5.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.4.2...flagd-proxy/v0.5.0) (2024-02-20)
 
 
