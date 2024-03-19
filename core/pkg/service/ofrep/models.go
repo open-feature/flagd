@@ -43,19 +43,19 @@ type InternalError struct {
 }
 
 func BulkEvaluationResponseFrom(values []evaluator.AnyValue) BulkEvaluationResponse {
-	flags := make([]interface{}, 0)
+	evaluations := make([]interface{}, 0)
 
 	for _, value := range values {
 		if value.Error != nil {
-			_, evaluationError := ErrorResponseAndStatus(value)
-			flags = append(flags, evaluationError)
+			_, evaluationError := ValueToStatusAndError(value)
+			evaluations = append(evaluations, evaluationError)
 		} else {
-			flags = append(flags, SuccessResponseFrom(value))
+			evaluations = append(evaluations, SuccessResponseFrom(value))
 		}
 	}
 
 	return BulkEvaluationResponse{
-		flags,
+		evaluations,
 	}
 }
 
@@ -84,7 +84,7 @@ func ContextErrorResponseForBulkAndStatus() BulkEvaluationError {
 	}
 }
 
-func ErrorResponseAndStatus(result evaluator.AnyValue) (int, EvaluationError) {
+func ValueToStatusAndError(result evaluator.AnyValue) (int, EvaluationError) {
 	payload := EvaluationError{
 		Key: result.FlagKey,
 	}

@@ -70,8 +70,8 @@ flags:
     targeting:
       if:
       - "$ref": emailWithFaas
-      - fractionalEvaluation:
-        - email
+      - fractional:
+        - var: email
         - - red
           - 25
         - - blue
@@ -89,12 +89,12 @@ flags:
     defaultVariant: first
     state: ENABLED
     targeting:
-if:
-- in:
-  - "@openfeature.dev"
-  - var: email
-- second
-- first
+      if:
+      - in:
+        - "@openfeature.dev"
+        - var: email
+      - second
+      - first
 
 "$evaluators":
   emailWithFaas:

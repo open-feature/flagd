@@ -54,7 +54,7 @@ func (s Service) Start(ctx context.Context) error {
 
 	group.Go(func() error {
 		<-gCtx.Done()
-		fmt.Println("context done")
+		s.Logger.Info("shutting down ofrep service")
 		err := s.server.Close()
 		if err != nil {
 			return fmt.Errorf("error from ofrep server shutdown: %w", err)

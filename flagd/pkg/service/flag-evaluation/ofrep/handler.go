@@ -60,13 +60,12 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	if res, ok := request.Context.(map[string]any); ok {
 		context = res
 	} else {
-		// todo should this be an error
 		h.Logger.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
 	}
 
 	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {
-		status, evaluationError := ofrep.ErrorResponseAndStatus(evaluation)
+		status, evaluationError := ofrep.ValueToStatusAndError(evaluation)
 		h.writeJSONToResponse(status, evaluationError, w)
 	} else {
 		h.writeJSONToResponse(http.StatusOK, ofrep.SuccessResponseFrom(evaluation), w)

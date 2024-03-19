@@ -20,6 +20,7 @@ const (
 	logFormatFlagName      = "log-format"
 	managementPortFlagName = "management-port"
 	metricsExporter        = "metrics-exporter"
+	ofrepPortFlagName      = "ofrep-port"
 	otelCollectorURI       = "otel-collector-uri"
 	portFlagName           = "port"
 	serverCertPathFlagName = "server-cert-path"
@@ -40,6 +41,7 @@ func init() {
 	flags.Int32P(managementPortFlagName, "m", 8014, "Port for management operations")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
+	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
 
 	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
 		"With grpc the service will become available on this address. "+
@@ -78,6 +80,7 @@ func init() {
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
+	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 }
 
 // startCmd represents the start command
@@ -127,6 +130,7 @@ var startCmd = &cobra.Command{
 			CORS:              viper.GetStringSlice(corsFlagName),
 			MetricExporter:    viper.GetString(metricsExporter),
 			ManagementPort:    viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:  viper.GetUint16(ofrepPortFlagName),
 			OtelCollectorURI:  viper.GetString(otelCollectorURI),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),

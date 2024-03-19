@@ -25,6 +25,7 @@ const svcName = "flagd"
 type Config struct {
 	MetricExporter    string
 	ManagementPort    uint16
+	OfrepServicePort  uint16
 	OtelCollectorURI  string
 	ServiceCertPath   string
 	ServiceKeyPath    string
@@ -83,11 +84,10 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		evaluator,
 		recorder)
 
-	// todo register this from connect service
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(evaluator, ofrep.SvcConfiguration{
 		Logger: logger.WithFields(zap.String("component", "OFREPService")),
-		Port:   8016,
+		Port:   config.OfrepServicePort,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating ofrep service")
