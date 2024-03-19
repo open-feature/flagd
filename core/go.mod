@@ -34,7 +34,7 @@ require (
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	golang.org/x/mod v0.15.0
 	golang.org/x/sync v0.5.0
-	google.golang.org/grpc v1.61.1
+	google.golang.org/grpc v1.62.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
