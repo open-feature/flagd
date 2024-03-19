@@ -16,7 +16,7 @@ const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
 const PALETTE_SWITCH_SELECTOR = "[data-md-component=palette]";
 const getPalette = () =>
   document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
-  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
+    document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
     ? "custom-dark"
     : "custom";
 const monacoBeforeMount: BeforeMount = (monaco) => {
@@ -43,6 +43,14 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
     allowComments: false, // we don't support JSON comments in flagd
   });
 };
+
+function encodeConfigToQueryParam(featureDefinition: any) {
+  return encodeURIComponent(JSON.stringify(featureDefinition));
+}
+
+function decodeQueryParamToConfig(paramValue: string) {
+  return JSON.parse(decodeURIComponent(paramValue));
+}
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
@@ -132,6 +140,25 @@ function App() {
     };
   });
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const flagsParam = urlParams.get('flags');
+    const scenarioParam = urlParams.get('scenario_name');
+
+    if (flagsParam) {
+      try {
+        const decodedConfig = decodeQueryParamToConfig(flagsParam);
+        setFeatureDefinition(decodedConfig);
+        setSelectedTemplate("Basic boolean flag");
+      } catch (error) {
+        console.error("Error decoding feature definition from URL:", error);
+      }
+    } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
+      setSelectedTemplate(scenarioParam as keyof typeof scenarios);
+      setFeatureDefinition(scenarios[scenarioParam as keyof typeof scenarios].flagDefinition);
+    }
+  }, []);
+
   const evaluate = () => {
     setShowOutput(true);
     try {
@@ -196,6 +223,14 @@ function App() {
     color: "var(--md-code-fg-color)",
     fontFeatureSettings: "kern",
     fontFamily: "var(--md-code-font-family)",
+  };
+
+  const share = () => {
+    const encodedConfig = encodeConfigToQueryParam(featureDefinition);
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('flags', encodedConfig);
+    newUrl.searchParams.delete('scenario_name');
+    window.history.pushState({}, '', newUrl.href);
   };
 
   return (
@@ -373,12 +408,13 @@ function App() {
               </button>
               <button className="md-button" onClick={resetInputs}>
                 Reset
+              </button><button className="md-button" onClick={share}>
+                Share
               </button>
             </div>
             <div
-              className={`output ${showOutput ? "visible" : ""} admonition ${
-                status === "success" ? "success" : "failure"
-              }`}
+              className={`output ${showOutput ? "visible" : ""} admonition ${status === "success" ? "success" : "failure"
+                }`}
             >
               <p className="admonition-title">
                 {status === "success" ? "Success" : "Failure"}
