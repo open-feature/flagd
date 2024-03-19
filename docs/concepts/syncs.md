@@ -1,7 +1,7 @@
 # Syncs
 
 Syncs are a core part of flagd; they are the abstraction that enables different sources for feature flag definitions.
-flagd can connect to one or more sync sources to
+flagd can connect to one or more sync sources.
 
 ## Available syncs
 
