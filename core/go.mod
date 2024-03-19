@@ -16,7 +16,7 @@ require (
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
 	github.com/prometheus/client_golang v1.18.0
 	github.com/robfig/cron v1.2.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/twmb/murmur3 v1.1.8
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/zeebo/xxh3 v1.0.2
