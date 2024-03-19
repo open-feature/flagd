@@ -14,7 +14,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240215170351-8c72c14eebff
 	github.com/open-feature/open-feature-operator/apis v0.2.38-0.20231117101310-726a7f714906
-	github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/client_golang v1.19.0
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.8.4
 	github.com/twmb/murmur3 v1.1.8
