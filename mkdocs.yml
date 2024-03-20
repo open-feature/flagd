@@ -88,6 +88,8 @@ nav:
       - 'Start': 'reference/flagd-cli/flagd_start.md'
       - 'Version': 'reference/flagd-cli/flagd_version.md'
     - 'Sync Configuration': 'reference/sync-configuration.md'
+    - 'gRPC sync service': 'reference/grpc-sync-service.md'
+    - 'OFREP service': 'reference/flagd-ofrep.md'
     - 'Flag Definitions':
       - 'Definition Overview': 'reference/flag-definitions.md'
       - 'Custom Operations':
