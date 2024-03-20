@@ -7,10 +7,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 
-const (
-	InvalidContextReason = "INVALID_CONTEXT"
-)
-
 type Request struct {
 	Context interface{} `json:"context"`
 }
@@ -69,17 +65,17 @@ func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
 	}
 }
 
-func ContextErrorResponseAndStatus(key string) EvaluationError {
+func ContextErrorResponseFrom(key string) EvaluationError {
 	return EvaluationError{
 		Key:          key,
-		ErrorCode:    InvalidContextReason,
+		ErrorCode:    model.InvalidContextCode,
 		ErrorDetails: "provided context is invalid",
 	}
 }
 
 func ContextErrorResponseForBulkAndStatus() BulkEvaluationError {
 	return BulkEvaluationError{
-		ErrorCode:    InvalidContextReason,
+		ErrorCode:    model.InvalidContextCode,
 		ErrorDetails: "provided context is invalid",
 	}
 }
@@ -100,6 +96,7 @@ func ValueToStatusAndError(result evaluator.AnyValue) (int, EvaluationError) {
 		payload.ErrorCode = model.ParseErrorCode
 		payload.ErrorDetails = "error parsing the flag"
 	case model.GeneralErrorCode:
+		fallthrough
 	default:
 		payload.ErrorCode = model.GeneralErrorCode
 		payload.ErrorDetails = "error processing the flag for evaluation"

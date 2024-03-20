@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -41,7 +42,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	// obtain flag key
 	vars := mux.Vars(r)
 	flagKey := vars[key]
-	if vars == nil || flagKey == "" {
+	if vars == nil || strings.TrimSpace(flagKey) == "" {
 		h.writeJSONToResponse(
 			http.StatusInternalServerError,
 			ofrep.InternalError{ErrorDetails: "failed to obtain the flag key from the request"}, w)
@@ -52,7 +53,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil && err.Error() != "EOF" {
 		// Special handling for invalid context
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseAndStatus(flagKey), w)
+		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
 
