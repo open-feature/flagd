@@ -143,15 +143,23 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const flagsParam = urlParams.get('flags');
+    const flagKeyParam = urlParams.get('flagKey');
+    const returnTypeParam = urlParams.get('returnType');
+    const evalContextParam = urlParams.get('evalContext');
     const scenarioParam = urlParams.get('scenario_name');
 
     if (flagsParam) {
       try {
         const decodedConfig = decodeQueryParamToConfig(flagsParam);
         setFeatureDefinition(decodedConfig);
-        setSelectedTemplate("Basic boolean flag");
+        if (flagKeyParam) setFlagKey(flagKeyParam);
+        if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
+        if (evalContextParam) {
+          const decodedContext = JSON.parse(decodeURIComponent(evalContextParam));
+          setEvaluationContext(decodedContext);
+        }
       } catch (error) {
-        console.error("Error decoding feature definition from URL:", error);
+        console.error("Error decoding URL parameters:", error);
       }
     } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
       setSelectedTemplate(scenarioParam as keyof typeof scenarios);
@@ -226,10 +234,22 @@ function App() {
   };
 
   const share = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const newUrl = new URL(baseUrl);
     const encodedConfig = encodeConfigToQueryParam(featureDefinition);
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('flags', encodedConfig);
-    newUrl.searchParams.delete('scenario_name');
+    const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
+  
+    if (Object.keys(scenarios).includes(selectedTemplate) &&
+      scenarios[selectedTemplate].flagDefinition === featureDefinition) {
+      newUrl.searchParams.set('scenario_name', selectedTemplate);
+    } else {
+      newUrl.searchParams.delete('scenario_name');
+      newUrl.searchParams.set('flags', encodedConfig);
+      newUrl.searchParams.set('flagKey', flagKey);
+      newUrl.searchParams.set('returnType', returnType);
+      newUrl.searchParams.set('evalContext', encodedEvalContext);
+    }
+
     window.history.pushState({}, '', newUrl.href);
   };
 
