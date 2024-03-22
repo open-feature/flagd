@@ -94,7 +94,7 @@ func ValueToStatusAndError(result evaluator.AnyValue) (int, EvaluationError) {
 		payload.ErrorDetails = fmt.Sprintf("flag `%s` does not exisit", result.FlagKey)
 	case model.ParseErrorCode:
 		payload.ErrorCode = model.ParseErrorCode
-		payload.ErrorDetails = "error parsing the flag"
+		payload.ErrorDetails = fmt.Sprintf("error parsing the flag `%s`", result.FlagKey)
 	case model.GeneralErrorCode:
 		fallthrough
 	default:
