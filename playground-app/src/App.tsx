@@ -143,10 +143,10 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const flagsParam = urlParams.get('flags');
-    const flagKeyParam = urlParams.get('flagKey');
-    const returnTypeParam = urlParams.get('returnType');
-    const evalContextParam = urlParams.get('evalContext');
-    const scenarioParam = urlParams.get('scenario_name');
+    const flagKeyParam = urlParams.get('flag-key');
+    const returnTypeParam = urlParams.get('return-type');
+    const evalContextParam = urlParams.get('eval-context');
+    const scenarioParam = urlParams.get('scenario-name');
 
     if (flagsParam) {
       try {
@@ -233,24 +233,30 @@ function App() {
     fontFamily: "var(--md-code-font-family)",
   };
 
-  const share = () => {
+  const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
     const newUrl = new URL(baseUrl);
     const encodedConfig = encodeConfigToQueryParam(featureDefinition);
     const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
-  
+
     if (Object.keys(scenarios).includes(selectedTemplate) &&
       scenarios[selectedTemplate].flagDefinition === featureDefinition) {
-      newUrl.searchParams.set('scenario_name', selectedTemplate);
+      newUrl.searchParams.set('scenario-name', selectedTemplate);
     } else {
-      newUrl.searchParams.delete('scenario_name');
+      newUrl.searchParams.delete('scenario-name');
       newUrl.searchParams.set('flags', encodedConfig);
-      newUrl.searchParams.set('flagKey', flagKey);
-      newUrl.searchParams.set('returnType', returnType);
-      newUrl.searchParams.set('evalContext', encodedEvalContext);
+      newUrl.searchParams.set('flag-key', flagKey);
+      newUrl.searchParams.set('return-type', returnType);
+      newUrl.searchParams.set('eval-context', encodedEvalContext);
     }
 
     window.history.pushState({}, '', newUrl.href);
+
+    navigator.clipboard.writeText(newUrl.href).then(() => {
+      console.log('URL copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy URL: ', err);
+    });
   };
 
   return (
@@ -418,7 +424,7 @@ function App() {
                 />
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", paddingTop: "8px" }}>
               <button
                 className="md-button md-button--primary"
                 onClick={evaluate}
@@ -428,8 +434,8 @@ function App() {
               </button>
               <button className="md-button" onClick={resetInputs}>
                 Reset
-              </button><button className="md-button" onClick={share}>
-                Share
+              </button><button className="md-button" onClick={copyUrl}>
+                Copy URL
               </button>
             </div>
             <div
