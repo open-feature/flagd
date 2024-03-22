@@ -91,7 +91,7 @@ func ValueToStatusAndError(result evaluator.AnyValue) (int, EvaluationError) {
 	case model.FlagNotFoundErrorCode:
 		status = 404
 		payload.ErrorCode = model.FlagNotFoundErrorCode
-		payload.ErrorDetails = fmt.Sprintf("flag `%s` does not exisit", result.FlagKey)
+		payload.ErrorDetails = fmt.Sprintf("flag `%s` does not exist", result.FlagKey)
 	case model.ParseErrorCode:
 		payload.ErrorCode = model.ParseErrorCode
 		payload.ErrorDetails = fmt.Sprintf("error parsing the flag `%s`", result.FlagKey)
