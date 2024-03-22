@@ -108,7 +108,7 @@ func TestErrorStatus(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			status, evaluationError := ValueToStatusAndError(evaluator.AnyValue{
+			status, evaluationError := EvaluationErrorResponseFrom(evaluator.AnyValue{
 				Value:   "value",
 				Variant: "variant",
 				Reason:  model.ErrorReason,

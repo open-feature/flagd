@@ -49,24 +49,16 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	request := ofrep.Request{}
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil && err.Error() != "EOF" {
-		// Special handling for invalid context
+	request, err := extractOfrepRequest(r)
+	if err != nil {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
 
-	context := map[string]any{}
-	if res, ok := request.Context.(map[string]any); ok {
-		context = res
-	} else {
-		h.Logger.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
-	}
-
+	context := flagdContext(h.Logger, requestID, request)
 	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {
-		status, evaluationError := ofrep.ValueToStatusAndError(evaluation)
+		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
 		h.writeJSONToResponse(status, evaluationError, w)
 	} else {
 		h.writeJSONToResponse(http.StatusOK, ofrep.SuccessResponseFrom(evaluation), w)
@@ -76,21 +68,13 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 
-	request := ofrep.Request{}
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil && err.Error() != "EOF" {
-		// Special handling for invalid context
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseForBulkAndStatus(), w)
+	request, err := extractOfrepRequest(r)
+	if err != nil {
+		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextErrorFrom(), w)
 		return
 	}
 
-	context := map[string]any{}
-	if res, ok := request.Context.(map[string]any); ok {
-		context = res
-	} else {
-		h.Logger.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
-	}
-
+	context := flagdContext(h.Logger, requestID, request)
 	evaluations := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
 	h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations), w)
 }
@@ -112,4 +96,25 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
 		return
 	}
+}
+
+func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
+	request := ofrep.Request{}
+	err := json.NewDecoder(req.Body).Decode(&request)
+	if err != nil && err.Error() != "EOF" {
+		return request, fmt.Errorf("decode error: %w", err)
+	}
+
+	return request, nil
+}
+
+func flagdContext(log *logger.Logger, requestID string, request ofrep.Request) map[string]any {
+	context := map[string]any{}
+	if res, ok := request.Context.(map[string]any); ok {
+		context = res
+	} else {
+		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
+	}
+
+	return context
 }

@@ -43,7 +43,7 @@ func BulkEvaluationResponseFrom(values []evaluator.AnyValue) BulkEvaluationRespo
 
 	for _, value := range values {
 		if value.Error != nil {
-			_, evaluationError := ValueToStatusAndError(value)
+			_, evaluationError := EvaluationErrorResponseFrom(value)
 			evaluations = append(evaluations, evaluationError)
 		} else {
 			evaluations = append(evaluations, SuccessResponseFrom(value))
@@ -69,18 +69,18 @@ func ContextErrorResponseFrom(key string) EvaluationError {
 	return EvaluationError{
 		Key:          key,
 		ErrorCode:    model.InvalidContextCode,
-		ErrorDetails: "provided context is invalid",
+		ErrorDetails: "Provider context is not valid",
 	}
 }
 
-func ContextErrorResponseForBulkAndStatus() BulkEvaluationError {
+func BulkEvaluationContextErrorFrom() BulkEvaluationError {
 	return BulkEvaluationError{
 		ErrorCode:    model.InvalidContextCode,
-		ErrorDetails: "provided context is invalid",
+		ErrorDetails: "Provider context is not valid",
 	}
 }
 
-func ValueToStatusAndError(result evaluator.AnyValue) (int, EvaluationError) {
+func EvaluationErrorResponseFrom(result evaluator.AnyValue) (int, EvaluationError) {
 	payload := EvaluationError{
 		Key: result.FlagKey,
 	}
