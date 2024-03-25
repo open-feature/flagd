@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -27,10 +28,16 @@ type Service struct {
 	server *http.Server
 }
 
-func NewOfrepService(evaluator evaluator.IEvaluator, cfg SvcConfiguration) (*Service, error) {
+func NewOfrepService(evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration) (*Service, error) {
+	corsMW := cors.New(cors.Options{
+		AllowedOrigins: origins,
+		AllowedMethods: []string{http.MethodPost},
+	})
+	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator))
+
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           NewHandler(cfg.Logger, evaluator),
+		Handler:           h,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 

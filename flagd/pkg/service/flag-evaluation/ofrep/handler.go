@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -24,7 +23,7 @@ type handler struct {
 	evaluator evaluator.IEvaluator
 }
 
-func NewHandler(logger *logger.Logger, evaluator evaluator.IEvaluator) http.Handler {
+func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator) http.Handler {
 	h := handler{
 		logger,
 		evaluator,
@@ -41,14 +40,14 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	// obtain flag key
 	vars := mux.Vars(r)
-	flagKey := vars[key]
-	if vars == nil || strings.TrimSpace(flagKey) == "" {
+	if vars == nil {
 		h.writeJSONToResponse(
 			http.StatusInternalServerError,
 			ofrep.InternalError{ErrorDetails: "failed to obtain the flag key from the request"}, w)
 		return
 	}
 
+	flagKey := vars[key]
 	request, err := extractOfrepRequest(r)
 	if err != nil {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)

@@ -85,7 +85,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		recorder)
 
 	// ofrep service
-	ofrepService, err := ofrep.NewOfrepService(evaluator, ofrep.SvcConfiguration{
+	ofrepService, err := ofrep.NewOfrepService(evaluator, config.CORS, ofrep.SvcConfiguration{
 		Logger: logger.WithFields(zap.String("component", "OFREPService")),
 		Port:   config.OfrepServicePort,
 	})

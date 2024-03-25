@@ -94,9 +94,10 @@ func Test_handler_HandleFlagEvaluation(t *testing.T) {
 			name:                 "flag key parsing error - whitespace",
 			method:               http.MethodPost,
 			path:                 "/ofrep/v1/evaluate/flags/ ",
+			mockAnyResponse:      &successValue,
 			input:                bytes.NewReader([]byte{}),
-			expectedStatus:       http.StatusInternalServerError,
-			expectedResponseType: ofrep.InternalError{},
+			expectedStatus:       http.StatusOK,
+			expectedResponseType: ofrep.EvaluationSuccess{},
 		},
 		{
 			name:                 "invalid context payload",
