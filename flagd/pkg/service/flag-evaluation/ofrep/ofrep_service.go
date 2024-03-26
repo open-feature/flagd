@@ -24,7 +24,8 @@ type SvcConfiguration struct {
 }
 
 type Service struct {
-	Logger *logger.Logger
+	logger *logger.Logger
+	port   uint16
 	server *http.Server
 }
 
@@ -42,7 +43,8 @@ func NewOfrepService(evaluator evaluator.IEvaluator, origins []string, cfg SvcCo
 	}
 
 	return &Service{
-		Logger: cfg.Logger,
+		logger: cfg.Logger,
+		port:   cfg.Port,
 		server: &server,
 	}, nil
 }
@@ -51,6 +53,7 @@ func (s Service) Start(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
+		s.logger.Info(fmt.Sprintf("ofrep service listening at %d", s.port))
 		err := s.server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("error from ofrep service: %w", err)
@@ -61,7 +64,7 @@ func (s Service) Start(ctx context.Context) error {
 
 	group.Go(func() error {
 		<-gCtx.Done()
-		s.Logger.Info("shutting down ofrep service")
+		s.logger.Info("shutting down ofrep service")
 		err := s.server.Close()
 		if err != nil {
 			return fmt.Errorf("error from ofrep server shutdown: %w", err)
