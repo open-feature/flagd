@@ -136,7 +136,7 @@ func (r *Multiplexer) Unregister(id interface{}, selector string) {
 
 // GetAllFlags per specific source
 func (r *Multiplexer) GetAllFlags(source string) (string, error) {
-	r.mu.RLocker()
+	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	if source == "" {
@@ -152,7 +152,7 @@ func (r *Multiplexer) GetAllFlags(source string) (string, error) {
 
 // SourcesAsMetadata returns all known sources, comma separated to be used as service metadata
 func (r *Multiplexer) SourcesAsMetadata() string {
-	r.mu.RLocker()
+	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	return strings.Join(r.sources, ",")
