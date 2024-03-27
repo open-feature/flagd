@@ -44,9 +44,9 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
   });
 };
 
-function encodeConfigToQueryParam(featureDefinition: any) {
-  return encodeURIComponent(JSON.stringify(featureDefinition));
-}
+// function encodeConfigToQueryParam(featureDefinition: any) {
+//   return encodeURIComponent(JSON.stringify(featureDefinition));
+// }
 
 function decodeQueryParamToConfig(paramValue: string) {
   return JSON.parse(decodeURIComponent(paramValue));
@@ -235,25 +235,32 @@ function App() {
 
   const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
-    const newUrl = new URL(baseUrl);
-    const encodedConfig = encodeConfigToQueryParam(featureDefinition);
-    const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
+    console.log("this is a string")
+    console.log(featureDefinition)
+    const newUrl = new URL(baseUrl) 
+    // const encodedConfig = encodeConfigToQueryParam(featureDefinition);
+    // const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
 
     if (Object.keys(scenarios).includes(selectedTemplate) &&
       scenarios[selectedTemplate].flagDefinition === featureDefinition) {
       newUrl.searchParams.set('scenario-name', selectedTemplate);
     } else {
       newUrl.searchParams.delete('scenario-name');
-      newUrl.searchParams.set('flags', encodedConfig);
+      newUrl.searchParams.set('flags', featureDefinition);
       newUrl.searchParams.set('flag-key', flagKey);
       newUrl.searchParams.set('return-type', returnType);
-      newUrl.searchParams.set('eval-context', encodedEvalContext);
+      newUrl.searchParams.set('eval-context', evaluationContext);
     }
 
     window.history.pushState({}, '', newUrl.href);
 
     navigator.clipboard.writeText(newUrl.href).then(() => {
       console.log('URL copied to clipboard');
+      console.log("this is a string")
+      console.log(featureDefinition)
+      console.log(flagKey)
+      console.log(returnType)
+      console.log(evaluationContext)
     }).catch(err => {
       console.error('Failed to copy URL: ', err);
     });
