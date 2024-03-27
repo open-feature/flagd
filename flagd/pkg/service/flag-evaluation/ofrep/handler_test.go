@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -257,6 +259,26 @@ func TestWriteJSONResponse(t *testing.T) {
 
 			if test.expectedStatus == http.StatusOK && recorder.Header().Get("Content-Type") != "application/json" {
 				t.Error("expected http OK to contain header application/json content type, but header is missing")
+			}
+
+			if test.expectedStatus != http.StatusOK {
+				// rest of the validations are only for status OK
+				return
+			}
+
+			b, err := io.ReadAll(recorder.Body)
+			if err != nil {
+				t.Errorf("error deriving body: %v", err)
+			}
+
+			var rsp evaluator.AnyValue
+			err = json.Unmarshal(b, &rsp)
+			if err != nil {
+				t.Errorf("error unmarshelling body: %v", err)
+			}
+
+			if !reflect.DeepEqual(test.payload, rsp) {
+				t.Errorf("incorrect payload in wire")
 			}
 		})
 	}
