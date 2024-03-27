@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.5.1...flagd-proxy/v0.5.2) (2024-03-27)
+
+
+### ✨ New Features
+
+* OFREP support for flagd  ([#1247](https://github.com/open-feature/flagd/issues/1247)) ([9d12fc2](https://github.com/open-feature/flagd/commit/9d12fc20702a86e8385564659be88f07ad36d9e5))
+
 ## [0.5.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.5.0...flagd-proxy/v0.5.1) (2024-03-15)
 
 

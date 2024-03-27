@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/open-feature/flagd/compare/core/v0.8.1...core/v0.8.2) (2024-03-27)
+
+
+### ✨ New Features
+
+* OFREP support for flagd  ([#1247](https://github.com/open-feature/flagd/issues/1247)) ([9d12fc2](https://github.com/open-feature/flagd/commit/9d12fc20702a86e8385564659be88f07ad36d9e5))
+
 ## [0.8.1](https://github.com/open-feature/flagd/compare/core/v0.8.0...core/v0.8.1) (2024-03-15)
 
 
