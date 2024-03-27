@@ -93,7 +93,6 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	_, err = w.Write(marshal)
 	if err != nil {
 		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
-		return
 	}
 }
 
