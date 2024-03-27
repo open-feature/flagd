@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	buildermock "github.com/open-feature/flagd/core/pkg/sync/builder/mock"
@@ -13,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/http"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSyncBuilder_SyncFromURI(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil)
+				mockClientBuilder.EXPECT().GetK8sClient().Times(1).Return(nil, nil)
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},
@@ -54,7 +54,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, errors.New("oops"))
+				mockClientBuilder.EXPECT().GetK8sClient().Times(1).Return(nil, errors.New("oops"))
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},
@@ -179,7 +179,7 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 				ctrl := gomock.NewController(t)
 
 				mockClientBuilder := buildermock.NewMockIK8sClientBuilder(ctrl)
-				mockClientBuilder.EXPECT().GetK8sClients().Times(1).Return(nil, nil)
+				mockClientBuilder.EXPECT().GetK8sClient().Times(1).Return(nil, nil)
 
 				builder.k8sClientBuilder = mockClientBuilder
 			},

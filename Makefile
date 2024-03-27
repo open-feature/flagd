@@ -71,9 +71,9 @@ mockgen: install-mockgen
 	cd core; mockgen -source=pkg/sync/http/http_sync.go -destination=pkg/sync/http/mock/http.go -package=syncmock
 	cd core; mockgen -source=pkg/sync/grpc/grpc_sync.go -destination=pkg/sync/grpc/mock/grpc.go -package=grpcmock
 	cd core; mockgen -source=pkg/sync/grpc/credentials/builder.go -destination=pkg/sync/grpc/credentials/mock/builder.go -package=credendialsmock
-	cd core; mockgen -source=pkg/evaluator/ievaluator.go -destination=pkg/eval/mock/ievaluator.go -package=evalmock
-	cd core; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
+	cd core; mockgen -source=pkg/evaluator/ievaluator.go -destination=pkg/evaluator/mock/ievaluator.go -package=evalmock
 	cd core; mockgen -source=pkg/sync/builder/syncbuilder.go -destination=pkg/sync/builder/mock/syncbuilder.go -package=middlewaremocksyncbuildermock
+	cd flagd; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go
 

@@ -753,6 +753,43 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 }
 
+func TestResolveAsAnyValue(t *testing.T) {
+	tests := []struct {
+		flagKey   string
+		context   map[string]interface{}
+		val       string
+		reason    string
+		errorCode string
+	}{
+		// success
+		{StaticBoolFlag, nil, "{}", model.StaticReason, ""},
+		{StaticObjectFlag, nil, StaticObjectValue, model.StaticReason, ""},
+		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
+		// errors
+		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
+		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
+	}
+
+	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	if err != nil {
+		t.Fatalf("expected no error")
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("evaluating flag: %s", test.flagKey), func(t *testing.T) {
+			anyResult := evaluator.ResolveAsAnyValue(context.TODO(), "", test.flagKey, test.context)
+
+			if test.errorCode == "" {
+				assert.NoError(t, anyResult.Error)
+			} else {
+				assert.Equal(t, model.ErrorReason, anyResult.Reason)
+				assert.EqualError(t, anyResult.Error, test.errorCode)
+			}
+		})
+	}
+}
+
 func TestSetState_DefaultVariantValidation(t *testing.T) {
 	tests := map[string]struct {
 		jsonFlags string

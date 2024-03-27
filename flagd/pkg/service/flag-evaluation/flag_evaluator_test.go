@@ -7,7 +7,6 @@ import (
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
-	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -17,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

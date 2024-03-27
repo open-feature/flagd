@@ -101,8 +101,10 @@
             "$ref": "emailWithFaas"
           },
           {
-            "fractionalEvaluation": [
-              "email",
+            "fractional": [
+              {
+                "var": "email"
+              },
               [
                 "red",
                 25

@@ -71,7 +71,7 @@ flags:
       if:
       - "$ref": emailWithFaas
       - fractionalEvaluation:
-        - email
+        - var: email
         - - red
           - 25
         - - blue

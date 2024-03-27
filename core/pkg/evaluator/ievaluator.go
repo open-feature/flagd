@@ -66,6 +66,11 @@ type IEvaluator interface {
 		flagKey string,
 		context map[string]any) (
 		value map[string]any, variant string, reason string, metadata map[string]interface{}, err error)
+	ResolveAsAnyValue(
+		ctx context.Context,
+		reqID string,
+		flagKey string,
+		context map[string]any) AnyValue
 	ResolveAllValues(
 		ctx context.Context,
 		reqID string,

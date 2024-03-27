@@ -86,7 +86,7 @@ func (s *Service) Start(ctx context.Context) error {
 
 		err := s.server.Serve(s.listener)
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("error from sync server start: %v", err))
+			s.logger.Warn(fmt.Sprintf("error from sync server start: %v", err))
 		}
 		return nil
 	})

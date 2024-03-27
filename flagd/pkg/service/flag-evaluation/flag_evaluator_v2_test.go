@@ -7,13 +7,13 @@ import (
 
 	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
 	"connectrpc.com/connect"
-	"github.com/golang/mock/gomock"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

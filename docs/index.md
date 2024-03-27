@@ -13,7 +13,8 @@ With flagd you can:
 * perform pseudorandom assignments for experimentation
 * perform progressive roll-outs of new features
 * aggregate flag definitions from multiple sources
-* expose aggregated flags as a gRPC stream to be used by in-process providers
+* expose aggregated flags as a [gRPC stream](./reference/grpc-sync-service.md) to be used by in-process providers
+* expose [OFREP service](./reference/flagd-ofrep.md) for configured flags
 
 It doesn't include a UI, management console or a persistence layer.
 It's configurable entirely via a [POSIX-style CLI](./reference/flagd-cli/flagd.md).
