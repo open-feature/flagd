@@ -44,13 +44,15 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
   });
 };
 
-// function encodeConfigToQueryParam(featureDefinition: any) {
-//   return encodeURIComponent(JSON.stringify(featureDefinition));
-// }
+function shortenJson(formattedString: string) {
+  const object = JSON.parse(formattedString);
+  return JSON.stringify(object);
+};
 
-function decodeQueryParamToConfig(paramValue: string) {
-  return JSON.parse(decodeURIComponent(paramValue));
-}
+function formatJson(shortenedString: string) {
+  const object = JSON.parse(shortenedString);
+  return JSON.stringify(object, null, 2);
+};
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
@@ -147,19 +149,18 @@ function App() {
     const returnTypeParam = urlParams.get('return-type');
     const evalContextParam = urlParams.get('eval-context');
     const scenarioParam = urlParams.get('scenario-name');
-
     if (flagsParam) {
       try {
-        const decodedConfig = decodeQueryParamToConfig(flagsParam);
-        setFeatureDefinition(decodedConfig);
+        const formattedFeatureDefinition = formatJson(flagsParam);
+        setFeatureDefinition(formattedFeatureDefinition);
         if (flagKeyParam) setFlagKey(flagKeyParam);
         if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
         if (evalContextParam) {
-          const decodedContext = JSON.parse(decodeURIComponent(evalContextParam));
-          setEvaluationContext(decodedContext);
+          const formattedEvaluationContext = formatJson(evalContextParam);
+          setEvaluationContext(formattedEvaluationContext);
         }
       } catch (error) {
-        console.error("Error decoding URL parameters:", error);
+        console.error("Error decoding URL parameters: ", error);
       }
     } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
       setSelectedTemplate(scenarioParam as keyof typeof scenarios);
@@ -235,32 +236,24 @@ function App() {
 
   const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
-    console.log("this is a string")
-    console.log(featureDefinition)
     const newUrl = new URL(baseUrl) 
-    // const encodedConfig = encodeConfigToQueryParam(featureDefinition);
-    // const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
+    const encodedFeatureDefinition = shortenJson(featureDefinition);
+    const encodedEvaluationContext = shortenJson(evaluationContext);
 
     if (Object.keys(scenarios).includes(selectedTemplate) &&
       scenarios[selectedTemplate].flagDefinition === featureDefinition) {
       newUrl.searchParams.set('scenario-name', selectedTemplate);
     } else {
       newUrl.searchParams.delete('scenario-name');
-      newUrl.searchParams.set('flags', featureDefinition);
+      newUrl.searchParams.set('flags', encodedFeatureDefinition);
       newUrl.searchParams.set('flag-key', flagKey);
       newUrl.searchParams.set('return-type', returnType);
-      newUrl.searchParams.set('eval-context', evaluationContext);
+      newUrl.searchParams.set('eval-context', encodedEvaluationContext);
     }
-
     window.history.pushState({}, '', newUrl.href);
 
     navigator.clipboard.writeText(newUrl.href).then(() => {
       console.log('URL copied to clipboard');
-      console.log("this is a string")
-      console.log(featureDefinition)
-      console.log(flagKey)
-      console.log(returnType)
-      console.log(evaluationContext)
     }).catch(err => {
       console.error('Failed to copy URL: ', err);
     });
