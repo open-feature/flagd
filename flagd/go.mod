@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.4
 
 require (
-	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.15.0-20240215170432-1e611e2999cc.1
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.16.0-20240215170432-1e611e2999cc.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.2
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.33.0-20240215170432-1e611e2999cc.1
 	connectrpc.com/connect v1.16.0
