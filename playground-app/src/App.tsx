@@ -16,7 +16,7 @@ const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
 const PALETTE_SWITCH_SELECTOR = "[data-md-component=palette]";
 const getPalette = () =>
   document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
-  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
+    document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
     ? "custom-dark"
     : "custom";
 const monacoBeforeMount: BeforeMount = (monaco) => {
@@ -43,6 +43,14 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
     allowComments: false, // we don't support JSON comments in flagd
   });
 };
+
+function encodeConfigToQueryParam(featureDefinition: any) {
+  return encodeURIComponent(JSON.stringify(featureDefinition));
+}
+
+function decodeQueryParamToConfig(paramValue: string) {
+  return JSON.parse(decodeURIComponent(paramValue));
+}
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
@@ -132,6 +140,33 @@ function App() {
     };
   });
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const flagsParam = urlParams.get('flags');
+    const flagKeyParam = urlParams.get('flag-key');
+    const returnTypeParam = urlParams.get('return-type');
+    const evalContextParam = urlParams.get('eval-context');
+    const scenarioParam = urlParams.get('scenario-name');
+
+    if (flagsParam) {
+      try {
+        const decodedConfig = decodeQueryParamToConfig(flagsParam);
+        setFeatureDefinition(decodedConfig);
+        if (flagKeyParam) setFlagKey(flagKeyParam);
+        if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
+        if (evalContextParam) {
+          const decodedContext = JSON.parse(decodeURIComponent(evalContextParam));
+          setEvaluationContext(decodedContext);
+        }
+      } catch (error) {
+        console.error("Error decoding URL parameters:", error);
+      }
+    } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
+      setSelectedTemplate(scenarioParam as keyof typeof scenarios);
+      setFeatureDefinition(scenarios[scenarioParam as keyof typeof scenarios].flagDefinition);
+    }
+  }, []);
+
   const evaluate = () => {
     setShowOutput(true);
     try {
@@ -196,6 +231,32 @@ function App() {
     color: "var(--md-code-fg-color)",
     fontFeatureSettings: "kern",
     fontFamily: "var(--md-code-font-family)",
+  };
+
+  const copyUrl = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const newUrl = new URL(baseUrl);
+    const encodedConfig = encodeConfigToQueryParam(featureDefinition);
+    const encodedEvalContext = encodeConfigToQueryParam(evaluationContext);
+
+    if (Object.keys(scenarios).includes(selectedTemplate) &&
+      scenarios[selectedTemplate].flagDefinition === featureDefinition) {
+      newUrl.searchParams.set('scenario-name', selectedTemplate);
+    } else {
+      newUrl.searchParams.delete('scenario-name');
+      newUrl.searchParams.set('flags', encodedConfig);
+      newUrl.searchParams.set('flag-key', flagKey);
+      newUrl.searchParams.set('return-type', returnType);
+      newUrl.searchParams.set('eval-context', encodedEvalContext);
+    }
+
+    window.history.pushState({}, '', newUrl.href);
+
+    navigator.clipboard.writeText(newUrl.href).then(() => {
+      console.log('URL copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy URL: ', err);
+    });
   };
 
   return (
@@ -363,7 +424,7 @@ function App() {
                 />
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", paddingTop: "8px" }}>
               <button
                 className="md-button md-button--primary"
                 onClick={evaluate}
@@ -373,12 +434,13 @@ function App() {
               </button>
               <button className="md-button" onClick={resetInputs}>
                 Reset
+              </button><button className="md-button" onClick={copyUrl}>
+                Copy URL
               </button>
             </div>
             <div
-              className={`output ${showOutput ? "visible" : ""} admonition ${
-                status === "success" ? "success" : "failure"
-              }`}
+              className={`output ${showOutput ? "visible" : ""} admonition ${status === "success" ? "success" : "failure"
+                }`}
             >
               <p className="admonition-title">
                 {status === "success" ? "Success" : "Failure"}
