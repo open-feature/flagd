@@ -10,6 +10,12 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 
+type IStore interface {
+	GetAll() map[string]model.Flag
+	Get(key string) (model.Flag, bool)
+	SelectorForFlag(flag model.Flag) string
+}
+
 type Flags struct {
 	mx             sync.RWMutex
 	Flags          map[string]model.Flag `json:"flags"`

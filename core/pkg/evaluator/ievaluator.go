@@ -36,7 +36,11 @@ do parsing and validation of the flag state and evaluate flags in response to ha
 type IEvaluator interface {
 	GetState() (string, error)
 	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
+	IResolver
+}
 
+// IResolver focuses on resolving of the known flags
+type IResolver interface {
 	ResolveBooleanValue(
 		ctx context.Context,
 		reqID string,

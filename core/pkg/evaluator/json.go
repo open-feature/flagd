@@ -28,43 +28,32 @@ import (
 
 const (
 	SelectorMetadataKey = "scope"
-
-	flagdPropertiesKey = "$flagd"
-
+	flagdPropertiesKey  = "$flagd"
 	// targetingKeyKey is used to extract the targetingKey to bucket on in fractional
 	// evaluation if the user did not supply the optional bucketing property.
 	targetingKeyKey = "targetingKey"
+	Disabled        = "DISABLED"
 )
 
 var regBrace *regexp.Regexp
 
-type flagdProperties struct {
-	FlagKey   string `json:"flagKey"`
-	Timestamp int64  `json:"timestamp"`
-}
-
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
-}
-
-type variantEvaluator func(string, string, map[string]any) (
-	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
-
-type JSON struct {
-	store          *store.Flags
-	Logger         *logger.Logger
-	jsonEvalTracer trace.Tracer
 }
 
 type constraints interface {
 	bool | string | map[string]any | float64 | interface{}
 }
 
-const (
-	Disabled = "DISABLED"
-)
-
 type JSONEvaluatorOption func(je *JSON)
+
+type flagdProperties struct {
+	FlagKey   string `json:"flagKey"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+type variantEvaluator func(string, string, map[string]any) (
+	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
 func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
 	return func(_ *JSON) {
@@ -72,14 +61,26 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 	}
 }
 
+// JSON evaluator
+type JSON struct {
+	store          *store.Flags
+	Logger         *logger.Logger
+	jsonEvalTracer trace.Tracer
+	Resolver
+}
+
 func NewJSON(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluatorOption) *JSON {
+	logger = logger.WithFields(
+		zap.String("component", "evaluator"),
+		zap.String("evaluator", "json"),
+	)
+	tracer := otel.Tracer("jsonEvaluator")
+
 	ev := JSON{
-		Logger: logger.WithFields(
-			zap.String("component", "evaluator"),
-			zap.String("evaluator", "json"),
-		),
 		store:          s,
-		jsonEvalTracer: otel.Tracer("jsonEvaluator"),
+		Logger:         logger,
+		jsonEvalTracer: tracer,
+		Resolver:       NewResolver(s, logger, tracer),
 	}
 
 	for _, o := range opts {
@@ -107,7 +108,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var newFlags Flags
 
-	err := je.configToFlags(payload.FlagData, &newFlags)
+	err := configToFlags(je.Logger, payload.FlagData, &newFlags)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -136,8 +137,19 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	return events, reSync, nil
 }
 
-func (je *JSON) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveAll")
+// Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
+type Resolver struct {
+	store  store.IStore
+	Logger *logger.Logger
+	tracer trace.Tracer
+}
+
+func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
+	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
+}
+
+func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
+	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
 
 	values := []AnyValue{}
@@ -192,7 +204,7 @@ func (je *JSON) ResolveAllValues(ctx context.Context, reqID string, context map[
 	return values
 }
 
-func (je *JSON) ResolveBooleanValue(
+func (je *Resolver) ResolveBooleanValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value bool,
 	variant string,
@@ -200,14 +212,14 @@ func (je *JSON) ResolveBooleanValue(
 	metadata map[string]interface{},
 	err error,
 ) {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveBoolean")
+	_, span := je.tracer.Start(ctx, "resolveBoolean")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
 	return resolve[bool](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func (je *JSON) ResolveStringValue(
+func (je *Resolver) ResolveStringValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value string,
 	variant string,
@@ -215,14 +227,14 @@ func (je *JSON) ResolveStringValue(
 	metadata map[string]interface{},
 	err error,
 ) {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveString")
+	_, span := je.tracer.Start(ctx, "resolveString")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
 	return resolve[string](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func (je *JSON) ResolveFloatValue(
+func (je *Resolver) ResolveFloatValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value float64,
 	variant string,
@@ -230,7 +242,7 @@ func (je *JSON) ResolveFloatValue(
 	metadata map[string]interface{},
 	err error,
 ) {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveFloat")
+	_, span := je.tracer.Start(ctx, "resolveFloat")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
@@ -238,14 +250,14 @@ func (je *JSON) ResolveFloatValue(
 	return
 }
 
-func (je *JSON) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context map[string]any) (
+func (je *Resolver) ResolveIntValue(ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value int64,
 	variant string,
 	reason string,
 	metadata map[string]interface{},
 	err error,
 ) {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveInt")
+	_, span := je.tracer.Start(ctx, "resolveInt")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
@@ -255,7 +267,7 @@ func (je *JSON) ResolveIntValue(ctx context.Context, reqID string, flagKey strin
 	return
 }
 
-func (je *JSON) ResolveObjectValue(
+func (je *Resolver) ResolveObjectValue(
 	ctx context.Context, reqID string, flagKey string, context map[string]any) (
 	value map[string]any,
 	variant string,
@@ -263,20 +275,20 @@ func (je *JSON) ResolveObjectValue(
 	metadata map[string]interface{},
 	err error,
 ) {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveObject")
+	_, span := je.tracer.Start(ctx, "resolveObject")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
 	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant)
 }
 
-func (je *JSON) ResolveAsAnyValue(
+func (je *Resolver) ResolveAsAnyValue(
 	ctx context.Context,
 	reqID string,
 	flagKey string,
 	context map[string]any,
 ) AnyValue {
-	_, span := je.jsonEvalTracer.Start(ctx, "resolveAnyValue")
+	_, span := je.tracer.Start(ctx, "resolveAnyValue")
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating flag `%s` as a generic flag", flagKey))
@@ -284,6 +296,7 @@ func (je *JSON) ResolveAsAnyValue(
 	return NewAnyValue(value, variant, reason, flagKey, meta, err)
 }
 
+// resolve is a helper for generic flag resolving
 func resolve[T constraints](reqID string, key string, context map[string]any, variantEval variantEvaluator) (
 	value T, variant string, reason string, metadata map[string]interface{}, err error,
 ) {
@@ -301,9 +314,8 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 	return value, variant, reason, metadata, nil
 }
 
-// runs the rules (if defined) to determine the variant, otherwise falling through to the default
 // nolint: funlen
-func (je *JSON) evaluateVariant(reqID string, flagKey string, context map[string]any) (
+func (je *Resolver) evaluateVariant(reqID string, flagKey string, context map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 	metadata = map[string]interface{}{}
@@ -336,7 +348,7 @@ func (je *JSON) evaluateVariant(reqID string, flagKey string, context map[string
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		context = je.setFlagdProperties(context, flagdProperties{
+		context = setFlagdProperties(je.Logger, context, flagdProperties{
 			FlagKey:   flagKey,
 			Timestamp: time.Now().Unix(),
 		})
@@ -376,7 +388,8 @@ func (je *JSON) evaluateVariant(reqID string, flagKey string, context map[string
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
 }
 
-func (je *JSON) setFlagdProperties(
+func setFlagdProperties(
+	log *logger.Logger,
 	context map[string]any,
 	properties flagdProperties,
 ) map[string]any {
@@ -387,7 +400,7 @@ func (je *JSON) setFlagdProperties(
 	newContext := maps.Clone(context)
 
 	if _, ok := newContext[flagdPropertiesKey]; ok {
-		je.Logger.Warn("overwriting $flagd properties in the context")
+		log.Warn("overwriting $flagd properties in the context")
 	}
 
 	newContext[flagdPropertiesKey] = properties
@@ -414,41 +427,41 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-func (je *JSON) loadAndCompileSchema() *gojsonschema.Schema {
+func loadAndCompileSchema(log *logger.Logger) *gojsonschema.Schema {
 	schemaLoader := gojsonschema.NewSchemaLoader()
 
 	// compile dependency schema
 	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.TargetingSchema)
 	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
-		je.Logger.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
+		log.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
 	}
 
 	// compile root schema
 	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagSchema)
 	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
 	if err != nil {
-		je.Logger.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
+		log.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
 	}
 
 	return compiledSchema
 }
 
 // configToFlags convert string configurations to flags and store them to pointer newFlags
-func (je *JSON) configToFlags(config string, newFlags *Flags) error {
-	compiledSchema := je.loadAndCompileSchema()
+func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
+	compiledSchema := loadAndCompileSchema(log)
 
 	flagStringLoader := gojsonschema.NewStringLoader(config)
 
 	result, err := compiledSchema.Validate(flagStringLoader)
 	if err != nil {
-		je.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
+		log.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
 	} else if !result.Valid() {
-		je.Logger.Warn(fmt.Sprintf(
+		log.Logger.Warn(fmt.Sprintf(
 			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
 		))
 	}
 
-	transposedConfig, err := je.transposeEvaluators(config)
+	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
@@ -474,7 +487,7 @@ func validateDefaultVariants(flags *Flags) error {
 	return nil
 }
 
-func (je *JSON) transposeEvaluators(state string) (string, error) {
+func transposeEvaluators(state string) (string, error) {
 	var evaluators Evaluators
 	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
 		return "", fmt.Errorf("unmarshal: %w", err)
