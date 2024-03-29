@@ -111,7 +111,8 @@ nav:
   - 'FAQ': 'faq.md'
   - 'Troubleshooting': 'troubleshooting.md'
 plugins:
-  - social
+  # Disabling social until https://github.com/squidfunk/mkdocs-material/issues/6983 is resolved
+  # - social
   - search
   # https://github.com/mondeja/mkdocs-include-markdown-plugin
   - include-markdown
