@@ -77,6 +77,7 @@ function App() {
   );
   const [validFeatureDefinition, setValidFeatureDefinition] = useState(true);
   const [validEvaluationContext, setValidEvaluationContext] = useState(true);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [status, setStatus] = useState<"success" | "failure">("success");
   const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
     getPalette()
@@ -93,6 +94,7 @@ function App() {
     setDescription(template.description);
     setValidFeatureDefinition(true);
     setValidEvaluationContext(true);
+    setShowCopyNotification(false)
     setStatus("success");
   }, [selectedTemplate]);
 
@@ -116,6 +118,8 @@ function App() {
         console.error("Invalid flagd configuration", err);
         setValidFeatureDefinition(false);
       }
+    } else {
+      setValidFeatureDefinition(false);
     }
   }, [featureDefinition, flagdCore]);
 
@@ -254,6 +258,7 @@ function App() {
 
     navigator.clipboard.writeText(newUrl.href).then(() => {
       console.log('URL copied to clipboard');
+      setShowCopyNotification(true)
     }).catch(err => {
       console.error('Failed to copy URL: ', err);
     });
@@ -402,7 +407,7 @@ function App() {
               </select>
             </div>
             <div>
-              <h4>Evaluation context</h4>
+              <h4>Evaluation context {showCopyNotification && <span className="admonition-title">URL copied to clipboard</span>}</h4>
               <div style={{ backgroundColor: codeStyle.backgroundColor }}>
                 <Editor
                   theme={editorTheme}
@@ -434,8 +439,13 @@ function App() {
               </button>
               <button className="md-button" onClick={resetInputs}>
                 Reset
-              </button><button className="md-button" onClick={copyUrl}>
-                Copy URL
+              </button>
+              <button 
+                className="md-button" 
+                onClick={copyUrl}
+                disabled={!validFeatureDefinition|| !validEvaluationContext}
+                >
+                Share
               </button>
             </div>
             <div
