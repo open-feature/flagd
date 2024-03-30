@@ -62,12 +62,19 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 		}
 	}
 
+	seed, ok := valuesArray[0].(string)
+	if ok {
+		valuesArray = valuesArray[1:]
+	} else {
+		seed = properties.FlagKey
+	}
+
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s%s", properties.FlagKey, bucketBy), feDistributions, nil
+	return fmt.Sprintf("%s%s", seed, bucketBy), feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
