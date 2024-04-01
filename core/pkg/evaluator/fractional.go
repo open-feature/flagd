@@ -56,17 +56,12 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	if ok {
 		valuesArray = valuesArray[1:]
 	} else {
-		bucketBy, ok = dataMap[targetingKeyKey].(string)
+		targetingKey, ok := dataMap[targetingKeyKey].(string)
 		if !ok {
 			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
 		}
-	}
 
-	seed, ok := valuesArray[0].(string)
-	if ok {
-		valuesArray = valuesArray[1:]
-	} else {
-		seed = properties.FlagKey
+		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
@@ -74,7 +69,7 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s%s", seed, bucketBy), feDistributions, nil
+	return bucketBy, feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
@@ -120,6 +115,8 @@ func distributeValue(value string, feDistribution []fractionalEvaluationDistribu
 	hashValue := int32(murmur3.StringSum32(value))
 	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
 	bucket := int(hashRatio * 100) // in range [0, 100]
+
+	fmt.Println(value, feDistribution)
 
 	rangeEnd := 0
 	for _, dist := range feDistribution {

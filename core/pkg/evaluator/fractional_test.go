@@ -32,8 +32,7 @@ func TestFractionalEvaluation(t *testing.T) {
 											  },
 											  {
 												"fractional": [
-												  {"var": "email"},
-												  {"var": "$flagd.flagKey"},
+												  {"cat": [{"var": "$flagd.flagKey"}, {"var": "email"}]},
 												  [
 												  "red",
 												  25
@@ -73,8 +72,7 @@ func TestFractionalEvaluation(t *testing.T) {
 						},
 						{
 						"fractional": [
-							{"var": "email"},
-							"my-seed",
+							{"cat": ["my-seed", {"var": "email"}]},
 							["red",25],
 							["blue",25],
 							["green",25],
@@ -227,59 +225,6 @@ func TestFractionalEvaluation(t *testing.T) {
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.TargetingMatchReason,
-		},
-		"ross@faas.com with default seed": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
-							"if": [
-								{
-									"in": ["@faas.com", {
-										"var": ["email"]
-									}]
-								},
-								{
-									"fractional": [
-										{"var": "email"},
-										[
-										"red",
-										25
-									  	],
-									  	[
-										"blue",
-										25
-										],
-										[
-										"green",
-										25
-									  	],
-									  	[
-										"yellow",
-										25
-									  	]
-									]
-								}, null
-							]
-						}`),
-					},
-				},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "ross@faas.com",
-			},
-			expectedVariant: "green",
-			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {
