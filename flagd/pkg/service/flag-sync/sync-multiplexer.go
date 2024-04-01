@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -162,7 +163,7 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 func (r *Multiplexer) reFill() error {
 	clear(r.selectorFlags)
 
-	all := r.store.GetAll()
+	all := r.store.GetAll(context.Background())
 	bytes, err := json.Marshal(map[string]interface{}{"flags": all})
 	if err != nil {
 		return fmt.Errorf("error from marshallin: %w", err)

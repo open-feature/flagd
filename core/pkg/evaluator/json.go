@@ -158,7 +158,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var reason string
 	var metadata map[string]interface{}
 	var err error
-	allFlags := je.store.GetAll()
+	allFlags := je.store.GetAll(ctx)
 	for flagKey, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
@@ -315,12 +315,12 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 }
 
 // nolint: funlen
-func (je *Resolver) evaluateVariant(reqID string, flagKey string, context map[string]any) (
+func (je *Resolver) evaluateVariant(reqID string, flagKey string, c map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 	metadata = map[string]interface{}{}
 
-	flag, ok := je.store.Get(flagKey)
+	flag, ok := je.store.Get(context.Background(), flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
@@ -328,7 +328,7 @@ func (je *Resolver) evaluateVariant(reqID string, flagKey string, context map[st
 	}
 
 	// add selector to evaluation metadata
-	selector := je.store.SelectorForFlag(flag)
+	selector := je.store.SelectorForFlag(context.Background(), flag)
 	if selector != "" {
 		metadata[SelectorMetadataKey] = selector
 	}
@@ -348,14 +348,14 @@ func (je *Resolver) evaluateVariant(reqID string, flagKey string, context map[st
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		context = setFlagdProperties(je.Logger, context, flagdProperties{
+		c = setFlagdProperties(je.Logger, c, flagdProperties{
 			FlagKey:   flagKey,
 			Timestamp: time.Now().Unix(),
 		})
 
-		b, err := json.Marshal(context)
+		b, err := json.Marshal(c)
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, context))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, c))
 
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}

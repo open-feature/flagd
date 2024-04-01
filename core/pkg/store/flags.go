@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -11,9 +12,9 @@ import (
 )
 
 type IStore interface {
-	GetAll() map[string]model.Flag
-	Get(key string) (model.Flag, bool)
-	SelectorForFlag(flag model.Flag) string
+	GetAll(ctx context.Context) map[string]model.Flag
+	Get(ctx context.Context, key string) (model.Flag, bool)
+	SelectorForFlag(ctx context.Context, flag model.Flag) string
 }
 
 type Flags struct {
@@ -56,7 +57,7 @@ func (f *Flags) Set(key string, flag model.Flag) {
 	f.Flags[key] = flag
 }
 
-func (f *Flags) Get(key string) (model.Flag, bool) {
+func (f *Flags) Get(_ context.Context, key string) (model.Flag, bool) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	flag, ok := f.Flags[key]
@@ -64,7 +65,7 @@ func (f *Flags) Get(key string) (model.Flag, bool) {
 	return flag, ok
 }
 
-func (f *Flags) SelectorForFlag(flag model.Flag) string {
+func (f *Flags) SelectorForFlag(_ context.Context, flag model.Flag) string {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
@@ -89,7 +90,7 @@ func (f *Flags) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (f *Flags) GetAll() map[string]model.Flag {
+func (f *Flags) GetAll(_ context.Context) map[string]model.Flag {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	state := make(map[string]model.Flag, len(f.Flags))
@@ -106,7 +107,7 @@ func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model
 	notifications := map[string]interface{}{}
 
 	for k, newFlag := range flags {
-		storedFlag, ok := f.Get(k)
+		storedFlag, ok := f.Get(context.Background(), k)
 		if ok && !f.hasPriority(storedFlag.Source, source) {
 			logger.Debug(
 				fmt.Sprintf(
@@ -137,7 +138,7 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 	notifications := map[string]interface{}{}
 
 	for k, flag := range flags {
-		storedFlag, ok := f.Get(k)
+		storedFlag, ok := f.Get(context.Background(), k)
 		if !ok {
 			logger.Warn(
 				fmt.Sprintf("failed to update the flag, flag with key %s from source %s does not exist.",
@@ -180,7 +181,7 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	)
 	notifications := map[string]interface{}{}
 	if len(flags) == 0 {
-		allFlags := f.GetAll()
+		allFlags := f.GetAll(context.Background())
 		for key, flag := range allFlags {
 			if flag.Source != source {
 				continue
@@ -194,7 +195,7 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	}
 
 	for k := range flags {
-		flag, ok := f.Get(k)
+		flag, ok := f.Get(context.Background(), k)
 		if ok {
 			if !f.hasPriority(flag.Source, source) {
 				logger.Debug(
@@ -256,7 +257,7 @@ func (f *Flags) Merge(
 	f.mx.Unlock()
 	for k, newFlag := range flags {
 		newFlag.Source = source
-		storedFlag, ok := f.Get(k)
+		storedFlag, ok := f.Get(context.Background(), k)
 		if ok {
 			if !f.hasPriority(storedFlag.Source, source) {
 				logger.Debug(
