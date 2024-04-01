@@ -30,8 +30,7 @@ func NewAnyValue(
 }
 
 /*
-IEvaluator implementations store the state of the flags,
-do parsing and validation of the flag state and evaluate flags in response to handlers.
+IEvaluator is an extension of IResolver, allowing storage updates and retrievals
 */
 type IEvaluator interface {
 	GetState() (string, error)
