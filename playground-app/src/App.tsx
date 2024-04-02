@@ -471,7 +471,12 @@ function App() {
               )}
             </div>
             {showCopyNotification && (
-              <h4 className="admonition-title" style={{ paddingLeft: "15px" }}>URL copied to clipboard</h4>
+              <h4 className="admonition-title" style={{
+                paddingLeft: "45px",
+                borderLeftWidth: "0rem",
+                borderLeftStyle: "solid",
+                left: "15px"
+              }}>URL copied to clipboard</h4>
             )}
           </div>
         </div>
