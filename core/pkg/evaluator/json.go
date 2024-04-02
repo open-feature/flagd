@@ -315,7 +315,7 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 }
 
 // nolint: funlen
-func (je *Resolver) evaluateVariant(reqID string, flagKey string, c map[string]any) (
+func (je *Resolver) evaluateVariant(reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 	metadata = map[string]interface{}{}
@@ -348,14 +348,14 @@ func (je *Resolver) evaluateVariant(reqID string, flagKey string, c map[string]a
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		c = setFlagdProperties(je.Logger, c, flagdProperties{
+		evalCtx = setFlagdProperties(je.Logger, evalCtx, flagdProperties{
 			FlagKey:   flagKey,
 			Timestamp: time.Now().Unix(),
 		})
 
-		b, err := json.Marshal(c)
+		b, err := json.Marshal(evalCtx)
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, c))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, evalCtx))
 
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}

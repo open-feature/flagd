@@ -179,9 +179,11 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 			source,
 		),
 	)
+	ctx := context.Background()
+
 	notifications := map[string]interface{}{}
 	if len(flags) == 0 {
-		allFlags := f.GetAll(context.Background())
+		allFlags := f.GetAll(ctx)
 		for key, flag := range allFlags {
 			if flag.Source != source {
 				continue
@@ -195,7 +197,7 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	}
 
 	for k := range flags {
-		flag, ok := f.Get(context.Background(), k)
+		flag, ok := f.Get(ctx, k)
 		if ok {
 			if !f.hasPriority(flag.Source, source) {
 				logger.Debug(
