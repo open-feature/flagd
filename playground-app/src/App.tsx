@@ -240,7 +240,7 @@ function App() {
 
   const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
-    const newUrl = new URL(baseUrl) 
+    const newUrl = new URL(baseUrl)
     const encodedFeatureDefinition = shortenJson(featureDefinition);
     const encodedEvaluationContext = shortenJson(evaluationContext);
 
@@ -259,6 +259,9 @@ function App() {
     navigator.clipboard.writeText(newUrl.href).then(() => {
       console.log('URL copied to clipboard');
       setShowCopyNotification(true)
+      setTimeout(() => {
+        setShowCopyNotification(false)
+      }, 5000);
     }).catch(err => {
       console.error('Failed to copy URL: ', err);
     });
@@ -407,7 +410,7 @@ function App() {
               </select>
             </div>
             <div>
-              <h4>Evaluation context {showCopyNotification && <span className="admonition-title">URL copied to clipboard</span>}</h4>
+              <h4>Evaluation context</h4>
               <div style={{ backgroundColor: codeStyle.backgroundColor }}>
                 <Editor
                   theme={editorTheme}
@@ -440,11 +443,11 @@ function App() {
               <button className="md-button" onClick={resetInputs}>
                 Reset
               </button>
-              <button 
-                className="md-button" 
+              <button
+                className="md-button"
                 onClick={copyUrl}
-                disabled={!validFeatureDefinition|| !validEvaluationContext}
-                >
+                disabled={!validFeatureDefinition || !validEvaluationContext}
+              >
                 Share
               </button>
             </div>
@@ -467,6 +470,9 @@ function App() {
                 <p>{parsedOutput}</p>
               )}
             </div>
+            {showCopyNotification && (
+              <h4 className="admonition-title" style={{ paddingLeft: "15px" }}>URL copied to clipboard</h4>
+            )}
           </div>
         </div>
       </div>
