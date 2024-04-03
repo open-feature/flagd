@@ -12,7 +12,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/gorilla/mux v1.8.1
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-feature/flagd/core v0.8.0
+	github.com/open-feature/flagd/core v0.8.2
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rs/cors v1.10.1
 	github.com/rs/xid v1.5.0
