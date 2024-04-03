@@ -52,7 +52,8 @@ is selected.
 As hashing is deterministic we can be sure to get the same result every time for the same data point.
 
 The `fractional` operation can be added as part of a targeting definition.
-The value is an array and the first element is a nested JsonLogic rule which resolves to the hash key. This rule should typically consist of a seed concatenated with a session variable to use from the evaluation context.
+The value is an array and the first element is a nested JsonLogic rule which resolves to the hash key.
+This rule should typically consist of a seed concatenated with a session variable to use from the evaluation context.
 This value should typically be something that remains consistent for the duration of a users session (e.g. email or session ID).
 The seed is typically the flagKey so that experiments running across different flags are statistically independent, however, you can also specify another seed to either align or further decouple your allocations across different feature flags or use-cases.
 The other elements in the array are nested arrays with the first element representing a variant and the second being the percentage that this option is selected.
