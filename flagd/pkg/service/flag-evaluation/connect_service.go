@@ -220,7 +220,7 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 	if err != nil {
 		return err
 	}
-	s.logger.Info(fmt.Sprintf("Flag Evaluation listening at %s", lis.Addr()))
+	s.logger.Info(fmt.Sprintf("Flag IResolver listening at %s", lis.Addr()))
 	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
 		if err := s.server.ServeTLS(
 			lis,
