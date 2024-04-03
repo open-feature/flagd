@@ -102,7 +102,12 @@
           },
           {
             "fractional": [
-              { "var": "email" },
+              { 
+                "cat": [
+                  { "var": "$flagd.flagKey" },
+                  { "var": "email" }
+                ]
+              },
               ["red", 25],
               ["blue", 25],
               ["green", 25],

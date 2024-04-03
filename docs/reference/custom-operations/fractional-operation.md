@@ -10,7 +10,13 @@ OpenFeature allows clients to pass contextual information which can then be used
 // Factional evaluation property name used in a targeting rule
 "fractional": [
   // Evaluation context property used to determine the split
-  { "var": "email" },
+  // Note using `cat` and `$flagd.flagKey` is the suggested default to seed your hash value and prevent bucketing collisions
+  {
+    "cat": [
+      { "var": "$flagd.flagKey" },
+      { "var": "email" }
+    ]
+  },
   // Split definitions contain an array with a variant and percentage
   // Percentages must add up to 100
   [
@@ -33,7 +39,7 @@ The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-defini
 
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
 
-Assignment is deterministic (sticky) based on the expression supplied as the first parameter (`{ "var": "email" }`, in this case).
+Assignment is deterministic (sticky) based on the expression supplied as the first parameter (`{ "cat": [{ "var": "$flagd.flagKey" }, { "var": "email" }]}`, in this case).
 The value retrieved by this expression is referred to as the "bucketing value".
 The bucketing value expression can be omitted, in which case a concatenation of the `targetingKey` and the `flagKey` will be used.
 
@@ -46,8 +52,9 @@ is selected.
 As hashing is deterministic we can be sure to get the same result every time for the same data point.
 
 The `fractional` operation can be added as part of a targeting definition.
-The value is an array and the first element is the name of the property to use from the evaluation context.
+The value is an array and the first element is a nested JsonLogic rule which resolves to the hash key. This rule should typically consist of a seed concatenated with a session variable to use from the evaluation context.
 This value should typically be something that remains consistent for the duration of a users session (e.g. email or session ID).
+The seed is typically the flagKey so that experiments running across different flags are statistically independent, however, you can also specify another seed to either align or further decouple your allocations across different feature flags or use-cases.
 The other elements in the array are nested arrays with the first element representing a variant and the second being the percentage that this option is selected.
 There is no limit to the number of elements but the configured percentages must add up to 100.
 
@@ -69,7 +76,12 @@ Flags defined as such:
       "state": "ENABLED",
       "targeting": {
         "fractional": [
-          { "var": "email" },
+          { 
+            "cat": [
+              { "var": "$flagd.flagKey" },
+              { "var": "email" }
+            ]
+          },
           [
             "red",
             50
