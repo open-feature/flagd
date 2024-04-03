@@ -116,8 +116,6 @@ func distributeValue(value string, feDistribution []fractionalEvaluationDistribu
 	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
 	bucket := int(hashRatio * 100) // in range [0, 100]
 
-	fmt.Println(value, feDistribution)
-
 	rangeEnd := 0
 	for _, dist := range feDistribution {
 		rangeEnd += dist.percentage
