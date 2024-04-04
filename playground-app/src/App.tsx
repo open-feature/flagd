@@ -16,7 +16,7 @@ const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
 const PALETTE_SWITCH_SELECTOR = "[data-md-component=palette]";
 const getPalette = () =>
   document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) &&
-  document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
+    document.body.getAttribute(BODY_COLOR_SCHEME_ATTR) !== "default"
     ? "custom-dark"
     : "custom";
 const monacoBeforeMount: BeforeMount = (monaco) => {
@@ -44,6 +44,16 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
   });
 };
 
+function shortenJson(formattedString: string) {
+  const object = JSON.parse(formattedString);
+  return JSON.stringify(object);
+};
+
+function formatJson(shortenedString: string) {
+  const object = JSON.parse(shortenedString);
+  return JSON.stringify(object, null, 2);
+};
+
 function App() {
   const [selectedTemplate, setSelectedTemplate] =
     useState<ScenarioName>("Basic boolean flag");
@@ -67,6 +77,7 @@ function App() {
   );
   const [validFeatureDefinition, setValidFeatureDefinition] = useState(true);
   const [validEvaluationContext, setValidEvaluationContext] = useState(true);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [status, setStatus] = useState<"success" | "failure">("success");
   const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
     getPalette()
@@ -83,6 +94,7 @@ function App() {
     setDescription(template.description);
     setValidFeatureDefinition(true);
     setValidEvaluationContext(true);
+    setShowCopyNotification(false)
     setStatus("success");
   }, [selectedTemplate]);
 
@@ -106,6 +118,8 @@ function App() {
         console.error("Invalid flagd configuration", err);
         setValidFeatureDefinition(false);
       }
+    } else {
+      setValidFeatureDefinition(false);
     }
   }, [featureDefinition, flagdCore]);
 
@@ -131,6 +145,32 @@ function App() {
       subscription?.unsubscribe();
     };
   });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const flagsParam = urlParams.get('flags');
+    const flagKeyParam = urlParams.get('flag-key');
+    const returnTypeParam = urlParams.get('return-type');
+    const evalContextParam = urlParams.get('eval-context');
+    const scenarioParam = urlParams.get('scenario-name');
+    if (flagsParam) {
+      try {
+        const formattedFeatureDefinition = formatJson(flagsParam);
+        setFeatureDefinition(formattedFeatureDefinition);
+        if (flagKeyParam) setFlagKey(flagKeyParam);
+        if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
+        if (evalContextParam) {
+          const formattedEvaluationContext = formatJson(evalContextParam);
+          setEvaluationContext(formattedEvaluationContext);
+        }
+      } catch (error) {
+        console.error("Error decoding URL parameters: ", error);
+      }
+    } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
+      setSelectedTemplate(scenarioParam as keyof typeof scenarios);
+      setFeatureDefinition(scenarios[scenarioParam as keyof typeof scenarios].flagDefinition);
+    }
+  }, []);
 
   const evaluate = () => {
     setShowOutput(true);
@@ -196,6 +236,35 @@ function App() {
     color: "var(--md-code-fg-color)",
     fontFeatureSettings: "kern",
     fontFamily: "var(--md-code-font-family)",
+  };
+
+  const copyUrl = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const newUrl = new URL(baseUrl)
+    const encodedFeatureDefinition = shortenJson(featureDefinition);
+    const encodedEvaluationContext = shortenJson(evaluationContext);
+
+    if (Object.keys(scenarios).includes(selectedTemplate) &&
+      scenarios[selectedTemplate].flagDefinition === featureDefinition) {
+      newUrl.searchParams.set('scenario-name', selectedTemplate);
+    } else {
+      newUrl.searchParams.delete('scenario-name');
+      newUrl.searchParams.set('flags', encodedFeatureDefinition);
+      newUrl.searchParams.set('flag-key', flagKey);
+      newUrl.searchParams.set('return-type', returnType);
+      newUrl.searchParams.set('eval-context', encodedEvaluationContext);
+    }
+    window.history.pushState({}, '', newUrl.href);
+
+    navigator.clipboard.writeText(newUrl.href).then(() => {
+      console.log('URL copied to clipboard');
+      setShowCopyNotification(true)
+      setTimeout(() => {
+        setShowCopyNotification(false)
+      }, 5000);
+    }).catch(err => {
+      console.error('Failed to copy URL: ', err);
+    });
   };
 
   return (
@@ -363,7 +432,7 @@ function App() {
                 />
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", paddingTop: "8px" }}>
               <button
                 className="md-button md-button--primary"
                 onClick={evaluate}
@@ -374,11 +443,17 @@ function App() {
               <button className="md-button" onClick={resetInputs}>
                 Reset
               </button>
+              <button
+                className="md-button"
+                onClick={copyUrl}
+                disabled={!validFeatureDefinition || !validEvaluationContext}
+              >
+                Share
+              </button>
             </div>
             <div
-              className={`output ${showOutput ? "visible" : ""} admonition ${
-                status === "success" ? "success" : "failure"
-              }`}
+              className={`output ${showOutput ? "visible" : ""} admonition ${status === "success" ? "success" : "failure"
+                }`}
             >
               <p className="admonition-title">
                 {status === "success" ? "Success" : "Failure"}
@@ -395,6 +470,14 @@ function App() {
                 <p>{parsedOutput}</p>
               )}
             </div>
+            {showCopyNotification && (
+              <h4 className="admonition-title" style={{
+                paddingLeft: "45px",
+                borderLeftWidth: "0rem",
+                borderLeftStyle: "solid",
+                left: "15px"
+              }}>URL copied to clipboard</h4>
+            )}
           </div>
         </div>
       </div>
