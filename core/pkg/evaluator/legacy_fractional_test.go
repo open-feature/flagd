@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"context"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -9,6 +10,8 @@ import (
 )
 
 func TestLegacyFractionalEvaluation(t *testing.T) {
+	ctx := context.Background()
+
 	flags := Flags{
 		Flags: map[string]model.Flag{
 			"headerColor": {
@@ -279,7 +282,7 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)

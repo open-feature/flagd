@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
+	ctx := context.Background()
+
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
@@ -191,7 +194,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
@@ -213,6 +216,8 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 }
 
 func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
+	ctx := context.Background()
+
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
@@ -394,7 +399,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)

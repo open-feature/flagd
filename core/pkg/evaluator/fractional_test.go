@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"context"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -9,6 +10,8 @@ import (
 )
 
 func TestFractionalEvaluation(t *testing.T) {
+	ctx := context.Background()
+
 	flags := Flags{
 		Flags: map[string]model.Flag{
 			"headerColor": {
@@ -333,7 +336,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
@@ -358,6 +361,8 @@ func TestFractionalEvaluation(t *testing.T) {
 }
 
 func BenchmarkFractionalEvaluation(b *testing.B) {
+	ctx := context.Background()
+
 	flags := Flags{
 		Flags: map[string]model.Flag{
 			"headerColor": {
@@ -466,7 +471,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 				),
 			)
 			for i := 0; i < b.N; i++ {
-				value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+				value, variant, reason, _, err := resolve[string](
+					ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 				if value != tt.expectedValue {
 					b.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)

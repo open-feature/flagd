@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -217,6 +219,8 @@ func TestSemVerOperator_Compare(t *testing.T) {
 }
 
 func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
+	ctx := context.Background()
+
 	tests := map[string]struct {
 		flags           Flags
 		flagKey         string
@@ -707,7 +711,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			)
 			je.store.Flags = tt.flags.Flags
 
-			value, variant, reason, _, err := resolve[string](reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
@@ -721,7 +725,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
 			}
 
-			if err != tt.expectedError {
+			if !errors.Is(err, tt.expectedError) {
 				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
 			}
 		})

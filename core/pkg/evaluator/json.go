@@ -52,7 +52,7 @@ type flagdProperties struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
-type variantEvaluator func(string, string, map[string]any) (
+type variantEvaluator func(context.Context, string, string, map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
 func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
@@ -169,6 +169,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		switch defaultValue.(type) {
 		case bool:
 			value, variant, reason, metadata, err = resolve[bool](
+				ctx,
 				reqID,
 				flagKey,
 				context,
@@ -176,6 +177,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			)
 		case string:
 			value, variant, reason, metadata, err = resolve[string](
+				ctx,
 				reqID,
 				flagKey,
 				context,
@@ -183,6 +185,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			)
 		case float64:
 			value, variant, reason, metadata, err = resolve[float64](
+				ctx,
 				reqID,
 				flagKey,
 				context,
@@ -190,6 +193,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			)
 		case map[string]any:
 			value, variant, reason, metadata, err = resolve[map[string]any](
+				ctx,
 				reqID,
 				flagKey,
 				context,
@@ -216,7 +220,7 @@ func (je *Resolver) ResolveBooleanValue(
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating boolean flag: %s", flagKey))
-	return resolve[bool](reqID, flagKey, context, je.evaluateVariant)
+	return resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
 }
 
 func (je *Resolver) ResolveStringValue(
@@ -231,7 +235,7 @@ func (je *Resolver) ResolveStringValue(
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating string flag: %s", flagKey))
-	return resolve[string](reqID, flagKey, context, je.evaluateVariant)
+	return resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
 }
 
 func (je *Resolver) ResolveFloatValue(
@@ -246,7 +250,7 @@ func (je *Resolver) ResolveFloatValue(
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
-	value, variant, reason, metadata, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant)
+	value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
 	return
 }
 
@@ -262,7 +266,7 @@ func (je *Resolver) ResolveIntValue(ctx context.Context, reqID string, flagKey s
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	var val float64
-	val, variant, reason, metadata, err = resolve[float64](reqID, flagKey, context, je.evaluateVariant)
+	val, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
 	value = int64(val)
 	return
 }
@@ -279,7 +283,7 @@ func (je *Resolver) ResolveObjectValue(
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating object flag: %s", flagKey))
-	return resolve[map[string]any](reqID, flagKey, context, je.evaluateVariant)
+	return resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
 }
 
 func (je *Resolver) ResolveAsAnyValue(
@@ -292,15 +296,15 @@ func (je *Resolver) ResolveAsAnyValue(
 	defer span.End()
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating flag `%s` as a generic flag", flagKey))
-	value, variant, reason, meta, err := resolve[interface{}](reqID, flagKey, context, je.evaluateVariant)
+	value, variant, reason, meta, err := resolve[interface{}](ctx, reqID, flagKey, context, je.evaluateVariant)
 	return NewAnyValue(value, variant, reason, flagKey, meta, err)
 }
 
 // resolve is a helper for generic flag resolving
-func resolve[T constraints](reqID string, key string, context map[string]any, variantEval variantEvaluator) (
-	value T, variant string, reason string, metadata map[string]interface{}, err error,
+func resolve[T constraints](ctx context.Context, reqID string, key string, context map[string]any,
+	variantEval variantEvaluator) (value T, variant string, reason string, metadata map[string]interface{}, err error,
 ) {
-	variant, variants, reason, metadata, err := variantEval(reqID, key, context)
+	variant, variants, reason, metadata, err := variantEval(ctx, reqID, key, context)
 	if err != nil {
 		return value, variant, reason, metadata, err
 	}
@@ -315,12 +319,12 @@ func resolve[T constraints](reqID string, key string, context map[string]any, va
 }
 
 // nolint: funlen
-func (je *Resolver) evaluateVariant(reqID string, flagKey string, evalCtx map[string]any) (
+func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 	metadata = map[string]interface{}{}
 
-	flag, ok := je.store.Get(context.Background(), flagKey)
+	flag, ok := je.store.Get(ctx, flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
@@ -328,7 +332,7 @@ func (je *Resolver) evaluateVariant(reqID string, flagKey string, evalCtx map[st
 	}
 
 	// add selector to evaluation metadata
-	selector := je.store.SelectorForFlag(context.Background(), flag)
+	selector := je.store.SelectorForFlag(ctx, flag)
 	if selector != "" {
 		metadata[SelectorMetadataKey] = selector
 	}
