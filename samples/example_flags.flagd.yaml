@@ -71,8 +71,9 @@ flags:
       if:
       - "$ref": emailWithFaas
       - fractional:
-        - var:
-          - email
+        - cat:
+          - var: $flagd.flagKey
+          - var: email
         - - red
           - 25
         - - blue

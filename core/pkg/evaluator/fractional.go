@@ -56,10 +56,12 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	if ok {
 		valuesArray = valuesArray[1:]
 	} else {
-		bucketBy, ok = dataMap[targetingKeyKey].(string)
+		targetingKey, ok := dataMap[targetingKeyKey].(string)
 		if !ok {
 			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
 		}
+
+		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
@@ -67,7 +69,7 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("%s%s", properties.FlagKey, bucketBy), feDistributions, nil
+	return bucketBy, feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {

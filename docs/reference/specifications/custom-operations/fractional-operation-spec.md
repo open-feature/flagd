@@ -34,7 +34,12 @@ JSON object. Below is an example of a targeting rule containing a `fractional`:
       "state": "ENABLED",
       "targeting": {
         "fractional": [
-          {"var":"email"},
+          {
+            "cat": [
+              { "var": "$flagd.flagKey" },
+              { "var": "email" }
+            ]
+          },
           [
             "red",
             50
