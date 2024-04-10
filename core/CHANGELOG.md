@@ -6,6 +6,14 @@
 ### ⚠ BREAKING CHANGES
 
 * allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266))
+  * This is a breaking change only to the extent that it changes the assignment of evaluated flag values.
+      Previously, flagd's `fractional` op would internally concatenate any specified bucketing property with the `flag-key`.
+      This improved apparent "randomness" by reducing the chances that users were assigned a bucket of the same ordinality across multiple flags.
+      However, sometimes it's desireable to have such predictibility, so now **flagd will use the bucketing value as is**.
+      If you are specifying a bucketing value in a `fractional` rule, and want to maintain the previous assignments, you can do this concatenation manually:
+      `{ "var": "user.name" }` => `{"cat": [{ "var": "$flagd.flagKey" }, { "var": "user.name" }]}`.
+      This will result in the same assignment as before.
+      Please note, that if you do not specify a bucketing key at all (the shorthand version of the `fractional` op), flagd still uses a concatentation of the `flag-key` and `targetingKey` as before; this behavior has not changed.
 
 ### ✨ New Features
 
