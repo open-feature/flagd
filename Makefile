@@ -115,7 +115,7 @@ markdownlint-fix:
 pull-schemas-submodule:
 	git submodule update schemas
 
-.PHONY: generate-proto-docs schemas/protobuf/flagd/evaluation/v1/evaluation.proto
+.PHONY: generate-proto-docs
 generate-proto-docs: pull-schemas-submodule
 	docker run --rm -v ${PWD}/$(DOCS_DIR)/reference/specifications:/out -v ${PWD}/schemas/protobuf:/protos pseudomuto/protoc-gen-doc --doc_opt=markdown,protos-with-toc.md flagd/evaluation/v1/evaluation.proto flagd/sync/v1/sync.proto \
 	&& echo '<!-- WARNING: THIS DOC IS AUTO-GENERATED. DO NOT EDIT! -->' > ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
