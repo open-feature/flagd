@@ -39,7 +39,7 @@ See [sync source](../reference/sync-configuration.md#source-configuration) confi
 ### gRPC sync
 
 The gRPC sync provider streams flag definitions from a gRPC sync provider implementation.
-This stream connection is defined by the [sync service protobuf definition](https://github.com/open-feature/schemas/blob/main/protobuf/sync/v1/sync_service.proto).
+This stream connection is defined by the [sync service protobuf definition](https://github.com/open-feature/flagd-schemas/blob/main/protobuf/flagd/sync/v1/sync.proto).
 
 ```shell
 flagd start --uri grpc://grpc-sync-source
