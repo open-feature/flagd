@@ -3,7 +3,7 @@
 <a name="top"></a>
 
 
-## schema/v1/schema.proto
+## flagd/evaluation/v1/evaluation.proto
 Flag evaluation API
 
 This proto forms the basis of a flag-evaluation API.
@@ -11,7 +11,7 @@ It supports single and bulk evaluation RPCs, and flags of various types, as well
 It supports the inclusion of a &#34;context&#34; with each evaluation, which may contain arbitrary attributes relevant to flag evaluation.
 
 
-<a name="schema-v1-AnyFlag"></a>
+<a name="flagd-evaluation-v1-AnyFlag"></a>
 
 ### AnyFlag
 A variant type flag response.
@@ -31,7 +31,7 @@ A variant type flag response.
 
 
 
-<a name="schema-v1-EventStreamRequest"></a>
+<a name="flagd-evaluation-v1-EventStreamRequest"></a>
 
 ### EventStreamRequest
 Empty stream request body
@@ -41,7 +41,7 @@ Empty stream request body
 
 
 
-<a name="schema-v1-EventStreamResponse"></a>
+<a name="flagd-evaluation-v1-EventStreamResponse"></a>
 
 ### EventStreamResponse
 Response body for the EventStream stream response
@@ -57,7 +57,7 @@ Response body for the EventStream stream response
 
 
 
-<a name="schema-v1-ResolveAllRequest"></a>
+<a name="flagd-evaluation-v1-ResolveAllRequest"></a>
 
 ### ResolveAllRequest
 Request body for bulk flag evaluation, used by the ResolveAll rpc.
@@ -72,7 +72,7 @@ Request body for bulk flag evaluation, used by the ResolveAll rpc.
 
 
 
-<a name="schema-v1-ResolveAllResponse"></a>
+<a name="flagd-evaluation-v1-ResolveAllResponse"></a>
 
 ### ResolveAllResponse
 Response body for bulk flag evaluation, used by the ResolveAll rpc.
@@ -80,14 +80,14 @@ Response body for bulk flag evaluation, used by the ResolveAll rpc.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flags | [ResolveAllResponse.FlagsEntry](#schema-v1-ResolveAllResponse-FlagsEntry) | repeated | Object structure describing the evaluated flags for the provided context. |
+| flags | [ResolveAllResponse.FlagsEntry](#flagd-evaluation-v1-ResolveAllResponse-FlagsEntry) | repeated | Object structure describing the evaluated flags for the provided context. |
 
 
 
 
 
 
-<a name="schema-v1-ResolveAllResponse-FlagsEntry"></a>
+<a name="flagd-evaluation-v1-ResolveAllResponse-FlagsEntry"></a>
 
 ### ResolveAllResponse.FlagsEntry
 
@@ -96,14 +96,14 @@ Response body for bulk flag evaluation, used by the ResolveAll rpc.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
-| value | [AnyFlag](#schema-v1-AnyFlag) |  |  |
+| value | [AnyFlag](#flagd-evaluation-v1-AnyFlag) |  |  |
 
 
 
 
 
 
-<a name="schema-v1-ResolveBooleanRequest"></a>
+<a name="flagd-evaluation-v1-ResolveBooleanRequest"></a>
 
 ### ResolveBooleanRequest
 Request body for boolean flag evaluation, used by the ResolveBoolean rpc.
@@ -119,7 +119,7 @@ Request body for boolean flag evaluation, used by the ResolveBoolean rpc.
 
 
 
-<a name="schema-v1-ResolveBooleanResponse"></a>
+<a name="flagd-evaluation-v1-ResolveBooleanResponse"></a>
 
 ### ResolveBooleanResponse
 Response body for boolean flag evaluation. used by the ResolveBoolean rpc.
@@ -137,7 +137,7 @@ Response body for boolean flag evaluation. used by the ResolveBoolean rpc.
 
 
 
-<a name="schema-v1-ResolveFloatRequest"></a>
+<a name="flagd-evaluation-v1-ResolveFloatRequest"></a>
 
 ### ResolveFloatRequest
 Request body for float flag evaluation, used by the ResolveFloat rpc.
@@ -153,7 +153,7 @@ Request body for float flag evaluation, used by the ResolveFloat rpc.
 
 
 
-<a name="schema-v1-ResolveFloatResponse"></a>
+<a name="flagd-evaluation-v1-ResolveFloatResponse"></a>
 
 ### ResolveFloatResponse
 Response body for float flag evaluation. used by the ResolveFloat rpc.
@@ -171,7 +171,7 @@ Response body for float flag evaluation. used by the ResolveFloat rpc.
 
 
 
-<a name="schema-v1-ResolveIntRequest"></a>
+<a name="flagd-evaluation-v1-ResolveIntRequest"></a>
 
 ### ResolveIntRequest
 Request body for int flag evaluation, used by the ResolveInt rpc.
@@ -187,7 +187,7 @@ Request body for int flag evaluation, used by the ResolveInt rpc.
 
 
 
-<a name="schema-v1-ResolveIntResponse"></a>
+<a name="flagd-evaluation-v1-ResolveIntResponse"></a>
 
 ### ResolveIntResponse
 Response body for int flag evaluation. used by the ResolveInt rpc.
@@ -205,7 +205,7 @@ Response body for int flag evaluation. used by the ResolveInt rpc.
 
 
 
-<a name="schema-v1-ResolveObjectRequest"></a>
+<a name="flagd-evaluation-v1-ResolveObjectRequest"></a>
 
 ### ResolveObjectRequest
 Request body for object flag evaluation, used by the ResolveObject rpc.
@@ -221,7 +221,7 @@ Request body for object flag evaluation, used by the ResolveObject rpc.
 
 
 
-<a name="schema-v1-ResolveObjectResponse"></a>
+<a name="flagd-evaluation-v1-ResolveObjectResponse"></a>
 
 ### ResolveObjectResponse
 Response body for object flag evaluation. used by the ResolveObject rpc.
@@ -241,7 +241,7 @@ NOTE: This structure will need to be decoded from google/protobuf/struct.proto b
 
 
 
-<a name="schema-v1-ResolveStringRequest"></a>
+<a name="flagd-evaluation-v1-ResolveStringRequest"></a>
 
 ### ResolveStringRequest
 Request body for string flag evaluation, used by the ResolveString rpc.
@@ -257,7 +257,7 @@ Request body for string flag evaluation, used by the ResolveString rpc.
 
 
 
-<a name="schema-v1-ResolveStringResponse"></a>
+<a name="flagd-evaluation-v1-ResolveStringResponse"></a>
 
 ### ResolveStringResponse
 Response body for string flag evaluation. used by the ResolveString rpc.
@@ -281,44 +281,44 @@ Response body for string flag evaluation. used by the ResolveString rpc.
  
 
 
-<a name="schema-v1-Service"></a>
+<a name="flagd-evaluation-v1-Service"></a>
 
 ### Service
 Service defines the exposed rpcs of flagd
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| ResolveAll | [ResolveAllRequest](#schema-v1-ResolveAllRequest) | [ResolveAllResponse](#schema-v1-ResolveAllResponse) |  |
-| ResolveBoolean | [ResolveBooleanRequest](#schema-v1-ResolveBooleanRequest) | [ResolveBooleanResponse](#schema-v1-ResolveBooleanResponse) |  |
-| ResolveString | [ResolveStringRequest](#schema-v1-ResolveStringRequest) | [ResolveStringResponse](#schema-v1-ResolveStringResponse) |  |
-| ResolveFloat | [ResolveFloatRequest](#schema-v1-ResolveFloatRequest) | [ResolveFloatResponse](#schema-v1-ResolveFloatResponse) |  |
-| ResolveInt | [ResolveIntRequest](#schema-v1-ResolveIntRequest) | [ResolveIntResponse](#schema-v1-ResolveIntResponse) |  |
-| ResolveObject | [ResolveObjectRequest](#schema-v1-ResolveObjectRequest) | [ResolveObjectResponse](#schema-v1-ResolveObjectResponse) |  |
-| EventStream | [EventStreamRequest](#schema-v1-EventStreamRequest) | [EventStreamResponse](#schema-v1-EventStreamResponse) stream |  |
+| ResolveAll | [ResolveAllRequest](#flagd-evaluation-v1-ResolveAllRequest) | [ResolveAllResponse](#flagd-evaluation-v1-ResolveAllResponse) |  |
+| ResolveBoolean | [ResolveBooleanRequest](#flagd-evaluation-v1-ResolveBooleanRequest) | [ResolveBooleanResponse](#flagd-evaluation-v1-ResolveBooleanResponse) |  |
+| ResolveString | [ResolveStringRequest](#flagd-evaluation-v1-ResolveStringRequest) | [ResolveStringResponse](#flagd-evaluation-v1-ResolveStringResponse) |  |
+| ResolveFloat | [ResolveFloatRequest](#flagd-evaluation-v1-ResolveFloatRequest) | [ResolveFloatResponse](#flagd-evaluation-v1-ResolveFloatResponse) |  |
+| ResolveInt | [ResolveIntRequest](#flagd-evaluation-v1-ResolveIntRequest) | [ResolveIntResponse](#flagd-evaluation-v1-ResolveIntResponse) |  |
+| ResolveObject | [ResolveObjectRequest](#flagd-evaluation-v1-ResolveObjectRequest) | [ResolveObjectResponse](#flagd-evaluation-v1-ResolveObjectResponse) |  |
+| EventStream | [EventStreamRequest](#flagd-evaluation-v1-EventStreamRequest) | [EventStreamResponse](#flagd-evaluation-v1-EventStreamResponse) stream |  |
 
  
 
 
 
-<a name="sync_v1_sync_service-proto"></a>
+<a name="flagd_sync_v1_sync-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## sync/v1/sync_service.proto
+## flagd/sync/v1/sync.proto
 Flag definition sync API
 
 This proto defines a simple API to synchronize a feature flag definition.
 It supports establishing a stream for getting notifications about changes in a flag definition.
 
 
-<a name="sync-v1-FetchAllFlagsRequest"></a>
+<a name="flagd-sync-v1-FetchAllFlagsRequest"></a>
 
 ### FetchAllFlagsRequest
-FetchAllFlagsRequest is the request to fetch all flags. Flagd sends this request as the client in order to resync its internal state
+FetchAllFlagsRequest is the request to fetch all flags. Clients send this request as the client in order to resync their internal state
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| provider_id | [string](#string) |  | Optional: A unique identifier for flagd(grpc client) initiating the request. The server implementations may utilize this identifier to uniquely identify, validate(ex:- enforce authentication/authorization) and filter flag configurations that it can expose to this request. This field is intended to be optional. However server implementations may enforce it. ex:- provider_id: flagd-weatherapp-sidecar |
+| provider_id | [string](#string) |  | Optional: A unique identifier for clients initiating the request. The server implementations may utilize this identifier to uniquely identify, validate(ex:- enforce authentication/authorization) and filter flag configurations that it can expose to this request. This field is intended to be optional. However server implementations may enforce it. ex:- provider_id: flagd-weatherapp-sidecar |
 | selector | [string](#string) |  | Optional: A selector for the flag configuration request. The server implementation may utilize this to select flag configurations from a collection, select the source of the flag or combine this to any desired underlying filtering mechanism. ex:- selector: &#39;source=database,app=weatherapp&#39; |
 
 
@@ -326,7 +326,7 @@ FetchAllFlagsRequest is the request to fetch all flags. Flagd sends this request
 
 
 
-<a name="sync-v1-FetchAllFlagsResponse"></a>
+<a name="flagd-sync-v1-FetchAllFlagsResponse"></a>
 
 ### FetchAllFlagsResponse
 FetchAllFlagsResponse is the server response containing feature flag configurations
@@ -341,10 +341,36 @@ FetchAllFlagsResponse is the server response containing feature flag configurati
 
 
 
-<a name="sync-v1-SyncFlagsRequest"></a>
+<a name="flagd-sync-v1-GetMetadataRequest"></a>
+
+### GetMetadataRequest
+GetMetadataRequest is the request for retrieving metadata from the sync service
+
+
+
+
+
+
+<a name="flagd-sync-v1-GetMetadataResponse"></a>
+
+### GetMetadataResponse
+GetMetadataResponse contains metadata from the sync service
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
+<a name="flagd-sync-v1-SyncFlagsRequest"></a>
 
 ### SyncFlagsRequest
-SyncFlagsRequest is the request initiating the sever-streaming rpc. Flagd sends this request, acting as the client
+SyncFlagsRequest is the request initiating the server-streaming rpc.
+Implementations of Flagd providers and Flagd itself send this request, acting as the client.
 
 
 | Field | Type | Label | Description |
@@ -357,7 +383,7 @@ SyncFlagsRequest is the request initiating the sever-streaming rpc. Flagd sends 
 
 
 
-<a name="sync-v1-SyncFlagsResponse"></a>
+<a name="flagd-sync-v1-SyncFlagsResponse"></a>
 
 ### SyncFlagsResponse
 SyncFlagsResponse is the server response containing feature flag configurations and the state
@@ -366,7 +392,6 @@ SyncFlagsResponse is the server response containing feature flag configurations 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/schemas/main/json/flagd-definitions.json |
-| state | [SyncState](#sync-v1-SyncState) |  | State conveying the operation to be performed by flagd. See the descriptions of SyncState for an explanation of supported values |
 
 
 
@@ -374,37 +399,21 @@ SyncFlagsResponse is the server response containing feature flag configurations 
 
  
 
-
-<a name="sync-v1-SyncState"></a>
-
-### SyncState
-SyncState conveys the state of the payload. These states are related to flagd isync.go type definitions but
-contains extras to optimize grpc use case. Refer - https://github.com/open-feature/flagd/blob/main/pkg/sync/isync.go
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| SYNC_STATE_UNSPECIFIED | 0 | Value is ignored by the listening flagd |
-| SYNC_STATE_ALL | 1 | All the flags matching the request. This is the default response and other states can be ignored by the implementation. Flagd internally replaces all existing flags for this response state. |
-| SYNC_STATE_ADD | 2 | Convey an addition of a flag. Flagd internally handles this by combining new flags with existing ones |
-| SYNC_STATE_UPDATE | 3 | Convey an update of a flag. Flagd internally attempts to update if the updated flag already exist OR if it does not, it will get added |
-| SYNC_STATE_DELETE | 4 | Convey a deletion of a flag. Flagd internally removes the flag |
-| SYNC_STATE_PING | 5 | Optional server ping to check client connectivity. Handling is ignored by flagd and is to merely support live check |
-
-
  
 
  
 
 
-<a name="sync-v1-FlagSyncService"></a>
+<a name="flagd-sync-v1-FlagSyncService"></a>
 
 ### FlagSyncService
 FlagService implements a server streaming to provide realtime flag configurations
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| SyncFlags | [SyncFlagsRequest](#sync-v1-SyncFlagsRequest) | [SyncFlagsResponse](#sync-v1-SyncFlagsResponse) stream |  |
-| FetchAllFlags | [FetchAllFlagsRequest](#sync-v1-FetchAllFlagsRequest) | [FetchAllFlagsResponse](#sync-v1-FetchAllFlagsResponse) |  |
+| SyncFlags | [SyncFlagsRequest](#flagd-sync-v1-SyncFlagsRequest) | [SyncFlagsResponse](#flagd-sync-v1-SyncFlagsResponse) stream |  |
+| FetchAllFlags | [FetchAllFlagsRequest](#flagd-sync-v1-FetchAllFlagsRequest) | [FetchAllFlagsResponse](#flagd-sync-v1-FetchAllFlagsResponse) |  |
+| GetMetadata | [GetMetadataRequest](#flagd-sync-v1-GetMetadataRequest) | [GetMetadataResponse](#flagd-sync-v1-GetMetadataResponse) |  |
 
  
 
