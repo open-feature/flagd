@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-feature/flagd/compare/core/v0.8.2...core/v0.9.0) (2024-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266))
+
+### ✨ New Features
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266)) ([f62bc72](https://github.com/open-feature/flagd/commit/f62bc721e8ebc07e27fbe7b9ca085a8771295d65))
+
+
+### 🧹 Chore
+
+* refactor evaluation core ([#1259](https://github.com/open-feature/flagd/issues/1259)) ([0e6604c](https://github.com/open-feature/flagd/commit/0e6604cd038dc13d7d40e622523320bf03efbcd0))
+* update go deps ([#1279](https://github.com/open-feature/flagd/issues/1279)) ([219789f](https://github.com/open-feature/flagd/commit/219789fca8a929d552e4e8d1f6b6d5cd44505f43))
+* wire evaluation ctx to store methods ([#1273](https://github.com/open-feature/flagd/issues/1273)) ([0075932](https://github.com/open-feature/flagd/commit/00759322594f309ca9236156f296805a09f5f9fe))
+
 ## [0.8.2](https://github.com/open-feature/flagd/compare/core/v0.8.1...core/v0.8.2) (2024-03-27)
 
 

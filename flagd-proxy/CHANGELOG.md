@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.5.2...flagd-proxy/v0.6.0) (2024-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.8.2 ([#1255](https://github.com/open-feature/flagd/issues/1255)) ([9005089](https://github.com/open-feature/flagd/commit/9005089b3e7c8ec4c1e52b42a59c0c05983647a2))
+
+
+### ✨ New Features
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266)) ([f62bc72](https://github.com/open-feature/flagd/commit/f62bc721e8ebc07e27fbe7b9ca085a8771295d65))
+
+
+### 🧹 Chore
+
+* update go deps ([#1279](https://github.com/open-feature/flagd/issues/1279)) ([219789f](https://github.com/open-feature/flagd/commit/219789fca8a929d552e4e8d1f6b6d5cd44505f43))
+
 ## [0.5.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.5.1...flagd-proxy/v0.5.2) (2024-03-27)
 
 
