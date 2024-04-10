@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-feature/flagd/compare/core/v0.8.2...core/v0.9.0) (2024-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266))
+  * This is a breaking change only to the extent that it changes the assignment of evaluated flag values.
+      Previously, flagd's `fractional` op would internally concatenate any specified bucketing property with the `flag-key`.
+      This improved apparent "randomness" by reducing the chances that users were assigned a bucket of the same ordinality across multiple flags.
+      However, sometimes it's desireable to have such predictibility, so now **flagd will use the bucketing value as is**.
+      If you are specifying a bucketing value in a `fractional` rule, and want to maintain the previous assignments, you can do this concatenation manually:
+      `{ "var": "user.name" }` => `{"cat": [{ "var": "$flagd.flagKey" }, { "var": "user.name" }]}`.
+      This will result in the same assignment as before.
+      Please note, that if you do not specify a bucketing key at all (the shorthand version of the `fractional` op), flagd still uses a concatentation of the `flag-key` and `targetingKey` as before; this behavior has not changed.
+
+### ✨ New Features
+
+* allow custom seed when using targetingKey override for fractional op ([#1266](https://github.com/open-feature/flagd/issues/1266)) ([f62bc72](https://github.com/open-feature/flagd/commit/f62bc721e8ebc07e27fbe7b9ca085a8771295d65))
+
+
+### 🧹 Chore
+
+* refactor evaluation core ([#1259](https://github.com/open-feature/flagd/issues/1259)) ([0e6604c](https://github.com/open-feature/flagd/commit/0e6604cd038dc13d7d40e622523320bf03efbcd0))
+* update go deps ([#1279](https://github.com/open-feature/flagd/issues/1279)) ([219789f](https://github.com/open-feature/flagd/commit/219789fca8a929d552e4e8d1f6b6d5cd44505f43))
+* wire evaluation ctx to store methods ([#1273](https://github.com/open-feature/flagd/issues/1273)) ([0075932](https://github.com/open-feature/flagd/commit/00759322594f309ca9236156f296805a09f5f9fe))
+
 ## [0.8.2](https://github.com/open-feature/flagd/compare/core/v0.8.1...core/v0.8.2) (2024-03-27)
 
 
