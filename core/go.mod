@@ -31,7 +31,7 @@ require (
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.22.0
-	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8
+	golang.org/x/exp fe59bbe5cc7f
 	golang.org/x/mod v0.17.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.63.2
