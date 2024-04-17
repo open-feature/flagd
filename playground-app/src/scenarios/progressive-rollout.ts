@@ -29,43 +29,30 @@ export const progressRollout: Scenario = {
           },
           targeting: {
             if: [
+              { ">=": [phase1, { var: "$flagd.timestamp" }] },
+              "disabled",
+              { "<=": [phase1, { var: "$flagd.timestamp" }, phase2] },
               {
-                ">": [{ var: "$flagd.timestamp" }, enabled],
-              },
-              "enabled",
-              {
-                if: [
-                  { ">": [{ var: "$flagd.timestamp" }, phase3] },
-                  {
-                    fractional: [
-                      ["phase3Enabled", 50],
-                      ["phase3Disabled", 50],
-                    ],
-                  },
-                  {
-                    if: [
-                      { ">": [{ var: "$flagd.timestamp" }, phase2] },
-                      {
-                        fractional: [
-                          ["phase2Enabled", 25],
-                          ["phase2Disabled", 75],
-                        ],
-                      },
-                      {
-                        if: [
-                          { ">": [{ var: "$flagd.timestamp" }, phase1] },
-                          {
-                            fractional: [
-                              ["phase1Enabled", 10],
-                              ["phase1Disabled", 90],
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
+                fractional: [
+                  ["phase1Enabled", 10],
+                  ["phase1Disabled", 90],
                 ],
               },
+              { "<=": [phase2, { var: "$flagd.timestamp" }, phase3] },
+              {
+                fractional: [
+                  ["phase2Enabled", 25],
+                  ["phase2Disabled", 75],
+                ],
+              },
+              { "<=": [phase3, { var: "$flagd.timestamp" }, enabled] },
+              {
+                fractional: [
+                  ["phase3Enabled", 50],
+                  ["phase3Disabled", 50],
+                ],
+              },
+              "enabled",
             ],
           },
         },
