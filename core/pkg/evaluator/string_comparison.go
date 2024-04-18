@@ -68,7 +68,7 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 //
 // Note that the 'ends_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
-func (sce StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
+func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
 		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))

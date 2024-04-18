@@ -74,18 +74,18 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// derive evaluator
-	evaluator := setupJSONEvaluator(logger, s)
+	jsonEvaluator := evaluator.NewJSON(logger, s)
 
 	// derive services
 
 	// connect service
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
-		evaluator,
+		jsonEvaluator,
 		recorder)
 
 	// ofrep service
-	ofrepService, err := ofrep.NewOfrepService(evaluator, config.CORS, ofrep.SvcConfiguration{
+	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
 		Logger: logger.WithFields(zap.String("component", "OFREPService")),
 		Port:   config.OfrepServicePort,
 	})
@@ -118,7 +118,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	return &Runtime{
 		Logger:       logger.WithFields(zap.String("component", "runtime")),
-		Evaluator:    evaluator,
+		Evaluator:    jsonEvaluator,
 		FlagSync:     flagSyncService,
 		OfrepService: ofrepService,
 		Service:      connectService,
@@ -134,35 +134,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		},
 		SyncImpl: iSyncs,
 	}, nil
-}
-
-func setupJSONEvaluator(logger *logger.Logger, s *store.Flags) *evaluator.JSON {
-	evaluator := evaluator.NewJSON(
-		logger,
-		s,
-		evaluator.WithEvaluator(
-			evaluator.FractionEvaluationName,
-			evaluator.NewFractional(logger).Evaluate,
-		),
-		evaluator.WithEvaluator(
-			evaluator.StartsWithEvaluationName,
-			evaluator.NewStringComparisonEvaluator(logger).StartsWithEvaluation,
-		),
-		evaluator.WithEvaluator(
-			evaluator.EndsWithEvaluationName,
-			evaluator.NewStringComparisonEvaluator(logger).EndsWithEvaluation,
-		),
-		evaluator.WithEvaluator(
-			evaluator.SemVerEvaluationName,
-			evaluator.NewSemVerComparison(logger).SemVerEvaluation,
-		),
-		// deprecated: will be removed before v1!
-		evaluator.WithEvaluator(
-			evaluator.LegacyFractionEvaluationName,
-			evaluator.NewLegacyFractional(logger).LegacyFractionalEvaluation,
-		),
-	)
-	return evaluator
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig
