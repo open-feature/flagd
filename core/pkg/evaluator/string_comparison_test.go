@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -184,14 +185,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(
-				log,
-				store.NewFlags(),
-				WithEvaluator(
-					StartsWithEvaluationName,
-					NewStringComparisonEvaluator(log).StartsWithEvaluation,
-				),
-			)
+			je := NewJSON(log, store.NewFlags())
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
@@ -208,7 +202,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
 			}
 
-			if err != tt.expectedError {
+			if !errors.Is(err, tt.expectedError) {
 				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
 			}
 		})
@@ -388,14 +382,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(
-				log,
-				store.NewFlags(),
-				WithEvaluator(
-					EndsWithEvaluationName,
-					NewStringComparisonEvaluator(log).EndsWithEvaluation,
-				),
-			)
+			je := NewJSON(log, store.NewFlags())
 
 			je.store.Flags = tt.flags.Flags
 
