@@ -701,14 +701,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(
-				log,
-				store.NewFlags(),
-				WithEvaluator(
-					SemVerEvaluationName,
-					NewSemVerComparison(log).SemVerEvaluation,
-				),
-			)
+			je := NewJSON(log, store.NewFlags())
 			je.store.Flags = tt.flags.Flags
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)

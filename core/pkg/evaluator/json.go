@@ -55,6 +55,7 @@ type flagdProperties struct {
 type variantEvaluator func(context.Context, string, string, map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
+// Deprecated - this will be remove in the next release
 func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
 	return func(_ *JSON) {
 		jsonlogic.AddOperator(name, evalFunc)
@@ -145,6 +146,13 @@ type Resolver struct {
 }
 
 func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
+	// register supported json logic custom operator implementations
+	jsonlogic.AddOperator(FractionEvaluationName, NewFractional(logger).Evaluate)
+	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
+	jsonlogic.AddOperator(EndsWithEvaluationName, NewStringComparisonEvaluator(logger).EndsWithEvaluation)
+	jsonlogic.AddOperator(SemVerEvaluationName, NewSemVerComparison(logger).SemVerEvaluation)
+	jsonlogic.AddOperator(LegacyFractionEvaluationName, NewLegacyFractional(logger).LegacyFractionalEvaluation)
+
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
 
