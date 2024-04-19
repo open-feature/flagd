@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.1](https://github.com/open-feature/flagd/compare/flagd/v0.10.0...flagd/v0.10.1) (2024-04-19)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.9.0 ([#1281](https://github.com/open-feature/flagd/issues/1281)) ([3cfb052](https://github.com/open-feature/flagd/commit/3cfb0523cc857dd2019d712c621afe81c2b41398))
+
+
+### ✨ New Features
+
+* move json logic operator registration to resolver ([#1291](https://github.com/open-feature/flagd/issues/1291)) ([b473457](https://github.com/open-feature/flagd/commit/b473457ddff28789fee1eeb6704491b6aa3525e3))
+
 ## [0.10.0](https://github.com/open-feature/flagd/compare/flagd/v0.9.2...flagd/v0.10.0) (2024-04-10)
 
 

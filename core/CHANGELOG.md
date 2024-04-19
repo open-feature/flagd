@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.1](https://github.com/open-feature/flagd/compare/core/v0.9.0...core/v0.9.1) (2024-04-19)
+
+
+### 🐛 Bug Fixes
+
+* missing/nil custom variables in fractional operator ([#1295](https://github.com/open-feature/flagd/issues/1295)) ([418c5cd](https://github.com/open-feature/flagd/commit/418c5cd7c07fad61674a751872a1256b5062799c))
+
+
+### ✨ New Features
+
+* move json logic operator registration to resolver ([#1291](https://github.com/open-feature/flagd/issues/1291)) ([b473457](https://github.com/open-feature/flagd/commit/b473457ddff28789fee1eeb6704491b6aa3525e3))
+
 ## [0.9.0](https://github.com/open-feature/flagd/compare/core/v0.8.2...core/v0.9.0) (2024-04-10)
 
 
