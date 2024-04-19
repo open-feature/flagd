@@ -72,13 +72,13 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	return bucketBy, feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationDistributions(values []interface{}) ([]fractionalEvaluationDistribution, error) {
 	sumOfPercentages := 0
 	var feDistributions []fractionalEvaluationDistribution
 	for i := 0; i < len(values); i++ {
-		distributionArray, ok := values[i].([]any)
+		distributionArray, ok := values[i].([]interface{})
 		if !ok {
-			return nil, errors.New("distribution elements aren't of type []any")
+			return nil, errors.New("distribution elements aren't of type []interface{}")
 		}
 
 		if len(distributionArray) != 2 {
