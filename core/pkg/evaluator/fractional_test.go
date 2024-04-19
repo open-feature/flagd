@@ -12,7 +12,7 @@ import (
 func TestFractionalEvaluation(t *testing.T) {
 	ctx := context.Background()
 
-	flags := Flags{
+	commonFlags := Flags{
 		Flags: map[string]model.Flag{
 			"headerColor": {
 				State:          "ENABLED",
@@ -95,7 +95,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		expectedErrorCode string
 	}{
 		"rachel@faas.com": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "headerColor",
 			context: map[string]any{
 				"email": "rachel@faas.com",
@@ -105,7 +105,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"monica@faas.com": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "headerColor",
 			context: map[string]any{
 				"email": "monica@faas.com",
@@ -115,7 +115,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"joey@faas.com": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "headerColor",
 			context: map[string]any{
 				"email": "joey@faas.com",
@@ -125,7 +125,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "headerColor",
 			context: map[string]any{
 				"email": "ross@faas.com",
@@ -135,7 +135,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"rachel@faas.com with custom seed": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "customSeededHeaderColor",
 			context: map[string]any{
 				"email": "rachel@faas.com",
@@ -145,7 +145,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"monica@faas.com with custom seed": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "customSeededHeaderColor",
 			context: map[string]any{
 				"email": "monica@faas.com",
@@ -155,7 +155,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"joey@faas.com with custom seed": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "customSeededHeaderColor",
 			context: map[string]any{
 				"email": "joey@faas.com",
@@ -165,7 +165,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with custom seed": {
-			flags:   flags,
+			flags:   commonFlags,
 			flagKey: "customSeededHeaderColor",
 			context: map[string]any{
 				"email": "ross@faas.com",
@@ -387,6 +387,35 @@ func TestFractionalEvaluation(t *testing.T) {
 			},
 			expectedVariant: "blue",
 			expectedValue:   "#0000FF",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"missing email - parser should ignore nil/missing custom variables and continue": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":  "#FF0000",
+							"blue": "#0000FF",
+						},
+						Targeting: []byte(
+							`{
+								"fractional": [
+									{"var": "email"},
+									["red",50],
+									["blue",50]
+								]
+							}`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": "foo@foo.com",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}

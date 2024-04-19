@@ -56,6 +56,11 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	if ok {
 		valuesArray = valuesArray[1:]
 	} else {
+		// check for nil here as custom property could be nil/missing
+		if valuesArray[0] == nil {
+			valuesArray = valuesArray[1:]
+		}
+
 		targetingKey, ok := dataMap[targetingKeyKey].(string)
 		if !ok {
 			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
@@ -78,7 +83,8 @@ func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluatio
 	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
 		if !ok {
-			return nil, errors.New("distribution elements aren't of type []any")
+			return nil, errors.New("distribution elements aren't of type []any. " +
+				"please check your rule in flag definition")
 		}
 
 		if len(distributionArray) != 2 {
