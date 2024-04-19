@@ -4,6 +4,7 @@ import { basicNumber } from "./basic-number";
 import { basicObject } from "./basic-object";
 import { basicString } from "./basic-string";
 import { booleanShorthand } from "./boolean-shorthand";
+import { chainableConditions } from "./chainable-conditions";
 import { enableByDomain } from "./enable-by-domain";
 import { enableByLocale } from "./enable-by-locale";
 import { enableByTime } from "./enable-by-time";
@@ -22,6 +23,7 @@ export const scenarios = {
   "Enable based on users locale": enableByLocale,
   "Enable based on release version": enableByVersion,
   "Enable based on the current time": enableByTime,
+  "Chainable if/else/then": chainableConditions,
   "Multi-variant experiment": pseudoRandomSplit,
   "Progressive rollout": progressRollout,
   "Shared evaluators": sharedEvaluators,
