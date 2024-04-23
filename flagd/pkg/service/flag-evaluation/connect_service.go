@@ -58,7 +58,7 @@ type ConnectService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
-	eventingConfiguration *eventingConfiguration
+	eventingConfiguration IEvents
 
 	server        *http.Server
 	metricsServer *http.Server
@@ -125,7 +125,7 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 
 // Notify emits change event notifications for subscriptions
 func (s *ConnectService) Notify(n service.Notification) {
-	s.eventingConfiguration.emitToAll(n)
+	s.eventingConfiguration.EmitToAll(n)
 }
 
 // nolint: funlen
@@ -209,7 +209,7 @@ func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
 
 func (s *ConnectService) Shutdown() {
 	s.readinessEnabled = false
-	s.eventingConfiguration.emitToAll(service.Notification{
+	s.eventingConfiguration.EmitToAll(service.Notification{
 		Type: service.Shutdown,
 		Data: map[string]interface{}{},
 	})

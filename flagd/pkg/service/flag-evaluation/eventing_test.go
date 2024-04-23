@@ -22,8 +22,8 @@ func TestSubscribe(t *testing.T) {
 	chanB := make(chan iservice.Notification, 1)
 
 	// when
-	eventing.subscribe(idA, chanA)
-	eventing.subscribe(idB, chanB)
+	eventing.Subscribe(idA, chanA)
+	eventing.Subscribe(idB, chanB)
 
 	// then
 	require.Equal(t, chanA, eventing.subs[idA], "incorrect subscription association")
@@ -43,10 +43,10 @@ func TestUnsubscribe(t *testing.T) {
 	chanB := make(chan iservice.Notification, 1)
 
 	// when
-	eventing.subscribe(idA, chanA)
-	eventing.subscribe(idB, chanB)
+	eventing.Subscribe(idA, chanA)
+	eventing.Subscribe(idB, chanB)
 
-	eventing.unSubscribe(idA)
+	eventing.Unsubscribe(idA)
 
 	// then
 	require.Empty(t, eventing.subs[idA],

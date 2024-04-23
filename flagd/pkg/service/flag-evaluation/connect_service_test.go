@@ -182,7 +182,7 @@ func TestConnectServiceNotify(t *testing.T) {
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.subs["key"] = sChan
+	eventing.Subscribe("key", sChan)
 
 	// notification type
 	ofType := iservice.ConfigurationChange
@@ -220,7 +220,7 @@ func TestConnectServiceShutdown(t *testing.T) {
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.subs["key"] = sChan
+	eventing.Subscribe("key", sChan)
 
 	// notification type
 	ofType := iservice.Shutdown

@@ -23,14 +23,14 @@ type FlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
-	eventingConfiguration *eventingConfiguration
+	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
 func NewFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator,
-	eventingCfg *eventingConfiguration,
+	eventingCfg IEvents,
 	metricsRecorder *telemetry.MetricsRecorder,
 ) *FlagEvaluationService {
 	return &FlagEvaluationService{
@@ -116,8 +116,8 @@ func (s *FlagEvaluationService) EventStream(
 	stream *connect.ServerStream[evalV1.EventStreamResponse],
 ) error {
 	requestNotificationChan := make(chan service.Notification, 1)
-	s.eventingConfiguration.subscribe(req, requestNotificationChan)
-	defer s.eventingConfiguration.unSubscribe(req)
+	s.eventingConfiguration.Subscribe(req, requestNotificationChan)
+	defer s.eventingConfiguration.Unsubscribe(req)
 
 	requestNotificationChan <- service.Notification{
 		Type: service.ProviderReady,
