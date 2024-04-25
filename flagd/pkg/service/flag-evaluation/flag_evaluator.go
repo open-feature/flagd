@@ -30,13 +30,13 @@ type OldFlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               *telemetry.MetricsRecorder
-	eventingConfiguration *eventingConfiguration
+	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
 }
 
 // NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
 func NewOldFlagEvaluationService(log *logger.Logger,
-	eval evaluator.IEvaluator, eventingCfg *eventingConfiguration, metricsRecorder *telemetry.MetricsRecorder,
+	eval evaluator.IEvaluator, eventingCfg IEvents, metricsRecorder *telemetry.MetricsRecorder,
 ) *OldFlagEvaluationService {
 	return &OldFlagEvaluationService{
 		logger:                log,
@@ -117,8 +117,8 @@ func (s *OldFlagEvaluationService) EventStream(
 	stream *connect.ServerStream[schemaV1.EventStreamResponse],
 ) error {
 	requestNotificationChan := make(chan service.Notification, 1)
-	s.eventingConfiguration.subscribe(req, requestNotificationChan)
-	defer s.eventingConfiguration.unSubscribe(req)
+	s.eventingConfiguration.Subscribe(req, requestNotificationChan)
+	defer s.eventingConfiguration.Unsubscribe(req)
 
 	requestNotificationChan <- service.Notification{
 		Type: service.ProviderReady,
