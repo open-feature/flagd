@@ -19,6 +19,7 @@ The following table lists all the available flagd providers.
 | :fontawesome-brands-java: [Java](./java.md)         | :material-check: | :material-check: |
 | :fontawesome-brands-node-js: [Node.JS](./nodejs.md) | :material-check: | :material-check: |
 | :simple-php: [PHP](./php.md)                        | :material-check: | :material-close: |
+| :simple-dotnet: [.NET](./dotnet.md)                 | :material-check: | :material-check: |
 | :simple-python: [Python](./python.md)               | :material-check: | :material-close: |
 | :material-web: [Web](./web.md)                      | :material-check: | :material-close: |
 
