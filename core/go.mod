@@ -12,7 +12,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240408192555-ea4f119d2bd7
-	github.com/open-feature/open-feature-operator/apis v0.2.39
+	github.com/open-feature/open-feature-operator/apis v0.2.40
 	github.com/prometheus/client_golang v1.19.0
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.9.0
