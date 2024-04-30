@@ -10,7 +10,7 @@ flagd can connect to one or more sync sources.
 The file path sync provider reads and watch the source file for updates(ex: changes and deletions).
 It's important to note that most file operations result in multiple file system events.
 For production use-cases, a symbolic link is recommended for the watched file, which enables atomic modification.
-See the [relevant troubleshooting entry](../../troubleshooting/#extra-duplicate-events-in-file-syncs).
+See the [relevant troubleshooting entry](../troubleshooting.md#extra-duplicate-events-in-file-syncs).
 
 ```shell
 flagd start --uri file:etc/featureflags.json

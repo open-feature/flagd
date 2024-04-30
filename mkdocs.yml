@@ -81,6 +81,7 @@ nav:
     - 'Node.JS': 'providers/nodejs.md'
     - 'PHP': 'providers/php.md'
     - '.NET': 'providers/dotnet.md'
+    - 'Python': 'providers/python.md'
     - 'Web': 'providers/web.md'
   - 'Reference':
     - 'CLI':
