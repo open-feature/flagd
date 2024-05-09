@@ -376,7 +376,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		// evaluate JsonLogic rules to determine the variant
 		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying rules: %s", err))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying targeting rules: %s", err))
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
