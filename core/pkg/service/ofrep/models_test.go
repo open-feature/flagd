@@ -90,7 +90,7 @@ func TestErrorStatus(t *testing.T) {
 			name:           "flag disabled",
 			modelError:     model.FlagDisabledErrorCode,
 			expectedStatus: 400,
-			expectedCode:   model.FlagDisabledErrorCode,
+			expectedCode:   model.GeneralErrorCode,
 		},
 		{
 			name:           "general error",

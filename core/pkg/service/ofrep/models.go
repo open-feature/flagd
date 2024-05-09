@@ -96,7 +96,7 @@ func EvaluationErrorResponseFrom(result evaluator.AnyValue) (int, EvaluationErro
 		payload.ErrorCode = model.ParseErrorCode
 		payload.ErrorDetails = fmt.Sprintf("error parsing the flag `%s`", result.FlagKey)
 	case model.FlagDisabledErrorCode:
-		payload.ErrorCode = model.FlagDisabledErrorCode
+		payload.ErrorCode = model.GeneralErrorCode
 		payload.ErrorDetails = fmt.Sprintf("flag `%s` is disabled", result.FlagKey)
 	case model.GeneralErrorCode:
 		fallthrough
