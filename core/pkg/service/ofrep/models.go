@@ -92,6 +92,10 @@ func EvaluationErrorResponseFrom(result evaluator.AnyValue) (int, EvaluationErro
 		status = 404
 		payload.ErrorCode = model.FlagNotFoundErrorCode
 		payload.ErrorDetails = fmt.Sprintf("flag `%s` does not exist", result.FlagKey)
+	case model.FlagDisabledErrorCode:
+		status = 404
+		payload.ErrorCode = model.FlagNotFoundErrorCode
+		payload.ErrorDetails = fmt.Sprintf("flag `%s` is disabled", result.FlagKey)
 	case model.ParseErrorCode:
 		payload.ErrorCode = model.ParseErrorCode
 		payload.ErrorDetails = fmt.Sprintf("error parsing the flag `%s`", result.FlagKey)
