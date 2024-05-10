@@ -5,11 +5,11 @@
 _flagd_ is a _feature flag evaluation engine_.
 Think of it as a ready-made, open source, OpenFeature-compliant feature flag backend system.
 
-With flagd you can:
+With flagd, you can:
 
-* modify flags in real time
+* modify flags in real-time
 * define flags of various types (boolean, string, number, JSON)
-* use context-sensitive rules to target specific users or user-traits
+* use context-sensitive rules to target specific users or user traits
 * perform pseudorandom assignments for experimentation
 * perform progressive roll-outs of new features
 * aggregate flag definitions from multiple sources
@@ -18,12 +18,12 @@ With flagd you can:
 
 It doesn't include a UI, management console or a persistence layer.
 It's configurable entirely via a [POSIX-style CLI](./reference/flagd-cli/flagd.md).
-Thanks to it's minimalism, it's _extremely flexible_; you can leverage flagd as a sidecar alongside your application, an engine running in your application process, or as a central service evaluating thousands of flags per second.
+Thanks to its minimalism, it's _extremely flexible_; you can leverage flagd as a sidecar alongside your application, an engine running in your application process, or as a central service evaluating thousands of flags per second.
 
 ## How do I deploy flagd?
 
-flagd is designed to fit well into a variety of infrastructures, and can run on various architectures.
-It run as a separate process or directly in your application (see [architecture](./architecture.md)).
+flagd is designed to fit well into a variety of infrastructures and can run on various architectures.
+It runs as a separate process or directly in your application (see [architecture](./architecture.md)).
 It's distributed as a binary, container image, and various libraries (see [installation](./installation.md)).
 If you're already leveraging containers in your infrastructure, you can extend the docker image with your required configuration.
 You can also run flagd as a service on a VM or a "bare-metal" host.
