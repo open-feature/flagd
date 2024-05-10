@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.2](https://github.com/open-feature/flagd/compare/flagd/v0.10.1...flagd/v0.10.2) (2024-05-10)
+
+
+### ✨ New Features
+
+* Create interface for eval events.  ([#1288](https://github.com/open-feature/flagd/issues/1288)) ([9714215](https://github.com/open-feature/flagd/commit/9714215cedb0fd28daddf086ce1255ec29b877d4))
+
+
+### 🧹 Chore
+
+* bump go deps to latest ([#1307](https://github.com/open-feature/flagd/issues/1307)) ([004ad08](https://github.com/open-feature/flagd/commit/004ad083dc01538791148d6233e453d2a3009fcd))
+
 ## [0.10.1](https://github.com/open-feature/flagd/compare/flagd/v0.10.0...flagd/v0.10.1) (2024-04-19)
 
 

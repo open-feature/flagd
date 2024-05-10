@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.2](https://github.com/open-feature/flagd/compare/core/v0.9.1...core/v0.9.2) (2024-05-10)
+
+
+### ✨ New Features
+
+* improve error log and add flag disabled handling for ofrep ([#1306](https://github.com/open-feature/flagd/issues/1306)) ([39ae4fe](https://github.com/open-feature/flagd/commit/39ae4fe11380af5c6e23c4aaae45b5ec17cf32d6))
+
+
+### 🧹 Chore
+
+* bump go deps to latest ([#1307](https://github.com/open-feature/flagd/issues/1307)) ([004ad08](https://github.com/open-feature/flagd/commit/004ad083dc01538791148d6233e453d2a3009fcd))
+
 ## [0.9.1](https://github.com/open-feature/flagd/compare/core/v0.9.0...core/v0.9.1) (2024-04-19)
 
 
