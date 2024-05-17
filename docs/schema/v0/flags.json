@@ -9,7 +9,7 @@
       "title": "Flags",
       "description": "Top-level flags object. All flags are defined here.",
       "type": "object",
-      "$comment": "flag objects are one of the 4 flag types defined in $defs",
+      "$comment": "flag objects are one of the 4 flag types defined in definitions",
       "additionalProperties": false,
       "patternProperties": {
         "^.{1,}$": {
@@ -17,22 +17,22 @@
             {
               "title": "Boolean flag",
               "description": "A flag having boolean values.",
-              "$ref": "#/$defs/booleanFlag"
+              "$ref": "#/definitions/booleanFlag"
             },
             {
               "title": "String flag",
               "description": "A flag having string values.",
-              "$ref": "#/$defs/stringFlag"
+              "$ref": "#/definitions/stringFlag"
             },
             {
               "title": "Numeric flag",
               "description": "A flag having numeric values.",
-              "$ref": "#/$defs/numberFlag"
+              "$ref": "#/definitions/numberFlag"
             },
             {
               "title": "Object flag",
               "description": "A flag having arbitrary object values.",
-              "$ref": "#/$defs/objectFlag"
+              "$ref": "#/definitions/objectFlag"
             }
           ]
         }
@@ -46,12 +46,12 @@
       "patternProperties": {
         "^.{1,}$": {
           "$comment": "this relative ref means that targeting.json MUST be in the same dir, or available on the same HTTP path",
-          "$ref": "./targeting.json#/$defs/targeting"
+          "$ref": "./targeting.json#/definitions/targeting"
         }
       }
     }
   },
-  "$defs": {
+  "definitions": {
     "flag": {
       "$comment": "base flag object; no title/description here, allows for better UX, keep it in the overrides",
       "type": "object",
@@ -71,7 +71,7 @@
           "type": "string"
         },
         "targeting": {
-          "$ref": "./targeting.json#/$defs/targeting"
+          "$ref": "./targeting.json#/definitions/targeting"
         }
       },
       "required": [
@@ -139,44 +139,44 @@
         }
       }
     },
-    "$comment": "merge the variants with the base flag to build our typed flags",
     "booleanFlag": {
+      "$comment": "merge the variants with the base flag to build our typed flags",
       "allOf": [
         {
-          "$ref": "#/$defs/flag"
+          "$ref": "#/definitions/flag"
         },
         {
-          "$ref": "#/$defs/booleanVariants"
+          "$ref": "#/definitions/booleanVariants"
         }
       ]
     },
     "stringFlag": {
       "allOf": [
         {
-          "$ref": "#/$defs/flag"
+          "$ref": "#/definitions/flag"
         },
         {
-          "$ref": "#/$defs/stringVariants"
+          "$ref": "#/definitions/stringVariants"
         }
       ]
     },
     "numberFlag": {
       "allOf": [
         {
-          "$ref": "#/$defs/flag"
+          "$ref": "#/definitions/flag"
         },
         {
-          "$ref": "#/$defs/numberVariants"
+          "$ref": "#/definitions/numberVariants"
         }
       ]
     },
     "objectFlag": {
       "allOf": [
         {
-          "$ref": "#/$defs/flag"
+          "$ref": "#/definitions/flag"
         },
         {
-          "$ref": "#/$defs/objectVariants"
+          "$ref": "#/definitions/objectVariants"
         }
       ]
     }
