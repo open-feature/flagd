@@ -2,12 +2,12 @@ package evaluator
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFractionalEvaluation(t *testing.T) {
