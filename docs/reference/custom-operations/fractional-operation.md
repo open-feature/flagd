@@ -17,8 +17,7 @@ OpenFeature allows clients to pass contextual information which can then be used
       { "var": "email" }
     ]
   },
-  // Split definitions contain an array with a variant and percentage
-  // Percentages must add up to 100
+  // Split definitions contain an array with a variant and relative weights
   [
     // Must match a variant defined in the flag definition
     "red",
@@ -44,7 +43,7 @@ The value retrieved by this expression is referred to as the "bucketing value".
 The bucketing value expression can be omitted, in which case a concatenation of the `targetingKey` and the `flagKey` will be used.
 
 The `fractional` operation is a custom JsonLogic operation which deterministically selects a variant based on
-the defined distribution of each variant (as a percentage).
+the defined distribution of each variant (as a relative weight).
 This works by hashing ([murmur3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp))
 the given data point, converting it into an int in the range [0, 99].
 Whichever range this int falls in decides which variant
@@ -56,8 +55,8 @@ The value is an array and the first element is a nested JsonLogic rule which res
 This rule should typically consist of a seed concatenated with a session variable to use from the evaluation context.
 This value should typically be something that remains consistent for the duration of a users session (e.g. email or session ID).
 The seed is typically the flagKey so that experiments running across different flags are statistically independent, however, you can also specify another seed to either align or further decouple your allocations across different feature flags or use-cases.
-The other elements in the array are nested arrays with the first element representing a variant and the second being the percentage that this option is selected.
-There is no limit to the number of elements but the configured percentages must add up to 100.
+The other elements in the array are nested arrays with the first element representing a variant and the second being the relative weight for this option.
+There is no limit to the number of elements.
 
 ## Example
 
