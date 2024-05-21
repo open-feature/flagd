@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -576,6 +577,52 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 					}
 				}
 			}
+		})
+	}
+}
+
+func Test_fractionalEvaluationVariant_getPercentage(t *testing.T) {
+	type fields struct {
+		variant string
+		weight  int
+	}
+	type args struct {
+		totalWeight int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   float64
+	}{
+		{
+			name: "get percentage",
+			fields: fields{
+				weight: 10,
+			},
+			args: args{
+				totalWeight: 20,
+			},
+			want: 50,
+		},
+		{
+			name: "total weight 0",
+			fields: fields{
+				weight: 10,
+			},
+			args: args{
+				totalWeight: 0,
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := fractionalEvaluationVariant{
+				variant: tt.fields.variant,
+				weight:  tt.fields.weight,
+			}
+			assert.Equalf(t, tt.want, v.getPercentage(tt.args.totalWeight), "getPercentage(%v)", tt.args.totalWeight)
 		})
 	}
 }
