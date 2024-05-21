@@ -318,7 +318,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
 		},
-		"fallback to default variant if percentages don't sum to 100": {
+		"get variant for non-percentage weight values": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
 					"headerColor": {
@@ -352,7 +352,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.DefaultReason,
+			expectedReason:  model.TargetingMatchReason,
 		},
 		"default to targetingKey if no bucket key provided": {
 			flags: Flags{
