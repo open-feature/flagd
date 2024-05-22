@@ -51,13 +51,15 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	// register trace provider for the runtime
 	err := telemetry.BuildTraceProvider(context.Background(), logger, svcName, version, telCfg)
 	if err != nil {
-		return nil, fmt.Errorf("error building trace provider: %w", err)
+		// log the error but continue
+		logger.Error(fmt.Sprintf("error building trace provider: %v", err))
 	}
 
 	// build metrics recorder with startup configurations
 	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
 	if err != nil {
-		return nil, fmt.Errorf("error building metrics recorder: %w", err)
+		// log the error but continue
+		logger.Error(fmt.Sprintf("error building metrics recorder: %v", err))
 	}
 
 	// build flag store, collect flag sources & fill sources details
@@ -113,7 +115,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	options, err := telemetry.BuildConnectOptions(telCfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build connect options, %w", err)
+		// log the error but continue
+		logger.Error(fmt.Sprintf("failed to build connect options, %v", err))
 	}
 
 	return &Runtime{

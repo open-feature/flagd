@@ -29,7 +29,7 @@ type resolverSignature[T constraints] func(context context.Context, reqID, flagK
 type OldFlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
-	metrics               *telemetry.MetricsRecorder
+	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
 }
@@ -38,13 +38,19 @@ type OldFlagEvaluationService struct {
 func NewOldFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator, eventingCfg IEvents, metricsRecorder *telemetry.MetricsRecorder,
 ) *OldFlagEvaluationService {
-	return &OldFlagEvaluationService{
+	svc := &OldFlagEvaluationService{
 		logger:                log,
 		eval:                  eval,
-		metrics:               metricsRecorder,
+		metrics:               &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: eventingCfg,
 		flagEvalTracer:        otel.Tracer("flagEvaluationService"),
 	}
+
+	if metricsRecorder != nil {
+		svc.metrics = metricsRecorder
+	}
+
+	return svc
 }
 
 // nolint:dupl
@@ -67,7 +73,9 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
+		if s.metrics != nil {
+			s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
+		}
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
@@ -276,7 +284,7 @@ func (s *OldFlagEvaluationService) ResolveObject(
 
 // resolve is a generic flag resolver
 func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], flagKey string,
-	evaluationContext *structpb.Struct, resp response[T], metrics *telemetry.MetricsRecorder,
+	evaluationContext *structpb.Struct, resp response[T], metrics telemetry.IMetricsRecorder,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
@@ -295,7 +303,9 @@ func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver
 		evalErrFormatted = errFormat(evalErr)
 	}
 
-	metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey)
+	if metrics != nil {
+		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey)
+	}
 
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)

@@ -22,7 +22,7 @@ import (
 type FlagEvaluationService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
-	metrics               *telemetry.MetricsRecorder
+	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
 }
@@ -31,15 +31,21 @@ type FlagEvaluationService struct {
 func NewFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator,
 	eventingCfg IEvents,
-	metricsRecorder *telemetry.MetricsRecorder,
+	metricsRecorder telemetry.IMetricsRecorder,
 ) *FlagEvaluationService {
-	return &FlagEvaluationService{
+	svc := &FlagEvaluationService{
 		logger:                log,
 		eval:                  eval,
-		metrics:               metricsRecorder,
+		metrics:               &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: eventingCfg,
 		flagEvalTracer:        otel.Tracer("flagd.evaluation.v1"),
 	}
+
+	if metricsRecorder != nil {
+		svc.metrics = metricsRecorder
+	}
+
+	return svc
 }
 
 // nolint:dupl,funlen

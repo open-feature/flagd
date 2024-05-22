@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"net"
 	"net/http"
 	"strings"
@@ -20,7 +21,6 @@ import (
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	h2cmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/h2c"
-	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -183,14 +183,16 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	s.serverMtx.Unlock()
 
 	// Add middlewares
-	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
-		Service:        svcConf.ServiceName,
-		MetricRecorder: s.metrics,
-		Logger:         s.logger,
-		HandlerID:      "",
-	})
+	if s.metrics != nil {
+		metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
+			Service:        svcConf.ServiceName,
+			MetricRecorder: s.metrics,
+			Logger:         s.logger,
+			HandlerID:      "",
+		})
 
-	s.AddMiddleware(metricsMiddleware)
+		s.AddMiddleware(metricsMiddleware)
+	}
 
 	corsMiddleware := corsmw.New(svcConf.CORS)
 	s.AddMiddleware(corsMiddleware)
