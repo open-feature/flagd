@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"go.uber.org/mock/gomock"
