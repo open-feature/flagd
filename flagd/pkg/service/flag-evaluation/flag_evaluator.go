@@ -53,7 +53,7 @@ func NewOldFlagEvaluationService(log *logger.Logger,
 	return svc
 }
 
-// nolint:dupl
+// nolint:dupl,funlen
 func (s *OldFlagEvaluationService) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],
@@ -119,6 +119,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	return connect.NewResponse(res), nil
 }
 
+// nolint:dupl
 func (s *OldFlagEvaluationService) EventStream(
 	ctx context.Context,
 	req *connect.Request[schemaV1.EventStreamRequest],

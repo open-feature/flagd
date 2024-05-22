@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"net"
 	"net/http"
 	"strings"
@@ -21,6 +20,7 @@ import (
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	h2cmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/h2c"
+	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -244,8 +244,8 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
 	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.ManagementPort))
 
-	grpc := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
+	srv := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(srv, health.NewServer())
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -263,7 +263,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// if this is 'application/grpc' and HTTP2, handle with gRPC, otherwise HTTP.
 		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpc") {
-			grpc.ServeHTTP(writer, request)
+			srv.ServeHTTP(writer, request)
 		} else {
 			mux.ServeHTTP(writer, request)
 			return

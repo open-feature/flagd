@@ -116,6 +116,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	return connect.NewResponse(res), nil
 }
 
+// nolint: dupl
 func (s *FlagEvaluationService) EventStream(
 	ctx context.Context,
 	req *connect.Request[evalV1.EventStreamRequest],
