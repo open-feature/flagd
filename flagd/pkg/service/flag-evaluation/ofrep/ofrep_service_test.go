@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
@@ -18,6 +18,8 @@ import (
 func Test_OfrepServiceStartStop(t *testing.T) {
 	port := 18282
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return([]evaluator.AnyValue{})
 	cfg := SvcConfiguration{
 		Logger: logger.NewLogger(nil, false),
 		Port:   uint16(port),
@@ -39,10 +41,8 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	// allow time for server startup
 	<-time.After(2 * time.Second)
 
-	path, err := url.JoinPath(fmt.Sprintf("http://localhost:%d", port), bulkEvaluation)
-	if err != nil {
-		t.Fatalf("error creating the path: %v", err)
-	}
+	path := fmt.Sprintf("http://localhost:%d/ofrep/v1/evaluate/flags", port)
+
 	// validate response
 	response, err := tryResponse(http.MethodPost, path, []byte{})
 	if err != nil {
@@ -69,9 +69,12 @@ func tryResponse(method string, uri string, payload []byte) (int, error) {
 
 	request, err := http.NewRequest(method, uri, bytes.NewReader(payload))
 	if err != nil {
-		return 0, fmt.Errorf("error forming the request: %v", err)
+		return 0, fmt.Errorf("error forming the request: %w", err)
 	}
 
 	rsp, err := client.Do(request)
-	return rsp.StatusCode, fmt.Errorf("error from the request: %v", err)
+	if err != nil {
+		return 0, fmt.Errorf("error from the request: %w", err)
+	}
+	return rsp.StatusCode, nil
 }
