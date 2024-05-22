@@ -102,8 +102,8 @@ func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluation
 				"please check your rule in flag definition")
 		}
 
-		if len(distributionArray) != 2 {
-			return nil, errors.New("distribution element isn't length 2")
+		if len(distributionArray) == 0 {
+			return nil, errors.New("distribution element needs at least one element")
 		}
 
 		variant, ok := distributionArray[0].(string)
@@ -111,9 +111,13 @@ func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluation
 			return nil, errors.New("first element of distribution element isn't string")
 		}
 
-		weight, ok := distributionArray[1].(float64)
-		if !ok {
-			return nil, errors.New("second element of distribution element isn't float")
+		weight := 1.0
+		if len(distributionArray) >= 2 {
+			distributionWeight, ok := distributionArray[1].(float64)
+			if ok {
+				// default the weight to 1 if not specified explicitly
+				weight = distributionWeight
+			}
 		}
 
 		feDistributions.totalWeight += int(weight)

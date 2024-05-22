@@ -355,6 +355,40 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"get variant for non-specified weight values": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+							"fractional": [
+								{"var": "email"},
+								[
+								"red"
+								],
+								[
+								"blue"
+								]
+							]
+							}`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"email": "foo@foo.com",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
 		"default to targetingKey if no bucket key provided": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
