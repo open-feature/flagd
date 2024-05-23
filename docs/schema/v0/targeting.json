@@ -4,7 +4,7 @@
   "title": "flagd Targeting",
   "description": "Defines targeting logic for flagd; a extension of JSONLogic, including purpose-built feature-flagging operations.",
   "type": "object",
-  "$defs": {
+  "definitions": {
     "targeting": {
       "title": "Targeting",
       "description": "An expression returning a value which is coerced to a string to be used as a targeting key, or null (to fall back to defaultVariant). If targeting returns a value which is not a variant key, it's considered an error.",
@@ -16,7 +16,7 @@
           "properties": {}
         },
         {
-          "$ref": "#/$defs/anyRule"
+          "$ref": "#/definitions/anyRule"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "minItems": 2,
       "maxItems": 3,
       "items": {
-        "$ref": "#/$defs/args"
+        "$ref": "#/definitions/args"
       }
     },
     "binaryOrTernaryRule": {
@@ -148,15 +148,15 @@
         "substr": {
           "title": "Substring Operation",
           "description": "Get a portion of a string. Give a positive start position to return everything beginning at that index. Give a negative start position to work backwards from the end of the string, then return everything. Give a positive length to express how many characters to return.",
-          "$ref": "#/$defs/binaryOrTernaryOp"
+          "$ref": "#/definitions/binaryOrTernaryOp"
         },
         "<": {
           "title": "Less-Than/Between Operation. Can be used to test that one value is between two others.",
-          "$ref": "#/$defs/binaryOrTernaryOp"
+          "$ref": "#/definitions/binaryOrTernaryOp"
         },
         "<=": {
           "title": "Less-Than-Or-Equal-To/Between Operation. Can be used to test that one value is between two others.",
-          "$ref": "#/$defs/binaryOrTernaryOp"
+          "$ref": "#/definitions/binaryOrTernaryOp"
         }
       }
     },
@@ -165,7 +165,7 @@
       "minItems": 2,
       "maxItems": 2,
       "items": {
-        "$ref": "#/$defs/args"
+        "$ref": "#/definitions/args"
       }
     },
     "binaryRule": {
@@ -177,74 +177,74 @@
         "if": {
           "title": "If Operator",
           "description": "The if statement takes 1 or more arguments: a condition (\"if\"), what to do if its true (\"then\", optional, defaults to returning true), and what to do if its false (\"else\", optional, defaults to returning false). Note that the else condition can be used as an else-if statement by adding additional arguments.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "==": {
           "title": "Lose Equality Operation",
           "description": "Tests equality, with type coercion. Requires two arguments.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "===": {
           "title": "Strict Equality Operation",
           "description": "Tests strict equality. Requires two arguments.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "!=": {
           "title": "Lose Inequality Operation",
           "description": "Tests not-equal, with type coercion.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "!==": {
           "title": "Strict Inequality Operation",
           "description": "Tests strict not-equal.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         ">": {
           "title": "Greater-Than Operation",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         ">=": {
           "title": "Greater-Than-Or-Equal-To Operation",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "%": {
           "title": "Modulo Operation",
           "description": "Finds the remainder after the first argument is divided by the second argument.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "/": {
           "title": "Division Operation",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "map": {
           "title": "Map Operation",
           "description": "Perform an action on every member of an array. Note, that inside the logic being used to map, var operations are relative to the array element being worked on.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "filter": {
           "title": "Filter Operation",
           "description": "Keep only elements of the array that pass a test. Note, that inside the logic being used to filter, var operations are relative to the array element being worked on.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "all": {
           "title": "All Operation",
           "description": "Perform a test on each member of that array, returning true if all pass. Inside the test code, var operations are relative to the array element being tested.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "none": {
           "title": "None Operation",
           "description": "Perform a test on each member of that array, returning true if none pass. Inside the test code, var operations are relative to the array element being tested.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "some": {
           "title": "Some Operation",
           "description": "Perform a test on each member of that array, returning true if some pass. Inside the test code, var operations are relative to the array element being tested.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         },
         "in": {
           "title": "In Operation",
           "description": "If the second argument is an array, tests that the first argument is a member of the array.",
-          "$ref": "#/$defs/binaryOp"
+          "$ref": "#/definitions/binaryOp"
         }
       }
     },
@@ -259,7 +259,7 @@
           "minItems": 3,
           "maxItems": 3,
           "items": {
-            "$ref": "#/$defs/args"
+            "$ref": "#/definitions/args"
           }
         }
       }
@@ -268,7 +268,7 @@
       "type": "array",
       "minItems": 2,
       "items": {
-        "$ref": "#/$defs/args"
+        "$ref": "#/definitions/args"
       }
     },
     "associativeRule": {
@@ -280,17 +280,24 @@
         "*": {
           "title": "Multiplication Operation",
           "description": "Multiplication; associative, will accept and unlimited amount of arguments.",
-          "$ref": "#/$defs/associativeOp"
+          "$ref": "#/definitions/associativeOp"
         }
       }
     },
     "unaryOp": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 1,
-      "items": {
-        "$ref": "#/$defs/args"
-      }
+      "anyOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/definitions/args"
+          }
+        },
+        {
+          "$ref": "#/definitions/args"
+        }
+      ]
     },
     "unaryRule": {
       "title": "Unary Operation",
@@ -301,12 +308,12 @@
         "!": {
           "title": "Negation Operation",
           "description": "Logical negation (“not”). Takes just one argument.",
-          "$ref": "#/$defs/unaryOp"
+          "$ref": "#/definitions/unaryOp"
         },
         "!!": {
           "title": "Double Negation Operation",
           "description": "Double negation, or 'cast to a boolean'. Takes a single argument.",
-          "$ref": "#/$defs/unaryOp"
+          "$ref": "#/definitions/unaryOp"
         }
       }
     },
@@ -314,7 +321,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/args"
+        "$ref": "#/definitions/args"
       }
     },
     "variadicRule": {
@@ -325,41 +332,41 @@
         "or": {
           "title": "Or Operation",
           "description": "Simple boolean test, with 1 or more arguments. At a more sophisticated level, \"or\" returns the first truthy argument, or the last argument.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "and": {
           "title": "",
           "description": "Simple boolean test, with 1 or more arguments. At a more sophisticated level, \"and\" returns the first falsy argument, or the last argument.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "+": {
           "title": "Addition Operation",
           "description": "Addition; associative, will accept and unlimited amount of arguments.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "-": {
           "title": "Subtraction Operation",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "max": {
           "title": "Maximum Operation",
           "description": "Return the maximum from a list of values.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "min": {
           "title": "Minimum Operation",
           "description": "Return the minimum from a list of values.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "merge": {
           "title": "Merge Operation",
           "description": "Takes one or more arrays, and merges them into one array. If arguments aren't arrays, they get cast to arrays.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         },
         "cat": {
           "title": "Concatenate Operation",
           "description": "Concatenate all the supplied arguments. Note that this is not a join or implode operation, there is no “glue” string.",
-          "$ref": "#/$defs/variadicOp"
+          "$ref": "#/definitions/variadicOp"
         }
       }
     },
@@ -369,7 +376,7 @@
           "type": "string"
         },
         {
-          "$ref": "#/$defs/anyRule"
+          "$ref": "#/definitions/anyRule"
         }
       ]
     },
@@ -378,7 +385,7 @@
       "minItems": 2,
       "maxItems": 2,
       "items": {
-        "$ref": "#/$defs/stringCompareArg"
+        "$ref": "#/definitions/stringCompareArg"
       }
     },
     "stringCompareRule": {
@@ -388,12 +395,12 @@
         "starts_with": {
           "title": "Starts-With Operation",
           "description": "The string attribute starts with the specified string value.",
-          "$ref": "#/$defs/stringCompareArgs"
+          "$ref": "#/definitions/stringCompareArgs"
         },
         "ends_with": {
           "title": "Ends-With Operation",
           "description": "The string attribute ends with the specified string value.",
-          "$ref": "#/$defs/stringCompareArgs"
+          "$ref": "#/definitions/stringCompareArgs"
         }
       }
     },
@@ -417,10 +424,10 @@
             {
               "oneOf": [
                 {
-                  "$ref": "#/$defs/semVerString"
+                  "$ref": "#/definitions/semVerString"
                 },
                 {
-                  "$ref": "#/$defs/varRule"
+                  "$ref": "#/definitions/varRule"
                 }
               ]
             },
@@ -440,10 +447,10 @@
             {
               "oneOf": [
                 {
-                  "$ref": "#/$defs/semVerString"
+                  "$ref": "#/definitions/semVerString"
                 },
                 {
-                  "$ref": "#/$defs/varRule"
+                  "$ref": "#/definitions/varRule"
                 }
               ]
             }
@@ -475,24 +482,24 @@
       "items": [
         {
           "description": "Bucketing value used in pseudorandom assignment; should be unique and stable for each subject of flag evaluation. Defaults to a concatenation of the flagKey and targetingKey.",
-          "$ref": "#/$defs/anyRule"
+          "$ref": "#/definitions/anyRule"
         },
         {
-          "$ref": "#/$defs/fractionalWeightArg"
+          "$ref": "#/definitions/fractionalWeightArg"
         },
         {
-          "$ref": "#/$defs/fractionalWeightArg"
+          "$ref": "#/definitions/fractionalWeightArg"
         }
       ],
       "additionalItems": {
-        "$ref": "#/$defs/fractionalWeightArg"
+        "$ref": "#/definitions/fractionalWeightArg"
       }
     },
     "fractionalShorthandOp": {
       "type": "array",
       "minItems": 2,
       "items": {
-        "$ref": "#/$defs/fractionalWeightArg"
+        "$ref": "#/definitions/fractionalWeightArg"
       }
     },
     "fractionalRule": {
@@ -504,10 +511,10 @@
           "description": "Deterministic, pseudorandom fractional distribution.",
           "oneOf": [
             {
-              "$ref": "#/$defs/fractionalOp"
+              "$ref": "#/definitions/fractionalOp"
             },
             {
-              "$ref": "#/$defs/fractionalShorthandOp"
+              "$ref": "#/definitions/fractionalShorthandOp"
             }
           ]
         }
@@ -528,53 +535,53 @@
     "args": {
       "oneOf": [
         {
-          "$ref": "#/$defs/reference"
+          "$ref": "#/definitions/reference"
         },
         {
-          "$ref": "#/$defs/anyRule"
+          "$ref": "#/definitions/anyRule"
         },
         {
-          "$ref": "#/$defs/primitive"
+          "$ref": "#/definitions/primitive"
         }
       ]
     },
     "anyRule": {
       "anyOf": [
         {
-          "$ref": "#/$defs/varRule"
+          "$ref": "#/definitions/varRule"
         },
         {
-          "$ref": "#/$defs/missingRule"
+          "$ref": "#/definitions/missingRule"
         },
         {
-          "$ref": "#/$defs/missingSomeRule"
+          "$ref": "#/definitions/missingSomeRule"
         },
         {
-          "$ref": "#/$defs/binaryRule"
+          "$ref": "#/definitions/binaryRule"
         },
         {
-          "$ref": "#/$defs/binaryOrTernaryRule"
+          "$ref": "#/definitions/binaryOrTernaryRule"
         },
         {
-          "$ref": "#/$defs/associativeRule"
+          "$ref": "#/definitions/associativeRule"
         },
         {
-          "$ref": "#/$defs/unaryRule"
+          "$ref": "#/definitions/unaryRule"
         },
         {
-          "$ref": "#/$defs/variadicRule"
+          "$ref": "#/definitions/variadicRule"
         },
         {
-          "$ref": "#/$defs/reduceRule"
+          "$ref": "#/definitions/reduceRule"
         },
         {
-          "$ref": "#/$defs/stringCompareRule"
+          "$ref": "#/definitions/stringCompareRule"
         },
         {
-          "$ref": "#/$defs/ruleSemVer"
+          "$ref": "#/definitions/ruleSemVer"
         },
         {
-          "$ref": "#/$defs/fractionalRule"
+          "$ref": "#/definitions/fractionalRule"
         }
       ]
     }
