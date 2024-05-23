@@ -33,6 +33,31 @@ OpenFeature allows clients to pass contextual information which can then be used
 ]
 ```
 
+If not specified, the default weight for a variant is set to `1`, so an alternative to the example above would be the following:
+
+```js
+// Factional evaluation property name used in a targeting rule
+"fractional": [
+  // Evaluation context property used to determine the split
+  // Note using `cat` and `$flagd.flagKey` is the suggested default to seed your hash value and prevent bucketing collisions
+  {
+    "cat": [
+      { "var": "$flagd.flagKey" },
+      { "var": "email" }
+    ]
+  },
+  // Split definitions contain an array with a variant and relative weights
+  [
+    // Must match a variant defined in the flag definition
+    "red"
+  ],
+  [
+    // Must match a variant defined in the flag definition
+    "green"
+  ]
+]
+```
+
 See the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) flag.
 The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-definitions.md#targeting-rules), meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
 
