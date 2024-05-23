@@ -40,10 +40,13 @@ build: workspace-init # default to flagd
 build-flagd:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
 .PHONY: test
-test: # default to core
-	make test-core
+test: test-core test-flagd test-flagd-proxy
 test-core:
 	go test -race -covermode=atomic -cover -short ./core/pkg/... -coverprofile=core-coverage.out
+test-flagd:
+	go test -race -covermode=atomic -cover -short ./flagd/pkg/... -coverprofile=flagd-coverage.out
+test-flagd-proxy:
+	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out
 flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/flags/testing-flags.json -f file:test-harness/flags/custom-ops.json -f file:test-harness/flags/evaluator-refs.json -f file:test-harness/flags/zero-flags.json
 	go test -cover ./test/integration $(ARGS)
 run: # default to flagd
