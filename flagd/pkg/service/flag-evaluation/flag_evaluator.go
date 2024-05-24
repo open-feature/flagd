@@ -36,7 +36,7 @@ type OldFlagEvaluationService struct {
 
 // NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
 func NewOldFlagEvaluationService(log *logger.Logger,
-	eval evaluator.IEvaluator, eventingCfg IEvents, metricsRecorder *telemetry.MetricsRecorder,
+	eval evaluator.IEvaluator, eventingCfg IEvents, metricsRecorder telemetry.IMetricsRecorder,
 ) *OldFlagEvaluationService {
 	svc := &OldFlagEvaluationService{
 		logger:                log,
@@ -73,9 +73,8 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
-		if s.metrics != nil {
-			s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
-		}
+		s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
+
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{

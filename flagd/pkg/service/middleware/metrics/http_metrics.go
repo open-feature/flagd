@@ -16,7 +16,7 @@ import (
 )
 
 type Config struct {
-	MetricRecorder     *telemetry.MetricsRecorder
+	MetricRecorder     telemetry.IMetricsRecorder
 	Logger             *logger.Logger
 	Service            string
 	GroupedStatus      bool
@@ -41,7 +41,7 @@ func (cfg *Config) defaults() {
 		log.Fatal("missing logger")
 	}
 	if cfg.MetricRecorder == nil {
-		cfg.Logger.Fatal("missing OpenTelemetry metric recorder")
+		cfg.MetricRecorder = &telemetry.NoopMetricsRecorder{}
 	}
 }
 
