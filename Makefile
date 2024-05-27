@@ -127,7 +127,7 @@ generate-proto-docs: pull-schemas-submodule
 	&& rm -f ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md
 
 # update or add the publicly served schema at https://flagd.dev/schema/${JSON_SCHEMA_VERSION}/flags.json
-# update JSON_SCHEMA_VERSION var at the top of this file with a the version to be updated or addeds
+# update JSON_SCHEMA_VERSION var at the top of this file with the version to be updated or added and served publicly
 .PHONY: update-public-schema
 update-public-schema: pull-schemas-submodule
 	rm -rf ./$(PUBLIC_JSON_SCHEMA_DIR) || true
