@@ -26,6 +26,40 @@ const (
 	reasonMetric              = "feature_flag." + ProviderName + ".evaluation.reason"
 )
 
+type IMetricsRecorder interface {
+	HTTPAttributes(svcName, url, method, code string) []attribute.KeyValue
+	HTTPRequestDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
+	HTTPResponseSize(ctx context.Context, sizeBytes int64, attrs []attribute.KeyValue)
+	InFlightRequestStart(ctx context.Context, attrs []attribute.KeyValue)
+	InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue)
+	RecordEvaluation(ctx context.Context, err error, reason, variant, key string)
+	Impressions(ctx context.Context, reason, variant, key string)
+}
+
+type NoopMetricsRecorder struct{}
+
+func (NoopMetricsRecorder) HTTPAttributes(_, _, _, _ string) []attribute.KeyValue {
+	return []attribute.KeyValue{}
+}
+
+func (NoopMetricsRecorder) HTTPRequestDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) HTTPResponseSize(_ context.Context, _ int64, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) InFlightRequestStart(_ context.Context, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) InFlightRequestEnd(_ context.Context, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string) {
+}
+
+func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
+}
+
 type MetricsRecorder struct {
 	httpRequestDurHistogram   metric.Float64Histogram
 	httpResponseSizeHistogram metric.Float64Histogram

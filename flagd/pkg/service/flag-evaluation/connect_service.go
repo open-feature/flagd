@@ -57,7 +57,7 @@ func (b bufSwitchHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 type ConnectService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
-	metrics               *telemetry.MetricsRecorder
+	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
 
 	server        *http.Server
@@ -71,17 +71,21 @@ type ConnectService struct {
 
 // NewConnectService creates a ConnectService with provided parameters
 func NewConnectService(
-	logger *logger.Logger, evaluator evaluator.IEvaluator, mRecorder *telemetry.MetricsRecorder,
+	logger *logger.Logger, evaluator evaluator.IEvaluator, mRecorder telemetry.IMetricsRecorder,
 ) *ConnectService {
-	return &ConnectService{
+	cs := &ConnectService{
 		logger:  logger,
 		eval:    evaluator,
-		metrics: mRecorder,
+		metrics: &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: &eventingConfiguration{
 			subs: make(map[interface{}]chan service.Notification),
 			mu:   &sync.RWMutex{},
 		},
 	}
+	if mRecorder != nil {
+		cs.metrics = mRecorder
+	}
+	return cs
 }
 
 // Serve serves services with provided configuration options
@@ -242,8 +246,8 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
 	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.ManagementPort))
 
-	grpc := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(grpc, health.NewServer())
+	srv := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(srv, health.NewServer())
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +265,7 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// if this is 'application/grpc' and HTTP2, handle with gRPC, otherwise HTTP.
 		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpc") {
-			grpc.ServeHTTP(writer, request)
+			srv.ServeHTTP(writer, request)
 		} else {
 			mux.ServeHTTP(writer, request)
 			return

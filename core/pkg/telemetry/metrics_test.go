@@ -204,3 +204,35 @@ func TestMetrics(t *testing.T) {
 		})
 	}
 }
+
+// some really simple tests just to make sure all methods are actually implemented and nothing panics
+func TestNoopMetricsRecorder_HTTPAttributes(t *testing.T) {
+	no := NoopMetricsRecorder{}
+	got := no.HTTPAttributes("", "", "", "")
+	require.Empty(t, got)
+}
+
+func TestNoopMetricsRecorder_HTTPRequestDuration(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.HTTPRequestDuration(context.TODO(), 0, nil)
+}
+
+func TestNoopMetricsRecorder_InFlightRequestStart(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.InFlightRequestStart(context.TODO(), nil)
+}
+
+func TestNoopMetricsRecorder_InFlightRequestEnd(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.InFlightRequestEnd(context.TODO(), nil)
+}
+
+func TestNoopMetricsRecorder_RecordEvaluation(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.RecordEvaluation(context.TODO(), nil, "", "", "")
+}
+
+func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.Impressions(context.TODO(), "", "", "")
+}
