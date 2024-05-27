@@ -1,6 +1,7 @@
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
-PUBLIC_JSON_SCHEMA_DIR=docs/schema/v0/
+JSON_SCHEMA_VERSION=v0.2.3
+PUBLIC_JSON_SCHEMA_DIR=docs/schema/$(JSON_SCHEMA_VERSION)/
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 FLAGD_DEV_NAMESPACE ?= flagd-dev
@@ -116,7 +117,7 @@ markdownlint-fix:
 
 .PHONY: pull-schemas-submodule
 pull-schemas-submodule:
-	git submodule update schemas
+	cd schemas/ && git checkout json/json-schema-$(JSON_SCHEMA_VERSION)
 
 .PHONY: generate-proto-docs
 generate-proto-docs: pull-schemas-submodule
@@ -125,11 +126,12 @@ generate-proto-docs: pull-schemas-submodule
 	&& sed '/^## Table of Contents/,/#top/d' ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md >> ${PWD}/$(DOCS_DIR)/reference/specifications/protos.md \
 	&& rm -f ${PWD}/$(DOCS_DIR)/reference/specifications/protos-with-toc.md
 
-# Update the schema at flagd.dev
-# PUBLIC_JSON_SCHEMA_DIR above controls the dir (and therefore major version)
+# update or add the publicly served schema at https://flagd.dev/schema/${JSON_SCHEMA_VERSION}/flags.json
+# update JSON_SCHEMA_VERSION var at the top of this file with a the version to be updated or addeds
 .PHONY: update-public-schema
 update-public-schema: pull-schemas-submodule
-	rm -f $(PUBLIC_JSON_SCHEMA_DIR)*.json
+	rm -rf ./$(PUBLIC_JSON_SCHEMA_DIR) || true
+	mkdir ./$(PUBLIC_JSON_SCHEMA_DIR)
 	cp schemas/json/*.json $(PUBLIC_JSON_SCHEMA_DIR)
 
 .PHONY: run-web-docs
