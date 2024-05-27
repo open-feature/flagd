@@ -83,6 +83,9 @@ The seed is typically the flagKey so that experiments running across different f
 The other elements in the array are nested arrays with the first element representing a variant and the second being the relative weight for this option.
 There is no limit to the number of elements.
 
+> [!NOTE]
+> Older versions of the `fractional` operation were percentage based, and required all variants weights to sum to 100.
+
 ## Example
 
 Flags defined as such:
