@@ -103,7 +103,8 @@ func (f *Flags) GetAll(_ context.Context) map[string]model.Flag {
 }
 
 // Add new flags from source.
-func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
+func (f *Flags) Add(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
+) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
 	for k, newFlag := range flags {
@@ -127,6 +128,7 @@ func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model
 
 		// Store the new version of the flag
 		newFlag.Source = source
+		newFlag.Selector = selector
 		f.Set(k, newFlag)
 	}
 
@@ -134,7 +136,8 @@ func (f *Flags) Add(logger *logger.Logger, source string, flags map[string]model
 }
 
 // Update existing flags from source.
-func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
+func (f *Flags) Update(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
+) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
 	for k, flag := range flags {
@@ -165,6 +168,7 @@ func (f *Flags) Update(logger *logger.Logger, source string, flags map[string]mo
 		}
 
 		flag.Source = source
+		flag.Selector = selector
 		f.Set(k, flag)
 	}
 
@@ -228,16 +232,18 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 }
 
 // Merge provided flags from source with currently stored flags.
+// nolint: funlen
 func (f *Flags) Merge(
 	logger *logger.Logger,
 	source string,
+	selector string,
 	flags map[string]model.Flag,
 ) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
 	resyncRequired := false
 	f.mx.Lock()
 	for k, v := range f.Flags {
-		if v.Source == source {
+		if v.Source == source && v.Selector == selector {
 			if _, ok := flags[k]; !ok {
 				// flag has been deleted
 				delete(f.Flags, k)
@@ -259,6 +265,7 @@ func (f *Flags) Merge(
 	f.mx.Unlock()
 	for k, newFlag := range flags {
 		newFlag.Source = source
+		newFlag.Selector = selector
 		storedFlag, ok := f.Get(context.Background(), k)
 		if ok {
 			if !f.hasPriority(storedFlag.Source, source) {

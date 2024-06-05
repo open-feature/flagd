@@ -121,11 +121,11 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	switch payload.Type {
 	case sync.ALL:
-		events, reSync = je.store.Merge(je.Logger, payload.Source, newFlags.Flags)
+		events, reSync = je.store.Merge(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
 	case sync.ADD:
-		events = je.store.Add(je.Logger, payload.Source, newFlags.Flags)
+		events = je.store.Add(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
 	case sync.UPDATE:
-		events = je.store.Update(je.Logger, payload.Source, newFlags.Flags)
+		events = je.store.Update(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
 	case sync.DELETE:
 		events = je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags)
 	default:

@@ -76,7 +76,7 @@ func (g *Sync) Init(ctx context.Context) error {
 }
 
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
+	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		err = fmt.Errorf("error fetching all flags: %w", err)
 		g.Logger.Error(err.Error())
@@ -181,6 +181,7 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		dataSync <- sync.DataSync{
 			FlagData: data.FlagConfiguration,
 			Source:   g.URI,
+			Selector: g.Selector,
 			Type:     sync.ALL,
 		}
 

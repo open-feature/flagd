@@ -57,6 +57,7 @@ type ISync interface {
 type DataSync struct {
 	FlagData string
 	Source   string
+	Selector string
 	Type
 }
 
