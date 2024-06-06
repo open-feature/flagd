@@ -1,6 +1,7 @@
 package store
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -73,52 +74,38 @@ func TestHasPriority(t *testing.T) {
 func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name       string
-		current    *Flags
-		new        map[string]model.Flag
-		newSource  string
-		want       *Flags
-		wantNotifs map[string]interface{}
-		wantResync bool
+		name        string
+		current     *Flags
+		new         map[string]model.Flag
+		newSource   string
+		newSelector string
+		want        *Flags
+		wantNotifs  map[string]interface{}
+		wantResync  bool
 	}{
 		{
-			name: "both nil",
-			current: &Flags{
-				Flags: nil,
-			},
+			name:       "both nil",
+			current:    &Flags{Flags: nil},
 			new:        nil,
-			want:       &Flags{Flags: map[string]model.Flag{}},
+			want:       &Flags{Flags: nil},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name: "both empty flags",
-			current: &Flags{
-				Flags: map[string]model.Flag{},
-			},
+			name:       "both empty flags",
+			current:    &Flags{Flags: map[string]model.Flag{}},
 			new:        map[string]model.Flag{},
 			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name: "empty current",
-			current: &Flags{
-				Flags: nil,
-			},
-			new:        map[string]model.Flag{},
-			want:       &Flags{Flags: map[string]model.Flag{}},
-			wantNotifs: map[string]interface{}{},
-		},
-		{
-			name: "empty new",
-			current: &Flags{
-				Flags: map[string]model.Flag{},
-			},
+			name:       "empty new",
+			current:    &Flags{Flags: map[string]model.Flag{}},
 			new:        nil,
 			want:       &Flags{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name: "extra fields on each",
+			name: "merging with new source",
 			current: &Flags{
 				Flags: map[string]model.Flag{
 					"waka": {
@@ -143,15 +130,14 @@ func TestMergeFlags(t *testing.T) {
 					Source:         "2",
 				},
 			}},
-			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write", "source": "2"},
-			},
+			wantNotifs: map[string]interface{}{"paka": map[string]interface{}{"type": "write", "source": "2"}},
 		},
 		{
-			name: "override",
-			current: &Flags{
-				Flags: map[string]model.Flag{"waka": {DefaultVariant: "off"}},
-			},
+			name: "override by new update",
+			current: &Flags{Flags: map[string]model.Flag{
+				"waka": {DefaultVariant: "off"},
+				"paka": {DefaultVariant: "off"},
+			}},
 			new: map[string]model.Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
@@ -162,11 +148,11 @@ func TestMergeFlags(t *testing.T) {
 			}},
 			wantNotifs: map[string]interface{}{
 				"waka": map[string]interface{}{"type": "update", "source": ""},
-				"paka": map[string]interface{}{"type": "write", "source": ""},
+				"paka": map[string]interface{}{"type": "update", "source": ""},
 			},
 		},
 		{
-			name: "identical",
+			name: "identical update so empty notifications",
 			current: &Flags{
 				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off"}},
 			},
@@ -179,20 +165,26 @@ func TestMergeFlags(t *testing.T) {
 			wantNotifs: map[string]interface{}{},
 		},
 		{
-			name: "deleted flag",
-			current: &Flags{
-				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}},
-			},
-			new:       map[string]model.Flag{},
-			newSource: "A",
-			want:      &Flags{Flags: map[string]model.Flag{}},
-			wantNotifs: map[string]interface{}{
-				"hello": map[string]interface{}{"type": "delete", "source": "A"},
-			},
+			name:       "deleted flag & trigger resync for same source",
+			current:    &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}}},
+			new:        map[string]model.Flag{},
+			newSource:  "A",
+			want:       &Flags{Flags: map[string]model.Flag{}},
+			wantNotifs: map[string]interface{}{"hello": map[string]interface{}{"type": "delete", "source": "A"}},
 			wantResync: true,
 		},
 		{
-			name: "no merge priority",
+			name:        "no deleted & no resync for same source but different selector",
+			current:     &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
+			new:         map[string]model.Flag{},
+			newSource:   "A",
+			newSelector: "Y",
+			want:        &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
+			wantResync:  false,
+			wantNotifs:  map[string]interface{}{},
+		},
+		{
+			name: "no merge due to low priority",
 			current: &Flags{
 				FlagSources: []string{
 					"B",
@@ -205,9 +197,7 @@ func TestMergeFlags(t *testing.T) {
 					},
 				},
 			},
-			new: map[string]model.Flag{
-				"hello": {DefaultVariant: "off"},
-			},
+			new:       map[string]model.Flag{"hello": {DefaultVariant: "off"}},
 			newSource: "B",
 			want: &Flags{
 				FlagSources: []string{
@@ -229,8 +219,9 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.new)
-			require.Equal(t, tt.want, tt.want)
+			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.newSelector, tt.new)
+
+			require.True(t, reflect.DeepEqual(tt.want, tt.current))
 			require.Equal(t, tt.wantNotifs, gotNotifs)
 			require.Equal(t, tt.wantResync, resyncRequired)
 		})
@@ -243,8 +234,9 @@ func TestFlags_Add(t *testing.T) {
 	mockOverrideSource := "source-2"
 
 	type request struct {
-		source string
-		flags  map[string]model.Flag
+		source   string
+		selector string
+		flags    map[string]model.Flag
 	}
 
 	tests := []struct {
@@ -321,7 +313,7 @@ func TestFlags_Add(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			messages := tt.storedState.Add(mockLogger, tt.addRequest.source, tt.addRequest.flags)
+			messages := tt.storedState.Add(mockLogger, tt.addRequest.source, tt.addRequest.selector, tt.addRequest.flags)
 
 			require.Equal(t, tt.storedState, tt.expectedState)
 
@@ -339,8 +331,9 @@ func TestFlags_Update(t *testing.T) {
 	mockOverrideSource := "source-2"
 
 	type request struct {
-		source string
-		flags  map[string]model.Flag
+		source   string
+		selector string
+		flags    map[string]model.Flag
 	}
 
 	tests := []struct {
@@ -437,7 +430,8 @@ func TestFlags_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			messages := tt.storedState.Update(mockLogger, tt.UpdateRequest.source, tt.UpdateRequest.flags)
+			messages := tt.storedState.Update(mockLogger, tt.UpdateRequest.source,
+				tt.UpdateRequest.selector, tt.UpdateRequest.flags)
 
 			require.Equal(t, tt.storedState, tt.expectedState)
 
