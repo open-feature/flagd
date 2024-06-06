@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.3](https://github.com/open-feature/flagd/compare/flagd/v0.10.2...flagd/v0.10.3) (2024-06-06)
+
+
+### 🧹 Chore
+
+* adapt telemetry setup error handling ([#1315](https://github.com/open-feature/flagd/issues/1315)) ([20bcb78](https://github.com/open-feature/flagd/commit/20bcb78d11dbb16aab2b14d5869bb990a0f7bca5))
+* fix unit tests and ensure their execution ([#1316](https://github.com/open-feature/flagd/issues/1316)) ([25041c0](https://github.com/open-feature/flagd/commit/25041c016ae84afb01b8eb1e2b693aae3199a6ac))
+
 ## [0.10.2](https://github.com/open-feature/flagd/compare/flagd/v0.10.1...flagd/v0.10.2) (2024-05-10)
 
 

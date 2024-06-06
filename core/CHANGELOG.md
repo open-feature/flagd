@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.3](https://github.com/open-feature/flagd/compare/core/v0.9.2...core/v0.9.3) (2024-06-06)
+
+
+### 🐛 Bug Fixes
+
+* fixes store merge when selector is used ([#1322](https://github.com/open-feature/flagd/issues/1322)) ([ed5025d](https://github.com/open-feature/flagd/commit/ed5025d8f28fdf92a5c7dceaec7fd6df7f979e3b))
+
+
+### 🧹 Chore
+
+* adapt telemetry setup error handling ([#1315](https://github.com/open-feature/flagd/issues/1315)) ([20bcb78](https://github.com/open-feature/flagd/commit/20bcb78d11dbb16aab2b14d5869bb990a0f7bca5))
+
 ## [0.9.2](https://github.com/open-feature/flagd/compare/core/v0.9.1...core/v0.9.2) (2024-05-10)
 
 
