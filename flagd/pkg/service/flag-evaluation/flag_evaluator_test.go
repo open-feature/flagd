@@ -986,3 +986,52 @@ func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 		}
 	}
 }
+
+func Test_Readable_ErrorMessage(t *testing.T) {
+	type args struct {
+		code string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Testing flag not found error",
+			args: args{code: model.FlagNotFoundErrorCode},
+			want: "Flag not found",
+		},
+		{
+			name: "Testing parse error",
+			args: args{code: model.ParseErrorCode},
+			want: "Error parsing input",
+		},
+		{
+			name: "Testing type mismatch error",
+			args: args{code: model.TypeMismatchErrorCode},
+			want: "Type mismatch error",
+		},
+		{
+			name: "Testing general error",
+			args: args{code: model.GeneralErrorCode},
+			want: "General error",
+		},
+		{
+			name: "Testing flag disabled error",
+			args: args{code: model.FlagDisabledErrorCode},
+			want: "Flag is disabled",
+		},
+		{
+			name: "Testing invalid context error",
+			args: args{code: model.InvalidContextCode},
+			want: "Invalid context provided",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := model.GetErrorMessage(tt.args.code); got != tt.want {
+				t.Errorf("GetErrorMessage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

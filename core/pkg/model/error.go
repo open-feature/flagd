@@ -13,7 +13,7 @@ var readableErrorCode = map[string]string{
 	FlagNotFoundErrorCode: "Flag not found",
 	ParseErrorCode:        "Error parsing input",
 	TypeMismatchErrorCode: "Type mismatch error",
-	GeneralErrorCode:      "A general error occurred",
+	GeneralErrorCode:      "General error",
 	FlagDisabledErrorCode: "Flag is disabled",
 	InvalidContextCode:    "Invalid context provided",
 }
