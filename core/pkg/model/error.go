@@ -8,3 +8,19 @@ const (
 	FlagDisabledErrorCode = "FLAG_DISABLED"
 	InvalidContextCode    = "INVALID_CONTEXT"
 )
+
+var readableErrorCode = map[string]string{
+	FlagNotFoundErrorCode: "Flag not found",
+	ParseErrorCode:        "Error parsing input",
+	TypeMismatchErrorCode: "Type mismatch error",
+	GeneralErrorCode:      "A general error occurred",
+	FlagDisabledErrorCode: "Flag is disabled",
+	InvalidContextCode:    "Invalid context provided",
+}
+
+func GetErrorMessage(code string) string {
+	if msg, exists := readableErrorCode[code]; exists {
+		return msg
+	}
+	return "An unknown error code"
+}
