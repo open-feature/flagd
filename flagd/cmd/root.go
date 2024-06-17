@@ -47,6 +47,10 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().BoolVarP(&Debug, "debug", "x", false, "verbose logging")
+	// Bind the cobra flag to viper key
+	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+		fmt.Fprintln(os.Stderr, "error when binding flags", err.Error())
+	}
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agent.yaml)")
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(versionCmd)
@@ -69,6 +73,7 @@ func initConfig() {
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
+	Debug = viper.GetBool("debug")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
