@@ -11,7 +11,7 @@ const (
 
 var readableErrorMessage = map[string]string{
 	FlagNotFoundErrorCode: "Flag not found",
-	ParseErrorCode:        "Error parsing input",
+	ParseErrorCode:        "Error parsing input or configuration",
 	TypeMismatchErrorCode: "Type mismatch error",
 	GeneralErrorCode:      "General error",
 	FlagDisabledErrorCode: "Flag is disabled",
