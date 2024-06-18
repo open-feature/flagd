@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 const (
 	FlagNotFoundErrorCode = "FLAG_NOT_FOUND"
 	ParseErrorCode        = "PARSE_ERROR"
@@ -22,5 +24,5 @@ func GetErrorMessage(code string) string {
 	if msg, exists := ReadableErrorMessage[code]; exists {
 		return msg
 	}
-	return "An unknown error code"
+	return fmt.Sprintf("Unknown error code: %s", code)
 }
