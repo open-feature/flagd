@@ -327,15 +327,16 @@ func formatContextKeys(context *structpb.Struct) []string {
 }
 
 func errFormat(err error) error {
+	ReadableErrorMsg := model.GetErrorMessage(err.Error())
 	switch err.Error() {
 	case model.FlagNotFoundErrorCode, model.FlagDisabledErrorCode:
-		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.TypeMismatchErrorCode:
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.ParseErrorCode:
-		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+		return connect.NewError(connect.CodeDataLoss, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.GeneralErrorCode:
-		return connect.NewError(connect.CodeUnknown, fmt.Errorf("%s, %s", ErrorPrefix, err.Error()))
+		return connect.NewError(connect.CodeUnknown, fmt.Errorf("%s", ReadableErrorMsg))
 	}
 
 	return err

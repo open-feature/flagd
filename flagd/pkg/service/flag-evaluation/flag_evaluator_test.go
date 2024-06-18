@@ -986,3 +986,49 @@ func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 		}
 	}
 }
+
+func Test_Readable_ErrorMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		code string
+		want string
+	}{
+		{
+			name: "Testing flag not found error",
+			code: model.FlagNotFoundErrorCode,
+			want: model.ReadableErrorMessage[model.FlagNotFoundErrorCode],
+		},
+		{
+			name: "Testing parse error",
+			code: model.ParseErrorCode,
+			want: model.ReadableErrorMessage[model.ParseErrorCode],
+		},
+		{
+			name: "Testing type mismatch error",
+			code: model.TypeMismatchErrorCode,
+			want: model.ReadableErrorMessage[model.TypeMismatchErrorCode],
+		},
+		{
+			name: "Testing general error",
+			code: model.GeneralErrorCode,
+			want: model.ReadableErrorMessage[model.GeneralErrorCode],
+		},
+		{
+			name: "Testing flag disabled error",
+			code: model.FlagDisabledErrorCode,
+			want: model.ReadableErrorMessage[model.FlagDisabledErrorCode],
+		},
+		{
+			name: "Testing invalid context error",
+			code: model.InvalidContextCode,
+			want: model.ReadableErrorMessage[model.InvalidContextCode],
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := model.GetErrorMessage(tt.code); got != tt.want {
+				t.Errorf("GetErrorMessage() Wanted: %v , but got: %v as a ReadableErrorMessage", tt.want, got)
+			}
+		})
+	}
+}
