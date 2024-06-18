@@ -988,48 +988,45 @@ func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 }
 
 func Test_Readable_ErrorMessage(t *testing.T) {
-	type args struct {
-		code string
-	}
 	tests := []struct {
 		name string
-		args args
+		code string
 		want string
 	}{
 		{
 			name: "Testing flag not found error",
-			args: args{code: model.FlagNotFoundErrorCode},
-			want: "Flag not found",
+			code: model.FlagNotFoundErrorCode,
+			want: model.ReadableErrorMessage[model.FlagNotFoundErrorCode],
 		},
 		{
 			name: "Testing parse error",
-			args: args{code: model.ParseErrorCode},
-			want: "Error parsing input or configuration",
+			code: model.ParseErrorCode,
+			want: model.ReadableErrorMessage[model.ParseErrorCode],
 		},
 		{
 			name: "Testing type mismatch error",
-			args: args{code: model.TypeMismatchErrorCode},
-			want: "Type mismatch error",
+			code: model.TypeMismatchErrorCode,
+			want: model.ReadableErrorMessage[model.TypeMismatchErrorCode],
 		},
 		{
 			name: "Testing general error",
-			args: args{code: model.GeneralErrorCode},
-			want: "General error",
+			code: model.GeneralErrorCode,
+			want: model.ReadableErrorMessage[model.GeneralErrorCode],
 		},
 		{
 			name: "Testing flag disabled error",
-			args: args{code: model.FlagDisabledErrorCode},
-			want: "Flag is disabled",
+			code: model.FlagDisabledErrorCode,
+			want: model.ReadableErrorMessage[model.FlagDisabledErrorCode],
 		},
 		{
 			name: "Testing invalid context error",
-			args: args{code: model.InvalidContextCode},
-			want: "Invalid context provided",
+			code: model.InvalidContextCode,
+			want: model.ReadableErrorMessage[model.InvalidContextCode],
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := model.GetErrorMessage(tt.args.code); got != tt.want {
+			if got := model.GetErrorMessage(tt.code); got != tt.want {
 				t.Errorf("GetErrorMessage() Wanted: %v , but got: %v as a ReadableErrorMessage", tt.want, got)
 			}
 		})
