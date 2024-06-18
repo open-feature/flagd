@@ -9,7 +9,7 @@ const (
 	InvalidContextCode    = "INVALID_CONTEXT"
 )
 
-var readableErrorMessage = map[string]string{
+var ReadableErrorMessage = map[string]string{
 	FlagNotFoundErrorCode: "Flag not found",
 	ParseErrorCode:        "Error parsing input or configuration",
 	TypeMismatchErrorCode: "Type mismatch error",
@@ -19,7 +19,7 @@ var readableErrorMessage = map[string]string{
 }
 
 func GetErrorMessage(code string) string {
-	if msg, exists := readableErrorMessage[code]; exists {
+	if msg, exists := ReadableErrorMessage[code]; exists {
 		return msg
 	}
 	return "An unknown error code"
