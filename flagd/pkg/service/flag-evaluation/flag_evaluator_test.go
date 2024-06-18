@@ -1004,7 +1004,7 @@ func Test_Readable_ErrorMessage(t *testing.T) {
 		{
 			name: "Testing parse error",
 			args: args{code: model.ParseErrorCode},
-			want: "Error parsing input",
+			want: "Error parsing input or configuration",
 		},
 		{
 			name: "Testing type mismatch error",
