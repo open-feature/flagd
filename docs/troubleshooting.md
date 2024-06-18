@@ -9,7 +9,7 @@ description: troubleshooting flagd
 If a flag or targeting rule isn't proceeding the way you'd expect, you may want to enable more verbose logging.
 
 flagd and flagd providers typically have debug or verbose logging modes that you can use for this sort of troubleshooting.
-You can do this in the standalone version of flagd by starting it with the `--debug` flag (see [CLI](./reference/flagd-cli/flagd.md) for more information).
+You can do this in the standalone version of flagd by starting it with the `--debug` flag (see [CLI](./reference/flagd-cli/flagd.md) for more information) or through `FLAGD_DEBUG` env variable.
 
 _In-process_ providers which embed the flag evaluation engine use a logging consistent with their implementation language and SDK.
 See your provider's documentation for details on how to enable verbose logging.
