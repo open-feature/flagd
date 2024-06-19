@@ -1495,6 +1495,8 @@ github.com/open-feature/flagd-schemas v0.2.9-0.20240408192555-ea4f119d2bd7 h1:oP
 github.com/open-feature/flagd-schemas v0.2.9-0.20240408192555-ea4f119d2bd7/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
 github.com/open-feature/flagd/core v0.9.0 h1:1jHExDncnGFf8pOsrI35lM2GivD2vz1juReZbm67B+I=
 github.com/open-feature/flagd/core v0.9.0/go.mod h1:xwuBMPmdkuoUPyajIH4fiuQfBDC4chOF1Ysj8zSLpbA=
+github.com/open-feature/flagd/core v0.9.3 h1:hig5PwODKmndPJ2zy0BfAg7nhqYnEMZkII7ub3d9DOQ=
+github.com/open-feature/flagd/core v0.9.3/go.mod h1:o0qe6BmW+u0Qf/dlP3cuG2RdtYmjk//1M8GmFQrS2Lg=
 github.com/open-feature/open-feature-operator/apis v0.2.40 h1:h2w8vE2KZ9jrYk43zIIpku/GsTMZwzWm14D4K/Z47YI=
 github.com/open-feature/open-feature-operator/apis v0.2.40/go.mod h1:I/4tLd5D4JpWpaFZxe2o8R2S1isWGNwHDSC/H5h7o3A=
 github.com/pelletier/go-toml/v2 v2.2.0 h1:QLgLl2yMN7N+ruc31VynXs1vhMZa7CeHHejIeBAsoHo=
