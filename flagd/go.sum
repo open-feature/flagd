@@ -3,6 +3,8 @@ buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.34.0-20220906
 buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.34.1-20220906183531-bc28b723cd77.1/go.mod h1:gUfBTdJmhwTJHoIaOQjy7xczHhqjkQfXSKs5TY4IsUY=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.16.0-20240215170432-1e611e2999cc.1 h1:DcfsphSLDFU8iv69Aka0e+zYpymjlhYhGwMw+taKibM=
 buf.build/gen/go/open-feature/flagd/connectrpc/go v1.16.0-20240215170432-1e611e2999cc.1/go.mod h1:tA8NvN9Co1EQA2jC0vjeb8mLHMZ7EAtDzspKGM3aEfI=
+buf.build/gen/go/open-feature/flagd/connectrpc/go v1.16.2-20240215170432-1e611e2999cc.1 h1:LzKcO153IeqETZE4vW6Wc2ffzfkx3BXYwIX72Khz56U=
+buf.build/gen/go/open-feature/flagd/connectrpc/go v1.16.2-20240215170432-1e611e2999cc.1/go.mod h1:CV7JQktehuZgsiW5gEF1dd+LMqxl2kHJjM4bxuhNlz4=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.3 h1:mUh+66sS7hpfksYmcAu+UOqc1wDw4VK3oPOmRY4QVTU=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.3/go.mod h1:iyVT2Ux3voZ+n5j3aJylxePlhFiX4vpStA2P9Rcx5WY=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.34.0-20240215170432-1e611e2999cc.1/go.mod h1:C17h77473QJduq4M88y16OJ1he6h7kYRjjNaFYZrPP8=
@@ -1144,6 +1146,8 @@ cloud.google.com/go/workflows v1.12.2/go.mod h1:+OmBIgNqYJPVggnMo9nqmizW0qEXHhmn
 cloud.google.com/go/workflows v1.12.3/go.mod h1:fmOUeeqEwPzIU81foMjTRQIdwQHADi/vEr1cx9R1m5g=
 connectrpc.com/connect v1.16.1 h1:rOdrK/RTI/7TVnn3JsVxt3n028MlTRwmK5Q4heSpjis=
 connectrpc.com/connect v1.16.1/go.mod h1:XpZAduBQUySsb4/KO5JffORVkDI4B6/EYPi7N8xpNZw=
+connectrpc.com/connect v1.16.2 h1:ybd6y+ls7GOlb7Bh5C8+ghA6SvCBajHwxssO2CGFjqE=
+connectrpc.com/connect v1.16.2/go.mod h1:n2kgwskMHXC+lVqb18wngEpF95ldBHXjZYJussz5FRc=
 connectrpc.com/otelconnect v0.7.0 h1:ZH55ZZtcJOTKWWLy3qmL4Pam4RzRWBJFOqTPyAqCXkY=
 connectrpc.com/otelconnect v0.7.0/go.mod h1:Bt2ivBymHZHqxvo4HkJ0EwHuUzQN6k2l0oH+mp/8nwc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
