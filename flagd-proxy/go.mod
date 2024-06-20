@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.4
 
 require (
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.3
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.4.0-20240215170432-1e611e2999cc.1
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.34.2-20240215170432-1e611e2999cc.2
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
