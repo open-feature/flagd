@@ -19,7 +19,9 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	port := 18282
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 
-	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return([]evaluator.AnyValue{})
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return([]evaluator.AnyValue{}, nil)
+
 	cfg := SvcConfiguration{
 		Logger: logger.NewLogger(nil, false),
 		Port:   uint16(port),

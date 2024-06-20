@@ -77,5 +77,5 @@ type IResolver interface {
 	ResolveAllValues(
 		ctx context.Context,
 		reqID string,
-		context map[string]any) (values []AnyValue)
+		context map[string]any) (values []AnyValue, err error)
 }

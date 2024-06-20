@@ -118,7 +118,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				tt.evalRes,
+				tt.evalRes, nil,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
 			s := NewOldFlagEvaluationService(

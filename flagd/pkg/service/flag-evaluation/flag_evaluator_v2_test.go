@@ -21,7 +21,8 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
 		req     *evalV1.ResolveAllRequest
 		evalRes []evaluator.AnyValue
-		wantErr error
+		evalErr error
+		wantErr bool
 		wantRes *evalV1.ResolveAllResponse
 	}{
 		"happy-path": {
@@ -52,7 +53,6 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 					FlagKey: "object",
 				},
 			},
-			wantErr: nil,
 			wantRes: &evalV1.ResolveAllResponse{
 				Flags: map[string]*evalV1.AnyFlag{
 					"bool": {
@@ -76,26 +76,37 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 				},
 			},
 		},
+		"resolver error": {
+			req:     &evalV1.ResolveAllRequest{},
+			evalRes: []evaluator.AnyValue{},
+			evalErr: errors.New("some error from internal evaluator"),
+			wantErr: true,
+		},
 	}
 	ctrl := gomock.NewController(t)
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			// given
 			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				tt.evalRes,
+				tt.evalRes, tt.evalErr,
 			).AnyTimes()
+
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(
-				logger.NewLogger(nil, false),
-				eval,
-				&eventingConfiguration{},
-				metrics,
-			)
+			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics)
+
+			// when
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
-			if err != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ConnectService.ResolveAll() error = %v, wantErr %v", err.Error(), tt.wantErr.Error())
+
+			// then
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error but git none")
+				}
+
 				return
 			}
+
 			var data metricdata.ResourceMetrics
 			err = exp.Collect(context.TODO(), &data)
 			require.Nil(t, err)

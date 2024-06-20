@@ -156,17 +156,22 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
 
-func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) []AnyValue {
+func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]AnyValue, error) {
 	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
+
+	var err error
+	allFlags, err := je.store.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retreiving flags from the store: %w", err)
+	}
 
 	values := []AnyValue{}
 	var value interface{}
 	var variant string
 	var reason string
 	var metadata map[string]interface{}
-	var err error
-	allFlags := je.store.GetAll(ctx)
+
 	for flagKey, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
@@ -176,44 +181,21 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, metadata, err = resolve[bool](
-				ctx,
-				reqID,
-				flagKey,
-				context,
-				je.evaluateVariant,
-			)
+			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
 		case string:
-			value, variant, reason, metadata, err = resolve[string](
-				ctx,
-				reqID,
-				flagKey,
-				context,
-				je.evaluateVariant,
-			)
+			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
 		case float64:
-			value, variant, reason, metadata, err = resolve[float64](
-				ctx,
-				reqID,
-				flagKey,
-				context,
-				je.evaluateVariant,
-			)
+			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
 		case map[string]any:
-			value, variant, reason, metadata, err = resolve[map[string]any](
-				ctx,
-				reqID,
-				flagKey,
-				context,
-				je.evaluateVariant,
-			)
+			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
 		}
 		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
 	}
-	return values
+
+	return values, nil
 }
 
 func (je *Resolver) ResolveBooleanValue(
