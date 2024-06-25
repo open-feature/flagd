@@ -20,7 +20,7 @@ type EvaluationSuccess struct {
 }
 
 type BulkEvaluationResponse struct {
-	Flags []interface{} `json:"flags,omitempty"`
+	Flags []interface{} `json:"flags"`
 }
 
 type EvaluationError struct {

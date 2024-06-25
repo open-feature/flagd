@@ -1,6 +1,7 @@
 package ofrep
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
@@ -45,31 +46,54 @@ func TestSuccessResult(t *testing.T) {
 	}
 }
 
-func TestBulkEvaluationResult(t *testing.T) {
-	// given
-	values := []evaluator.AnyValue{
+func TestBulkEvaluationResponse(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            []evaluator.AnyValue
+		marshalledOutput string
+	}{
 		{
-			Value:   false,
-			Variant: "false",
-			Reason:  model.StaticReason,
-			FlagKey: "key",
-			Metadata: map[string]interface{}{
-				"key": "value",
-			},
+			name:             "empty input",
+			input:            nil,
+			marshalledOutput: "{\"flags\":[]}",
 		},
 		{
-			Value:   false,
-			Variant: "false",
-			Reason:  model.ErrorReason,
-			FlagKey: "errorFlag",
-			Error:   errors.New(model.FlagNotFoundErrorCode),
+			name: "valid values",
+			input: []evaluator.AnyValue{
+				{
+					Value:   false,
+					Variant: "false",
+					Reason:  model.StaticReason,
+					FlagKey: "key",
+					Metadata: map[string]interface{}{
+						"key": "value",
+					},
+				},
+				{
+					Value:   false,
+					Variant: "false",
+					Reason:  model.ErrorReason,
+					FlagKey: "errorFlag",
+					Error:   errors.New(model.FlagNotFoundErrorCode),
+				},
+			},
+			marshalledOutput: "{\"flags\":[{\"value\":false,\"key\":\"key\",\"reason\":\"STATIC\",\"variant\":\"false\",\"metadata\":{\"key\":\"value\"}},{\"key\":\"errorFlag\",\"errorCode\":\"FLAG_NOT_FOUND\",\"errorDetails\":\"flag `errorFlag` does not exist\"}]}",
 		},
 	}
 
-	bulkResponse := BulkEvaluationResponseFrom(values)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			response := BulkEvaluationResponseFrom(test.input)
 
-	if len(bulkResponse.Flags) != 2 {
-		t.Errorf("expected bulk response to contain 2 results, but got %d", len(bulkResponse.Flags))
+			marshal, err := json.Marshal(response)
+			if err != nil {
+				t.Errorf("error marshalling the response: %v", err)
+			}
+
+			if test.marshalledOutput != string(marshal) {
+				t.Errorf("expected %s, got %s", test.marshalledOutput, string(marshal))
+			}
+		})
 	}
 }
 
