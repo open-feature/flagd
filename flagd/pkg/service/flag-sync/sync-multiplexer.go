@@ -163,7 +163,11 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 func (r *Multiplexer) reFill() error {
 	clear(r.selectorFlags)
 
-	all := r.store.GetAll(context.Background())
+	all, err := r.store.GetAll(context.Background())
+	if err != nil {
+		return fmt.Errorf("error retrieving flags from the store: %w", err)
+	}
+
 	bytes, err := json.Marshal(map[string]interface{}{"flags": all})
 	if err != nil {
 		return fmt.Errorf("error from marshallin: %w", err)

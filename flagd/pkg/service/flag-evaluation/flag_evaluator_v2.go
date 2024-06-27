@@ -68,7 +68,12 @@ func (s *FlagEvaluationService) ResolveAll(
 		evalCtx = e.AsMap()
 	}
 
-	values := s.eval.ResolveAllValues(sCtx, reqID, evalCtx)
+	values, err := s.eval.ResolveAllValues(sCtx, reqID, evalCtx)
+	if err != nil {
+		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
+		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
+	}
+
 	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated

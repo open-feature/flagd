@@ -335,7 +335,11 @@ func TestResolveAllValues(t *testing.T) {
 	}
 	const reqID = "default"
 	for _, test := range tests {
-		vals := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
+		vals, err := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
+		if err != nil {
+			t.Error("error from resolver", err)
+		}
+
 		for _, val := range vals {
 			// disabled flag must be ignored from bulk evaluation
 			if val.FlagKey == DisabledFlag {
@@ -1234,21 +1238,30 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Add_ResolveAllValues": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				if err != nil {
+					return err
+				}
 				return nil
 			},
 		},
 		"Update_ResolveAllValues": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				if err != nil {
+					return err
+				}
 				return nil
 			},
 		},
 		"Delete_ResolveAllValues": {
 			dataSyncType: sync.DELETE,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				if err != nil {
+					return err
+				}
 				return nil
 			},
 		},

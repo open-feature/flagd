@@ -40,7 +40,7 @@ func NewFractional(logger *logger.Logger) *Fractional {
 func (fe *Fractional) Evaluate(values, data any) any {
 	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
 	if err != nil {
-		fe.Logger.Error(fmt.Sprintf("parse fractional evaluation data: %v", err))
+		fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
 	}
 

@@ -73,10 +73,17 @@ func ContextErrorResponseFrom(key string) EvaluationError {
 	}
 }
 
-func BulkEvaluationContextErrorFrom() BulkEvaluationError {
+func BulkEvaluationContextError() BulkEvaluationError {
 	return BulkEvaluationError{
 		ErrorCode:    model.InvalidContextCode,
 		ErrorDetails: "Provider context is not valid",
+	}
+}
+
+func BulkEvaluationContextErrorFrom(code string, details string) BulkEvaluationError {
+	return BulkEvaluationError{
+		ErrorCode:    code,
+		ErrorDetails: details,
 	}
 }
 

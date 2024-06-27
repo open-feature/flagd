@@ -12,7 +12,7 @@ import (
 )
 
 type IStore interface {
-	GetAll(ctx context.Context) map[string]model.Flag
+	GetAll(ctx context.Context) (map[string]model.Flag, error)
 	Get(ctx context.Context, key string) (model.Flag, bool)
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
 }
@@ -90,7 +90,7 @@ func (f *Flags) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (f *Flags) GetAll(_ context.Context) map[string]model.Flag {
+func (f *Flags) GetAll(_ context.Context) (map[string]model.Flag, error) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	state := make(map[string]model.Flag, len(f.Flags))
@@ -99,7 +99,7 @@ func (f *Flags) GetAll(_ context.Context) map[string]model.Flag {
 		state[key] = flag
 	}
 
-	return state
+	return state, nil
 }
 
 // Add new flags from source.
@@ -187,7 +187,12 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 
 	notifications := map[string]interface{}{}
 	if len(flags) == 0 {
-		allFlags := f.GetAll(ctx)
+		allFlags, err := f.GetAll(ctx)
+		if err != nil {
+			logger.Error(fmt.Sprintf("error while retrieving flags from the store: %v", err))
+			return notifications
+		}
+
 		for key, flag := range allFlags {
 			if flag.Source != source {
 				continue

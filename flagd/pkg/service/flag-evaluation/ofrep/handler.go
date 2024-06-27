@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
 	"github.com/rs/xid"
 )
@@ -37,6 +38,7 @@ func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator) http
 
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
+	defer h.Logger.ClearFields(requestID)
 
 	// obtain flag key
 	vars := mux.Vars(r)
@@ -66,16 +68,25 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
+	defer h.Logger.ClearFields(requestID)
 
 	request, err := extractOfrepRequest(r)
 	if err != nil {
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextErrorFrom(), w)
+		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextError(), w)
 		return
 	}
 
 	context := flagdContext(h.Logger, requestID, request)
-	evaluations := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
-	h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations), w)
+	evaluations, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
+	if err != nil {
+		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
+
+		res := ofrep.BulkEvaluationContextErrorFrom(model.GeneralErrorCode,
+			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
+		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
+	} else {
+		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations), w)
+	}
 }
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {
