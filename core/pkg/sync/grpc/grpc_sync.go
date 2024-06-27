@@ -53,7 +53,7 @@ type Sync struct {
 	ready  bool
 }
 
-func (g *Sync) Init(ctx context.Context) error {
+func (g *Sync) Init(_ context.Context) error {
 	tCredentials, err := g.CredentialBuilder.Build(g.Secure, g.CertPath)
 	if err != nil {
 		err := fmt.Errorf("error building transport credentials: %w", err)
@@ -62,7 +62,7 @@ func (g *Sync) Init(ctx context.Context) error {
 	}
 
 	// Derive reusable client connection
-	rpcCon, err := grpc.DialContext(ctx, g.URI, grpc.WithTransportCredentials(tCredentials))
+	rpcCon, err := grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials))
 	if err != nil {
 		err := fmt.Errorf("error initiating grpc client connection: %w", err)
 		g.Logger.Error(err.Error())

@@ -40,7 +40,7 @@ func doRequests(grpcClient pb.FlagSyncServiceClient, waitSecondsBetweenRequests 
 }
 
 func establishGrpcConnection(url string) (*grpc.ClientConn, pb.FlagSyncServiceClient) {
-	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Println(err.Error())
 	}

@@ -14,7 +14,7 @@ type Config struct {
 }
 
 func NewClient(config Config) (syncv1.FlagSyncServiceClient, error) {
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		fmt.Sprintf(
 			"%s:%d",
 			config.Host,
