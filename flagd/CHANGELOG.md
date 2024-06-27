@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.11.0](https://github.com/open-feature/flagd/compare/flagd/v0.10.3...flagd/v0.11.0) (2024-06-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* support emitting errors from the bulk evaluator ([#1338](https://github.com/open-feature/flagd/issues/1338))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.16.2-20240215170432-1e611e2999cc.1 ([#1293](https://github.com/open-feature/flagd/issues/1293)) ([2694e7f](https://github.com/open-feature/flagd/commit/2694e7f99fc356c23b6b34265418b0b0160deb62))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.1 ([#1333](https://github.com/open-feature/flagd/issues/1333)) ([494062f](https://github.com/open-feature/flagd/commit/494062fed891fab0fb659352142dbbc97c8f1492))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.34.2-20240215170432-1e611e2999cc.2 ([#1330](https://github.com/open-feature/flagd/issues/1330)) ([32291ad](https://github.com/open-feature/flagd/commit/32291ad93d25d79299a7a02381df70e2719c4fbc))
+* **deps:** update module github.com/open-feature/flagd/core to v0.9.3 ([#1296](https://github.com/open-feature/flagd/issues/1296)) ([1f7b8bd](https://github.com/open-feature/flagd/commit/1f7b8bd938f799da98462e45e52c0e1ac6cb83e6))
+* **deps:** update module github.com/rs/cors to v1.11.0 ([#1299](https://github.com/open-feature/flagd/issues/1299)) ([5f77541](https://github.com/open-feature/flagd/commit/5f775413fb33b4afed1ef98484463f07a67ed1cb))
+* **deps:** update module github.com/spf13/cobra to v1.8.1 ([#1332](https://github.com/open-feature/flagd/issues/1332)) ([c62bcb0](https://github.com/open-feature/flagd/commit/c62bcb0ec68fbcac40d16df001379f117c4df37e))
+* **deps:** update module github.com/spf13/viper to v1.19.0 ([#1334](https://github.com/open-feature/flagd/issues/1334)) ([1097b99](https://github.com/open-feature/flagd/commit/1097b9961b672d44a81e5b9e7a56f163e08e4909))
+* **deps:** update module golang.org/x/net to v0.26.0 ([#1337](https://github.com/open-feature/flagd/issues/1337)) ([83bdbb5](https://github.com/open-feature/flagd/commit/83bdbb5e7ea1be9da51d06e6b22c997f0354ef98))
+* **deps:** update opentelemetry-go monorepo ([#1314](https://github.com/open-feature/flagd/issues/1314)) ([e9f1a7a](https://github.com/open-feature/flagd/commit/e9f1a7a04828f36691e694375b3c665140bc7dee))
+* readable error messages  ([#1325](https://github.com/open-feature/flagd/issues/1325)) ([7ff33ef](https://github.com/open-feature/flagd/commit/7ff33effcc47e31c5b7fdc33385d8128db2163fc))
+
+
+### ✨ New Features
+
+* support `FLAGD_DEBUG` / `--debug` / `-x` ([#1326](https://github.com/open-feature/flagd/issues/1326)) ([298bd36](https://github.com/open-feature/flagd/commit/298bd36698224a0dca8b289f4cb0b80ae2fa6e0a))
+* support emitting errors from the bulk evaluator ([#1338](https://github.com/open-feature/flagd/issues/1338)) ([b9c099c](https://github.com/open-feature/flagd/commit/b9c099cb7fa002a509a82c81b467f5e784c27e82))
+
 ## [0.10.3](https://github.com/open-feature/flagd/compare/flagd/v0.10.2...flagd/v0.10.3) (2024-06-06)
 
 
