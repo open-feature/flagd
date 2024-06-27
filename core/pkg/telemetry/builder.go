@@ -126,7 +126,7 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	}
 
 	// Non-blocking, insecure grpc connection
-	conn, err := grpc.DialContext(ctx, cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
@@ -143,7 +143,7 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 // buildOtlpExporter is a helper to build grpc backed otlp trace exporter
 func buildOtlpExporter(ctx context.Context, collectorTarget string) (*otlptrace.Exporter, error) {
 	// Non-blocking, insecure grpc connection
-	conn, err := grpc.DialContext(ctx, collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
