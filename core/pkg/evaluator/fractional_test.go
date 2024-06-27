@@ -7,6 +7,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFractionalEvaluation(t *testing.T) {
@@ -318,7 +319,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   "#FF0000",
 			expectedReason:  model.DefaultReason,
 		},
-		"fallback to default variant if percentages don't sum to 100": {
+		"get variant for non-percentage weight values": {
 			flags: Flags{
 				Flags: map[string]model.Flag{
 					"headerColor": {
@@ -352,7 +353,41 @@ func TestFractionalEvaluation(t *testing.T) {
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
-			expectedReason:  model.DefaultReason,
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"get variant for non-specified weight values": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+							"fractional": [
+								{"var": "email"},
+								[
+								"red"
+								],
+								[
+								"blue"
+								]
+							]
+							}`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"email": "foo@foo.com",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
 		},
 		"default to targetingKey if no bucket key provided": {
 			flags: Flags{
@@ -576,6 +611,52 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 					}
 				}
 			}
+		})
+	}
+}
+
+func Test_fractionalEvaluationVariant_getPercentage(t *testing.T) {
+	type fields struct {
+		variant string
+		weight  int
+	}
+	type args struct {
+		totalWeight int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   float64
+	}{
+		{
+			name: "get percentage",
+			fields: fields{
+				weight: 10,
+			},
+			args: args{
+				totalWeight: 20,
+			},
+			want: 50,
+		},
+		{
+			name: "total weight 0",
+			fields: fields{
+				weight: 10,
+			},
+			args: args{
+				totalWeight: 0,
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := fractionalEvaluationVariant{
+				variant: tt.fields.variant,
+				weight:  tt.fields.weight,
+			}
+			assert.Equalf(t, tt.want, v.getPercentage(tt.args.totalWeight), "getPercentage(%v)", tt.args.totalWeight)
 		})
 	}
 }

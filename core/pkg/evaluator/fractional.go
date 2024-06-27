@@ -16,8 +16,21 @@ type Fractional struct {
 }
 
 type fractionalEvaluationDistribution struct {
-	variant    string
-	percentage int
+	totalWeight      int
+	weightedVariants []fractionalEvaluationVariant
+}
+
+type fractionalEvaluationVariant struct {
+	variant string
+	weight  int
+}
+
+func (v fractionalEvaluationVariant) getPercentage(totalWeight int) float64 {
+	if totalWeight == 0 {
+		return 0
+	}
+
+	return 100 * float64(v.weight) / float64(totalWeight)
 }
 
 func NewFractional(logger *logger.Logger) *Fractional {
@@ -34,7 +47,7 @@ func (fe *Fractional) Evaluate(values, data any) any {
 	return distributeValue(valueToDistribute, feDistributions)
 }
 
-func parseFractionalEvaluationData(values, data any) (string, []fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluationDistribution, error) {
 	valuesArray, ok := values.([]any)
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
@@ -77,9 +90,11 @@ func parseFractionalEvaluationData(values, data any) (string, []fractionalEvalua
 	return bucketBy, feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluationDistribution, error) {
-	sumOfPercentages := 0
-	var feDistributions []fractionalEvaluationDistribution
+func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluationDistribution, error) {
+	feDistributions := &fractionalEvaluationDistribution{
+		totalWeight:      0,
+		weightedVariants: make([]fractionalEvaluationVariant, len(values)),
+	}
 	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
 		if !ok {
@@ -87,8 +102,8 @@ func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluatio
 				"please check your rule in flag definition")
 		}
 
-		if len(distributionArray) != 2 {
-			return nil, errors.New("distribution element isn't length 2")
+		if len(distributionArray) == 0 {
+			return nil, errors.New("distribution element needs at least one element")
 		}
 
 		variant, ok := distributionArray[0].(string)
@@ -96,37 +111,36 @@ func parseFractionalEvaluationDistributions(values []any) ([]fractionalEvaluatio
 			return nil, errors.New("first element of distribution element isn't string")
 		}
 
-		percentage, ok := distributionArray[1].(float64)
-		if !ok {
-			return nil, errors.New("second element of distribution element isn't float")
+		weight := 1.0
+		if len(distributionArray) >= 2 {
+			distributionWeight, ok := distributionArray[1].(float64)
+			if ok {
+				// default the weight to 1 if not specified explicitly
+				weight = distributionWeight
+			}
 		}
 
-		sumOfPercentages += int(percentage)
-
-		feDistributions = append(feDistributions, fractionalEvaluationDistribution{
-			variant:    variant,
-			percentage: int(percentage),
-		})
-	}
-
-	if sumOfPercentages != 100 {
-		return nil, fmt.Errorf("percentages must sum to 100, got: %d", sumOfPercentages)
+		feDistributions.totalWeight += int(weight)
+		feDistributions.weightedVariants[i] = fractionalEvaluationVariant{
+			variant: variant,
+			weight:  int(weight),
+		}
 	}
 
 	return feDistributions, nil
 }
 
 // distributeValue calculate hash for given hash key and find the bucket distributions belongs to
-func distributeValue(value string, feDistribution []fractionalEvaluationDistribution) string {
+func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
 	hashValue := int32(murmur3.StringSum32(value))
 	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
-	bucket := int(hashRatio * 100) // in range [0, 100]
+	bucket := hashRatio * 100 // in range [0, 100]
 
-	rangeEnd := 0
-	for _, dist := range feDistribution {
-		rangeEnd += dist.percentage
+	rangeEnd := float64(0)
+	for _, weightedVariant := range feDistribution.weightedVariants {
+		rangeEnd += weightedVariant.getPercentage(feDistribution.totalWeight)
 		if bucket < rangeEnd {
-			return dist.variant
+			return weightedVariant.variant
 		}
 	}
 
