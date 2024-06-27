@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.2...flagd-proxy/v0.6.3) (2024-06-27)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.1 ([#1333](https://github.com/open-feature/flagd/issues/1333)) ([494062f](https://github.com/open-feature/flagd/commit/494062fed891fab0fb659352142dbbc97c8f1492))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.34.2-20240215170432-1e611e2999cc.2 ([#1330](https://github.com/open-feature/flagd/issues/1330)) ([32291ad](https://github.com/open-feature/flagd/commit/32291ad93d25d79299a7a02381df70e2719c4fbc))
+* **deps:** update module github.com/open-feature/flagd/core to v0.9.3 ([#1296](https://github.com/open-feature/flagd/issues/1296)) ([1f7b8bd](https://github.com/open-feature/flagd/commit/1f7b8bd938f799da98462e45e52c0e1ac6cb83e6))
+* **deps:** update module github.com/spf13/cobra to v1.8.1 ([#1332](https://github.com/open-feature/flagd/issues/1332)) ([c62bcb0](https://github.com/open-feature/flagd/commit/c62bcb0ec68fbcac40d16df001379f117c4df37e))
+* **deps:** update module github.com/spf13/viper to v1.19.0 ([#1334](https://github.com/open-feature/flagd/issues/1334)) ([1097b99](https://github.com/open-feature/flagd/commit/1097b9961b672d44a81e5b9e7a56f163e08e4909))
+* **deps:** update module golang.org/x/net to v0.26.0 ([#1337](https://github.com/open-feature/flagd/issues/1337)) ([83bdbb5](https://github.com/open-feature/flagd/commit/83bdbb5e7ea1be9da51d06e6b22c997f0354ef98))
+* **deps:** update opentelemetry-go monorepo ([#1314](https://github.com/open-feature/flagd/issues/1314)) ([e9f1a7a](https://github.com/open-feature/flagd/commit/e9f1a7a04828f36691e694375b3c665140bc7dee))
+
 ## [0.6.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.1...flagd-proxy/v0.6.2) (2024-05-10)
 
 

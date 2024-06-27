@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.10.0](https://github.com/open-feature/flagd/compare/core/v0.9.3...core/v0.10.0) (2024-06-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* support emitting errors from the bulk evaluator ([#1338](https://github.com/open-feature/flagd/issues/1338))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.1 ([#1333](https://github.com/open-feature/flagd/issues/1333)) ([494062f](https://github.com/open-feature/flagd/commit/494062fed891fab0fb659352142dbbc97c8f1492))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.34.2-20240215170432-1e611e2999cc.2 ([#1330](https://github.com/open-feature/flagd/issues/1330)) ([32291ad](https://github.com/open-feature/flagd/commit/32291ad93d25d79299a7a02381df70e2719c4fbc))
+* **deps:** update module connectrpc.com/connect to v1.16.2 ([#1289](https://github.com/open-feature/flagd/issues/1289)) ([8bacb7c](https://github.com/open-feature/flagd/commit/8bacb7c59c17956dda3cf9d2a7bc6f139885a656))
+* **deps:** update module github.com/open-feature/open-feature-operator/apis to v0.2.43 ([#1331](https://github.com/open-feature/flagd/issues/1331)) ([fecd769](https://github.com/open-feature/flagd/commit/fecd769e5f2c4aa7bf1a0fb13f0543e7b8045af8))
+* **deps:** update module golang.org/x/crypto to v0.24.0 ([#1335](https://github.com/open-feature/flagd/issues/1335)) ([2a31a17](https://github.com/open-feature/flagd/commit/2a31a1740303991412e0169e50a064823cce0560))
+* **deps:** update module golang.org/x/mod to v0.18.0 ([#1336](https://github.com/open-feature/flagd/issues/1336)) ([5fa83f7](https://github.com/open-feature/flagd/commit/5fa83f7ab266320d8d8f1388a6c2f2cac922275a))
+* **deps:** update opentelemetry-go monorepo ([#1314](https://github.com/open-feature/flagd/issues/1314)) ([e9f1a7a](https://github.com/open-feature/flagd/commit/e9f1a7a04828f36691e694375b3c665140bc7dee))
+* readable error messages  ([#1325](https://github.com/open-feature/flagd/issues/1325)) ([7ff33ef](https://github.com/open-feature/flagd/commit/7ff33effcc47e31c5b7fdc33385d8128db2163fc))
+
+
+### ✨ New Features
+
+* add mandatory flags property in bulk response ([#1339](https://github.com/open-feature/flagd/issues/1339)) ([b20266e](https://github.com/open-feature/flagd/commit/b20266ed5e0c16bf14769f300297f7f2b0ab2dcd))
+* support emitting errors from the bulk evaluator ([#1338](https://github.com/open-feature/flagd/issues/1338)) ([b9c099c](https://github.com/open-feature/flagd/commit/b9c099cb7fa002a509a82c81b467f5e784c27e82))
+* support relative weighting for fractional evaluation ([#1313](https://github.com/open-feature/flagd/issues/1313)) ([f82c094](https://github.com/open-feature/flagd/commit/f82c094f5c47f99ef37b7392bfd39cec3ec7ba51))
+
 ## [0.9.3](https://github.com/open-feature/flagd/compare/core/v0.9.2...core/v0.9.3) (2024-06-06)
 
 
