@@ -370,7 +370,7 @@ func Test_updateFuncHandler(t *testing.T) {
 
 func TestSync_fetch(t *testing.T) {
 	flagSpec := v1beta1.FlagSpec{
-		Flags: map[string]v1beta1.Flag{},
+		Flags: v1beta1.Flags{FlagsMap: map[string]v1beta1.Flag{}},
 	}
 
 	validCfg := v1beta1.FeatureFlag{
@@ -477,7 +477,7 @@ func TestSync_fetch(t *testing.T) {
 func TestSync_watcher(t *testing.T) {
 	flagSpec := v1beta1.FeatureFlagSpec{
 		FlagSpec: v1beta1.FlagSpec{
-			Flags: map[string]v1beta1.Flag{},
+			Flags: v1beta1.Flags{FlagsMap: map[string]v1beta1.Flag{}},
 		},
 	}
 
@@ -854,9 +854,11 @@ func TestMeasure(t *testing.T) {
 	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
 		Spec: v1beta1.FeatureFlagSpec{
 			FlagSpec: v1beta1.FlagSpec{
-				Flags: map[string]v1beta1.Flag{
-					"flag": {
-						DefaultVariant: "kubernetes",
+				Flags: v1beta1.Flags{
+					FlagsMap: map[string]v1beta1.Flag{
+						"flag": {
+							DefaultVariant: "kubernetes",
+						},
 					},
 				},
 			},
