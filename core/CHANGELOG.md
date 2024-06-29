@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/open-feature/flagd/compare/core/v0.10.0...core/v0.10.1) (2024-06-29)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
+
 ## [0.10.0](https://github.com/open-feature/flagd/compare/core/v0.9.3...core/v0.10.0) (2024-06-27)
 
 
