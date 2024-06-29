@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.3...flagd-proxy/v0.6.4) (2024-06-29)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.0 ([#1340](https://github.com/open-feature/flagd/issues/1340)) ([1e487b4](https://github.com/open-feature/flagd/commit/1e487b4bafad9814f190d0bf3a1d833def9ef5af))
+
 ## [0.6.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.2...flagd-proxy/v0.6.3) (2024-06-27)
 
 
