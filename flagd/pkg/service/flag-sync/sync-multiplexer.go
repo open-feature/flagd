@@ -12,7 +12,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-const emptyConfig = "{\"flags\":{}}"
+var emptyConfigBytes, _ = json.Marshal(map[string]map[string]string{
+	"flags": {},
+})
 
 // Multiplexer abstract subscription handling and storage processing.
 // Flag configurations will be lazy loaded using reFill logic upon the calls to publish.
@@ -166,7 +168,7 @@ func (r *Multiplexer) reFill() error {
 	clear(r.selectorFlags)
 	// start all sources with empty config
 	for _, source := range r.sources {
-		r.selectorFlags[source] = emptyConfig
+		r.selectorFlags[source] = string(emptyConfigBytes)
 	}
 
 	all, err := r.store.GetAll(context.Background())

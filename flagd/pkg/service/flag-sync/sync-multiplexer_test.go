@@ -56,7 +56,7 @@ func TestRegistration(t *testing.T) {
 			source:     "C",
 			connection: make(chan payload, 1),
 			flagStringValidator: func(flagString string, testSource string, testName string) {
-				assert.Equal(t, flagString, emptyConfig)
+				assert.Equal(t, flagString, string(emptyConfigBytes))
 			},
 			expectError: false,
 		},
@@ -196,5 +196,5 @@ func TestGetAllFlags(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, flags, "{\"flags\":{}}")
+	assert.Equal(t, flags, string(emptyConfigBytes))
 }
