@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRegistration(t *testing.T) {
@@ -17,11 +19,12 @@ func TestRegistration(t *testing.T) {
 	}
 
 	tests := []struct {
-		testName    string
-		id          interface{}
-		source      string
-		connection  chan payload
-		expectError bool
+		testName            string
+		id                  interface{}
+		source              string
+		flagStringValidator func(flagString string, testSource string, testName string)
+		connection          chan payload
+		expectError         bool
 	}{
 		{
 			testName:   "subscribe to all flags",
@@ -29,21 +32,38 @@ func TestRegistration(t *testing.T) {
 			connection: make(chan payload, 1),
 		},
 		{
-			testName:   "subscribe to source A",
-			id:         context.Background(),
-			source:     "A",
+			testName: "subscribe to source A",
+			id:       context.Background(),
+			source:   "A",
+			flagStringValidator: func(flagString string, testSource string, testName string) {
+				assert.Contains(t, flagString, fmt.Sprintf("\"source\":\"%s\"", testSource))
+			},
 			connection: make(chan payload, 1),
 		},
 		{
-			testName:   "subscribe to source B",
-			id:         context.Background(),
-			source:     "B",
+			testName: "subscribe to source B",
+			id:       context.Background(),
+			source:   "B",
+			flagStringValidator: func(flagString string, testSource string, testName string) {
+				assert.Contains(t, flagString, fmt.Sprintf("\"source\":\"%s\"", testSource))
+			},
 			connection: make(chan payload, 1),
+		},
+
+		{
+			testName:   "subscribe to empty",
+			id:         context.Background(),
+			source:     "C",
+			connection: make(chan payload, 1),
+			flagStringValidator: func(flagString string, testSource string, testName string) {
+				assert.Equal(t, flagString, emptyConfig)
+			},
+			expectError: false,
 		},
 		{
 			testName:    "subscribe to non-existing",
 			id:          context.Background(),
-			source:      "C",
+			source:      "D",
 			connection:  make(chan payload, 1),
 			expectError: true,
 		},
@@ -75,13 +95,8 @@ func TestRegistration(t *testing.T) {
 				break
 			}
 
-			if initSync.flags == "" {
-				t.Fatal("expected non empty flag payload, but got empty")
-			}
-
-			// validate source of flag
-			if test.source != "" && !strings.Contains(initSync.flags, fmt.Sprintf("\"source\":\"%s\"", test.source)) {
-				t.Fatal("expected initial flag response to contain flags from source, but failed to find source")
+			if test.flagStringValidator != nil {
+				test.flagStringValidator(initSync.flags, test.source, test.testName)
 			}
 		})
 	}
@@ -173,4 +188,13 @@ func TestGetAllFlags(t *testing.T) {
 		t.Fatal("expected flags to be scoped")
 		return
 	}
+
+	// when - get all for a flagless-scope
+	flags, err = mux.GetAllFlags("C")
+	if err != nil {
+		t.Fatal("error when retrieving all flags")
+		return
+	}
+
+	assert.Equal(t, flags, "{\"flags\":{}}")
 }

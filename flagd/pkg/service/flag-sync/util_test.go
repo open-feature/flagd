@@ -5,7 +5,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-// getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B
+// getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
 func getSimpleFlagStore() (*store.Flags, []string) {
 	variants := map[string]any{
 		"true":  true,
@@ -28,5 +28,5 @@ func getSimpleFlagStore() (*store.Flags, []string) {
 		Source:         "B",
 	})
 
-	return flagStore, []string{"A", "B"}
+	return flagStore, []string{"A", "B", "C"}
 }

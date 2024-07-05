@@ -12,6 +12,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
+const emptyConfig = "{\"flags\":{}}"
+
 // Multiplexer abstract subscription handling and storage processing.
 // Flag configurations will be lazy loaded using reFill logic upon the calls to publish.
 type Multiplexer struct {
@@ -162,6 +164,10 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 // reFill local configuration values
 func (r *Multiplexer) reFill() error {
 	clear(r.selectorFlags)
+	// start all sources with empty config
+	for _, source := range r.sources {
+		r.selectorFlags[source] = emptyConfig
+	}
 
 	all, err := r.store.GetAll(context.Background())
 	if err != nil {
@@ -170,7 +176,7 @@ func (r *Multiplexer) reFill() error {
 
 	bytes, err := json.Marshal(map[string]interface{}{"flags": all})
 	if err != nil {
-		return fmt.Errorf("error from marshallin: %w", err)
+		return fmt.Errorf("error marshalling: %w", err)
 	}
 
 	r.allFlags = string(bytes)
@@ -188,6 +194,7 @@ func (r *Multiplexer) reFill() error {
 		}
 	}
 
+	// for all flags, sort them into their correct selector
 	for source, flags := range collector {
 		bytes, err := json.Marshal(map[string]interface{}{"flags": flags})
 		if err != nil {
