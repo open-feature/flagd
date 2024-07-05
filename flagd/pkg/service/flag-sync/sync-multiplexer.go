@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
+//nolint:errchkjson
 var emptyConfigBytes, _ = json.Marshal(map[string]map[string]string{
 	"flags": {},
 })
