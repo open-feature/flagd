@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const emptyConfigString = "{\"flags\":{}}"
+
 func TestRegistration(t *testing.T) {
 	// given
 	mux, err := NewMux(getSimpleFlagStore())
@@ -56,7 +58,7 @@ func TestRegistration(t *testing.T) {
 			source:     "C",
 			connection: make(chan payload, 1),
 			flagStringValidator: func(flagString string, testSource string, testName string) {
-				assert.Equal(t, flagString, string(emptyConfigBytes))
+				assert.Equal(t, flagString, emptyConfigString)
 			},
 			expectError: false,
 		},
@@ -196,5 +198,5 @@ func TestGetAllFlags(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, flags, string(emptyConfigBytes))
+	assert.Equal(t, flags, emptyConfigString)
 }
