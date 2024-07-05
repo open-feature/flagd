@@ -128,7 +128,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		t.Fatal("expected sources entry in the metadata, but got nil")
 	}
 
-	if asMap["sources"] != "A,B" {
+	if asMap["sources"] != "A,B,C" {
 		t.Fatal("incorrect sources entry in metadata")
 	}
 
