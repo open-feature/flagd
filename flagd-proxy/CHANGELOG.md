@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.3...flagd-proxy/v0.6.4) (2024-07-08)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.0 ([#1340](https://github.com/open-feature/flagd/issues/1340)) ([1e487b4](https://github.com/open-feature/flagd/commit/1e487b4bafad9814f190d0bf3a1d833def9ef5af))
+* **deps:** update module golang.org/x/net to v0.27.0 ([#1353](https://github.com/open-feature/flagd/issues/1353)) ([df9834b](https://github.com/open-feature/flagd/commit/df9834bea2a7ae20c5926c98dc423ab6363ef332))
+* **deps:** update module google.golang.org/grpc to v1.65.0 ([#1346](https://github.com/open-feature/flagd/issues/1346)) ([72a6b87](https://github.com/open-feature/flagd/commit/72a6b876e880ff0b43440d9b63710c7a87536988))
+* **deps:** update opentelemetry-go monorepo ([#1347](https://github.com/open-feature/flagd/issues/1347)) ([37fb3cd](https://github.com/open-feature/flagd/commit/37fb3cd81d5436e9d8cd3ea490a3951ae5794130))
+
 ## [0.6.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.2...flagd-proxy/v0.6.3) (2024-06-27)
 
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.10.1](https://github.com/open-feature/flagd/compare/core/v0.10.0...core/v0.10.1) (2024-07-08)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
+* **deps:** update module golang.org/x/crypto to v0.25.0 ([#1351](https://github.com/open-feature/flagd/issues/1351)) ([450cbc8](https://github.com/open-feature/flagd/commit/450cbc84ca55eef3fccc768003e358a8e589668e))
+* **deps:** update module golang.org/x/mod to v0.19.0 ([#1349](https://github.com/open-feature/flagd/issues/1349)) ([6ee89b4](https://github.com/open-feature/flagd/commit/6ee89b44ca4aca8f6236603fc3f969e814907bd6))
+* **deps:** update module google.golang.org/grpc to v1.65.0 ([#1346](https://github.com/open-feature/flagd/issues/1346)) ([72a6b87](https://github.com/open-feature/flagd/commit/72a6b876e880ff0b43440d9b63710c7a87536988))
+* **deps:** update opentelemetry-go monorepo ([#1347](https://github.com/open-feature/flagd/issues/1347)) ([37fb3cd](https://github.com/open-feature/flagd/commit/37fb3cd81d5436e9d8cd3ea490a3951ae5794130))
+
 ## [0.10.0](https://github.com/open-feature/flagd/compare/core/v0.9.3...core/v0.10.0) (2024-06-27)
 
 
