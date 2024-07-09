@@ -1490,6 +1490,8 @@ github.com/open-feature/flagd/core v0.9.3 h1:hig5PwODKmndPJ2zy0BfAg7nhqYnEMZkII7
 github.com/open-feature/flagd/core v0.9.3/go.mod h1:o0qe6BmW+u0Qf/dlP3cuG2RdtYmjk//1M8GmFQrS2Lg=
 github.com/open-feature/flagd/core v0.10.0 h1:DDEU8fU/iw+J0ZyxhUMQ/5FxdChv94s2tVzmXtf+4J4=
 github.com/open-feature/flagd/core v0.10.0/go.mod h1:j2b2wh1Xz8VjNZznq5GJ1ozxOo8ywKN4Fhk18m2WE80=
+github.com/open-feature/flagd/core v0.10.1 h1:tvAT/lek7TnPyf99N0aw3ycPxtBpw4rzDHTcycHtpiY=
+github.com/open-feature/flagd/core v0.10.1/go.mod h1:WasXiXJOd6bBGey0IoD7uecOmTNJ/r4RTk+eG77WbrU=
 github.com/open-feature/open-feature-operator/apis v0.2.40 h1:h2w8vE2KZ9jrYk43zIIpku/GsTMZwzWm14D4K/Z47YI=
 github.com/open-feature/open-feature-operator/apis v0.2.40/go.mod h1:I/4tLd5D4JpWpaFZxe2o8R2S1isWGNwHDSC/H5h7o3A=
 github.com/open-feature/open-feature-operator/apis v0.2.43 h1:2icWjr2cEdKJ7LphY4tdBOMD+a+mOMCsFh0QAVW1vPg=
@@ -2375,6 +2377,8 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 h1:
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291/go.mod h1:EfXuqaE1J41VCDicxHzUDm+8rk+7ZdXzHV0IhO/I6s0=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 h1:Zy9XzmMEflZ/MAaA7vNcoebnRAld7FsPW1EeBB7V0m8=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157/go.mod h1:EfXuqaE1J41VCDicxHzUDm+8rk+7ZdXzHV0IhO/I6s0=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 h1:BwIjyKYGsK9dMCBOorzRri8MQwmi7mT9rGHsCEinZkA=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094/go.mod h1:Ue6ibwXGpU+dqIcODieyLOcgj7z8+IcskoNIgZxtrFY=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.20.1/go.mod h1:10oTOabMzJvdu6/UiuZezV6QK5dSlG84ov/aaiqXj38=
 google.golang.org/grpc v1.21.1/go.mod h1:oYelfM1adQP15Ek0mdvEgi9Df8B9CZIaU1084ijfRaM=
