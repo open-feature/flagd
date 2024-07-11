@@ -100,8 +100,9 @@ func Test_InitWithSizeOverride(t *testing.T) {
 
 	}
 
-	grpcSync.Init(context.Background())
-
+	err := grpcSync.Init(context.Background())
+    
+	require.Nilf(t, err, "%s: expected no error, but got non nil error", t.Name())
 	require.Equal(t, "setting max receive message size 10 bytes default 4MB", observedLogs.All()[0].Message)
 	
 }
