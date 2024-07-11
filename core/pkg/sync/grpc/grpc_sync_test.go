@@ -24,6 +24,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func Test_InitWithMockCredentialBuilder(t *testing.T) {
@@ -76,6 +78,32 @@ func Test_InitWithMockCredentialBuilder(t *testing.T) {
 			require.NotNilf(t, grpcSync.client, "%s: expected client to be initialized", test.name)
 		}
 	}
+}
+
+func Test_InitWithSizeOverride(t *testing.T) {
+	observedZapCore, observedLogs := observer.New(zap.InfoLevel)
+	observedLogger := zap.New(observedZapCore)
+	
+	mockCtrl := gomock.NewController(t)
+	mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
+
+	mockCredentialBulder.EXPECT().
+			Build(gomock.Any(), gomock.Any()).
+			Return(insecure.NewCredentials(), nil)
+
+
+	grpcSync := Sync{
+		URI:               "grpc-target",
+		Logger:            logger.NewLogger(observedLogger, false),
+		CredentialBuilder: mockCredentialBulder,
+		MaxMsgSize: 10,
+
+	}
+
+	grpcSync.Init(context.Background())
+
+	require.Equal(t, "setting max receive message size 10 bytes default 4MB", observedLogs.All()[0].Message)
+	
 }
 
 func Test_ReSyncTests(t *testing.T) {
