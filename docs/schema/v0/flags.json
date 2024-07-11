@@ -2,7 +2,7 @@
   "$id": "https://flagd.dev/schema/v0/flags.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "flagd Flag Configuration",
-  "description": "Defines flags for use in flagd, including typed variants and rules",
+  "description": "Defines flags for use in flagd, including typed variants and rules.",
   "type": "object",
   "properties": {
     "flags": {
@@ -46,7 +46,7 @@
       "patternProperties": {
         "^.{1,}$": {
           "$comment": "this relative ref means that targeting.json MUST be in the same dir, or available on the same HTTP path",
-          "$ref": "./targeting.json#/definitions/targeting"
+          "$ref": "./targeting.json"
         }
       }
     }
@@ -71,7 +71,7 @@
           "type": "string"
         },
         "targeting": {
-          "$ref": "./targeting.json#/definitions/targeting"
+          "$ref": "./targeting.json"
         }
       },
       "required": [
