@@ -64,11 +64,12 @@ func (g *Sync) Init(_ context.Context) error {
 
 	// Derive reusable client connection
 	// Set MaxMsgSize if passed
-    var rpcCon *grpc.ClientConn
+	var rpcCon *grpc.ClientConn
 
 	if g.MaxMsgSize > 0 {
 		g.Logger.Info(fmt.Sprintf("setting max receive message size %d bytes default 4MB", g.MaxMsgSize))
-		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize)))	
+		dialOptions := grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize))
+		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials), dialOptions)
 	} else {
 		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials))
 	}
