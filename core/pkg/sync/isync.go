@@ -73,4 +73,5 @@ type SourceConfig struct {
 	ProviderID  string `json:"providerID,omitempty"`
 	Selector    string `json:"selector,omitempty"`
 	Interval    uint32 `json:"interval,omitempty"`
+	MaxMsgSize  int    `json:"maxMsgSize,omitempty"`
 }
