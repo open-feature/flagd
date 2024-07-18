@@ -11,6 +11,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/gcsblob" // needed to initialize GCS driver
 	//nolint:gosec
 )
 

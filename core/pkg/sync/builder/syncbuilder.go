@@ -10,6 +10,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	blobSync "github.com/open-feature/flagd/core/pkg/sync/blob"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
@@ -17,6 +18,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
+	"gocloud.dev/blob"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,6 +29,7 @@ const (
 	syncProviderGrpc       = "grpc"
 	syncProviderKubernetes = "kubernetes"
 	syncProviderHTTP       = "http"
+	syncProviderGcs        = "gcs"
 )
 
 var (
@@ -35,6 +38,7 @@ var (
 	regGRPC       *regexp.Regexp
 	regGRPCSecure *regexp.Regexp
 	regFile       *regexp.Regexp
+	regGcs        *regexp.Regexp
 )
 
 func init() {
@@ -43,6 +47,7 @@ func init() {
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
 	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
 	regFile = regexp.MustCompile("^file:")
+	regGcs = regexp.MustCompile("^gs://.+?/")
 }
 
 type ISyncBuilder interface {
@@ -97,6 +102,9 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 	case syncProviderGrpc:
 		logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", sourceConfig.URI))
 		return sb.newGRPC(sourceConfig, logger), nil
+	case syncProviderGcs:
+		logger.Debug(fmt.Sprintf("using blob sync-provider with gcs driver for: %s", sourceConfig.URI))
+		return sb.newGcs(sourceConfig, logger), nil
 
 	default:
 		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s' or '%s'",
@@ -167,6 +175,34 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 		Secure:            config.TLS,
 		Selector:          config.Selector,
 		MaxMsgSize:        config.MaxMsgSize,
+	}
+}
+
+func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+	// Extract bucket uri and object name from the full URI:
+	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
+	// path/to/object as an object name.
+	bucketUri := regGcs.FindString(config.URI)
+	objectName := regGcs.ReplaceAllString(config.URI, "")
+
+	// Defaults to 5 seconds if interval is not set.
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+
+	return &blobSync.Sync{
+		Bucket: bucketUri,
+		Object: objectName,
+
+		BlobURLMux: blob.DefaultURLMux(),
+
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "gcs"),
+		),
+		Interval: interval,
+		Cron:     cron.New(),
 	}
 }
 
