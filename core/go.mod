@@ -11,7 +11,7 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/open-feature/flagd-schemas v0.2.9-0.20240527214546-61523e5efe3e
+	github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322
 	github.com/open-feature/open-feature-operator/apis v0.2.43
 	github.com/prometheus/client_golang v1.19.1
 	github.com/robfig/cron v1.2.0
