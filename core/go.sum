@@ -1478,10 +1478,14 @@ github.com/open-feature/flagd-schemas v0.2.9-0.20240408192555-ea4f119d2bd7 h1:oP
 github.com/open-feature/flagd-schemas v0.2.9-0.20240408192555-ea4f119d2bd7/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
 github.com/open-feature/flagd-schemas v0.2.9-0.20240527214546-61523e5efe3e h1:j1xFE8kIrFXf4fZtJUsR457rEG4mxsq2YCVyy92I0HU=
 github.com/open-feature/flagd-schemas v0.2.9-0.20240527214546-61523e5efe3e/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
+github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322 h1:5zbNHqcZAc9jlhSrC0onuVL2RPpvYcDaNvW2wOZBfUY=
+github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
 github.com/open-feature/open-feature-operator/apis v0.2.40 h1:h2w8vE2KZ9jrYk43zIIpku/GsTMZwzWm14D4K/Z47YI=
 github.com/open-feature/open-feature-operator/apis v0.2.40/go.mod h1:I/4tLd5D4JpWpaFZxe2o8R2S1isWGNwHDSC/H5h7o3A=
 github.com/open-feature/open-feature-operator/apis v0.2.43 h1:2icWjr2cEdKJ7LphY4tdBOMD+a+mOMCsFh0QAVW1vPg=
 github.com/open-feature/open-feature-operator/apis v0.2.43/go.mod h1:Af4tzkbKp0PLoYy2nJk6SJZnFWz8KrVRa5JqoVMN8jc=
+github.com/open-feature/open-feature-operator/apis v0.2.44 h1:0r4Z+RnJltuHdRBv79NFgAckhna6/M3Wcec6gzNX5vI=
+github.com/open-feature/open-feature-operator/apis v0.2.44/go.mod h1:xB2uLzvUkbydieX7q6/NqannBz3bt/e5BS2DeOyyw4Q=
 github.com/phpdave11/gofpdf v1.4.2/go.mod h1:zpO6xFn9yxo3YLyMvW8HcKWVdbNqgIfOOp2dXMnm1mY=
 github.com/phpdave11/gofpdi v1.0.12/go.mod h1:vBmVV0Do6hSBHC8uKUQ71JGW+ZGQq74llk/7bXwjDoI=
 github.com/phpdave11/gofpdi v1.0.13/go.mod h1:vBmVV0Do6hSBHC8uKUQ71JGW+ZGQq74llk/7bXwjDoI=
