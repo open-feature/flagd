@@ -11,7 +11,6 @@ import (
 
 type MockBlob struct {
 	mux    *blob.URLMux
-	bucket *blob.Bucket
 	scheme string
 	opener *fakeOpener
 }
@@ -23,13 +22,13 @@ type fakeOpener struct {
 	getSync     func() *Sync
 }
 
-func (f *fakeOpener) OpenBucketURL(ctx context.Context, u *url.URL) (*blob.Bucket, error) {
-	bucketUrl, err := url.Parse("mem://")
+func (f *fakeOpener) OpenBucketURL(ctx context.Context, _ *url.URL) (*blob.Bucket, error) {
+	bucketURL, err := url.Parse("mem://")
 	if err != nil {
 		log.Fatalf("couldn't parse url: %s: %v", "mem://", err)
 	}
 	opener := &memblob.URLOpener{}
-	bucket, err := opener.OpenBucketURL(context.Background(), bucketUrl)
+	bucket, err := opener.OpenBucketURL(ctx, bucketURL)
 	if err != nil {
 		log.Fatalf("couldn't open in memory bucket: %v", err)
 	}

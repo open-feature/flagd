@@ -182,7 +182,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 	// Extract bucket uri and object name from the full URI:
 	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
 	// path/to/object as an object name.
-	bucketUri := regGcs.FindString(config.URI)
+	bucketURI := regGcs.FindString(config.URI)
 	objectName := regGcs.ReplaceAllString(config.URI, "")
 
 	// Defaults to 5 seconds if interval is not set.
@@ -192,7 +192,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 	}
 
 	return &blobSync.Sync{
-		Bucket: bucketUri,
+		Bucket: bucketURI,
 		Object: objectName,
 
 		BlobURLMux: blob.DefaultURLMux(),

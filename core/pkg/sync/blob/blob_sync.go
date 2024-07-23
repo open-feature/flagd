@@ -12,7 +12,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/gcsblob" // needed to initialize GCS driver
-	//nolint:gosec
 )
 
 type Sync struct {
@@ -33,7 +32,7 @@ type Cron interface {
 	Stop()
 }
 
-func (hs *Sync) Init(ctx context.Context) error {
+func (hs *Sync) Init(_ context.Context) error {
 	return nil
 }
 
@@ -43,44 +42,21 @@ func (hs *Sync) IsReady() bool {
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s with interval %d", hs.Bucket, hs.Object, hs.Interval))
+	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
+		err := hs.sync(ctx, dataSync, false)
+		if err != nil {
+			hs.Logger.Warn(fmt.Sprintf("sync failed: %v", err))
+		}
+	})
 	// Initial fetch
 	hs.Logger.Debug(fmt.Sprintf("initial sync of the %s/%s", hs.Bucket, hs.Object))
-	err := hs.ReSync(ctx, dataSync)
+	err := hs.sync(ctx, dataSync, false)
 	if err != nil {
 		return err
 	}
+
 	hs.ready = true
-
-	hs.Logger.Debug(fmt.Sprintf("polling %s/%s every %d seconds", hs.Bucket, hs.Object, hs.Interval))
-	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
-		hs.Logger.Debug(fmt.Sprintf("fetching configuration from %s/%s", hs.Bucket, hs.Object))
-		bucket, err := hs.getBucket(ctx)
-		if err != nil {
-			hs.Logger.Warn(fmt.Sprintf("couldn't get bucket: %v", err))
-			return
-		}
-		defer bucket.Close()
-		updated, err := hs.fetchObjectModificationTime(ctx, bucket)
-		if err != nil {
-			hs.Logger.Warn(fmt.Sprintf("couldn't get object attributes: %v", err))
-			return
-		}
-		if hs.lastUpdated == updated {
-			hs.Logger.Debug("configuration hasn't changed, skipping fetching full object")
-			return
-		}
-		msg, err := hs.fetchObject(ctx, bucket)
-		if err != nil {
-			hs.Logger.Warn(fmt.Sprintf("couldn't get object: %v", err))
-			return
-		}
-		hs.Logger.Info(fmt.Sprintf("configuration updated: %s", msg))
-		dataSync <- sync.DataSync{FlagData: msg, Source: hs.Bucket + hs.Object, Type: sync.ALL}
-		hs.lastUpdated = updated
-	})
-
 	hs.Cron.Start()
-
 	<-ctx.Done()
 	hs.Cron.Stop()
 
@@ -88,22 +64,35 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 }
 
 func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	return hs.sync(ctx, dataSync, true)
+}
+
+func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCheckingModTime bool) error {
 	bucket, err := hs.getBucket(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get bucket: %v", err)
 	}
 	defer bucket.Close()
-	updated, err := hs.fetchObjectModificationTime(ctx, bucket)
-	if err != nil {
-		return err
+	var updated time.Time
+	if !skipCheckingModTime {
+		updated, err = hs.fetchObjectModificationTime(ctx, bucket)
+		if err != nil {
+			return fmt.Errorf("couldn't get object attributes: %v", err)
+		}
+		if hs.lastUpdated == updated {
+			hs.Logger.Debug("configuration hasn't changed, skipping fetching full object")
+			return nil
+		}
 	}
 	msg, err := hs.fetchObject(ctx, bucket)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get object: %v", err)
 	}
-	hs.Logger.Info(fmt.Sprintf("configuration updated: %s", msg))
+	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
+	if !skipCheckingModTime {
+		hs.lastUpdated = updated
+	}
 	dataSync <- sync.DataSync{FlagData: msg, Source: hs.Bucket + hs.Object, Type: sync.ALL}
-	hs.lastUpdated = updated
 	return nil
 }
 
@@ -111,7 +100,11 @@ func (hs *Sync) getBucket(ctx context.Context) (*blob.Bucket, error) {
 	if hs.Bucket == "" {
 		return nil, errors.New("no bucket string set")
 	}
-	return hs.BlobURLMux.OpenBucket(ctx, hs.Bucket)
+	b, err := hs.BlobURLMux.OpenBucket(ctx, hs.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("error opening bucket %s: %v", hs.Bucket, err)
+	}
+	return b, nil
 }
 
 func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bucket) (time.Time, error) {
@@ -141,5 +134,5 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, e
 		return "", fmt.Errorf("error reading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
-	return string(buf.Bytes()), nil
+	return buf.String(), nil
 }

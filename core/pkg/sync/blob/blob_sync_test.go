@@ -63,7 +63,7 @@ func TestSync(t *testing.T) {
 }
 
 func tickWithConfigChange(t *testing.T, mockCron *synctesting.MockCron, dataSyncChan chan sync.DataSync, blobMock *MockBlob, newConfig string) {
-	time.Sleep(time.Millisecond) // sleep so the new file has different modification date
+	time.Sleep(1 * time.Millisecond) // sleep so the new file has different modification date
 	blobMock.AddObject(object, newConfig)
 	mockCron.Tick()
 	select {
