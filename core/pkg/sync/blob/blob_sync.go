@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -33,6 +32,12 @@ type Cron interface {
 }
 
 func (hs *Sync) Init(_ context.Context) error {
+	if hs.Bucket == "" {
+		return errors.New("no bucket string set")
+	}
+	if hs.Object == "" {
+		return errors.New("no object string set")
+	}
 	return nil
 }
 
@@ -97,9 +102,6 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChe
 }
 
 func (hs *Sync) getBucket(ctx context.Context) (*blob.Bucket, error) {
-	if hs.Bucket == "" {
-		return nil, errors.New("no bucket string set")
-	}
 	b, err := hs.BlobURLMux.OpenBucket(ctx, hs.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("error opening bucket %s: %v", hs.Bucket, err)
@@ -119,19 +121,10 @@ func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bu
 }
 
 func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, error) {
-	if hs.Object == "" {
-		return "", errors.New("no object string set")
-	}
-	r, err := bucket.NewReader(ctx, hs.Object, nil)
-	if err != nil {
-		return "", fmt.Errorf("error creating reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
-	}
-	defer r.Close()
-
 	buf := bytes.NewBuffer(nil)
-	_, err = io.Copy(buf, r)
+	err := bucket.Download(ctx, hs.Object, buf, nil)
 	if err != nil {
-		return "", fmt.Errorf("error reading object %s/%s: %w", hs.Bucket, hs.Object, err)
+		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
 	return buf.String(), nil
