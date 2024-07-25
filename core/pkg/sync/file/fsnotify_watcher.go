@@ -10,7 +10,7 @@ type fsNotifyWatcher struct {
 }
 
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
-func NewFSNotifyWatcher() (*fsNotifyWatcher, error) {
+func NewFSNotifyWatcher() (Watcher, error) {
 	fsn, err := fsnotify.NewWatcher()
 	return &fsNotifyWatcher{
 		watcher: fsn,

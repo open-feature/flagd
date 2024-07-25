@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"golang.org/x/sync/errgroup"
+	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
 // Implements file.Watcher using a timer and os.FileInfo
@@ -18,8 +18,8 @@ type fileInfoWatcher struct {
 	evChan chan fsnotify.Event
 	// Errors Chan
 	erChan chan error
-	// timer thread errgroup
-	eg errgroup.Group
+	// logger
+	logger *logger.Logger
 	// Func to wrap os.Stat (injection point for test helpers)
 	statFunc func(string) (fs.FileInfo, error)
 	// thread-safe interface to underlying files we are watching
@@ -28,11 +28,15 @@ type fileInfoWatcher struct {
 }
 
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
-func NewFileInfoWatcher() *fileInfoWatcher {
-	return &fileInfoWatcher{
+func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
+	fiw := &fileInfoWatcher{
 		evChan: make(chan fsnotify.Event),
 		erChan: make(chan error),
+		logger: logger,
 	}
+	// TODO: wire in configs
+	fiw.run(ctx, (1 * time.Second))
+	return fiw
 }
 
 // fileInfoWatcher explicitly implements file.Watcher
@@ -99,10 +103,10 @@ func (f *fileInfoWatcher) Errors() chan error {
 	return f.erChan
 }
 
-// Run is a blocking function that starts the filewatcher's timer thread
-func (f *fileInfoWatcher) Run(ctx context.Context, s time.Duration) error {
+// run is a blocking function that starts the filewatcher's timer thread
+func (f *fileInfoWatcher) run(ctx context.Context, s time.Duration) {
 	// timer thread
-	f.eg.Go(func() error {
+	go func() {
 		// execute update on the configured interval of time
 		ticker := time.NewTicker(s)
 		defer ticker.Stop()
@@ -110,16 +114,15 @@ func (f *fileInfoWatcher) Run(ctx context.Context, s time.Duration) error {
 		for {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-ticker.C:
 				if err := f.update(); err != nil {
-					return err
+					f.erChan <- err
+					return
 				}
 			}
 		}
-	})
-
-	return f.eg.Wait()
+	}()
 }
 
 func (f *fileInfoWatcher) update() error {
@@ -159,6 +162,7 @@ func (f *fileInfoWatcher) update() error {
 }
 
 // generateEvent figures out what changed and generates an fsnotify.Event for it. (if we care)
+// file removal events are handled above in the update() method
 func (f *fileInfoWatcher) generateEvent(path string, newInfo fs.FileInfo) (*fsnotify.Event, error) {
 	info := f.watches[path]
 	switch {

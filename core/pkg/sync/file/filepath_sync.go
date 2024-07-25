@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	msync "sync"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -70,10 +69,7 @@ func (fs *Sync) Init(ctx context.Context) error {
 		}
 		fs.watcher = w
 	case FILEINFO:
-		w := NewFileInfoWatcher()
-		// start the timer
-		// TODO: wire up configuration for the fileinfo sync duration
-		w.Run(ctx, 1*time.Second)
+		w := NewFileInfoWatcher(ctx, fs.Logger)
 		fs.watcher = w
 	default:
 		return fmt.Errorf("unknown watcher type: '%s'", fs.watchType)
