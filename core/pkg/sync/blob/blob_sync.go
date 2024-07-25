@@ -46,7 +46,7 @@ func (hs *Sync) IsReady() bool {
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s with interval %d", hs.Bucket, hs.Object, hs.Interval))
+	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s with interval %ds", hs.Bucket, hs.Object, hs.Interval))
 	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
 		err := hs.sync(ctx, dataSync, false)
 		if err != nil {
@@ -87,6 +87,9 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChe
 		if hs.lastUpdated == updated {
 			hs.Logger.Debug("configuration hasn't changed, skipping fetching full object")
 			return nil
+		}
+		if hs.lastUpdated.After(updated) {
+			hs.Logger.Warn("configuration changed but the modification time decreased instead of increasing")
 		}
 	}
 	msg, err := hs.fetchObject(ctx, bucket)
