@@ -79,7 +79,6 @@ official [OTEL collector example](https://github.com/open-telemetry/opentelemetr
 #### docker-compose.yaml
 
 ```yaml
-version: "3"
 services:
   # Jaeger
   jaeger-all-in-one:
@@ -122,13 +121,14 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
     const_labels:
       label1: value1
-  jaeger:
-    endpoint: jaeger-all-in-one:14250
+  otlp/jaeger:
+    endpoint: jaeger-all-in-one:4317
     tls:
       insecure: true
 processors:
@@ -138,7 +138,7 @@ service:
     traces:
       receivers: [ otlp ]
       processors: [ batch ]
-      exporters: [ jaeger ]
+      exporters: [ otlp/jaeger ]
     metrics:
       receivers: [ otlp ]
       processors: [ batch ]
