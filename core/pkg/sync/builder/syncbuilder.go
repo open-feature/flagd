@@ -115,10 +115,10 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 	switch os.Getenv("KUBERNETES_SERVICE_HOST") {
 	case "":
 		// no k8s service host env; use fileinfo
-		return sb.newFsNotify(uri, logger)
+		return sb.newFileInfo(uri, logger)
 	default:
 		// default to fsnotify
-		return sb.newFileInfo(uri, logger)
+		return sb.newFsNotify(uri, logger)
 	}
 }
 

@@ -30,7 +30,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | Field       | Type               | Note                                                                                                                                                                                                             |
 | ----------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                                            |
-| provider    | required `string`  | Provider type - `file`, `kubernetes`, `http`, or `grpc`                                                                                                                                                          |
+| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, or `grpc`                                                                                                                                                          |
 | authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.). Cannot be used with `bearerToken` |
 | bearerToken | optional `string`  | (Deprecated) Used for http sync; token gets appended to `Authorization` header with [bearer schema](https://www.rfc-editor.org/rfc/rfc6750#section-2.1). Cannot be used with `authHeader`                        |
 | interval    | optional `uint32`  | Used for http sync; requests will be made at this interval. Defaults to 5 seconds.                                                                                                                               |
@@ -44,11 +44,20 @@ The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The 
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
 URIs will result in a flagd start-up failure with errors from the respective sync provider implementation.
 
+The `file` provider type uses either an `fsnotify` poller (on systems that
+support it), or a timer-based poller that relies on `os.Stat` and `fs.FileInfo`.
+The moniker: `file` defaults to using `fsnotify` when flagd detects it is
+running in kubernetes and `fileinfo` in all other cases, but you may explicitly
+select either polling back-end by setting the provider value to either
+`fsnotify` or `fileinfo`.
+
 Given below are example sync providers, startup command and equivalent config file definition:
 
 Sync providers:
 
 - `file` - config/samples/example_flags.json
+- `fsnotify` - config/samples/example_flags.json
+- `fileinfo` - config/samples/example_flags.json
 - `http` - <http://my-flag-source.json/>
 - `https` - <https://my-secure-flag-source.json/>
 - `kubernetes` - default/my-flag-config
@@ -60,6 +69,8 @@ Startup command:
 ```sh
 ./bin/flagd start
 --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},
+            {"uri":"config/samples/example_flags.json","provider":"fsnotify"},
+            {"uri":"config/samples/example_flags.json","provider":"fileinfo"},
             {"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
             {"uri":"https://secure-remote/bearer-auth","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
             {"uri":"https://secure-remote/basic-auth","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
@@ -75,6 +86,10 @@ Configuration file,
 sources:
   - uri: config/samples/example_flags.json
     provider: file
+  - uri: config/samples/example_flags.json
+    provider: fsnotify
+  - uri: config/samples/example_flags.json
+    provider: fileinfo
   - uri: http://my-flag-source.json
     provider: http
     bearerToken: bearer-dji34ld2l
