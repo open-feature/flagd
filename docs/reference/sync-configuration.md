@@ -44,7 +44,7 @@ The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The 
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
 URIs will result in a flagd start-up failure with errors from the respective sync provider implementation.
 
-The `file` provider type uses either an `fsnotify` poller (on systems that
+The `file` provider type uses either an `fsnotify` notification (on systems that
 support it), or a timer-based poller that relies on `os.Stat` and `fs.FileInfo`.
 The moniker: `file` defaults to using `fsnotify` when flagd detects it is
 running in kubernetes and `fileinfo` in all other cases, but you may explicitly
