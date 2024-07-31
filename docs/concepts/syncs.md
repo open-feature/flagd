@@ -68,6 +68,23 @@ In this example, `default/my_example` expected to be a valid FeatureFlag resourc
 namespace and `my_example` being the resource name.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
+---
+
+### GCS sync
+
+The GCS sync provider fetches flags from a GCS blob and periodically poll the GCS for the flag definition updates.
+It uses [application default credentials](https://cloud.google.com/docs/authentication/application-default-credentials) if they
+are [configured](https://cloud.google.com/docs/authentication/provide-credentials-adc) to authorize the calls to GCS.
+
+```shell
+flagd start --uri gs://my-bucket/my-flags.json
+```
+
+In this example, `gs://my-bucket/my-flags.json` is expected to be a valid GCS URI accessible by the flagd
+(either by being public or together with application default credentials).
+The polling interval can be configured.
+See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
+
 ## Merging
 
 Flagd can be configured to read from multiple sources at once, when this is the case flagd will merge all flag definition into a single

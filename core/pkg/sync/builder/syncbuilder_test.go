@@ -6,6 +6,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/blob"
 	buildermock "github.com/open-feature/flagd/core/pkg/sync/builder/mock"
 	"github.com/open-feature/flagd/core/pkg/sync/file"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
@@ -231,6 +232,10 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 						URI:      "my-namespace/my-flags",
 						Provider: syncProviderKubernetes,
 					},
+					{
+						URI:      "gs://bucket/path/to/file",
+						Provider: syncProviderGcs,
+					},
 				},
 			},
 			wantSyncs: []sync.ISync{
@@ -239,6 +244,7 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 				&http.Sync{},
 				&file.Sync{},
 				&kubernetes.Sync{},
+				&blob.Sync{},
 			},
 			wantErr: false,
 		},
@@ -261,6 +267,60 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 			for index, wantType := range tt.wantSyncs {
 				require.IsType(t, wantType, syncs[index])
 			}
+		})
+	}
+}
+
+func Test_GcsConfig(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+	defaultInterval := uint32(5)
+	tests := []struct {
+		name             string
+		uri              string
+		interval         uint32
+		expectedBucket   string
+		expectedObject   string
+		expectedInterval uint32
+	}{
+		{
+			name:             "simple path",
+			uri:              "gs://bucket/path/to/object",
+			interval:         10,
+			expectedBucket:   "gs://bucket/",
+			expectedObject:   "path/to/object",
+			expectedInterval: 10,
+		},
+		{
+			name:             "default interval",
+			uri:              "gs://bucket/path/to/object",
+			expectedBucket:   "gs://bucket/",
+			expectedObject:   "path/to/object",
+			expectedInterval: defaultInterval,
+		},
+		{
+			name:             "no object set", // Blob syncer will return error when fetching
+			uri:              "gs://bucket/",
+			expectedBucket:   "gs://bucket/",
+			expectedObject:   "",
+			expectedInterval: defaultInterval,
+		},
+		{
+			name:             "malformed uri", // Blob syncer will return error when opening bucket
+			uri:              "malformed",
+			expectedBucket:   "",
+			expectedObject:   "malformed",
+			expectedInterval: defaultInterval,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gcsSync := NewSyncBuilder().newGcs(sync.SourceConfig{
+				URI:      tt.uri,
+				Interval: tt.interval,
+			}, lg)
+			require.Equal(t, tt.expectedBucket, gcsSync.Bucket)
+			require.Equal(t, tt.expectedObject, gcsSync.Object)
+			require.Equal(t, int(tt.expectedInterval), int(gcsSync.Interval))
 		})
 	}
 }

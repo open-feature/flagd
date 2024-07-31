@@ -13,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncmock "github.com/open-feature/flagd/core/pkg/sync/http/mock"
+	synctesting "github.com/open-feature/flagd/core/pkg/sync/testing"
 	"go.uber.org/mock/gomock"
 )
 
@@ -20,7 +21,7 @@ func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	resp := "test response"
 
-	mockCron := syncmock.NewMockCron(ctrl)
+	mockCron := synctesting.NewMockCron(ctrl)
 	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
 		return nil
 	})
