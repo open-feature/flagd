@@ -45,7 +45,7 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 ## Metrics
 
-flagd expose following metrics,
+flagd exposes following metrics:
 
 - `http.server.duration`
 - `http.server.response.size`
@@ -53,9 +53,12 @@ flagd expose following metrics,
 - `feature_flag.flagd.impression`
 - `feature_flag.flagd.evaluation.reason`
 
+> Please note that metric names may vary based on the consuming monitoring tool naming requirements.
+> For example, the transformation of OTLP metrics to Prometheus is described [here](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/compatibility/prometheus_and_openmetrics.md#otlp-metric-points-to-prometheus).
+
 ## Traces
 
-flagd expose following traces,
+flagd exposes following traces:
 
 - `flagEvaluationService(resolveX)` - SpanKind server
   - `jsonEvaluator(resolveX)` - SpanKind internal
