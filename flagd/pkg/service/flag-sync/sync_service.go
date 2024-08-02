@@ -119,10 +119,7 @@ func (s *Service) Emit(isResync bool, source string) {
 }
 
 func (s *Service) shutdown() {
-	err := s.listener.Close()
-	if err != nil {
-		s.logger.Warn(fmt.Sprintf("error closing the listener: %v", err))
-	}
+	s.logger.Info("shutting down gRPC sync service")
 	s.server.Stop()
 }
 
