@@ -45,7 +45,7 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 ## Metrics
 
-flagd exposes following metrics:
+flagd exposes the following metrics:
 
 - `http.server.duration`
 - `http.server.response.size`
@@ -58,7 +58,7 @@ flagd exposes following metrics:
 
 ## Traces
 
-flagd exposes following traces:
+flagd creates the following spans as part of a trace:
 
 - `flagEvaluationService(resolveX)` - SpanKind server
   - `jsonEvaluator(resolveX)` - SpanKind internal
