@@ -30,8 +30,8 @@ type fileInfoWatcher struct {
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
 func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 	fiw := &fileInfoWatcher{
-		evChan: make(chan fsnotify.Event),
-		erChan: make(chan error),
+		evChan: make(chan fsnotify.Event, 256),
+		erChan: make(chan error, 256),
 		logger: logger,
 	}
 	// TODO: wire in configs
@@ -84,7 +84,7 @@ func (f *fileInfoWatcher) Remove(name string) error {
 // Watchlist calls watchlist on the underlying fsnotify.Watcher
 func (f *fileInfoWatcher) WatchList() []string {
 	f.mu.RLock()
-	defer f.mu.Unlock()
+	defer f.mu.RUnlock()
 	out := []string{}
 	for name := range f.watches {
 		n := name
@@ -131,7 +131,7 @@ func (f *fileInfoWatcher) update() error {
 	defer f.mu.Unlock()
 
 	for path, info := range f.watches {
-		newInfo, err := getFileInfo(path)
+		newInfo, err := f.statFunc(path)
 		if err != nil {
 			// if the file isn't there, it must have been removed
 			// fire off a remove event and remove it from the watches
@@ -141,6 +141,7 @@ func (f *fileInfoWatcher) update() error {
 					Op:   fsnotify.Remove,
 				}
 				delete(f.watches, path)
+				continue
 			}
 			return err
 		}
@@ -162,7 +163,7 @@ func (f *fileInfoWatcher) update() error {
 }
 
 // generateEvent figures out what changed and generates an fsnotify.Event for it. (if we care)
-// file removal events are handled above in the update() method
+// file removal are handled above in the update() method
 func (f *fileInfoWatcher) generateEvent(path string, newInfo fs.FileInfo) (*fsnotify.Event, error) {
 	info := f.watches[path]
 	switch {

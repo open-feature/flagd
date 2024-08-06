@@ -1,7 +1,10 @@
 package file
 
 import (
+	"errors"
+	"fmt"
 	"io/fs"
+	"os"
 	"testing"
 	"time"
 
@@ -68,13 +71,136 @@ func Test_fileInfoWatcher_Add(t *testing.T) {
 	}
 }
 
+func Test_fileInfoWatcher_Remove(t *testing.T) {
+	tests := []struct {
+		name       string
+		watcher    *fileInfoWatcher
+		removeThis string
+		want       []string
+	}{{
+		name:       "remove foo",
+		watcher:    makeTestWatcher(t, map[string]fs.FileInfo{"foo": &mockFileInfo{}, "bar": &mockFileInfo{}}),
+		removeThis: "foo",
+		want:       []string{"bar"},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.watcher.Remove(tt.removeThis)
+			if err != nil {
+				t.Errorf("fileInfoWatcher.Remove() error = %v", err)
+			}
+			if !cmp.Equal(tt.watcher.WatchList(), tt.want) {
+				t.Errorf("fileInfoWatcher.Add(): want-, got+: %v ", cmp.Diff(tt.want, tt.watcher.WatchList()))
+			}
+		})
+	}
+}
+
+func Test_fileInfoWatcher_update(t *testing.T) {
+	tests := []struct {
+		name     string
+		watcher  *fileInfoWatcher
+		statFunc func(string) (fs.FileInfo, error)
+		wantErr  bool
+		want     *fsnotify.Event
+	}{
+		{
+			name: "chmod",
+			watcher: makeTestWatcher(t,
+				map[string]fs.FileInfo{
+					"foo": &mockFileInfo{
+						name: "foo",
+						mode: 0,
+					},
+				},
+			),
+			statFunc: func(path string) (fs.FileInfo, error) {
+				return &mockFileInfo{
+					name: "foo",
+					mode: 1,
+				}, nil
+			},
+			want: &fsnotify.Event{Name: "foo", Op: fsnotify.Chmod},
+		},
+		{
+			name: "write",
+			watcher: makeTestWatcher(t,
+				map[string]fs.FileInfo{
+					"foo": &mockFileInfo{
+						name:    "foo",
+						modTime: time.Now().Local(),
+					},
+				},
+			),
+			statFunc: func(path string) (fs.FileInfo, error) {
+				return &mockFileInfo{
+					name:    "foo",
+					modTime: (time.Now().Local().Add(5 * time.Minute)),
+				}, nil
+			},
+			want: &fsnotify.Event{Name: "foo", Op: fsnotify.Write},
+		},
+		{
+			name: "remove",
+			watcher: makeTestWatcher(t,
+				map[string]fs.FileInfo{
+					"foo": &mockFileInfo{
+						name: "foo",
+					},
+				},
+			),
+			statFunc: func(path string) (fs.FileInfo, error) {
+				return nil, fmt.Errorf("mock file-no-existy error: %w", os.ErrNotExist)
+			},
+			want: &fsnotify.Event{Name: "foo", Op: fsnotify.Remove},
+		},
+		{
+			name: "unknown error",
+			watcher: makeTestWatcher(t,
+				map[string]fs.FileInfo{
+					"foo": &mockFileInfo{
+						name: "foo",
+					},
+				},
+			),
+			statFunc: func(path string) (fs.FileInfo, error) {
+				return nil, errors.New("unhandled error")
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// set the statFunc
+			tt.watcher.statFunc = tt.statFunc
+			// run an update
+			// this also flexes fileinfowatcher.generateEvent()
+			err := tt.watcher.update()
+			if err != nil {
+				if tt.wantErr {
+					return
+				} else {
+					t.Errorf("fileInfoWatcher.update() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				}
+			}
+			// slurp an event off the event chan
+			out := <-tt.watcher.Events()
+			if out != *tt.want {
+				t.Errorf("fileInfoWatcher.update() wanted %v, got %v", tt.want, out)
+			}
+		})
+	}
+}
+
+// Helpers
+
 // makeTestWatcher returns a pointer to a fileInfoWatcher suitable for testing
 func makeTestWatcher(t *testing.T, watches map[string]fs.FileInfo) *fileInfoWatcher {
 	t.Helper()
 
 	return &fileInfoWatcher{
-		evChan:  make(chan fsnotify.Event),
-		erChan:  make(chan error),
+		evChan:  make(chan fsnotify.Event, 512),
+		erChan:  make(chan error, 512),
 		watches: watches,
 	}
 }
