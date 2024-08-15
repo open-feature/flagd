@@ -3,6 +3,7 @@ package file
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"sync"
@@ -30,11 +31,11 @@ type fileInfoWatcher struct {
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
 func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 	fiw := &fileInfoWatcher{
-		evChan: make(chan fsnotify.Event, 256),
-		erChan: make(chan error, 256),
-		logger: logger,
+		evChan:   make(chan fsnotify.Event, 32),
+		erChan:   make(chan error, 32),
+		statFunc: getFileInfo,
+		logger:   logger,
 	}
-	// TODO: wire in configs
 	fiw.run(ctx, (1 * time.Second))
 	return fiw
 }
@@ -126,7 +127,6 @@ func (f *fileInfoWatcher) run(ctx context.Context, s time.Duration) {
 }
 
 func (f *fileInfoWatcher) update() error {
-	event := &fsnotify.Event{}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -148,13 +148,9 @@ func (f *fileInfoWatcher) update() error {
 
 		// if the new stat doesn't match the old stat, figure out what changed
 		if info != newInfo {
-			event, err = f.generateEvent(path, newInfo)
-			if err != nil {
-				f.erChan <- err
-			} else {
-				if event != nil {
-					f.evChan <- *event
-				}
+			event := f.generateEvent(path, newInfo)
+			if event != nil {
+				f.evChan <- *event
 			}
 			f.watches[path] = newInfo
 		}
@@ -164,7 +160,7 @@ func (f *fileInfoWatcher) update() error {
 
 // generateEvent figures out what changed and generates an fsnotify.Event for it. (if we care)
 // file removal are handled above in the update() method
-func (f *fileInfoWatcher) generateEvent(path string, newInfo fs.FileInfo) (*fsnotify.Event, error) {
+func (f *fileInfoWatcher) generateEvent(path string, newInfo fs.FileInfo) *fsnotify.Event {
 	info := f.watches[path]
 	switch {
 	// new mod time is more recent than old mod time, generate a write event
@@ -172,32 +168,33 @@ func (f *fileInfoWatcher) generateEvent(path string, newInfo fs.FileInfo) (*fsno
 		return &fsnotify.Event{
 			Name: path,
 			Op:   fsnotify.Write,
-		}, nil
+		}
 		// the file modes changed, generate a chmod event
 	case info.Mode() != newInfo.Mode():
 		return &fsnotify.Event{
 			Name: path,
 			Op:   fsnotify.Chmod,
-		}, nil
+		}
+	// nothing changed that we care about
+	default:
+		return nil
 	}
-	return nil, nil
 }
 
 // getFileInfo returns the fs.FileInfo for the given path
-// TODO: verify this works correctly on windows
 func getFileInfo(path string) (fs.FileInfo, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error from os.Open(%s): %w", path, err)
 	}
 
 	info, err := f.Stat()
 	if err != nil {
-		return info, err
+		return info, fmt.Errorf("error from fs.Stat(%s): %w", path, err)
 	}
 
 	if err := f.Close(); err != nil {
-		return info, err
+		return info, fmt.Errorf("err from fs.Close(%s): %w", path, err)
 	}
 
 	return info, nil

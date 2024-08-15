@@ -13,7 +13,6 @@ import (
 )
 
 func Test_fileInfoWatcher_Close(t *testing.T) {
-	type fields struct{}
 	tests := []struct {
 		name    string
 		watcher *fileInfoWatcher
@@ -179,9 +178,8 @@ func Test_fileInfoWatcher_update(t *testing.T) {
 			if err != nil {
 				if tt.wantErr {
 					return
-				} else {
-					t.Errorf("fileInfoWatcher.update() unexpected error = %v, wantErr %v", err, tt.wantErr)
 				}
+				t.Errorf("fileInfoWatcher.update() unexpected error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// slurp an event off the event chan
 			out := <-tt.watcher.Events()
