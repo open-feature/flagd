@@ -113,7 +113,7 @@ func Test_fileInfoWatcher_update(t *testing.T) {
 					},
 				},
 			),
-			statFunc: func(path string) (fs.FileInfo, error) {
+			statFunc: func(_ string) (fs.FileInfo, error) {
 				return &mockFileInfo{
 					name: "foo",
 					mode: 1,
@@ -131,7 +131,7 @@ func Test_fileInfoWatcher_update(t *testing.T) {
 					},
 				},
 			),
-			statFunc: func(path string) (fs.FileInfo, error) {
+			statFunc: func(_ string) (fs.FileInfo, error) {
 				return &mockFileInfo{
 					name:    "foo",
 					modTime: (time.Now().Local().Add(5 * time.Minute)),
@@ -148,7 +148,7 @@ func Test_fileInfoWatcher_update(t *testing.T) {
 					},
 				},
 			),
-			statFunc: func(path string) (fs.FileInfo, error) {
+			statFunc: func(_ string) (fs.FileInfo, error) {
 				return nil, fmt.Errorf("mock file-no-existy error: %w", os.ErrNotExist)
 			},
 			want: &fsnotify.Event{Name: "foo", Op: fsnotify.Remove},
@@ -162,7 +162,7 @@ func Test_fileInfoWatcher_update(t *testing.T) {
 					},
 				},
 			),
-			statFunc: func(path string) (fs.FileInfo, error) {
+			statFunc: func(_ string) (fs.FileInfo, error) {
 				return nil, errors.New("unhandled error")
 			},
 			wantErr: true,
@@ -207,7 +207,7 @@ func makeTestWatcher(t *testing.T, watches map[string]fs.FileInfo) *fileInfoWatc
 // constructor is given
 func makeStatFunc(t *testing.T, fi fs.FileInfo) func(string) (fs.FileInfo, error) {
 	t.Helper()
-	return func(s string) (fs.FileInfo, error) {
+	return func(_ string) (fs.FileInfo, error) {
 		return fi, nil
 	}
 }

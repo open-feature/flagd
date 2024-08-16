@@ -1,6 +1,10 @@
 package file
 
-import "github.com/fsnotify/fsnotify"
+import (
+	"fmt"
+
+	"github.com/fsnotify/fsnotify"
+)
 
 // Implements file.Watcher by wrapping fsnotify.Watcher
 // This is only necessary because fsnotify.Watcher directly exposes its Errors
@@ -12,9 +16,12 @@ type fsNotifyWatcher struct {
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
 func NewFSNotifyWatcher() (Watcher, error) {
 	fsn, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, fmt.Errorf("fsnotify: %w", err)
+	}
 	return &fsNotifyWatcher{
 		watcher: fsn,
-	}, err
+	}, nil
 }
 
 // explicitly implements file.Watcher
@@ -22,17 +29,26 @@ var _ Watcher = &fsNotifyWatcher{}
 
 // Close calls close on the underlying fsnotify.Watcher
 func (f *fsNotifyWatcher) Close() error {
-	return f.watcher.Close()
+	if err := f.watcher.Close(); err != nil {
+		return fmt.Errorf("fsnotify: %w", err)
+	}
+	return nil
 }
 
 // Add calls Add on the underlying fsnotify.Watcher
 func (f *fsNotifyWatcher) Add(name string) error {
-	return f.watcher.Add(name)
+	if err := f.watcher.Add(name); err != nil {
+		return fmt.Errorf("fsnotify: %w", err)
+	}
+	return nil
 }
 
 // Remove calls Remove on the underlying fsnotify.Watcher
 func (f *fsNotifyWatcher) Remove(name string) error {
-	return f.watcher.Remove(name)
+	if err := f.watcher.Remove(name); err != nil {
+		return fmt.Errorf("fsnotify: %w", err)
+	}
+	return nil
 }
 
 // Watchlist calls watchlist on the underlying fsnotify.Watcher
