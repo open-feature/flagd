@@ -114,7 +114,8 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 
 	default:
 		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s', %s', '%s' or '%s'",
-			sourceConfig.Provider, syncProviderFile, syncProviderFsNotify, syncProviderFileInfo, syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
+			sourceConfig.Provider, syncProviderFile, syncProviderFsNotify, syncProviderFileInfo,
+			syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
 	}
 }
 
