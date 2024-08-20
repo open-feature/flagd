@@ -35,6 +35,7 @@ func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 		erChan:   make(chan error, 32),
 		statFunc: getFileInfo,
 		logger:   logger,
+		watches:  make(map[string]fs.FileInfo),
 	}
 	fiw.run(ctx, (1 * time.Second))
 	return fiw
