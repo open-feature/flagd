@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.2](https://github.com/open-feature/flagd/compare/flagd/v0.11.1...flagd/v0.11.2) (2024-08-22)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240215170432-1e611e2999cc.1 ([#1372](https://github.com/open-feature/flagd/issues/1372)) ([ae24595](https://github.com/open-feature/flagd/commit/ae2459504f7eccafebccec83fa1f72b08f41a978))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.1 ([#1355](https://github.com/open-feature/flagd/issues/1355)) ([8fcfb14](https://github.com/open-feature/flagd/commit/8fcfb146b0c55712c1758201ee4bc59e83b0898c))
+* **deps:** update module golang.org/x/net to v0.28.0 ([#1380](https://github.com/open-feature/flagd/issues/1380)) ([239a432](https://github.com/open-feature/flagd/commit/239a432c18bf6780117b5d563443124887b38120))
+* **deps:** update module golang.org/x/sync to v0.8.0 ([#1378](https://github.com/open-feature/flagd/issues/1378)) ([4804c17](https://github.com/open-feature/flagd/commit/4804c17a67ea9761079ecade34ccb3446643050b))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.22.6 ([#1297](https://github.com/open-feature/flagd/issues/1297)) ([50b92c1](https://github.com/open-feature/flagd/commit/50b92c17cfd872d3e6b95fef3b3d96444e563715))
+* **deps:** update golang docker tag to v1.23 ([#1382](https://github.com/open-feature/flagd/issues/1382)) ([abb5ca3](https://github.com/open-feature/flagd/commit/abb5ca3e31308535c66a94300d6f6409fd370b95))
+* improve gRPC sync service shutdown behavior ([#1375](https://github.com/open-feature/flagd/issues/1375)) ([79d9085](https://github.com/open-feature/flagd/commit/79d9085a50c49a97b70febb5f444fa3ea965220b))
+
 ## [0.11.1](https://github.com/open-feature/flagd/compare/flagd/v0.11.0...flagd/v0.11.1) (2024-07-08)
 
 
