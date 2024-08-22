@@ -15,21 +15,38 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	FSNOTIFY = "fsnotify"
+	FILEINFO = "fileinfo"
+)
+
+type Watcher interface {
+	Close() error
+	Add(name string) error
+	Remove(name string) error
+	WatchList() []string
+	Events() chan fsnotify.Event
+	Errors() chan error
+}
+
 type Sync struct {
 	URI    string
 	Logger *logger.Logger
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
 	fileType string
-	watcher  *fsnotify.Watcher
-	ready    bool
-	Mux      *msync.RWMutex
+	// watchType indicates how to watch the file FSNOTIFY|FILEINFO
+	watchType string
+	watcher   Watcher
+	ready     bool
+	Mux       *msync.RWMutex
 }
 
-func NewFileSync(uri string, logger *logger.Logger) *Sync {
+func NewFileSync(uri string, watchType string, logger *logger.Logger) *Sync {
 	return &Sync{
-		URI:    uri,
-		Logger: logger,
-		Mux:    &msync.RWMutex{},
+		URI:       uri,
+		watchType: watchType,
+		Logger:    logger,
+		Mux:       &msync.RWMutex{},
 	}
 }
 
@@ -41,14 +58,24 @@ func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return nil
 }
 
-func (fs *Sync) Init(_ context.Context) error {
+func (fs *Sync) Init(ctx context.Context) error {
 	fs.Logger.Info("Starting filepath sync notifier")
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		return fmt.Errorf("error creating filepath watcher: %w", err)
+
+	switch fs.watchType {
+	case FSNOTIFY, "":
+		w, err := NewFSNotifyWatcher()
+		if err != nil {
+			return fmt.Errorf("error creating fsnotify watcher: %w", err)
+		}
+		fs.watcher = w
+	case FILEINFO:
+		w := NewFileInfoWatcher(ctx, fs.Logger)
+		fs.watcher = w
+	default:
+		return fmt.Errorf("unknown watcher type: '%s'", fs.watchType)
 	}
-	fs.watcher = w
-	if err = fs.watcher.Add(fs.URI); err != nil {
+
+	if err := fs.watcher.Add(fs.URI); err != nil {
 		return fmt.Errorf("error adding watcher %s: %w", fs.URI, err)
 	}
 	return nil
@@ -74,7 +101,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
 		select {
-		case event, ok := <-fs.watcher.Events:
+		case event, ok := <-fs.watcher.Events():
 			if !ok {
 				fs.Logger.Info("filepath notifier closed")
 				return errors.New("filepath notifier closed")
@@ -108,7 +135,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				}
 			}
 
-		case err, ok := <-fs.watcher.Errors:
+		case err, ok := <-fs.watcher.Errors():
 			if !ok {
 				fs.setReady(false)
 				return errors.New("watcher error")

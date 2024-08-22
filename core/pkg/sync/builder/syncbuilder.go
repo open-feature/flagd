@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	msync "sync"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -26,6 +25,8 @@ import (
 
 const (
 	syncProviderFile       = "file"
+	syncProviderFsNotify   = "fsnotify"
+	syncProviderFileInfo   = "fileinfo"
 	syncProviderGrpc       = "grpc"
 	syncProviderKubernetes = "kubernetes"
 	syncProviderHTTP       = "http"
@@ -91,8 +92,13 @@ func (sb *SyncBuilder) SyncsFromConfig(sourceConfigs []sync.SourceConfig, logger
 func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *logger.Logger) (sync.ISync, error) {
 	switch sourceConfig.Provider {
 	case syncProviderFile:
-		logger.Debug(fmt.Sprintf("using filepath sync-provider for: %q", sourceConfig.URI))
 		return sb.newFile(sourceConfig.URI, logger), nil
+	case syncProviderFsNotify:
+		logger.Debug(fmt.Sprintf("using fsnotify sync-provider for: %q", sourceConfig.URI))
+		return sb.newFsNotify(sourceConfig.URI, logger), nil
+	case syncProviderFileInfo:
+		logger.Debug(fmt.Sprintf("using fileinfo sync-provider for: %q", sourceConfig.URI))
+		return sb.newFileInfo(sourceConfig.URI, logger), nil
 	case syncProviderKubernetes:
 		logger.Debug(fmt.Sprintf("using kubernetes sync-provider for: %s", sourceConfig.URI))
 		return sb.newK8s(sourceConfig.URI, logger)
@@ -107,20 +113,46 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 		return sb.newGcs(sourceConfig, logger), nil
 
 	default:
-		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s' or '%s'",
-			sourceConfig.Provider, syncProviderFile, syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
+		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s', %s', '%s' or '%s'",
+			sourceConfig.Provider, syncProviderFile, syncProviderFsNotify, syncProviderFileInfo,
+			syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
 	}
 }
 
+// newFile returns an fsinfo sync if we are in k8s or fileinfo if not
 func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
-	return &file.Sync{
-		URI: regFile.ReplaceAllString(uri, ""),
-		Logger: logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "filepath"),
-		),
-		Mux: &msync.RWMutex{},
+	switch os.Getenv("KUBERNETES_SERVICE_HOST") {
+	case "":
+		// no k8s service host env; use fileinfo
+		return sb.newFileInfo(uri, logger)
+	default:
+		// default to fsnotify
+		return sb.newFsNotify(uri, logger)
 	}
+}
+
+// return a new file.Sync that uses fsnotify under the hood
+func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync {
+	return file.NewFileSync(
+		regFile.ReplaceAllString(uri, ""),
+		file.FSNOTIFY,
+		logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", syncProviderFsNotify),
+		),
+	)
+}
+
+// return a new file.Sync that uses os.Stat/fs.FileInfo under the hood
+func (sb *SyncBuilder) newFileInfo(uri string, logger *logger.Logger) *file.Sync {
+	return file.NewFileSync(
+		regFile.ReplaceAllString(uri, ""),
+		file.FILEINFO,
+		logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", syncProviderFileInfo),
+		),
+	)
 }
 
 func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
