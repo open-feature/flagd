@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.10.2](https://github.com/open-feature/flagd/compare/core/v0.10.1...core/v0.10.2) (2024-08-22)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240215170432-1e611e2999cc.1 ([#1372](https://github.com/open-feature/flagd/issues/1372)) ([ae24595](https://github.com/open-feature/flagd/commit/ae2459504f7eccafebccec83fa1f72b08f41a978))
+* **deps:** update module connectrpc.com/otelconnect to v0.7.1 ([#1367](https://github.com/open-feature/flagd/issues/1367)) ([184915b](https://github.com/open-feature/flagd/commit/184915b31726729e8ed2f7999f338bf4ed684809))
+* **deps:** update module github.com/open-feature/open-feature-operator/apis to v0.2.44 ([#1368](https://github.com/open-feature/flagd/issues/1368)) ([0c68726](https://github.com/open-feature/flagd/commit/0c68726bed1cdae07f1b90447818ebbc9dc45caf))
+* **deps:** update module golang.org/x/crypto to v0.26.0 ([#1379](https://github.com/open-feature/flagd/issues/1379)) ([05f6658](https://github.com/open-feature/flagd/commit/05f6658e3dc72182adbff9197c8980641af8c53f))
+* **deps:** update module golang.org/x/mod to v0.20.0 ([#1377](https://github.com/open-feature/flagd/issues/1377)) ([797d7a4](https://github.com/open-feature/flagd/commit/797d7a4bbafc73e6882e5998df500ae4fe98fbbc))
+* **deps:** update module golang.org/x/sync to v0.8.0 ([#1378](https://github.com/open-feature/flagd/issues/1378)) ([4804c17](https://github.com/open-feature/flagd/commit/4804c17a67ea9761079ecade34ccb3446643050b))
+
+
+### ✨ New Features
+
+* add 'watcher' interface to file sync ([#1365](https://github.com/open-feature/flagd/issues/1365)) ([61fff43](https://github.com/open-feature/flagd/commit/61fff43e288daac88efb127ada20276c01ed5928))
+* added new grpc sync config option to allow setting max receive message size. ([#1358](https://github.com/open-feature/flagd/issues/1358)) ([bed077b](https://github.com/open-feature/flagd/commit/bed077bac9da3b6e3bd45ca54046e40a595fcba6))
+* Support blob type sources and GCS as an example of such source. ([#1366](https://github.com/open-feature/flagd/issues/1366)) ([21f2c9a](https://github.com/open-feature/flagd/commit/21f2c9a5d64cbfe2fc841080850a2c582e8f4ba6))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.22.6 ([#1297](https://github.com/open-feature/flagd/issues/1297)) ([50b92c1](https://github.com/open-feature/flagd/commit/50b92c17cfd872d3e6b95fef3b3d96444e563715))
+
 ## [0.10.1](https://github.com/open-feature/flagd/compare/core/v0.10.0...core/v0.10.1) (2024-07-08)
 
 
