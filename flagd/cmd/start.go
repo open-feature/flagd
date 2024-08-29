@@ -70,9 +70,9 @@ func init() {
 		" be present")
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
-	flags.StringP(otelCertPathFlagName, "oc", "", "tls certificate path to use with OpenTelemetry collector")
-	flags.StringP(otelKeyPathFlagName, "ok", "", "tls key path to use with OpenTelemetry collector")
-	flags.StringP(otelCAPathFlagName, "oca", "", "tls certificate authority path to use with OpenTelemetry collector")
+	flags.StringP(otelCertPathFlagName, "D", "", "tls certificate path to use with OpenTelemetry collector")
+	flags.StringP(otelKeyPathFlagName, "K", "", "tls key path to use with OpenTelemetry collector")
+	flags.StringP(otelCAPathFlagName, "A", "", "tls certificate authority path to use with OpenTelemetry collector")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
