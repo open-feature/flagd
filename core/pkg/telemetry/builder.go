@@ -2,7 +2,10 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"os"
 	"time"
 
 	"connectrpc.com/connect"
@@ -20,6 +23,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -28,10 +32,17 @@ const (
 	exportInterval      = 2 * time.Second
 )
 
+type CollectorConfig struct {
+	Target   string
+	CertPath string
+	KeyPath  string
+	CAPath   string
+}
+
 // Config of the telemetry runtime. These are expected to be mapped to start-up arguments
 type Config struct {
 	MetricsExporter string
-	CollectorTarget string
+	CollectorConfig CollectorConfig
 }
 
 func RegisterErrorHandling(log *logger.Logger) {
@@ -64,13 +75,13 @@ func BuildMetricsRecorder(
 // provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
 // This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
-	if cfg.CollectorTarget == "" {
+	if cfg.CollectorConfig.Target == "" {
 		logger.Debug("skipping trace provider setup as collector target is not set." +
 			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
 		return nil
 	}
 
-	exporter, err := buildOtlpExporter(ctx, cfg.CollectorTarget)
+	exporter, err := buildOtlpExporter(ctx, cfg.CollectorConfig)
 	if err != nil {
 		return err
 	}
@@ -95,7 +106,7 @@ func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	options := []connect.HandlerOption{}
 
 	// add interceptor if configuration is available for collector
-	if cfg.CollectorTarget != "" {
+	if cfg.CollectorConfig.Target == "" {
 		interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
 		if err != nil {
 			return nil, fmt.Errorf("error creating interceptor, %w", err)
@@ -105,6 +116,38 @@ func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	}
 
 	return options, nil
+}
+
+func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credentials.TransportCredentials, error) {
+	creds := insecure.NewCredentials()
+	if cfg.KeyPath != "" || cfg.CertPath != "" || cfg.CAPath != "" {
+		capool := x509.NewCertPool()
+		if cfg.CAPath != "" {
+			ca, err := os.ReadFile(cfg.CAPath)
+			if err != nil {
+				return nil, fmt.Errorf("can't read ca file from %s", cfg.CAPath)
+			}
+			if !capool.AppendCertsFromPEM(ca) {
+				return nil, fmt.Errorf("can't add CA '%s' to pool", cfg.CAPath)
+			}
+		}
+
+		tlsConfig := &tls.Config{
+			RootCAs: capool,
+			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				newCert, err := tls.LoadX509KeyPair(cfg.CertPath, cfg.KeyPath)
+				if err != nil {
+					return nil, err
+				}
+
+				return &newCert, err
+			},
+		}
+
+		creds = credentials.NewTLS(tlsConfig)
+	}
+
+	return creds, nil
 }
 
 // buildMetricReader builds a metric reader based on provided configurations
@@ -120,13 +163,18 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	}
 
 	// Otel override require target configuration
-	if cfg.CollectorTarget == "" {
+	if cfg.CollectorConfig.Target == "" {
 		return nil, fmt.Errorf("metric exporter is set(%s) without providing otel collector target."+
 			" collector target is required for this option", cfg.MetricsExporter)
 	}
 
+	transportCredentials, err := buildTransportCredentials(ctx, cfg.CollectorConfig)
+	if err != nil {
+		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
+	}
+
 	// Non-blocking, insecure grpc connection
-	conn, err := grpc.NewClient(cfg.CollectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cfg.CollectorConfig.Target, grpc.WithTransportCredentials(transportCredentials))
 	if err != nil {
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
@@ -141,9 +189,14 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 }
 
 // buildOtlpExporter is a helper to build grpc backed otlp trace exporter
-func buildOtlpExporter(ctx context.Context, collectorTarget string) (*otlptrace.Exporter, error) {
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.NewClient(collectorTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func buildOtlpExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
+	transportCredentials, err := buildTransportCredentials(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
+	}
+
+	// Non-blocking, grpc connection
+	conn, err := grpc.NewClient(cfg.Target, grpc.WithTransportCredentials(transportCredentials))
 	if err != nil {
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}

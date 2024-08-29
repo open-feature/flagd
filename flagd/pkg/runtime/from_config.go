@@ -27,6 +27,9 @@ type Config struct {
 	ManagementPort    uint16
 	OfrepServicePort  uint16
 	OtelCollectorURI  string
+	OtelCertPath      string
+	OtelKeyPath       string
+	OtelCAPath        string
 	ServiceCertPath   string
 	ServiceKeyPath    string
 	ServicePort       uint16
@@ -42,7 +45,12 @@ type Config struct {
 func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
-		CollectorTarget: config.OtelCollectorURI,
+		CollectorConfig: telemetry.CollectorConfig{
+			Target:   config.OtelCollectorURI,
+			CertPath: config.OtelCertPath,
+			KeyPath:  config.OtelKeyPath,
+			CAPath:   config.OtelCAPath,
+		},
 	}
 
 	// register error handling for OpenTelemetry

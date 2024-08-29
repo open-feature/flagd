@@ -21,7 +21,9 @@ func TestBuildMetricsRecorder(t *testing.T) {
 	// Simple happy-path test
 	recorder, err := BuildMetricsRecorder(context.Background(), "service", "0.0.1", Config{
 		MetricsExporter: "otel",
-		CollectorTarget: "localhost:8080",
+		CollectorConfig: CollectorConfig{
+			Target: "localhost:8080",
+		},
 	})
 
 	require.Nil(t, err, "expected no error, but got: %v", err)
@@ -52,7 +54,9 @@ func TestBuildMetricReader(t *testing.T) {
 			name: "Metric exporter overriding require valid configuration combination",
 			cfg: Config{
 				MetricsExporter: metricsExporterOtel,
-				CollectorTarget: "", // collector target is unset
+				CollectorConfig: CollectorConfig{
+					Target: "", // collector target is unset
+				},
 			},
 			error: true,
 		},
@@ -60,7 +64,9 @@ func TestBuildMetricReader(t *testing.T) {
 			name: "Metric exporter overriding with valid configurations",
 			cfg: Config{
 				MetricsExporter: metricsExporterOtel,
-				CollectorTarget: "localhost:8080",
+				CollectorConfig: CollectorConfig{
+					Target: "localhost:8080",
+				},
 			},
 			error: false,
 		},
@@ -90,7 +96,9 @@ func TestBuildSpanProcessor(t *testing.T) {
 		{
 			name: "Valid configurations yield a valid processor",
 			cfg: Config{
-				CollectorTarget: "localhost:8080",
+				CollectorConfig: CollectorConfig{
+					Target: "localhost:8080",
+				},
 			},
 			error: false,
 		},
@@ -127,7 +135,9 @@ func TestBuildConnectOptions(t *testing.T) {
 		{
 			name: "Connect option is set when telemetry target is set",
 			cfg: Config{
-				CollectorTarget: "localhost:8080",
+				CollectorConfig: CollectorConfig{
+					Target: "localhost:8080",
+				},
 			},
 			optionCount: 1,
 		},

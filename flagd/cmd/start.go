@@ -22,6 +22,9 @@ const (
 	metricsExporter        = "metrics-exporter"
 	ofrepPortFlagName      = "ofrep-port"
 	otelCollectorURI       = "otel-collector-uri"
+	otelCertPathFlagName   = "otel-cert-path"
+	otelKeyPathFlagName    = "otel-key-path"
+	otelCAPathFlagName     = "otel-ca-path"
 	portFlagName           = "port"
 	serverCertPathFlagName = "server-cert-path"
 	serverKeyPathFlagName  = "server-key-path"
@@ -67,12 +70,18 @@ func init() {
 		" be present")
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
+	flags.StringP(otelCertPathFlagName, "oc", "", "tls certificate path to use with OpenTelemetry collector")
+	flags.StringP(otelKeyPathFlagName, "ok", "", "tls key path to use with OpenTelemetry collector")
+	flags.StringP(otelCAPathFlagName, "oca", "", "tls certificate authority path to use with OpenTelemetry collector")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
+	_ = viper.BindPFlag(otelCertPathFlagName, flags.Lookup(otelCertPathFlagName))
+	_ = viper.BindPFlag(otelKeyPathFlagName, flags.Lookup(otelKeyPathFlagName))
+	_ = viper.BindPFlag(otelCAPathFlagName, flags.Lookup(otelCAPathFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
@@ -132,6 +141,9 @@ var startCmd = &cobra.Command{
 			ManagementPort:    viper.GetUint16(managementPortFlagName),
 			OfrepServicePort:  viper.GetUint16(ofrepPortFlagName),
 			OtelCollectorURI:  viper.GetString(otelCollectorURI),
+			OtelCertPath:      viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:       viper.GetString(otelKeyPathFlagName),
+			OtelCAPath:        viper.GetString(otelCAPathFlagName),
 			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
 			ServicePort:       viper.GetUint16(portFlagName),
