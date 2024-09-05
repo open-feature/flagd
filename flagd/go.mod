@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.10.1
 	github.com/prometheus/client_golang v1.19.1
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.11.1
 	github.com/rs/xid v1.5.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
