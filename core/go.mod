@@ -11,6 +11,7 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/google/go-cmp v0.6.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322
 	github.com/open-feature/open-feature-operator/apis v0.2.44
 	github.com/prometheus/client_golang v1.19.1
@@ -35,7 +36,7 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.20.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc v1.66.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
@@ -67,7 +68,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/uuid v1.6.0 // indirect
