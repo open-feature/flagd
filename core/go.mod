@@ -14,7 +14,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322
 	github.com/open-feature/open-feature-operator/apis v0.2.44
-	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_golang v1.20.3
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/twmb/murmur3 v1.1.8
@@ -79,6 +79,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
