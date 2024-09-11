@@ -19,7 +19,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.29.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/grpc v1.66.1
+	google.golang.org/grpc v1.66.2
 )
 
 require (
