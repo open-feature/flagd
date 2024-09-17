@@ -10,7 +10,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.10.2
-	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/client_golang v1.20.4
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.52.0
