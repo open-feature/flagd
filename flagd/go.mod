@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.10.2
-	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/client_golang v1.20.4
 	github.com/rs/cors v1.11.1
 	github.com/rs/xid v1.6.0
 	github.com/spf13/cobra v1.8.1
