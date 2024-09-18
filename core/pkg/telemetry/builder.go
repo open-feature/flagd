@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/otelconnect"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/flagd/pkg/certreloader"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -33,10 +34,11 @@ const (
 )
 
 type CollectorConfig struct {
-	Target   string
-	CertPath string
-	KeyPath  string
-	CAPath   string
+	Target         string
+	CertPath       string
+	KeyPath        string
+	ReloadInterval time.Duration
+	CAPath         string
 }
 
 // Config of the telemetry runtime. These are expected to be mapped to start-up arguments
@@ -132,15 +134,20 @@ func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credenti
 			}
 		}
 
-		tlsConfig := &tls.Config{
-			RootCAs: capool,
-			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				newCert, err := tls.LoadX509KeyPair(cfg.CertPath, cfg.KeyPath)
-				if err != nil {
-					return nil, err
-				}
+		reloader, err := certreloader.NewCertReloader(certreloader.Config{
+			KeyPath:        cfg.KeyPath,
+			CertPath:       cfg.CertPath,
+			ReloadInterval: time.Minute * 5,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create certreloader: %w", err)
+		}
 
-				return &newCert, err
+		tlsConfig := &tls.Config{
+			RootCAs:    capool,
+			MinVersion: tls.VersionTLS13,
+			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				return reloader.GetCertificate()
 			},
 		}
 

@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -23,18 +24,19 @@ const svcName = "flagd"
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter    string
-	ManagementPort    uint16
-	OfrepServicePort  uint16
-	OtelCollectorURI  string
-	OtelCertPath      string
-	OtelKeyPath       string
-	OtelCAPath        string
-	ServiceCertPath   string
-	ServiceKeyPath    string
-	ServicePort       uint16
-	ServiceSocketPath string
-	SyncServicePort   uint16
+	MetricExporter     string
+	ManagementPort     uint16
+	OfrepServicePort   uint16
+	OtelCollectorURI   string
+	OtelCertPath       string
+	OtelKeyPath        string
+	OtelCAPath         string
+	OtelReloadInterval time.Duration
+	ServiceCertPath    string
+	ServiceKeyPath     string
+	ServicePort        uint16
+	ServiceSocketPath  string
+	SyncServicePort    uint16
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -46,10 +48,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
 		CollectorConfig: telemetry.CollectorConfig{
-			Target:   config.OtelCollectorURI,
-			CertPath: config.OtelCertPath,
-			KeyPath:  config.OtelKeyPath,
-			CAPath:   config.OtelCAPath,
+			Target:         config.OtelCollectorURI,
+			CertPath:       config.OtelCertPath,
+			KeyPath:        config.OtelKeyPath,
+			CAPath:         config.OtelCAPath,
+			ReloadInterval: config.OtelReloadInterval,
 		},
 	}
 
