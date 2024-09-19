@@ -186,16 +186,22 @@ func generateValidCertificate(t *testing.T) (*bytes.Buffer, *bytes.Buffer) {
 
 	// pem encode
 	caPEM := new(bytes.Buffer)
-	pem.Encode(caPEM, &pem.Block{
+	err = pem.Encode(caPEM, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	caPrivKeyPEM := new(bytes.Buffer)
-	pem.Encode(caPrivKeyPEM, &pem.Block{
+	err = pem.Encode(caPrivKeyPEM, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// set up our server certificate
 	cert := &x509.Certificate{
@@ -228,16 +234,22 @@ func generateValidCertificate(t *testing.T) (*bytes.Buffer, *bytes.Buffer) {
 	}
 
 	certPEM := new(bytes.Buffer)
-	pem.Encode(certPEM, &pem.Block{
+	err = pem.Encode(certPEM, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	certPrivKeyPEM := new(bytes.Buffer)
-	pem.Encode(certPrivKeyPEM, &pem.Block{
+	err = pem.Encode(certPrivKeyPEM, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return certPEM, certPrivKeyPEM
 }
@@ -272,15 +284,20 @@ func generateValidCertificateFiles(t *testing.T) (string, string, func()) {
 func copyFile(src, dst string) error {
 	data, err := os.ReadFile(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load key pair: %w", err)
 	}
 
-	return os.WriteFile(dst, data, 0o777)
+	err = os.WriteFile(dst, data, 0o0600)
+	if err != nil {
+		return fmt.Errorf("failed to load key pair: %w", err)
+	}
+	return nil
 }
 
 func randString(n int) string {
 	const alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	bytes := make([]byte, n)
+	//nolint:errcheck
 	rand.Read(bytes)
 	for i, b := range bytes {
 		bytes[i] = alphanum[b%byte(len(alphanum))]

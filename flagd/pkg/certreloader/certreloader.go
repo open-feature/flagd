@@ -13,15 +13,15 @@ type Config struct {
 	ReloadInterval time.Duration
 }
 
-type certReloader struct {
+type CertReloader struct {
 	cert       *tls.Certificate
 	mu         sync.RWMutex
 	nextReload time.Time
 	Config
 }
 
-func NewCertReloader(config Config) (*certReloader, error) {
-	reloader := certReloader{
+func NewCertReloader(config Config) (*CertReloader, error) {
+	reloader := CertReloader{
 		Config: config,
 	}
 
@@ -36,7 +36,7 @@ func NewCertReloader(config Config) (*certReloader, error) {
 	return &reloader, nil
 }
 
-func (r *certReloader) GetCertificate() (*tls.Certificate, error) {
+func (r *CertReloader) GetCertificate() (*tls.Certificate, error) {
 	now := time.Now()
 	// Read locking here before we do the time comparison
 	// If a reload is in progress this will block and we will skip reloading in the current
@@ -59,8 +59,8 @@ func (r *certReloader) GetCertificate() (*tls.Certificate, error) {
 	return r.cert, nil
 }
 
-func (c *certReloader) loadCertificate() (tls.Certificate, error) {
-	newCert, err := tls.LoadX509KeyPair(c.CertPath, c.KeyPath)
+func (r *CertReloader) loadCertificate() (tls.Certificate, error) {
+	newCert, err := tls.LoadX509KeyPair(r.CertPath, r.KeyPath)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("failed to load key pair: %w", err)
 	}
