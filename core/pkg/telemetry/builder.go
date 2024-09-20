@@ -137,7 +137,7 @@ func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credenti
 		reloader, err := certreloader.NewCertReloader(certreloader.Config{
 			KeyPath:        cfg.KeyPath,
 			CertPath:       cfg.CertPath,
-			ReloadInterval: time.Minute * 5,
+			ReloadInterval: cfg.ReloadInterval,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create certreloader: %w", err)
