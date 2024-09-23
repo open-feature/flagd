@@ -40,6 +40,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                                          |
 | certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                                         |
 | maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize)                       |
+| servAuthority | optional `string` | Specifies the target host (authority) when routing requests through a proxy (e.g., Envoy). If not provided, no authority header will be set                                                                   |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect

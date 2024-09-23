@@ -104,6 +104,30 @@ func Test_InitWithSizeOverride(t *testing.T) {
 	require.Equal(t, "setting max receive message size 10 bytes default 4MB", observedLogs.All()[0].Message)
 }
 
+func Test_InitWithServAuthority(t *testing.T) {
+	observedZapCore, observedLogs := observer.New(zap.InfoLevel)
+	observedLogger := zap.New(observedZapCore)
+
+	mockCtrl := gomock.NewController(t)
+	mockCredentialBulder := credendialsmock.NewMockBuilder(mockCtrl)
+
+	mockCredentialBulder.EXPECT().
+		Build(gomock.Any(), gomock.Any()).
+		Return(insecure.NewCredentials(), nil)
+
+	grpcSync := Sync{
+		URI:               "grpc-target",
+		Logger:            logger.NewLogger(observedLogger, false),
+		CredentialBuilder: mockCredentialBulder,
+		ServAuthority:     "target-service",
+	}
+
+	err := grpcSync.Init(context.Background())
+
+	require.Nilf(t, err, "%s: expected no error, but got non nil error", t.Name())
+	require.Equal(t, "setting service authority as target-service", observedLogs.All()[0].Message)
+}
+
 func Test_ReSyncTests(t *testing.T) {
 	const target = "localBufCon"
 

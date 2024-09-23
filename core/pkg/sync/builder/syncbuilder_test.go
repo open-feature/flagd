@@ -195,6 +195,27 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "grpc-with-service-authority",
+			args: args{
+				logger: lg,
+				sources: []sync.SourceConfig{
+					{
+						URI:        "grpc://host:port",
+						Provider:   syncProviderGrpc,
+						ProviderID: "myapp",
+						CertPath:   "/tmp/ca.cert",
+						Selector:   "source=database",
+						MaxMsgSize: 10,
+						ServAuthority: "target-service",
+					},
+				},
+			},
+			wantSyncs: []sync.ISync{
+				&grpc.Sync{},
+			},
+			wantErr: false,
+		},
+		{
 			name: "combined",
 			injectFunc: func(builder *SyncBuilder) {
 				ctrl := gomock.NewController(t)

@@ -66,12 +66,13 @@ type SourceConfig struct {
 	URI      string `json:"uri"`
 	Provider string `json:"provider"`
 
-	BearerToken string `json:"bearerToken,omitempty"`
-	AuthHeader  string `json:"authHeader,omitempty"`
-	CertPath    string `json:"certPath,omitempty"`
-	TLS         bool   `json:"tls,omitempty"`
-	ProviderID  string `json:"providerID,omitempty"`
-	Selector    string `json:"selector,omitempty"`
-	Interval    uint32 `json:"interval,omitempty"`
-	MaxMsgSize  int    `json:"maxMsgSize,omitempty"`
+	BearerToken 	  string `json:"bearerToken,omitempty"`
+	AuthHeader  	  string `json:"authHeader,omitempty"`
+	CertPath    	  string `json:"certPath,omitempty"`
+	TLS         	  bool   `json:"tls,omitempty"`
+	ProviderID  	  string `json:"providerID,omitempty"`
+	Selector    	  string `json:"selector,omitempty"`
+	Interval    	  uint32 `json:"interval,omitempty"`
+	MaxMsgSize  	  int    `json:"maxMsgSize,omitempty"`
+	ServAuthority     string `json:"servAuthority,omitempty"`
 }

@@ -49,6 +49,7 @@ type Sync struct {
 	Selector          string
 	URI               string
 	MaxMsgSize        int
+	ServAuthority     string
 
 	client FlagSyncServiceClient
 	ready  bool
@@ -66,14 +67,18 @@ func (g *Sync) Init(_ context.Context) error {
 	// Set MaxMsgSize if passed
 	var rpcCon *grpc.ClientConn
 
+	var dialOptions []grpc.DialOption
 	if g.MaxMsgSize > 0 {
 		g.Logger.Info(fmt.Sprintf("setting max receive message size %d bytes default 4MB", g.MaxMsgSize))
-		dialOptions := grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize))
-		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials), dialOptions)
-	} else {
-		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials))
+		dialOptions = append(dialOptions, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize)))
 	}
 
+	if g.ServAuthority != "" {
+		g.Logger.Info(fmt.Sprintf("setting service authority as %s", g.ServAuthority))
+		dialOptions = append(dialOptions, grpc.WithAuthority(g.ServAuthority))
+	}
+
+	rpcCon, err = grpc.NewClient(g.URI, append(dialOptions, grpc.WithTransportCredentials(tCredentials))...)
 	if err != nil {
 		err := fmt.Errorf("error initiating grpc client connection: %w", err)
 		g.Logger.Error(err.Error())
