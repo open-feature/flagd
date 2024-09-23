@@ -1,5 +1,3 @@
-//lint:file-ignore SA4003 old proto is deprecated but we want to serve it for a while
-
 package service
 
 import (
@@ -55,7 +53,7 @@ func NewOldFlagEvaluationService(log *logger.Logger,
 	return svc
 }
 
-// nolint:dupl,funlen
+// nolint:dupl,funlen,staticcheck
 func (s *OldFlagEvaluationService) ResolveAll(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveAllRequest],
@@ -126,7 +124,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	return connect.NewResponse(res), nil
 }
 
-// nolint:dupl
+// nolint:dupl,staticcheck
 func (s *OldFlagEvaluationService) EventStream(
 	ctx context.Context,
 	req *connect.Request[schemaV1.EventStreamRequest],
@@ -166,6 +164,7 @@ func (s *OldFlagEvaluationService) EventStream(
 	}
 }
 
+//nolint:staticcheck
 func (s *OldFlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveBooleanRequest],
@@ -190,6 +189,7 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	return res, err
 }
 
+//nolint:staticcheck
 func (s *OldFlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveStringRequest],
@@ -215,6 +215,7 @@ func (s *OldFlagEvaluationService) ResolveString(
 	return res, err
 }
 
+//nolint:staticcheck
 func (s *OldFlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveIntRequest],
@@ -240,6 +241,7 @@ func (s *OldFlagEvaluationService) ResolveInt(
 	return res, err
 }
 
+//nolint:staticcheck
 func (s *OldFlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveFloatRequest],
@@ -265,6 +267,7 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 	return res, err
 }
 
+//nolint:staticcheck
 func (s *OldFlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[schemaV1.ResolveObjectRequest],

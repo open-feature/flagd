@@ -72,6 +72,7 @@ type oldHandler struct {
 	ctx context.Context
 }
 
+//nolint:staticcheck
 func (l *oldHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse,
 	error,
@@ -86,6 +87,7 @@ func (l *oldHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	}, nil
 }
 
+//nolint:staticcheck
 func (l *oldHandler) SyncFlags(
 	req *syncv1.SyncFlagsRequest,
 	stream rpc.FlagSyncService_SyncFlagsServer,
@@ -114,6 +116,7 @@ func (l *oldHandler) SyncFlags(
 	}
 }
 
+//nolint:staticcheck
 func dataSyncToGrpcState(s sync.DataSync) syncv1.SyncState {
 	return syncv1.SyncState(s.Type + 1)
 }
