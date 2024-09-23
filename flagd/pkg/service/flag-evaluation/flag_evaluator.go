@@ -1,3 +1,5 @@
+//lint:file-ignore SA4003 old proto is deprecated but we want to serve it for a while
+
 package service
 
 import (
