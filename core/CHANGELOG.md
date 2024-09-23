@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.10.3](https://github.com/open-feature/flagd/compare/core/v0.10.2...core/v0.10.3) (2024-09-23)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes package and controller runtime, fix proto lint ([#1290](https://github.com/open-feature/flagd/issues/1290)) ([94860d6](https://github.com/open-feature/flagd/commit/94860d6ceabe9eb7c1e5dd8ea139a796710d6d8b))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240906125204-0a6a901b42e8.1 ([#1400](https://github.com/open-feature/flagd/issues/1400)) ([954d972](https://github.com/open-feature/flagd/commit/954d97238210f90b650493ae76277d4a8d80788a))
+* **deps:** update module connectrpc.com/connect to v1.17.0 ([#1408](https://github.com/open-feature/flagd/issues/1408)) ([e7eb691](https://github.com/open-feature/flagd/commit/e7eb691094dfbf02e37d79c41f60f556415e7640))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.3 ([#1384](https://github.com/open-feature/flagd/issues/1384)) ([8fd16b2](https://github.com/open-feature/flagd/commit/8fd16b23b1fa8517128af36b3068ca18ebbad6c3))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.4 ([#1406](https://github.com/open-feature/flagd/issues/1406)) ([a0a6426](https://github.com/open-feature/flagd/commit/a0a64269b08251317676075fdea7bc65bea8a8dc))
+* **deps:** update module gocloud.dev to v0.39.0 ([#1404](https://github.com/open-feature/flagd/issues/1404)) ([a3184d6](https://github.com/open-feature/flagd/commit/a3184d68413749808709baac47df3bf7400f9cdc))
+* **deps:** update module golang.org/x/crypto to v0.27.0 ([#1396](https://github.com/open-feature/flagd/issues/1396)) ([f9a7d10](https://github.com/open-feature/flagd/commit/f9a7d10590d3191ea8eba0dbb340fa94d07026a4))
+* **deps:** update module golang.org/x/mod to v0.21.0 ([#1397](https://github.com/open-feature/flagd/issues/1397)) ([1507e19](https://github.com/open-feature/flagd/commit/1507e19e9304bcebfbbe4376f45e9f2e82135fd2))
+* **deps:** update module google.golang.org/grpc to v1.66.0 ([#1393](https://github.com/open-feature/flagd/issues/1393)) ([c96e9d7](https://github.com/open-feature/flagd/commit/c96e9d764aa51caf00fbde07cdc7d2de55b98b9e))
+* **deps:** update module google.golang.org/grpc to v1.66.1 ([#1402](https://github.com/open-feature/flagd/issues/1402)) ([50c9cd3](https://github.com/open-feature/flagd/commit/50c9cd3ada2f470a22374392a5a152a487636645))
+* **deps:** update module google.golang.org/grpc to v1.66.2 ([#1405](https://github.com/open-feature/flagd/issues/1405)) ([69ec28f](https://github.com/open-feature/flagd/commit/69ec28fceb597bdaad63b184943b66ccdb4af0b7))
+* **deps:** update module google.golang.org/grpc to v1.67.0 ([#1407](https://github.com/open-feature/flagd/issues/1407)) ([1ad6480](https://github.com/open-feature/flagd/commit/1ad6480a0f37c4677e53065ef455f615b26b1f17))
+* **deps:** update opentelemetry-go monorepo ([#1387](https://github.com/open-feature/flagd/issues/1387)) ([22aef5b](https://github.com/open-feature/flagd/commit/22aef5bbf030c619e48fbe22a16d83e071b11902))
+* **deps:** update opentelemetry-go monorepo ([#1403](https://github.com/open-feature/flagd/issues/1403)) ([fc4cd3e](https://github.com/open-feature/flagd/commit/fc4cd3e547f4826ea0bb8cc1bb2304807932b4e6))
+* remove dep cycle with certreloader ([#1410](https://github.com/open-feature/flagd/issues/1410)) ([5244f6f](https://github.com/open-feature/flagd/commit/5244f6f6c94f310fd80c7ab84942103cc8c18a39))
+
+
+### ✨ New Features
+
+* add mTLS support to otel exporter ([#1389](https://github.com/open-feature/flagd/issues/1389)) ([8737f53](https://github.com/open-feature/flagd/commit/8737f53444016b114ee4ae52eead0b835af0e200))
+
 ## [0.10.2](https://github.com/open-feature/flagd/compare/core/v0.10.1...core/v0.10.2) (2024-08-22)
 
 
