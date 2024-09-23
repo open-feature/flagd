@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.11.3](https://github.com/open-feature/flagd/compare/flagd/v0.11.2...flagd/v0.11.3) (2024-09-23)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes package and controller runtime, fix proto lint ([#1290](https://github.com/open-feature/flagd/issues/1290)) ([94860d6](https://github.com/open-feature/flagd/commit/94860d6ceabe9eb7c1e5dd8ea139a796710d6d8b))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.16.2-20240906125204-0a6a901b42e8.1 ([#1399](https://github.com/open-feature/flagd/issues/1399)) ([18dd4e2](https://github.com/open-feature/flagd/commit/18dd4e279f1278938749bd21d106ecfbaf2f5fff))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240906125204-0a6a901b42e8.1 ([#1400](https://github.com/open-feature/flagd/issues/1400)) ([954d972](https://github.com/open-feature/flagd/commit/954d97238210f90b650493ae76277d4a8d80788a))
+* **deps:** update module connectrpc.com/connect to v1.17.0 ([#1408](https://github.com/open-feature/flagd/issues/1408)) ([e7eb691](https://github.com/open-feature/flagd/commit/e7eb691094dfbf02e37d79c41f60f556415e7640))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.2 ([#1385](https://github.com/open-feature/flagd/issues/1385)) ([3b5a818](https://github.com/open-feature/flagd/commit/3b5a818b69ffca61347a3feaa85dd1a8f8001e24))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.3 ([#1384](https://github.com/open-feature/flagd/issues/1384)) ([8fd16b2](https://github.com/open-feature/flagd/commit/8fd16b23b1fa8517128af36b3068ca18ebbad6c3))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.4 ([#1406](https://github.com/open-feature/flagd/issues/1406)) ([a0a6426](https://github.com/open-feature/flagd/commit/a0a64269b08251317676075fdea7bc65bea8a8dc))
+* **deps:** update module github.com/rs/cors to v1.11.1 ([#1392](https://github.com/open-feature/flagd/issues/1392)) ([8bd549e](https://github.com/open-feature/flagd/commit/8bd549e8603b4a61cc26d0c09ef5dd13860cb3da))
+* **deps:** update module github.com/rs/xid to v1.6.0 ([#1386](https://github.com/open-feature/flagd/issues/1386)) ([2317013](https://github.com/open-feature/flagd/commit/231701346abab2018cc7c495ebc7f285bb2a46d2))
+* **deps:** update module golang.org/x/net to v0.29.0 ([#1398](https://github.com/open-feature/flagd/issues/1398)) ([0721e02](https://github.com/open-feature/flagd/commit/0721e02daae4c92438490169113d3d76ca4a028a))
+* **deps:** update module google.golang.org/grpc to v1.66.0 ([#1393](https://github.com/open-feature/flagd/issues/1393)) ([c96e9d7](https://github.com/open-feature/flagd/commit/c96e9d764aa51caf00fbde07cdc7d2de55b98b9e))
+* **deps:** update module google.golang.org/grpc to v1.66.1 ([#1402](https://github.com/open-feature/flagd/issues/1402)) ([50c9cd3](https://github.com/open-feature/flagd/commit/50c9cd3ada2f470a22374392a5a152a487636645))
+* **deps:** update module google.golang.org/grpc to v1.66.2 ([#1405](https://github.com/open-feature/flagd/issues/1405)) ([69ec28f](https://github.com/open-feature/flagd/commit/69ec28fceb597bdaad63b184943b66ccdb4af0b7))
+* **deps:** update module google.golang.org/grpc to v1.67.0 ([#1407](https://github.com/open-feature/flagd/issues/1407)) ([1ad6480](https://github.com/open-feature/flagd/commit/1ad6480a0f37c4677e53065ef455f615b26b1f17))
+* **deps:** update opentelemetry-go monorepo ([#1387](https://github.com/open-feature/flagd/issues/1387)) ([22aef5b](https://github.com/open-feature/flagd/commit/22aef5bbf030c619e48fbe22a16d83e071b11902))
+* **deps:** update opentelemetry-go monorepo ([#1403](https://github.com/open-feature/flagd/issues/1403)) ([fc4cd3e](https://github.com/open-feature/flagd/commit/fc4cd3e547f4826ea0bb8cc1bb2304807932b4e6))
+* remove dep cycle with certreloader ([#1410](https://github.com/open-feature/flagd/issues/1410)) ([5244f6f](https://github.com/open-feature/flagd/commit/5244f6f6c94f310fd80c7ab84942103cc8c18a39))
+
+
+### ✨ New Features
+
+* add mTLS support to otel exporter ([#1389](https://github.com/open-feature/flagd/issues/1389)) ([8737f53](https://github.com/open-feature/flagd/commit/8737f53444016b114ee4ae52eead0b835af0e200))
+
 ## [0.11.2](https://github.com/open-feature/flagd/compare/flagd/v0.11.1...flagd/v0.11.2) (2024-08-22)
 
 
