@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -16,19 +17,23 @@ import (
 )
 
 const (
-	corsFlagName           = "cors-origin"
-	logFormatFlagName      = "log-format"
-	managementPortFlagName = "management-port"
-	metricsExporter        = "metrics-exporter"
-	ofrepPortFlagName      = "ofrep-port"
-	otelCollectorURI       = "otel-collector-uri"
-	portFlagName           = "port"
-	serverCertPathFlagName = "server-cert-path"
-	serverKeyPathFlagName  = "server-key-path"
-	socketPathFlagName     = "socket-path"
-	sourcesFlagName        = "sources"
-	syncPortFlagName       = "sync-port"
-	uriFlagName            = "uri"
+	corsFlagName               = "cors-origin"
+	logFormatFlagName          = "log-format"
+	managementPortFlagName     = "management-port"
+	metricsExporter            = "metrics-exporter"
+	ofrepPortFlagName          = "ofrep-port"
+	otelCollectorURI           = "otel-collector-uri"
+	otelCertPathFlagName       = "otel-cert-path"
+	otelKeyPathFlagName        = "otel-key-path"
+	otelCAPathFlagName         = "otel-ca-path"
+	otelReloadIntervalFlagName = "otel-reload-interval"
+	portFlagName               = "port"
+	serverCertPathFlagName     = "server-cert-path"
+	serverKeyPathFlagName      = "server-key-path"
+	socketPathFlagName         = "socket-path"
+	sourcesFlagName            = "sources"
+	syncPortFlagName           = "sync-port"
+	uriFlagName                = "uri"
 )
 
 func init() {
@@ -67,12 +72,20 @@ func init() {
 		" be present")
 	flags.StringP(otelCollectorURI, "o", "", "Set the grpc URI of the OpenTelemetry collector "+
 		"for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.")
+	flags.StringP(otelCertPathFlagName, "D", "", "tls certificate path to use with OpenTelemetry collector")
+	flags.StringP(otelKeyPathFlagName, "K", "", "tls key path to use with OpenTelemetry collector")
+	flags.StringP(otelCAPathFlagName, "A", "", "tls certificate authority path to use with OpenTelemetry collector")
+	flags.DurationP(otelReloadIntervalFlagName, "I", time.Hour, "how long between reloading the otel tls certificate "+
+		"from disk")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(otelCollectorURI, flags.Lookup(otelCollectorURI))
+	_ = viper.BindPFlag(otelCertPathFlagName, flags.Lookup(otelCertPathFlagName))
+	_ = viper.BindPFlag(otelKeyPathFlagName, flags.Lookup(otelKeyPathFlagName))
+	_ = viper.BindPFlag(otelCAPathFlagName, flags.Lookup(otelCAPathFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(serverCertPathFlagName, flags.Lookup(serverCertPathFlagName))
 	_ = viper.BindPFlag(serverKeyPathFlagName, flags.Lookup(serverKeyPathFlagName))
@@ -127,17 +140,21 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:              viper.GetStringSlice(corsFlagName),
-			MetricExporter:    viper.GetString(metricsExporter),
-			ManagementPort:    viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:  viper.GetUint16(ofrepPortFlagName),
-			OtelCollectorURI:  viper.GetString(otelCollectorURI),
-			ServiceCertPath:   viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:    viper.GetString(serverKeyPathFlagName),
-			ServicePort:       viper.GetUint16(portFlagName),
-			ServiceSocketPath: viper.GetString(socketPathFlagName),
-			SyncServicePort:   viper.GetUint16(syncPortFlagName),
-			SyncProviders:     syncProviders,
+			CORS:               viper.GetStringSlice(corsFlagName),
+			MetricExporter:     viper.GetString(metricsExporter),
+			ManagementPort:     viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:   viper.GetUint16(ofrepPortFlagName),
+			OtelCollectorURI:   viper.GetString(otelCollectorURI),
+			OtelCertPath:       viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:        viper.GetString(otelKeyPathFlagName),
+			OtelReloadInterval: viper.GetDuration(otelReloadIntervalFlagName),
+			OtelCAPath:         viper.GetString(otelCAPathFlagName),
+			ServiceCertPath:    viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:     viper.GetString(serverKeyPathFlagName),
+			ServicePort:        viper.GetUint16(portFlagName),
+			ServiceSocketPath:  viper.GetString(socketPathFlagName),
+			SyncServicePort:    viper.GetUint16(syncPortFlagName),
+			SyncProviders:      syncProviders,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())
