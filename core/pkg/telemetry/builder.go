@@ -10,8 +10,8 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/otelconnect"
+	"github.com/open-feature/flagd/core/pkg/certreloader"
 	"github.com/open-feature/flagd/core/pkg/logger"
-	"github.com/open-feature/flagd/flagd/pkg/certreloader"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
