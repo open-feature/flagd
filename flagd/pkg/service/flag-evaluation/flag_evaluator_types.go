@@ -1,5 +1,3 @@
-//lint:file-ignore SA4003 old proto is deprecated but we want to serve it for a while
-
 package service
 
 import (
@@ -20,10 +18,12 @@ type constraints interface {
 }
 
 type booleanResponse struct {
+	//nolint:staticcheck
 	schemaV1Resp *connect.Response[schemaV1.ResolveBooleanResponse]
 	evalV1Resp   *connect.Response[evalV1.ResolveBooleanResponse]
 }
 
+//nolint:staticcheck
 func (r *booleanResponse) SetResult(value bool, variant, reason string, metadata map[string]interface{}) error {
 	newStruct, err := structpb.NewStruct(metadata)
 	if err != nil {
@@ -47,10 +47,12 @@ func (r *booleanResponse) SetResult(value bool, variant, reason string, metadata
 }
 
 type stringResponse struct {
+	//nolint:staticcheck
 	schemaV1Resp *connect.Response[schemaV1.ResolveStringResponse]
 	evalV1Resp   *connect.Response[evalV1.ResolveStringResponse]
 }
 
+//nolint:staticcheck
 func (r *stringResponse) SetResult(value string, variant, reason string, metadata map[string]interface{}) error {
 	newStruct, err := structpb.NewStruct(metadata)
 	if err != nil {
@@ -74,10 +76,12 @@ func (r *stringResponse) SetResult(value string, variant, reason string, metadat
 }
 
 type floatResponse struct {
+	//nolint:staticcheck
 	schemaV1Resp *connect.Response[schemaV1.ResolveFloatResponse]
 	evalV1Resp   *connect.Response[evalV1.ResolveFloatResponse]
 }
 
+//nolint:staticcheck
 func (r *floatResponse) SetResult(value float64, variant, reason string, metadata map[string]interface{}) error {
 	newStruct, err := structpb.NewStruct(metadata)
 	if err != nil {
@@ -85,6 +89,7 @@ func (r *floatResponse) SetResult(value float64, variant, reason string, metadat
 	}
 
 	if r.schemaV1Resp != nil {
+		// nolint:staticcheck
 		r.schemaV1Resp.Msg.Value = value
 		r.schemaV1Resp.Msg.Variant = variant
 		r.schemaV1Resp.Msg.Reason = reason
@@ -101,10 +106,12 @@ func (r *floatResponse) SetResult(value float64, variant, reason string, metadat
 }
 
 type intResponse struct {
+	//nolint:staticcheck
 	schemaV1Resp *connect.Response[schemaV1.ResolveIntResponse]
 	evalV1Resp   *connect.Response[evalV1.ResolveIntResponse]
 }
 
+//nolint:staticcheck
 func (r *intResponse) SetResult(value int64, variant, reason string, metadata map[string]interface{}) error {
 	newStruct, err := structpb.NewStruct(metadata)
 	if err != nil {
@@ -127,10 +134,12 @@ func (r *intResponse) SetResult(value int64, variant, reason string, metadata ma
 }
 
 type objectResponse struct {
+	// nolint:staticcheck
 	schemaV1Resp *connect.Response[schemaV1.ResolveObjectResponse]
 	evalV1Resp   *connect.Response[evalV1.ResolveObjectResponse]
 }
 
+//nolint:staticcheck
 func (r *objectResponse) SetResult(value map[string]any, variant, reason string,
 	metadata map[string]interface{},
 ) error {

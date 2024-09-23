@@ -15,7 +15,8 @@ const (
 )
 
 type Watcher struct {
-	client     syncv1grpc.FlagSyncServiceClient
+	client syncv1grpc.FlagSyncServiceClient
+	//nolint:staticcheck
 	Stream     chan syncv1Types.SyncState
 	Ready      chan struct{}
 	targetFile string
@@ -23,6 +24,7 @@ type Watcher struct {
 
 func NewWatcher(client syncv1grpc.FlagSyncServiceClient, target string) *Watcher {
 	return &Watcher{
+		//nolint:staticcheck
 		Stream:     make(chan syncv1Types.SyncState, 1),
 		client:     client,
 		Ready:      make(chan struct{}),
@@ -30,6 +32,7 @@ func NewWatcher(client syncv1grpc.FlagSyncServiceClient, target string) *Watcher
 	}
 }
 
+//nolint:staticcheck
 func (w *Watcher) StartWatcher(ctx context.Context) error {
 	stream, err := w.client.SyncFlags(ctx, &syncv1Types.SyncFlagsRequest{
 		Selector: fmt.Sprintf("file:%s", w.targetFile),

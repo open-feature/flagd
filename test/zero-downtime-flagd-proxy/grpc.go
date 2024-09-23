@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+//nolint:staticcheck
 func doRequests(grpcClient pb.FlagSyncServiceClient, waitSecondsBetweenRequests int) error {
 	ctx := context.TODO()
 	stream, err := grpcClient.SyncFlags(ctx, &schemav1.SyncFlagsRequest{
