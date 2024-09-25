@@ -10,7 +10,7 @@
 
 ## Summary
 
-gRPC by default support dns resolution which is currently being used e.g. "localhost:8013" in both
+gRPC by default supports DNS resolution which is currently being used e.g. "localhost:8013" in both
 [core](https://github.com/open-feature/flagd/blob/main/core/pkg/sync/grpc/grpc_sync.go#L72-L74) and
 providers e.g. [java](https://github.com/open-feature/java-sdk-contrib/blob/main/providers/flagd/src/main/java/dev/openfeature/contrib/providers/flagd/resolver/common/ChannelBuilder.java#L53-L55).
 This covers most deployments but with increase adoption of microservice architecture and service discovery
