@@ -13,9 +13,8 @@
 gRPC by default supports DNS resolution which is currently being used e.g. "localhost:8013" in both
 [core](https://github.com/open-feature/flagd/blob/main/core/pkg/sync/grpc/grpc_sync.go#L72-L74) and
 providers e.g. [java](https://github.com/open-feature/java-sdk-contrib/blob/main/providers/flagd/src/main/java/dev/openfeature/contrib/providers/flagd/resolver/common/ChannelBuilder.java#L53-L55).
-This covers most deployments but with increase adoption of microservice architecture and service discovery
-application with S2S policy e.g. istio, envoy, consul etc. In such deployments the current gRPC connection was
-breaking because the proxies need the destination domain i.e. service name in order to route the traffic.
+This covers most deployments, but with increased adoption of microservice-architecture, service discovery,
+policy-enabled service meshes (e.g. istio, envoy, consul, etc) it's necessary to support custom routing and name resolution.
 
 For such cases the gRPC core libs support few alternative resolver* also expose required interface to build custom one
 you can find more details in the document referenced below
