@@ -60,9 +60,8 @@ provided by gRPC core*.
 
 The idea is to
 
-* create custom name resolver for `java` and `golang` based on the example [provided](https://grpc.io/docs/guides/custom-name-resolution/#language-support)
-* and allow a new config option to pass the [target](https://grpc.io/docs/guides/custom-name-resolution/#life-of-a-target-string)
-string
+- allow a new config option to pass the [target](https://grpc.io/docs/guides/custom-name-resolution/#life-of-a-target-string) string
+- reduce need to create/override existing implementations to simplify use of name-resolver
 
 ### Target String Pattern*
 
