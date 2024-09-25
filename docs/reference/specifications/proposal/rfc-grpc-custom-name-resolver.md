@@ -24,28 +24,6 @@ For such cases the gRPC core libraries support few alternative resolver* also ex
 * [Java Client](https://grpc.github.io/grpc-java/javadoc/io/grpc/ManagedChannelBuilder.html#forTarget(java.lang.String))
 * [Golang](https://pkg.go.dev/google.golang.org/grpc#NewClient)
 
-A sample workflow of a deployment with proxy sidecar using `in-process` mode (for `rpc` the process is same)
-
-```mermaid
-sequenceDiagram
-    participant flagd-sync.service
-    participant proxy-sidecar-agent
-    participant flagd-provider
-    participant application
-
-
-    flagd-provider-->proxy-sidecar-agent: Route traffic to backend sync service based on policy
-    Note left of flagd-provider: In most cases the connection made to <br> `localhost` data plane port <br> e.g. localhost:9211
-
-    flagd-provider-->flagd-sync.service: Get realtime flag update over gRPC stream
-    Note left of proxy-sidecar-agent: Based on the host header i.e. authority <br> the tarrfic was then routed <br> backend service.
-    loop
-        flagd-provider->>flagd-provider: in-memory cache
-    end
-    application-->>flagd-provider: Check the state of a feature flag
-    flagd-provider-->>application: Get the feature flag from in-memory cache <br/> run the evaluation logic and return final state
-```
-
 **Note:** There is small variation in supported alternative resolver e.g. java support `zooKeeper`
 
 ## Motivation
@@ -59,51 +37,41 @@ provided by gRPC core*.
 
 The idea is to
 
-- allow a new config option to pass the [target](https://grpc.io/docs/guides/custom-name-resolution/#life-of-a-target-string) string
-- reduce need to create/override existing implementations to simplify use of name-resolver
+* allow a new config option to pass the [target](https://grpc.io/docs/guides/custom-name-resolution/#life-of-a-target-string) string
+* reduce need to create/override existing implementations to simplify use of name-resolver
 
 ### Target String Pattern*
 
-There is no restriction on naming but the string most comply with below standard
+Below is an example of a custom target string which will use envoy sidecar proxy for name resolution
 
 ```text
-scheme://authority/endpoint_name
+envoy://localhost:9211/flagd-sync.service
 ```
 
-#### Scheme Suggestions
+The custom name resolver provider in this case will use the endpoint name i.e. `flagd-sync.service` as [authority](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/nameresolve/ExampleNameResolver.java#L55-L61)
+and connect to `localhost:9211`
 
-We can choose our own scheme considering it's not used in gRPC core
+```mermaid
+sequenceDiagram
+    participant application
+    participant flagd-provider
+    participant proxy-sidecar-agent
+    participant flagd-sync.service
 
-| Scheme             | Comment | Status             |
-|--------------------|---------|--------------------|
-| **flagd://**       |         | Approved / Reject  |
-| **grpc-remote://** |         | Approved / Reject  |
-| **tbd**            |         | Approved / Reject  |
-
-##### Authority
-
-Authority needs to be a valid tcp endpoint of proxy/service discovery agent (passed by the user)
-e.g. `localhost:9211`
-
-##### Endpoint Name
-
-The endpoint also specific to user deployment environment which define the `flagd` or `sync` backend
-service name i.e. VirtualHost. This is used by the provided authority i.e. proxy service where to
-route the traffic e.g.
-
-```shell
-$ grpcurl -vv -plaintext -authority flagd-sync.service 127.0.0.1:9211 list flagd.sync.v1.FlagSyncService
-flagd.sync.v1.FlagSyncService.FetchAllFlags
-flagd.sync.v1.FlagSyncService.GetMetadata
-flagd.sync.v1.FlagSyncService.SyncFlags
+    application->>flagd-provider: Check the state of a feature flag
+    flagd-provider-->>application: Get the feature flag from in-memory cache <br/> run the evaluation logic and return final state
+    loop
+    flagd-provider->>flagd-provider: in-memory cache
+    end
+    flagd-provider->>proxy-sidecar-agent: gRPC stream connection
+    proxy-sidecar-agent-->>flagd-provider: 
+    Note right of flagd-provider: Instead host:port target string <br> "envoy://localhost:9211/flagd-sync.service" <br> will be used
+    proxy-sidecar-agent->>flagd-sync.service: Apply required policy and route traffic <br> to backend nodes
+    flagd-sync.service-->>proxy-sidecar-agent: 
+    Note right of proxy-sidecar-agent: Policy and route rules are applied based <br> on `authority` header used by the <br> gRPC client
 ```
 
-##### Samples
-
-* ``[ flagd || grpc-remote ]://[ 127.0.0.1:9211 ]/[ flagd-sync.service ]``
-* ``[ flagd || grpc-remote ]://[ proxy.domain:443 ]/[ flagd-sync.service ]``
-
-##### Drawbacks
+#### Drawbacks
 
 * One of the big drawback was limited support of the language only `java` and `golang`
 * Will introduce inconsistent user experience
