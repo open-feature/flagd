@@ -83,7 +83,7 @@ providing sdks similar to [custom connector](https://github.com/open-feature/jav
 
 ### Option-1
 
-Allow users to override default ``authority`` header as shown above in `grpcurl`, the override option was
+Allow users to override default `authority` header as shown above in `grpcurl`, the override option was
 already supported by all major languages*
 
 * [Golang](https://pkg.go.dev/google.golang.org/grpc#WithAuthority)
