@@ -16,8 +16,7 @@ providers e.g. [java](https://github.com/open-feature/java-sdk-contrib/blob/main
 This covers most deployments, but with increased adoption of microservice-architecture, service discovery,
 policy-enabled service meshes (e.g. istio, envoy, consul, etc) it's necessary to support custom routing and name resolution.
 
-For such cases the gRPC core libs support few alternative resolver* also expose required interface to build custom one
-you can find more details in the document referenced below
+For such cases the gRPC core libraries support few alternative resolver* also expose the required interfaces to build custom implementations:
 
 ### Reference
 
