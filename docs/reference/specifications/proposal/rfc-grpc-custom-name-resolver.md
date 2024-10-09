@@ -1,4 +1,4 @@
-# gRPC Custom Name Resolver Proposal (DRAFT)
+# gRPC Custom Name Resolver Proposal
 
 ## Details
 
