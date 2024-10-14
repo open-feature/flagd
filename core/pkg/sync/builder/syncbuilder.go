@@ -34,12 +34,13 @@ const (
 )
 
 var (
-	regCrd        *regexp.Regexp
-	regURL        *regexp.Regexp
-	regGRPC       *regexp.Regexp
-	regGRPCSecure *regexp.Regexp
-	regFile       *regexp.Regexp
-	regGcs        *regexp.Regexp
+	regCrd                *regexp.Regexp
+	regURL                *regexp.Regexp
+	regGRPC               *regexp.Regexp
+	regGRPCSecure         *regexp.Regexp
+	regGRPCCustomResolver *regexp.Regexp
+	regFile               *regexp.Regexp
+	regGcs                *regexp.Regexp
 )
 
 func init() {
@@ -47,6 +48,7 @@ func init() {
 	regURL = regexp.MustCompile("^https?://")
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
 	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
+	regGRPCCustomResolver = regexp.MustCompile("^" + grpc.SupportedScheme)
 	regFile = regexp.MustCompile("^file:")
 	regGcs = regexp.MustCompile("^gs://.+?/")
 }

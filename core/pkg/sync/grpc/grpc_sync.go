@@ -12,14 +12,16 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
+	_ "github.com/open-feature/flagd/core/pkg/sync/grpc/nameresolvers" // initialize custom resolvers e.g. envoy.Init()
 	"google.golang.org/grpc"
 )
 
 const (
 	// Prefix for GRPC URL inputs. GRPC does not define a standard prefix. This prefix helps to differentiate remote
 	// URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
-	Prefix       = "grpc://"
-	PrefixSecure = "grpcs://"
+	Prefix          = "grpc://"
+	PrefixSecure    = "grpcs://"
+	SupportedScheme = "(envoy|dns|uds|xds|ipv4)"
 
 	// Connection retry constants
 	// Back off period is calculated with backOffBase ^ #retry-iteration. However, when #retry-iteration count reach
