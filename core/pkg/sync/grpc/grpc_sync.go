@@ -21,7 +21,7 @@ const (
 	// URLs for REST APIs (i.e - HTTP) from GRPC endpoints.
 	Prefix          = "grpc://"
 	PrefixSecure    = "grpcs://"
-	SupportedScheme = "(envoy|dns|uds|xds|ipv4)"
+	SupportedScheme = "(envoy|dns|uds|xds)"
 
 	// Connection retry constants
 	// Back off period is calculated with backOffBase ^ #retry-iteration. However, when #retry-iteration count reach
