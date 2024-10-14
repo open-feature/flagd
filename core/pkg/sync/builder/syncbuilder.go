@@ -49,6 +49,7 @@ func init() {
 	regURL = regexp.MustCompile("^https?://")
 	regGRPC = regexp.MustCompile("^" + grpc.Prefix)
 	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
+	regGRPCCustomResolver = regexp.MustCompile("^" + grpc.SupportedScheme)
 	regFile = regexp.MustCompile("^file:")
 	regGcs = regexp.MustCompile("^gs://.+?/")
 	regAzblob = regexp.MustCompile("^azblob://.+?/")
