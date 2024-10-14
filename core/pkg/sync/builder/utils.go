@@ -64,6 +64,11 @@ func ParseSyncProviderURIs(uris []string) ([]sync.SourceConfig, error) {
 				Provider: syncProviderGrpc,
 				TLS:      true,
 			})
+		case regGRPCCustomResolver.Match(uriB):
+			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
+				URI:      uri,
+				Provider: syncProviderGrpc,
+			})
 		case regGcs.Match(uriB):
 			syncProvidersParsed = append(syncProvidersParsed, sync.SourceConfig{
 				URI:      uri,
