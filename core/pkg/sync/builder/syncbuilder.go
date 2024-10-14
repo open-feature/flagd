@@ -35,14 +35,14 @@ const (
 )
 
 var (
-	regCrd                *regexp.Regexp
-	regURL                *regexp.Regexp
-	regGRPC               *regexp.Regexp
-	regGRPCSecure         *regexp.Regexp
+	regCrd        *regexp.Regexp
+	regURL        *regexp.Regexp
+	regGRPC       *regexp.Regexp
+	regGRPCSecure *regexp.Regexp
 	regGRPCCustomResolver *regexp.Regexp
-	regFile               *regexp.Regexp
-	regGcs                *regexp.Regexp
-	regAzblob             *regexp.Regexp
+	regFile       *regexp.Regexp
+	regGcs        *regexp.Regexp
+	regAzblob     *regexp.Regexp
 )
 
 func init() {
