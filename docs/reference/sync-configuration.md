@@ -11,14 +11,14 @@ See [syncs](../concepts/syncs.md) for a conceptual overview.
 Any URI passed to flagd via the `--uri` (`-f`) flag must follow one of the 6 following patterns with prefixes to ensure that
 it is passed to the correct implementation:
 
-| Implied Sync Provider                 | Prefix                             | Example                             |
-|---------------------------------------|------------------------------------|-------------------------------------|
-| `kubernetes`                          | `core.openfeature.dev`             | `core.openfeature.dev/default/my-crd` |
-| `file`                                | `file:`                            | `file:etc/flagd/my-flags.json`      |
-| `http`                                | `http(s)://`                       | `https://my-flags.com/flags`        |
-| `grpc`                                | `grpc(s)://`                       | `grpc://my-flags-server`            |
+| Implied Sync Provider | Prefix                 | Example                               |
+| --------------------- | ---------------------- | ------------------------------------- |
+| `kubernetes`          | `core.openfeature.dev` | `core.openfeature.dev/default/my-crd` |
+| `file`                | `file:`                | `file:etc/flagd/my-flags.json`        |
+| `http`                | `http(s)://`           | `https://my-flags.com/flags`          |
+| `grpc`                | `grpc(s)://`           | `grpc://my-flags-server`              |
 | &nbsp;[grpc](#custom-grpc-target-uri) | `[ envoy \| dns \| uds\| xds ]://` | `envoy://localhost:9211/test.service` |
-| `gcs`                                 | `gs://`                            | `gs://my-bucket/my-flags.json`      |
+| `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
 | `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
 
 ### Custom gRPC Target URI
@@ -31,6 +31,17 @@ and one custom resolver for `envoy` proxy resolution. For more details, please r
 ./bin/flagd start -x --uri envoy://localhost:9211/test.service
 ```
 >>>>>>> 9045a1d (fix: doc update)
+
+### Custom gRPC Target URI
+
+Apart from default `dns` resolution, Flagd also support different resolution method e.g. `xds`.  Currently, we are supporting all [core resolver](https://grpc.io/docs/guides/custom-name-resolution/)
+and one custom resolver for `envoy` proxy resolution. For more details, please refer the
+[RFC](https://github.com/open-feature/flagd/blob/main/docs/reference/specifications/proposal/rfc-grpc-custom-name-resolver.md) document.
+
+```shell
+./bin/flagd start -x --uri envoy://localhost:9211/test.service
+```
+>>>>>>> de5dc6b (fix: doc update)
 
 ## Source Configuration
 
