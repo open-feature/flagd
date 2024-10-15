@@ -14,7 +14,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20240708163558-2aa89b314322
 	github.com/open-feature/open-feature-operator/apis v0.2.44
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/twmb/murmur3 v1.1.8
