@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.11.4](https://github.com/open-feature/flagd/compare/flagd/v0.11.3...flagd/v0.11.4) (2024-10-18)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.17.0-20240906125204-0a6a901b42e8.1 ([#1409](https://github.com/open-feature/flagd/issues/1409)) ([f07d348](https://github.com/open-feature/flagd/commit/f07d348b42bfa43c3b263ed7ba69c1630a14ec10))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.3 ([#1411](https://github.com/open-feature/flagd/issues/1411)) ([a312196](https://github.com/open-feature/flagd/commit/a312196c118705d7a8eb0056fdb98480b887f7c5))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#1425](https://github.com/open-feature/flagd/issues/1425)) ([583ba89](https://github.com/open-feature/flagd/commit/583ba894f2de794b36b6a1cc3bfceb9c46dc9d96))
+* **deps:** update module google.golang.org/grpc to v1.67.1 ([#1415](https://github.com/open-feature/flagd/issues/1415)) ([85a3a6b](https://github.com/open-feature/flagd/commit/85a3a6b46233fcc7cf71a0292b46c82ac8e66d7b))
+
 ## [0.11.3](https://github.com/open-feature/flagd/compare/flagd/v0.11.2...flagd/v0.11.3) (2024-09-23)
 
 
