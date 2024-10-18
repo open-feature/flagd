@@ -98,8 +98,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           input: ${{ github.workspace }}/flagd-local.tar
-          format: "template"
-          template: "@/contrib/sarif.tpl"
+          format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
 
