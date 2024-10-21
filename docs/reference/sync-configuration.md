@@ -8,7 +8,7 @@ See [syncs](../concepts/syncs.md) for a conceptual overview.
 
 ## URI patterns
 
-Any URI passed to flagd via the `--uri` (`-f`) flag must follow one of the 4 following patterns with prefixes to ensure that
+Any URI passed to flagd via the `--uri` (`-f`) flag must follow one of the 6 following patterns with prefixes to ensure that
 it is passed to the correct implementation:
 
 | Implied Sync Provider | Prefix                 | Example                               |
@@ -18,6 +18,7 @@ it is passed to the correct implementation:
 | `http`                | `http(s)://`           | `https://my-flags.com/flags`          |
 | `grpc`                | `grpc(s)://`           | `grpc://my-flags-server`              |
 | `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
+| `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
 
 ## Source Configuration
 
@@ -31,10 +32,10 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | Field       | Type               | Note                                                                                                                                                                                                             |
 | ----------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                                            |
-| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc` or `gcs`                                                                                                                                                        |
+| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                                                  |
 | authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.). Cannot be used with `bearerToken` |
 | bearerToken | optional `string`  | (Deprecated) Used for http sync; token gets appended to `Authorization` header with [bearer schema](https://www.rfc-editor.org/rfc/rfc6750#section-2.1). Cannot be used with `authHeader`                        |
-| interval    | optional `uint32`  | Used for http and gcs syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                                                               |
+| interval    | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                                              |
 | tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                                                 |
 | providerID  | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                                                |
 | selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                                          |
@@ -65,6 +66,7 @@ Sync providers:
 - `grpc`(insecure) - grpc-source:8080
 - `grpcs`(secure) - my-flag-source:8080
 - `gcs` - gs://my-bucket/my-flags.json
+- `azblob` - azblob://my-container/my-flags.json
 
 Startup command:
 
@@ -80,7 +82,8 @@ Startup command:
             {"uri":"grpc-source:8080","provider":"grpc"},
             {"uri":"my-flag-source:8080","provider":"grpc", "maxMsgSize": 5242880},
             {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "tls": true, "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"},
-            {"uri":"gs://my-bucket/my-flag.json","provider":"gcs"}]'
+            {"uri":"gs://my-bucket/my-flag.json","provider":"gcs"},
+            {"uri":"azblob://my-container/my-flag.json","provider":"azblob"}]'
 ```
 
 Configuration file,
@@ -111,4 +114,6 @@ sources:
     selector: "source=database,app=weatherapp"
   - uri: gs://my-bucket/my-flag.json
     provider: gcs
+  - uri: azblob://my-container/my-flags.json
+    provider: azblob
 ```
