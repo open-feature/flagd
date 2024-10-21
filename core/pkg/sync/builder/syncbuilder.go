@@ -31,6 +31,7 @@ const (
 	syncProviderKubernetes = "kubernetes"
 	syncProviderHTTP       = "http"
 	syncProviderGcs        = "gcs"
+	syncProviderAzblob     = "azblob"
 )
 
 var (
@@ -40,6 +41,7 @@ var (
 	regGRPCSecure *regexp.Regexp
 	regFile       *regexp.Regexp
 	regGcs        *regexp.Regexp
+	regAzblob     *regexp.Regexp
 )
 
 func init() {
@@ -49,6 +51,7 @@ func init() {
 	regGRPCSecure = regexp.MustCompile("^" + grpc.PrefixSecure)
 	regFile = regexp.MustCompile("^file:")
 	regGcs = regexp.MustCompile("^gs://.+?/")
+	regAzblob = regexp.MustCompile("^azblob://.+?/")
 }
 
 type ISyncBuilder interface {
@@ -111,11 +114,15 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 	case syncProviderGcs:
 		logger.Debug(fmt.Sprintf("using blob sync-provider with gcs driver for: %s", sourceConfig.URI))
 		return sb.newGcs(sourceConfig, logger), nil
+	case syncProviderAzblob:
+		logger.Debug(fmt.Sprintf("using blob sync-provider with azblob driver for: %s", sourceConfig.URI))
+		return sb.newAzblob(sourceConfig, logger)
 
 	default:
-		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with '%s', '%s', '%s', %s', '%s' or '%s'",
+		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with "+
+			"'%s', '%s', '%s', '%s', '%s', '%s', '%s' or '%s'",
 			sourceConfig.Provider, syncProviderFile, syncProviderFsNotify, syncProviderFileInfo,
-			syncProviderKubernetes, syncProviderHTTP, syncProviderKubernetes)
+			syncProviderKubernetes, syncProviderHTTP, syncProviderGrpc, syncProviderGcs, syncProviderAzblob)
 	}
 }
 
@@ -236,6 +243,43 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 		Interval: interval,
 		Cron:     cron.New(),
 	}
+}
+
+func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
+	// Required to generate the azblob service URL
+	storageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
+	if storageAccountName == "" {
+		return nil, fmt.Errorf("environment variable AZURE_STORAGE_ACCOUNT not set or is blank")
+	}
+	if regexp.MustCompile(`\s`).MatchString(storageAccountName) {
+		return nil, fmt.Errorf("environment variable AZURE_STORAGE_ACCOUNT contains whitespace")
+	}
+
+	// Extract bucket uri and object name from the full URI:
+	// azblob://bucket/path/to/object results in azblob://bucket/ as bucketUri and
+	// path/to/object as an object name.
+	bucketURI := regAzblob.FindString(config.URI)
+	objectName := regAzblob.ReplaceAllString(config.URI, "")
+
+	// Defaults to 5 seconds if interval is not set.
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+
+	return &blobSync.Sync{
+		Bucket: bucketURI,
+		Object: objectName,
+
+		BlobURLMux: blob.DefaultURLMux(),
+
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "azblob"),
+		),
+		Interval: interval,
+		Cron:     cron.New(),
+	}, nil
 }
 
 type IK8sClientBuilder interface {
