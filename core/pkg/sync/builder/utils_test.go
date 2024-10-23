@@ -29,7 +29,8 @@ func TestParseSource(t *testing.T) {
 					{"uri":"http://test.com","provider":"http","bearerToken":":)"},
 					{"uri":"host:port","provider":"grpc"},
 					{"uri":"default/my-crd","provider":"kubernetes"},
-					{"uri":"gs://bucket-name/path/to/file","provider":"gcs"}
+					{"uri":"gs://bucket-name/path/to/file","provider":"gcs"},
+					{"uri":"azblob://bucket-name/path/to/file","provider":"azblob"}
 				]`,
 			expectErr: false,
 			out: []sync.SourceConfig{
@@ -53,6 +54,10 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:      "gs://bucket-name/path/to/file",
 					Provider: syncProviderGcs,
+				},
+				{
+					URI:      "azblob://bucket-name/path/to/file",
+					Provider: syncProviderAzblob,
 				},
 			},
 		},
@@ -188,6 +193,7 @@ func TestParseSyncProviderURIs(t *testing.T) {
 				"grpcs://secure-grpc",
 				"core.openfeature.dev/default/my-crd",
 				"gs://bucket-name/path/to/file",
+				"azblob://bucket-name/path/to/file",
 			},
 			expectErr: false,
 			out: []sync.SourceConfig{
@@ -216,6 +222,10 @@ func TestParseSyncProviderURIs(t *testing.T) {
 				{
 					URI:      "gs://bucket-name/path/to/file",
 					Provider: syncProviderGcs,
+				},
+				{
+					URI:      "azblob://bucket-name/path/to/file",
+					Provider: syncProviderAzblob,
 				},
 			},
 		},

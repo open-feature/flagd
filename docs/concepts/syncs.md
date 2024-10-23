@@ -72,7 +72,7 @@ See [sync source](../reference/sync-configuration.md#source-configuration) confi
 
 ### GCS sync
 
-The GCS sync provider fetches flags from a GCS blob and periodically poll the GCS for the flag definition updates.
+The GCS sync provider fetches flags from a GCS blob and periodically polls the GCS for the flag definition updates.
 It uses [application default credentials](https://cloud.google.com/docs/authentication/application-default-credentials) if they
 are [configured](https://cloud.google.com/docs/authentication/provide-credentials-adc) to authorize the calls to GCS.
 
@@ -82,6 +82,22 @@ flagd start --uri gs://my-bucket/my-flags.json
 
 In this example, `gs://my-bucket/my-flags.json` is expected to be a valid GCS URI accessible by the flagd
 (either by being public or together with application default credentials).
+The polling interval can be configured.
+See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
+
+### Azure Blob sync
+
+The Azure Blob sync provider fetches flags from an Azure Blob Storage blob and periodically polls the blob for the flag definition updates.
+It uses [environment variables](https://pkg.go.dev/gocloud.dev/blob/azureblob#hdr-URLs) to set the Storage Account name and to
+authorize the calls to Azure Blob Storage.
+
+```shell
+flagd start --uri azblob://my-container/my-flags.json
+```
+
+In this example, assuming the environment variable AZURE_STORAGE_ACCOUNT is set to `myaccount`, and other options are not set, the service URL will be:
+`https://myaccount.blob.core.windows.net/my-container/my-flags.json`.
+This is expected be a valid service URL accessible by flagd (either by being public or together with environment variable credentials).
 The polling interval can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
