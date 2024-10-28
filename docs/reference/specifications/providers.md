@@ -2,12 +2,12 @@
 description: flagd provider specification
 ---
 
+# flagd Providers
+
 !!! note
 
     This document serves as both a specification and general documentation for flagd providers.
     For language-specific details, see the `README.md` for the provider in question.
-
-# flagd Providers
 
 flagd providers are as essential as the flagd daemon itself, acting as the "bridge" between the OpenFeature SDK and flagd.
 In fact, flagd providers may be the most crucial part of the flagd framework, as they can be used without an active flagd instance.
@@ -73,7 +73,7 @@ The lifecycle is summarized below:
     - if stream connection fails or exceeds the time specified by `deadline`, abort initialization (SDK will emit `PROVIDER_ERROR`), and attempt to [reconnect](#stream-reconnection)
 - while connected:
     - flags are resolved according to resolver mode; either by calling evaluation RPCs, or by evaluating the stored `flag set` rules
-    - for RPC providers, flags resolved with `reason=STATIC` are [cached](#caching)  
+    - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)  
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
     - [reconnect](#stream-reconnection) with backoff
@@ -82,7 +82,7 @@ The lifecycle is summarized below:
         - if reconnect attempt <= `retryGraceAttempts`
             - emit `PROVIDER_STALE`
             - RPC mode resolves `STALE` from cache where possible
-            - in-process mode resolves `STALE` from stored `flag set` rules 
+            - in-process mode resolves `STALE` from stored `flag set` rules
 - on stream reconnection:
     - emit `PROVIDER_READY` and `PROVIDER_CONFIGURATION_CHANGED`
     - in-process providers store the latest `flag set` rules
@@ -126,7 +126,7 @@ stateDiagram-v2
 %% ** In-Process providers only
 ```
 
-```
+```pseudo
 *   RPC providers only
 **  In-Process providers only
 ```
@@ -143,7 +143,7 @@ The provider attempts to reconnect indefinitely, with a maximum interval of `ret
 
 RPC providers use the [evaluation protocol](./protos.md#flagdevaluationv1evaluationproto) to connect to flagd, initiate the [event stream](./protos.md#eventstreamresponse), listen for changes in the flag definitions, and evaluate flags remotely by calling flagd.
 RPC providers are relatively simple to implement since they essentially call a remote flagd instance with relevant parameters, and then flagd responds with the resolved flag value.
-Of course, this means there's latency associated with RPC providers, though this is mitigated somewhat by [caching](#flag-evaluation-caching). 
+Of course, this means there's latency associated with RPC providers, though this is mitigated somewhat by [caching](#flag-evaluation-caching).
 
 ### Flag Evaluation Caching
 
@@ -189,6 +189,7 @@ Client side flagd providers (used in mobile and front-end web applications) have
 These flagd providers only support the RPC resolver mode (so that `flag set` rules, which might contain sensitive information, are never sent to the client).
 Instead, these do bulk evaluations of all flags in the `flag set`, and cache the results until they are invalidated.
 Bulk evaluations take place when:
+
 - the provider is initialized
 - the context is changed
 - a change in the definition notifies the provider it should re-evaluate the flags
@@ -203,7 +204,7 @@ This pattern is consistent with OpenFeature's [static context paradigm](https://
 
     flagd supports the OFREP protocol, meaning client-side OFREP providers can also be used for client-side use-cases.
 
-### Provider Metadata
+### RPC Mode Provider Metadata
 
 The provider metadata includes properties returned from the [provider_ready event payload](./protos.md#eventstreamresponse) data.
 
@@ -245,6 +246,6 @@ In-process flagd providers also inject any properties returned by the [sync-meta
 This allows for static properties defined in flagd to be added to in-process evaluations.
 If only a subset of the sync-metadata response is desired to be injected into the evaluation context, you can use the define a mapping function with the `contextEnricher` option.
 
-### Provider Metadata
+### In-Process Mode Provider Metadata
 
-The provider metadata includes the top-level metadata property in the [flag definition](../flag-definitions.md). 
+The provider metadata includes the top-level metadata property in the [flag definition](../flag-definitions.md).

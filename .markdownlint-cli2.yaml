@@ -13,6 +13,8 @@ config:
   max-one-sentence-per-line: true
   code-block-style: false         # not compatible with mkdocs "details" panes
   no-alt-text: false
+  MD007:
+    indent: 4
 
 ignores:
   - "**/CHANGELOG.md"
