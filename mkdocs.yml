@@ -100,8 +100,7 @@ nav:
       - 'Schema': 'reference/schema.md'
     - 'Monitoring': 'reference/monitoring.md'
     - 'Specifications':
-      - 'RPC Providers': 'reference/specifications/rpc-providers.md'
-      - 'In-Process Providers': 'reference/specifications/in-process-providers.md'
+      - 'Providers': 'reference/specifications/providers.md'
       - 'Protobuf Schemas': 'reference/specifications/protos.md' 
       - 'Custom Operations':
         - 'Fractional Specification': 'reference/specifications/custom-operations/fractional-operation-spec.md'
@@ -124,3 +123,5 @@ plugins:
         'reference/openfeature-operator/installation.md': 'https://github.com/open-feature/open-feature-operator/blob/main/docs/installation.md'
         'reference/openfeature-operator/crds/featureflag.md': 'https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag.md'
         'reference/openfeature-operator/crds/featureflagsource.md': https://github.com/open-feature/open-feature-operator/blob/main/docs/feature_flag_source.md
+        'reference/specifications/rpc-providers.md': 'reference/specifications/providers.md#rpc-providers'
+        'reference/specifications/in-process-providers.md': 'reference/specifications/providers.md#in-process-providers'
