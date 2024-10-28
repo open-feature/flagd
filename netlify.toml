@@ -4,6 +4,7 @@
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml pyproject.toml ./docs/"
   command = """
     pip3 install -q poetry &&
+    pip3 install -q mkdocs &&
     poetry config virtualenvs.in-project true &&
     poetry lock &&
     poetry install -v &&
