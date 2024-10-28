@@ -30,18 +30,6 @@ and one custom resolver for `envoy` proxy resolution. For more details, please r
 ```shell
 ./bin/flagd start -x --uri envoy://localhost:9211/test.service
 ```
->>>>>>> 9045a1d (fix: doc update)
-
-### Custom gRPC Target URI
-
-Apart from default `dns` resolution, Flagd also support different resolution method e.g. `xds`.  Currently, we are supporting all [core resolver](https://grpc.io/docs/guides/custom-name-resolution/)
-and one custom resolver for `envoy` proxy resolution. For more details, please refer the
-[RFC](https://github.com/open-feature/flagd/blob/main/docs/reference/specifications/proposal/rfc-grpc-custom-name-resolver.md) document.
-
-```shell
-./bin/flagd start -x --uri envoy://localhost:9211/test.service
-```
->>>>>>> de5dc6b (fix: doc update)
 
 ## Source Configuration
 
