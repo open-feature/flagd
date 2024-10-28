@@ -223,7 +223,12 @@ jobs:
         run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
         continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
       - name: Bundle license extracts
-        run: tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
+        run: |
+          if [ -d ./${{ steps.license-files.outputs.LICENSE_FOLDER }} ]; then
+            tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
+          else
+            echo "Directory ./${{ steps.license-files.outputs.LICENSE_FOLDER }} does not exist. Skipping tar creation."
+          fi
       # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
