@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.7](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.6...flagd-proxy/v0.6.7) (2024-10-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.1-20240906125204-0a6a901b42e8.1 ([#1420](https://github.com/open-feature/flagd/issues/1420)) ([1f06d5a](https://github.com/open-feature/flagd/commit/1f06d5a1837ea2b753974e96c2a1154d6cb3e582))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.3 ([#1411](https://github.com/open-feature/flagd/issues/1411)) ([a312196](https://github.com/open-feature/flagd/commit/a312196c118705d7a8eb0056fdb98480b887f7c5))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#1425](https://github.com/open-feature/flagd/issues/1425)) ([583ba89](https://github.com/open-feature/flagd/commit/583ba894f2de794b36b6a1cc3bfceb9c46dc9d96))
+* **deps:** update module golang.org/x/net to v0.30.0 ([#1417](https://github.com/open-feature/flagd/issues/1417)) ([4d5b75e](https://github.com/open-feature/flagd/commit/4d5b75eed9097c09760fcc71bfdf473cd19232ec))
+* **deps:** update module google.golang.org/grpc to v1.67.1 ([#1415](https://github.com/open-feature/flagd/issues/1415)) ([85a3a6b](https://github.com/open-feature/flagd/commit/85a3a6b46233fcc7cf71a0292b46c82ac8e66d7b))
+
 ## [0.6.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.5...flagd-proxy/v0.6.6) (2024-09-23)
 
 
