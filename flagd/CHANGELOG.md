@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.11.4](https://github.com/open-feature/flagd/compare/flagd/v0.11.3...flagd/v0.11.4) (2024-10-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.17.0-20240906125204-0a6a901b42e8.1 ([#1409](https://github.com/open-feature/flagd/issues/1409)) ([f07d348](https://github.com/open-feature/flagd/commit/f07d348b42bfa43c3b263ed7ba69c1630a14ec10))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.1-20240906125204-0a6a901b42e8.1 ([#1420](https://github.com/open-feature/flagd/issues/1420)) ([1f06d5a](https://github.com/open-feature/flagd/commit/1f06d5a1837ea2b753974e96c2a1154d6cb3e582))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.3 ([#1411](https://github.com/open-feature/flagd/issues/1411)) ([a312196](https://github.com/open-feature/flagd/commit/a312196c118705d7a8eb0056fdb98480b887f7c5))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#1425](https://github.com/open-feature/flagd/issues/1425)) ([583ba89](https://github.com/open-feature/flagd/commit/583ba894f2de794b36b6a1cc3bfceb9c46dc9d96))
+* **deps:** update module go.uber.org/mock to v0.5.0 ([#1427](https://github.com/open-feature/flagd/issues/1427)) ([0c6fd7f](https://github.com/open-feature/flagd/commit/0c6fd7fa688db992d4e58a202889cbfea07eebf6))
+* **deps:** update module golang.org/x/net to v0.30.0 ([#1417](https://github.com/open-feature/flagd/issues/1417)) ([4d5b75e](https://github.com/open-feature/flagd/commit/4d5b75eed9097c09760fcc71bfdf473cd19232ec))
+* **deps:** update module google.golang.org/grpc to v1.67.1 ([#1415](https://github.com/open-feature/flagd/issues/1415)) ([85a3a6b](https://github.com/open-feature/flagd/commit/85a3a6b46233fcc7cf71a0292b46c82ac8e66d7b))
+
+
+### ✨ New Features
+
+* added custom grpc resolver ([#1424](https://github.com/open-feature/flagd/issues/1424)) ([e5007e2](https://github.com/open-feature/flagd/commit/e5007e2bcb6f049a3c54e09331065bb9abe215be))
+* support azure blob sync ([#1428](https://github.com/open-feature/flagd/issues/1428)) ([5c39cfe](https://github.com/open-feature/flagd/commit/5c39cfe30a3dead4f6db2c6f9ee4c12193cd479b))
+
 ## [0.11.3](https://github.com/open-feature/flagd/compare/flagd/v0.11.2...flagd/v0.11.3) (2024-09-23)
 
 

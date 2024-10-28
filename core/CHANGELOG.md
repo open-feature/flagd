@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.10.4](https://github.com/open-feature/flagd/compare/core/v0.10.3...core/v0.10.4) (2024-10-28)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.1-20240906125204-0a6a901b42e8.1 ([#1420](https://github.com/open-feature/flagd/issues/1420)) ([1f06d5a](https://github.com/open-feature/flagd/commit/1f06d5a1837ea2b753974e96c2a1154d6cb3e582))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#1425](https://github.com/open-feature/flagd/issues/1425)) ([583ba89](https://github.com/open-feature/flagd/commit/583ba894f2de794b36b6a1cc3bfceb9c46dc9d96))
+* **deps:** update module go.uber.org/mock to v0.5.0 ([#1427](https://github.com/open-feature/flagd/issues/1427)) ([0c6fd7f](https://github.com/open-feature/flagd/commit/0c6fd7fa688db992d4e58a202889cbfea07eebf6))
+* **deps:** update module gocloud.dev to v0.40.0 ([#1422](https://github.com/open-feature/flagd/issues/1422)) ([e0e4709](https://github.com/open-feature/flagd/commit/e0e4709243d8301bcbb0aaaa309be66944c1d9ed))
+* **deps:** update module golang.org/x/crypto to v0.28.0 ([#1416](https://github.com/open-feature/flagd/issues/1416)) ([fb272da](https://github.com/open-feature/flagd/commit/fb272da56e0eba12245309899888c18920b9a200))
+* **deps:** update module google.golang.org/grpc to v1.67.1 ([#1415](https://github.com/open-feature/flagd/issues/1415)) ([85a3a6b](https://github.com/open-feature/flagd/commit/85a3a6b46233fcc7cf71a0292b46c82ac8e66d7b))
+
+
+### ✨ New Features
+
+* added custom grpc resolver ([#1424](https://github.com/open-feature/flagd/issues/1424)) ([e5007e2](https://github.com/open-feature/flagd/commit/e5007e2bcb6f049a3c54e09331065bb9abe215be))
+* support azure blob sync ([#1428](https://github.com/open-feature/flagd/issues/1428)) ([5c39cfe](https://github.com/open-feature/flagd/commit/5c39cfe30a3dead4f6db2c6f9ee4c12193cd479b))
+
 ## [0.10.3](https://github.com/open-feature/flagd/compare/core/v0.10.2...core/v0.10.3) (2024-09-23)
 
 
