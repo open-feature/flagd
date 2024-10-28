@@ -1,14 +1,8 @@
 [build]
   publish = "site"
   # https://docs.netlify.com/configure-builds/ignore-builds/
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml pyproject.toml ./docs/"
-  command = """
-    pip3 install -q poetry &&
-    poetry config virtualenvs.in-project true &&
-    poetry lock &&
-    poetry install -v &&
-    mkdocs build
-  """
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml requirements.txt ./docs/"
+  command = "mkdocs build"
 
 [[headers]]
   # Relax cross origin restrictions for schemas, so they can be requested by front-end apps.

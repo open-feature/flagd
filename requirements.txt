@@ -1,0 +1,9 @@
+mkdocs==1.6.1
+mkdocs-material==9.5.42
+pymdown-extensions
+mkdocs-material-extensions
+fontawesome-markdown
+pillow
+cairosvg
+mkdocs-include-markdown-plugin
+mkdocs-redirects
