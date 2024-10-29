@@ -94,7 +94,7 @@ stateDiagram-v2
     [*] --> NOT_READY
     NOT_READY --> READY: initialize
     NOT_READY --> ERROR: initialize
-    READY --> ERROR: disconnected, reconnect attempt >= retry grace attempts
+    READY --> ERROR: disconnected, retry grace attempts == 0
     READY --> STALE: disconnected, reconnect attempt < retry grace attempts
     STALE --> ERROR: reconnect attempt >= retry grace attempts
     ERROR --> READY: reconnected
