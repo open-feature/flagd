@@ -28,25 +28,25 @@ precedence.
 
 Below are the supported configuration parameters (note that not all apply to both resolver modes):
 
-| Option name        | Environment variable name  | Explanation                                                                     | Type & Values            | Default                       | Compatible resolver |
-| ------------------ | -------------------------- | ------------------------------------------------------------------------------- | ------------------------ | ----------------------------- | ------------------- |
+| Option name        | Environment variable name  | Explanation                                                                     | Type & Values                | Default                       | Compatible resolver |
+| ------------------ | -------------------------- | ------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ------------------- |
 | resolver           | FLAGD_RESOLVER             | mode of operation                                                               | String - `rpc`, `in-process` | rpc                           | rpc & in-process    |
-| host               | FLAGD_HOST                 | remote host                                                                     | String                   | localhost                     | rpc & in-process    |
-| port               | FLAGD_PORT                 | remote port                                                                     | int                      | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
-| targetUri          | FLAGD_GRPC_TARGET          | alternative to host/port, supporting custom name resolution                     | string                   | null                          | rpc & in-process    |
-| tls                | FLAGD_TLS                  | connection encryption                                                           | boolean                  | false                         | rpc & in-process    |
-| socketPath         | FLAGD_SOCKET_PATH          | alternative to host port, unix socket                                           | String                   | null                          | rpc & in-process    |
-| certPath           | FLAGD_SERVER_CERT_PATH     | tls cert path                                                                   | String                   | null                          | rpc & in-process    |
-| deadline           | FLAGD_DEADLINE_MS          | deadline for unary calls, and timeout for initialization                        | int                      | 500                           | rpc & in-process    |
-| streamDeadlineMs   | FLAGD_STREAM_DEADLINE_MS   | deadline for streaming calls, useful as an application-layer keepalive          | int                      | 600000                        | rpc & in-process    |
-| retryBackoffMs     | FLAGD_RETRY_BACKOFF_MS     | initial backoff for stream retry                                                | int                      | 1000                          | rpc & in-process    |
-| retryBackoffMaxMs  | FLAGD_RETRY_BACKOFF_MAX_MS | maximum backoff for stream retry                                                | int                      | 120000                        | rpc & in-process    |
-| retryGraceAttempts | FLAGD_RETRY_GRACE_ATTEMPTS | amount of stream retry attempts before provider moves from STALE to ERROR state | int                      | 5                             | rpc & in-process    |
-| keepAliveTime      | FLAGD_KEEP_ALIVE_TIME_MS   | http 2 keepalive                                                                | long                     | 0                             | rpc & in-process    |
+| host               | FLAGD_HOST                 | remote host                                                                     | String                       | localhost                     | rpc & in-process    |
+| port               | FLAGD_PORT                 | remote port                                                                     | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
+| targetUri          | FLAGD_GRPC_TARGET          | alternative to host/port, supporting custom name resolution                     | string                       | null                          | rpc & in-process    |
+| tls                | FLAGD_TLS                  | connection encryption                                                           | boolean                      | false                         | rpc & in-process    |
+| socketPath         | FLAGD_SOCKET_PATH          | alternative to host port, unix socket                                           | String                       | null                          | rpc & in-process    |
+| certPath           | FLAGD_SERVER_CERT_PATH     | tls cert path                                                                   | String                       | null                          | rpc & in-process    |
+| deadline           | FLAGD_DEADLINE_MS          | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
+| streamDeadlineMs   | FLAGD_STREAM_DEADLINE_MS   | deadline for streaming calls, useful as an application-layer keepalive          | int                          | 600000                        | rpc & in-process    |
+| retryBackoffMs     | FLAGD_RETRY_BACKOFF_MS     | initial backoff for stream retry                                                | int                          | 1000                          | rpc & in-process    |
+| retryBackoffMaxMs  | FLAGD_RETRY_BACKOFF_MAX_MS | maximum backoff for stream retry                                                | int                          | 120000                        | rpc & in-process    |
+| retryGraceAttempts | FLAGD_RETRY_GRACE_ATTEMPTS | amount of stream retry attempts before provider moves from STALE to ERROR state | int                          | 5                             | rpc & in-process    |
+| keepAliveTime      | FLAGD_KEEP_ALIVE_TIME_MS   | http 2 keepalive                                                                | long                         | 0                             | rpc & in-process    |
 | cache              | FLAGD_CACHE                | enable cache of static flags                                                    | String - `lru`, `disabled`   | lru                           | rpc                 |
-| maxCacheSize       | FLAGD_MAX_CACHE_SIZE       | max size of static flag cache                                                   | int                      | 1000                          | rpc                 |
-| selector           | FLAGD_SOURCE_SELECTOR      | selects a single sync source to retrieve flags from only that source            | string                   | null                          | in-process          |
-| contextEnricher    | -                          | sync-metadata to evaluation context mapping function                            | string                   | identity function             | rpc & in-process    |
+| maxCacheSize       | FLAGD_MAX_CACHE_SIZE       | max size of static flag cache                                                   | int                          | 1000                          | rpc                 |
+| selector           | FLAGD_SOURCE_SELECTOR      | selects a single sync source to retrieve flags from only that source            | string                       | null                          | in-process          |
+| contextEnricher    | -                          | sync-metadata to evaluation context mapping function                            | function                     | identity function             | in-process          |
 
 ### Custom Name Resolution
 
@@ -136,9 +136,9 @@ stateDiagram-v2
 ### Stream Reconnection
 
 When either stream (sync or event) disconnects, whether due to the associated deadline being exceeded, network error or any other cause, the provider attempts to re-establish the stream immediately, and then retries with an exponential back-off.
-When disconnected, if the number of reconnect attempts is less than `retryGraceAttempts`, the provider emits `STALE`.
+When disconnected, if the number of reconnect attempts is less than `retryGraceAttempts`, the provider emits `STALE` when it disconnects.
 While the provider is in state `STALE` the provider resolves values from its cache or stored flag set rules, depending on its resolver mode.
-When the number of reconnect attempts is equal to or greater than `retryGraceAttempts`, the provider emits `ERROR`.
+When the number of reconnects first exceeds `retryGraceAttempts`, the provider emits `ERROR`.
 The provider attempts to reconnect indefinitely, with a maximum interval of `retryBackoffMaxMs`.
 
 ## RPC Evaluation
