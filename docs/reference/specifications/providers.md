@@ -244,7 +244,7 @@ Conflicting properties in the context will be overwritten by the values below.
 
 In-process flagd providers also inject any properties returned by the [sync-metadata RPC response](./protos.md#getmetadataresponse) into the context.
 This allows for static properties defined in flagd to be added to in-process evaluations.
-If only a subset of the sync-metadata response is desired to be injected into the evaluation context, you can use the define a mapping function with the `contextEnricher` option.
+If only a subset of the sync-metadata response is desired to be injected into the evaluation context, you can define a mapping function with the `contextEnricher` option.
 
 ### In-Process Mode Provider Metadata
 
