@@ -37,7 +37,7 @@ Below are the supported configuration parameters (note that not all apply to bot
 | tls                | FLAGD_TLS                  | connection encryption                                                           | boolean                      | false                         | rpc & in-process    |
 | socketPath         | FLAGD_SOCKET_PATH          | alternative to host port, unix socket                                           | String                       | null                          | rpc & in-process    |
 | certPath           | FLAGD_SERVER_CERT_PATH     | tls cert path                                                                   | String                       | null                          | rpc & in-process    |
-| deadline           | FLAGD_DEADLINE_MS          | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
+| deadlineMs         | FLAGD_DEADLINE_MS          | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
 | streamDeadlineMs   | FLAGD_STREAM_DEADLINE_MS   | deadline for streaming calls, useful as an application-layer keepalive          | int                          | 600000                        | rpc & in-process    |
 | retryBackoffMs     | FLAGD_RETRY_BACKOFF_MS     | initial backoff for stream retry                                                | int                          | 1000                          | rpc & in-process    |
 | retryBackoffMaxMs  | FLAGD_RETRY_BACKOFF_MAX_MS | maximum backoff for stream retry                                                | int                          | 120000                        | rpc & in-process    |
@@ -68,7 +68,7 @@ Understanding the flagd provider lifecycle is helpful in configuring and optimiz
 
 The lifecycle is summarized below:
 
-- on initialization, attempt to connect the appropriate stream according to the resolver type (sync stream for in-process vs event stream for RPC) and in the case of in-process, fetch the sync-metadata
+- on initialization, attempt to connect the appropriate stream according to the resolver type ([sync](https://buf.build/open-feature/flagd/docs/main:flagd.sync.v1#flagd.sync.v1.FlagSyncService.SyncFlags) stream for in-process vs [event](https://buf.build/open-feature/flagd/docs/main:flagd.evaluation.v1#flagd.evaluation.v1.Service.EventStream) stream for RPC) and in the case of in-process, fetch the [sync-metadata](https://buf.build/open-feature/flagd/docs/main:flagd.sync.v1#flagd.sync.v1.FlagSyncService.GetMetadata)
     - if stream connection succeeds within the time specified by `deadline`, return from initialization (SDK will emit `PROVIDER_READY`) and for in-process providers, store the `flag set` rules
     - if stream connection fails or exceeds the time specified by `deadline`, abort initialization (SDK will emit `PROVIDER_ERROR`), and attempt to [reconnect](#stream-reconnection)
 - while connected:
