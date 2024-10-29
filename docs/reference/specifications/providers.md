@@ -46,7 +46,7 @@ Below are the supported configuration parameters (note that not all apply to bot
 | cache              | FLAGD_CACHE                | enable cache of static flags                                                    | String - `lru`, `disabled`   | lru                           | rpc                 |
 | maxCacheSize       | FLAGD_MAX_CACHE_SIZE       | max size of static flag cache                                                   | int                      | 1000                          | rpc                 |
 | selector           | FLAGD_SOURCE_SELECTOR      | selects a single sync source to retrieve flags from only that source            | string                   | null                          | in-process          |
-| contextEnricher    | -                          | sync-metadata to evaluation context mapping function                            | string                   | identity function             | in-process          |
+| contextEnricher    | -                          | sync-metadata to evaluation context mapping function                            | string                   | identity function             | rpc & in-process    |
 
 ### Custom Name Resolution
 
