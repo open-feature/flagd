@@ -210,7 +210,7 @@ This pattern is consistent with OpenFeature's [static context paradigm](https://
 
 The provider metadata includes properties returned from the [provider_ready event payload](./protos.md#eventstreamresponse) data.
 
-## In-Process Providers
+## In-Process Evaluation
 
 In-process providers use the [sync schema](./protos.md#syncflagsresponse) to connect to flagd, initiate the [sync stream](./protos.md#eventstreamresponse), and download the `flag-set` rules to evaluate them locally.
 In-process providers are relatively complex (compared to RPC providers) to implement since they essentially must implement more of flagd's logic to evaluate flags locally.
