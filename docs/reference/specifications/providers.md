@@ -79,6 +79,8 @@ The lifecycle is summarized below:
     - [reconnect](#stream-reconnection) with exponential backoff
         - if reconnect attempt > `retryGraceAttempts`
             - emit `PROVIDER_ERROR`
+            - RPC mode resolves `STALE` from cache where possible
+            - in-process mode resolves `STALE` from stored `flag set` rules
         - if reconnect attempt <= `retryGraceAttempts`
             - emit `PROVIDER_STALE`
             - RPC mode resolves `STALE` from cache where possible
