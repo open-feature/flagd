@@ -141,7 +141,7 @@ While the provider is in state `STALE` the provider resolves values from its cac
 When the number of reconnect attempts is equal to or greater than `retryGraceAttempts`, the provider emits `ERROR`.
 The provider attempts to reconnect indefinitely, with a maximum interval of `retryBackoffMaxMs`.
 
-## RPC Providers
+## RPC Evaluation
 
 RPC providers use the [evaluation protocol](./protos.md#flagdevaluationv1evaluationproto) to connect to flagd, initiate the [event stream](./protos.md#eventstreamresponse), listen for changes in the flag definitions, and evaluate flags remotely by calling flagd.
 RPC providers are relatively simple to implement since they essentially call a remote flagd instance with relevant parameters, and then flagd responds with the resolved flag value.
