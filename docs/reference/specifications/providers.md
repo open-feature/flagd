@@ -76,7 +76,7 @@ The lifecycle is summarized below:
     - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)  
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
-    - [reconnect](#stream-reconnection) with backoff
+    - [reconnect](#stream-reconnection) with exponential backoff
         - if reconnect attempt > `retryGraceAttempts`
             - emit `PROVIDER_ERROR`
         - if reconnect attempt <= `retryGraceAttempts`
