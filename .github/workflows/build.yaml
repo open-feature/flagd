@@ -95,12 +95,15 @@ jobs:
           tags: flagd-local:test
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           input: ${{ github.workspace }}/flagd-local.tar
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
+        env:
+          # use an alternative trivvy db to avoid rate limits
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2,ghcr.io/aquasecurity/trivy-db:2
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@e8893c57a1f3a2b659b6b55564fdfdbbd2982911 # v3
