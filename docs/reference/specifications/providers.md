@@ -210,7 +210,7 @@ Conflicting properties in the context will be overwritten by the values below.
 ### Changed Flags
 
 When a new flag definition is parsed, the stored flags are compared with the newly parsed flags.
-Flags which have been removed, added, or mutated (including their default variant, targeting rules, or metadata) have their keys added to the `flags changed` field of the associated `PROVIDER_CONFIGURATION_CHANGED` event.`
+Flags which have been removed, added, or mutated (considering, at a minimum, their `default variant`, `targeting rules`, and `metadata`) have their keys added to the `flags changed` field of the associated `PROVIDER_CONFIGURATION_CHANGED` event.`
 
 ### Sync-Metadata Properties in the Evaluation Context
 
@@ -228,7 +228,7 @@ The provider metadata includes the top-level metadata properties in the [flag de
 
 The in-process resolver mode can also use a file based [flag definition](../flag-definitions.md).
 This does not connect to a flagd instance or gRPC sync implementation, and instead polls a flag definition from a file.
-If the file has been modified (based on the file metadata) since the last poll, a change event with the [calculated changed flags](#changed-flags) field is emitted.  
+If the file has been modified since the last poll (based on the file metadata) and [flags have changed](#changed-flags), a `PROVIDER_CONFIGURATION_CHANGED` event with the appropriate `changed flags` field is emitted.  
 
 !!! note
 
