@@ -61,7 +61,7 @@ flagd exposes the following metrics:
 flagd creates the following spans as part of a trace:
 
 - `flagEvaluationService(resolveX)` - SpanKind server
-  - `jsonEvaluator(resolveX)` - SpanKind internal
+    - `jsonEvaluator(resolveX)` - SpanKind internal
 - `jsonEvaluator(setState)` - SpanKind internal
 
 ## Export to OTEL collector
