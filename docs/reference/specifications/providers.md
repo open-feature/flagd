@@ -13,53 +13,15 @@ flagd providers are as essential as the flagd daemon itself, acting as the "brid
 In fact, flagd providers may be the most crucial part of the flagd framework, as they can be used without an active flagd instance.
 This document outlines their behavior and configuration.
 
+## Naming
+
+Consistent with our [naming conventions](../naming.md), the flagd provider name (no matter what language or runtime is in use) is `flagd`.
+
 ## In-Process vs RPC Evaluation
 
 There are two modes of operation (`resolvers`) for flagd providers; _in-process_ and _RPC_.
 Both modes have their advantages and disadvantages.
 For more information on the architectural implications of these different modes, see the [RPC vs In-Process Evaluation](/architecture/#rpc-vs-in-process-evaluation) page.
-
-## Configuration
-
-### Configuration options
-
-Most options can be defined in the constructor, or as environment variables, with constructor options having the highest
-precedence.
-
-Below are the supported configuration parameters (note that not all apply to both resolver modes):
-
-| Option name        | Environment variable name  | Explanation                                                                     | Type & Values                | Default                       | Compatible resolver |
-| ------------------ | -------------------------- | ------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ------------------- |
-| resolver           | FLAGD_RESOLVER             | mode of operation                                                               | String - `rpc`, `in-process` | rpc                           | rpc & in-process    |
-| host               | FLAGD_HOST                 | remote host                                                                     | String                       | localhost                     | rpc & in-process    |
-| port               | FLAGD_PORT                 | remote port                                                                     | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
-| targetUri          | FLAGD_TARGET_URI           | alternative to host/port, supporting custom name resolution                     | string                       | null                          | rpc & in-process    |
-| tls                | FLAGD_TLS                  | connection encryption                                                           | boolean                      | false                         | rpc & in-process    |
-| socketPath         | FLAGD_SOCKET_PATH          | alternative to host port, unix socket                                           | String                       | null                          | rpc & in-process    |
-| certPath           | FLAGD_SERVER_CERT_PATH     | tls cert path                                                                   | String                       | null                          | rpc & in-process    |
-| deadlineMs         | FLAGD_DEADLINE_MS          | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
-| streamDeadlineMs   | FLAGD_STREAM_DEADLINE_MS   | deadline for streaming calls, useful as an application-layer keepalive          | int                          | 600000                        | rpc & in-process    |
-| retryBackoffMs     | FLAGD_RETRY_BACKOFF_MS     | initial backoff for stream retry                                                | int                          | 1000                          | rpc & in-process    |
-| retryBackoffMaxMs  | FLAGD_RETRY_BACKOFF_MAX_MS | maximum backoff for stream retry                                                | int                          | 120000                        | rpc & in-process    |
-| retryGraceAttempts | FLAGD_RETRY_GRACE_ATTEMPTS | amount of stream retry attempts before provider moves from STALE to ERROR state | int                          | 5                             | rpc & in-process    |
-| keepAliveTime      | FLAGD_KEEP_ALIVE_TIME_MS   | http 2 keepalive                                                                | long                         | 0                             | rpc & in-process    |
-| cache              | FLAGD_CACHE                | enable cache of static flags                                                    | String - `lru`, `disabled`   | lru                           | rpc                 |
-| maxCacheSize       | FLAGD_MAX_CACHE_SIZE       | max size of static flag cache                                                   | int                          | 1000                          | rpc                 |
-| selector           | FLAGD_SOURCE_SELECTOR      | selects a single sync source to retrieve flags from only that source            | string                       | null                          | in-process          |
-| contextEnricher    | -                          | sync-metadata to evaluation context mapping function                            | function                     | identity function             | in-process          |
-
-### Custom Name Resolution
-
-Some implementations support [gRPC custom name resolution](https://grpc.io/docs/guides/custom-name-resolution/), and abstractions to introduce additional resolvers.
-Specifically, a custom resolver for `envoy` has been implemented in some providers, which overrides the authority header with the authority specified in the envoy URL scheme.
-Below is an example of a custom target string which will use envoy sidecar proxy for name resolution:
-
-```text
-envoy://localhost:9211/flagd-sync.service
-```
-
-The custom name resolver provider in this case will use the endpoint name i.e. `flagd-sync.service` as [authority](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/nameresolve/ExampleNameResolver.java#L55-L61)
-and connect to `localhost:9211`.
 
 ## flagd Provider Lifecycle
 
@@ -73,16 +35,17 @@ The lifecycle is summarized below:
     - if stream connection fails or exceeds the time specified by `deadline`, abort initialization (SDK will emit `PROVIDER_ERROR`), and attempt to [reconnect](#stream-reconnection)
 - while connected:
     - flags are resolved according to resolver mode; either by calling evaluation RPCs, or by evaluating the stored `flag set` rules
-    - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)  
+    - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
     - [reconnect](#stream-reconnection) with exponential backoff
-        - if reconnect attempt > `retryGraceAttempts`
-            - emit `PROVIDER_ERROR`
-            - RPC mode resolves `STALE` from cache where possible
-            - in-process mode resolves `STALE` from stored `flag set` rules
         - if reconnect attempt <= `retryGraceAttempts`
             - emit `PROVIDER_STALE`
+            - RPC mode resolves `STALE` from cache where possible
+            - in-process mode resolves `STALE` from stored `flag set` rules
+        - if reconnect attempt > `retryGraceAttempts`
+            - emit `PROVIDER_ERROR`
+            - RPC mode evaluation cache is purged
             - RPC mode resolves `STALE` from cache where possible
             - in-process mode resolves `STALE` from stored `flag set` rules
 - on stream reconnection:
@@ -120,7 +83,7 @@ stateDiagram-v2
 
     note right of ERROR
         stream disconnected, attempting to reconnect,
-        evaluation cache invalidated*,
+        evaluation cache purged*,
         ERROR emitted
     end note
 
@@ -206,7 +169,9 @@ This pattern is consistent with OpenFeature's [static context paradigm](https://
 
     flagd supports the OFREP protocol, meaning client-side OFREP providers can also be used for client-side use-cases.
 
-### RPC Mode Provider Metadata
+<!-- markdownlint-disable MD024 -->
+### Provider Metadata
+<!-- markdownlint-enable MD024 -->
 
 The provider metadata includes properties returned from the [provider_ready event payload](./protos.md#eventstreamresponse) data.
 
@@ -248,6 +213,61 @@ In-process flagd providers also inject any properties returned by the [sync-meta
 This allows for static properties defined in flagd to be added to in-process evaluations.
 If only a subset of the sync-metadata response is desired to be injected into the evaluation context, you can define a mapping function with the `contextEnricher` option.
 
-### In-Process Mode Provider Metadata
+<!-- markdownlint-disable MD024 -->
+### Provider Metadata
+<!-- markdownlint-enable MD024 -->
 
-The provider metadata includes the top-level metadata property in the [flag definition](../flag-definitions.md).
+The provider metadata includes the top-level metadata properties in the [flag definition](../flag-definitions.md).
+
+### Offline (File) Mode
+
+The in-process resolver mode can also use a file based [flag definition](../flag-definitions.md).
+This does not connect to a flagd instance or gRPC sync implementation, and instead polls a flag definition from a file.
+
+!!! note
+
+    This mode does not support [context enrichment via sync-metadata](#sync-metadata-properties-in-the-evaluation-context).
+
+## Configuration
+
+### Configuration options
+
+Most options can be defined in the constructor, or as environment variables, with constructor options having the highest
+precedence.
+
+Below are the supported configuration parameters (note that not all apply to both resolver modes):
+
+| Option name           | Environment variable name      | Explanation                                                                     | Type & Values                | Default                       | Compatible resolver |
+| --------------------- | ------------------------------ | ------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ------------------- |
+| resolver              | FLAGD_RESOLVER                 | mode of operation                                                               | String - `rpc`, `in-process` | rpc                           | rpc & in-process    |
+| host                  | FLAGD_HOST                     | remote host                                                                     | String                       | localhost                     | rpc & in-process    |
+| port                  | FLAGD_PORT                     | remote port                                                                     | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
+| targetUri             | FLAGD_TARGET_URI               | alternative to host/port, supporting custom name resolution                     | string                       | null                          | rpc & in-process    |
+| tls                   | FLAGD_TLS                      | connection encryption                                                           | boolean                      | false                         | rpc & in-process    |
+| socketPath            | FLAGD_SOCKET_PATH              | alternative to host port, unix socket                                           | String                       | null                          | rpc & in-process    |
+| certPath              | FLAGD_SERVER_CERT_PATH         | tls cert path                                                                   | String                       | null                          | rpc & in-process    |
+| deadlineMs            | FLAGD_DEADLINE_MS              | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
+| streamDeadlineMs      | FLAGD_STREAM_DEADLINE_MS       | deadline for streaming calls, useful as an application-layer keepalive          | int                          | 600000                        | rpc & in-process    |
+| retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | initial backoff for stream retry                                                | int                          | 1000                          | rpc & in-process    |
+| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | maximum backoff for stream retry                                                | int                          | 120000                        | rpc & in-process    |
+| retryGraceAttempts    | FLAGD_RETRY_GRACE_ATTEMPTS     | amount of stream retry attempts before provider moves from STALE to ERROR state | int                          | 5                             | rpc & in-process    |
+| keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | http 2 keepalive                                                                | long                         | 0                             | rpc & in-process    |
+| cache                 | FLAGD_CACHE                    | enable cache of static flags                                                    | String - `lru`, `disabled`   | lru                           | rpc                 |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | max size of static flag cache                                                   | int                          | 1000                          | rpc                 |
+| selector              | FLAGD_SOURCE_SELECTOR          | selects a single sync source to retrieve flags from only that source            | string                       | null                          | in-process          |
+| offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri             | string                       | null                          | in-process          |
+| offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                                 | int                          | 5000                          | in-process          |
+| contextEnricher       | -                              | sync-metadata to evaluation context mapping function                            | function                     | identity function             | in-process          |
+
+### Custom Name Resolution
+
+Some implementations support [gRPC custom name resolution](https://grpc.io/docs/guides/custom-name-resolution/), and abstractions to introduce additional resolvers.
+Specifically, a custom resolver for `envoy` has been implemented in some providers, which overrides the authority header with the authority specified in the envoy URL scheme.
+Below is an example of a custom target string which will use envoy sidecar proxy for name resolution:
+
+```text
+envoy://localhost:9211/flagd-sync.service
+```
+
+The custom name resolver provider in this case will use the endpoint name i.e. `flagd-sync.service` as [authority](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/nameresolve/ExampleNameResolver.java#L55-L61)
+and connect to `localhost:9211`.
