@@ -113,10 +113,10 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:                config.SyncServicePort,
-		Sources:             sources,
-		Store:               s,
+		Logger:        logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:          config.SyncServicePort,
+		Sources:       sources,
+		Store:         s,
 		ContextValues: config.ContextValues,
 	})
 	if err != nil {
