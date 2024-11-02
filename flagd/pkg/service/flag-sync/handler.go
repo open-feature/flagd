@@ -12,8 +12,9 @@ import (
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	mux *Multiplexer
-	log *logger.Logger
+	mux           *Multiplexer
+	log           *logger.Logger
+	contextValues map[string]any
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
@@ -60,7 +61,8 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest
 	*syncv1.GetMetadataResponse, error,
 ) {
 	metadata, err := structpb.NewStruct(map[string]interface{}{
-		"sources": s.mux.SourcesAsMetadata(),
+		"sources":        s.mux.SourcesAsMetadata(),
+		"context_values": s.contextValues,
 	})
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))

@@ -20,14 +20,16 @@ const (
 )
 
 type handler struct {
-	Logger    *logger.Logger
-	evaluator evaluator.IEvaluator
+	Logger        *logger.Logger
+	evaluator     evaluator.IEvaluator
+	contextValues map[string]any
 }
 
-func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator) http.Handler {
+func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any) http.Handler {
 	h := handler{
 		logger,
 		evaluator,
+		contextValues,
 	}
 
 	router := mux.NewRouter()
@@ -56,7 +58,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	context := flagdContext(h.Logger, requestID, request)
+	context := flagdContext(h.Logger, requestID, request, h.contextValues)
 	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
@@ -76,7 +78,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	context := flagdContext(h.Logger, requestID, request)
+	context := flagdContext(h.Logger, requestID, request, h.contextValues)
 	evaluations, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
@@ -117,12 +119,16 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	return request, nil
 }
 
-func flagdContext(log *logger.Logger, requestID string, request ofrep.Request) map[string]any {
+func flagdContext(log *logger.Logger, requestID string, request ofrep.Request, contextValues map[string]any) map[string]any {
 	context := map[string]any{}
 	if res, ok := request.Context.(map[string]any); ok {
 		context = res
 	} else {
 		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
+	}
+
+	for k, v := range contextValues {
+		context[k] = v
 	}
 
 	return context

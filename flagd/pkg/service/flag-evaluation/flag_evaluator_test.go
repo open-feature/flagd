@@ -128,6 +128,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
 			if err != nil && !errors.Is(err, tt.wantErr) {
@@ -235,6 +236,7 @@ func TestFlag_Evaluation_ResolveBoolean(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -290,6 +292,7 @@ func BenchmarkFlag_Evaluation_ResolveBoolean(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -388,6 +391,7 @@ func TestFlag_Evaluation_ResolveString(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -443,6 +447,7 @@ func BenchmarkFlag_Evaluation_ResolveString(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -540,6 +545,7 @@ func TestFlag_Evaluation_ResolveFloat(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -595,6 +601,7 @@ func BenchmarkFlag_Evaluation_ResolveFloat(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -692,6 +699,7 @@ func TestFlag_Evaluation_ResolveInt(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -747,6 +755,7 @@ func BenchmarkFlag_Evaluation_ResolveInt(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -847,6 +856,7 @@ func TestFlag_Evaluation_ResolveObject(t *testing.T) {
 				eval,
 				&eventingConfiguration{},
 				metrics,
+				nil,
 			)
 
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -910,6 +920,7 @@ func BenchmarkFlag_Evaluation_ResolveObject(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 		)
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)

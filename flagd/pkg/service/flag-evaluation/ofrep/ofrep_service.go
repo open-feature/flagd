@@ -29,12 +29,12 @@ type Service struct {
 	server *http.Server
 }
 
-func NewOfrepService(evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration) (*Service, error) {
+func NewOfrepService(evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any) (*Service, error) {
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins: origins,
 		AllowedMethods: []string{http.MethodPost},
 	})
-	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator))
+	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator, contextValues))
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),

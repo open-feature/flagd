@@ -27,7 +27,7 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 		Port:   uint16(port),
 	}
 
-	service, err := NewOfrepService(eval, []string{"*"}, cfg)
+	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil)
 	if err != nil {
 		t.Fatalf("error creating the ofrep service: %v", err)
 	}

@@ -154,6 +154,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.eval,
 		s.eventingConfiguration,
 		s.metrics,
+		svcConf.ContextValues,
 	)
 
 	marshalOpts := WithJSON(
@@ -170,6 +171,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.eval,
 		s.eventingConfiguration,
 		s.metrics,
+		svcConf.ContextValues,
 	)
 
 	_, newHandler := evaluationV1.NewServiceHandler(newFes, append(svcConf.Options, marshalOpts)...)
