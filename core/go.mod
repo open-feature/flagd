@@ -1,8 +1,8 @@
 module github.com/open-feature/flagd/core
 
-go 1.22.0
+go 1.22.7
 
-toolchain go1.22.7
+toolchain go1.22.9
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20240906125204-0a6a901b42e8.1
@@ -36,7 +36,7 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.21.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.31.2
 	k8s.io/client-go v0.31.2
