@@ -1,8 +1,8 @@
 module github.com/open-feature/flagd/flagd-proxy
 
-go 1.22.0
+go 1.22.7
 
-toolchain go1.22.7
+toolchain go1.22.9
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20240906125204-0a6a901b42e8.1
@@ -19,7 +19,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.30.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 )
 
 require (
