@@ -289,3 +289,40 @@ func TestWriteJSONResponse(t *testing.T) {
 		})
 	}
 }
+
+func Test_flagContext(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	type args struct {
+		requestID     string
+		req           ofrep.Request
+		contextValues map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "merge contexts",
+			args: args{
+				requestID: "",
+				req: ofrep.Request{
+					Context: map[string]any{"k1": "v1", "k2": "v2"},
+				},
+				contextValues: map[string]any{"k2": "v22", "k3": "v3"},
+			},
+			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := flagdContext(log, tt.args.requestID, tt.args.req, tt.args.contextValues)
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\ngot:  %+v\nwant: %+v", got, tt.want)
+			}
+		})
+	}
+}
