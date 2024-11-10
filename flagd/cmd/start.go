@@ -79,7 +79,7 @@ func init() {
 	flags.StringP(otelCAPathFlagName, "A", "", "tls certificate authority path to use with OpenTelemetry collector")
 	flags.DurationP(otelReloadIntervalFlagName, "I", time.Hour, "how long between reloading the otel tls certificate "+
 		"from disk")
-	flags.StringToStringP(contextValueFlagName, "kv", map[string]string{}, "add arbitrary key value pairs "+
+	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
 		"to the flag value evaluation context")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
