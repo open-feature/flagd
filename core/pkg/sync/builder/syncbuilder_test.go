@@ -242,6 +242,10 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 						URI:      "azblob://bucket/path/to/file",
 						Provider: syncProviderAzblob,
 					},
+					{
+						URI:      "s3://bucket/path/to/file",
+						Provider: syncProviderS3,
+					},
 				},
 			},
 			wantSyncs: []sync.ISync{
@@ -250,6 +254,7 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 				&http.Sync{},
 				&file.Sync{},
 				&kubernetes.Sync{},
+				&blob.Sync{},
 				&blob.Sync{},
 				&blob.Sync{},
 			},
@@ -415,6 +420,60 @@ func Test_AzblobConfig(t *testing.T) {
 			require.Equal(t, tt.expectedBucket, azblobSync.Bucket)
 			require.Equal(t, tt.expectedObject, azblobSync.Object)
 			require.Equal(t, int(tt.expectedInterval), int(azblobSync.Interval))
+		})
+	}
+}
+
+func Test_S3Config(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+	defaultInterval := uint32(5)
+	tests := []struct {
+		name             string
+		uri              string
+		interval         uint32
+		expectedBucket   string
+		expectedObject   string
+		expectedInterval uint32
+	}{
+		{
+			name:             "simple path",
+			uri:              "s3://bucket/path/to/object",
+			interval:         10,
+			expectedBucket:   "s3://bucket/",
+			expectedObject:   "path/to/object",
+			expectedInterval: 10,
+		},
+		{
+			name:             "default interval",
+			uri:              "s3://bucket/path/to/object",
+			expectedBucket:   "s3://bucket/",
+			expectedObject:   "path/to/object",
+			expectedInterval: defaultInterval,
+		},
+		{
+			name:             "no object set", // Blob syncer will return error when fetching
+			uri:              "s3://bucket/",
+			expectedBucket:   "s3://bucket/",
+			expectedObject:   "",
+			expectedInterval: defaultInterval,
+		},
+		{
+			name:             "malformed uri", // Blob syncer will return error when opening bucket
+			uri:              "malformed",
+			expectedBucket:   "",
+			expectedObject:   "malformed",
+			expectedInterval: defaultInterval,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s3Sync := NewSyncBuilder().newS3(sync.SourceConfig{
+				URI:      tt.uri,
+				Interval: tt.interval,
+			}, lg)
+			require.Equal(t, tt.expectedBucket, s3Sync.Bucket)
+			require.Equal(t, tt.expectedObject, s3Sync.Object)
+			require.Equal(t, int(tt.expectedInterval), int(s3Sync.Interval))
 		})
 	}
 }
