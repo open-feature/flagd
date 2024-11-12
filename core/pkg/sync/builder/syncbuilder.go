@@ -32,6 +32,7 @@ const (
 	syncProviderHTTP       = "http"
 	syncProviderGcs        = "gcs"
 	syncProviderAzblob     = "azblob"
+	syncProviderS3         = "s3"
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 	regFile               *regexp.Regexp
 	regGcs                *regexp.Regexp
 	regAzblob             *regexp.Regexp
+	regS3                 *regexp.Regexp
 )
 
 func init() {
@@ -54,6 +56,7 @@ func init() {
 	regFile = regexp.MustCompile("^file:")
 	regGcs = regexp.MustCompile("^gs://.+?/")
 	regAzblob = regexp.MustCompile("^azblob://.+?/")
+	regS3 = regexp.MustCompile("^s3://.+?/")
 }
 
 type ISyncBuilder interface {
@@ -119,12 +122,15 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 	case syncProviderAzblob:
 		logger.Debug(fmt.Sprintf("using blob sync-provider with azblob driver for: %s", sourceConfig.URI))
 		return sb.newAzblob(sourceConfig, logger)
+	case syncProviderS3:
+		logger.Debug(fmt.Sprintf("using blob sync-provider with s3 driver for: %s", sourceConfig.URI))
+		return sb.newS3(sourceConfig, logger), nil
 
 	default:
 		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with "+
-			"'%s', '%s', '%s', '%s', '%s', '%s', '%s' or '%s'",
+			"'%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' or '%s'",
 			sourceConfig.Provider, syncProviderFile, syncProviderFsNotify, syncProviderFileInfo,
-			syncProviderKubernetes, syncProviderHTTP, syncProviderGrpc, syncProviderGcs, syncProviderAzblob)
+			syncProviderKubernetes, syncProviderHTTP, syncProviderGrpc, syncProviderGcs, syncProviderAzblob, syncProviderS3)
 	}
 }
 
@@ -282,6 +288,34 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 		Interval: interval,
 		Cron:     cron.New(),
 	}, nil
+}
+
+func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+	// Extract bucket uri and object name from the full URI:
+	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
+	// path/to/object as an object name.
+	bucketURI := regS3.FindString(config.URI)
+	objectName := regS3.ReplaceAllString(config.URI, "")
+
+	// Defaults to 5 seconds if interval is not set.
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+
+	return &blobSync.Sync{
+		Bucket: bucketURI,
+		Object: objectName,
+
+		BlobURLMux: blob.DefaultURLMux(),
+
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "s3"),
+		),
+		Interval: interval,
+		Cron:     cron.New(),
+	}
 }
 
 type IK8sClientBuilder interface {
