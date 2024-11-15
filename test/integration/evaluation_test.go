@@ -51,15 +51,9 @@ func TestEvaluationUsingEnvoy(t *testing.T) {
 
 	flag.Parse()
 
-	var providerOptions []flagd.ProviderOption
-	name := "evaluation.feature"
-
-	if tls == "true" {
-		name = "evaluation_tls.feature"
-		providerOptions = []flagd.ProviderOption{
-			flagd.WithTLS(certPath),
-			flagd.WithTargetUri("envoy://localhost:9211/flagd-sync.service"),
-		}
+	name := "evaluation_envoy.feature"
+	providerOptions := []flagd.ProviderOption{
+		flagd.WithTargetUri("envoy://localhost:9211/flagd-sync.service"),
 	}
 
 	testSuite := godog.TestSuite{
