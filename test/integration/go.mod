@@ -7,7 +7,7 @@ toolchain go1.21.4
 require (
 	github.com/cucumber/godog v0.14.0
 	github.com/open-feature/go-sdk v1.10.0
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.1.22
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.2.3
 	github.com/open-feature/go-sdk-contrib/tests/flagd v1.4.1
 )
 
