@@ -147,5 +147,9 @@ jobs:
           -f file:${{ github.workspace }}/test-harness/flags/zero-flags.json \
           -f file:${{ github.workspace }}/test-harness/flags/edge-case-flags.json &
 
+      - name: Run envoy proxy in background
+        run: |
+          envoy -c ./test/integration/config/envoy.yaml &
+
       - name: Run evaluation test suite
         run: go clean -testcache && go test -cover ./test/integration
