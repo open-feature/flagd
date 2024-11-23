@@ -119,7 +119,9 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	return request, nil
 }
 
-func flagdContext(log *logger.Logger, requestID string, request ofrep.Request, contextValues map[string]any) map[string]any {
+func flagdContext(
+	log *logger.Logger, requestID string, request ofrep.Request, contextValues map[string]any,
+) map[string]any {
 	context := map[string]any{}
 	if res, ok := request.Context.(map[string]any); ok {
 		context = res

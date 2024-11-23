@@ -106,7 +106,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	},
 		config.ContextValues,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("error creating ofrep service")
 	}

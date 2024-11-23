@@ -39,7 +39,6 @@ const (
 
 func init() {
 	flags := startCmd.Flags()
-
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
@@ -167,7 +166,6 @@ var startCmd = &cobra.Command{
 			SyncProviders:      syncProviders,
 			ContextValues:      contextValuesToMap,
 		})
-
 		if err != nil {
 			rtLogger.Fatal(err.Error())
 		}

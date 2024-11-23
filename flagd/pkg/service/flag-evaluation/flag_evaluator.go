@@ -36,8 +36,12 @@ type OldFlagEvaluationService struct {
 }
 
 // NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
-func NewOldFlagEvaluationService(log *logger.Logger,
-	eval evaluator.IEvaluator, eventingCfg IEvents, metricsRecorder telemetry.IMetricsRecorder, contextValues map[string]any,
+func NewOldFlagEvaluationService(
+	log *logger.Logger,
+	eval evaluator.IEvaluator,
+	eventingCfg IEvents,
+	metricsRecorder telemetry.IMetricsRecorder,
+	contextValues map[string]any,
 ) *OldFlagEvaluationService {
 	svc := &OldFlagEvaluationService{
 		logger:                log,
