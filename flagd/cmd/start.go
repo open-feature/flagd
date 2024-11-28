@@ -79,7 +79,7 @@ func init() {
 	flags.DurationP(otelReloadIntervalFlagName, "I", time.Hour, "how long between reloading the otel tls certificate "+
 		"from disk")
 	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
-		"to the flag value evaluation context")
+		"to the flag evaluation context")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))

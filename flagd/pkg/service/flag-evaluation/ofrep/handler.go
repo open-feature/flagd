@@ -27,9 +27,9 @@ type handler struct {
 
 func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any) http.Handler {
 	h := handler{
-		logger,
-		evaluator,
-		contextValues,
+		Logger:        logger,
+		evaluator:     evaluator,
+		contextValues: contextValues,
 	}
 
 	router := mux.NewRouter()
@@ -122,15 +122,17 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 func flagdContext(
 	log *logger.Logger, requestID string, request ofrep.Request, contextValues map[string]any,
 ) map[string]any {
-	context := map[string]any{}
-	if res, ok := request.Context.(map[string]any); ok {
-		context = res
-	} else {
-		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
-	}
-
+	context := make(map[string]any)
 	for k, v := range contextValues {
 		context[k] = v
+	}
+
+	if res, ok := request.Context.(map[string]any); ok {
+		for k, v := range res {
+			context[k] = v
+		}
+	} else {
+		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
 	}
 
 	return context

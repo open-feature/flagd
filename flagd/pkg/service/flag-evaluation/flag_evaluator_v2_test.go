@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
@@ -963,5 +964,36 @@ func TestFlag_EvaluationV2_ErrorCodes(t *testing.T) {
 			t.Errorf("expected code %s, but got code %s for model error %s", test.code, connectErr.Code(),
 				test.err.Error())
 		}
+	}
+}
+
+func Test_mergeContexts(t *testing.T) {
+	type args struct {
+		clientContext, configContext map[string]any
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "merge contexts",
+			args: args{
+				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
+				configContext: map[string]any{"k2": "v22", "k3": "v3"},
+			},
+			want: map[string]any{"k1": "v1", "k2": "v2", "k3": "v3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mergeContexts(tt.args.clientContext, tt.args.configContext)
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\ngot:  %+v\nwant: %+v", got, tt.want)
+			}
+		})
 	}
 }

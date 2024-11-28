@@ -181,22 +181,16 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
 
 	err := resolve[bool](
 		sCtx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
 		req.Msg.GetFlagKey(),
-		evalCtx,
+		req.Msg.GetContext(),
 		&booleanResponse{schemaV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -214,23 +208,16 @@ func (s *OldFlagEvaluationService) ResolveString(
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveString", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
-
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
 	err := resolve[string](
 		sCtx,
 		s.logger,
 		s.eval.ResolveStringValue,
 		req.Msg.GetFlagKey(),
-		evalCtx,
+		req.Msg.GetContext(),
 		&stringResponse{schemaV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -248,23 +235,16 @@ func (s *OldFlagEvaluationService) ResolveInt(
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveInt", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
-
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
 	err := resolve[int64](
 		sCtx,
 		s.logger,
 		s.eval.ResolveIntValue,
 		req.Msg.GetFlagKey(),
-		evalCtx,
+		req.Msg.GetContext(),
 		&intResponse{schemaV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -282,23 +262,16 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveFloat", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
-
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
 	err := resolve[float64](
 		sCtx,
 		s.logger,
 		s.eval.ResolveFloatValue,
 		req.Msg.GetFlagKey(),
-		evalCtx,
+		req.Msg.GetContext(),
 		&floatResponse{schemaV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -316,23 +289,16 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveObject", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
-
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
 	err := resolve[map[string]any](
 		sCtx,
 		s.logger,
 		s.eval.ResolveObjectValue,
 		req.Msg.GetFlagKey(),
-		evalCtx,
+		req.Msg.GetContext(),
 		&objectResponse{schemaV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -342,21 +308,36 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	return res, err
 }
 
+// mergeContexts combines values from the request context with the values from the config --context-values flag.
+// Request context values have a higher priority.
+func mergeContexts(reqCtx, configFlagsCtx map[string]any) map[string]any {
+	merged := make(map[string]any)
+	for k, v := range configFlagsCtx {
+		merged[k] = v
+	}
+	for k, v := range reqCtx {
+		merged[k] = v
+	}
+	return merged
+}
+
 // resolve is a generic flag resolver
 func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], flagKey string,
-	evaluationContext map[string]any, resp response[T], metrics telemetry.IMetricsRecorder,
+	evaluationContext *structpb.Struct, resp response[T], metrics telemetry.IMetricsRecorder,
+	configContextValues map[string]any,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
 
+	mergedContext := mergeContexts(evaluationContext.AsMap(), configContextValues)
 	logger.WriteFields(
 		reqID,
 		zap.String("flag-key", flagKey),
-		zap.Strings("context-keys", formatContextKeys(evaluationContext)),
+		zap.Strings("context-keys", formatContextKeys(mergedContext)),
 	)
 
 	var evalErrFormatted error
-	result, variant, reason, metadata, evalErr := resolver(ctx, reqID, flagKey, evaluationContext)
+	result, variant, reason, metadata, evalErr := resolver(ctx, reqID, flagKey, mergedContext)
 	if evalErr != nil {
 		logger.WarnWithID(reqID, fmt.Sprintf("returning error response, reason: %v", evalErr))
 		reason = model.ErrorReason
