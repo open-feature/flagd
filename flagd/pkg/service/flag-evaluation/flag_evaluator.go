@@ -71,15 +71,8 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	res := &schemaV1.ResolveAllResponse{
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-	for k, v := range s.contextValues {
-		evalCtx[k] = v
-	}
 
-	values, err := s.eval.ResolveAllValues(sCtx, reqID, evalCtx)
+	values, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
