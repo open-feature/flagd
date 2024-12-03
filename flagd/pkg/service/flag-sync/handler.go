@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
-	"buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
-	"github.com/open-feature/flagd/core/pkg/logger"
+	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/open-feature/flagd/core/pkg/logger"
 )
 
 // syncHandler implements the sync contract
@@ -60,10 +61,12 @@ func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsR
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
 ) {
-	metadata, err := structpb.NewStruct(map[string]interface{}{
-		"sources":        s.mux.SourcesAsMetadata(),
-		"context_values": s.contextValues,
-	})
+	metadataSrc := make(map[string]any)
+	for k, v := range s.contextValues {
+		metadataSrc[k] = v
+	}
+	metadataSrc["sources"] = s.mux.SourcesAsMetadata()
+	metadata, err := structpb.NewStruct(metadataSrc)
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
 		return nil, fmt.Errorf("error constructing metadata response")
