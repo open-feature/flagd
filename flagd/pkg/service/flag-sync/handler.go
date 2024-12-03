@@ -65,7 +65,10 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest
 	for k, v := range s.contextValues {
 		metadataSrc[k] = v
 	}
-	metadataSrc["sources"] = s.mux.SourcesAsMetadata()
+	if sources := s.mux.SourcesAsMetadata(); sources != "" {
+		metadataSrc["sources"] = sources
+	}
+
 	metadata, err := structpb.NewStruct(metadataSrc)
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
