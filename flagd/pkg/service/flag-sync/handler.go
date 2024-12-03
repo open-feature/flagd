@@ -6,9 +6,8 @@ import (
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
-	"google.golang.org/protobuf/types/known/structpb"
-
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // syncHandler implements the sync contract
