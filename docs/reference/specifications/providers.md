@@ -46,7 +46,6 @@ The lifecycle is summarized below:
         - if reconnect attempt > `retryGraceAttempts`
             - emit `PROVIDER_ERROR`
             - RPC mode evaluation cache is purged
-            - RPC mode resolves `STALE` from cache where possible
             - in-process mode resolves `STALE` from stored `flag set` rules
 - on stream reconnection:
     - emit `PROVIDER_READY` and `PROVIDER_CONFIGURATION_CHANGED`
