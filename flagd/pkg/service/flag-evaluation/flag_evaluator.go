@@ -305,10 +305,10 @@ func (s *OldFlagEvaluationService) ResolveObject(
 // Request context values have a higher priority.
 func mergeContexts(reqCtx, configFlagsCtx map[string]any) map[string]any {
 	merged := make(map[string]any)
-	for k, v := range configFlagsCtx {
+	for k, v := range reqCtx {
 		merged[k] = v
 	}
-	for k, v := range reqCtx {
+	for k, v := range configFlagsCtx {
 		merged[k] = v
 	}
 	return merged

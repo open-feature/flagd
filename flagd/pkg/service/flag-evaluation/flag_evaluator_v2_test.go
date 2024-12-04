@@ -983,7 +983,8 @@ func Test_mergeContexts(t *testing.T) {
 				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
 				configContext: map[string]any{"k2": "v22", "k3": "v3"},
 			},
-			want: map[string]any{"k1": "v1", "k2": "v2", "k3": "v3"},
+			// static context should "win"
+			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
 		},
 	}
 
