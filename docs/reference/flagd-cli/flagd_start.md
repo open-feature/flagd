@@ -11,6 +11,7 @@ flagd start [flags]
 ### Options
 
 ```
+  -X, --context-value stringToString    add arbitrary key value pairs to the flag evaluation context (default [])
   -C, --cors-origin strings             CORS allowed origins, * will allow all origins
   -h, --help                            help for start
   -z, --log-format string               Set the logging format, e.g. console or json (default "console")

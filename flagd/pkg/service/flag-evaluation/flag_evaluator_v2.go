@@ -25,6 +25,7 @@ type FlagEvaluationService struct {
 	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
+	contextValues         map[string]any
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
@@ -32,6 +33,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 	eval evaluator.IEvaluator,
 	eventingCfg IEvents,
 	metricsRecorder telemetry.IMetricsRecorder,
+	contextValues map[string]any,
 ) *FlagEvaluationService {
 	svc := &FlagEvaluationService{
 		logger:                log,
@@ -39,6 +41,7 @@ func NewFlagEvaluationService(log *logger.Logger,
 		metrics:               &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: eventingCfg,
 		flagEvalTracer:        otel.Tracer("flagd.evaluation.v1"),
+		contextValues:         contextValues,
 	}
 
 	if metricsRecorder != nil {
@@ -63,12 +66,7 @@ func (s *FlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	evalCtx := map[string]any{}
-	if e := req.Msg.GetContext(); e != nil {
-		evalCtx = e.AsMap()
-	}
-
-	values, err := s.eval.ResolveAllValues(sCtx, reqID, evalCtx)
+	values, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
@@ -167,8 +165,9 @@ func (s *FlagEvaluationService) ResolveBoolean(
 ) (*connect.Response[evalV1.ResolveBooleanResponse], error) {
 	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
 	res := connect.NewResponse(&evalV1.ResolveBooleanResponse{})
-	err := resolve[bool](
+	err := resolve(
 		sCtx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
@@ -176,6 +175,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 		req.Msg.GetContext(),
 		&booleanResponse{evalV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -193,7 +193,7 @@ func (s *FlagEvaluationService) ResolveString(
 	defer span.End()
 
 	res := connect.NewResponse(&evalV1.ResolveStringResponse{})
-	err := resolve[string](
+	err := resolve(
 		sCtx,
 		s.logger,
 		s.eval.ResolveStringValue,
@@ -201,6 +201,7 @@ func (s *FlagEvaluationService) ResolveString(
 		req.Msg.GetContext(),
 		&stringResponse{evalV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -218,7 +219,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	defer span.End()
 
 	res := connect.NewResponse(&evalV1.ResolveIntResponse{})
-	err := resolve[int64](
+	err := resolve(
 		sCtx,
 		s.logger,
 		s.eval.ResolveIntValue,
@@ -226,6 +227,7 @@ func (s *FlagEvaluationService) ResolveInt(
 		req.Msg.GetContext(),
 		&intResponse{evalV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -243,7 +245,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	defer span.End()
 
 	res := connect.NewResponse(&evalV1.ResolveFloatResponse{})
-	err := resolve[float64](
+	err := resolve(
 		sCtx,
 		s.logger,
 		s.eval.ResolveFloatValue,
@@ -251,6 +253,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 		req.Msg.GetContext(),
 		&floatResponse{evalV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -268,7 +271,7 @@ func (s *FlagEvaluationService) ResolveObject(
 	defer span.End()
 
 	res := connect.NewResponse(&evalV1.ResolveObjectResponse{})
-	err := resolve[map[string]any](
+	err := resolve(
 		sCtx,
 		s.logger,
 		s.eval.ResolveObjectValue,
@@ -276,6 +279,7 @@ func (s *FlagEvaluationService) ResolveObject(
 		req.Msg.GetContext(),
 		&objectResponse{evalV1Resp: res},
 		s.metrics,
+		s.contextValues,
 	)
 	if err != nil {
 		span.RecordError(err)

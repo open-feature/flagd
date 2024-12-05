@@ -184,6 +184,9 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 
 The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
 
+The evaluation context can be appended by arbitrary key value pairs
+via the `-X` command line flag.
+
 | Description                                                    | Example                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------- |
 | Retrieve property from the evaluation context                  | `#!json { "var": "email" }`                          |

@@ -5,15 +5,16 @@ import (
 	"fmt"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
-	"buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
+	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	mux *Multiplexer
-	log *logger.Logger
+	mux           *Multiplexer
+	log           *logger.Logger
+	contextValues map[string]any
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
@@ -59,9 +60,15 @@ func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsR
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
 ) {
-	metadata, err := structpb.NewStruct(map[string]interface{}{
-		"sources": s.mux.SourcesAsMetadata(),
-	})
+	metadataSrc := make(map[string]any)
+	for k, v := range s.contextValues {
+		metadataSrc[k] = v
+	}
+	if sources := s.mux.SourcesAsMetadata(); sources != "" {
+		metadataSrc["sources"] = sources
+	}
+
+	metadata, err := structpb.NewStruct(metadataSrc)
 	if err != nil {
 		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
 		return nil, fmt.Errorf("error constructing metadata response")

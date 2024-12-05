@@ -40,6 +40,8 @@ type Config struct {
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
+
+	ContextValues map[string]any
 }
 
 // FromConfig builds a runtime from startup configurations
@@ -101,17 +103,20 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
 		Logger: logger.WithFields(zap.String("component", "OFREPService")),
 		Port:   config.OfrepServicePort,
-	})
+	},
+		config.ContextValues,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ofrep service")
 	}
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:  logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:    config.SyncServicePort,
-		Sources: sources,
-		Store:   s,
+		Logger:        logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:          config.SyncServicePort,
+		Sources:       sources,
+		Store:         s,
+		ContextValues: config.ContextValues,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)
@@ -145,6 +150,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			SocketPath:     config.ServiceSocketPath,
 			CORS:           config.CORS,
 			Options:        options,
+			ContextValues:  config.ContextValues,
 		},
 		SyncImpl: iSyncs,
 	}, nil

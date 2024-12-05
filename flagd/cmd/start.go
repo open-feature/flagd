@@ -34,11 +34,11 @@ const (
 	sourcesFlagName            = "sources"
 	syncPortFlagName           = "sync-port"
 	uriFlagName                = "uri"
+	contextValueFlagName       = "context-value"
 )
 
 func init() {
 	flags := startCmd.Flags()
-
 	// allows environment variables to use _ instead of -
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // sync-provider-args becomes SYNC_PROVIDER_ARGS
 	viper.SetEnvPrefix("FLAGD")                            // port becomes FLAGD_PORT
@@ -78,6 +78,8 @@ func init() {
 	flags.StringP(otelCAPathFlagName, "A", "", "tls certificate authority path to use with OpenTelemetry collector")
 	flags.DurationP(otelReloadIntervalFlagName, "I", time.Hour, "how long between reloading the otel tls certificate "+
 		"from disk")
+	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
+		"to the flag evaluation context")
 
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
@@ -95,6 +97,7 @@ func init() {
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
+	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 }
 
 // startCmd represents the start command
@@ -139,6 +142,11 @@ var startCmd = &cobra.Command{
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
+		contextValuesToMap := make(map[string]any)
+		for k, v := range viper.GetStringMapString(contextValueFlagName) {
+			contextValuesToMap[k] = v
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:               viper.GetStringSlice(corsFlagName),
@@ -156,6 +164,7 @@ var startCmd = &cobra.Command{
 			ServiceSocketPath:  viper.GetString(socketPathFlagName),
 			SyncServicePort:    viper.GetUint16(syncPortFlagName),
 			SyncProviders:      syncProviders,
+			ContextValues:      contextValuesToMap,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

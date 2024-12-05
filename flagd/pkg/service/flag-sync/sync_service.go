@@ -23,10 +23,11 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger  *logger.Logger
-	Port    uint16
-	Sources []string
-	Store   *store.Flags
+	Logger        *logger.Logger
+	Port          uint16
+	Sources       []string
+	Store         *store.Flags
+	ContextValues map[string]any
 }
 
 type Service struct {
@@ -47,8 +48,9 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 
 	server := grpc.NewServer()
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
-		mux: mux,
-		log: l,
+		mux:           mux,
+		log:           l,
+		contextValues: cfg.ContextValues,
 	})
 
 	l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))

@@ -32,6 +32,7 @@ type Configuration struct {
 	SocketPath     string
 	CORS           []string
 	Options        []connect.HandlerOption
+	ContextValues  map[string]any
 }
 
 /*
