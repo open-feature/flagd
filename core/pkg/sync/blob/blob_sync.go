@@ -12,6 +12,7 @@ import (
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
 	_ "gocloud.dev/blob/gcsblob"   // needed to initialize GCS driver
+	_ "gocloud.dev/blob/s3blob"    // needed to initialize s3 driver
 )
 
 type Sync struct {
