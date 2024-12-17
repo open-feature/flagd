@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.10.5](https://github.com/open-feature/flagd/compare/core/v0.10.4...core/v0.10.5) (2024-12-17)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update kubernetes packages to v0.31.2 ([#1430](https://github.com/open-feature/flagd/issues/1430)) ([0df8622](https://github.com/open-feature/flagd/commit/0df862215563545c33f518ab7a5ad42a19bf6adb))
+* **deps:** update kubernetes packages to v0.31.3 ([#1454](https://github.com/open-feature/flagd/issues/1454)) ([f56d7b0](https://github.com/open-feature/flagd/commit/f56d7b043c2d80ae4fe27e996c05a7cc1c2c1b28))
+* **deps:** update kubernetes packages to v0.31.4 ([#1461](https://github.com/open-feature/flagd/issues/1461)) ([431fbb4](https://github.com/open-feature/flagd/commit/431fbb49513bcdb21b09845f47c26e51e7e9f21b))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.2-20240906125204-0a6a901b42e8.1 ([#1451](https://github.com/open-feature/flagd/issues/1451)) ([8c6d91d](https://github.com/open-feature/flagd/commit/8c6d91d538d226b10cb954c23409902e9d245cda))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.0-20240906125204-0a6a901b42e8.1 ([#1475](https://github.com/open-feature/flagd/issues/1475)) ([0b11c6c](https://github.com/open-feature/flagd/commit/0b11c6cf612b244bda6bab119814647f3ce8de2e))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.6.0 ([#1460](https://github.com/open-feature/flagd/issues/1460)) ([dbc1da4](https://github.com/open-feature/flagd/commit/dbc1da4ba984c06972b57cf990d1d31c4b8323df))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.6.1 ([#1473](https://github.com/open-feature/flagd/issues/1473)) ([a3d899c](https://github.com/open-feature/flagd/commit/a3d899c5f8952181a6a987436e2255c2ab9176c5))
+* **deps:** update module github.com/fsnotify/fsnotify to v1.8.0 ([#1438](https://github.com/open-feature/flagd/issues/1438)) ([949c73b](https://github.com/open-feature/flagd/commit/949c73bd6ebadb30cfa3b7573b43d722f8d2a93d))
+* **deps:** update module github.com/stretchr/testify to v1.10.0 ([#1455](https://github.com/open-feature/flagd/issues/1455)) ([8c843df](https://github.com/open-feature/flagd/commit/8c843df7714b1f2d120c5cac8e40c7220cc0c05b))
+* **deps:** update module golang.org/x/crypto to v0.29.0 ([#1443](https://github.com/open-feature/flagd/issues/1443)) ([db96dd5](https://github.com/open-feature/flagd/commit/db96dd57b9de032fc4d15931bf907a7ed962f81b))
+* **deps:** update module golang.org/x/crypto to v0.30.0 ([#1457](https://github.com/open-feature/flagd/issues/1457)) ([dbdaa19](https://github.com/open-feature/flagd/commit/dbdaa199f0667f16d2a3b91867535ce93e63373c))
+* **deps:** update module golang.org/x/crypto to v0.31.0 ([#1463](https://github.com/open-feature/flagd/issues/1463)) ([b2245d7](https://github.com/open-feature/flagd/commit/b2245d7f73f1bde859b9627d337dd09ecd2f1a31))
+* **deps:** update module golang.org/x/mod to v0.22.0 ([#1444](https://github.com/open-feature/flagd/issues/1444)) ([ed064e1](https://github.com/open-feature/flagd/commit/ed064e134fb3a5edb0ec2d976f136af7e94d7f6d))
+* **deps:** update module google.golang.org/grpc to v1.68.0 ([#1442](https://github.com/open-feature/flagd/issues/1442)) ([cd27d09](https://github.com/open-feature/flagd/commit/cd27d098e6d8d8b0f681ef42d26dba1ebac67d12))
+* **deps:** update module google.golang.org/grpc to v1.68.1 ([#1456](https://github.com/open-feature/flagd/issues/1456)) ([0b6e2a1](https://github.com/open-feature/flagd/commit/0b6e2a1cd64910226d348c921b08a6de8013ac90))
+* **deps:** update module google.golang.org/grpc to v1.69.0 ([#1469](https://github.com/open-feature/flagd/issues/1469)) ([dd4869f](https://github.com/open-feature/flagd/commit/dd4869f5e095066f80c9d82d1be83155e7504d88))
+* **deps:** update opentelemetry-go monorepo ([#1447](https://github.com/open-feature/flagd/issues/1447)) ([68b5794](https://github.com/open-feature/flagd/commit/68b5794180da84af9adc1f2cd80f929489969c1c))
+
+
+### ✨ New Features
+
+* add context-value flag ([#1448](https://github.com/open-feature/flagd/issues/1448)) ([7ca092e](https://github.com/open-feature/flagd/commit/7ca092e478c937eca0c91357394499763545dc1c))
+* s3 support for the blob sync ([#1449](https://github.com/open-feature/flagd/issues/1449)) ([a9f7261](https://github.com/open-feature/flagd/commit/a9f7261e75bc064947ae14900e5c4edc4b49bec4))
+
 ## [0.10.4](https://github.com/open-feature/flagd/compare/core/v0.10.3...core/v0.10.4) (2024-10-28)
 
 
