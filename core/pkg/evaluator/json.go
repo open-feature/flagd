@@ -33,6 +33,8 @@ const (
 	// evaluation if the user did not supply the optional bucketing property.
 	targetingKeyKey = "targetingKey"
 	Disabled        = "DISABLED"
+	ID              = "id"
+	VERSION         = "version"
 )
 
 var regBrace *regexp.Regexp
@@ -325,6 +327,14 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	selector := je.store.SelectorForFlag(ctx, flag)
 	if selector != "" {
 		metadata[SelectorMetadataKey] = selector
+	}
+
+	flagMetadata := je.store.MetadataForFlag(ctx, flag)
+	if flagMetadata.ID != "" {
+		metadata[ID] = flagMetadata.ID
+	}
+	if flagMetadata.Version != "" {
+		metadata[VERSION] = flagMetadata.Version
 	}
 
 	if flag.State == Disabled {

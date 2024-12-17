@@ -15,13 +15,15 @@ type IStore interface {
 	GetAll(ctx context.Context) (map[string]model.Flag, error)
 	Get(ctx context.Context, key string) (model.Flag, bool)
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
+	MetadataForFlag(ctx context.Context, flag model.Flag) model.Metadata
 }
 
 type Flags struct {
-	mx             sync.RWMutex
-	Flags          map[string]model.Flag `json:"flags"`
-	FlagSources    []string
-	SourceMetadata map[string]SourceDetails
+	mx              sync.RWMutex
+	Flags           map[string]model.Flag `json:"flags"`
+	FlagSources     []string
+	SourceMetadata  map[string]SourceDetails
+	FlagSetMetadata model.Metadata
 }
 
 type SourceDetails struct {
@@ -70,6 +72,13 @@ func (f *Flags) SelectorForFlag(_ context.Context, flag model.Flag) string {
 	defer f.mx.RUnlock()
 
 	return f.SourceMetadata[flag.Source].Selector
+}
+
+func (f *Flags) MetadataForFlag(_ context.Context, flag model.Flag) model.Metadata {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
+	return flag.Metadata
 }
 
 func (f *Flags) Delete(key string) {
