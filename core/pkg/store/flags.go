@@ -23,7 +23,7 @@ type Flags struct {
 	Flags           map[string]model.Flag `json:"flags"`
 	FlagSources     []string
 	SourceMetadata  map[string]SourceDetails
-	FlagSetMetadata model.Metadata
+	FlagSetMetadata model.Metadata `json:"metadata"`
 }
 
 type SourceDetails struct {
