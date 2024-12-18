@@ -9,6 +9,7 @@ const (
 	GeneralErrorCode      = "GENERAL"
 	FlagDisabledErrorCode = "FLAG_DISABLED"
 	InvalidContextCode    = "INVALID_CONTEXT"
+	TypeCheckingError     = "TYPE_CHECKING_ERROR"
 )
 
 var ReadableErrorMessage = map[string]string{
@@ -18,6 +19,7 @@ var ReadableErrorMessage = map[string]string{
 	GeneralErrorCode:      "General error",
 	FlagDisabledErrorCode: "Flag is disabled",
 	InvalidContextCode:    "Invalid context provided",
+	TypeCheckingError:     "Type checking error due to selected type checking behavior",
 }
 
 func GetErrorMessage(code string) string {
