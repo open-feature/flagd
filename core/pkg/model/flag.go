@@ -13,8 +13,10 @@ type Flag struct {
 }
 
 type Metadata struct {
-	ID      string `json:"id"`
-	Version string `json:"version"`
+	ID             string `json:"id"`
+	Version        string `json:"version"`
+	FlagSetID      string `json:"flagSetId"`
+	FlagSetVersion string `json:"flagSetVersion"`
 }
 
 type Evaluators struct {

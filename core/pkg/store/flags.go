@@ -19,11 +19,11 @@ type IStore interface {
 }
 
 type Flags struct {
-	mx              sync.RWMutex
-	Flags           map[string]model.Flag `json:"flags"`
-	FlagSources     []string
-	SourceMetadata  map[string]SourceDetails
-	FlagSetMetadata model.Metadata `json:"metadata"`
+	mx             sync.RWMutex
+	Flags          map[string]model.Flag `json:"flags"`
+	FlagSources    []string
+	SourceMetadata map[string]SourceDetails
+	Metadata       model.Metadata `json:"metadata"`
 }
 
 type SourceDetails struct {
