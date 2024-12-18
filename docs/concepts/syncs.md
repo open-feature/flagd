@@ -101,6 +101,21 @@ This is expected be a valid service URL accessible by flagd (either by being pub
 The polling interval can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
+### S3 sync
+
+The S3 sync provider fetches flags from an S3 bucket and periodically polls for flag definition updates.
+It uses [AWS standardized credentials chain](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html) to authorize the calls to AWS.
+
+```shell
+flagd start --uri s3://my-bucket/my-flags.json
+```
+
+In this example, `s3://my-bucket/my-flags.json` is expected to be a valid URI accessible by flagd
+(either by being public or together with the appropriate credentials read from a file or via the environment as described in the AWS docs linked above).
+The polling interval is configurable.
+See [sync source](../reference/sync-configuration.md#source-configuration) for details.
+
+
 ## Merging
 
 Flagd can be configured to read from multiple sources at once, when this is the case flagd will merge all flag definition into a single
