@@ -2,7 +2,7 @@ module github.com/open-feature/flagd/flagd-proxy
 
 go 1.22.7
 
-toolchain go1.22.9
+toolchain go1.23.4
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20240906125204-0a6a901b42e8.1
