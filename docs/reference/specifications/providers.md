@@ -38,12 +38,12 @@ The lifecycle is summarized below:
     - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
-    - [reconnect](#stream-reconnection) with exponential backoff
-        - if reconnect attempt <= `retryGraceAttempts`
+    - [reconnect](#stream-reconnection) with exponential backoff offered by GRPC.
+        - if disconnected time <= `retryGracePeriod`
             - emit `PROVIDER_STALE`
             - RPC mode resolves `STALE` from cache where possible
             - in-process mode resolves `STALE` from stored `flag set` rules
-        - if reconnect attempt > `retryGraceAttempts`
+        - if disconnected time > `retryGracePeriod`
             - emit `PROVIDER_ERROR`
             - RPC mode evaluation cache is purged
             - in-process mode resolves `STALE` from stored `flag set` rules
@@ -58,9 +58,9 @@ stateDiagram-v2
     [*] --> NOT_READY
     NOT_READY --> READY: initialize
     NOT_READY --> ERROR: initialize
-    READY --> ERROR: disconnected, retry grace attempts == 0
-    READY --> STALE: disconnected, reconnect attempt < retry grace attempts
-    STALE --> ERROR: reconnect attempt >= retry grace attempts
+    READY --> ERROR: disconnected, disconnected period == 0
+    READY --> STALE: disconnected, disconnect period < retry grace period
+    STALE --> ERROR: disconnect period >= retry grace period
     ERROR --> READY: reconnected
     ERROR --> [*]: shutdown
 
@@ -98,9 +98,23 @@ stateDiagram-v2
 ### Stream Reconnection
 
 When either stream (sync or event) disconnects, whether due to the associated deadline being exceeded, network error or any other cause, the provider attempts to re-establish the stream immediately, and then retries with an exponential back-off.
-When disconnected, if the number of reconnect attempts is less than `retryGraceAttempts`, the provider emits `STALE` when it disconnects.
+We always rely on the [integrated functionality of GRPC for reconnection](https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md) and utilize [Wait-for-Ready](https://grpc.io/docs/guides/wait-for-ready/) to re-establish the stream.
+We are configuring the underlying reconnection mechanism whenever we can, based on our configuration. (not all GRPC implementations support this)
+
+| language/property | min connect timeout               | max backoff              | initial backoff          | jitter | multiplier |
+|-------------------|-----------------------------------|--------------------------|--------------------------|--------|------------|
+| GRPC property     | grpc.initial_reconnect_backoff_ms | max_reconnect_backoff_ms | min_reconnect_backoff_ms | 0.2    | 1.6        |
+| Flagd property    | deadlineMs                        | retryBackoffMaxMs        | retryBackoffMs           | 0.2    | 1.6        |
+| ---               | ---                               | ---                      | ---                      | ---    | ---        |
+| default [^1]      | ✅                                 | ✅                        | ✅                        | 0.2    | 1.6        |
+| js                | ✅                                 | ✅                        | ❌                        | 0.2    | 1.6        |
+| java              | ❌                                 | ❌                        | ❌                        | 0.2    | 1.6        |
+
+[^1] : C++, Python, Ruby, Objective-C, PHP, C#, js(deprecated)
+
+When disconnected, if the time since disconnection is less than `retryGracePeriod`, the provider emits `STALE` when it disconnects.
 While the provider is in state `STALE` the provider resolves values from its cache or stored flag set rules, depending on its resolver mode.
-When the number of reconnects first exceeds `retryGraceAttempts`, the provider emits `ERROR`.
+When the time since the last disconnect first exceeds `retryGracePeriod`, the provider emits `ERROR`.
 The provider attempts to reconnect indefinitely, with a maximum interval of `retryBackoffMaxMs`.
 
 ## RPC Evaluation
@@ -242,27 +256,27 @@ precedence.
 
 Below are the supported configuration parameters (note that not all apply to both resolver modes):
 
-| Option name           | Environment variable name      | Explanation                                                                     | Type & Values                | Default                       | Compatible resolver |
-| --------------------- | ------------------------------ | ------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ------------------- |
-| resolver              | FLAGD_RESOLVER                 | mode of operation                                                               | String - `rpc`, `in-process` | rpc                           | rpc & in-process    |
-| host                  | FLAGD_HOST                     | remote host                                                                     | String                       | localhost                     | rpc & in-process    |
-| port                  | FLAGD_PORT                     | remote port                                                                     | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
-| targetUri             | FLAGD_TARGET_URI               | alternative to host/port, supporting custom name resolution                     | string                       | null                          | rpc & in-process    |
-| tls                   | FLAGD_TLS                      | connection encryption                                                           | boolean                      | false                         | rpc & in-process    |
-| socketPath            | FLAGD_SOCKET_PATH              | alternative to host port, unix socket                                           | String                       | null                          | rpc & in-process    |
-| certPath              | FLAGD_SERVER_CERT_PATH         | tls cert path                                                                   | String                       | null                          | rpc & in-process    |
-| deadlineMs            | FLAGD_DEADLINE_MS              | deadline for unary calls, and timeout for initialization                        | int                          | 500                           | rpc & in-process    |
-| streamDeadlineMs      | FLAGD_STREAM_DEADLINE_MS       | deadline for streaming calls, useful as an application-layer keepalive          | int                          | 600000                        | rpc & in-process    |
-| retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | initial backoff for stream retry                                                | int                          | 1000                          | rpc & in-process    |
-| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | maximum backoff for stream retry                                                | int                          | 120000                        | rpc & in-process    |
-| retryGraceAttempts    | FLAGD_RETRY_GRACE_ATTEMPTS     | amount of stream retry attempts before provider moves from STALE to ERROR state | int                          | 5                             | rpc & in-process    |
-| keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | http 2 keepalive                                                                | long                         | 0                             | rpc & in-process    |
-| cache                 | FLAGD_CACHE                    | enable cache of static flags                                                    | String - `lru`, `disabled`   | lru                           | rpc                 |
-| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | max size of static flag cache                                                   | int                          | 1000                          | rpc                 |
-| selector              | FLAGD_SOURCE_SELECTOR          | selects a single sync source to retrieve flags from only that source            | string                       | null                          | in-process          |
-| offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri             | string                       | null                          | in-process          |
-| offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                                 | int                          | 5000                          | in-process          |
-| contextEnricher       | -                              | sync-metadata to evaluation context mapping function                            | function                     | identity function             | in-process          |
+| Option name           | Environment variable name      | Explanation                                                            | Type & Values                | Default                       | Compatible resolver |
+|-----------------------|--------------------------------|------------------------------------------------------------------------| ---------------------------- | ----------------------------- | ------------------- |
+| resolver              | FLAGD_RESOLVER                 | mode of operation                                                      | String - `rpc`, `in-process` | rpc                           | rpc & in-process    |
+| host                  | FLAGD_HOST                     | remote host                                                            | String                       | localhost                     | rpc & in-process    |
+| port                  | FLAGD_PORT                     | remote port                                                            | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process    |
+| targetUri             | FLAGD_TARGET_URI               | alternative to host/port, supporting custom name resolution            | string                       | null                          | rpc & in-process    |
+| tls                   | FLAGD_TLS                      | connection encryption                                                  | boolean                      | false                         | rpc & in-process    |
+| socketPath            | FLAGD_SOCKET_PATH              | alternative to host port, unix socket                                  | String                       | null                          | rpc & in-process    |
+| certPath              | FLAGD_SERVER_CERT_PATH         | tls cert path                                                          | String                       | null                          | rpc & in-process    |
+| deadlineMs            | FLAGD_DEADLINE_MS              | deadline for unary calls, and timeout for initialization               | int                          | 500                           | rpc & in-process    |
+| streamDeadlineMs      | FLAGD_STREAM_DEADLINE_MS       | deadline for streaming calls, useful as an application-layer keepalive | int                          | 600000                        | rpc & in-process    |
+| retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | initial backoff for stream retry                                       | int                          | 1000                          | rpc & in-process    |
+| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | maximum backoff for stream retry                                       | int                          | 120000                        | rpc & in-process    |
+| retryGracePeriod      | FLAGD_RETRY_GRACE_PERIOD       | period in seconds before provider moves from STALE to ERROR state      | int                          | 5                             | rpc & in-process    |
+| keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | http 2 keepalive                                                       | long                         | 0                             | rpc & in-process    |
+| cache                 | FLAGD_CACHE                    | enable cache of static flags                                           | String - `lru`, `disabled`   | lru                           | rpc                 |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | max size of static flag cache                                          | int                          | 1000                          | rpc                 |
+| selector              | FLAGD_SOURCE_SELECTOR          | selects a single sync source to retrieve flags from only that source   | string                       | null                          | in-process          |
+| offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri    | string                       | null                          | in-process          |
+| offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                        | int                          | 5000                          | in-process          |
+| contextEnricher       | -                              | sync-metadata to evaluation context mapping function                   | function                     | identity function             | in-process          |
 
 ### Custom Name Resolution
 
