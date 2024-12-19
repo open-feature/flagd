@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.6](https://github.com/open-feature/flagd/compare/flagd/v0.11.5...flagd/v0.11.6) (2024-12-19)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.5 ([#1482](https://github.com/open-feature/flagd/issues/1482)) ([ce48cb7](https://github.com/open-feature/flagd/commit/ce48cb757659eef8807531f8522ca1b7bc80422c))
+* **deps:** update module golang.org/x/net to v0.33.0 [security] ([#1486](https://github.com/open-feature/flagd/issues/1486)) ([4764077](https://github.com/open-feature/flagd/commit/476407769f47675f649c328e27e0f87860f0f79d))
+* **deps:** update module google.golang.org/grpc to v1.69.2 ([#1484](https://github.com/open-feature/flagd/issues/1484)) ([6b40ad3](https://github.com/open-feature/flagd/commit/6b40ad34c83da4a3116e7cad4139a63a6c918097))
+
 ## [0.11.5](https://github.com/open-feature/flagd/compare/flagd/v0.11.4...flagd/v0.11.5) (2024-12-17)
 
 
