@@ -114,7 +114,7 @@ We are configuring the underlying reconnection mechanism whenever we can, based 
 
 When disconnected, if the time since disconnection is less than `retryGracePeriod`, the provider emits `STALE` when it disconnects.
 While the provider is in state `STALE` the provider resolves values from its cache or stored flag set rules, depending on its resolver mode.
-When the time of disconnection first exceeds `retryGracePeriod`, the provider emits `ERROR`.
+When the time since the last disconnect first exceeds `retryGracePeriod`, the provider emits `ERROR`.
 The provider attempts to reconnect indefinitely, with a maximum interval of `retryBackoffMaxMs`.
 
 ## RPC Evaluation
