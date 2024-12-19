@@ -97,7 +97,7 @@ flagd start --uri azblob://my-container/my-flags.json
 
 In this example, assuming the environment variable AZURE_STORAGE_ACCOUNT is set to `myaccount`, and other options are not set, the service URL will be:
 `https://myaccount.blob.core.windows.net/my-container/my-flags.json`.
-This is expected be a valid service URL accessible by flagd (either by being public or together with environment variable credentials).
+This is expected to be a valid service URL accessible by flagd (either by being public or together with environment variable credentials).
 The polling interval can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
@@ -114,7 +114,6 @@ In this example, `s3://my-bucket/my-flags.json` is expected to be a valid URI ac
 (either by being public or together with the appropriate credentials read from a file or via the environment as described in the AWS docs linked above).
 The polling interval is configurable.
 See [sync source](../reference/sync-configuration.md#source-configuration) for details.
-
 
 ## Merging
 
