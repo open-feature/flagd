@@ -331,18 +331,17 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		metadata[SelectorMetadataKey] = selector
 	}
 
-	flagMetadata := je.store.MetadataForFlag(ctx, flag)
-	if flagMetadata.ID != "" {
-		metadata[ID] = flagMetadata.ID
+	if flag.Metadata.ID != "" {
+		metadata[ID] = flag.Metadata.ID
 	}
-	if flagMetadata.Version != "" {
-		metadata[VERSION] = flagMetadata.Version
+	if flag.Metadata.Version != "" {
+		metadata[VERSION] = flag.Metadata.Version
 	}
-	if flagMetadata.FlagSetID != "" {
-		metadata[FLAGSETID] = flagMetadata.FlagSetID
+	if flag.Metadata.FlagSetID != "" {
+		metadata[FLAGSETID] = flag.Metadata.FlagSetID
 	}
-	if flagMetadata.FlagSetVersion != "" {
-		metadata[FLAGSETVERSION] = flagMetadata.FlagSetVersion
+	if flag.Metadata.FlagSetVersion != "" {
+		metadata[FLAGSETVERSION] = flag.Metadata.FlagSetVersion
 	}
 
 	if flag.State == Disabled {
