@@ -6,7 +6,7 @@ toolchain go1.22.9
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.1
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.0-20240906125204-0a6a901b42e8.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.0-20241220192239-696330adaff0.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.10.5
