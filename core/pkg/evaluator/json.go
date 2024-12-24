@@ -33,6 +33,10 @@ const (
 	// evaluation if the user did not supply the optional bucketing property.
 	targetingKeyKey = "targetingKey"
 	Disabled        = "DISABLED"
+	ID              = "id"
+	VERSION         = "version"
+	FLAGSETVERSION  = "flagSetVersion"
+	FLAGSETID       = "flagSetId"
 )
 
 var regBrace *regexp.Regexp
@@ -327,6 +331,19 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		metadata[SelectorMetadataKey] = selector
 	}
 
+	if flag.Metadata.ID != "" {
+		metadata[ID] = flag.Metadata.ID
+	}
+	if flag.Metadata.Version != "" {
+		metadata[VERSION] = flag.Metadata.Version
+	}
+	if flag.Metadata.FlagSetID != "" {
+		metadata[FLAGSETID] = flag.Metadata.FlagSetID
+	}
+	if flag.Metadata.FlagSetVersion != "" {
+		metadata[FLAGSETVERSION] = flag.Metadata.FlagSetVersion
+	}
+
 	if flag.State == Disabled {
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
 		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
@@ -460,9 +477,20 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
+	var configData ConfigWithMetadata
+	err = json.Unmarshal([]byte(transposedConfig), &configData)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
+	}
+
+	// Assign the flags from the unmarshalled config to the newFlags struct
+	newFlags.Flags = configData.Flags
+
+	// Assign version and id from metadata to the flags
+	for key, flag := range newFlags.Flags {
+		flag.Metadata.FlagSetID = configData.MetaData.ID
+		flag.Metadata.FlagSetVersion = configData.MetaData.Version
+		newFlags.Flags[key] = flag
 	}
 
 	return validateDefaultVariants(newFlags)
