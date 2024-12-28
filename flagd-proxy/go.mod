@@ -5,8 +5,8 @@ go 1.22.7
 toolchain go1.22.9
 
 require (
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20240906125204-0a6a901b42e8.1
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.0-20240906125204-0a6a901b42e8.1
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.2
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.1-20241220192239-696330adaff0.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-feature/flagd/core v0.10.5
@@ -139,7 +139,7 @@ require (
 	google.golang.org/genproto v0.0.0-20240812133136-8ffd90a71988 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
-	google.golang.org/protobuf v1.36.0 // indirect
+	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
