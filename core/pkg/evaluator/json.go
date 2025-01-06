@@ -488,8 +488,8 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 
 	// Assign version and id from metadata to the flags
 	for key, flag := range newFlags.Flags {
-		flag.Metadata.FlagSetID = configData.MetaData.ID
-		flag.Metadata.FlagSetVersion = configData.MetaData.Version
+		flag.Metadata.FlagSetID = configData.MetaData.FlagSetID
+		flag.Metadata.FlagSetVersion = configData.MetaData.FlagSetVersion
 		newFlags.Flags[key] = flag
 	}
 
