@@ -20,6 +20,7 @@ it is passed to the correct implementation:
 | &nbsp;[grpc](#custom-grpc-target-uri) | `[ envoy \| dns \| uds\| xds ]://` | `envoy://localhost:9211/test.service` |
 | `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
 | `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
+| `s3`              | `s3://`            | `s3://my-bucket/my-flags.json` |
 
 ### Custom gRPC Target URI
 

@@ -3,24 +3,11 @@
   "constraints": {
     "go": "1.22"
   },
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["github>open-feature/community-tooling"],
   "includePaths": [
     "flagd/**",
     "flagd-proxy/**",
     "core/**",
     "test/**"
-  ],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchCurrentVersion": "!/^0/",
-      "automerge": true
-    },
-    {
-      "matchManagers": ["github-actions"],
-      "automerge": true
-    }
   ]
 }
