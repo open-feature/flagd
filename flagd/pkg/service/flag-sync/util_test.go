@@ -1,8 +1,13 @@
 package sync
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"google.golang.org/grpc/credentials"
+	"io/ioutil"
 )
 
 // getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
@@ -29,4 +34,24 @@ func getSimpleFlagStore() (*store.Flags, []string) {
 	})
 
 	return flagStore, []string{"A", "B", "C"}
+}
+
+func LoadTLSClientCredentials(certPath string) (credentials.TransportCredentials, error) {
+	// Load certificate of the CA who signed server's certificate
+	pemServerCA, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(pemServerCA) {
+		return nil, fmt.Errorf("failed to add server CA's certificate")
+	}
+
+	// Create the credentials and return it
+	config := &tls.Config{
+		RootCAs: certPool,
+	}
+
+	return credentials.NewTLS(config), nil
 }
