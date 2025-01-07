@@ -102,7 +102,7 @@ function App() {
     resetInputs();
   }, [selectedTemplate, resetInputs]);
 
-  const flagStorage = useMemo(() => new MemoryStorage(), []);
+  const flagStorage = useMemo(() => new MemoryStorage(console), []);
   const flagdCore = useMemo(
     () => new FlagdCore(flagStorage, console),
     [flagStorage]

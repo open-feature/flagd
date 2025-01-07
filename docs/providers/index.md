@@ -23,4 +23,4 @@ The following table lists all the available flagd providers.
 | :simple-python: [Python](./python.md)               | :material-check: | :material-close: |
 | :material-web: [Web](./web.md)                      | :material-check: | :material-close: |
 
-For information on implementing a flagd provider, see the specifications for [RPC](../reference/specifications/rpc-providers.md) and [in-process](../reference/specifications/in-process-providers.md) providers.
+For information on implementing a flagd provider, see the [specification](../reference/specifications/providers.md).

@@ -49,6 +49,21 @@
           "$ref": "./targeting.json"
         }
       }
+    },
+    "metadata": {
+      "title": "Flag Set Metadata",
+      "description": "Metadata about the flag set, with keys of type string, and values of type boolean, string, or number.",
+      "properties": {
+        "flagSetId": {
+          "description": "The unique identifier for the flag set.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The version of the flag set.",
+          "type": "string"
+        }
+      },
+      "$ref": "#/definitions/metadata"
     }
   },
   "definitions": {
@@ -72,6 +87,11 @@
         },
         "targeting": {
           "$ref": "./targeting.json"
+        },
+        "metadata": {
+          "title": "Flag Metadata",
+          "description": "Metadata about an individual feature flag, with keys of type string, and values of type boolean, string, or number.",
+          "$ref": "#/definitions/metadata"
         }
       },
       "required": [
@@ -179,6 +199,18 @@
           "$ref": "#/definitions/objectVariants"
         }
       ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "description": "Any additional key/value pair with value of type boolean, string, or number.",
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      },
+      "required": []
     }
   }
 }

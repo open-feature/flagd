@@ -33,7 +33,7 @@ erDiagram
 
 ### In-Process evaluation
 
-In-process deployments embed the flagd evaluation engine directly into the client application through the use of an [in-process provider](./installation.md#in-process).
+In-process deployments embed the flagd evaluation engine directly into the client application through the use of an [in-process provider](./providers/index.md).
 The in-process provider is connected via the sync protocol to an implementing [gRPC service](./concepts/syncs.md#grpc-sync) that provides the flag definitions.
 You can use flagd as a [gRPC sync service](./reference/grpc-sync-service.md).
 In this mode, the flag sync stream will expose aggregated flag configurations currently configured through [syncs](./concepts/syncs.md).

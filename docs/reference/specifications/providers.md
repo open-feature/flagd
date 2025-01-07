@@ -21,7 +21,7 @@ Consistent with our [naming conventions](../naming.md), the flagd provider name 
 
 There are two modes of operation (`resolvers`) for flagd providers; _in-process_ and _RPC_.
 Both modes have their advantages and disadvantages.
-For more information on the architectural implications of these different modes, see the [RPC vs In-Process Evaluation](/architecture/#rpc-vs-in-process-evaluation) page.
+For more information on the architectural implications of these different modes, see the [RPC vs In-Process Evaluation](../../architecture.md#rpc-vs-in-process-evaluation) page.
 
 ## flagd Provider Lifecycle
 

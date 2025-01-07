@@ -13,6 +13,7 @@ import { pseudoRandomSplit } from "./fraction-string";
 import { progressRollout } from "./progressive-rollout";
 import { sharedEvaluators } from "./share-evaluators";
 import { targetingKey } from "./targeting-key";
+import { flagMetadata } from "./flag-metadata";
 
 export const scenarios = {
   "Basic boolean flag": basicBoolean,
@@ -29,6 +30,7 @@ export const scenarios = {
   "Shared evaluators": sharedEvaluators,
   "Boolean variant shorthand": booleanShorthand,
   "Targeting key": targetingKey,
+  "Flag metadata": flagMetadata,
 } satisfies { [name: string]: Scenario };
 
 export type ScenarioName = keyof typeof scenarios;

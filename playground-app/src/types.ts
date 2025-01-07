@@ -1,4 +1,8 @@
-import type { FlagValueType, JsonObject } from "@openfeature/core";
+import type {
+  FlagMetadata,
+  FlagValueType,
+  JsonObject,
+} from "@openfeature/core";
 
 type StringVariants = {
   [key: string]: string;
@@ -27,9 +31,11 @@ export type FeatureDefinition = {
         | BooleanVariants
         | ObjectVariants;
       targeting?: JsonObject;
+      metadata?: FlagMetadata;
     };
   };
   $evaluators?: JsonObject;
+  metadata?: FlagMetadata;
 };
 
 export type Scenario = {

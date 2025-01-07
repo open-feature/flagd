@@ -6,4 +6,4 @@
 	url = https://github.com/open-feature/spec.git
 [submodule "schemas"]
 	path = schemas
-	url = https://github.com/open-feature/schemas.git
+	url = https://github.com/open-feature/flagd-schemas.git
