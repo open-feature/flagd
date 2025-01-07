@@ -40,7 +40,7 @@ func LoadTLSClientCredentials(certPath string) (credentials.TransportCredentials
 	// Load certificate of the CA who signed server's certificate
 	pemServerCA, err := ioutil.ReadFile(certPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read file from path '%s'", certPath)
 	}
 
 	certPool := x509.NewCertPool()
