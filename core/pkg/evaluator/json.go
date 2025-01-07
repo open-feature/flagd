@@ -33,10 +33,6 @@ const (
 	// evaluation if the user did not supply the optional bucketing property.
 	targetingKeyKey = "targetingKey"
 	Disabled        = "DISABLED"
-	ID              = "id"
-	VERSION         = "version"
-	FLAGSETVERSION  = "flagSetVersion"
-	FLAGSETID       = "flagSetId"
 )
 
 var regBrace *regexp.Regexp
@@ -331,17 +327,11 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		metadata[SelectorMetadataKey] = selector
 	}
 
-	if flag.Metadata.ID != "" {
-		metadata[ID] = flag.Metadata.ID
-	}
-	if flag.Metadata.Version != "" {
-		metadata[VERSION] = flag.Metadata.Version
-	}
-	if flag.Metadata.FlagSetID != "" {
-		metadata[FLAGSETID] = flag.Metadata.FlagSetID
-	}
-	if flag.Metadata.FlagSetVersion != "" {
-		metadata[FLAGSETVERSION] = flag.Metadata.FlagSetVersion
+	for key, value := range flag.MetaData {
+		// If value is not nil or empty, copy to metadata
+		if value != nil {
+			metadata[key] = value
+		}
 	}
 
 	if flag.State == Disabled {
@@ -486,10 +476,14 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 	// Assign the flags from the unmarshalled config to the newFlags struct
 	newFlags.Flags = configData.Flags
 
-	// Assign version and id from metadata to the flags
+	// Assign metadata as a map to each flag's metadata
 	for key, flag := range newFlags.Flags {
-		flag.Metadata.FlagSetID = configData.MetaData.FlagSetID
-		flag.Metadata.FlagSetVersion = configData.MetaData.FlagSetVersion
+		if flag.MetaData == nil {
+			flag.MetaData = make(map[string]interface{})
+		}
+		for metaKey, metaValue := range configData.MetaData {
+			flag.MetaData[metaKey] = metaValue
+		}
 		newFlags.Flags[key] = flag
 	}
 
