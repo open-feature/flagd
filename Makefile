@@ -44,7 +44,6 @@ test: test-core test-flagd test-flagd-proxy
 test-core:
 	go test -race -covermode=atomic -cover -short ./core/pkg/... -coverprofile=core-coverage.out
 test-flagd:
-	cd ./flagd/pkg/service/flag-sync/test-utils; ./gen.sh # generate certificate to test tls connection
 	go test -race -covermode=atomic -cover -short ./flagd/pkg/... -coverprofile=flagd-coverage.out
 test-flagd-proxy:
 	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out

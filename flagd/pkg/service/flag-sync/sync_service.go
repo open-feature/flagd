@@ -54,6 +54,7 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 	config := &tls.Config{
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.NoClientCert,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil

@@ -50,7 +50,8 @@ func LoadTLSClientCredentials(certPath string) (credentials.TransportCredentials
 
 	// Create the credentials and return it
 	config := &tls.Config{
-		RootCAs: certPool,
+		RootCAs:    certPool,
+		MinVersion: tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil

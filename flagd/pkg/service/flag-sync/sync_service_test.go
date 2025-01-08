@@ -16,12 +16,13 @@ import (
 
 func TestSyncServiceEndToEnd(t *testing.T) {
 	testCases := []struct {
-		certPath string
-		keyPath  string
-		tls      bool
+		certPath       string
+		keyPath        string
+		clientCertPath string
+		tls            bool
 	}{
-		{"./test-utils/server-cert.pem", "./test-utils/server-key.pem", true},
-		{"", "", false},
+		{"./test-cert/server-cert.pem", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true},
+		{"", "", "", false},
 	}
 
 	for _, tc := range testCases {
@@ -66,7 +67,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			// when - derive a client for sync service
 			var con *grpc.ClientConn
 			if tc.tls {
-				tlsCredentials, e := LoadTLSClientCredentials("./test-utils/ca-cert.pem")
+				tlsCredentials, e := LoadTLSClientCredentials(tc.clientCertPath)
 				if e != nil {
 					log.Fatal("cannot load TLS credentials: ", e)
 				}
