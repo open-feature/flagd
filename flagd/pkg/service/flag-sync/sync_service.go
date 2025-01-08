@@ -8,8 +8,6 @@ import (
 	"slices"
 	"time"
 
-	"google.golang.org/grpc/credentials"
-
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
