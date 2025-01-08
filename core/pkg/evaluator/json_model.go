@@ -12,7 +12,7 @@ type Evaluators struct {
 
 type ConfigWithMetadata struct {
 	Flags    map[string]model.Flag  `json:"flags"`
-	MetaData map[string]interface{} `json:"metadata"`
+	Metadata map[string]interface{} `json:"metadata"`
 }
 
 type Flags struct {

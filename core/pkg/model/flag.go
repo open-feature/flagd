@@ -9,7 +9,7 @@ type Flag struct {
 	Targeting      json.RawMessage        `json:"targeting,omitempty"`
 	Source         string                 `json:"source"`
 	Selector       string                 `json:"selector"`
-	MetaData       map[string]interface{} `json:"metadata"`
+	Metadata       map[string]interface{} `json:"metadata"`
 }
 
 type Evaluators struct {

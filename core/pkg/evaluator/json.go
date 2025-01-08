@@ -327,7 +327,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		metadata[SelectorMetadataKey] = selector
 	}
 
-	for key, value := range flag.MetaData {
+	for key, value := range flag.Metadata {
 		// If value is not nil or empty, copy to metadata
 		if value != nil {
 			metadata[key] = value
@@ -478,11 +478,11 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 
 	// Assign metadata as a map to each flag's metadata
 	for key, flag := range newFlags.Flags {
-		if flag.MetaData == nil {
-			flag.MetaData = make(map[string]interface{})
+		if flag.Metadata == nil {
+			flag.Metadata = make(map[string]interface{})
 		}
-		for metaKey, metaValue := range configData.MetaData {
-			flag.MetaData[metaKey] = metaValue
+		for metaKey, metaValue := range configData.Metadata {
+			flag.Metadata[metaKey] = metaValue
 		}
 		newFlags.Flags[key] = flag
 	}
