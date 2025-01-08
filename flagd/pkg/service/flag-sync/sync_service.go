@@ -4,16 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"net"
 	"slices"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type ISyncService interface {
@@ -116,7 +118,6 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 
 		err := s.server.Serve(s.listener)
-
 		if err != nil {
 			s.logger.Warn(fmt.Sprintf("error from sync server start: %v", err))
 		}

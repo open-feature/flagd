@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"google.golang.org/grpc/credentials"
-	"io/ioutil"
 )
 
 // getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
