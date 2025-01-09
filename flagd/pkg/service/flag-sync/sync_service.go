@@ -71,11 +71,9 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
 		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
 		if err != nil {
-			l.warn("Couldn't load credentials from given paths. Starting server without TLS connection...", err)
-			server = grpc.NewServer()
-		} else {
-			server = grpc.NewServer(grpc.Creds(tlsCredentials))
+			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
 		}
+		server = grpc.NewServer(grpc.Creds(tlsCredentials))
 	} else {
 		server = grpc.NewServer()
 	}

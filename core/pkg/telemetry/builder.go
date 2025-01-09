@@ -145,7 +145,7 @@ func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credenti
 
 		tlsConfig := &tls.Config{
 			RootCAs:    capool,
-			MinVersion: tls.VersionTLS13,
+			MinVersion: tls.VersionTLS12,
 			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
 				certs, err := reloader.GetCertificate()
 				if err != nil {

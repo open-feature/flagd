@@ -20,9 +20,11 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		keyPath        string
 		clientCertPath string
 		tls            bool
+		wantErr        bool
 	}{
-		{"./test-cert/server-cert.pem", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true},
-		{"", "", "", false},
+		{"./test-cert/server-cert.pem", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true, false},
+		{"", "", "", false, false},
+		{"./lol/not/a/cert", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true, true},
 	}
 
 	for _, tc := range testCases {
@@ -45,8 +47,14 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 				CertPath: tc.certPath,
 				KeyPath:  tc.keyPath,
 			})
-			if err != nil {
-				t.Fatal("error creating the service: %w", err)
+
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error creating the service!")
+				}
+				return
+			} else if err != nil {
+				t.Fatal("unexpected error creating the service: %w", err)
 				return
 			}
 
