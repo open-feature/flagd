@@ -67,7 +67,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			// when - derive a client for sync service
 			var con *grpc.ClientConn
 			if tc.tls {
-				tlsCredentials, e := LoadTLSClientCredentials(tc.clientCertPath)
+				tlsCredentials, e := loadTLSClientCredentials(tc.clientCertPath)
 				if e != nil {
 					log.Fatal("cannot load TLS credentials: ", e)
 				}

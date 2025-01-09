@@ -47,7 +47,7 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 	// Load server's certificate and private key
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load key pair from given certificate paths: '%s' and '%s'", certPath, keyPath)
+		return nil, fmt.Errorf("failed to load key pair from certificate paths '%s' and '%s': %w", certPath, keyPath, err)
 	}
 
 	// Create the credentials and return it

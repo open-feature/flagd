@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
@@ -37,9 +37,9 @@ func getSimpleFlagStore() (*store.Flags, []string) {
 	return flagStore, []string{"A", "B", "C"}
 }
 
-func LoadTLSClientCredentials(certPath string) (credentials.TransportCredentials, error) {
+func loadTLSClientCredentials(certPath string) (credentials.TransportCredentials, error) {
 	// Load certificate of the CA who signed server's certificate
-	pemServerCA, err := ioutil.ReadFile(certPath)
+	pemServerCA, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file from path '%s'", certPath)
 	}
