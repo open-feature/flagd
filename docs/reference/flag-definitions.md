@@ -156,7 +156,7 @@ Example of an invalid configuration:
 `targeting` is an **optional** property.
 A targeting rule **must** be valid JSON.
 Flagd uses a modified version of [JsonLogic](https://jsonlogic.com/), as well as some custom pre-processing, to evaluate these rules.
-If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](specifications/rpc-providers.md#caching).
+If no targeting rules are defined, the response reason will always be `STATIC`, this allows for the flag values to be cached, this behavior is described [here](specifications/providers.md#flag-evaluation-caching).
 
 #### Variants Returned From Targeting Rules
 
