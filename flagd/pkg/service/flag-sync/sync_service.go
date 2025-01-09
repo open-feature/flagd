@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"slices"
@@ -12,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type ISyncService interface {
@@ -28,6 +30,8 @@ type SvcConfigurations struct {
 	Sources       []string
 	Store         *store.Flags
 	ContextValues map[string]any
+	CertPath      string
+	KeyPath       string
 }
 
 type Service struct {
@@ -39,6 +43,23 @@ type Service struct {
 	startupTracker syncTracker
 }
 
+func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportCredentials, error) {
+	// Load server's certificate and private key
+	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load key pair from certificate paths '%s' and '%s': %w", certPath, keyPath, err)
+	}
+
+	// Create the credentials and return it
+	config := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.NoClientCert,
+		MinVersion:   tls.VersionTLS12,
+	}
+
+	return credentials.NewTLS(config), nil
+}
+
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	l := cfg.Logger
 	mux, err := NewMux(cfg.Store, cfg.Sources)
@@ -46,7 +67,17 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		return nil, fmt.Errorf("error initializing multiplexer: %w", err)
 	}
 
-	server := grpc.NewServer()
+	var server *grpc.Server
+	if cfg.CertPath != "" && cfg.KeyPath != "" {
+		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
+		}
+		server = grpc.NewServer(grpc.Creds(tlsCredentials))
+	} else {
+		server = grpc.NewServer()
+	}
+
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
 		mux:           mux,
 		log:           l,
