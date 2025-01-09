@@ -44,10 +44,6 @@ type Service struct {
 }
 
 func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportCredentials, error) {
-	if certPath == "" || keyPath == "" {
-		return nil, fmt.Errorf("at least one passed path parameter is empty string")
-	}
-
 	// Load server's certificate and private key
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
@@ -72,12 +68,16 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	}
 
 	var server *grpc.Server
-	tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
-	if err != nil {
-		l.Info("Couldn't load credentials or no credentials given. Starting server without TLS connection...")
-		server = grpc.NewServer()
+	if cfg.CertPath != "" && cfg.KeyPath != "" {
+		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
+		if err != nil {
+			l.Info("Couldn't load credentials from given paths. Starting server without TLS connection...")
+			server = grpc.NewServer()
+		} else {
+			server = grpc.NewServer(grpc.Creds(tlsCredentials))
+		}
 	} else {
-		server = grpc.NewServer(grpc.Creds(tlsCredentials))
+		server = grpc.NewServer()
 	}
 
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
