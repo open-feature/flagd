@@ -44,6 +44,10 @@ type Service struct {
 }
 
 func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportCredentials, error) {
+	if certPath == "" || keyPath == "" {
+		return nil, fmt.Errorf("at least one passed path parameter is empty string")
+	}
+
 	// Load server's certificate and private key
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
