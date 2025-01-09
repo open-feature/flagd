@@ -190,7 +190,7 @@ The provider metadata includes properties returned from the [provider_ready even
 
 ## In-Process Evaluation
 
-In-process providers use the [sync schema](./protos.md#syncflagsresponse) to connect to flagd, initiate the [sync stream](./protos.md#eventstreamresponse), and download the `flag-set` rules to evaluate them locally.
+In-process providers use the [sync schema](./protos.md#syncflagsresponse) to connect to flagd, initiate the [sync stream](./protos.md#eventstreamresponse), and download the `flag set` rules to evaluate them locally.
 In-process providers are relatively complex (compared to RPC providers) to implement since they essentially must implement more of flagd's logic to evaluate flags locally.
 Local evaluation has the impact of much lower latency and almost no serialization compared to RPC providers.
 
@@ -290,3 +290,9 @@ envoy://localhost:9211/flagd-sync.service
 
 The custom name resolver provider in this case will use the endpoint name i.e. `flagd-sync.service` as [authority](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/nameresolve/ExampleNameResolver.java#L55-L61)
 and connect to `localhost:9211`.
+
+### Metadata
+
+When a flag is resolved, the returned [metadata](./flag-definitions.md#metadata) is a merged representation of the metadata defined on the flag set, and on the flag, with the flag metadata taking priority.
+Flag metadata is returned on a "best effort" basis when flags are resolved: disabled, missing or erroneous flags return the metadata of the associated flag set.
+This is particularly important for debugging purposes and error metrics.
