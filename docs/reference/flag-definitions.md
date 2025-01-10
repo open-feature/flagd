@@ -56,8 +56,15 @@ A fully configured flag may look like this.
           "on",
           "off"
         ]
+      },
+      "metadata": {
+        "version": "17"
       }
     }
+  },
+  "metadata": {
+    "team": "user-experience",
+    "flagSetId": "ecommerce"
   }
 }
 ```
@@ -338,6 +345,13 @@ Example:
   }
 }
 ```
+
+## Metadata
+
+Metadata can be defined at both the flag set (as a sibling of [flags](#flags)) and within each flag.
+Flag metadata conveys arbitrary information about the flag or flag set, such as a version number, or the business unit that is responsible for the flag.
+When flagd resolves flags, the returned [flag metadata](https://openfeature.dev/specification/types/#flag-metadata) is a merged representation of the metadata defined in the flag set, and the metadata defined in the flag, with the metadata defined in the flag taking priority.
+See the [playground](/playground/?scenario-name=Flag+metadata) for an interactive example.
 
 ## Boolean Variant Shorthand
 
