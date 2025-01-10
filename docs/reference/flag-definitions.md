@@ -63,7 +63,8 @@ A fully configured flag may look like this.
     }
   },
   "metadata": {
-    "team": "platform-engineering"
+    "team": "user-experience",
+    "flagSetid": "ecommerce"
   }
 }
 ```
