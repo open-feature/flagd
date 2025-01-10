@@ -7,7 +7,7 @@ toolchain go1.22.9
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.2
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.2-20241220192239-696330adaff0.1
-	connectrpc.com/connect v1.17.0
+	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.1
 	github.com/diegoholiveira/jsonlogic/v3 v3.7.0
 	github.com/fsnotify/fsnotify v1.8.0
