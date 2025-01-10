@@ -42,10 +42,7 @@ A fully configured flag may look like this.
 ```json
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
-  "metadata": {
-    "team": "platform-engineering"
-  },
-  "flags": {    
+  "flags": {
     "new-welcome-banner": {
       "state": "ENABLED",
       "variants": {
@@ -64,6 +61,9 @@ A fully configured flag may look like this.
         "version": "17"
       }
     }
+  },
+  "metadata": {
+    "team": "platform-engineering"
   }
 }
 ```
