@@ -64,7 +64,7 @@ A fully configured flag may look like this.
   },
   "metadata": {
     "team": "user-experience",
-    "flagSetid": "ecommerce"
+    "flagSetId": "ecommerce"
   }
 }
 ```
