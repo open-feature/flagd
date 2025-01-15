@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.10.6](https://github.com/open-feature/flagd/compare/core/v0.10.5...core/v0.10.6) (2025-01-15)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 37baa2c ([#1499](https://github.com/open-feature/flagd/issues/1499)) ([1a853f7](https://github.com/open-feature/flagd/commit/1a853f79dc41523fd6dcb1ae6ca9745947955cbc))
+* **deps:** update github.com/open-feature/flagd-schemas digest to b81a56e ([#1391](https://github.com/open-feature/flagd/issues/1391)) ([6a3d8ac](https://github.com/open-feature/flagd/commit/6a3d8ac2511c32bd0dc77bba0169679aa9bf6ca6))
+* **deps:** update golang.org/x/exp digest to 7588d65 ([#1495](https://github.com/open-feature/flagd/issues/1495)) ([242e594](https://github.com/open-feature/flagd/commit/242e59450c71c682b56e554830ea3003bdbf9622))
+* **deps:** update golang.org/x/exp digest to b2144cd ([#1320](https://github.com/open-feature/flagd/issues/1320)) ([a692b00](https://github.com/open-feature/flagd/commit/a692b009ae8e7dc928d0fd65236b404192c99562))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.1 ([#1489](https://github.com/open-feature/flagd/issues/1489)) ([53add83](https://github.com/open-feature/flagd/commit/53add83a491c6e00e0d9b1b64a9461e5973edca7))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.2 ([#1492](https://github.com/open-feature/flagd/issues/1492)) ([9f1d94a](https://github.com/open-feature/flagd/commit/9f1d94a42ac00ecf5fc58c07a76c350e2e4ec2f6))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.0-20241220192239-696330adaff0.1 ([#1490](https://github.com/open-feature/flagd/issues/1490)) ([6edce72](https://github.com/open-feature/flagd/commit/6edce72e8cff01ea13cbd15d604b35ccc8337f50))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.2-20241220192239-696330adaff0.1 ([#1502](https://github.com/open-feature/flagd/issues/1502)) ([426c36e](https://github.com/open-feature/flagd/commit/426c36e838b9ded3a23f933e66e963c8110c0ddb))
+* **deps:** update module connectrpc.com/connect to v1.18.1 ([#1507](https://github.com/open-feature/flagd/issues/1507)) ([89d3259](https://github.com/open-feature/flagd/commit/89d32591db784458ce9b4cca36662ea502418bc5))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.7.0 ([#1496](https://github.com/open-feature/flagd/issues/1496)) ([e1fe149](https://github.com/open-feature/flagd/commit/e1fe1490fd1c26b9c566ff5ddef666c0fa74b2d5))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.7.1 ([#1509](https://github.com/open-feature/flagd/issues/1509)) ([9d06812](https://github.com/open-feature/flagd/commit/9d0681270f26bb91777fa2b8a792a4b0ccd07304))
+* **deps:** update module golang.org/x/crypto to v0.32.0 ([#1497](https://github.com/open-feature/flagd/issues/1497)) ([63a34d2](https://github.com/open-feature/flagd/commit/63a34d23aedcd798ff9f4cd47cdaddca35416423))
+* **deps:** update module google.golang.org/grpc to v1.69.2 ([#1484](https://github.com/open-feature/flagd/issues/1484)) ([6b40ad3](https://github.com/open-feature/flagd/commit/6b40ad34c83da4a3116e7cad4139a63a6c918097))
+* **deps:** update module google.golang.org/grpc to v1.69.4 ([#1510](https://github.com/open-feature/flagd/issues/1510)) ([76d6353](https://github.com/open-feature/flagd/commit/76d6353840ab8e7c93bdb0802eb1c49fc6fe1dc0))
+* **deps:** update opentelemetry-go monorepo ([#1470](https://github.com/open-feature/flagd/issues/1470)) ([26b0b1a](https://github.com/open-feature/flagd/commit/26b0b1af8bc4b3a393c3453784b50f167f13f743))
+
+
+### ✨ New Features
+
+* add ssl support to sync service ([#1479](https://github.com/open-feature/flagd/issues/1479)) ([#1501](https://github.com/open-feature/flagd/issues/1501)) ([d50fcc8](https://github.com/open-feature/flagd/commit/d50fcc821c1ae043cb8cf77e464f7b738e2ff755))
+* support flag metadata ([#1476](https://github.com/open-feature/flagd/issues/1476)) ([13fbbad](https://github.com/open-feature/flagd/commit/13fbbad4d849b35884f429c0e74a71ece9cce2c9))
+
 ## [0.10.5](https://github.com/open-feature/flagd/compare/core/v0.10.4...core/v0.10.5) (2024-12-17)
 
 

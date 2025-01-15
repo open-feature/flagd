@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.11.6](https://github.com/open-feature/flagd/compare/flagd/v0.11.5...flagd/v0.11.6) (2025-01-15)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.17.0-20241220192239-696330adaff0.1 ([#1488](https://github.com/open-feature/flagd/issues/1488)) ([8e09457](https://github.com/open-feature/flagd/commit/8e09457d739fc7d9e679e27a3449e4a13cd6c718))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.18.1-20241220192239-696330adaff0.1 ([#1506](https://github.com/open-feature/flagd/issues/1506)) ([b868194](https://github.com/open-feature/flagd/commit/b8681947bf5dcc24d5b0e48f5e59a61c1278c280))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.1 ([#1489](https://github.com/open-feature/flagd/issues/1489)) ([53add83](https://github.com/open-feature/flagd/commit/53add83a491c6e00e0d9b1b64a9461e5973edca7))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.2 ([#1492](https://github.com/open-feature/flagd/issues/1492)) ([9f1d94a](https://github.com/open-feature/flagd/commit/9f1d94a42ac00ecf5fc58c07a76c350e2e4ec2f6))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.0-20241220192239-696330adaff0.1 ([#1490](https://github.com/open-feature/flagd/issues/1490)) ([6edce72](https://github.com/open-feature/flagd/commit/6edce72e8cff01ea13cbd15d604b35ccc8337f50))
+* **deps:** update module github.com/mattn/go-colorable to v0.1.14 ([#1508](https://github.com/open-feature/flagd/issues/1508)) ([87727f7](https://github.com/open-feature/flagd/commit/87727f7f8f18e4f532d152190ada5dbe3fc915b0))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.5 ([#1482](https://github.com/open-feature/flagd/issues/1482)) ([ce48cb7](https://github.com/open-feature/flagd/commit/ce48cb757659eef8807531f8522ca1b7bc80422c))
+* **deps:** update module golang.org/x/net to v0.33.0 [security] ([#1486](https://github.com/open-feature/flagd/issues/1486)) ([4764077](https://github.com/open-feature/flagd/commit/476407769f47675f649c328e27e0f87860f0f79d))
+* **deps:** update module golang.org/x/net to v0.34.0 ([#1498](https://github.com/open-feature/flagd/issues/1498)) ([7584f95](https://github.com/open-feature/flagd/commit/7584f95e4da50ae870014589a971b83b10c23873))
+* **deps:** update module google.golang.org/grpc to v1.69.2 ([#1484](https://github.com/open-feature/flagd/issues/1484)) ([6b40ad3](https://github.com/open-feature/flagd/commit/6b40ad34c83da4a3116e7cad4139a63a6c918097))
+* **deps:** update module google.golang.org/grpc to v1.69.4 ([#1510](https://github.com/open-feature/flagd/issues/1510)) ([76d6353](https://github.com/open-feature/flagd/commit/76d6353840ab8e7c93bdb0802eb1c49fc6fe1dc0))
+* **deps:** update module google.golang.org/protobuf to v1.36.1 ([#1491](https://github.com/open-feature/flagd/issues/1491)) ([2c729a7](https://github.com/open-feature/flagd/commit/2c729a7c212479e689a4cb4f6a289bee8accb194))
+* **deps:** update opentelemetry-go monorepo ([#1470](https://github.com/open-feature/flagd/issues/1470)) ([26b0b1a](https://github.com/open-feature/flagd/commit/26b0b1af8bc4b3a393c3453784b50f167f13f743))
+
+
+### ✨ New Features
+
+* add ssl support to sync service ([#1479](https://github.com/open-feature/flagd/issues/1479)) ([#1501](https://github.com/open-feature/flagd/issues/1501)) ([d50fcc8](https://github.com/open-feature/flagd/commit/d50fcc821c1ae043cb8cf77e464f7b738e2ff755))
+
 ## [0.11.5](https://github.com/open-feature/flagd/compare/flagd/v0.11.4...flagd/v0.11.5) (2024-12-17)
 
 
