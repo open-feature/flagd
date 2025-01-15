@@ -327,6 +327,13 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		metadata[SelectorMetadataKey] = selector
 	}
 
+	for key, value := range flag.Metadata {
+		// If value is not nil or empty, copy to metadata
+		if value != nil {
+			metadata[key] = value
+		}
+	}
+
 	if flag.State == Disabled {
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
 		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
@@ -460,9 +467,26 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &newFlags)
+	var configData ConfigWithMetadata
+	err = json.Unmarshal([]byte(transposedConfig), &configData)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
+	}
+
+	// Assign the flags from the unmarshalled config to the newFlags struct
+	newFlags.Flags = configData.Flags
+
+	// Assign metadata as a map to each flag's metadata
+	for key, flag := range newFlags.Flags {
+		if flag.Metadata == nil {
+			flag.Metadata = make(map[string]interface{})
+		}
+		for metaKey, metaValue := range configData.Metadata {
+			if _, exists := flag.Metadata[metaKey]; !exists {
+				flag.Metadata[metaKey] = metaValue
+			}
+		}
+		newFlags.Flags[key] = flag
 	}
 
 	return validateDefaultVariants(newFlags)

@@ -1184,6 +1184,222 @@ func TestState_Evaluator(t *testing.T) {
 			expectedError:  true,
 			expectedResync: false,
 		},
+		"flag metadata": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": 1
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"$evaluators": {
+						"emailWithFaas": {
+							  "in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+						}
+  					}
+				}
+			`,
+			inputSyncType: sync.ALL,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": 1
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "source":"",
+						  "selector":"",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"flagSources":null
+				}
+			`,
+		},
+		"flagSet and flag metadata": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": "sso/dev",
+							"version": "1.0.0"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"metadata": {
+						"flagSetId": "test",
+						"flagSetVersion": "1"
+					},
+					"$evaluators": {
+						"emailWithFaas": {
+							  "in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+						}
+  					}
+				}
+			`,
+			inputSyncType: sync.ALL,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": "sso/dev",
+							"version": "1.0.0",
+							"flagSetId": "test",
+                            "flagSetVersion": "1"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "source":"",
+						  "selector":"",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"flagSources":null
+				}
+			`,
+		},
+		"flag metadata priority": {
+			inputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": "sso/dev",
+							"version": "1.0.0"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "targeting": {
+							"if": [
+							  {
+								"$ref": "emailWithFaas"
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"metadata": {
+						"id": "test",
+						"flagSetVersion": "1"
+					},
+					"$evaluators": {
+						"emailWithFaas": {
+							  "in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+						}
+  					}
+				}
+			`,
+			inputSyncType: sync.ALL,
+			expectedOutputState: `
+				{
+  					"flags": {
+						"fibAlgo": {
+						  "variants": {
+							"recursive": "recursive",
+							"memo": "memo",
+							"loop": "loop",
+							"binet": "binet"
+						  },
+						  "metadata": {
+							"id": "sso/dev",
+							"version": "1.0.0",
+                            "flagSetVersion": "1"
+						  },
+						  "defaultVariant": "recursive",
+						  "state": "ENABLED",
+						  "source":"",
+						  "selector":"",
+						  "targeting": {
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }
+    					}
+					},
+					"flagSources":null
+				}
+			`,
+		},
 	}
 
 	for name, tt := range tests {

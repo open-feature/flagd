@@ -10,6 +10,11 @@ type Evaluators struct {
 	Evaluators map[string]json.RawMessage `json:"$evaluators"`
 }
 
+type ConfigWithMetadata struct {
+	Flags    map[string]model.Flag  `json:"flags"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
 type Flags struct {
 	Flags map[string]model.Flag `json:"flags"`
 }
