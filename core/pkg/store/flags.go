@@ -21,8 +21,8 @@ type Flags struct {
 	mx             sync.RWMutex
 	Flags          map[string]model.Flag `json:"flags"`
 	FlagSources    []string
-	SourceMetadata map[string]SourceDetails
-	Metadata       map[string]interface{} `json:"metadata"`
+	SourceMetadata map[string]SourceDetails `json:"sourceMetadata,omitempty"`
+	Metadata       map[string]interface{}   `json:"metadata,omitempty"`
 }
 
 type SourceDetails struct {
