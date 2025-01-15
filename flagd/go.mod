@@ -7,7 +7,7 @@ toolchain go1.22.9
 require (
 	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.18.1-20241220192239-696330adaff0.1
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.2
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.2-20241220192239-696330adaff0.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.3-20241220192239-696330adaff0.1
 	connectrpc.com/connect v1.18.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/gorilla/mux v1.8.1
@@ -28,7 +28,7 @@ require (
 	golang.org/x/net v0.34.0
 	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.69.4
-	google.golang.org/protobuf v1.36.2
+	google.golang.org/protobuf v1.36.3
 )
 
 require (
