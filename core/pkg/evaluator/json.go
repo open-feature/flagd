@@ -482,7 +482,9 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 			flag.Metadata = make(map[string]interface{})
 		}
 		for metaKey, metaValue := range configData.Metadata {
-			flag.Metadata[metaKey] = metaValue
+			if _, exists := flag.Metadata[metaKey]; !exists {
+				flag.Metadata[metaKey] = metaValue
+			}
 		}
 		newFlags.Flags[key] = flag
 	}
