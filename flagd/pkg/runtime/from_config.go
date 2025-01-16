@@ -117,6 +117,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		Sources:       sources,
 		Store:         s,
 		ContextValues: config.ContextValues,
+		KeyPath:       config.ServiceKeyPath,
+		CertPath:      config.ServiceCertPath,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)
