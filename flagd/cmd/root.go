@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/dimiro1/banner"
+	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,6 +25,20 @@ var rootCmd = &cobra.Command{
 		"It is designed to conform to Open Feature schema for flag definitions.",
 	Long:              ``,
 	DisableAutoGenTag: true,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if viper.GetString(logFormatFlagName) == "console" {
+			banner.InitString(colorable.NewColorableStdout(), true, true, `
+	{{ .AnsiColor.BrightRed }}	 ______   __       ________   _______    ______      
+	{{ .AnsiColor.BrightRed }}	/_____/\ /_/\     /_______/\ /______/\  /_____/\     
+	{{ .AnsiColor.BrightRed }}	\::::_\/_\:\ \    \::: _  \ \\::::__\/__\:::_ \ \    
+	{{ .AnsiColor.BrightRed }}	 \:\/___/\\:\ \    \::(_)  \ \\:\ /____/\\:\ \ \ \   
+	{{ .AnsiColor.BrightRed }}	  \:::._\/ \:\ \____\:: __  \ \\:\\_  _\/ \:\ \ \ \  
+	{{ .AnsiColor.BrightRed }}	   \:\ \    \:\/___/\\:.\ \  \ \\:\_\ \ \  \:\/.:| | 
+	{{ .AnsiColor.BrightRed }}	    \_\/     \_____\/ \__\/\__\/ \_____\/   \____/_/ 
+{{ .AnsiColor.Default }}
+`)
+		}
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
