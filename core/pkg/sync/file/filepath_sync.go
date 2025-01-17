@@ -2,7 +2,6 @@ package file
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -12,7 +11,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"gopkg.in/yaml.v3"
+	"github.com/open-feature/flagd/core/pkg/utils"
 )
 
 const (
@@ -187,31 +186,10 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 
 	switch fs.fileType {
 	case "yaml", "yml":
-		return yamlToJSON(rawFile)
+		return utils.YAMLToJSON(rawFile)
 	case "json":
 		return string(rawFile), nil
 	default:
 		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
 	}
-}
-
-// yamlToJSON is a generic helper function to convert
-// yaml to json
-func yamlToJSON(rawFile []byte) (string, error) {
-	if len(rawFile) == 0 {
-		return "", nil
-	}
-
-	var ms map[string]interface{}
-	// yaml.Unmarshal unmarshals to map[interface]interface{}
-	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
-		return "", fmt.Errorf("unmarshal yaml: %w", err)
-	}
-
-	r, err := json.Marshal(ms)
-	if err != nil {
-		return "", fmt.Errorf("convert yaml to json: %w", err)
-	}
-
-	return string(r), err
 }

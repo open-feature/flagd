@@ -5,10 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/utils"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
 	_ "gocloud.dev/blob/gcsblob"   // needed to initialize GCS driver
@@ -18,6 +20,8 @@ import (
 type Sync struct {
 	Bucket      string
 	Object      string
+	// FileType indicates the file type e.g., json, yaml/yml etc.,
+	fileType string
 	BlobURLMux  *blob.URLMux
 	Cron        Cron
 	Logger      *logger.Logger
@@ -131,6 +135,20 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, e
 	if err != nil {
 		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
+	if hs.fileType == "" {
+		uriSplit := strings.Split(hs.Object, ".")
+		hs.fileType = uriSplit[len(uriSplit)-1]
+	}
 
-	return buf.String(), nil
+	switch hs.fileType {
+	case "yaml", "yml":
+		return utils.YAMLToJSON(buf.Bytes())
+	case "json":
+		return buf.String(), nil
+	default:
+		// TODO make consistent with the file sync
+		return buf.String(), nil
+		// return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", hs.sync())
+	}
 }
+

@@ -190,7 +190,7 @@ func TestSimpleSync(t *testing.T) {
 
 func TestFilePathSync_Fetch(t *testing.T) {
 	successDirName := t.TempDir()
-	falureDirName := t.TempDir()
+	failureDirName := t.TempDir()
 	tests := map[string]struct {
 		fpSync         Sync
 		handleResponse func(t *testing.T, fetched string, err error)
@@ -213,9 +213,9 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			},
 		},
 		"not found": {
-			fetchDirName: falureDirName,
+			fetchDirName: failureDirName,
 			fpSync: Sync{
-				URI:    fmt.Sprintf("%s/%s", falureDirName, "not_found"),
+				URI:    fmt.Sprintf("%s/%s", failureDirName, "not_found"),
 				Logger: logger.NewLogger(nil, false),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
@@ -307,33 +307,5 @@ func writeToFile(t *testing.T, fetchDirName, fileContents string) {
 	_, err = file.WriteAt([]byte(fileContents), 0)
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestFilePathSync_yamlToJSON(t *testing.T) {
-	tests := map[string]struct {
-		input          []byte
-		handleResponse func(t *testing.T, output string, err error)
-	}{
-		"empty": {
-			input: []byte(""),
-			handleResponse: func(t *testing.T, output string, err error) {
-				if err != nil {
-					t.Fatalf("expect no err, got err = %v", err)
-				}
-
-				if output != "" {
-					t.Fatalf("expect output = '', got output = '%v'", output)
-				}
-			},
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			output, err := yamlToJSON(tt.input)
-
-			tt.handleResponse(t, output, err)
-		})
 	}
 }
