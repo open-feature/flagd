@@ -18,10 +18,10 @@ import (
 )
 
 type Sync struct {
-	Bucket      string
-	Object      string
+	Bucket string
+	Object string
 	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType string
+	fileType    string
 	BlobURLMux  *blob.URLMux
 	Cron        Cron
 	Logger      *logger.Logger
@@ -142,7 +142,11 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, e
 
 	switch hs.fileType {
 	case "yaml", "yml":
-		return utils.YAMLToJSON(buf.Bytes())
+		str, err := utils.YAMLToJSON(buf.Bytes())
+		if err != nil {
+			return "", fmt.Errorf("error converting blob from yaml to json: %w", err)
+		}
+		return str, nil
 	case "json":
 		return buf.String(), nil
 	default:
@@ -151,4 +155,3 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, e
 		// return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", hs.sync())
 	}
 }
-

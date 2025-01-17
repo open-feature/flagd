@@ -186,7 +186,11 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 
 	switch fs.fileType {
 	case "yaml", "yml":
-		return utils.YAMLToJSON(rawFile)
+		str, err := utils.YAMLToJSON(rawFile)
+		if err != nil {
+			return "", fmt.Errorf("error converting file from yaml to json: %w", err)
+		}
+		return str, nil
 	case "json":
 		return string(rawFile), nil
 	default:
