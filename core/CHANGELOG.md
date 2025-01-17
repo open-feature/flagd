@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.7](https://github.com/open-feature/flagd/compare/core/v0.10.6...core/v0.10.7) (2025-01-16)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.3-20241220192239-696330adaff0.1 ([#1513](https://github.com/open-feature/flagd/issues/1513)) ([64c5787](https://github.com/open-feature/flagd/commit/64c57875b032edcef2e2d230e7735990e01b72b8))
+
 ## [0.10.6](https://github.com/open-feature/flagd/compare/core/v0.10.5...core/v0.10.6) (2025-01-15)
 
 
