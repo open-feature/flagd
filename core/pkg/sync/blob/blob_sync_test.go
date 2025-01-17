@@ -14,31 +14,31 @@ import (
 
 func TestBlobSync(t *testing.T) {
 	tests := map[string]struct {
-		scheme string
-		bucket string
-		object string
-		content string
+		scheme           string
+		bucket           string
+		object           string
+		content          string
 		convertedContent string
 	}{
 		"unspecified file type": {
-			scheme: "xyz",
-			bucket: "b",
-			object: "flags",
-			content: "{\"flags\":{}}",
+			scheme:           "xyz",
+			bucket:           "b",
+			object:           "flags",
+			content:          "{\"flags\":{}}",
 			convertedContent: "{\"flags\":{}}",
 		},
 		"json file type": {
-			scheme: "xyz",
-			bucket: "b",
-			object: "flags.json",
-			content: "{\"flags\":{}}",
+			scheme:           "xyz",
+			bucket:           "b",
+			object:           "flags.json",
+			content:          "{\"flags\":{}}",
 			convertedContent: "{\"flags\":{}}",
 		},
 		"yaml file type": {
-			scheme: "xyz",
-			bucket: "b",
-			object: "flags.yaml",
-			content: "flags: []",
+			scheme:           "xyz",
+			bucket:           "b",
+			object:           "flags.yaml",
+			content:          "flags: []",
 			convertedContent: "{\"flags\":[]}",
 		},
 	}

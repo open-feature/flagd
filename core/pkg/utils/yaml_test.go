@@ -4,9 +4,9 @@ import "testing"
 
 func TestYAMLToJSON(t *testing.T) {
 	tests := map[string]struct {
-		input          []byte
-		expected       string
-		expectedError  bool
+		input         []byte
+		expected      string
+		expectedError bool
 	}{
 		"empty": {
 			input:         []byte(""),
