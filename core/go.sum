@@ -119,6 +119,8 @@ github.com/diegoholiveira/jsonlogic/v3 v3.7.0 h1:fDGVmOyIS8H4WJhtv0YUOoeoUXo7sZL
 github.com/diegoholiveira/jsonlogic/v3 v3.7.0/go.mod h1:OYRb6FSTVmMM+MNQ7ElmMsczyNSepw+OU4Z8emDSi4w=
 github.com/diegoholiveira/jsonlogic/v3 v3.7.1 h1:N9nEU+sFL793cZc11fsZ/Rlicvlg7hcOFOI6CVjvIhk=
 github.com/diegoholiveira/jsonlogic/v3 v3.7.1/go.mod h1:OYRb6FSTVmMM+MNQ7ElmMsczyNSepw+OU4Z8emDSi4w=
+github.com/diegoholiveira/jsonlogic/v3 v3.7.3 h1:orvGaTW5Qdcowpr7vgfMNuqYNjQYcqtw9W1Bk4QyI38=
+github.com/diegoholiveira/jsonlogic/v3 v3.7.3/go.mod h1:OYRb6FSTVmMM+MNQ7ElmMsczyNSepw+OU4Z8emDSi4w=
 github.com/emicklei/go-restful/v3 v3.12.0 h1:y2DdzBAURM29NFF94q6RaY4vjIH1rtwDapwQtU84iWk=
 github.com/emicklei/go-restful/v3 v3.12.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
