@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.8](https://github.com/open-feature/flagd/compare/core/v0.10.7...core/v0.10.8) (2025-01-19)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.7.3 ([#1520](https://github.com/open-feature/flagd/issues/1520)) ([db2f990](https://github.com/open-feature/flagd/commit/db2f99021dfd676d2fd0c6af6af7e77783ee31ce))
+* **deps:** update opentelemetry-go monorepo ([#1524](https://github.com/open-feature/flagd/issues/1524)) ([eeae9a6](https://github.com/open-feature/flagd/commit/eeae9a64caf93356fd663cc735cc422edcf9e132))
+
 ## [0.10.7](https://github.com/open-feature/flagd/compare/core/v0.10.6...core/v0.10.7) (2025-01-16)
 
 

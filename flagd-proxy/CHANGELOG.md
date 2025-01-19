@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.11](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.10...flagd-proxy/v0.6.11) (2025-01-19)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.7 ([#1521](https://github.com/open-feature/flagd/issues/1521)) ([bf8e7e0](https://github.com/open-feature/flagd/commit/bf8e7e06d9b34e0548abb8af9cce2becb357f9c4))
+* **deps:** update opentelemetry-go monorepo ([#1524](https://github.com/open-feature/flagd/issues/1524)) ([eeae9a6](https://github.com/open-feature/flagd/commit/eeae9a64caf93356fd663cc735cc422edcf9e132))
+* Skip flagd banner when non-console logger in use ([#1516](https://github.com/open-feature/flagd/issues/1516)) ([bae9b6f](https://github.com/open-feature/flagd/commit/bae9b6fb3b53a9d73f4c36e7b676beb6dac03476))
+
 ## [0.6.10](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.9...flagd-proxy/v0.6.10) (2025-01-16)
 
 
