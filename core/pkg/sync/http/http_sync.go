@@ -149,7 +149,11 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) (string, error
 		return "", fmt.Errorf("unable to read body to bytes: %w", err)
 	}
 
-	return utils.ConvertToJSON(body, filepath.Ext(url), resp.Header.Get("Content-Type"))
+	json, err := utils.ConvertToJSON(body, filepath.Ext(url), resp.Header.Get("Content-Type"))
+	if err != nil {
+		return "", fmt.Errorf("error converting response body to json: %w", err)
+	}
+	return json, nil
 }
 
 func (hs *Sync) generateSha(body []byte) string {
@@ -171,5 +175,5 @@ func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 		hs.LastBodySHA = hs.generateSha([]byte(body))
 	}
 
-	return string(body), nil
+	return body, nil
 }

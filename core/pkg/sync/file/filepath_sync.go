@@ -187,5 +187,9 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	}
 
 	// File extension is used to determine the content type, so media type is unnecessary
-	return utils.ConvertToJSON(data, filepath.Ext(fs.URI), "")
+	json, err := utils.ConvertToJSON(data, filepath.Ext(fs.URI), "")
+	if err != nil {
+		return "", fmt.Errorf("error converting file content to json: %w", err)
+	}
+	return json, nil
 }

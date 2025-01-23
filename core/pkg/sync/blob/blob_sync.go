@@ -141,5 +141,9 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, e
 		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
-	return utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
+	json, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
+	if err != nil {
+		return "", fmt.Errorf("error converting blob data to json: %w", err)
+	}
+	return json, nil
 }

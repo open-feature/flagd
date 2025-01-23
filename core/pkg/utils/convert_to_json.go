@@ -11,14 +11,14 @@ import (
 func ConvertToJSON(data []byte, fileExtension string, mediaType string) (string, error) {
 	var detectedType string
 	if fileExtension != "" {
-			// file extension may be preceded by a dot
-			detectedType = strings.TrimPrefix(fileExtension, ".")
+		// file extension may be preceded by a dot
+		detectedType = strings.TrimPrefix(fileExtension, ".")
 	} else {
-			parsedMediaType, _, err := mime.ParseMediaType(mediaType)
-			if err != nil {
-				return "", fmt.Errorf("unable to determine file format: %w", err)
-			}
-			detectedType = parsedMediaType
+		parsedMediaType, _, err := mime.ParseMediaType(mediaType)
+		if err != nil {
+			return "", fmt.Errorf("unable to determine file format: %w", err)
+		}
+		detectedType = parsedMediaType
 	}
 
 	// Normalize the detected type
