@@ -1,11 +1,11 @@
 package blob
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"io"
+	"path/filepath"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -20,8 +20,6 @@ import (
 type Sync struct {
 	Bucket string
 	Object string
-	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType    string
 	BlobURLMux  *blob.URLMux
 	Cron        Cron
 	Logger      *logger.Logger
@@ -130,28 +128,18 @@ func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bu
 }
 
 func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, error) {
-	buf := bytes.NewBuffer(nil)
-	err := bucket.Download(ctx, hs.Object, buf, nil)
+	r, err := bucket.NewReader(ctx, hs.Object, nil)
+
+	if err != nil {
+		return "", fmt.Errorf("error opening reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
+	}
+	defer r.Close()
+
+	data, err := io.ReadAll(r)
+
 	if err != nil {
 		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
-	if hs.fileType == "" {
-		uriSplit := strings.Split(hs.Object, ".")
-		hs.fileType = uriSplit[len(uriSplit)-1]
-	}
 
-	switch hs.fileType {
-	case "yaml", "yml":
-		str, err := utils.YAMLToJSON(buf.Bytes())
-		if err != nil {
-			return "", fmt.Errorf("error converting blob from yaml to json: %w", err)
-		}
-		return str, nil
-	case "json":
-		return buf.String(), nil
-	default:
-		// TODO make consistent with the file sync
-		return buf.String(), nil
-		// return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", hs.sync())
-	}
+	return utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
 }

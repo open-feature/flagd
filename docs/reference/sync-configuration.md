@@ -20,13 +20,19 @@ it is passed to the correct implementation:
 | &nbsp;[grpc](#custom-grpc-target-uri) | `[ envoy \| dns \| uds\| xds ]://` | `envoy://localhost:9211/test.service` |
 | `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
 | `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
-| `s3`              | `s3://`            | `s3://my-bucket/my-flags.json` |
+| `s3`                  | `s3://`                | `s3://my-bucket/my-flags.json`        |
+
+### Data Serialization
+
+The `file`, `http`, `gcs`, `azblob` and `s3` sync providers expect the data to be formatted as JSON or YAML.
+The file extension is used to determine the serialization format.
+If the file extension hasn't been defined, the [media type](https://en.wikipedia.org/wiki/Media_type) will be used instead.
 
 ### Custom gRPC Target URI
 
-Apart from default `dns` resolution, Flagd also support different resolution method e.g. `xds`.  Currently, we are supporting all [core resolver](https://grpc.io/docs/guides/custom-name-resolution/)
-and one custom resolver for `envoy` proxy resolution. For more details, please refer the
-[RFC](https://github.com/open-feature/flagd/blob/main/docs/reference/specifications/proposal/rfc-grpc-custom-name-resolver.md) document.
+Apart from default `dns` resolution, Flagd also support different resolution method e.g. `xds`.
+Currently, we are supporting all [core resolver](https://grpc.io/docs/guides/custom-name-resolution/) and one custom resolver for `envoy` proxy resolution.
+For more details, please refer the [RFC](https://github.com/open-feature/flagd/blob/main/docs/reference/specifications/proposal/rfc-grpc-custom-name-resolver.md) document.
 
 ```shell
 ./bin/flagd start -x --uri envoy://localhost:9211/test.service
@@ -72,8 +78,8 @@ Sync providers:
 - `file` - config/samples/example_flags.json
 - `fsnotify` - config/samples/example_flags.json
 - `fileinfo` - config/samples/example_flags.json
-- `http` - <http://my-flag-source.json/>
-- `https` - <https://my-secure-flag-source.json/>
+- `http` - <http://my-flag-source.com/flags.json/>
+- `https` - <https://my-secure-flag-source.com/flags.json/>
 - `kubernetes` - default/my-flag-config
 - `grpc`(insecure) - grpc-source:8080
 - `grpcs`(secure) - my-flag-source:8080
@@ -110,7 +116,7 @@ sources:
     provider: fsnotify
   - uri: config/samples/example_flags.json
     provider: fileinfo
-  - uri: http://my-flag-source.json
+  - uri: http://my-flag-source/flags.json
     provider: http
     bearerToken: bearer-dji34ld2l
   - uri: default/my-flag-config

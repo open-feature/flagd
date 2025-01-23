@@ -19,19 +19,22 @@ import (
 
 func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	resp := "test response"
-
 	mockCron := synctesting.NewMockCron(ctrl)
 	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
 		return nil
 	})
 	mockCron.EXPECT().Start().Times(1)
-
+	
 	mockClient := syncmock.NewMockClient(ctrl)
-	mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{Body: io.NopCloser(strings.NewReader(resp))}, nil)
+	responseBody := "test response"
+	resp := &http.Response{
+		Header: map[string][]string{"Content-Type": {"application/json"}},
+		Body: io.NopCloser(strings.NewReader(responseBody)),
+	}
+	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
 	httpSync := Sync{
-		URI:         "http://localhost",
+		URI:         "http://localhost/flags",
 		Client:      mockClient,
 		Cron:        mockCron,
 		LastBodySHA: "",
@@ -51,8 +54,8 @@ func TestSimpleSync(t *testing.T) {
 
 	data := <-dataSyncChan
 
-	if data.FlagData != resp {
-		t.Errorf("expected content: %s, but received content: %s", resp, data.FlagData)
+	if data.FlagData != responseBody {
+		t.Errorf("expected content: %s, but received content: %s", responseBody, data.FlagData)
 	}
 }
 
@@ -70,6 +73,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		"success": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Header: map[string][]string{"Content-Type": {"application/json"}},
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},
@@ -95,6 +99,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		"update last body sha": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Header: map[string][]string{"Content-Type": {"application/json"}},
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},
@@ -121,7 +126,10 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					if actualAuthHeader != "Bearer "+expectedToken {
 						t.Fatalf("expected Authorization header to be 'Bearer %s', got %s", expectedToken, actualAuthHeader)
 					}
-					return &http.Response{Body: io.NopCloser(strings.NewReader("test response"))}, nil
+					return &http.Response{
+						Header: map[string][]string{"Content-Type": {"application/json"}},
+						Body: io.NopCloser(strings.NewReader("test response")),
+					}, nil
 				})
 			},
 			uri:         "http://localhost",
@@ -148,7 +156,10 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					if actualAuthHeader != expectedHeader {
 						t.Fatalf("expected Authorization header to be '%s', got %s", expectedHeader, actualAuthHeader)
 					}
-					return &http.Response{Body: io.NopCloser(strings.NewReader("test response"))}, nil
+					return &http.Response{
+						Header: map[string][]string{"Content-Type": {"application/json"}},
+						Body: io.NopCloser(strings.NewReader("test response")),
+					}, nil
 				})
 			},
 			uri:         "http://localhost",
@@ -228,6 +239,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 		"success": {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
+					Header: map[string][]string{"Content-Type": {"application/json"}},
 					Body: io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},

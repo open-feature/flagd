@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"strings"
+	"path/filepath"
 	msync "sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -31,8 +32,6 @@ type Watcher interface {
 type Sync struct {
 	URI    string
 	Logger *logger.Logger
-	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType string
 	// watchType indicates how to watch the file FSNOTIFY|FILEINFO
 	watchType string
 	watcher   Watcher
@@ -175,25 +174,18 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
-	if fs.fileType == "" {
-		uriSplit := strings.Split(fs.URI, ".")
-		fs.fileType = uriSplit[len(uriSplit)-1]
+
+	file, err := os.Open(fs.URI)
+	if err != nil {
+		return "", fmt.Errorf("error opening file %s: %w", fs.URI, err)
 	}
-	rawFile, err := os.ReadFile(fs.URI)
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", fmt.Errorf("error reading file %s: %w", fs.URI, err)
 	}
 
-	switch fs.fileType {
-	case "yaml", "yml":
-		str, err := utils.YAMLToJSON(rawFile)
-		if err != nil {
-			return "", fmt.Errorf("error converting file from yaml to json: %w", err)
-		}
-		return str, nil
-	case "json":
-		return string(rawFile), nil
-	default:
-		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
-	}
+	// File extension is used to determine the content type, so media type is unnecessary
+	return utils.ConvertToJSON(data, filepath.Ext(fs.URI), "")
 }

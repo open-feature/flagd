@@ -20,13 +20,6 @@ func TestBlobSync(t *testing.T) {
 		content          string
 		convertedContent string
 	}{
-		"unspecified file type": {
-			scheme:           "xyz",
-			bucket:           "b",
-			object:           "flags",
-			content:          "{\"flags\":{}}",
-			convertedContent: "{\"flags\":{}}",
-		},
 		"json file type": {
 			scheme:           "xyz",
 			bucket:           "b",
@@ -124,7 +117,7 @@ func TestReSync(t *testing.T) {
 	const (
 		scheme = "xyz"
 		bucket = "b"
-		object = "flags"
+		object = "flags.json"
 	)
 	ctrl := gomock.NewController(t)
 	mockCron := synctesting.NewMockCron(ctrl)
