@@ -18,8 +18,8 @@ import (
 )
 
 type Sync struct {
-	Bucket string
-	Object string
+	Bucket      string
+	Object      string
 	BlobURLMux  *blob.URLMux
 	Cron        Cron
 	Logger      *logger.Logger

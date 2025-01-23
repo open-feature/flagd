@@ -24,12 +24,12 @@ func TestSimpleSync(t *testing.T) {
 		return nil
 	})
 	mockCron.EXPECT().Start().Times(1)
-	
+
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
 	resp := &http.Response{
 		Header: map[string][]string{"Content-Type": {"application/json"}},
-		Body: io.NopCloser(strings.NewReader(responseBody)),
+		Body:   io.NopCloser(strings.NewReader(responseBody)),
 	}
 	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
@@ -74,7 +74,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Header: map[string][]string{"Content-Type": {"application/json"}},
-					Body: io.NopCloser(strings.NewReader("test response")),
+					Body:   io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},
 			uri: "http://localhost",
@@ -100,7 +100,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Header: map[string][]string{"Content-Type": {"application/json"}},
-					Body: io.NopCloser(strings.NewReader("test response")),
+					Body:   io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},
 			uri:         "http://localhost",
@@ -128,7 +128,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					}
 					return &http.Response{
 						Header: map[string][]string{"Content-Type": {"application/json"}},
-						Body: io.NopCloser(strings.NewReader("test response")),
+						Body:   io.NopCloser(strings.NewReader("test response")),
 					}, nil
 				})
 			},
@@ -158,7 +158,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					}
 					return &http.Response{
 						Header: map[string][]string{"Content-Type": {"application/json"}},
-						Body: io.NopCloser(strings.NewReader("test response")),
+						Body:   io.NopCloser(strings.NewReader("test response")),
 					}, nil
 				})
 			},
@@ -240,7 +240,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 			setup: func(t *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Header: map[string][]string{"Content-Type": {"application/json"}},
-					Body: io.NopCloser(strings.NewReader("test response")),
+					Body:   io.NopCloser(strings.NewReader("test response")),
 				}, nil)
 			},
 			uri: "http://localhost",
