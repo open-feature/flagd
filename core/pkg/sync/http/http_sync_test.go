@@ -28,8 +28,9 @@ func TestSimpleSync(t *testing.T) {
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
 	resp := &http.Response{
-		Header: map[string][]string{"Content-Type": {"application/json"}},
-		Body:   io.NopCloser(strings.NewReader(responseBody)),
+		Header:     map[string][]string{"Content-Type": {"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(responseBody)),
+		StatusCode: http.StatusOK,
 	}
 	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
@@ -69,7 +70,11 @@ func TestExtensionWithQSSync(t *testing.T) {
 
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
-	resp := &http.Response{Body: io.NopCloser(strings.NewReader(responseBody))}
+	resp := &http.Response{
+		Header:     map[string][]string{"Content-Type": {"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(responseBody)),
+		StatusCode: http.StatusOK,
+	}
 	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
 	httpSync := Sync{
