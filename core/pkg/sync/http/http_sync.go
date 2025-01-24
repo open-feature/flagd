@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	parseUrl "net/url"
 	"path/filepath"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -144,16 +145,31 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) (string, error
 		}
 	}()
 
+	statusOK := resp.StatusCode >= 200 && resp.StatusCode < 300
+	if !statusOK {
+		return "", fmt.Errorf("error fetching from url %s: %s", url, resp.Status)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("unable to read body to bytes: %w", err)
 	}
 
-	json, err := utils.ConvertToJSON(body, filepath.Ext(url), resp.Header.Get("Content-Type"))
+	json, err := utils.ConvertToJSON(body, getFileExtensions(url), resp.Header.Get("Content-Type"))
 	if err != nil {
 		return "", fmt.Errorf("error converting response body to json: %w", err)
 	}
 	return json, nil
+}
+
+// getFileExtensions returns the file extension from the URL path
+func getFileExtensions(url string) string {
+	u, err := parseUrl.Parse(url)
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Ext(u.Path)
 }
 
 func (hs *Sync) generateSha(body []byte) string {

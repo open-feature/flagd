@@ -21,6 +21,13 @@ func TestConvertToJSON(t *testing.T) {
 			want:          `{"flags": {"foo": "bar"}}`,
 			wantErr:       false,
 		},
+		"json file type using in http path": {
+			data:          []byte(`{"flags": {"foo": "bar"}}`),
+			fileExtension: ".json/",
+			mediaType:     "",
+			want:          `{"flags": {"foo": "bar"}}`,
+			wantErr:       false,
+		},
 		"json file type with encoding": {
 			data:          []byte(`{"flags": {"foo": "bar"}}`),
 			fileExtension: "json",

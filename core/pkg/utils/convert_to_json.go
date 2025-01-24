@@ -3,16 +3,19 @@ package utils
 import (
 	"fmt"
 	"mime"
+	"regexp"
 	"strings"
 )
+
+var alphanumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // ConvertToJSON attempts to convert the content of a file to JSON based on the file extension.
 // The media type is used as a fallback in case the file extension is not recognized.
 func ConvertToJSON(data []byte, fileExtension string, mediaType string) (string, error) {
 	var detectedType string
 	if fileExtension != "" {
-		// file extension may be preceded by a dot
-		detectedType = strings.TrimPrefix(fileExtension, ".")
+		// file extension only contains alphanumeric characters
+		detectedType = alphanumericRegex.ReplaceAllString(fileExtension, "")
 	} else {
 		parsedMediaType, _, err := mime.ParseMediaType(mediaType)
 		if err != nil {
