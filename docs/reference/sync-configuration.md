@@ -78,8 +78,8 @@ Sync providers:
 - `file` - config/samples/example_flags.json
 - `fsnotify` - config/samples/example_flags.json
 - `fileinfo` - config/samples/example_flags.json
-- `http` - <http://my-flag-source.com/flags.json/>
-- `https` - <https://my-secure-flag-source.com/flags.json/>
+- `http` - <http://my-flag-source.com/flags.json>
+- `https` - <https://my-secure-flag-source.com/flags.json>
 - `kubernetes` - default/my-flag-config
 - `grpc`(insecure) - grpc-source:8080
 - `grpcs`(secure) - my-flag-source:8080
