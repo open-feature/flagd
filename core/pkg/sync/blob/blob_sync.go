@@ -129,14 +129,12 @@ func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bu
 
 func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, error) {
 	r, err := bucket.NewReader(ctx, hs.Object, nil)
-
 	if err != nil {
 		return "", fmt.Errorf("error opening reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 	defer r.Close()
 
 	data, err := io.ReadAll(r)
-
 	if err != nil {
 		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
