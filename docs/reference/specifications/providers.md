@@ -23,7 +23,7 @@ There are three resolver types for flagd providers:
 
 - RPC Resolver: Evaluates flags remotely by connecting to a flagd instance using the gRPC evaluation protocol.
 - In-Process Resolver: Downloads the flag set rules from a flagd instance and evaluates them locally, offering low-latency performance.
-- File Resolver: Operates offline by reading flag definitions from a file, ideal for environments without network connectivity.
+- File Resolver: Similar to in-process in terms of performance and latency; operates offline by reading flag definitions from a file, ideal for environments without network connectivity.
 
 Each resolver type has unique characteristics and use cases. Below, we delve into their specifics.
 
