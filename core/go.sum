@@ -20,6 +20,8 @@ buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.3-20241220192239-69
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.3-20241220192239-696330adaff0.1/go.mod h1:i4r8Y6TOuQGjptheWsep7c1PZodfGPohMDQLGoxImfs=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20241220192239-696330adaff0.1 h1:GzWS8kvK11LM7OnrTSofL5RJlOOeSC8DrZ58ExnG1TA=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20241220192239-696330adaff0.1/go.mod h1:wemFLfCpuNfhrBQ7NwzbtYxbg+IihAYqJcNeS+fLpLI=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20250127221518-be6d1143b690.1 h1:0vXmOkGv8nO5H1W8TkSz+GtZhvD2LNXiQaiucEio6vk=
+buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20250127221518-be6d1143b690.1/go.mod h1:wemFLfCpuNfhrBQ7NwzbtYxbg+IihAYqJcNeS+fLpLI=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.115.0 h1:CnFSK6Xo3lDYRoBKEcAtia6VSC837/ZkJuRduSFnr14=
 cloud.google.com/go v0.115.0/go.mod h1:8jIM5vVgoAEoiVxQ/O4BFTfHqulPZgs/ufEzMcFMdWU=
