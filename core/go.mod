@@ -33,7 +33,7 @@ require (
 	go.uber.org/zap v1.27.0
 	gocloud.dev v0.40.0
 	golang.org/x/crypto v0.32.0
-	golang.org/x/exp v0.0.0-20250128144449-3edf0e91c1ae
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
 	golang.org/x/mod v0.22.0
 	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.70.0
