@@ -4,6 +4,8 @@ buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.1
 buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.1/go.mod h1:tuqaSMGk0JdcgfeGezlkUyPs5EcRvefx3pY12jl0CWc=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.2 h1:DTzLajNo/KOdqIyYQEf1ycToux8PzatOqeLgppUJYO0=
 buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20241220192239-696330adaff0.2/go.mod h1:CgtzL3a/OZI2tPbGH0TWbMEyPFGPeE3NT9AXvrGZ9Ic=
+buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250127221518-be6d1143b690.2 h1:D3HI5RQbqgffyf+Z77+hReDx5kigFVAKGvttULD9/ms=
+buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250127221518-be6d1143b690.2/go.mod h1:b9rfG6rbGXZAlLwQwedvZ0kI0nUcR+aLaYF70pj920E=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.35.2-20240906125204-0a6a901b42e8.1 h1:YH4cN90+V8Ma0oesiknkwAfpaXv1os0wf6hHxZbsYXI=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.35.2-20240906125204-0a6a901b42e8.1/go.mod h1:Xr7OXtIywezTZbrenv3UbcK0eSikuoXJ/Au9MlmMADs=
 buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.0-20240906125204-0a6a901b42e8.1 h1:sLBOg6If+/9NAB/PpHdRWruKdhJINz4Hc6gn5mA3yDQ=
