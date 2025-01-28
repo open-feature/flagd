@@ -302,8 +302,9 @@ func TestHTTPSync_Resync(t *testing.T) {
 		"success": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Header: map[string][]string{"Content-Type": {"application/json"}},
-					Body:   io.NopCloser(strings.NewReader("test response")),
+					Header:     map[string][]string{"Content-Type": {"application/json"}},
+					Body:       io.NopCloser(strings.NewReader("")),
+					StatusCode: http.StatusOK,
 				}, nil)
 			},
 			uri: "http://localhost",
