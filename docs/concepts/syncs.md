@@ -26,10 +26,10 @@ See [sync source](../reference/sync-configuration.md#source-configuration) confi
 The HTTP sync provider fetch flags from a remote source and periodically poll the source for flag definition updates.
 
 ```shell
-flagd start --uri https://my-flag-source.json
+flagd start --uri https://my-flag-source/flags.json
 ```
 
-In this example, `https://my-flag-source.json` is a remote endpoint responding valid feature flag definition when
+In this example, `https://my-flag-source/flags.json` is a remote endpoint responding valid feature flag definition when
 invoked with **HTTP GET** request.
 The polling interval, port, TLS settings, and authentication information can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.

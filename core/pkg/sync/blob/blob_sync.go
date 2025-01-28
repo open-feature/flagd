@@ -1,14 +1,16 @@
 package blob
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"path/filepath"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/utils"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
 	_ "gocloud.dev/blob/gcsblob"   // needed to initialize GCS driver
@@ -126,11 +128,20 @@ func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bu
 }
 
 func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, error) {
-	buf := bytes.NewBuffer(nil)
-	err := bucket.Download(ctx, hs.Object, buf, nil)
+	r, err := bucket.NewReader(ctx, hs.Object, nil)
+	if err != nil {
+		return "", fmt.Errorf("error opening reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
+	}
+	defer r.Close()
+
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
-	return buf.String(), nil
+	json, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
+	if err != nil {
+		return "", fmt.Errorf("error converting blob data to json: %w", err)
+	}
+	return json, nil
 }

@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	parseUrl "net/url"
+	"path/filepath"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/utils"
 	"golang.org/x/crypto/sha3" //nolint:gosec
 )
 
@@ -77,7 +80,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return
 		}
 
-		if len(body) == 0 {
+		if body == "" {
 			hs.Logger.Debug("configuration deleted")
 		} else {
 			if hs.LastBodySHA == "" {
@@ -89,7 +92,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
 				}
 			} else {
-				currentSHA := hs.generateSha(body)
+				currentSHA := hs.generateSha([]byte(body))
 				if hs.LastBodySHA != currentSHA {
 					hs.Logger.Debug("configuration modified")
 					msg, err := hs.Fetch(ctx)
@@ -115,13 +118,14 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	return nil
 }
 
-func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error) {
+func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request for url %s: %w", url, err)
+		return "", fmt.Errorf("error creating request for url %s: %w", url, err)
 	}
 
 	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Accept", "application/yaml")
 
 	if hs.AuthHeader != "" {
 		req.Header.Set("Authorization", hs.AuthHeader)
@@ -132,7 +136,7 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 
 	resp, err := hs.Client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error calling endpoint %s: %w", url, err)
+		return "", fmt.Errorf("error calling endpoint %s: %w", url, err)
 	}
 	defer func() {
 		err = resp.Body.Close()
@@ -141,12 +145,31 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) ([]byte, error
 		}
 	}()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read body to bytes: %w", err)
+	statusOK := resp.StatusCode >= 200 && resp.StatusCode < 300
+	if !statusOK {
+		return "", fmt.Errorf("error fetching from url %s: %s", url, resp.Status)
 	}
 
-	return body, nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("unable to read body to bytes: %w", err)
+	}
+
+	json, err := utils.ConvertToJSON(body, getFileExtensions(url), resp.Header.Get("Content-Type"))
+	if err != nil {
+		return "", fmt.Errorf("error converting response body to json: %w", err)
+	}
+	return json, nil
+}
+
+// getFileExtensions returns the file extension from the URL path
+func getFileExtensions(url string) string {
+	u, err := parseUrl.Parse(url)
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Ext(u.Path)
 }
 
 func (hs *Sync) generateSha(body []byte) string {
@@ -164,9 +187,9 @@ func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(body) != 0 {
-		hs.LastBodySHA = hs.generateSha(body)
+	if body != "" {
+		hs.LastBodySHA = hs.generateSha([]byte(body))
 	}
 
-	return string(body), nil
+	return body, nil
 }

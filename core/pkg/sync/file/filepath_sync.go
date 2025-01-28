@@ -2,17 +2,17 @@ package file
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"strings"
+	"path/filepath"
 	msync "sync"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"gopkg.in/yaml.v3"
+	"github.com/open-feature/flagd/core/pkg/utils"
 )
 
 const (
@@ -32,8 +32,6 @@ type Watcher interface {
 type Sync struct {
 	URI    string
 	Logger *logger.Logger
-	// FileType indicates the file type e.g., json, yaml/yml etc.,
-	fileType string
 	// watchType indicates how to watch the file FSNOTIFY|FILEINFO
 	watchType string
 	watcher   Watcher
@@ -176,42 +174,22 @@ func (fs *Sync) fetch(_ context.Context) (string, error) {
 	if fs.URI == "" {
 		return "", errors.New("no filepath string set")
 	}
-	if fs.fileType == "" {
-		uriSplit := strings.Split(fs.URI, ".")
-		fs.fileType = uriSplit[len(uriSplit)-1]
+
+	file, err := os.Open(fs.URI)
+	if err != nil {
+		return "", fmt.Errorf("error opening file %s: %w", fs.URI, err)
 	}
-	rawFile, err := os.ReadFile(fs.URI)
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", fmt.Errorf("error reading file %s: %w", fs.URI, err)
 	}
 
-	switch fs.fileType {
-	case "yaml", "yml":
-		return yamlToJSON(rawFile)
-	case "json":
-		return string(rawFile), nil
-	default:
-		return "", fmt.Errorf("filepath extension for URI: '%s' is not supported", fs.URI)
-	}
-}
-
-// yamlToJSON is a generic helper function to convert
-// yaml to json
-func yamlToJSON(rawFile []byte) (string, error) {
-	if len(rawFile) == 0 {
-		return "", nil
-	}
-
-	var ms map[string]interface{}
-	// yaml.Unmarshal unmarshals to map[interface]interface{}
-	if err := yaml.Unmarshal(rawFile, &ms); err != nil {
-		return "", fmt.Errorf("unmarshal yaml: %w", err)
-	}
-
-	r, err := json.Marshal(ms)
+	// File extension is used to determine the content type, so media type is unnecessary
+	json, err := utils.ConvertToJSON(data, filepath.Ext(fs.URI), "")
 	if err != nil {
-		return "", fmt.Errorf("convert yaml to json: %w", err)
+		return "", fmt.Errorf("error converting file content to json: %w", err)
 	}
-
-	return string(r), err
+	return json, nil
 }
