@@ -66,7 +66,8 @@ func (s *FlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
+	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(),
+		s.contextValues))
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)

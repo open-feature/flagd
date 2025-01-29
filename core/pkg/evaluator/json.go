@@ -157,7 +157,9 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
 
-func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]AnyValue, model.Metadata, error) {
+func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]AnyValue,
+	model.Metadata, error,
+) {
 	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
 

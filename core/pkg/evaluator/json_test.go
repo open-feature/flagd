@@ -45,7 +45,7 @@ const ValidFlags = `{
 }`
 
 const (
-	FlagSetId                  = "testSetId"
+	FlagSetID                  = "testSetId"
 	Version                    = "v33"
 	MissingFlag                = "missingFlag"
 	StaticBoolFlag             = "staticBoolFlag"
@@ -264,7 +264,7 @@ var Flags = fmt.Sprintf(`{
     }
   }
 }`,
-	FlagSetId,
+	FlagSetID,
 	Version,
 	StaticBoolFlag,
 	StaticBoolValue,
@@ -400,8 +400,8 @@ func TestMetadataResolveType(t *testing.T) {
 		flagKey  string
 		metadata model.Metadata
 	}{
-		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetId, "version": Version}},
-		{MetadataFlag, model.Metadata{"flagSetId": FlagSetId, "version": VersionOverride}},
+		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetID, "version": Version}},
+		{MetadataFlag, model.Metadata{"flagSetId": FlagSetID, "version": VersionOverride}},
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -419,14 +419,14 @@ func TestMetadataResolveType(t *testing.T) {
 }
 
 func TestMetadataResolveAll(t *testing.T) {
-	var expectedFlagSetMetadata = model.Metadata{"flagSetId": FlagSetId, "version": Version}
+	expectedFlagSetMetadata := model.Metadata{"flagSetId": FlagSetID, "version": Version}
 
 	tests := []struct {
 		flagKey  string
 		metadata model.Metadata
 	}{
-		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetId, "version": Version}},
-		{MetadataFlag, model.Metadata{"flagSetId": FlagSetId, "version": VersionOverride}},
+		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetID, "version": Version}},
+		{MetadataFlag, model.Metadata{"flagSetId": FlagSetID, "version": VersionOverride}},
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -436,7 +436,6 @@ func TestMetadataResolveAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		resolutions, flagSetMetadata, _ := evaluator.ResolveAllValues(context.TODO(), reqID, nil)
 
 		for _, resolved := range resolutions {

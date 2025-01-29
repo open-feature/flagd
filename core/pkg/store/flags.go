@@ -208,7 +208,6 @@ func (f *State) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 			logger.Error(fmt.Sprintf("error while retrieving flags from the store: %v", err))
 			return notifications
 		}
-
 		for key, flag := range allFlags {
 			if flag.Source != source {
 				continue
@@ -239,7 +238,6 @@ func (f *State) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 				"type":   string(model.NotificationDelete),
 				"source": source,
 			}
-
 			f.Delete(k)
 		} else {
 			logger.Warn(
@@ -248,7 +246,6 @@ func (f *State) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 					source))
 		}
 	}
-
 	return notifications
 }
 
@@ -326,9 +323,8 @@ func (f *State) getMetadataForSource(source string) model.Metadata {
 	perSource, ok := f.MetadataPerSource[source]
 	if ok && perSource != nil {
 		return maps.Clone(perSource)
-	} else {
-		return model.Metadata{}
 	}
+	return model.Metadata{}
 }
 
 func (f *State) getMetadata() model.Metadata {
