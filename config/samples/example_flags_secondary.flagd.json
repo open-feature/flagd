@@ -1,5 +1,8 @@
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "metadata": {
+    "version": "v2"
+  },
   "flags": {
     "myBoolFlag": {
       "state": "ENABLED",

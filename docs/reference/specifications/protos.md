@@ -25,6 +25,7 @@ A variant type flag response.
 | string_value | [string](#string) |  |  |
 | double_value | [double](#double) |  |  |
 | object_value | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  | Metadata for this evaluation |
 
 
 
@@ -81,6 +82,7 @@ Response body for bulk flag evaluation, used by the ResolveAll rpc.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | flags | [ResolveAllResponse.FlagsEntry](#flagd-evaluation-v1-ResolveAllResponse-FlagsEntry) | repeated | Object structure describing the evaluated flags for the provided context. |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  | Metadata for the bulk evaluation |
 
 
 

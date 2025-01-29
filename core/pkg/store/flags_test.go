@@ -12,21 +12,21 @@ import (
 func TestHasPriority(t *testing.T) {
 	tests := []struct {
 		name         string
-		currentState *Flags
+		currentState *State
 		storedSource string
 		newSource    string
 		hasPriority  bool
 	}{
 		{
 			name:         "same source",
-			currentState: &Flags{},
+			currentState: &State{},
 			storedSource: "A",
 			newSource:    "A",
 			hasPriority:  true,
 		},
 		{
 			name: "no priority",
-			currentState: &Flags{
+			currentState: &State{
 				FlagSources: []string{
 					"B",
 					"A",
@@ -38,7 +38,7 @@ func TestHasPriority(t *testing.T) {
 		},
 		{
 			name: "priority",
-			currentState: &Flags{
+			currentState: &State{
 				FlagSources: []string{
 					"A",
 					"B",
@@ -50,7 +50,7 @@ func TestHasPriority(t *testing.T) {
 		},
 		{
 			name: "not in sources",
-			currentState: &Flags{
+			currentState: &State{
 				FlagSources: []string{
 					"A",
 					"B",
@@ -75,38 +75,38 @@ func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name        string
-		current     *Flags
+		current     *State
 		new         map[string]model.Flag
 		newSource   string
 		newSelector string
-		want        *Flags
+		want        *State
 		wantNotifs  map[string]interface{}
 		wantResync  bool
 	}{
 		{
 			name:       "both nil",
-			current:    &Flags{Flags: nil},
+			current:    &State{Flags: nil},
 			new:        nil,
-			want:       &Flags{Flags: nil},
+			want:       &State{Flags: nil},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "both empty flags",
-			current:    &Flags{Flags: map[string]model.Flag{}},
+			current:    &State{Flags: map[string]model.Flag{}},
 			new:        map[string]model.Flag{},
-			want:       &Flags{Flags: map[string]model.Flag{}},
+			want:       &State{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "empty new",
-			current:    &Flags{Flags: map[string]model.Flag{}},
+			current:    &State{Flags: map[string]model.Flag{}},
 			new:        nil,
-			want:       &Flags{Flags: map[string]model.Flag{}},
+			want:       &State{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name: "merging with new source",
-			current: &Flags{
+			current: &State{
 				Flags: map[string]model.Flag{
 					"waka": {
 						DefaultVariant: "off",
@@ -120,7 +120,7 @@ func TestMergeFlags(t *testing.T) {
 				},
 			},
 			newSource: "2",
-			want: &Flags{Flags: map[string]model.Flag{
+			want: &State{Flags: map[string]model.Flag{
 				"waka": {
 					DefaultVariant: "off",
 					Source:         "1",
@@ -134,7 +134,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "override by new update",
-			current: &Flags{Flags: map[string]model.Flag{
+			current: &State{Flags: map[string]model.Flag{
 				"waka": {DefaultVariant: "off"},
 				"paka": {DefaultVariant: "off"},
 			}},
@@ -142,7 +142,7 @@ func TestMergeFlags(t *testing.T) {
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
 			},
-			want: &Flags{Flags: map[string]model.Flag{
+			want: &State{Flags: map[string]model.Flag{
 				"waka": {DefaultVariant: "on"},
 				"paka": {DefaultVariant: "on"},
 			}},
@@ -153,39 +153,39 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "identical update so empty notifications",
-			current: &Flags{
+			current: &State{
 				Flags: map[string]model.Flag{"hello": {DefaultVariant: "off"}},
 			},
 			new: map[string]model.Flag{
 				"hello": {DefaultVariant: "off"},
 			},
-			want: &Flags{Flags: map[string]model.Flag{
+			want: &State{Flags: map[string]model.Flag{
 				"hello": {DefaultVariant: "off"},
 			}},
 			wantNotifs: map[string]interface{}{},
 		},
 		{
 			name:       "deleted flag & trigger resync for same source",
-			current:    &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}}},
+			current:    &State{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A"}}},
 			new:        map[string]model.Flag{},
 			newSource:  "A",
-			want:       &Flags{Flags: map[string]model.Flag{}},
+			want:       &State{Flags: map[string]model.Flag{}},
 			wantNotifs: map[string]interface{}{"hello": map[string]interface{}{"type": "delete", "source": "A"}},
 			wantResync: true,
 		},
 		{
 			name:        "no deleted & no resync for same source but different selector",
-			current:     &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
+			current:     &State{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
 			new:         map[string]model.Flag{},
 			newSource:   "A",
 			newSelector: "Y",
-			want:        &Flags{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
+			want:        &State{Flags: map[string]model.Flag{"hello": {DefaultVariant: "off", Source: "A", Selector: "X"}}},
 			wantResync:  false,
 			wantNotifs:  map[string]interface{}{},
 		},
 		{
 			name: "no merge due to low priority",
-			current: &Flags{
+			current: &State{
 				FlagSources: []string{
 					"B",
 					"A",
@@ -199,7 +199,7 @@ func TestMergeFlags(t *testing.T) {
 			},
 			new:       map[string]model.Flag{"hello": {DefaultVariant: "off"}},
 			newSource: "B",
-			want: &Flags{
+			want: &State{
 				FlagSources: []string{
 					"B",
 					"A",
@@ -219,9 +219,9 @@ func TestMergeFlags(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.newSelector, tt.new)
+			gotNotifs, resyncRequired := tt.current.Merge(logger.NewLogger(nil, false), tt.newSource, tt.newSelector, tt.new, model.Metadata{})
 
-			require.True(t, reflect.DeepEqual(tt.want, tt.current))
+			require.True(t, reflect.DeepEqual(tt.want.Flags, tt.current.Flags))
 			require.Equal(t, tt.wantNotifs, gotNotifs)
 			require.Equal(t, tt.wantResync, resyncRequired)
 		})
@@ -241,14 +241,14 @@ func TestFlags_Add(t *testing.T) {
 
 	tests := []struct {
 		name                     string
-		storedState              *Flags
+		storedState              *State
 		addRequest               request
-		expectedState            *Flags
+		expectedState            *State
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Add success",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
@@ -259,7 +259,7 @@ func TestFlags_Add(t *testing.T) {
 					"B": {Source: mockSource},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -269,7 +269,7 @@ func TestFlags_Add(t *testing.T) {
 		},
 		{
 			name: "Add multiple success",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
@@ -281,7 +281,7 @@ func TestFlags_Add(t *testing.T) {
 					"C": {Source: mockSource},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -292,7 +292,7 @@ func TestFlags_Add(t *testing.T) {
 		},
 		{
 			name: "Add success - conflict and override",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
@@ -303,7 +303,7 @@ func TestFlags_Add(t *testing.T) {
 					"A": {Source: mockOverrideSource},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockOverrideSource},
 				},
@@ -338,14 +338,14 @@ func TestFlags_Update(t *testing.T) {
 
 	tests := []struct {
 		name                     string
-		storedState              *Flags
+		storedState              *State
 		UpdateRequest            request
-		expectedState            *Flags
+		expectedState            *State
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Update success",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
@@ -356,7 +356,7 @@ func TestFlags_Update(t *testing.T) {
 					"A": {Source: mockSource, DefaultVariant: "False"},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 				},
@@ -365,7 +365,7 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update multiple success",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 					"B": {Source: mockSource, DefaultVariant: "True"},
@@ -378,7 +378,7 @@ func TestFlags_Update(t *testing.T) {
 					"B": {Source: mockSource, DefaultVariant: "False"},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "False"},
 					"B": {Source: mockSource, DefaultVariant: "False"},
@@ -388,7 +388,7 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update success - conflict and override",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource, DefaultVariant: "True"},
 				},
@@ -399,7 +399,7 @@ func TestFlags_Update(t *testing.T) {
 					"A": {Source: mockOverrideSource, DefaultVariant: "True"},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockOverrideSource, DefaultVariant: "True"},
 				},
@@ -408,7 +408,7 @@ func TestFlags_Update(t *testing.T) {
 		},
 		{
 			name: "Update fail",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
@@ -419,7 +419,7 @@ func TestFlags_Update(t *testing.T) {
 					"B": {Source: mockSource},
 				},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 				},
@@ -450,14 +450,14 @@ func TestFlags_Delete(t *testing.T) {
 
 	tests := []struct {
 		name                     string
-		storedState              *Flags
+		storedState              *State
 		deleteRequest            map[string]model.Flag
-		expectedState            *Flags
+		expectedState            *State
 		expectedNotificationKeys []string
 	}{
 		{
 			name: "Remove success",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -471,7 +471,7 @@ func TestFlags_Delete(t *testing.T) {
 			deleteRequest: map[string]model.Flag{
 				"A": {Source: mockSource},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"B": {Source: mockSource},
 					"C": {Source: mockSource2},
@@ -485,7 +485,7 @@ func TestFlags_Delete(t *testing.T) {
 		},
 		{
 			name: "Nothing to remove",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -499,7 +499,7 @@ func TestFlags_Delete(t *testing.T) {
 			deleteRequest: map[string]model.Flag{
 				"C": {Source: mockSource},
 			},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -514,7 +514,7 @@ func TestFlags_Delete(t *testing.T) {
 		},
 		{
 			name: "Remove all",
-			storedState: &Flags{
+			storedState: &State{
 				Flags: map[string]model.Flag{
 					"A": {Source: mockSource},
 					"B": {Source: mockSource},
@@ -522,7 +522,7 @@ func TestFlags_Delete(t *testing.T) {
 				},
 			},
 			deleteRequest: map[string]model.Flag{},
-			expectedState: &Flags{
+			expectedState: &State{
 				Flags: map[string]model.Flag{
 					"C": {Source: mockSource2},
 				},

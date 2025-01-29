@@ -20,7 +20,7 @@ var emptyConfigBytes, _ = json.Marshal(map[string]map[string]string{
 // Multiplexer abstract subscription handling and storage processing.
 // Flag configurations will be lazy loaded using reFill logic upon the calls to publish.
 type Multiplexer struct {
-	store   *store.Flags
+	store   *store.State
 	sources []string
 
 	subs         map[interface{}]subscription            // subscriptions on all sources
@@ -42,7 +42,7 @@ type payload struct {
 }
 
 // NewMux creates a new sync multiplexer
-func NewMux(store *store.Flags, sources []string) (*Multiplexer, error) {
+func NewMux(store *store.State, sources []string) (*Multiplexer, error) {
 	m := &Multiplexer{
 		store:         store,
 		sources:       sources,
@@ -172,12 +172,12 @@ func (r *Multiplexer) reFill() error {
 		r.selectorFlags[source] = string(emptyConfigBytes)
 	}
 
-	all, err := r.store.GetAll(context.Background())
+	all, metadata, err := r.store.GetAll(context.Background())
 	if err != nil {
 		return fmt.Errorf("error retrieving flags from the store: %w", err)
 	}
 
-	bytes, err := json.Marshal(map[string]interface{}{"flags": all})
+	bytes, err := json.Marshal(map[string]interface{}{"flags": all, "metadata": metadata})
 	if err != nil {
 		return fmt.Errorf("error marshalling: %w", err)
 	}
@@ -199,7 +199,7 @@ func (r *Multiplexer) reFill() error {
 
 	// for all flags, sort them into their correct selector
 	for source, flags := range collector {
-		bytes, err := json.Marshal(map[string]interface{}{"flags": flags})
+		bytes, err := json.Marshal(map[string]interface{}{"flags": flags, "metadata": metadata})
 		if err != nil {
 			return fmt.Errorf("unable to marshal flags: %w", err)
 		}

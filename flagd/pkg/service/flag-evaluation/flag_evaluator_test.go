@@ -57,10 +57,11 @@ var sadCommon = evalCommons{
 
 func TestConnectService_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
-		req     *schemaV1.ResolveAllRequest
-		evalRes []evaluator.AnyValue
-		wantErr error
-		wantRes *schemaV1.ResolveAllResponse
+		req      *schemaV1.ResolveAllRequest
+		evalRes  []evaluator.AnyValue
+		metadata model.Metadata
+		wantErr  error
+		wantRes  *schemaV1.ResolveAllResponse
 	}{
 		"happy-path": {
 			req: &schemaV1.ResolveAllRequest{},
@@ -120,7 +121,7 @@ func TestConnectService_ResolveAll(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				tt.evalRes, nil,
+				tt.evalRes, tt.metadata, nil,
 			).AnyTimes()
 			metrics, exp := getMetricReader()
 			s := NewOldFlagEvaluationService(

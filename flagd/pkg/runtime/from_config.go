@@ -81,7 +81,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	for _, provider := range config.SyncProviders {
 		s.FlagSources = append(s.FlagSources, provider.URI)
-		s.SourceMetadata[provider.URI] = store.SourceDetails{
+		s.SourceDetails[provider.URI] = store.SourceDetails{
 			Source:   provider.URI,
 			Selector: provider.Selector,
 		}

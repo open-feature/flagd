@@ -55,7 +55,7 @@ func TestBulkEvaluationResponse(t *testing.T) {
 		{
 			name:             "empty input",
 			input:            nil,
-			marshalledOutput: "{\"flags\":[]}",
+			marshalledOutput: "{\"flags\":[],\"metadata\":{}}",
 		},
 		{
 			name: "valid values",
@@ -70,20 +70,21 @@ func TestBulkEvaluationResponse(t *testing.T) {
 					},
 				},
 				{
-					Value:   false,
-					Variant: "false",
-					Reason:  model.ErrorReason,
-					FlagKey: "errorFlag",
-					Error:   errors.New(model.FlagNotFoundErrorCode),
+					Value:    false,
+					Variant:  "false",
+					Reason:   model.ErrorReason,
+					FlagKey:  "errorFlag",
+					Error:    errors.New(model.FlagNotFoundErrorCode),
+					Metadata: map[string]interface{}{},
 				},
 			},
-			marshalledOutput: "{\"flags\":[{\"value\":false,\"key\":\"key\",\"reason\":\"STATIC\",\"variant\":\"false\",\"metadata\":{\"key\":\"value\"}},{\"key\":\"errorFlag\",\"errorCode\":\"FLAG_NOT_FOUND\",\"errorDetails\":\"flag `errorFlag` does not exist\"}]}",
+			marshalledOutput: "{\"flags\":[{\"value\":false,\"key\":\"key\",\"reason\":\"STATIC\",\"variant\":\"false\",\"metadata\":{\"key\":\"value\"}},{\"key\":\"errorFlag\",\"errorCode\":\"FLAG_NOT_FOUND\",\"errorDetails\":\"flag `errorFlag` does not exist\",\"metadata\":{}}],\"metadata\":{}}",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			response := BulkEvaluationResponseFrom(test.input)
+			response := BulkEvaluationResponseFrom(test.input, model.Metadata{})
 
 			marshal, err := json.Marshal(response)
 			if err != nil {

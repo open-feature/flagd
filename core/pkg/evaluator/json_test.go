@@ -45,6 +45,8 @@ const ValidFlags = `{
 }`
 
 const (
+	FlagSetId                  = "testSetId"
+	Version                    = "v33"
 	MissingFlag                = "missingFlag"
 	StaticBoolFlag             = "staticBoolFlag"
 	StaticBoolValue            = true
@@ -69,9 +71,15 @@ const (
 	ColorProp                  = "color"
 	ColorValue                 = "yellow"
 	DisabledFlag               = "disabledFlag"
+	MetadataFlag               = "metadataFlag"
+	VersionOverride            = "v66"
 )
 
 var Flags = fmt.Sprintf(`{
+	"metadata": {
+		"flagSetId": "%s",
+		"version": "%s"
+	},
   "flags": {
     "%s": {
       "state": "ENABLED",
@@ -242,9 +250,22 @@ var Flags = fmt.Sprintf(`{
         "off": false
       },
       "defaultVariant": "on"
+    },
+	"%s": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+			"metadata": {
+				"version": "%s"
+			}
     }
   }
 }`,
+	FlagSetId,
+	Version,
 	StaticBoolFlag,
 	StaticBoolValue,
 	StaticStringFlag,
@@ -275,7 +296,9 @@ var Flags = fmt.Sprintf(`{
 	DynamicObjectValue,
 	ColorProp,
 	ColorValue,
-	DisabledFlag)
+	DisabledFlag,
+	MetadataFlag,
+	VersionOverride)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -335,7 +358,7 @@ func TestResolveAllValues(t *testing.T) {
 	}
 	const reqID = "default"
 	for _, test := range tests {
-		vals, err := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
+		vals, _, err := evaluator.ResolveAllValues(context.TODO(), reqID, test.context)
 		if err != nil {
 			t.Error("error from resolver", err)
 		}
@@ -368,6 +391,63 @@ func TestResolveAllValues(t *testing.T) {
 				assert.Equal(t, val.Reason, reason)
 				assert.Equalf(t, val.Error, nil, "expected no errors, but got %v for flag key %s", val.Error, val.FlagKey)
 			}
+		}
+	}
+}
+
+func TestMetadataResolveType(t *testing.T) {
+	tests := []struct {
+		flagKey  string
+		metadata model.Metadata
+	}{
+		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetId, "version": Version}},
+		{MetadataFlag, model.Metadata{"flagSetId": FlagSetId, "version": VersionOverride}},
+	}
+	const reqID = "default"
+	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	if err != nil {
+		t.Fatalf("expected no error")
+	}
+
+	for _, test := range tests {
+		_, _, _, metadata, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, nil)
+		if !reflect.DeepEqual(test.metadata, metadata) {
+			t.Errorf("expected metadata to be %v, but got %v", test.metadata, metadata)
+		}
+	}
+}
+
+func TestMetadataResolveAll(t *testing.T) {
+	var expectedFlagSetMetadata = model.Metadata{"flagSetId": FlagSetId, "version": Version}
+
+	tests := []struct {
+		flagKey  string
+		metadata model.Metadata
+	}{
+		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetId, "version": Version}},
+		{MetadataFlag, model.Metadata{"flagSetId": FlagSetId, "version": VersionOverride}},
+	}
+	const reqID = "default"
+	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	if err != nil {
+		t.Fatalf("expected no error")
+	}
+
+	for _, test := range tests {
+
+		resolutions, flagSetMetadata, _ := evaluator.ResolveAllValues(context.TODO(), reqID, nil)
+
+		for _, resolved := range resolutions {
+			if resolved.FlagKey == test.flagKey {
+				if !reflect.DeepEqual(test.metadata, resolved.Metadata) {
+					t.Errorf("expected flag metadata to be %v, but got %v", test.metadata, resolved.Metadata)
+				}
+			}
+		}
+		if !reflect.DeepEqual(expectedFlagSetMetadata, flagSetMetadata) {
+			t.Errorf("expected flag set metadata to be %v, but got %v", expectedFlagSetMetadata, flagSetMetadata)
 		}
 	}
 }
@@ -1184,222 +1264,6 @@ func TestState_Evaluator(t *testing.T) {
 			expectedError:  true,
 			expectedResync: false,
 		},
-		"flag metadata": {
-			inputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": 1
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"$evaluators": {
-						"emailWithFaas": {
-							  "in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-						}
-  					}
-				}
-			`,
-			inputSyncType: sync.ALL,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": 1
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"",
-						  "selector":"",
-						  "targeting": {
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"flagSources":null
-				}
-			`,
-		},
-		"flagSet and flag metadata": {
-			inputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": "sso/dev",
-							"version": "1.0.0"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"metadata": {
-						"flagSetId": "test",
-						"flagSetVersion": "1"
-					},
-					"$evaluators": {
-						"emailWithFaas": {
-							  "in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-						}
-  					}
-				}
-			`,
-			inputSyncType: sync.ALL,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": "sso/dev",
-							"version": "1.0.0",
-							"flagSetId": "test",
-                            "flagSetVersion": "1"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"",
-						  "selector":"",
-						  "targeting": {
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"flagSources":null
-				}
-			`,
-		},
-		"flag metadata priority": {
-			inputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": "sso/dev",
-							"version": "1.0.0"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"metadata": {
-						"id": "test",
-						"flagSetVersion": "1"
-					},
-					"$evaluators": {
-						"emailWithFaas": {
-							  "in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-						}
-  					}
-				}
-			`,
-			inputSyncType: sync.ALL,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "metadata": {
-							"id": "sso/dev",
-							"version": "1.0.0",
-                            "flagSetVersion": "1"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"",
-						  "selector":"",
-						  "targeting": {
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }
-    					}
-					},
-					"flagSources":null
-				}
-			`,
-		},
 	}
 
 	for name, tt := range tests {
@@ -1454,7 +1318,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Add_ResolveAllValues": {
 			dataSyncType: sync.ADD,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
 				}
@@ -1464,7 +1328,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Update_ResolveAllValues": {
 			dataSyncType: sync.UPDATE,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
 				}
@@ -1474,7 +1338,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		"Delete_ResolveAllValues": {
 			dataSyncType: sync.DELETE,
 			flagResolution: func(evaluator *evaluator.JSON) error {
-				_, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
+				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
 				}

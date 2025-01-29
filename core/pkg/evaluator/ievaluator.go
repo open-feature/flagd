@@ -3,6 +3,7 @@ package evaluator
 import (
 	"context"
 
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/sync"
 )
 
@@ -11,12 +12,12 @@ type AnyValue struct {
 	Variant  string
 	Reason   string
 	FlagKey  string
-	Metadata map[string]interface{}
+	Metadata model.Metadata
 	Error    error
 }
 
 func NewAnyValue(
-	value interface{}, variant string, reason string, flagKey string, metadata map[string]interface{},
+	value interface{}, variant string, reason string, flagKey string, metadata model.Metadata,
 	err error,
 ) AnyValue {
 	return AnyValue{
@@ -34,7 +35,7 @@ IEvaluator is an extension of IResolver, allowing storage updates and retrievals
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
+	SetState(payload sync.DataSync) (model.Metadata, bool, error)
 	IResolver
 }
 
@@ -44,31 +45,31 @@ type IResolver interface {
 		ctx context.Context,
 		reqID string,
 		flagKey string,
-		context map[string]any) (value bool, variant string, reason string, metadata map[string]interface{}, err error)
+		context map[string]any) (value bool, variant string, reason string, metadata model.Metadata, err error)
 	ResolveStringValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context map[string]any) (
-		value string, variant string, reason string, metadata map[string]interface{}, err error)
+		value string, variant string, reason string, metadata model.Metadata, err error)
 	ResolveIntValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context map[string]any) (
-		value int64, variant string, reason string, metadata map[string]interface{}, err error)
+		value int64, variant string, reason string, metadata model.Metadata, err error)
 	ResolveFloatValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context map[string]any) (
-		value float64, variant string, reason string, metadata map[string]interface{}, err error)
+		value float64, variant string, reason string, metadata model.Metadata, err error)
 	ResolveObjectValue(
 		ctx context.Context,
 		reqID string,
 		flagKey string,
 		context map[string]any) (
-		value map[string]any, variant string, reason string, metadata map[string]interface{}, err error)
+		value map[string]any, variant string, reason string, metadata model.Metadata, err error)
 	ResolveAsAnyValue(
 		ctx context.Context,
 		reqID string,
@@ -77,5 +78,5 @@ type IResolver interface {
 	ResolveAllValues(
 		ctx context.Context,
 		reqID string,
-		context map[string]any) (values []AnyValue, err error)
+		context map[string]any) (resolutions []AnyValue, metadata model.Metadata, err error)
 }

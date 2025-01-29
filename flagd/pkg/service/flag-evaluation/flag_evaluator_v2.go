@@ -66,37 +66,37 @@ func (s *FlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	values, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
+	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
 	}
 
-	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
-	for _, value := range values {
+	span.SetAttributes(attribute.Int("feature_flag.count", len(resolutions)))
+	for _, resolved := range resolutions {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(sCtx, value.Error, value.Reason, value.Variant, value.FlagKey)
-		switch v := value.Value.(type) {
+		s.metrics.RecordEvaluation(sCtx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
+		switch v := resolved.Value.(type) {
 		case bool:
-			res.Flags[value.FlagKey] = &evalV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
+			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
+				Reason:  resolved.Reason,
+				Variant: resolved.Variant,
 				Value: &evalV1.AnyFlag_BoolValue{
 					BoolValue: v,
 				},
 			}
 		case string:
-			res.Flags[value.FlagKey] = &evalV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
+			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
+				Reason:  resolved.Reason,
+				Variant: resolved.Variant,
 				Value: &evalV1.AnyFlag_StringValue{
 					StringValue: v,
 				},
 			}
 		case float64:
-			res.Flags[value.FlagKey] = &evalV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
+			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
+				Reason:  resolved.Reason,
+				Variant: resolved.Variant,
 				Value: &evalV1.AnyFlag_DoubleValue{
 					DoubleValue: v,
 				},
@@ -107,15 +107,29 @@ func (s *FlagEvaluationService) ResolveAll(
 				s.logger.ErrorWithID(reqID, fmt.Sprintf("struct response construction: %v", err))
 				continue
 			}
-			res.Flags[value.FlagKey] = &evalV1.AnyFlag{
-				Reason:  value.Reason,
-				Variant: value.Variant,
+			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
+				Reason:  resolved.Reason,
+				Variant: resolved.Variant,
 				Value: &evalV1.AnyFlag_ObjectValue{
 					ObjectValue: val,
 				},
 			}
 		}
+		// TODO: error handling
+		metadata, err := structpb.NewStruct(resolved.Metadata)
+		if err != nil {
+			s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
+			return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
+		}
+
+		res.Flags[resolved.FlagKey].Metadata = metadata
 	}
+	res.Metadata, err = structpb.NewStruct(flagSetMetadata)
+	if err != nil {
+		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
+		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
+	}
+
 	return connect.NewResponse(res), nil
 }
 
