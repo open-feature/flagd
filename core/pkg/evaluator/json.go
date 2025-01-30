@@ -119,7 +119,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	var events map[string]interface{}
 	var reSync bool
 
-	// TODO: handle other types
+	// TODO: We do not handle metadata in ADD/UPDATE operations. These are only relevant for grpc sync implementations.
 	switch payload.Type {
 	case sync.ALL:
 		events, reSync = je.store.Merge(je.Logger, payload.Source, payload.Selector, definition.Flags, definition.Metadata)
