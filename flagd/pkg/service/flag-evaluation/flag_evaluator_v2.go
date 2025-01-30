@@ -116,7 +116,6 @@ func (s *FlagEvaluationService) ResolveAll(
 				},
 			}
 		}
-		// TODO: error handling
 		metadata, err := structpb.NewStruct(resolved.Metadata)
 		if err != nil {
 			s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
