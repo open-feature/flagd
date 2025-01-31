@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
 	"sync"
 
@@ -11,18 +12,22 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 
+type del = struct{}
+
+var deleteMarker *del
+
 type IStore interface {
-	GetAll(ctx context.Context) (map[string]model.Flag, error)
-	Get(ctx context.Context, key string) (model.Flag, bool)
+	GetAll(ctx context.Context) (map[string]model.Flag, model.Metadata, error)
+	Get(ctx context.Context, key string) (model.Flag, model.Metadata, bool)
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
 }
 
-type Flags struct {
-	mx             sync.RWMutex
-	Flags          map[string]model.Flag `json:"flags"`
-	FlagSources    []string
-	SourceMetadata map[string]SourceDetails `json:"sourceMetadata,omitempty"`
-	Metadata       map[string]interface{}   `json:"metadata,omitempty"`
+type State struct {
+	mx                sync.RWMutex
+	Flags             map[string]model.Flag `json:"flags"`
+	FlagSources       []string
+	SourceDetails     map[string]SourceDetails  `json:"sourceMetadata,omitempty"`
+	MetadataPerSource map[string]model.Metadata `json:"metadata,omitempty"`
 }
 
 type SourceDetails struct {
@@ -30,7 +35,7 @@ type SourceDetails struct {
 	Selector string
 }
 
-func (f *Flags) hasPriority(stored string, new string) bool {
+func (f *State) hasPriority(stored string, new string) bool {
 	if stored == new {
 		return true
 	}
@@ -45,41 +50,46 @@ func (f *Flags) hasPriority(stored string, new string) bool {
 	return true
 }
 
-func NewFlags() *Flags {
-	return &Flags{
-		Flags:          map[string]model.Flag{},
-		SourceMetadata: map[string]SourceDetails{},
+func NewFlags() *State {
+	return &State{
+		Flags:             map[string]model.Flag{},
+		SourceDetails:     map[string]SourceDetails{},
+		MetadataPerSource: map[string]model.Metadata{},
 	}
 }
 
-func (f *Flags) Set(key string, flag model.Flag) {
+func (f *State) Set(key string, flag model.Flag) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 	f.Flags[key] = flag
 }
 
-func (f *Flags) Get(_ context.Context, key string) (model.Flag, bool) {
+func (f *State) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
+	metadata := f.getMetadata()
 	flag, ok := f.Flags[key]
+	if ok {
+		metadata = f.getMetadataForSource(flag.Source)
+	}
 
-	return flag, ok
+	return flag, metadata, ok
 }
 
-func (f *Flags) SelectorForFlag(_ context.Context, flag model.Flag) string {
+func (f *State) SelectorForFlag(_ context.Context, flag model.Flag) string {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
-	return f.SourceMetadata[flag.Source].Selector
+	return f.SourceDetails[flag.Source].Selector
 }
 
-func (f *Flags) Delete(key string) {
+func (f *State) Delete(key string) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 	delete(f.Flags, key)
 }
 
-func (f *Flags) String() (string, error) {
+func (f *State) String() (string, error) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	bytes, err := json.Marshal(f)
@@ -91,25 +101,25 @@ func (f *Flags) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (f *Flags) GetAll(_ context.Context) (map[string]model.Flag, error) {
+func (f *State) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	state := make(map[string]model.Flag, len(f.Flags))
+	flags := make(map[string]model.Flag, len(f.Flags))
 
 	for key, flag := range f.Flags {
-		state[key] = flag
+		flags[key] = flag
 	}
 
-	return state, nil
+	return flags, f.getMetadata(), nil
 }
 
 // Add new flags from source.
-func (f *Flags) Add(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
+func (f *State) Add(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
 ) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
 	for k, newFlag := range flags {
-		storedFlag, ok := f.Get(context.Background(), k)
+		storedFlag, _, ok := f.Get(context.Background(), k)
 		if ok && !f.hasPriority(storedFlag.Source, source) {
 			logger.Debug(
 				fmt.Sprintf(
@@ -137,12 +147,12 @@ func (f *Flags) Add(logger *logger.Logger, source string, selector string, flags
 }
 
 // Update existing flags from source.
-func (f *Flags) Update(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
+func (f *State) Update(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
 ) map[string]interface{} {
 	notifications := map[string]interface{}{}
 
 	for k, flag := range flags {
-		storedFlag, ok := f.Get(context.Background(), k)
+		storedFlag, _, ok := f.Get(context.Background(), k)
 		if !ok {
 			logger.Warn(
 				fmt.Sprintf("failed to update the flag, flag with key %s from source %s does not exist.",
@@ -177,7 +187,7 @@ func (f *Flags) Update(logger *logger.Logger, source string, selector string, fl
 }
 
 // DeleteFlags matching flags from source.
-func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
+func (f *State) DeleteFlags(logger *logger.Logger, source string, flags map[string]model.Flag) map[string]interface{} {
 	logger.Debug(
 		fmt.Sprintf(
 			"store resync triggered: delete event from source %s",
@@ -186,14 +196,18 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	)
 	ctx := context.Background()
 
+	_, ok := f.MetadataPerSource[source]
+	if ok {
+		delete(f.MetadataPerSource, source)
+	}
+
 	notifications := map[string]interface{}{}
 	if len(flags) == 0 {
-		allFlags, err := f.GetAll(ctx)
+		allFlags, _, err := f.GetAll(ctx)
 		if err != nil {
 			logger.Error(fmt.Sprintf("error while retrieving flags from the store: %v", err))
 			return notifications
 		}
-
 		for key, flag := range allFlags {
 			if flag.Source != source {
 				continue
@@ -207,7 +221,7 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 	}
 
 	for k := range flags {
-		flag, ok := f.Get(ctx, k)
+		flag, _, ok := f.Get(ctx, k)
 		if ok {
 			if !f.hasPriority(flag.Source, source) {
 				logger.Debug(
@@ -224,7 +238,6 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 				"type":   string(model.NotificationDelete),
 				"source": source,
 			}
-
 			f.Delete(k)
 		} else {
 			logger.Warn(
@@ -233,21 +246,23 @@ func (f *Flags) DeleteFlags(logger *logger.Logger, source string, flags map[stri
 					source))
 		}
 	}
-
 	return notifications
 }
 
 // Merge provided flags from source with currently stored flags.
 // nolint: funlen
-func (f *Flags) Merge(
+func (f *State) Merge(
 	logger *logger.Logger,
 	source string,
 	selector string,
 	flags map[string]model.Flag,
+	metadata model.Metadata,
 ) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
 	resyncRequired := false
 	f.mx.Lock()
+	f.setSourceMetadata(source, metadata)
+
 	for k, v := range f.Flags {
 		if v.Source == source && v.Selector == selector {
 			if _, ok := flags[k]; !ok {
@@ -272,7 +287,7 @@ func (f *Flags) Merge(
 	for k, newFlag := range flags {
 		newFlag.Source = source
 		newFlag.Selector = selector
-		storedFlag, ok := f.Get(context.Background(), k)
+		storedFlag, _, ok := f.Get(context.Background(), k)
 		if ok {
 			if !f.hasPriority(storedFlag.Source, source) {
 				logger.Debug(
@@ -302,4 +317,41 @@ func (f *Flags) Merge(
 		f.Set(k, newFlag)
 	}
 	return notifications, resyncRequired
+}
+
+func (f *State) getMetadataForSource(source string) model.Metadata {
+	perSource, ok := f.MetadataPerSource[source]
+	if ok && perSource != nil {
+		return maps.Clone(perSource)
+	}
+	return model.Metadata{}
+}
+
+func (f *State) getMetadata() model.Metadata {
+	metadata := model.Metadata{}
+	for _, perSource := range f.MetadataPerSource {
+		for key, entry := range perSource {
+			_, exists := metadata[key]
+			if !exists {
+				metadata[key] = entry
+			} else {
+				metadata[key] = deleteMarker
+			}
+		}
+	}
+
+	// keys that exist across multiple sources are deleted
+	maps.DeleteFunc(metadata, func(key string, _ interface{}) bool {
+		return metadata[key] == deleteMarker
+	})
+
+	return metadata
+}
+
+func (f *State) setSourceMetadata(source string, metadata model.Metadata) {
+	if f.MetadataPerSource == nil {
+		f.MetadataPerSource = map[string]model.Metadata{}
+	}
+
+	f.MetadataPerSource[source] = metadata
 }

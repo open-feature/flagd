@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	evaluator "github.com/open-feature/flagd/core/pkg/evaluator"
+	model "github.com/open-feature/flagd/core/pkg/model"
 	sync "github.com/open-feature/flagd/core/pkg/sync"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -22,6 +23,7 @@ import (
 type MockIEvaluator struct {
 	ctrl     *gomock.Controller
 	recorder *MockIEvaluatorMockRecorder
+	isgomock struct{}
 }
 
 // MockIEvaluatorMockRecorder is the mock recorder for MockIEvaluator.
@@ -57,12 +59,13 @@ func (mr *MockIEvaluatorMockRecorder) GetState() *gomock.Call {
 }
 
 // ResolveAllValues mocks base method.
-func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, error) {
+func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, context)
 	ret0, _ := ret[0].([]evaluator.AnyValue)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(model.Metadata)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // ResolveAllValues indicates an expected call of ResolveAllValues.
@@ -86,13 +89,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, con
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, map[string]any, error) {
+func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -104,13 +107,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, c
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, map[string]any, error) {
+func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -122,13 +125,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, con
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, map[string]any, error) {
+func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -140,13 +143,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveIntValue(ctx, reqID, flagKey, conte
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, map[string]any, error) {
+func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -158,13 +161,13 @@ func (mr *MockIEvaluatorMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, co
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, map[string]any, error) {
+func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -176,10 +179,10 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, co
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]any, bool, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) (model.Metadata, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", payload)
-	ret0, _ := ret[0].(map[string]any)
+	ret0, _ := ret[0].(model.Metadata)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -195,6 +198,7 @@ func (mr *MockIEvaluatorMockRecorder) SetState(payload any) *gomock.Call {
 type MockIResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockIResolverMockRecorder
+	isgomock struct{}
 }
 
 // MockIResolverMockRecorder is the mock recorder for MockIResolver.
@@ -215,12 +219,13 @@ func (m *MockIResolver) EXPECT() *MockIResolverMockRecorder {
 }
 
 // ResolveAllValues mocks base method.
-func (m *MockIResolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, error) {
+func (m *MockIResolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, context)
 	ret0, _ := ret[0].([]evaluator.AnyValue)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(model.Metadata)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // ResolveAllValues indicates an expected call of ResolveAllValues.
@@ -244,13 +249,13 @@ func (mr *MockIResolverMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, cont
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIResolver) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, map[string]any, error) {
+func (m *MockIResolver) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -262,13 +267,13 @@ func (mr *MockIResolverMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, co
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIResolver) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, map[string]any, error) {
+func (m *MockIResolver) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -280,13 +285,13 @@ func (mr *MockIResolverMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, cont
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIResolver) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, map[string]any, error) {
+func (m *MockIResolver) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -298,13 +303,13 @@ func (mr *MockIResolverMockRecorder) ResolveIntValue(ctx, reqID, flagKey, contex
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIResolver) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, map[string]any, error) {
+func (m *MockIResolver) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }
@@ -316,13 +321,13 @@ func (mr *MockIResolverMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, con
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIResolver) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, map[string]any, error) {
+func (m *MockIResolver) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(map[string]any)
+	ret3, _ := ret[3].(model.Metadata)
 	ret4, _ := ret[4].(error)
 	return ret0, ret1, ret2, ret3, ret4
 }

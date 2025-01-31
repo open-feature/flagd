@@ -12,7 +12,7 @@ import (
 )
 
 // getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
-func getSimpleFlagStore() (*store.Flags, []string) {
+func getSimpleFlagStore() (*store.State, []string) {
 	variants := map[string]any{
 		"true":  true,
 		"false": false,

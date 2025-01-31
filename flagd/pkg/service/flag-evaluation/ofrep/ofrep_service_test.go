@@ -11,6 +11,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/errgroup"
 )
@@ -20,7 +21,7 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return([]evaluator.AnyValue{}, nil)
+		Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
 
 	cfg := SvcConfiguration{
 		Logger: logger.NewLogger(nil, false),

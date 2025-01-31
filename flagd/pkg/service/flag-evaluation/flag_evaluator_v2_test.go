@@ -20,11 +20,12 @@ import (
 
 func TestConnectServiceV2_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
-		req     *evalV1.ResolveAllRequest
-		evalRes []evaluator.AnyValue
-		evalErr error
-		wantErr bool
-		wantRes *evalV1.ResolveAllResponse
+		req         *evalV1.ResolveAllRequest
+		evalRes     []evaluator.AnyValue
+		metadataRes model.Metadata
+		evalErr     error
+		wantErr     bool
+		wantRes     *evalV1.ResolveAllResponse
 	}{
 		"happy-path": {
 			req: &evalV1.ResolveAllRequest{},
@@ -54,7 +55,15 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 					FlagKey: "object",
 				},
 			},
+			metadataRes: model.Metadata{
+				"key": "value",
+			},
 			wantRes: &evalV1.ResolveAllResponse{
+				Metadata: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key": structpb.NewStringValue("value"),
+					},
+				},
 				Flags: map[string]*evalV1.AnyFlag{
 					"bool": {
 						Value: &evalV1.AnyFlag_BoolValue{
@@ -90,7 +99,7 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 			// given
 			eval := mock.NewMockIEvaluator(ctrl)
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				tt.evalRes, tt.evalErr,
+				tt.evalRes, tt.metadataRes, tt.evalErr,
 			).AnyTimes()
 
 			metrics, exp := getMetricReader()
@@ -113,6 +122,7 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 			require.Nil(t, err)
 			// the impression metric is registered
 			require.Equal(t, len(data.ScopeMetrics), 1)
+			require.EqualValues(t, tt.wantRes.Metadata, got.Msg.Metadata)
 			for _, flag := range tt.evalRes {
 				switch v := flag.Value.(type) {
 				case bool:

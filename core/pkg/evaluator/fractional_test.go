@@ -587,7 +587,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, &store.Flags{Flags: tt.flags.Flags})
+			je := NewJSON(log, &store.State{Flags: tt.flags.Flags})
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](
 					ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)

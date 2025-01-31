@@ -64,13 +64,13 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 
 // JSON evaluator
 type JSON struct {
-	store          *store.Flags
+	store          *store.State
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s *store.Flags, opts ...JSONEvaluatorOption) *JSON {
+func NewJSON(logger *logger.Logger, s *store.State, opts ...JSONEvaluatorOption) *JSON {
 	logger = logger.WithFields(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
@@ -107,9 +107,9 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.Type.String())))
 	defer span.End()
 
-	var newFlags Flags
+	var definition Definition
 
-	err := configToFlags(je.Logger, payload.FlagData, &newFlags)
+	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -119,15 +119,16 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	var events map[string]interface{}
 	var reSync bool
 
+	// TODO: We do not handle metadata in ADD/UPDATE operations. These are only relevant for grpc sync implementations.
 	switch payload.Type {
 	case sync.ALL:
-		events, reSync = je.store.Merge(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
+		events, reSync = je.store.Merge(je.Logger, payload.Source, payload.Selector, definition.Flags, definition.Metadata)
 	case sync.ADD:
-		events = je.store.Add(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
+		events = je.store.Add(je.Logger, payload.Source, payload.Selector, definition.Flags)
 	case sync.UPDATE:
-		events = je.store.Update(je.Logger, payload.Source, payload.Selector, newFlags.Flags)
+		events = je.store.Update(je.Logger, payload.Source, payload.Selector, definition.Flags)
 	case sync.DELETE:
-		events = je.store.DeleteFlags(je.Logger, payload.Source, newFlags.Flags)
+		events = je.store.DeleteFlags(je.Logger, payload.Source, definition.Flags)
 	default:
 		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
@@ -156,14 +157,16 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
 
-func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]AnyValue, error) {
+func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]AnyValue,
+	model.Metadata, error,
+) {
 	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
 
 	var err error
-	allFlags, err := je.store.GetAll(ctx)
+	allFlags, flagSetMetadata, err := je.store.GetAll(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error retreiving flags from the store: %w", err)
+		return nil, flagSetMetadata, fmt.Errorf("error retreiving flags from the store: %w", err)
 	}
 
 	values := []AnyValue{}
@@ -195,7 +198,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
 	}
 
-	return values, nil
+	return values, flagSetMetadata, nil
 }
 
 func (je *Resolver) ResolveBooleanValue(
@@ -312,9 +315,7 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
-	metadata = map[string]interface{}{}
-
-	flag, ok := je.store.Get(ctx, flagKey)
+	flag, metadata, ok := je.store.Get(ctx, flagKey)
 	if !ok {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
@@ -447,8 +448,8 @@ func loadAndCompileSchema(log *logger.Logger) *gojsonschema.Schema {
 	return compiledSchema
 }
 
-// configToFlags convert string configurations to flags and store them to pointer newFlags
-func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
+// configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
+func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
 	compiledSchema := loadAndCompileSchema(log)
 
 	flagStringLoader := gojsonschema.NewStringLoader(config)
@@ -467,33 +468,16 @@ func configToFlags(log *logger.Logger, config string, newFlags *Flags) error {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	var configData ConfigWithMetadata
-	err = json.Unmarshal([]byte(transposedConfig), &configData)
+	err = json.Unmarshal([]byte(transposedConfig), &definition)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
 
-	// Assign the flags from the unmarshalled config to the newFlags struct
-	newFlags.Flags = configData.Flags
-
-	// Assign metadata as a map to each flag's metadata
-	for key, flag := range newFlags.Flags {
-		if flag.Metadata == nil {
-			flag.Metadata = make(map[string]interface{})
-		}
-		for metaKey, metaValue := range configData.Metadata {
-			if _, exists := flag.Metadata[metaKey]; !exists {
-				flag.Metadata[metaKey] = metaValue
-			}
-		}
-		newFlags.Flags[key] = flag
-	}
-
-	return validateDefaultVariants(newFlags)
+	return validateDefaultVariants(definition)
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
-func validateDefaultVariants(flags *Flags) error {
+func validateDefaultVariants(flags *Definition) error {
 	for name, flag := range flags.Flags {
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(

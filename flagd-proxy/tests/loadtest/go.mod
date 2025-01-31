@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.3
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.34.1-20240215170432-1e611e2999cc.1
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20250127221518-be6d1143b690.1
 	google.golang.org/grpc v1.63.2
 )
 

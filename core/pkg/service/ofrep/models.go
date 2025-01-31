@@ -12,36 +12,39 @@ type Request struct {
 }
 
 type EvaluationSuccess struct {
-	Value    interface{} `json:"value"`
-	Key      string      `json:"key"`
-	Reason   string      `json:"reason"`
-	Variant  string      `json:"variant"`
-	Metadata interface{} `json:"metadata"`
+	Value    interface{}    `json:"value"`
+	Key      string         `json:"key"`
+	Reason   string         `json:"reason"`
+	Variant  string         `json:"variant"`
+	Metadata model.Metadata `json:"metadata"`
 }
 
 type BulkEvaluationResponse struct {
-	Flags []interface{} `json:"flags"`
+	Flags    []interface{}  `json:"flags"`
+	Metadata model.Metadata `json:"metadata"`
 }
 
 type EvaluationError struct {
-	Key          string `json:"key"`
-	ErrorCode    string `json:"errorCode"`
-	ErrorDetails string `json:"errorDetails"`
+	Key          string         `json:"key"`
+	ErrorCode    string         `json:"errorCode"`
+	ErrorDetails string         `json:"errorDetails"`
+	Metadata     model.Metadata `json:"metadata"`
 }
 
 type BulkEvaluationError struct {
-	ErrorCode    string `json:"errorCode"`
-	ErrorDetails string `json:"errorDetails"`
+	ErrorCode    string         `json:"errorCode"`
+	ErrorDetails string         `json:"errorDetails"`
+	Metadata     model.Metadata `json:"metadata"`
 }
 
 type InternalError struct {
 	ErrorDetails string `json:"errorDetails"`
 }
 
-func BulkEvaluationResponseFrom(values []evaluator.AnyValue) BulkEvaluationResponse {
+func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model.Metadata) BulkEvaluationResponse {
 	evaluations := make([]interface{}, 0)
 
-	for _, value := range values {
+	for _, value := range resolutions {
 		if value.Error != nil {
 			_, evaluationError := EvaluationErrorResponseFrom(value)
 			evaluations = append(evaluations, evaluationError)
@@ -52,6 +55,7 @@ func BulkEvaluationResponseFrom(values []evaluator.AnyValue) BulkEvaluationRespo
 
 	return BulkEvaluationResponse{
 		evaluations,
+		metadata,
 	}
 }
 
@@ -89,7 +93,8 @@ func BulkEvaluationContextErrorFrom(code string, details string) BulkEvaluationE
 
 func EvaluationErrorResponseFrom(result evaluator.AnyValue) (int, EvaluationError) {
 	payload := EvaluationError{
-		Key: result.FlagKey,
+		Key:      result.FlagKey,
+		Metadata: result.Metadata,
 	}
 
 	status := 400

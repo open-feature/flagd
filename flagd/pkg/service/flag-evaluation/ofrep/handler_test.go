@@ -155,6 +155,7 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 		method          string
 		input           *bytes.Reader
 		mockAnyResponse []evaluator.AnyValue
+		mockAnyMetadata model.Metadata
 		mockAnyError    error
 
 		expectedStatus int
@@ -207,7 +208,7 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			eval := mock.NewMockIEvaluator(gomock.NewController(t))
 			eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(test.mockAnyResponse, test.mockAnyError).MinTimes(0)
+				Return(test.mockAnyResponse, test.mockAnyMetadata, test.mockAnyError).MinTimes(0)
 
 			h := handler{Logger: log, evaluator: eval}
 

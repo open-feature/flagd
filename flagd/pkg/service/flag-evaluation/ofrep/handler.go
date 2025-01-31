@@ -79,7 +79,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	context := flagdContext(h.Logger, requestID, request, h.contextValues)
-	evaluations, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
+	evaluations, metadata, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
 
@@ -87,7 +87,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
 	} else {
-		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations), w)
+		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
 	}
 }
 
