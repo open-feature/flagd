@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.11...flagd-proxy/v0.7.0) (2025-01-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* flagSetMetadata in OFREP/ResolveAll, core refactors ([#1540](https://github.com/open-feature/flagd/issues/1540))
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20250127221518-be6d1143b690.2 ([#1536](https://github.com/open-feature/flagd/issues/1536)) ([e23060f](https://github.com/open-feature/flagd/commit/e23060f24b2a714ae748e6b37d0d06b7caa1c95c))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20241220192239-696330adaff0.1 ([#1529](https://github.com/open-feature/flagd/issues/1529)) ([8881a80](https://github.com/open-feature/flagd/commit/8881a804b4055da0127a16b8fc57022d24906e1b))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20250127221518-be6d1143b690.1 ([#1537](https://github.com/open-feature/flagd/issues/1537)) ([f74207b](https://github.com/open-feature/flagd/commit/f74207bc13b75bae4275bc486df51e2da569dd41))
+* **deps:** update module github.com/open-feature/flagd/core to v0.10.8 ([#1526](https://github.com/open-feature/flagd/issues/1526)) ([fbf2ed5](https://github.com/open-feature/flagd/commit/fbf2ed527fcf3b300808c7b835a8d891df7b88a8))
+* **deps:** update module google.golang.org/grpc to v1.70.0 ([#1528](https://github.com/open-feature/flagd/issues/1528)) ([79b2b0a](https://github.com/open-feature/flagd/commit/79b2b0a6bbd48676dcbdd2393feb8247529bf29c))
+
+
+### ✨ New Features
+
+* flagSetMetadata in OFREP/ResolveAll, core refactors ([#1540](https://github.com/open-feature/flagd/issues/1540)) ([b49abf9](https://github.com/open-feature/flagd/commit/b49abf95069da93bdf8369c8aa0ae40e698df760))
+
 ## [0.6.11](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.6.10...flagd-proxy/v0.6.11) (2025-01-19)
 
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.11.0](https://github.com/open-feature/flagd/compare/core/v0.10.8...core/v0.11.0) (2025-01-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* flagSetMetadata in OFREP/ResolveAll, core refactors ([#1540](https://github.com/open-feature/flagd/issues/1540))
+
+### 🐛 Bug Fixes
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to bb76343 ([#1534](https://github.com/open-feature/flagd/issues/1534)) ([8303353](https://github.com/open-feature/flagd/commit/8303353a1b503ef34b8e46d9bf77ce53c067ef3b))
+* **deps:** update golang.org/x/exp digest to 3edf0e9 ([#1538](https://github.com/open-feature/flagd/issues/1538)) ([7a06567](https://github.com/open-feature/flagd/commit/7a0656713a8c2ac3d456a3a300fe137debee0edd))
+* **deps:** update golang.org/x/exp digest to e0ece0d ([#1539](https://github.com/open-feature/flagd/issues/1539)) ([4281c6e](https://github.com/open-feature/flagd/commit/4281c6e80b233a162436fea3640bf5d061d40b96))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20250127221518-be6d1143b690.2 ([#1536](https://github.com/open-feature/flagd/issues/1536)) ([e23060f](https://github.com/open-feature/flagd/commit/e23060f24b2a714ae748e6b37d0d06b7caa1c95c))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20241220192239-696330adaff0.1 ([#1529](https://github.com/open-feature/flagd/issues/1529)) ([8881a80](https://github.com/open-feature/flagd/commit/8881a804b4055da0127a16b8fc57022d24906e1b))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20250127221518-be6d1143b690.1 ([#1537](https://github.com/open-feature/flagd/issues/1537)) ([f74207b](https://github.com/open-feature/flagd/commit/f74207bc13b75bae4275bc486df51e2da569dd41))
+* **deps:** update module google.golang.org/grpc to v1.70.0 ([#1528](https://github.com/open-feature/flagd/issues/1528)) ([79b2b0a](https://github.com/open-feature/flagd/commit/79b2b0a6bbd48676dcbdd2393feb8247529bf29c))
+
+
+### ✨ New Features
+
+* flagSetMetadata in OFREP/ResolveAll, core refactors ([#1540](https://github.com/open-feature/flagd/issues/1540)) ([b49abf9](https://github.com/open-feature/flagd/commit/b49abf95069da93bdf8369c8aa0ae40e698df760))
+* support yaml in blob, file, and http syncs ([#1522](https://github.com/open-feature/flagd/issues/1522)) ([76d673a](https://github.com/open-feature/flagd/commit/76d673ae8f765512270e6498569c0ce3d54a60bf))
+
 ## [0.10.8](https://github.com/open-feature/flagd/compare/core/v0.10.7...core/v0.10.8) (2025-01-19)
 
 
