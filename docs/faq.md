@@ -33,6 +33,27 @@ Please see [architecture](./architecture.md) and [installation](./installation.m
 
 ---
 
+> How can I access the SBOM for flagd?
+
+SBOMs for the flagd binary are available as assets on the [GitHub release page](https://github.com/open-feature/flagd/releases).
+Container SBOMs can be inspected using Docker CLI.
+
+An example of inspecting the SBOM for the latest flagd `linux/amd64` container image:
+
+```shell
+docker buildx imagetools inspect ghcr.io/open-feature/flagd:latest \
+    --format '{{ json (index .SBOM "linux/amd64").SPDX }}'
+```
+
+An example of inspecting the SBOM for the latest flagd `linux/arm64` container image:
+
+```shell
+docker buildx imagetools inspect ghcr.io/open-feature/flagd:latest \
+    --format '{{ json (index .SBOM "linux/arm64").SPDX }}'
+```
+
+---
+
 > Why doesn't flagd support {_my desired feature_}?
 
 Because you haven't opened a PR or created an issue!
