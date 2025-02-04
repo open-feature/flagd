@@ -253,6 +253,8 @@ github.com/open-feature/flagd/core v0.10.8 h1:JDspNtQ/AspLgtoC4UVsk8j+iCxY4yo4Ro
 github.com/open-feature/flagd/core v0.10.8/go.mod h1:8o7NXJdknnbseuK2HmfKYlqpIqvtwK8SZ+0Tg9/H4ac=
 github.com/open-feature/flagd/core v0.11.0 h1:uyT2keRVqVptqoNOaK4Pq3LueLkcVIZ/qfCnN2mdKiw=
 github.com/open-feature/flagd/core v0.11.0/go.mod h1:jjMq0sMdCvvsoi4dWoNwUTP4jN0vC1e8OtY/giqZIIM=
+github.com/open-feature/flagd/core v0.11.1 h1:0qBVXcRBZOFoZ5lNK/Yba2IyUDdxUHcLsv5OhUJtltA=
+github.com/open-feature/flagd/core v0.11.1/go.mod h1:yzPjp7D9wNusvOyKt8wBND5PQGslcu+5e+xmaIBGgLE=
 github.com/open-feature/open-feature-operator/apis v0.2.44 h1:0r4Z+RnJltuHdRBv79NFgAckhna6/M3Wcec6gzNX5vI=
 github.com/open-feature/open-feature-operator/apis v0.2.44/go.mod h1:xB2uLzvUkbydieX7q6/NqannBz3bt/e5BS2DeOyyw4Q=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
