@@ -130,7 +130,7 @@ jobs:
 
       - name: Generate image SBOM file name
         id: image-sbom-file-gen
-        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
+        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx.json', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
 
       - name: SBOM for latest image
         uses: anchore/sbom-action@b6a39da80722a2cb0ef5d197531764a89b5d48c3 # v0
