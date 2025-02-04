@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/open-feature/flagd/compare/core/v0.11.0...core/v0.11.1) (2025-02-04)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module golang.org/x/sync to v0.11.0 ([#1543](https://github.com/open-feature/flagd/issues/1543)) ([7d6c0dc](https://github.com/open-feature/flagd/commit/7d6c0dc6e6e6955af1e5225807deeb2b6797900b))
+
 ## [0.11.0](https://github.com/open-feature/flagd/compare/core/v0.10.8...core/v0.11.0) (2025-01-31)
 
 
