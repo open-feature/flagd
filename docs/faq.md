@@ -36,7 +36,7 @@ Please see [architecture](./architecture.md) and [installation](./installation.m
 > How can I access the SBOM for flagd?
 
 SBOMs for the flagd binary are available as assets on the [GitHub release page](https://github.com/open-feature/flagd/releases).
-Container SBOMs can be inspected using Docker CLI.
+Container SBOMs can be inspected using the Docker CLI.
 
 An example of inspecting the SBOM for the latest flagd `linux/amd64` container image:
 
