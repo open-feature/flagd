@@ -9,7 +9,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.4-20250127221518-be6d1143b690.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.14
-	github.com/open-feature/flagd/core v0.11.0
+	github.com/open-feature/flagd/core v0.11.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
