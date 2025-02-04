@@ -108,6 +108,8 @@ jobs:
           context: .
           file: ./${{ matrix.path }}/build.Dockerfile
           platforms: linux/amd64,linux/arm64
+          provenance: mode=max
+          sbom: true
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest
@@ -128,24 +130,12 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
 
-      - name: Generate image SBOM file name
-        id: image-sbom-file-gen
-        run: echo "IMG_SBOM_FILE=${{ format('{0}-{1}-sbom.spdx.json', matrix.path, env.VERSION) }}" >> $GITHUB_OUTPUT
-
-      - name: SBOM for latest image
-        uses: anchore/sbom-action@b6a39da80722a2cb0ef5d197531764a89b5d48c3 # v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
-          artifact-name: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-          output-file: ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
-
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           tag_name: ${{ env.TAG }}
           files: |
             ${{ env.PUBLIC_KEY_FILE }}
-            ${{ steps.image-sbom-file-gen.outputs.IMG_SBOM_FILE }}
 
   release-go-binaries:
     name: Create and publish binaries to GitHub
@@ -211,24 +201,6 @@ jobs:
         run: |
           env CGO_ENABLED=0 GOOS=windows GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
           zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      # Bundle licenses
-      - name: Install go-licenses
-        run: go install github.com/google/go-licenses@latest
-      - name: Build license extraction locations
-        id: license-files
-        run: |
-          echo "LICENSE_FOLDER=${{ format('{0}-third-party-license', matrix.path) }}" >> $GITHUB_OUTPUT
-          echo "LICENSE_ERROR_FILE=${{ format('{0}-license-errors.txt', matrix.path) }}" >> $GITHUB_OUTPUT
-      - name: Run go-licenses for module ${{ matrix.path }}
-        run: go-licenses save ./${{ matrix.path }} --save_path=./${{ steps.license-files.outputs.LICENSE_FOLDER }} --force --logtostderr=false 2> ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
-        continue-on-error: true # tool set stderr which can be ignored and referred through error artefact
-      - name: Bundle license extracts
-        run: |
-          if [ -d ./${{ steps.license-files.outputs.LICENSE_FOLDER }} ]; then
-            tar czf ./${{ steps.license-files.outputs.LICENSE_FOLDER }}.tar.gz ./${{ steps.license-files.outputs.LICENSE_FOLDER }}
-          else
-            echo "Directory ./${{ steps.license-files.outputs.LICENSE_FOLDER }} does not exist. Skipping tar creation."
-          fi
       # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
@@ -238,7 +210,6 @@ jobs:
             ./sbom.xml
             ./*.tar.gz
             ./*.zip
-            ./${{ steps.license-files.outputs.LICENSE_ERROR_FILE }}
   homebrew:
     name: Bump homebrew-core formula
     needs: release-please
