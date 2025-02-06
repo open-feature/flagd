@@ -161,3 +161,10 @@ scrape_configs:
 
 Once, configuration files are ready, use `docker-compose up` to start the local setup. With successful startup, you can
 access metrics through [Prometheus](http://localhost:9090/graph) & traces through [Jaeger](http://localhost:16686/).
+
+## Metadata
+
+[Flag metadata](https://openfeature.dev/specification/types/#flag-metadata) comprises auxiliary data pertaining to feature flags; it's highly valuable in telemetry signals.
+Flag metadata might consist of attributes indicating the version of the flag, an identifier for the flag set, ownership information about the flag, or other documentary information.
+flagd supports flag metadata in all its [gRPC protocols](../reference/specifications//protos.md), in [OFREP](../reference/flagd-ofrep.md), and in its [flag definitions](./flag-definitions.md#metadata).
+These attributes are returned with flag evaluations, and can be added to telemetry signals as outlined in the [OpenFeature specification](https://openfeature.dev/specification/appendix-d).
