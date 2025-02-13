@@ -31,7 +31,6 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-
 		t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
 			// given
 			port := 18016
