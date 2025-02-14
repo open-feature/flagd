@@ -14,6 +14,7 @@ import (
 	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	_ "github.com/open-feature/flagd/core/pkg/sync/grpc/nameresolvers" // initialize custom resolvers e.g. envoy.Init()
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -43,37 +44,44 @@ type FlagSyncServiceClientResponse interface {
 var once msync.Once
 
 type Sync struct {
-	CertPath          string
-	CredentialBuilder grpccredential.Builder
-	Logger            *logger.Logger
-	ProviderID        string
-	Secure            bool
-	Selector          string
-	URI               string
-	MaxMsgSize        int
+	GrpcDialOptionsOverride []grpc.DialOption
+	CertPath                string
+	CredentialBuilder       grpccredential.Builder
+	Logger                  *logger.Logger
+	ProviderID              string
+	Secure                  bool
+	Selector                string
+	URI                     string
+	MaxMsgSize              int
 
 	client FlagSyncServiceClient
 	ready  bool
 }
 
 func (g *Sync) Init(_ context.Context) error {
-	tCredentials, err := g.CredentialBuilder.Build(g.Secure, g.CertPath)
-	if err != nil {
-		err := fmt.Errorf("error building transport credentials: %w", err)
-		g.Logger.Error(err.Error())
-		return err
-	}
+	var rpcCon *grpc.ClientConn // Reusable client connection
+	var err error
 
-	// Derive reusable client connection
-	// Set MaxMsgSize if passed
-	var rpcCon *grpc.ClientConn
-
-	if g.MaxMsgSize > 0 {
-		g.Logger.Info(fmt.Sprintf("setting max receive message size %d bytes default 4MB", g.MaxMsgSize))
-		dialOptions := grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize))
-		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials), dialOptions)
+	if len(g.GrpcDialOptionsOverride) > 0 {
+		g.Logger.Debug("GRPC DialOptions override provided")
+		rpcCon, err = grpc.NewClient(g.URI, g.GrpcDialOptionsOverride...)
 	} else {
-		rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials))
+		var tCredentials credentials.TransportCredentials
+		tCredentials, err = g.CredentialBuilder.Build(g.Secure, g.CertPath)
+		if err != nil {
+			err = fmt.Errorf("error building transport credentials: %w", err)
+			g.Logger.Error(err.Error())
+			return err
+		}
+
+		// Set MaxMsgSize if passed
+		if g.MaxMsgSize > 0 {
+			g.Logger.Info(fmt.Sprintf("setting max receive message size %d bytes default 4MB", g.MaxMsgSize))
+			dialOptions := grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(g.MaxMsgSize))
+			rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials), dialOptions)
+		} else {
+			rpcCon, err = grpc.NewClient(g.URI, grpc.WithTransportCredentials(tCredentials))
+		}
 	}
 
 	if err != nil {
