@@ -336,7 +336,7 @@ FetchAllFlagsResponse is the server response containing feature flag configurati
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/schemas/main/json/flagd-definitions.json |
+| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/flagd-schemas/main/json/flags.json |
 
 
 
@@ -393,7 +393,7 @@ SyncFlagsResponse is the server response containing feature flag configurations 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/schemas/main/json/flagd-definitions.json |
+| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/flagd-schemas/main/json/flags.json |
 
 
 
