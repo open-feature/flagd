@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.2](https://github.com/open-feature/flagd/compare/core/v0.11.1...core/v0.11.2) (2025-02-21)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update golang.org/x/exp digest to 939b2ce ([#1555](https://github.com/open-feature/flagd/issues/1555)) ([23afa9c](https://github.com/open-feature/flagd/commit/23afa9c18c27885bdae0f5c4ebdc30e780e9da71))
+* **deps:** update golang.org/x/exp digest to f9890c6 ([#1551](https://github.com/open-feature/flagd/issues/1551)) ([02c4b42](https://github.com/open-feature/flagd/commit/02c4b4250131ca819c85dcf10c2d78e0c218469f))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.7.4 ([#1556](https://github.com/open-feature/flagd/issues/1556)) ([0dfa799](https://github.com/open-feature/flagd/commit/0dfa79956695849f3a703554525759093931a01d))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#1568](https://github.com/open-feature/flagd/issues/1568)) ([a3d4162](https://github.com/open-feature/flagd/commit/a3d41625a2b79452c0732af29d0b4f320e74fe8b))
+* **deps:** update module golang.org/x/crypto to v0.33.0 ([#1552](https://github.com/open-feature/flagd/issues/1552)) ([7cef153](https://github.com/open-feature/flagd/commit/7cef153a275a4fac5099f5a52013dcd227a79bb3))
+* **deps:** update module golang.org/x/mod to v0.23.0 ([#1544](https://github.com/open-feature/flagd/issues/1544)) ([6fe7bd2](https://github.com/open-feature/flagd/commit/6fe7bd2a3e82dfc81068d9d95d8c3a4acc16456c))
+
+
+### ✨ New Features
+
+* Adding gRPC dial option override to grpc_sync.go ([#1563](https://github.com/open-feature/flagd/issues/1563)) ([1a97ca5](https://github.com/open-feature/flagd/commit/1a97ca5f81582e6d1f139a61e0e49007ad173d3f))
+
 ## [0.11.1](https://github.com/open-feature/flagd/compare/core/v0.11.0...core/v0.11.1) (2025-02-04)
 
 
