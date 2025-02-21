@@ -11,7 +11,7 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/diegoholiveira/jsonlogic/v3 v3.7.4
 	github.com/fsnotify/fsnotify v1.8.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20250127221449-bb763438abc5
 	github.com/open-feature/open-feature-operator/apis v0.2.44
 	github.com/prometheus/client_golang v1.21.0
