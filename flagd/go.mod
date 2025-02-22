@@ -12,7 +12,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/gorilla/mux v1.8.1
 	github.com/mattn/go-colorable v0.1.14
-	github.com/open-feature/flagd/core v0.11.1
+	github.com/open-feature/flagd/core v0.11.2
 	github.com/prometheus/client_golang v1.21.0
 	github.com/rs/cors v1.11.1
 	github.com/rs/xid v1.6.0
@@ -73,7 +73,7 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/diegoholiveira/jsonlogic/v3 v3.7.3 // indirect
+	github.com/diegoholiveira/jsonlogic/v3 v3.7.4 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -150,8 +150,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	gocloud.dev v0.40.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
-	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
+	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
