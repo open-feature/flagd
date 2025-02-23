@@ -9,7 +9,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.5-20250127221518-be6d1143b690.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.14
-	github.com/open-feature/flagd/core v0.11.1
+	github.com/open-feature/flagd/core v0.11.2
 	github.com/prometheus/client_golang v1.21.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
@@ -128,7 +128,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	gocloud.dev v0.40.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect

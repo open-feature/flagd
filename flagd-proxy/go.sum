@@ -243,6 +243,8 @@ github.com/open-feature/flagd/core v0.11.0 h1:uyT2keRVqVptqoNOaK4Pq3LueLkcVIZ/qf
 github.com/open-feature/flagd/core v0.11.0/go.mod h1:jjMq0sMdCvvsoi4dWoNwUTP4jN0vC1e8OtY/giqZIIM=
 github.com/open-feature/flagd/core v0.11.1 h1:0qBVXcRBZOFoZ5lNK/Yba2IyUDdxUHcLsv5OhUJtltA=
 github.com/open-feature/flagd/core v0.11.1/go.mod h1:yzPjp7D9wNusvOyKt8wBND5PQGslcu+5e+xmaIBGgLE=
+github.com/open-feature/flagd/core v0.11.2 h1:3LAuLR2vXpBF80RwwCAu9JX898JasfPH7ErJEf5C5YA=
+github.com/open-feature/flagd/core v0.11.2/go.mod h1:rTdYFyLGP1tGwxo0X26ygIrC31nINCv8hcCq+vhFD0E=
 github.com/open-feature/open-feature-operator/apis v0.2.44 h1:0r4Z+RnJltuHdRBv79NFgAckhna6/M3Wcec6gzNX5vI=
 github.com/open-feature/open-feature-operator/apis v0.2.44/go.mod h1:xB2uLzvUkbydieX7q6/NqannBz3bt/e5BS2DeOyyw4Q=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
@@ -365,6 +367,8 @@ golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 h1:yqrTHse8TCMW1M1ZCP+VAR/l0
 golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8/go.mod h1:tujkw807nyEEAamNbDrEGzRav+ilXA7PCRAd6xsmwiU=
 golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c h1:KL/ZBHXgKGVmuZBZ01Lt57yE5ws8ZPSkkihmEyq7FXc=
 golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c/go.mod h1:tujkw807nyEEAamNbDrEGzRav+ilXA7PCRAd6xsmwiU=
+golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac h1:l5+whBCLH3iH2ZNHYLbAe58bo7yrN4mVcnkHDYz5vvs=
+golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac/go.mod h1:hH+7mtFmImwwcMvScyxUhjuVHR3HGaDPMn9rMSUUbxo=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
