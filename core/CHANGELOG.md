@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.3](https://github.com/open-feature/flagd/compare/core/v0.11.2...core/v0.11.3) (2025-02-23)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/google/go-cmp to v0.7.0 ([#1569](https://github.com/open-feature/flagd/issues/1569)) ([6e9dbd2](https://github.com/open-feature/flagd/commit/6e9dbd2dbf8365f839e353f53cb638847a1f05d6))
+
 ## [0.11.2](https://github.com/open-feature/flagd/compare/core/v0.11.1...core/v0.11.2) (2025-02-21)
 
 
