@@ -24,19 +24,20 @@ const svcName = "flagd"
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter     string
-	ManagementPort     uint16
-	OfrepServicePort   uint16
-	OtelCollectorURI   string
-	OtelCertPath       string
-	OtelKeyPath        string
-	OtelCAPath         string
-	OtelReloadInterval time.Duration
-	ServiceCertPath    string
-	ServiceKeyPath     string
-	ServicePort        uint16
-	ServiceSocketPath  string
-	SyncServicePort    uint16
+	MetricExporter        string
+	ManagementPort        uint16
+	OfrepServicePort      uint16
+	OtelCollectorURI      string
+	OtelCertPath          string
+	OtelKeyPath           string
+	OtelCAPath            string
+	OtelReloadInterval    time.Duration
+	ServiceCertPath       string
+	ServiceKeyPath        string
+	ServicePort           uint16
+	ServiceSocketPath     string
+	SyncServicePort       uint16
+	SyncServiceSocketPath string
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -119,6 +120,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		ContextValues: config.ContextValues,
 		KeyPath:       config.ServiceKeyPath,
 		CertPath:      config.ServiceCertPath,
+		SocketPath:    config.SyncServiceSocketPath,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)

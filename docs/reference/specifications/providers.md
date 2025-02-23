@@ -263,7 +263,7 @@ precedence.
 Below are the supported configuration parameters (note that not all apply to both resolver modes):
 
 | Option name           | Environment variable name      | Explanation                                                            | Type & Values                | Default                       | Compatible resolver     |
-|-----------------------|--------------------------------|------------------------------------------------------------------------|------------------------------|-------------------------------|-------------------------|
+| --------------------- | ------------------------------ | ---------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ----------------------- |
 | resolver              | FLAGD_RESOLVER                 | mode of operation                                                      | String - `rpc`, `in-process` | rpc                           | rpc & in-process        |
 | host                  | FLAGD_HOST                     | remote host                                                            | String                       | localhost                     | rpc & in-process        |
 | port                  | FLAGD_PORT                     | remote port                                                            | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process        |

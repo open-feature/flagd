@@ -32,6 +32,7 @@ type SvcConfigurations struct {
 	ContextValues map[string]any
 	CertPath      string
 	KeyPath       string
+	SocketPath    string
 }
 
 type Service struct {
@@ -61,6 +62,7 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
+	var err error
 	l := cfg.Logger
 	mux, err := NewMux(cfg.Store, cfg.Sources)
 	if err != nil {
@@ -84,14 +86,20 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		contextValues: cfg.ContextValues,
 	})
 
-	l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	var lis net.Listener
+	if cfg.SocketPath != "" {
+		l.Info(fmt.Sprintf("starting flag sync service at %s", cfg.SocketPath))
+		lis, err = net.Listen("unix", cfg.SocketPath)
+	} else {
+		l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))
+		lis, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
 	return &Service{
-		listener: listener,
+		listener: lis,
 		logger:   l,
 		mux:      mux,
 		server:   server,
