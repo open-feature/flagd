@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.3](https://github.com/open-feature/flagd/compare/flagd/v0.12.2...flagd/v0.12.3) (2025-02-23)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.2 ([#1570](https://github.com/open-feature/flagd/issues/1570)) ([e151b1f](https://github.com/open-feature/flagd/commit/e151b1f97524a568e361103bf7a388f2598e5861))
+
 ## [0.12.2](https://github.com/open-feature/flagd/compare/flagd/v0.12.1...flagd/v0.12.2) (2025-02-21)
 
 
