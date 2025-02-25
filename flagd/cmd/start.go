@@ -50,10 +50,11 @@ func init() {
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
 
-	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
-		"With grpc the service will become available on this address. "+
+	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+
+		"With grpc the evaluations service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
-	flags.StringP(syncSocketPathFlagName, "e", "", "Flagd sync service socket path.")
+	flags.StringP(syncSocketPathFlagName, "e", "", "Flagd sync service socket path. "+
+		"With grpc the sync service will be available on this address.")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringSliceP(
