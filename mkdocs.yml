@@ -82,6 +82,7 @@ nav:
     - 'PHP': 'providers/php.md'
     - '.NET': 'providers/dotnet.md'
     - 'Python': 'providers/python.md'
+    - 'Rust': 'providers/rust.md'
     - 'Web': 'providers/web.md'
   - 'Reference':
     - 'CLI':

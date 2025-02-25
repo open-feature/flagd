@@ -13,14 +13,15 @@ Providers for flagd come in two flavors: those that are built to communicate wit
 
 The following table lists all the available flagd providers.
 
-| Technology                                                    | RPC              | in-process       |
-| ------------------------------------------------------------- | ---------------- | ---------------- |
+| Technology                                          | RPC              | in-process       |
+| --------------------------------------------------- | ---------------- | ---------------- |
 | :fontawesome-brands-golang: [Go](./go.md)           | :material-check: | :material-check: |
 | :fontawesome-brands-java: [Java](./java.md)         | :material-check: | :material-check: |
 | :fontawesome-brands-node-js: [Node.JS](./nodejs.md) | :material-check: | :material-check: |
 | :simple-php: [PHP](./php.md)                        | :material-check: | :material-close: |
 | :simple-dotnet: [.NET](./dotnet.md)                 | :material-check: | :material-check: |
-| :simple-python: [Python](./python.md)               | :material-check: | :material-close: |
+| :simple-python: [Python](./python.md)               | :material-check: | :material-check: |
+| :fontawesome-brands-rust: [Rust](./rust.md)         | :material-check: | :material-check: |
 | :material-web: [Web](./web.md)                      | :material-check: | :material-close: |
 
 For information on implementing a flagd provider, see the [specification](../reference/specifications/providers.md).
