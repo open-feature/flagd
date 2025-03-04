@@ -28,7 +28,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.35.0
 	golang.org/x/sync v0.11.0
-	google.golang.org/grpc v1.70.0
+	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.5
 )
 
@@ -36,7 +36,7 @@ require (
 	cloud.google.com/go v0.115.0 // indirect
 	cloud.google.com/go/auth v0.8.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
-	cloud.google.com/go/compute/metadata v0.5.2 // indirect
+	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/iam v1.1.13 // indirect
 	cloud.google.com/go/storage v1.43.0 // indirect
 	connectrpc.com/otelconnect v0.7.1 // indirect
@@ -152,7 +152,7 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/oauth2 v0.24.0 // indirect
+	golang.org/x/oauth2 v0.25.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
