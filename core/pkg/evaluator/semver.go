@@ -102,10 +102,10 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 	}
 
 	if len(parsed) != 3 {
-		return "", "", "", errors.New("sem_ver evaluation must contain a value, an operator and a comparison target")
+		return "", "", "", errors.New("sem_ver evaluation must contain a value, an operator, and a comparison target")
 	}
 
-	actualVersion, err := parseSemanticVersion(parsed[0])
+	actualVersion, err := parseSemanticVersion(ensureString(parsed[0]))
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target property value: %w", err)
 	}
@@ -115,17 +115,26 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse operator: %w", err)
 	}
 
-	targetVersion, err := parseSemanticVersion(parsed[2])
+	targetVersion, err := parseSemanticVersion(ensureString(parsed[2]))
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target value: %w", err)
 	}
 	return actualVersion, targetVersion, operator, nil
 }
 
+func ensureString(v interface{}) string {
+	if str, ok := v.(string); ok {
+		// It's already a string
+		return str
+	}
+	// Convert to string if not already
+	return fmt.Sprintf("%v", v)
+}
+
 func parseSemanticVersion(v interface{}) (string, error) {
 	version, ok := v.(string)
 	if !ok {
-		return "", errors.New("sem_ver evaluation: property did not resolve to a string value")
+		return "", fmt.Errorf("sem_ver evaluation: value '%v' did not resolve to a string value", v)
 	}
 	// version strings are only valid in the semver package if they start with a 'v'
 	// if it's not present in the given value, we prepend it
@@ -134,7 +143,7 @@ func parseSemanticVersion(v interface{}) (string, error) {
 	}
 
 	if !semver.IsValid(version) {
-		return "", errors.New("not a valid semantic version string")
+		return "", fmt.Errorf("'%v' is not a valid semantic version string", version)
 	}
 
 	return version, nil
@@ -143,7 +152,7 @@ func parseSemanticVersion(v interface{}) (string, error) {
 func parseOperator(o interface{}) (SemVerOperator, error) {
 	operatorString, ok := o.(string)
 	if !ok {
-		return "", errors.New("could not parse operator")
+		return "", fmt.Errorf("could not parse operator '%v'", o)
 	}
 
 	return SemVerOperator(operatorString), nil
