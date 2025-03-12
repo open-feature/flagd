@@ -298,7 +298,6 @@ func TestSemVerOperator_Compare(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var operatorInterface interface{} = string(tt.svo)
 			actualVersion, targetVersion, operator, err := parseSemverEvaluationData([]interface{}{tt.args.v1, operatorInterface, tt.args.v2})
-
 			if err != nil {
 				require.Truef(t, tt.wantErr, "Error parsing semver evaluation data. actualVersion: %s, targetVersion: %s, operator: %s, err: %s", actualVersion, targetVersion, operator, err)
 				return
