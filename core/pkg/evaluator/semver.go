@@ -105,7 +105,7 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", errors.New("sem_ver evaluation must contain a value, an operator, and a comparison target")
 	}
 
-	actualVersion, err := parseSemanticVersion(ensureString(parsed[0]))
+	actualVersion, err := parseSemanticVersion(parsed[0])
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target property value: %w", err)
 	}
@@ -115,7 +115,7 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse operator: %w", err)
 	}
 
-	targetVersion, err := parseSemanticVersion(ensureString(parsed[2]))
+	targetVersion, err := parseSemanticVersion(parsed[2])
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target value: %w", err)
 	}
@@ -132,10 +132,7 @@ func ensureString(v interface{}) string {
 }
 
 func parseSemanticVersion(v interface{}) (string, error) {
-	version, ok := v.(string)
-	if !ok {
-		return "", fmt.Errorf("sem_ver evaluation: value '%v' did not resolve to a string value", v)
-	}
+	version := ensureString(v)
 	// version strings are only valid in the semver package if they start with a 'v'
 	// if it's not present in the given value, we prepend it
 	if !strings.HasPrefix(version, "v") {
