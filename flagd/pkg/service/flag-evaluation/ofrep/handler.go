@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -14,7 +13,6 @@ import (
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -49,8 +47,6 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)
 
-	rCtx, span := h.tracer.Start(r.Context(), "flagEvaluation", trace.WithSpanKind(trace.SpanKindServer))
-	defer span.End()
 	// obtain flag key
 	vars := mux.Vars(r)
 	if vars == nil {
@@ -67,9 +63,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	context := flagdContext(h.Logger, requestID, request, h.contextValues)
-	evaluation := h.evaluator.ResolveAsAnyValue(rCtx, requestID, flagKey, context)
-	span.SetAttributes(attribute.String("feature_flag.key", evaluation.FlagKey))
-	span.SetAttributes(attribute.String("feature_flag.variant", evaluation.Variant))
+	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
 		h.writeJSONToResponse(status, evaluationError, w)
@@ -82,8 +76,6 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)
 
-	rCtx, span := h.tracer.Start(r.Context(), "bulkEvaluation", trace.WithSpanKind(trace.SpanKindServer))
-	defer span.End()
 	request, err := extractOfrepRequest(r)
 	if err != nil {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextError(), w)
@@ -91,7 +83,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	context := flagdContext(h.Logger, requestID, request, h.contextValues)
-	evaluations, metadata, err := h.evaluator.ResolveAllValues(rCtx, requestID, context)
+	evaluations, metadata, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
 
@@ -99,7 +91,6 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
 	} else {
-		span.SetAttributes(attribute.Int("feature_flag.count", len(evaluations)))
 		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
 	}
 }
