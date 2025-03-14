@@ -24,6 +24,76 @@ func TestSemVerOperator_Compare(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "invalid version",
+			svo:  Greater,
+			args: args{
+				v1: "invalid",
+				v2: "v1.0.0",
+			},
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name: "preview version vs non preview version",
+			svo:  Greater,
+			args: args{
+				v1: "v1.0.0-preview.1.2",
+				v2: "v1.0.0",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "preview version vs preview version",
+			svo:  Greater,
+			args: args{
+				v1: "v1.0.0-preview.1.3",
+				v2: "v1.0.0-preview.1.2",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "no prefixed v left greater",
+			svo:  Greater,
+			args: args{
+				v1: "0.0.1",
+				v2: "v0.0.2",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "no prefixed v right greater",
+			svo:  Greater,
+			args: args{
+				v1: "v0.0.1",
+				v2: "0.0.2",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "no prefixed v right equals",
+			svo:  Equals,
+			args: args{
+				v1: "v0.0.1",
+				v2: "0.0.1",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "no prefixed v both",
+			svo:  Greater,
+			args: args{
+				v1: "0.0.1",
+				v2: "0.0.2",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
 			name: "invalid operator",
 			svo:  "",
 			args: args{
@@ -34,11 +104,31 @@ func TestSemVerOperator_Compare(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "less with large number",
+			svo:  Less,
+			args: args{
+				v1: "v1234.0.1",
+				v2: "v1235.0.2",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
 			name: "less",
 			svo:  Less,
 			args: args{
 				v1: "v0.0.1",
 				v2: "v0.0.2",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "no minor version",
+			svo:  Less,
+			args: args{
+				v1: "v1.0",
+				v2: "v1.2",
 			},
 			want:    true,
 			wantErr: false,
@@ -206,13 +296,20 @@ func TestSemVerOperator_Compare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.svo.compare(tt.args.v1, tt.args.v2)
+			var operatorInterface interface{} = string(tt.svo)
+			actualVersion, targetVersion, operator, err := parseSemverEvaluationData([]interface{}{tt.args.v1, operatorInterface, tt.args.v2})
+			if err != nil {
+				require.Truef(t, tt.wantErr, "Error parsing semver evaluation data. actualVersion: %s, targetVersion: %s, operator: %s, err: %s", actualVersion, targetVersion, operator, err)
+				return
+			}
+
+			got, err := operator.compare(actualVersion, targetVersion)
 
 			if tt.wantErr {
 				require.NotNil(t, err)
 			} else {
 				require.Nil(t, err)
-				require.Equalf(t, tt.want, got, "compare(%v, %v)", tt.args.v1, tt.args.v2)
+				require.Equalf(t, tt.want, got, "compare(%v, %v) operator: %s", tt.args.v1, tt.args.v2, operator)
 			}
 		})
 	}
@@ -380,6 +477,130 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			flagKey: "headerColor",
 			context: map[string]any{
 				"version": "1.0.0",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions given as double - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": [1.2, "=", "1.2"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"version": "1.0.0",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions given as int - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": [1, "=", "v1.0.0"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"version": "1.0.0",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions and minor-version without patch version operator provided - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": [1.2, "=", "1.2"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"version": "1.0.0",
+			},
+			expectedVariant: "red",
+			expectedValue:   "#FF0000",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"versions with prefixed v operator provided - match": {
+			flags: Flags{
+				Flags: map[string]model.Flag{
+					"headerColor": {
+						State:          "ENABLED",
+						DefaultVariant: "red",
+						Variants: map[string]any{
+							"red":    "#FF0000",
+							"blue":   "#0000FF",
+							"green":  "#00FF00",
+							"yellow": "#FFFF00",
+						},
+						Targeting: []byte(`{
+											"if": [
+											  {
+												"sem_ver": [{"var": "version"}, "<", "v1.2"]
+											  },
+											  "red", "green"
+											]
+										  }`),
+					},
+				},
+			},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"version": "v1.0.0",
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
