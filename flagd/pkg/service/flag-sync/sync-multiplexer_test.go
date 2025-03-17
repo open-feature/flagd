@@ -128,7 +128,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 	}
 
 	// when - updates are triggered
-	err = mux.Publish()
+	err = mux.Publish(context.Background())
 	if err != nil {
 		t.Fatal("failure to trigger update request on multiplexer")
 		return
@@ -144,7 +144,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 
 	// when - subscription removed & update triggered
 	mux.Unregister(identifier, "")
-	err = mux.Publish()
+	err = mux.Publish(context.Background())
 	if err != nil {
 		t.Fatal("failure to trigger update request on multiplexer")
 		return
