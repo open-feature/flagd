@@ -11,6 +11,8 @@ import (
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc/filters"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -75,9 +77,14 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
 		}
-		server = grpc.NewServer(grpc.Creds(tlsCredentials))
+		server = grpc.NewServer(
+			grpc.Creds(tlsCredentials),
+			grpc.StatsHandler(
+				otelgrpc.NewServerHandler(otelgrpc.WithFilter(filters.Not(filters.MethodName("SyncFlags"))))))
 	} else {
-		server = grpc.NewServer()
+		server = grpc.NewServer(
+			grpc.StatsHandler(
+				otelgrpc.NewServerHandler(otelgrpc.WithFilter(filters.Not(filters.MethodName("SyncFlags"))))))
 	}
 
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
