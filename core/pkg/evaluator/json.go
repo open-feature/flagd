@@ -19,8 +19,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/xeipuuv/gojsonschema"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
@@ -100,19 +98,10 @@ func (je *JSON) GetState() (string, error) {
 }
 
 func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
-	_, span := je.jsonEvalTracer.Start(
-		context.Background(),
-		"flagSync",
-		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
-		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.Type.String())))
-	defer span.End()
-
 	var definition Definition
 
 	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
 	if err != nil {
-		span.SetStatus(codes.Error, "flagSync error")
-		span.RecordError(err)
 		return nil, false, err
 	}
 
@@ -132,9 +121,6 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	default:
 		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
 	}
-
-	// Number of events correlates to the number of flags changed through this sync, record it
-	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
 
 	return events, reSync, nil
 }

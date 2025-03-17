@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"slices"
 	"strings"
 	"sync"
@@ -51,7 +52,7 @@ func NewMux(store *store.State, sources []string) (*Multiplexer, error) {
 		selectorFlags: map[string]string{},
 	}
 
-	return m, m.reFill()
+	return m, m.reFill(context.Background())
 }
 
 // Register a subscription
@@ -99,12 +100,12 @@ func (r *Multiplexer) Register(id interface{}, source string, con chan payload) 
 }
 
 // Publish sync updates to subscriptions
-func (r *Multiplexer) Publish() error {
+func (r *Multiplexer) Publish(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// perform a refill prior to publishing
-	err := r.reFill()
+	err := r.reFill(ctx)
 	if err != nil {
 		return err
 	}
@@ -120,7 +121,6 @@ func (r *Multiplexer) Publish() error {
 			s.channel <- payload{flags}
 		}
 	}
-
 	return nil
 }
 
@@ -164,8 +164,13 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 	return strings.Join(r.sources, ",")
 }
 
+type flagConfig struct {
+	flags    map[string]model.Flag
+	metadata map[string]string
+}
+
 // reFill local configuration values
-func (r *Multiplexer) reFill() error {
+func (r *Multiplexer) reFill(ctx context.Context) error {
 	clear(r.selectorFlags)
 	// start all sources with empty config
 	for _, source := range r.sources {
@@ -176,6 +181,10 @@ func (r *Multiplexer) reFill() error {
 	if err != nil {
 		return fmt.Errorf("error retrieving flags from the store: %w", err)
 	}
+
+	spanContext := trace.SpanContextFromContext(ctx)
+	metadata["propagationTraceId"] = spanContext.TraceID()
+	metadata["propagationSpanId"] = spanContext.SpanID()
 
 	bytes, err := json.Marshal(map[string]interface{}{"flags": all, "metadata": metadata})
 	if err != nil {
@@ -201,6 +210,9 @@ func (r *Multiplexer) reFill() error {
 	for source, flags := range collector {
 		// store the corresponding metadata
 		metadata := r.store.GetMetadataForSource(source)
+		metadata["propagationTraceId"] = spanContext.TraceID()
+		metadata["propagationSpanId"] = spanContext.SpanID()
+
 		bytes, err := json.Marshal(map[string]interface{}{"flags": flags, "metadata": metadata})
 		if err != nil {
 			return fmt.Errorf("unable to marshal flags: %w", err)
