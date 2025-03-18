@@ -16,36 +16,34 @@ import (
 
 func TestSyncServiceEndToEnd(t *testing.T) {
 	testCases := []struct {
+		title          string
 		certPath       string
 		keyPath        string
 		clientCertPath string
+		socketPath     string
 		tls            bool
 		wantErr        bool
 	}{
-		{"./test-cert/server-cert.pem", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true, false},
-		{"", "", "", false, false},
-		{"./lol/not/a/cert", "./test-cert/server-key.pem", "./test-cert/ca-cert.pem", true, true},
+		{title: "with TLS Connection", certPath: "./test-cert/server-cert.pem", keyPath: "./test-cert/server-key.pem", clientCertPath: "./test-cert/ca-cert.pem", socketPath: "", tls: true, wantErr: false},
+		{title: "witout TLS Connection", certPath: "", keyPath: "", clientCertPath: "", socketPath: "", tls: false, wantErr: false},
+		{title: "with invalid TLS certificate path", certPath: "./lol/not/a/cert", keyPath: "./test-cert/server-key.pem", clientCertPath: "./test-cert/ca-cert.pem", socketPath: "", tls: true, wantErr: true},
+		{title: "with unix socket connection", certPath: "", keyPath: "", clientCertPath: "", socketPath: "/tmp/flagd", tls: false, wantErr: false},
 	}
 
 	for _, tc := range testCases {
-		var testTitle string
-		if tc.tls {
-			testTitle = "Testing Sync Service with TLS Connection"
-		} else {
-			testTitle = "Testing Sync Service without TLS Connection"
-		}
-		t.Run(testTitle, func(t *testing.T) {
+		t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
 			// given
 			port := 18016
 			store, sources := getSimpleFlagStore()
 
 			service, err := NewSyncService(SvcConfigurations{
-				Logger:   logger.NewLogger(nil, false),
-				Port:     uint16(port),
-				Sources:  sources,
-				Store:    store,
-				CertPath: tc.certPath,
-				KeyPath:  tc.keyPath,
+				Logger:     logger.NewLogger(nil, false),
+				Port:       uint16(port),
+				Sources:    sources,
+				Store:      store,
+				CertPath:   tc.certPath,
+				KeyPath:    tc.keyPath,
+				SocketPath: tc.socketPath,
 			})
 
 			if tc.wantErr {
@@ -81,7 +79,16 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 				}
 				con, err = grpc.Dial(fmt.Sprintf("0.0.0.0:%d", port), grpc.WithTransportCredentials(tlsCredentials))
 			} else {
-				con, err = grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+				if tc.socketPath != "" {
+					con, err = grpc.Dial(
+						fmt.Sprintf("unix://%s", tc.socketPath),
+						grpc.WithTransportCredentials(insecure.NewCredentials()),
+						grpc.WithBlock(),
+						grpc.WithTimeout(2*time.Second),
+					)
+				} else {
+					con, err = grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+				}
 			}
 			if err != nil {
 				t.Fatal(fmt.Printf("error creating grpc dial ctx: %v", err))

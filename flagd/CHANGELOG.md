@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.2](https://github.com/open-feature/flagd/compare/flagd/v0.12.1...flagd/v0.12.2) (2025-02-21)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.1 ([#1545](https://github.com/open-feature/flagd/issues/1545)) ([ca663b5](https://github.com/open-feature/flagd/commit/ca663b5832c94834f73cd5449a2f28af631d9556))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#1568](https://github.com/open-feature/flagd/issues/1568)) ([a3d4162](https://github.com/open-feature/flagd/commit/a3d41625a2b79452c0732af29d0b4f320e74fe8b))
+* **deps:** update module github.com/spf13/cobra to v1.9.0 ([#1564](https://github.com/open-feature/flagd/issues/1564)) ([345d2a9](https://github.com/open-feature/flagd/commit/345d2a920759e3e7046d7679a9c8a7cdb6cd3b40))
+* **deps:** update module github.com/spf13/cobra to v1.9.1 ([#1566](https://github.com/open-feature/flagd/issues/1566)) ([a48cc80](https://github.com/open-feature/flagd/commit/a48cc8023963ac0ae41e70d4fd6fb0a9f453dba9))
+* **deps:** update module golang.org/x/net to v0.35.0 ([#1557](https://github.com/open-feature/flagd/issues/1557)) ([13146e5](https://github.com/open-feature/flagd/commit/13146e5ac3de44e482f496b47dd3e0777d08c718))
+* **deps:** update module google.golang.org/protobuf to v1.36.5 ([#1548](https://github.com/open-feature/flagd/issues/1548)) ([7b2b7cc](https://github.com/open-feature/flagd/commit/7b2b7ccbdf7cbebeb4b9c18bc7ab3321efe5a490))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.24 ([#1561](https://github.com/open-feature/flagd/issues/1561)) ([130904c](https://github.com/open-feature/flagd/commit/130904c212b1f8d484b96c05dd5996286c2922cd))
+
 ## [0.12.1](https://github.com/open-feature/flagd/compare/flagd/v0.12.0...flagd/v0.12.1) (2025-02-04)
 
 
