@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd/flagd
 
-go 1.24.1
+go 1.22.7
 
 toolchain go1.24.1
 

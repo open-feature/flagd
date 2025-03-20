@@ -1,6 +1,8 @@
 module github.com/open-feature/flagd/flagd-proxy/tests/loadtest
 
-go 1.20
+go 1.21
+
+toolchain go1.24.1
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.3.0-20240215170432-1e611e2999cc.3
@@ -13,5 +15,5 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240506185236-b8a5c65736ae // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.36.4 // indirect
 )
