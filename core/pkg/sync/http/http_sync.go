@@ -82,30 +82,20 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		if body == "" {
 			hs.Logger.Debug("configuration deleted")
-		} else {
-			if hs.LastBodySHA == "" {
-				hs.Logger.Debug("new configuration created")
-				msg, err := hs.Fetch(ctx)
-				if err != nil {
-					hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
-				} else {
-					dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
-				}
-			} else {
-				currentSHA := hs.generateSha([]byte(body))
-				if hs.LastBodySHA != currentSHA {
-					hs.Logger.Debug("configuration modified")
-					msg, err := hs.Fetch(ctx)
-					if err != nil {
-						hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
-					} else {
-						dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
-					}
-				}
-
-				hs.LastBodySHA = currentSHA
-			}
+			return
 		}
+
+		currentSHA := hs.generateSha([]byte(body))
+
+		if hs.LastBodySHA == "" {
+			hs.Logger.Debug("new configuration created")
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
+		} else if hs.LastBodySHA != currentSHA {
+			hs.Logger.Debug("configuration modified")
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
+		}
+
+		hs.LastBodySHA = currentSHA
 	})
 
 	hs.Cron.Start()
