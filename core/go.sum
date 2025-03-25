@@ -235,6 +235,8 @@ github.com/open-feature/flagd-schemas v0.2.9-0.20250127221449-bb763438abc5 h1:0R
 github.com/open-feature/flagd-schemas v0.2.9-0.20250127221449-bb763438abc5/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
 github.com/open-feature/flagd-schemas v0.2.9-0.20250310135615-e840a037dc49 h1:hJaCK9RPXzxKVrHXinB7dt5MT6RRbEA6fF1ZZbUFWPE=
 github.com/open-feature/flagd-schemas v0.2.9-0.20250310135615-e840a037dc49/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
+github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47 h1:c6nodciz/xeU0xiAcDQ5MBW34DnPoi5/lEgjV5kZeZA=
+github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
 github.com/open-feature/open-feature-operator/apis v0.2.44 h1:0r4Z+RnJltuHdRBv79NFgAckhna6/M3Wcec6gzNX5vI=
 github.com/open-feature/open-feature-operator/apis v0.2.44/go.mod h1:xB2uLzvUkbydieX7q6/NqannBz3bt/e5BS2DeOyyw4Q=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
