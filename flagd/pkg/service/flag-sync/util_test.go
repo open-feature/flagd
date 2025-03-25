@@ -34,6 +34,16 @@ func getSimpleFlagStore() (*store.State, []string) {
 		Source:         "B",
 	})
 
+	flagStore.MetadataPerSource["A"] = model.Metadata{
+		"keyDuped": "value",
+		"keyA":     "valueA",
+	}
+
+	flagStore.MetadataPerSource["B"] = model.Metadata{
+		"keyDuped": "value",
+		"keyB":     "valueB",
+	}
+
 	return flagStore, []string{"A", "B", "C"}
 }
 
