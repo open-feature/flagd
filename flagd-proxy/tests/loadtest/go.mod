@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd/flagd-proxy/tests/loadtest
 
-go 1.21
+go 1.22
 
 toolchain go1.24.1
 
