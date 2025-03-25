@@ -70,7 +70,7 @@ func (f *State) Get(_ context.Context, key string) (model.Flag, model.Metadata, 
 	metadata := f.getMetadata()
 	flag, ok := f.Flags[key]
 	if ok {
-		metadata = f.getMetadataForSource(flag.Source)
+		metadata = f.GetMetadataForSource(flag.Source)
 	}
 
 	return flag, metadata, ok
@@ -319,7 +319,7 @@ func (f *State) Merge(
 	return notifications, resyncRequired
 }
 
-func (f *State) getMetadataForSource(source string) model.Metadata {
+func (f *State) GetMetadataForSource(source string) model.Metadata {
 	perSource, ok := f.MetadataPerSource[source]
 	if ok && perSource != nil {
 		return maps.Clone(perSource)
