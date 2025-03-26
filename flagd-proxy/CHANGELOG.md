@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.2...flagd-proxy/v0.7.3) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.2 ([#1570](https://github.com/open-feature/flagd/issues/1570)) ([e151b1f](https://github.com/open-feature/flagd/commit/e151b1f97524a568e361103bf7a388f2598e5861))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#1576](https://github.com/open-feature/flagd/issues/1576)) ([cd95193](https://github.com/open-feature/flagd/commit/cd95193f71fd465ffd1b177fa492aa84d8414a87))
+* **deps:** update module google.golang.org/grpc to v1.71.0 ([#1578](https://github.com/open-feature/flagd/issues/1578)) ([5c2c64f](https://github.com/open-feature/flagd/commit/5c2c64f878b8603dd37cbfd79b0e1588e4b5a3c6))
+
 ## [0.7.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.1...flagd-proxy/v0.7.2) (2025-02-21)
 
 

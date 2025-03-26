@@ -1,53 +1,11 @@
 run:
-  skip-dirs:
-    - (^|/)bin($|/)
-    - (^|/)examples($|/)
-    - (^|/)schemas($|/)
-    - (^|/)test-harness($|/)
-linters:
-  enable:
-    - asciicheck
-    - asasalint
-    - bidichk
-    - bodyclose
-    - contextcheck
-    - dogsled
-    - dupl
-    - dupword
-    - durationcheck
-    - errchkjson
-    - exhaustive
-    - funlen
-    - gci
-    - goconst
-    - gocritic
-    - gocyclo
-    - interfacebloat
-    - gosec
-    - lll
-    - misspell
-    - nakedret
-    - nilerr
-    - nilnil
-    - noctx
-    - nosprintfhostport
-    - prealloc
-    - promlinter
-    - revive
-    - rowserrcheck
-    - exportloopref
-    - stylecheck
-    - unconvert
-    - unparam
-    - whitespace
-    - wrapcheck
-    - gofumpt
-    - tenv
+  timeout: 3m
 linters-settings:
   funlen:
     statements: 50
   golint:
     min-confidence: 0.6
+  enable-all: true
 issues:
   exclude:
     - pkg/generated
@@ -65,3 +23,8 @@ issues:
         - gocyclo
         - dupl
         - staticcheck
+  exclude-dirs:
+    - (^|/)bin($|/)
+    - (^|/)examples($|/)
+    - (^|/)schemas($|/)
+    - (^|/)test-harness($|/)
