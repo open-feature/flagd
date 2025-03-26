@@ -2,7 +2,7 @@ module github.com/open-feature/flagd/core
 
 go 1.22.7
 
-toolchain go1.22.9
+toolchain go1.24.1
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250127221518-be6d1143b690.2
@@ -12,7 +12,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.7.4
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/google/go-cmp v0.7.0
-	github.com/open-feature/flagd-schemas v0.2.9-0.20250310135615-e840a037dc49
+	github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47
 	github.com/open-feature/open-feature-operator/apis v0.2.44
 	github.com/prometheus/client_golang v1.21.1
 	github.com/robfig/cron v1.2.0
