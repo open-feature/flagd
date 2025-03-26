@@ -88,7 +88,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChe
 		if err != nil {
 			return fmt.Errorf("couldn't get object attributes: %v", err)
 		}
-		if hs.lastUpdated == updated {
+		if hs.lastUpdated.Equal(updated) {
 			hs.Logger.Debug("configuration hasn't changed, skipping fetching full object")
 			return nil
 		}
