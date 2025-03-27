@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.4](https://github.com/open-feature/flagd/compare/flagd/v0.12.3...flagd/v0.12.4) (2025-03-27)
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.24.1 ([#1559](https://github.com/open-feature/flagd/issues/1559)) ([cd46044](https://github.com/open-feature/flagd/commit/cd4604471bba0a1df67bf87653a38df3caf9d20f))
+
 ## [0.12.3](https://github.com/open-feature/flagd/compare/flagd/v0.12.2...flagd/v0.12.3) (2025-03-25)
 
 
