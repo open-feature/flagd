@@ -30,7 +30,6 @@ import (
 
 const (
 	metricsExporterOtel = "otel"
-	exportInterval      = 2 * time.Second
 )
 
 type CollectorConfig struct {
@@ -196,7 +195,7 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
 	}
 
-	return metric.NewPeriodicReader(otelExporter, metric.WithInterval(exportInterval)), nil
+	return metric.NewPeriodicReader(otelExporter), nil
 }
 
 // buildOtlpExporter is a helper to build grpc backed otlp trace exporter
