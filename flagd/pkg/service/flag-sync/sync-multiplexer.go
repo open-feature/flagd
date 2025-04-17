@@ -199,6 +199,8 @@ func (r *Multiplexer) reFill() error {
 
 	// for all flags, sort them into their correct selector
 	for source, flags := range collector {
+		// store the corresponding metadata
+		metadata := r.store.GetMetadataForSource(source)
 		bytes, err := json.Marshal(map[string]interface{}{"flags": flags, "metadata": metadata})
 		if err != nil {
 			return fmt.Errorf("unable to marshal flags: %w", err)

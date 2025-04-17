@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.3](https://github.com/open-feature/flagd/compare/core/v0.11.2...core/v0.11.3) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 9b0ee43 ([#1598](https://github.com/open-feature/flagd/issues/1598)) ([0587ce4](https://github.com/open-feature/flagd/commit/0587ce44e60b643ff6960c1eaf4461f933ea95b7))
+* **deps:** update github.com/open-feature/flagd-schemas digest to e840a03 ([#1587](https://github.com/open-feature/flagd/issues/1587)) ([9ee0c57](https://github.com/open-feature/flagd/commit/9ee0c573d6dbfa0c4e9b18c9da7313094ea56916))
+* **deps:** update module connectrpc.com/otelconnect to v0.7.2 ([#1574](https://github.com/open-feature/flagd/issues/1574)) ([6094dce](https://github.com/open-feature/flagd/commit/6094dce5c0472f593b79d6d40e080f9b8d6503e5))
+* **deps:** update module github.com/google/go-cmp to v0.7.0 ([#1569](https://github.com/open-feature/flagd/issues/1569)) ([6e9dbd2](https://github.com/open-feature/flagd/commit/6e9dbd2dbf8365f839e353f53cb638847a1f05d6))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#1576](https://github.com/open-feature/flagd/issues/1576)) ([cd95193](https://github.com/open-feature/flagd/commit/cd95193f71fd465ffd1b177fa492aa84d8414a87))
+* **deps:** update module google.golang.org/grpc to v1.71.0 ([#1578](https://github.com/open-feature/flagd/issues/1578)) ([5c2c64f](https://github.com/open-feature/flagd/commit/5c2c64f878b8603dd37cbfd79b0e1588e4b5a3c6))
+* incorrect metadata returned per source ([#1599](https://github.com/open-feature/flagd/issues/1599)) ([b333e11](https://github.com/open-feature/flagd/commit/b333e11ecfe54f72c44ee61b3dcb1f2a487c94d4))
+
+
+### ✨ New Features
+
+* accept version numbers which are not strings ([#1589](https://github.com/open-feature/flagd/issues/1589)) ([6a13796](https://github.com/open-feature/flagd/commit/6a137967a258e799cbac9e3bb3927a07412c2a7b))
+
 ## [0.11.2](https://github.com/open-feature/flagd/compare/core/v0.11.1...core/v0.11.2) (2025-02-21)
 
 

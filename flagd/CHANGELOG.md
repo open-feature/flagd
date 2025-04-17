@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.3](https://github.com/open-feature/flagd/compare/flagd/v0.12.2...flagd/v0.12.3) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* add support for unix socket connection in sync service ([#1518](https://github.com/open-feature/flagd/issues/1518)) ([#1560](https://github.com/open-feature/flagd/issues/1560)) ([e2203a1](https://github.com/open-feature/flagd/commit/e2203a13ca4debd5b43c94a9b00acd2d40152bb2))
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.2 ([#1570](https://github.com/open-feature/flagd/issues/1570)) ([e151b1f](https://github.com/open-feature/flagd/commit/e151b1f97524a568e361103bf7a388f2598e5861))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#1576](https://github.com/open-feature/flagd/issues/1576)) ([cd95193](https://github.com/open-feature/flagd/commit/cd95193f71fd465ffd1b177fa492aa84d8414a87))
+* **deps:** update module google.golang.org/grpc to v1.71.0 ([#1578](https://github.com/open-feature/flagd/issues/1578)) ([5c2c64f](https://github.com/open-feature/flagd/commit/5c2c64f878b8603dd37cbfd79b0e1588e4b5a3c6))
+* incorrect metadata returned per source ([#1599](https://github.com/open-feature/flagd/issues/1599)) ([b333e11](https://github.com/open-feature/flagd/commit/b333e11ecfe54f72c44ee61b3dcb1f2a487c94d4))
+
+
+### ✨ New Features
+
+* accept version numbers which are not strings ([#1589](https://github.com/open-feature/flagd/issues/1589)) ([6a13796](https://github.com/open-feature/flagd/commit/6a137967a258e799cbac9e3bb3927a07412c2a7b))
+
 ## [0.12.2](https://github.com/open-feature/flagd/compare/flagd/v0.12.1...flagd/v0.12.2) (2025-02-21)
 
 

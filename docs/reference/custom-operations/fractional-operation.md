@@ -64,7 +64,9 @@ The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-defini
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
 
 Assignment is deterministic (sticky) based on the expression supplied as the first parameter (`{ "cat": [{ "var": "$flagd.flagKey" }, { "var": "email" }]}`, in this case).
-The value retrieved by this expression is referred to as the "bucketing value".
+The value retrieved by this expression is referred to as the "bucketing value" and must be a string.
+Other primitive types can be used by casting the value using `"cat"` operator.
+For example, a less deterministic distribution can be achieved using `{ "cat": [{ "var": "$flagd.timestamp" }]}`.
 The bucketing value expression can be omitted, in which case a concatenation of the `targetingKey` and the `flagKey` will be used.
 
 The `fractional` operation is a custom JsonLogic operation which deterministically selects a variant based on

@@ -63,6 +63,7 @@ jobs:
   container-release:
     name: Build and push containers to GHCR
     needs: release-please
+    environment: publish
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.items_to_publish != '' && toJson(fromJson(needs.release-please.outputs.items_to_publish)) != '[]' }}
     strategy:

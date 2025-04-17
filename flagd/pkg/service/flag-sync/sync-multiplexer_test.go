@@ -168,35 +168,94 @@ func TestGetAllFlags(t *testing.T) {
 	}
 
 	// when - get all with open scope
-	flags, err := mux.GetAllFlags("")
+	flagConfig, err := mux.GetAllFlags("")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return
 	}
 
-	if len(flags) == 0 {
+	if len(flagConfig) == 0 {
 		t.Fatal("expected no empty flags")
 		return
 	}
 
 	// when - get all with a scope
-	flags, err = mux.GetAllFlags("A")
+	flagConfig, err = mux.GetAllFlags("A")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return
 	}
 
-	if len(flags) == 0 || !strings.Contains(flags, fmt.Sprintf("\"source\":\"%s\"", "A")) {
+	if len(flagConfig) == 0 || !strings.Contains(flagConfig, fmt.Sprintf("\"source\":\"%s\"", "A")) {
 		t.Fatal("expected flags to be scoped")
 		return
 	}
 
 	// when - get all for a flagless-scope
-	flags, err = mux.GetAllFlags("C")
+	flagConfig, err = mux.GetAllFlags("C")
 	if err != nil {
 		t.Fatal("error when retrieving all flags")
 		return
 	}
 
-	assert.Equal(t, flags, emptyConfigString)
+	assert.Equal(t, flagConfig, emptyConfigString)
+}
+
+func TestGetAllFlagsMetadata(t *testing.T) {
+	// given
+	mux, err := NewMux(getSimpleFlagStore())
+	if err != nil {
+		t.Fatal("error during flag extraction")
+		return
+	}
+
+	// when - get all with open scope
+	flagConfig, err := mux.GetAllFlags("")
+	if err != nil {
+		t.Fatal("error when retrieving all flags")
+		return
+	}
+
+	if len(flagConfig) == 0 {
+		t.Fatal("expected no empty flags")
+		return
+	}
+
+	if !strings.Contains(flagConfig, "\"keyA\":\"valueA\"") {
+		t.Fatal("expected unique metadata key for A to be present")
+		return
+	}
+
+	if !strings.Contains(flagConfig, "\"keyB\":\"valueB\"") {
+		t.Fatal("expected unique metadata key for B to be present")
+		return
+	}
+
+	// duplicated keys are removed
+	if strings.Contains(flagConfig, "\"keyDuped\":\"value\"") {
+		t.Fatal("expected duplicated metadata key NOT to be present")
+		return
+	}
+
+	// when - get all with a scope
+	flagConfig, err = mux.GetAllFlags("A")
+	if err != nil {
+		t.Fatal("error when retrieving all flags")
+		return
+	}
+
+	if len(flagConfig) == 0 {
+		t.Fatal("expected no empty flags")
+		return
+	}
+
+	if !strings.Contains(flagConfig, "\"keyA\":\"valueA\"") {
+		t.Fatal("expected unique metadata key to be present")
+		return
+	}
+
+	if !strings.Contains(flagConfig, "\"keyDuped\":\"value\"") {
+		t.Fatal("expected duplicated metadata key to be present")
+		return
+	}
 }

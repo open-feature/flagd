@@ -476,7 +476,7 @@
       "$comment": "there seems to be a bug here, where ajv gives a warning (not an error) because maxItems doesn't equal the number of entries in items, though this is valid in this case",
       "items": [
         {
-          "description": "Bucketing value used in pseudorandom assignment; should be unique and stable for each subject of flag evaluation. Defaults to a concatenation of the flagKey and targetingKey.",
+          "description": "Bucketing value used in pseudorandom assignment; should be a string that is unique and stable for each subject of flag evaluation. Defaults to a concatenation of the flagKey and targetingKey.",
           "$ref": "#/definitions/anyRule"
         },
         {
