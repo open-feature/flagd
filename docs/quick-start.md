@@ -62,7 +62,7 @@ services:
       - '8013:8013'
 ```
 
-Create a folder called `flags` where the JSON flag and `docker-compose` files can reside. [Download the flag definition](#download-the-flag-definition) and move this JSON file to the flags folder.
+Create a folder called `flags` where the JSON flag files can reside. [Download the flag definition](#download-the-flag-definition) and move this JSON file to the flags folder.
 
 ```
 ├── flags
