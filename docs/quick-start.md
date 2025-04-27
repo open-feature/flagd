@@ -43,6 +43,39 @@ docker run \
     In Windows, use WSL system for both the file location and Docker runtime.
     Mixed file systems does not work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479).
 
+#### Running flagd in Docker Compose
+
+Create a docker-compose.yaml file with the following contents:
+
+```yaml
+services:
+  flagd:
+    image: ghcr.io/open-feature/flagd:latest
+    volumes:
+      - ./flags:/etc/flagd
+    command: [
+      'start',
+      '--uri',
+      'file:./etc/flagd/demo.flagd.json',
+    ]
+    ports:
+      - '8013:8013'
+```
+
+Create a folder called `flags` where the JSON flag and `docker-compose` files can reside. [Download the flag definition](#download-the-flag-definition) and move this JSON file to the flags folder.
+
+```
+├── flags
+│   ├── demo.flagd.json
+├── docker-compose.yaml
+```
+
+Open up a terminal and run the following:
+
+```shell
+docker compose up
+```
+
 ### Evaluating a feature flag
 
 Test it out by running the following cURL command in a separate terminal:
