@@ -64,7 +64,7 @@ services:
 
 Create a folder called `flags` where the JSON flag files can reside. [Download the flag definition](#download-the-flag-definition) and move this JSON file to the flags folder.
 
-```
+```text
 ├── flags
 │   ├── demo.flagd.json
 ├── docker-compose.yaml
