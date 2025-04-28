@@ -25,23 +25,58 @@ These types of feature flags are commonly used to gate access to a new feature u
 The second flag has the key `background-color` and is a multi-variant string.
 These are commonly used for A/B/(n) testing and experimentation.
 
-### Start flagd
+### Running Flagd
 
-Run the following command to start flagd using docker. This will expose flagd on port `8013` and read from the `demo.flagd.json` file we downloaded in the previous step.
+=== "Docker"
 
-```shell
-docker run \
-  --rm -it \
-  --name flagd \
-  -p 8013:8013 \
-  -v $(pwd):/etc/flagd \
-  ghcr.io/open-feature/flagd:latest start \
-  --uri file:./etc/flagd/demo.flagd.json
-```
+    Run the following command to start flagd using docker. This will expose flagd on port `8013` and read from the `demo.flagd.json` file we downloaded in the previous step.
 
-??? "Tips for Windows users"
-    In Windows, use WSL system for both the file location and Docker runtime.
-    Mixed file systems does not work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479).
+    ```shell
+    docker run \
+      --rm -it \
+      --name flagd \
+      -p 8013:8013 \
+      -v $(pwd):/etc/flagd \
+      ghcr.io/open-feature/flagd:latest start \
+      --uri file:./etc/flagd/demo.flagd.json
+    ```
+
+    ??? "Tips for Windows users"
+        In Windows, use WSL system for both the file location and Docker runtime.
+        Mixed file systems does not work and this is a [limitation of Docker](https://github.com/docker/for-win/issues/8479).
+
+=== "Docker Compose"
+
+    Create a docker-compose.yaml file with the following contents:
+
+    ```yaml
+    services:
+      flagd:
+        image: ghcr.io/open-feature/flagd:latest
+        volumes:
+          - ./flags:/flags
+        command: [
+          'start',
+          '--uri',
+          'file:./flags/demo.flagd.json',
+        ]
+        ports:
+          - '8013:8013'
+    ```
+
+    Create a folder called `flags` where the JSON flag files can reside. [Download the flag definition](#download-the-flag-definition) and move this JSON file to the flags folder.
+
+    ```text
+    ├── flags
+    │   ├── demo.flagd.json
+    ├── docker-compose.yaml
+    ```
+
+    Open up a terminal and run the following:
+
+    ```shell
+    docker compose up
+    ```
 
 ### Evaluating a feature flag
 
