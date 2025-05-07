@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.4](https://github.com/open-feature/flagd/compare/core/v0.11.3...core/v0.11.4) (2025-05-07)
+
+
+### 🐛 Bug Fixes
+
+* incorrect comparison used for time ([#1608](https://github.com/open-feature/flagd/issues/1608)) ([8c5ac2f](https://github.com/open-feature/flagd/commit/8c5ac2f2c31e092cbe6ddb4d3c1adeeeb04e9ef9))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.24.1 ([#1559](https://github.com/open-feature/flagd/issues/1559)) ([cd46044](https://github.com/open-feature/flagd/commit/cd4604471bba0a1df67bf87653a38df3caf9d20f))
+
+
+### 🔄 Refactoring
+
+* Refactor the cron function in http sync ([#1600](https://github.com/open-feature/flagd/issues/1600)) ([babcacf](https://github.com/open-feature/flagd/commit/babcacfe4dd1244dda954823d8a3ed2019c8752b))
+* removed hardcoded metric export interval and use otel default ([#1621](https://github.com/open-feature/flagd/issues/1621)) ([81c66eb](https://github.com/open-feature/flagd/commit/81c66ebf2b82fc6874ab325569f52801d5ab8e5e))
+
 ## [0.11.3](https://github.com/open-feature/flagd/compare/core/v0.11.2...core/v0.11.3) (2025-03-25)
 
 
