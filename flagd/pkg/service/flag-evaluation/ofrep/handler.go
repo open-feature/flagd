@@ -11,6 +11,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
 	"github.com/rs/xid"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -23,6 +26,7 @@ type handler struct {
 	Logger        *logger.Logger
 	evaluator     evaluator.IEvaluator
 	contextValues map[string]any
+	tracer        trace.Tracer
 }
 
 func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any) http.Handler {
@@ -30,12 +34,13 @@ func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, cont
 		Logger:        logger,
 		evaluator:     evaluator,
 		contextValues: contextValues,
+		tracer:        otel.Tracer("flagd.ofrep.v1"),
 	}
 
 	router := mux.NewRouter()
 	router.HandleFunc(singleEvaluation, h.HandleFlagEvaluation).Methods("POST")
 	router.HandleFunc(bulkEvaluation, h.HandleBulkEvaluation).Methods("POST")
-	return router
+	return otelhttp.NewHandler(router, "flagd.ofrep")
 }
 
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +62,6 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
-
 	context := flagdContext(h.Logger, requestID, request, h.contextValues)
 	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {

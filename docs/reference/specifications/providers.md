@@ -263,7 +263,7 @@ precedence.
 Below are the supported configuration parameters (note that not all apply to both resolver modes):
 
 | Option name           | Environment variable name      | Explanation                                                            | Type & Values                | Default                       | Compatible resolver     |
-|-----------------------|--------------------------------|------------------------------------------------------------------------|------------------------------|-------------------------------|-------------------------|
+| --------------------- | ------------------------------ | ---------------------------------------------------------------------- | ---------------------------- | ----------------------------- | ----------------------- |
 | resolver              | FLAGD_RESOLVER                 | mode of operation                                                      | String - `rpc`, `in-process` | rpc                           | rpc & in-process        |
 | host                  | FLAGD_HOST                     | remote host                                                            | String                       | localhost                     | rpc & in-process        |
 | port                  | FLAGD_PORT                     | remote port                                                            | int                          | 8013 (rpc), 8015 (in-process) | rpc & in-process        |
@@ -280,6 +280,7 @@ Below are the supported configuration parameters (note that not all apply to bot
 | cache                 | FLAGD_CACHE                    | enable cache of static flags                                           | String - `lru`, `disabled`   | lru                           | rpc                     |
 | maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | max size of static flag cache                                          | int                          | 1000                          | rpc                     |
 | selector              | FLAGD_SOURCE_SELECTOR          | selects a single sync source to retrieve flags from only that source   | string                       | null                          | in-process              |
+| providerId            | FLAGD_PROVIDER_ID              | A unique identifier for flagd(grpc client) initiating the request.     | string                       | null                          | in-process              |
 | offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri    | string                       | null                          | file                    |
 | offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                        | int                          | 5000                          | file                    |
 | contextEnricher       | -                              | sync-metadata to evaluation context mapping function                   | function                     | identity function             | in-process              |

@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.2...flagd-proxy/v0.7.3) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.2 ([#1570](https://github.com/open-feature/flagd/issues/1570)) ([e151b1f](https://github.com/open-feature/flagd/commit/e151b1f97524a568e361103bf7a388f2598e5861))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#1576](https://github.com/open-feature/flagd/issues/1576)) ([cd95193](https://github.com/open-feature/flagd/commit/cd95193f71fd465ffd1b177fa492aa84d8414a87))
+* **deps:** update module google.golang.org/grpc to v1.71.0 ([#1578](https://github.com/open-feature/flagd/issues/1578)) ([5c2c64f](https://github.com/open-feature/flagd/commit/5c2c64f878b8603dd37cbfd79b0e1588e4b5a3c6))
+
+## [0.7.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.1...flagd-proxy/v0.7.2) (2025-02-21)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.1 ([#1545](https://github.com/open-feature/flagd/issues/1545)) ([ca663b5](https://github.com/open-feature/flagd/commit/ca663b5832c94834f73cd5449a2f28af631d9556))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#1568](https://github.com/open-feature/flagd/issues/1568)) ([a3d4162](https://github.com/open-feature/flagd/commit/a3d41625a2b79452c0732af29d0b4f320e74fe8b))
+* **deps:** update module github.com/spf13/cobra to v1.9.0 ([#1564](https://github.com/open-feature/flagd/issues/1564)) ([345d2a9](https://github.com/open-feature/flagd/commit/345d2a920759e3e7046d7679a9c8a7cdb6cd3b40))
+* **deps:** update module github.com/spf13/cobra to v1.9.1 ([#1566](https://github.com/open-feature/flagd/issues/1566)) ([a48cc80](https://github.com/open-feature/flagd/commit/a48cc8023963ac0ae41e70d4fd6fb0a9f453dba9))
+* **deps:** update module golang.org/x/net to v0.35.0 ([#1557](https://github.com/open-feature/flagd/issues/1557)) ([13146e5](https://github.com/open-feature/flagd/commit/13146e5ac3de44e482f496b47dd3e0777d08c718))
+
+
+### 🧹 Chore
+
+* **deps:** update golang docker tag to v1.24 ([#1561](https://github.com/open-feature/flagd/issues/1561)) ([130904c](https://github.com/open-feature/flagd/commit/130904c212b1f8d484b96c05dd5996286c2922cd))
+
 ## [0.7.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.0...flagd-proxy/v0.7.1) (2025-02-04)
 
 

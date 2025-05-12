@@ -11,6 +11,7 @@ import (
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/flagd/pkg/runtime"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -33,6 +34,7 @@ const (
 	socketPathFlagName         = "socket-path"
 	sourcesFlagName            = "sources"
 	syncPortFlagName           = "sync-port"
+	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	contextValueFlagName       = "context-value"
 )
@@ -48,9 +50,11 @@ func init() {
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
 
-	flags.StringP(socketPathFlagName, "d", "", "Flagd socket path. "+
-		"With grpc the service will become available on this address. "+
+	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+
+		"With grpc the evaluations service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
+	flags.StringP(syncSocketPathFlagName, "e", "", "Flagd sync service socket path. "+
+		"With grpc the sync service will be available on this address.")
 	flags.StringP(serverCertPathFlagName, "c", "", "Server side tls certificate path")
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringSliceP(
@@ -81,6 +85,10 @@ func init() {
 	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
 		"to the flag evaluation context")
 
+	bindFlags(flags)
+}
+
+func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
@@ -96,6 +104,7 @@ func init() {
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
+	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 }
@@ -149,22 +158,23 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:               viper.GetStringSlice(corsFlagName),
-			MetricExporter:     viper.GetString(metricsExporter),
-			ManagementPort:     viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:   viper.GetUint16(ofrepPortFlagName),
-			OtelCollectorURI:   viper.GetString(otelCollectorURI),
-			OtelCertPath:       viper.GetString(otelCertPathFlagName),
-			OtelKeyPath:        viper.GetString(otelKeyPathFlagName),
-			OtelReloadInterval: viper.GetDuration(otelReloadIntervalFlagName),
-			OtelCAPath:         viper.GetString(otelCAPathFlagName),
-			ServiceCertPath:    viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:     viper.GetString(serverKeyPathFlagName),
-			ServicePort:        viper.GetUint16(portFlagName),
-			ServiceSocketPath:  viper.GetString(socketPathFlagName),
-			SyncServicePort:    viper.GetUint16(syncPortFlagName),
-			SyncProviders:      syncProviders,
-			ContextValues:      contextValuesToMap,
+			CORS:                  viper.GetStringSlice(corsFlagName),
+			MetricExporter:        viper.GetString(metricsExporter),
+			ManagementPort:        viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:      viper.GetUint16(ofrepPortFlagName),
+			OtelCollectorURI:      viper.GetString(otelCollectorURI),
+			OtelCertPath:          viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:           viper.GetString(otelKeyPathFlagName),
+			OtelReloadInterval:    viper.GetDuration(otelReloadIntervalFlagName),
+			OtelCAPath:            viper.GetString(otelCAPathFlagName),
+			ServiceCertPath:       viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:        viper.GetString(serverKeyPathFlagName),
+			ServicePort:           viper.GetUint16(portFlagName),
+			ServiceSocketPath:     viper.GetString(socketPathFlagName),
+			SyncServicePort:       viper.GetUint16(syncPortFlagName),
+			SyncServiceSocketPath: viper.GetString(syncSocketPathFlagName),
+			SyncProviders:         syncProviders,
+			ContextValues:         contextValuesToMap,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

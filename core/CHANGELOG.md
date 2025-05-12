@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.11.3](https://github.com/open-feature/flagd/compare/core/v0.11.2...core/v0.11.3) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 9b0ee43 ([#1598](https://github.com/open-feature/flagd/issues/1598)) ([0587ce4](https://github.com/open-feature/flagd/commit/0587ce44e60b643ff6960c1eaf4461f933ea95b7))
+* **deps:** update github.com/open-feature/flagd-schemas digest to e840a03 ([#1587](https://github.com/open-feature/flagd/issues/1587)) ([9ee0c57](https://github.com/open-feature/flagd/commit/9ee0c573d6dbfa0c4e9b18c9da7313094ea56916))
+* **deps:** update module connectrpc.com/otelconnect to v0.7.2 ([#1574](https://github.com/open-feature/flagd/issues/1574)) ([6094dce](https://github.com/open-feature/flagd/commit/6094dce5c0472f593b79d6d40e080f9b8d6503e5))
+* **deps:** update module github.com/google/go-cmp to v0.7.0 ([#1569](https://github.com/open-feature/flagd/issues/1569)) ([6e9dbd2](https://github.com/open-feature/flagd/commit/6e9dbd2dbf8365f839e353f53cb638847a1f05d6))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#1576](https://github.com/open-feature/flagd/issues/1576)) ([cd95193](https://github.com/open-feature/flagd/commit/cd95193f71fd465ffd1b177fa492aa84d8414a87))
+* **deps:** update module google.golang.org/grpc to v1.71.0 ([#1578](https://github.com/open-feature/flagd/issues/1578)) ([5c2c64f](https://github.com/open-feature/flagd/commit/5c2c64f878b8603dd37cbfd79b0e1588e4b5a3c6))
+* incorrect metadata returned per source ([#1599](https://github.com/open-feature/flagd/issues/1599)) ([b333e11](https://github.com/open-feature/flagd/commit/b333e11ecfe54f72c44ee61b3dcb1f2a487c94d4))
+
+
+### ✨ New Features
+
+* accept version numbers which are not strings ([#1589](https://github.com/open-feature/flagd/issues/1589)) ([6a13796](https://github.com/open-feature/flagd/commit/6a137967a258e799cbac9e3bb3927a07412c2a7b))
+
+## [0.11.2](https://github.com/open-feature/flagd/compare/core/v0.11.1...core/v0.11.2) (2025-02-21)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update golang.org/x/exp digest to 939b2ce ([#1555](https://github.com/open-feature/flagd/issues/1555)) ([23afa9c](https://github.com/open-feature/flagd/commit/23afa9c18c27885bdae0f5c4ebdc30e780e9da71))
+* **deps:** update golang.org/x/exp digest to f9890c6 ([#1551](https://github.com/open-feature/flagd/issues/1551)) ([02c4b42](https://github.com/open-feature/flagd/commit/02c4b4250131ca819c85dcf10c2d78e0c218469f))
+* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
+* **deps:** update module github.com/diegoholiveira/jsonlogic/v3 to v3.7.4 ([#1556](https://github.com/open-feature/flagd/issues/1556)) ([0dfa799](https://github.com/open-feature/flagd/commit/0dfa79956695849f3a703554525759093931a01d))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#1568](https://github.com/open-feature/flagd/issues/1568)) ([a3d4162](https://github.com/open-feature/flagd/commit/a3d41625a2b79452c0732af29d0b4f320e74fe8b))
+* **deps:** update module golang.org/x/crypto to v0.33.0 ([#1552](https://github.com/open-feature/flagd/issues/1552)) ([7cef153](https://github.com/open-feature/flagd/commit/7cef153a275a4fac5099f5a52013dcd227a79bb3))
+* **deps:** update module golang.org/x/mod to v0.23.0 ([#1544](https://github.com/open-feature/flagd/issues/1544)) ([6fe7bd2](https://github.com/open-feature/flagd/commit/6fe7bd2a3e82dfc81068d9d95d8c3a4acc16456c))
+
+
+### ✨ New Features
+
+* Adding gRPC dial option override to grpc_sync.go ([#1563](https://github.com/open-feature/flagd/issues/1563)) ([1a97ca5](https://github.com/open-feature/flagd/commit/1a97ca5f81582e6d1f139a61e0e49007ad173d3f))
+
 ## [0.11.1](https://github.com/open-feature/flagd/compare/core/v0.11.0...core/v0.11.1) (2025-02-04)
 
 
