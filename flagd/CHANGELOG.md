@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.12.4](https://github.com/open-feature/flagd/compare/flagd/v0.12.3...flagd/v0.12.4) (2025-05-15)
+
+
+### 🐛 Bug Fixes
+
+* Bump OpenTelemetry instrumentation dependencies ([#1616](https://github.com/open-feature/flagd/issues/1616)) ([11db29d](https://github.com/open-feature/flagd/commit/11db29dc3ab0639c3a9129c9bf449e0bd8bfc45c))
+
+
+### ✨ New Features
+
+* add traces to ofrep endpoint ([#1593](https://github.com/open-feature/flagd/issues/1593)) ([a5d43bc](https://github.com/open-feature/flagd/commit/a5d43bc1de9ca2757899678436a3e04d833da196))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.24.1 ([#1559](https://github.com/open-feature/flagd/issues/1559)) ([cd46044](https://github.com/open-feature/flagd/commit/cd4604471bba0a1df67bf87653a38df3caf9d20f))
+
 ## [0.12.3](https://github.com/open-feature/flagd/compare/flagd/v0.12.2...flagd/v0.12.3) (2025-03-25)
 
 
