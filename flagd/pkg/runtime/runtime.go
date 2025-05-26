@@ -146,7 +146,7 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 	defer r.mu.Unlock()
 
 	tp := otel.GetTracerProvider()
-	tracer := tp.Tracer("flagd-inprocess-sync")
+	tracer := tp.Tracer("flagd-sync")
 	ctx, span := tracer.Start(context.Background(), "flagd flagset update",
 		trace.WithSpanKind(trace.SpanKindProducer),
 		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
