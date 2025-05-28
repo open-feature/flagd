@@ -13,7 +13,7 @@ By leveraging Gherkin’s natural language syntax and Cucumber’s mature ecosys
 
 ## Background
 
-`flagd` is a language-agnostic feature flagging engine that forms a core part of the OpenFeature ecosystem. As an open-source project, it needs robust, readable, and accessible testing frameworks that allow for scalable behavior-driven testing.
+`flagd` is an open-source feature flagging engine that forms a core part of the OpenFeature ecosystem. As such, it includes many clients (providers) written in multiple languages and it needs robust, readable, and accessible testing frameworks that allow for scalable behavior-driven testing.
 
 Previously, test cases for flagd providers were written in language-specific test frameworks, which created fragmentation and limited contributions from engineers who weren’t familiar with the language in question. Furthermore, the ability to validate consistent feature flag behavior across multiple SDKs and environments became increasingly important as adoption grew, and in-process evaluation was implemented.
 
