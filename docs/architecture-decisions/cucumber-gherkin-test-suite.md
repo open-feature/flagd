@@ -29,7 +29,7 @@ After evaluating our options and experimenting with prototypes, we adopted Cucum
 
 - Must be supported across a wide variety of programming languages.
 - Must offer mature tooling and documentation.
-- Must enable writing of easily understandable, high-level test cases.
+- Must enable the writing of easily understandable, high-level test cases.
 - Must be open source.
 - Should support automated integration in CI pipelines.
 - Should support parameterized and reusable test definitions.
