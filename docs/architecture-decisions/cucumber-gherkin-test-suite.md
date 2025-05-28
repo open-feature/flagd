@@ -36,7 +36,9 @@ After evaluating our options and experimenting with prototypes, we adopted Cucum
 
 ## Considered Options
 
-- Adoption of Cucumber/Gherkin testing framework
+- Adoption of Cucumber/Gherkin e2e testing framework
+- No cross-implementation e2e testing framework (rely on unit tests)
+- Custom e2e testing framework, perhaps based on csv or other tabular input/output assertions 
 
 ## Proposal
 
