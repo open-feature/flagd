@@ -59,7 +59,7 @@ N/A – this decision does not introduce API-level changes but applies to test i
 
 #### Cons
 
-- Adding a new framework introduces some complexity and learning curve.
+- Adding a new framework introduces some complexity and a learning curve.
 - In some cases/runtimes, debugging failed tests in Gherkin can be more difficult than traditional unit tests.
 
 ### Timeline
