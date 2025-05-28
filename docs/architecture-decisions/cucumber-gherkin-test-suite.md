@@ -19,7 +19,7 @@ Previously, test cases for `flagd` providers were written in language-specific t
 
 To address this, the engineering team investigated frameworks that would enable:
 
-- Behavior-driven development (BDD) to validate consistent flag evaluation behavior.
+- Behavior-driven development (BDD) to validate consistent flag evaluation behavior, configuration, and provider life-cycle (connection, etc).
 - High cross-language support to integrate with multiple SDKs and tools.
 - Ease of use for writing, understanding, enhancing and maintaining tests.
 
