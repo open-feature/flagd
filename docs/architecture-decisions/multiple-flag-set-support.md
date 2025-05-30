@@ -144,6 +144,7 @@ final FlagdProvider flagdProvider =
 * Good, because we can support backwards compatibility with the v0 schema
 * Good, because the "null" flag set is logically treated as any other flag set, reducing overall implementation complexity.
 * Bad, because there's additional complexity to support this new config schema as well as the current.
+* Bad, because this is a breaking change in the behavior of the `selector` member.
 
 ### Other Options
 
