@@ -147,7 +147,7 @@ final FlagdProvider flagdProvider =
 
 ### Other Options
 
-We evaluated _options 2 + 3: support for dynamically adding/removing flag sources_ and decided against this option because it requires much more implementation effort than _option 1_. Required changes include:
+We evaluated the [mentioned options](#considered_options) as follows: _options 2 + 3: support for dynamically adding/removing flag sources_ and decided against this option because it requires much more implementation effort than _option 1_. Required changes include:
 
 * flagd/core/sync: dynamic mode, which allows specifying the sync type that should be added/removed at runtime
 * flagd/flagd: startup dynamic sync configuration
