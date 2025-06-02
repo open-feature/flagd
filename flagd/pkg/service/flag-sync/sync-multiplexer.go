@@ -164,11 +164,6 @@ func (r *Multiplexer) SourcesAsMetadata() string {
 	return strings.Join(r.sources, ",")
 }
 
-type flagConfig struct {
-	flags    map[string]model.Flag
-	metadata map[string]string
-}
-
 // reFill local configuration values
 func (r *Multiplexer) reFill(ctx context.Context) error {
 	clear(r.selectorFlags)

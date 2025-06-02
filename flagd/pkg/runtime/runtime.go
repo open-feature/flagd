@@ -149,9 +149,9 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 	tracer := tp.Tracer("flagd-sync")
 	ctx, span := tracer.Start(context.Background(), "flagd flagset update",
 		trace.WithSpanKind(trace.SpanKindProducer),
-		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
-		trace.WithAttributes(attribute.String("feature_flag.selector", payload.Selector)),
-		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.Type.String())),
+		trace.WithAttributes(attribute.String("feature_flag.set.source", payload.Source)),
+		trace.WithAttributes(attribute.String("feature_flag.set.id", payload.Selector)),
+		trace.WithAttributes(attribute.String("feature_flag.flagd.sync_type", payload.Type.String())),
 	)
 	defer span.End()
 	notifications, resyncRequired, err := r.Evaluator.SetState(payload)
@@ -163,7 +163,7 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 	}
 
 	// Number of notifications correlates to the number of flags changed through this sync, record it
-	span.SetAttributes(attribute.Int("feature_flag.change_count", len(notifications)))
+	span.SetAttributes(attribute.Int("feature_flag.set.flag_count", len(notifications)))
 
 	r.Service.Notify(service.Notification{
 		Type: service.ConfigurationChange,
