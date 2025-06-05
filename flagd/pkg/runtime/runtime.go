@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"os"
 	"os/signal"
 	msync "sync"
@@ -141,11 +145,25 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	tp := otel.GetTracerProvider()
+	tracer := tp.Tracer("flagd-sync")
+	ctx, span := tracer.Start(context.Background(), "flagd flagset update",
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(attribute.String("feature_flag.set.source", payload.Source)),
+		trace.WithAttributes(attribute.String("feature_flag.set.id", payload.Selector)),
+		trace.WithAttributes(attribute.String("feature_flag.flagd.sync_type", payload.Type.String())),
+	)
+	defer span.End()
 	notifications, resyncRequired, err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(err.Error())
+		span.SetStatus(codes.Error, "flagSync error")
+		span.RecordError(err)
 		return false
 	}
+
+	// Number of notifications correlates to the number of flags changed through this sync, record it
+	span.SetAttributes(attribute.Int("feature_flag.set.flag_count", len(notifications)))
 
 	r.Service.Notify(service.Notification{
 		Type: service.ConfigurationChange,
@@ -154,7 +172,7 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) bool {
 		},
 	})
 
-	r.FlagSync.Emit(resyncRequired, payload.Source)
+	r.FlagSync.Emit(resyncRequired, payload.Source, ctx)
 
 	return resyncRequired
 }
