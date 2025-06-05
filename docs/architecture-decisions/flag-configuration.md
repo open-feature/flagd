@@ -29,6 +29,7 @@ flagd chose **JSON Logic** as its core evaluation engine, implementing a modifie
 This provides a secure, portable foundation where rules are expressed as JSON objects with operators as keys and parameters as values.
 
 #### Benefits realized
+
 - Rules can be stored in databases, transmitted over networks, shared between frontend/backend, and embedded in Kubernetes custom resources
 - No eval() or code injection risks - computations are deterministic and sand-boxed
 - Implementations exist in most languages
@@ -38,6 +39,7 @@ This provides a secure, portable foundation where rules are expressed as JSON ob
 The system provides two tiers of operators:
 
 ##### Primitive JSON Logic Operators (inherited from the JSONLogic)
+
 - Logical: `and`, `or`, `!`, `!!`
 - Comparison: `==`, `!=`, `>`, `<`, etc
 - Arithmetic: `+`, `-`, `*`, `/`, `%`
@@ -47,6 +49,7 @@ The system provides two tiers of operators:
 - Assignment and extraction: `var`
 
 ##### Custom flagd Extensions
+
 - `fractional`: Deterministic percentage-based distribution using murmur3 hashing
 - `starts_with`/`ends_with`: String prefix/suffix matching for common patterns
 - `sem_ver`: Semantic version comparisons with standard (npm-style) operators
@@ -57,6 +60,7 @@ The system provides two tiers of operators:
 flagd automatically injects critical context values:
 
 ##### System-provided context
+
 - `$flagd.flagKey`: The flag being evaluated (available v0.6.4+)
 - `$flagd.timestamp`: Unix timestamp of evaluation (available v0.6.7+)
 
@@ -73,6 +77,7 @@ flagd returns specific reason codes with every evaluation to indicate how the de
 5. **ERROR**: Evaluation failed due to invalid configuration
 
 This transparency enables:
+
 - Appropriate caching strategies (only STATIC flags are cached)
 - Improved debugging, telemetry, and monitoring of flag behavior
 
@@ -106,6 +111,7 @@ The `$evaluators` top-level property enables shared targeting logic:
 ##### Intelligent Caching Strategy
 
 Only flags with reason **STATIC** are cached, as they have deterministic outputs. This ensures:
+
 - Maximum cache efficiency for simple toggles
 - Fresh evaluation for complex targeting rules
 - Cache invalidation on configuration changes
@@ -113,10 +119,12 @@ Only flags with reason **STATIC** are cached, as they have deterministic outputs
 ##### Schema-Driven Configuration
 
 Two schemas validate flag configurations:
+
 - `https://flagd.dev/schema/v0/flags.json`: Overall flag structure
 - `https://flagd.dev/schema/v0/targeting.json`: Targeting rule validation
 
 These enable:
+
 - IDE support with autocomplete
 - Run-time and build-time validation
 - Separate validation of rules and overall configuration if desired
@@ -129,14 +137,16 @@ These enable:
 
 ## Consequences
 
-### Positive:
+### Positive
+
 - Good, because implementations exist across languages
 - Good, because, no code injection or system access possible
 - Good, because combined with JSON schemas, we have rich IDE support
 - Good, because JSON is easily serialized and also can be represented/embedded in YAML
 
-### Negative:
-- Bad, JSONLogic syntax can be cumbersome when rules are complex 
+### Negative
+
+- Bad, JSONLogic syntax can be cumbersome when rules are complex
 - Bad, hard to debug
 
 ## Conclusion
