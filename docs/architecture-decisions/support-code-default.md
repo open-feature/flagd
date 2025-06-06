@@ -235,7 +235,7 @@ Both the type-specific value field and variant field are omitted
 **Provider behavior**:
 
 1. Check response for presence of value field
-2. If value field is absent and reason is "DEFAULT", use code-defined default
+2. If value field is absent and error code is absent , use code-defined default
 3. If value field is present (even if null/false/empty), use that value
 4. The variant field will also be absent when delegating to code defaults
 5. This logic is consistent across in-process, RPC, and OFREP modes
