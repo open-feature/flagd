@@ -110,11 +110,12 @@ Note that in this example, we've also specified a custom bucketing value.
   ]
 }
 ```
+
 ### Consequences
 
-* Good, because Murmur3 is fast, has good avalanche properties, and we don't need "cryptographic" randomness
-* Good, because we have flexibility but also simple shorthand
-* Good, because our bucketing algorithm is relatively stable when new variants are added
-* Bad, because we only support string bucketing values
-* Bad, because we don't have bucket resolution finer than 1:99
-* Bad because we don't support JSONLogic expressions within bucket definitions
+- Good, because Murmur3 is fast, has good avalanche properties, and we don't need "cryptographic" randomness
+- Good, because we have flexibility but also simple shorthand
+- Good, because our bucketing algorithm is relatively stable when new variants are added
+- Bad, because we only support string bucketing values
+- Bad, because we don't have bucket resolution finer than 1:99
+- Bad because we don't support JSONLogic expressions within bucket definitions
