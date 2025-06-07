@@ -37,6 +37,7 @@ const (
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	contextValueFlagName       = "context-value"
+	streamDeadlineFlagName     = "stream-deadline"
 )
 
 func init() {
@@ -84,6 +85,7 @@ func init() {
 		"from disk")
 	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
 		"to the flag evaluation context")
+	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 
 	bindFlags(flags)
 }
@@ -107,6 +109,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
+	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 }
 
 // startCmd represents the start command
@@ -173,6 +176,7 @@ var startCmd = &cobra.Command{
 			ServiceSocketPath:     viper.GetString(socketPathFlagName),
 			SyncServicePort:       viper.GetUint16(syncPortFlagName),
 			SyncServiceSocketPath: viper.GetString(syncSocketPathFlagName),
+			StreamDeadline:        viper.GetDuration(streamDeadlineFlagName),
 			SyncProviders:         syncProviders,
 			ContextValues:         contextValuesToMap,
 		})

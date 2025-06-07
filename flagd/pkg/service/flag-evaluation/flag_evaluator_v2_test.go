@@ -103,7 +103,7 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 			).AnyTimes()
 
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil)
+			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, 0)
 
 			// when
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
@@ -220,6 +220,7 @@ func TestFlag_EvaluationV2_ResolveBoolean(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				0,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -276,6 +277,7 @@ func BenchmarkFlag_EvaluationV2_ResolveBoolean(b *testing.B) {
 			&eventingConfiguration{},
 			metrics,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -375,6 +377,7 @@ func TestFlag_EvaluationV2_ResolveString(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				0,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -431,6 +434,7 @@ func BenchmarkFlag_EvaluationV2_ResolveString(b *testing.B) {
 			&eventingConfiguration{},
 			metrics,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -529,6 +533,7 @@ func TestFlag_EvaluationV2_ResolveFloat(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				0,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -585,6 +590,7 @@ func BenchmarkFlag_EvaluationV2_ResolveFloat(b *testing.B) {
 			&eventingConfiguration{},
 			metrics,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -683,6 +689,7 @@ func TestFlag_EvaluationV2_ResolveInt(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				0,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -739,6 +746,7 @@ func BenchmarkFlag_EvaluationV2_ResolveInt(b *testing.B) {
 			&eventingConfiguration{},
 			metrics,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -840,6 +848,7 @@ func TestFlag_EvaluationV2_ResolveObject(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				0,
 			)
 
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -904,6 +913,7 @@ func BenchmarkFlag_EvaluationV2_ResolveObject(b *testing.B) {
 			&eventingConfiguration{},
 			metrics,
 			nil,
+			0,
 		)
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -1008,3 +1018,61 @@ func Test_mergeContexts(t *testing.T) {
 		})
 	}
 }
+
+/*
+func TestFlagEvaluationService_EventStream(t *testing.T) {
+
+	type args struct {
+		ctx    context.Context
+		req    *connect.Request[evalV1.EventStreamRequest]
+		stream *connect.ServerStream[evalV1.EventStreamResponse]
+	}
+	metrics, _ := getMetricReader()
+	tests := []struct {
+		name     string
+		deadline time.Duration
+		args     args
+		wantErr  bool
+	}{
+		{
+			name:     "no deadline",
+			deadline: 0,
+			args: args{
+				ctx:    context.TODO(),
+				req:    connect.NewRequest(&evalV1.EventStreamRequest{}),
+				stream: nil, //connect.NewResponse(&evalV1.EventStreamResponse{}),
+			},
+			wantErr: false,
+		},
+		{
+			name:     "with deadline",
+			deadline: 2 * time.Second,
+			args: args{
+				ctx:    context.TODO(),
+				req:    connect.NewRequest(&evalV1.EventStreamRequest{}),
+				stream: nil, //connect.NewResponse(&evalV1.EventStreamResponse{}),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &FlagEvaluationService{
+				logger:                logger.NewLogger(nil, false),
+				eval:                  mock.NewMockIEvaluator(gomock.NewController(t)),
+				metrics:               metrics,
+				eventingConfiguration: &eventingConfiguration{},
+				flagEvalTracer:        nil,
+				contextValues:         nil,
+				deadline:              tt.deadline,
+			}
+			sChan := make(chan iservice.Notification, 1)
+			eventing := s.eventingConfiguration
+			eventing.Subscribe("key", sChan)
+			if err := s.EventStream(tt.args.ctx, tt.args.req, nil); (err != nil) != tt.wantErr {
+				t.Errorf("EventStream() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+*/
