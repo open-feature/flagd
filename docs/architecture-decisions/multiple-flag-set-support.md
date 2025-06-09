@@ -21,10 +21,7 @@ flagd start \
   --uri https://my-flags-2.com/flags
 ````
 
-Currently, we see 2 limitations:
-
-1. Once `flagd` is running, it is not possible to dynamically add flag sources.
-2. Logical groups of flags (for example the flags belonging to a particular development team or org unit) are tightly coupled to sources, and clients (usually flagd providers) must be aware of the source in order to select it.
+The primary object here is to remove the coupling between sources and "logical" groups of flags, so that provider's aren't required to know their set of flags are sources from a file/http resource, etc, but could instead just supply a logical identifier for their flag set.
 
 Consequently, it's challenging to implement basic "multi-tenancy" in flagd.
 A client should only need concern itself with a logical identifier for its set of flags (ie: `marketing-team-flags`) instead of the resource (source) that happens to correspond to that group of flags (ie: `/etc/flags/marketing-team-flags.json`)
