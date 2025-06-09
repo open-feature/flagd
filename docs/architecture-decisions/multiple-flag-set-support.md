@@ -23,14 +23,9 @@ flagd start \
 
 The primary object here is to remove the coupling between sources and "logical" groups of flags, so that provider's aren't required to know their set of flags are sources from a file/http resource, etc, but could instead just supply a logical identifier for their flag set.
 
-Consequently, it's challenging to implement basic "multi-tenancy" in flagd.
-A client should only need concern itself with a logical identifier for its set of flags (ie: `marketing-team-flags`) instead of the resource (source) that happens to correspond to that group of flags (ie: `/etc/flags/marketing-team-flags.json`)
-Furthermore, if a new set of flags is introduced, flagd must be restarted with a new source (`--uri /etc/flags/holiday-sale-flags.json`)
-These limitations are acceptable when flagd is deployed close to its workload (for example as a kubenetes sidecar or daemon-set) however, to enhance its viability when deployed as a centralized feature-flag service with a variety of client workloads, improvements are necessary.
-
 ## Requirements
 
-* Should enable the dynamic usage of flag sets.
+* Should enable the dynamic usage of flag sets as logical identifiers.
 * Should support configurations without flag sets.
 * Should adhere to existing OpenFeature and flagd terminology and concepts
 
