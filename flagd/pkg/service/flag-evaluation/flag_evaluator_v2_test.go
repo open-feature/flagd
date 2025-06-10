@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -103,7 +104,7 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 			).AnyTimes()
 
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil)
+			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil)
 
 			// when
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
@@ -220,6 +221,7 @@ func TestFlag_EvaluationV2_ResolveBoolean(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				nil,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -275,6 +277,7 @@ func BenchmarkFlag_EvaluationV2_ResolveBoolean(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 			nil,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -375,6 +378,7 @@ func TestFlag_EvaluationV2_ResolveString(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				nil,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -430,6 +434,7 @@ func BenchmarkFlag_EvaluationV2_ResolveString(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 			nil,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -529,6 +534,7 @@ func TestFlag_EvaluationV2_ResolveFloat(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				nil,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -584,6 +590,7 @@ func BenchmarkFlag_EvaluationV2_ResolveFloat(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 			nil,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -683,6 +690,7 @@ func TestFlag_EvaluationV2_ResolveInt(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				nil,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -738,6 +746,7 @@ func BenchmarkFlag_EvaluationV2_ResolveInt(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 			nil,
 		)
 		b.Run(name, func(b *testing.B) {
@@ -840,6 +849,7 @@ func TestFlag_EvaluationV2_ResolveObject(t *testing.T) {
 				&eventingConfiguration{},
 				metrics,
 				nil,
+				nil,
 			)
 
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -903,6 +913,7 @@ func BenchmarkFlag_EvaluationV2_ResolveObject(b *testing.B) {
 			eval,
 			&eventingConfiguration{},
 			metrics,
+			nil,
 			nil,
 		)
 		if name != "eval returns error" {
@@ -979,7 +990,10 @@ func TestFlag_EvaluationV2_ErrorCodes(t *testing.T) {
 
 func Test_mergeContexts(t *testing.T) {
 	type args struct {
-		clientContext, configContext map[string]any
+		headers                    http.Header
+		headerToContextKeyMappings map[string]string
+		clientContext              map[string]any
+		configContext              map[string]any
 	}
 
 	tests := []struct {
@@ -992,6 +1006,8 @@ func Test_mergeContexts(t *testing.T) {
 			args: args{
 				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
 				configContext: map[string]any{"k2": "v22", "k3": "v3"},
+				headers:       http.Header{},
+				headerToContextKeyMappings: map[string]string{},
 			},
 			// static context should "win"
 			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
@@ -1000,7 +1016,7 @@ func Test_mergeContexts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := mergeContexts(tt.args.clientContext, tt.args.configContext)
+			got := mergeContexts(tt.args.clientContext, tt.args.configContext, tt.args.headers, tt.args.headerToContextKeyMappings)
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\ngot:  %+v\nwant: %+v", got, tt.want)

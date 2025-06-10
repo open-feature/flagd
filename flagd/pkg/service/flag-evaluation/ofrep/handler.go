@@ -23,18 +23,20 @@ const (
 )
 
 type handler struct {
-	Logger        *logger.Logger
-	evaluator     evaluator.IEvaluator
-	contextValues map[string]any
-	tracer        trace.Tracer
+	Logger                     *logger.Logger
+	evaluator                  evaluator.IEvaluator
+	contextValues              map[string]any
+	headerToContextKeyMappings map[string]string
+	tracer                     trace.Tracer
 }
 
-func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any) http.Handler {
+func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any, headerToContextKeyMappings map[string]string) http.Handler {
 	h := handler{
-		Logger:        logger,
-		evaluator:     evaluator,
-		contextValues: contextValues,
-		tracer:        otel.Tracer("flagd.ofrep.v1"),
+		Logger:                     logger,
+		evaluator:                  evaluator,
+		contextValues:              contextValues,
+		headerToContextKeyMappings: headerToContextKeyMappings,
+		tracer:                     otel.Tracer("flagd.ofrep.v1"),
 	}
 
 	router := mux.NewRouter()
@@ -62,7 +64,8 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
-	context := flagdContext(h.Logger, requestID, request, h.contextValues)
+	context := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+
 	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
@@ -82,7 +85,8 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	context := flagdContext(h.Logger, requestID, request, h.contextValues)
+	context := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
@@ -123,8 +127,10 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	return request, nil
 }
 
+// flagdContext returns combined context values from headers, static context (from cli) and request context. 
+// highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func flagdContext(
-	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any,
+	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,
 ) map[string]any {
 	context := make(map[string]any)
 	if res, ok := request.Context.(map[string]any); ok {
@@ -137,6 +143,12 @@ func flagdContext(
 
 	for k, v := range staticContextValues {
 		context[k] = v
+	}
+
+	for header, contextKey := range headerToContextKeyMappings {
+		if values, ok := headers[header]; ok {
+			context[contextKey] = values[0]
+		}
 	}
 
 	return context
