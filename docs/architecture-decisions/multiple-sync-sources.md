@@ -7,7 +7,7 @@ updated: 2025-05-21
 ---
 
 # ADR: Multiple Sync Sources
-It is the Intent of this document to articulate our rationale for supporting multiple flag synchronization sources (grpc, http, blob, local file, etc..) as a core design property of Flagd. Because "future proofing" the runtime against sources that don't yet exist, or those we may have omitted is a requisite byproduct of this architectural decision, this document also includes a short discussion of how flagd is engineered to enable the community to extend it to support new sources in the future.
+It is the Intent of this document to articulate our rationale for supporting multiple flag synchronization sources (grpc, http, blob, local file, etc..) as a core design property of flagd. This document also includes a short discussion of how flagd is engineered to enable the community to extend it to support new sources in the future, to "future proof" the runtime against sources that don't yet exist, or those we may have omitted is a requisite byproduct of this architectural decision.
 
 The goal of first-class multi-sync support generally is to broaden flagd's potential to suit the needs of many different types of users or architecture. By decoupling flag persistence from the runtime, flagd can focus on evaluation and sync, while enabling its user-base to choose a persistence layer that best suits their individual requirements. 
 
