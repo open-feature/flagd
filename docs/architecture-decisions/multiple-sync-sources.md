@@ -58,7 +58,7 @@ type ISync interface {
 ```
 Synchronization events "fan-in" from all configured sync providers to flagd's in-memory state-store via a channel carrying [`sync.DataSync`](https://github.com/open-feature/flagd/blob/main/core/pkg/store/flags.go#L19) events. These events detail the source and type of the change, along with the flag data in question and are merged into the currently held state by the [store](https://github.com/open-feature/flagd/blob/main/core/pkg/store/flags.go#L19).
 
-### API changes
+### Consequences
 
 <!--
 This section should describe any API changes that are part of the proposal.
