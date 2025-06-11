@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -114,6 +117,26 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 
 			if len(syncRsp.GetFlagConfiguration()) == 0 {
 				t.Error("expected non empty sync response, but got empty")
+			}
+
+			// checks sync context actually set
+			syncContext := syncRsp.GetSyncContext()
+			if syncContext == nil {
+				t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
+			}
+
+			syncAsMap := syncContext.AsMap()
+			if syncAsMap["sources"] == nil {
+				t.Fatalf("expected sources in sync_context, but got nil")
+			}
+
+			sourcesStr := syncAsMap["sources"].(string)
+			sourcesArray := strings.Split(sourcesStr, ",")
+			sort.Strings(sourcesArray)
+
+			expectedSources := []string{"A", "B", "C"}
+			if !reflect.DeepEqual(sourcesArray, expectedSources) {
+				t.Fatalf("sources entry in sync_context does not match expected: got %v, want %v", sourcesArray, expectedSources)
 			}
 
 			// validate emits
