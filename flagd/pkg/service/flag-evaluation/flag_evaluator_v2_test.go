@@ -1002,7 +1002,7 @@ func Test_mergeContexts(t *testing.T) {
 		want map[string]any
 	}{
 		{
-			name: "merge contexts",
+			name: "merge contexts with no headers, with no header-context mappings",
 			args: args{
 				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
 				configContext: map[string]any{"k2": "v22", "k3": "v3"},
@@ -1011,6 +1011,39 @@ func Test_mergeContexts(t *testing.T) {
 			},
 			// static context should "win"
 			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
+		},
+		{
+			name: "merge contexts with headers, with no header-context mappings",
+			args: args{
+				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
+				configContext: map[string]any{"k2": "v22", "k3": "v3"},
+				headers:       http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
+				headerToContextKeyMappings: map[string]string{},
+			},
+			// static context should "win"
+			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
+		},
+		{
+			name: "merge contexts with no headers, with header-context mappings",
+			args: args{
+				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
+				configContext: map[string]any{"k2": "v22", "k3": "v3"},
+				headers:       http.Header{},
+				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
+			},
+			// static context should "win"
+			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
+		},
+		{
+			name: "merge contexts with headers, with header-context mappings",
+			args: args{
+				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
+				configContext: map[string]any{"k2": "v22", "k3": "v3"},
+				headers:       http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
+				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
+			},
+			// header context should "win"
+			want: map[string]any{"k1": "v1", "k2": "value", "k3": "v3"},
 		},
 	}
 
