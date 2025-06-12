@@ -92,6 +92,9 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 
 			syncMetadata := syncResp.GetSyncContext().AsMap()
 			assert.Equal(t, tt.wantMetadata, syncMetadata)
+
+			// Check the two metadatas are equal
+			assert.Equal(t, respMetadata, syncMetadata)
 		})
 	}
 }
