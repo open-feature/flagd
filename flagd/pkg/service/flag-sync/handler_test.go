@@ -39,7 +39,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 				"env": "dev",
 			},
 			wantMetadata: map[string]any{
-				"env":     "dev",
+				"env": "dev",
 			},
 		},
 		{
@@ -66,13 +66,14 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 				contextValues: tt.contextValues,
 				log:           logger.NewLogger(nil, false),
 			}
-			
-			// Test getting metadata from GetMetadata (deprecated)
+
+			// Test getting metadata from `GetMetadata` (deprecated)
+			// remove when `GetMetadata` is full removed and deprecated
 			resp, err := handler.GetMetadata(context.Background(), &syncv1.GetMetadataRequest{})
 			assert.NoError(t, err)
 			respMetadata := resp.GetMetadata().AsMap()
 			assert.Equal(t, tt.wantMetadata, respMetadata)
-			
+
 			// Test metadata from sync_context
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -85,7 +86,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 			}()
 
 			// A pause so the handler has time to fully register
-            time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 
 			syncResp := stream.lastResp
 			assert.NotNil(t, syncResp)
@@ -94,6 +95,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 			assert.Equal(t, tt.wantMetadata, syncMetadata)
 
 			// Check the two metadatas are equal
+			// remove when `GetMetadata` is full removed and deprecated
 			assert.Equal(t, respMetadata, syncMetadata)
 		})
 	}
