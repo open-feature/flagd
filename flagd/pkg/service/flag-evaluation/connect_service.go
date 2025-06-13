@@ -173,6 +173,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.metrics,
 		svcConf.ContextValues,
 		svcConf.HeaderToContextKeyMappings,
+		svcConf.StreamDeadline,
 	)
 
 	_, newHandler := evaluationV1.NewServiceHandler(newFes, append(svcConf.Options, marshalOpts)...)

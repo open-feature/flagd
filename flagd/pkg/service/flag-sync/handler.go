@@ -2,8 +2,12 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
@@ -16,13 +20,21 @@ type syncHandler struct {
 	mux           *Multiplexer
 	log           *logger.Logger
 	contextValues map[string]any
+	deadline      time.Duration
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	muxPayload := make(chan payload, 1)
 	selector := req.GetSelector()
-
 	ctx := server.Context()
+
+	// attach server-side stream deadline to context
+	if s.deadline != 0 {
+		streamDeadline := time.Now().Add(s.deadline)
+		deadlineCtx, cancel := context.WithDeadline(server.Context(), streamDeadline)
+		ctx = deadlineCtx
+		defer cancel()
+	}
 
 	err := s.mux.Register(ctx, selector, muxPayload)
 	if err != nil {
@@ -56,6 +68,11 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 			}
 		case <-ctx.Done():
 			s.mux.Unregister(ctx, selector)
+
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
+				return status.Error(codes.DeadlineExceeded, "stream closed due to server-side timeout")
+			}
 			s.log.Debug("context complete and exiting stream request")
 			return nil
 		}

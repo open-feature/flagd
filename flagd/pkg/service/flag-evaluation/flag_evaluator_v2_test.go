@@ -104,7 +104,7 @@ func TestConnectServiceV2_ResolveAll(t *testing.T) {
 			).AnyTimes()
 
 			metrics, exp := getMetricReader()
-			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil)
+			s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil, 0)
 
 			// when
 			got, err := s.ResolveAll(context.Background(), connect.NewRequest(tt.req))
@@ -222,6 +222,7 @@ func TestFlag_EvaluationV2_ResolveBoolean(t *testing.T) {
 				metrics,
 				nil,
 				nil,
+				0,
 			)
 			got, err := s.ResolveBoolean(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -279,6 +280,7 @@ func BenchmarkFlag_EvaluationV2_ResolveBoolean(b *testing.B) {
 			metrics,
 			nil,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -379,6 +381,7 @@ func TestFlag_EvaluationV2_ResolveString(t *testing.T) {
 				metrics,
 				nil,
 				nil,
+				0,
 			)
 			got, err := s.ResolveString(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -436,6 +439,7 @@ func BenchmarkFlag_EvaluationV2_ResolveString(b *testing.B) {
 			metrics,
 			nil,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -535,6 +539,7 @@ func TestFlag_EvaluationV2_ResolveFloat(t *testing.T) {
 				metrics,
 				nil,
 				nil,
+				0,
 			)
 			got, err := s.ResolveFloat(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -592,6 +597,7 @@ func BenchmarkFlag_EvaluationV2_ResolveFloat(b *testing.B) {
 			metrics,
 			nil,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -691,6 +697,7 @@ func TestFlag_EvaluationV2_ResolveInt(t *testing.T) {
 				metrics,
 				nil,
 				nil,
+				0,
 			)
 			got, err := s.ResolveInt(tt.functionArgs.ctx, connect.NewRequest(tt.functionArgs.req))
 			if (err != nil) && !errors.Is(err, tt.wantErr) {
@@ -748,6 +755,7 @@ func BenchmarkFlag_EvaluationV2_ResolveInt(b *testing.B) {
 			metrics,
 			nil,
 			nil,
+			0,
 		)
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -850,6 +858,7 @@ func TestFlag_EvaluationV2_ResolveObject(t *testing.T) {
 				metrics,
 				nil,
 				nil,
+				0,
 			)
 
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -915,6 +924,7 @@ func BenchmarkFlag_EvaluationV2_ResolveObject(b *testing.B) {
 			metrics,
 			nil,
 			nil,
+			0,
 		)
 		if name != "eval returns error" {
 			outParsed, err := structpb.NewStruct(tt.evalFields.result)
@@ -1004,9 +1014,9 @@ func Test_mergeContexts(t *testing.T) {
 		{
 			name: "merge contexts with no headers, with no header-context mappings",
 			args: args{
-				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
-				configContext: map[string]any{"k2": "v22", "k3": "v3"},
-				headers:       http.Header{},
+				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
+				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
+				headers:                    http.Header{},
 				headerToContextKeyMappings: map[string]string{},
 			},
 			// static context should "win"
@@ -1015,9 +1025,9 @@ func Test_mergeContexts(t *testing.T) {
 		{
 			name: "merge contexts with headers, with no header-context mappings",
 			args: args{
-				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
-				configContext: map[string]any{"k2": "v22", "k3": "v3"},
-				headers:       http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
+				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
+				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
+				headers:                    http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
 				headerToContextKeyMappings: map[string]string{},
 			},
 			// static context should "win"
@@ -1026,9 +1036,9 @@ func Test_mergeContexts(t *testing.T) {
 		{
 			name: "merge contexts with no headers, with header-context mappings",
 			args: args{
-				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
-				configContext: map[string]any{"k2": "v22", "k3": "v3"},
-				headers:       http.Header{},
+				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
+				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
+				headers:                    http.Header{},
 				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
 			},
 			// static context should "win"
@@ -1037,9 +1047,9 @@ func Test_mergeContexts(t *testing.T) {
 		{
 			name: "merge contexts with headers, with header-context mappings",
 			args: args{
-				clientContext: map[string]any{"k1": "v1", "k2": "v2"},
-				configContext: map[string]any{"k2": "v22", "k3": "v3"},
-				headers:       http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
+				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
+				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
+				headers:                    http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
 				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
 			},
 			// header context should "win"
