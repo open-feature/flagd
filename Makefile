@@ -32,7 +32,7 @@ docker-build: # default to flagd
 docker-push: # default to flagd
 	make docker-push-flagd
 docker-build-flagd:
-	docker buildx build --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
+	docker buildx build --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/amd64" -t ${IMG} -f flagd/build.Dockerfile .
 docker-push-flagd:
 	docker buildx build --push --build-arg=VERSION="$$(git describe --tags --abbrev=0)" --build-arg=COMMIT="$$(git rev-parse --short HEAD)" --build-arg DATE="$$(date +%FT%TZ)" --platform="linux/ppc64le,linux/s390x,linux/amd64,linux/arm64" -t ${IMG} -f flagd/build.Dockerfile .
 build: workspace-init # default to flagd
@@ -108,11 +108,11 @@ run-flagd-proxy-zd-test:
 # - .markdownlint.yaml contains the rules for markdownfiles
 MDL_DOCKER_VERSION := next
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-MDL_CMD := docker run -v $(ROOT_DIR):/workdir --rm 
+MDL_CMD := docker run -v $(ROOT_DIR):/workdir --rm
 
 .PHONY: markdownlint markdownlint-fix
 markdownlint:
-	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
+	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"
 
 markdownlint-fix:
 	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"

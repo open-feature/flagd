@@ -67,7 +67,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 
 			// trigger manual emits matching sources, so that service can start
 			for _, source := range sources {
-				service.Emit(false, source)
+				service.Emit(false, source, ctx)
 			}
 
 			// when - derive a client for sync service
@@ -128,7 +128,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			}()
 
 			// Emit as a resync
-			service.Emit(true, "A")
+			service.Emit(true, "A", ctx)
 
 			select {
 			case <-dataReceived:
@@ -138,7 +138,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			}
 
 			// Emit as a resync
-			service.Emit(false, "A")
+			service.Emit(false, "A", ctx)
 
 			select {
 			case <-dataReceived:
