@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
@@ -72,7 +73,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
 
-	values, _, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues))
+	values, _, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), make(map[string]string)))
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
@@ -179,11 +180,13 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 		sCtx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&booleanResponse{schemaV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		make(map[string]string),
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -206,11 +209,13 @@ func (s *OldFlagEvaluationService) ResolveString(
 		sCtx,
 		s.logger,
 		s.eval.ResolveStringValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&stringResponse{schemaV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		make(map[string]string),
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -233,11 +238,13 @@ func (s *OldFlagEvaluationService) ResolveInt(
 		sCtx,
 		s.logger,
 		s.eval.ResolveIntValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&intResponse{schemaV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		make(map[string]string),
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -260,11 +267,13 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 		sCtx,
 		s.logger,
 		s.eval.ResolveFloatValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&floatResponse{schemaV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		make(map[string]string),
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -287,11 +296,13 @@ func (s *OldFlagEvaluationService) ResolveObject(
 		sCtx,
 		s.logger,
 		s.eval.ResolveObjectValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&objectResponse{schemaV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		make(map[string]string),
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -301,9 +312,9 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	return res, err
 }
 
-// mergeContexts combines values from the request context with the values from the config --context-values flag.
-// Request context values have a higher priority.
-func mergeContexts(reqCtx, configFlagsCtx map[string]any) map[string]any {
+// mergeContexts combines context values from headers, static context (from cli) and request context. 
+// highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
+func mergeContexts(reqCtx, configFlagsCtx map[string]any, headers http.Header, headerToContextKeyMappings map[string]string) map[string]any {
 	merged := make(map[string]any)
 	for k, v := range reqCtx {
 		merged[k] = v
@@ -311,18 +322,24 @@ func mergeContexts(reqCtx, configFlagsCtx map[string]any) map[string]any {
 	for k, v := range configFlagsCtx {
 		merged[k] = v
 	}
+	for header, contextKey := range headerToContextKeyMappings {
+		if values, ok := headers[header]; ok {
+			merged[contextKey] = values[0]
+		}
+	}
 	return merged
 }
 
 // resolve is a generic flag resolver
-func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], flagKey string,
+func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], header http.Header, flagKey string,
 	evaluationContext *structpb.Struct, resp response[T], metrics telemetry.IMetricsRecorder,
-	configContextValues map[string]any,
+	configContextValues map[string]any, configHeaderToContextKeyMappings map[string]string,
 ) error {
 	reqID := xid.New().String()
 	defer logger.ClearFields(reqID)
 
-	mergedContext := mergeContexts(evaluationContext.AsMap(), configContextValues)
+	mergedContext := mergeContexts(evaluationContext.AsMap(), configContextValues, header, configHeaderToContextKeyMappings)	
+
 	logger.WriteFields(
 		reqID,
 		zap.String("flag-key", flagKey),
