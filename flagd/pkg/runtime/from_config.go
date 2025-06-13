@@ -38,6 +38,7 @@ type Config struct {
 	ServiceSocketPath     string
 	SyncServicePort       uint16
 	SyncServiceSocketPath string
+	StreamDeadline        time.Duration
 
 	SyncProviders []sync.SourceConfig
 	CORS          []string
@@ -115,14 +116,15 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:        logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:          config.SyncServicePort,
-		Sources:       sources,
-		Store:         s,
-		ContextValues: config.ContextValues,
-		KeyPath:       config.ServiceKeyPath,
-		CertPath:      config.ServiceCertPath,
-		SocketPath:    config.SyncServiceSocketPath,
+		Logger:         logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:           config.SyncServicePort,
+		Sources:        sources,
+		Store:          s,
+		ContextValues:  config.ContextValues,
+		KeyPath:        config.ServiceKeyPath,
+		CertPath:       config.ServiceCertPath,
+		SocketPath:     config.SyncServiceSocketPath,
+		StreamDeadline: config.StreamDeadline,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)
@@ -158,6 +160,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			Options:                    options,
 			ContextValues:              config.ContextValues,
 			HeaderToContextKeyMappings: config.HeaderToContextKeyMappings,
+			StreamDeadline:             config.StreamDeadline,
 		},
 		SyncImpl: iSyncs,
 	}, nil

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 )
@@ -34,6 +35,7 @@ type Configuration struct {
 	Options                    []connect.HandlerOption
 	ContextValues              map[string]any
 	HeaderToContextKeyMappings map[string]string
+	StreamDeadline             time.Duration
 }
 
 /*
