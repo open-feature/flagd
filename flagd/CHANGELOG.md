@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.5](https://github.com/open-feature/flagd/compare/flagd/v0.12.4...flagd/v0.12.5) (2025-06-13)
+
+
+### ✨ New Features
+
+* add server-side deadline to sync service ([#1638](https://github.com/open-feature/flagd/issues/1638)) ([b70fa06](https://github.com/open-feature/flagd/commit/b70fa06b66e1fe8a28728441a7ccd28c6fe6a0c6))
+* updating context using headers ([#1641](https://github.com/open-feature/flagd/issues/1641)) ([ba34815](https://github.com/open-feature/flagd/commit/ba348152b6e7b6bd7473bb11846aac7db316c88e))
+
 ## [0.12.4](https://github.com/open-feature/flagd/compare/flagd/v0.12.3...flagd/v0.12.4) (2025-05-28)
 
 
