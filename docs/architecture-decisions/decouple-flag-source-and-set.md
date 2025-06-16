@@ -20,7 +20,6 @@ Assumptions of the current model
 - `flagSetId`s must be unique across different sources or the configuration is considered invalid.
 - In-process providers request at most one flag set.
 
-
 ## Requirements
 
 - Flagd daemon can remove a source without breaking in-process providers that depend on the flag set the source provides.
@@ -62,7 +61,6 @@ The semantic can later be extended with a more complex design, such as AIP-160 f
 
 3. `flagSetID` will be added as part of `model.Flag` or under `model.Flag.Metadata` for better consistency with the API.
 
-
 ### Flags Sync
 
 Sync server would count the extended syntax of `selector` and filter the list of flags on-the-fly answering the requests from the providers.
@@ -72,6 +70,7 @@ The existing conflict resolving based on sources remains the same. Resyncs on re
 ## Consequences
 
 ### The good
+
 - One source can have multiple flag sets.
 - `selector` works on a more grandular level.
 - No breaking change
