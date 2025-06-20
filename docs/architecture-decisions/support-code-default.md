@@ -1,9 +1,9 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: draft
+status: accepted
 author: @beeme1mr
-created: 2025-05-06
-updated: 2025-05-06
+created: 2025-06-06
+updated: 2025-06-20
 ---
 
 # Support Explicit Code Default Values in flagd Configuration
@@ -316,14 +316,23 @@ To ensure correct implementation across all components:
 ### Open questions
 
 - How should providers handle responses with missing value fields in strongly-typed languages?
+    - We'll handle the same way as with optional fields, using language-specific patterns (e.g., pointers in Go, `hasValue()` in Java).
 - Should we support both `null` and absent `defaultVariant` fields, or choose one approach?
+    - Yes, we'll support both `null` and absent fields to maximize flexibility. An absent `defaultVariant` will be the equivalent of `null`.
 - What migration path should we recommend for users currently using workarounds?
+    - Update the flag configurations to use `defaultVariant: null` and remove any misconfigured rulesets that force code defaults.
 - Should this feature be gated behind a configuration flag during initial rollout?
+    - We'll avoid public facing documentation until the feature is fully implemented and tested.
 - How do we ensure consistent behavior across all provider implementations?
+    - Gherkin tests will be added to the flagd testbed to ensure all providers handle the new behavior consistently.
 - Should providers validate that the reason is "DEFAULT" when value is omitted, or accept any omitted value as delegation?
+    - Providers should accept any omitted value as delegation.
 - How do we handle edge cases where network protocols might strip empty fields?
+    - It would behaving as expected, as the absence of fields is the intended signal.
 - When the client uses its code default after receiving a delegation response, what variant should be reported in telemetry/analytics?
+    - The variant will be omitted, indicating that the code default was used.
 - Should we add explicit proto comments documenting the field omission behavior?
+    - Leave this to the implementers, but it would be beneficial to add comments in the proto files to clarify this behavior for future maintainers.
 
 ## More Information
 
