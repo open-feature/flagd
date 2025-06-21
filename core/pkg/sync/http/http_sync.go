@@ -27,6 +27,7 @@ type Sync struct {
 	AuthHeader  string
 	Interval    uint32
 	ready       bool
+	eTag        string
 }
 
 // Client defines the behaviour required of a http client
@@ -42,7 +43,7 @@ type Cron interface {
 }
 
 func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	msg, err := hs.Fetch(ctx)
+	msg, _, err := hs.fetchBody(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -74,28 +75,25 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	hs.Logger.Debug(fmt.Sprintf("polling %s every %d seconds", hs.URI, hs.Interval))
 	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
 		hs.Logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.URI))
-		body, err := hs.fetchBodyFromURL(ctx, hs.URI)
+		previousBodySHA := hs.LastBodySHA
+		body, noChange, err := hs.fetchBody(ctx, false)
 		if err != nil {
-			hs.Logger.Error(err.Error())
+			hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 			return
 		}
 
-		if body == "" {
+		if body == "" && !noChange {
 			hs.Logger.Debug("configuration deleted")
 			return
 		}
 
-		currentSHA := hs.generateSha([]byte(body))
-
-		if hs.LastBodySHA == "" {
-			hs.Logger.Debug("new configuration created")
+		if previousBodySHA == "" {
+			hs.Logger.Debug("configuration created")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
-		} else if hs.LastBodySHA != currentSHA {
-			hs.Logger.Debug("configuration modified")
+		} else if previousBodySHA != hs.LastBodySHA {
+			hs.Logger.Debug("configuration updated")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
 		}
-
-		hs.LastBodySHA = currentSHA
 	})
 
 	hs.Cron.Start()
@@ -108,10 +106,14 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	return nil
 }
 
-func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(nil))
+func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, error) {
+	if hs.URI == "" {
+		return "", false, errors.New("no HTTP URL string set")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", hs.URI, bytes.NewBuffer(nil))
 	if err != nil {
-		return "", fmt.Errorf("error creating request for url %s: %w", url, err)
+		return "", false, fmt.Errorf("error creating request for url %s: %w", hs.URI, err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -124,32 +126,50 @@ func (hs *Sync) fetchBodyFromURL(ctx context.Context, url string) (string, error
 		req.Header.Set("Authorization", bearer)
 	}
 
+	if hs.eTag != "" && !fetchAll {
+		req.Header.Set("If-None-Match", hs.eTag)
+	}
+
 	resp, err := hs.Client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error calling endpoint %s: %w", url, err)
+		return "", false, fmt.Errorf("error calling endpoint %s: %w", hs.URI, err)
 	}
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			hs.Logger.Debug(fmt.Sprintf("error closing the response body: %s", err.Error()))
+			hs.Logger.Error(fmt.Sprintf("error closing the response body: %s", err.Error()))
 		}
 	}()
 
+	if resp.StatusCode == 304 {
+		hs.Logger.Debug("no changes detected")
+		return "", true, nil
+	}
+
 	statusOK := resp.StatusCode >= 200 && resp.StatusCode < 300
 	if !statusOK {
-		return "", fmt.Errorf("error fetching from url %s: %s", url, resp.Status)
+		return "", false, fmt.Errorf("error fetching from url %s: %s", hs.URI, resp.Status)
+	}
+
+	if resp.Header.Get("ETag") != "" {
+		hs.eTag = resp.Header.Get("ETag")
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("unable to read body to bytes: %w", err)
+		return "", false, fmt.Errorf("unable to read body to bytes: %w", err)
 	}
 
-	json, err := utils.ConvertToJSON(body, getFileExtensions(url), resp.Header.Get("Content-Type"))
+	json, err := utils.ConvertToJSON(body, getFileExtensions(hs.URI), resp.Header.Get("Content-Type"))
 	if err != nil {
-		return "", fmt.Errorf("error converting response body to json: %w", err)
+		return "", false, fmt.Errorf("error converting response body to json: %w", err)
 	}
-	return json, nil
+
+	if json != "" {
+		hs.LastBodySHA = hs.generateSha([]byte(body))
+	}
+
+	return json, false, nil
 }
 
 // getFileExtensions returns the file extension from the URL path
@@ -168,18 +188,10 @@ func (hs *Sync) generateSha(body []byte) string {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
+// Deprecated: Fetch won't be exposed in the future.
+// Use fetchBody instead for internal use
+// Use Sync instead for external use
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
-	if hs.URI == "" {
-		return "", errors.New("no HTTP URL string set")
-	}
-
-	body, err := hs.fetchBodyFromURL(ctx, hs.URI)
-	if err != nil {
-		return "", err
-	}
-	if body != "" {
-		hs.LastBodySHA = hs.generateSha([]byte(body))
-	}
-
-	return body, nil
+	body, _, err := hs.fetchBody(ctx, true)
+	return body, err
 }
