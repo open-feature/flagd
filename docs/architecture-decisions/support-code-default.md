@@ -162,7 +162,7 @@ A single flag evaluation returns a `404` status code.
 - Good, because it maintains full backward compatibility
 - Bad, because it requires updates across multiple components (flagd, providers, testbed)
 - Bad, because it introduces a new concept that users need to understand
-- Neutral, because existing configurations continue to work unchanged
+- Neutral, because existing configurations continue to work unchange
 
 ### Implementation Plan
 

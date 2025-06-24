@@ -30,13 +30,13 @@ type Service struct {
 }
 
 func NewOfrepService(
-	evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any,
+	evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any, headerToContextKeyMappings map[string]string,
 ) (*Service, error) {
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins: origins,
 		AllowedMethods: []string{http.MethodPost},
 	})
-	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator, contextValues))
+	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator, contextValues, headerToContextKeyMappings))
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
