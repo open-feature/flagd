@@ -1,5 +1,4 @@
 ---
-# Valid statuses: draft | proposed | rejected | accepted | superseded
 status: accepted
 author: @beeme1mr
 created: 2025-06-06
@@ -77,101 +76,23 @@ The absence of a value field provides an unambiguous signal that distinguishes b
    }
    ```
 
-2. **Protobuf Considerations**:
-
-   **No proto changes required** - The existing proto3 definitions already support this behavior:
-
-   ```protobuf
-   message ResolveBooleanResponse {
-     bool value = 1;
-     string reason = 2;
-     string variant = 3;
-     google.protobuf.Struct metadata = 4;
-   }
-   ```
-
-   In proto3, all fields are optional by default. To implement code default delegation:
-   - Do NOT set the `value` field (not even to false/0/"")
-   - Do NOT set the `variant` field
-   - Set `reason` to "DEFAULT"
-   - Optionally set `metadata`
-
-   **Critical implementation notes**:
-   - Ensure flagd omits fields rather than setting zero values
-   - Different languages detect field presence differently:
-     - Go: Check for zero values or use pointers
-     - Java: Use `hasValue()` / `hasVariant()` methods
-     - Python: Use `HasField()` or check field presence
-     - JavaScript: Check for `undefined` (not null)
-   - Consider adding proto comments documenting this behavior
-   - Test wire format to confirm fields are actually omitted
-
-   **Example - Correct vs Incorrect Implementation**:
-
-   ```go
-   // INCORRECT - sets zero value
-   response := &ResolveBooleanResponse{
-       Value:   false,  // This sends 'false' on the wire
-       Reason:  "DEFAULT",
-       Variant: "",     // This sends empty string on the wire
-   }
-   
-   // CORRECT - omits fields
-   response := &ResolveBooleanResponse{
-       Reason: "DEFAULT",
-       // Value and Variant fields are not set at all
-   }
-   ```
-
-3. **Evaluation Behavior**:
+2. **Evaluation Behavior**:
    - When flag has `defaultVariant: null` and targeting returns no match
-   - Server responds with both value and variant fields omitted, reason set to "DEFAULT"
-   - Client detects the missing value field and uses its code-defined default
+   - Server responds with reason set to reason "ERROR" and error code "FLAG_NOT_FOUND"
+   - Client detects this reason value field and uses its code-defined default
    - This same pattern works across all evaluation modes
 
-   **In-Process Mode Special Considerations**:
-   - The in-process evaluator must return the same "shape" of response
-   - Cannot return null/nil as that's different from "no value"
-   - May need a special response type or wrapper to indicate delegation
-   - Example approach: Return evaluation result with a "useDefault" flag
-
-4. **Remote Evaluation Protocol Responses**:
-
-   **OFREP (OpenFeature Remote Evaluation Protocol)**:
-   - Return HTTP 200 with response body that omits both value and variant fields
-   - Reason field set to "DEFAULT" to indicate delegation
-   - Clear distinction from error cases (which return 4xx/5xx)
-
-   **flagd RPC**:
-   - Omit both the type-specific value field and variant field in response messages
-   - Use protobuf field presence to signal "no opinion from server"
-   - No changes needed to RPC method signatures
-
-5. **Provider Implementation**:
-   - Check for presence/absence of value field in responses
-   - When value is absent and reason is "DEFAULT", use code-defined default
-   - When value is present (even if null/false/empty), use that value
-   - Variant field will also be absent in delegation responses, resulting in undefined variant in resolution details
-   - Responses with value fields work as before, maintaining backward compatibility
+3. **Provider Implementation**:
+   - No changes to existing providers
 
 ### Design Rationale
 
-**Using "DEFAULT" reason**: We intentionally reuse the existing "DEFAULT" reason code rather than introducing a new one (like "CODE_DEFAULT"). The distinction between a configuration default and code default is clear from the response structure:
+**Using "ERROR" reason**: We intentionally reuse the existing "ERROR" reason code rather than introducing a new one (like "CODE_DEFAULT"). This retains the current behavior of an disabled flag and allows for progressive enablement of a flag without unexpected variations in flag evaluation behavior.
 
-- Configuration default: Has both value and variant fields
-- Code default: Omits both value and variant fields
+Advantages of this approach:
 
-**Field Omission Pattern**: Using field presence/absence is a well-established pattern in protocol design:
-
-- Unambiguous: Cannot confuse "null value" with "no opinion"
-- Language agnostic: Works across type systems
-- Protocol friendly: Natural in both JSON and Protobuf
-- Backward compatible: Existing responses always include values
-- Spec compliant: OpenFeature allows undefined variants
-
-The omission of both value and variant fields creates a clear, consistent signal that the server is fully delegating the decision to the client's code default.
-
-This approach maintains compatibility with the established OpenFeature terminology while providing clear semantics through response structure.
+- The "ERROR" reason is already used for cases where the flag is not found or misconfigured, so it aligns with the intent of using code defaults.
+- This approach avoids introducing new reason codes that would require additional handling in providers and clients.
 
 ### API changes
 
@@ -197,10 +118,14 @@ flags:
 
 #### Single flag evaluation response
 
+A single flag evaluation returns a `404` status code.
+
 ```json
 {
   "key": "my-feature",
-  "reason": "DEFAULT",
+  "errorCode": "FLAG_NOT_FOUND",
+  // Optional error details
+  "errorDetails": "Targeting not matched, using code default",
   "metadata": {}
 }
 ```
@@ -210,57 +135,19 @@ flags:
 ```json
 {
   "flags": [
-    {
-      "key": "my-feature",
-      "reason": "DEFAULT",
-      "metadata": {}
-    }
+    // Flag is omitted from bulk response
   ]
 }
 ```
-
-Note: Both `value` and `variant` fields are intentionally omitted to signal "use code default"
 
 **flagd RPC Response** (ResolveBooleanResponse):
 
 ```protobuf
 {
-  "reason": "DEFAULT",
+  "reason": "ERROR",
+  "errorCode": "FLAG_NOT_FOUND",
   "metadata": {}
 }
-```
-
-Both the type-specific value field and variant field are omitted
-
-**Provider behavior**:
-
-1. Check response for presence of value field
-2. If value field is absent and error code is absent , use code-defined default
-3. If value field is present (even if null/false/empty), use that value
-4. The variant field will also be absent when delegating to code defaults
-5. This logic is consistent across in-process, RPC, and OFREP modes
-
-This approach clearly differentiates between:
-
-- Server returning an actual value with a variant (both fields present)
-- Server delegating to code default (both fields absent)
-
-**Example evaluation flow**:
-
-```javascript
-// Client code
-const value = client.getBooleanValue('my-feature', false, context);
-
-// Server evaluates flag with defaultVariant: null
-// No targeting match, so server returns:
-{
-  "reason": "DEFAULT",
-  "metadata": {}
-  // Note: both "value" and "variant" fields are omitted
-}
-
-// Client detects missing value field and uses its default (false)
-// Resolution details show reason: "DEFAULT" with undefined variant
 ```
 
 ### Consequences
@@ -277,41 +164,23 @@ const value = client.getBooleanValue('my-feature', false, context);
 - Bad, because it introduces a new concept that users need to understand
 - Neutral, because existing configurations continue to work unchanged
 
-### Remote Evaluation Considerations
-
-This feature works consistently across all flagd evaluation modes through a unified pattern:
-
-1. **In-Process Mode**: Direct evaluation returns responses without value fields when delegating
-2. **RPC Mode (gRPC/HTTP)**: Responses omit the type-specific value field to signal delegation
-3. **OFREP (OpenFeature Remote Evaluation Protocol)**: HTTP responses omit the value field
-
-The key insight is using field omission to indicate "use code default":
-
-- Present value field (even if null/false/empty) = use this value
-- Absent value field = use your code default
-- Works identically across all protocols and evaluation modes
-- No protocol changes required
-
 ### Implementation Plan
 
 1. Update flagd-schemas with new JSON schema supporting null default variants
-2. Implement core logic in flagd to handle null defaults and omit value/variant fields
-3. Update flagd-testbed with comprehensive test cases for all evaluation modes
-4. Update OpenFeature providers to handle responses without value fields
-5. Documentation updates, migration guides, and proto comment additions
-
-Note: No protobuf schema changes are required, but implementation must carefully handle field omission
+2. Update flagd-testbed with comprehensive test cases for all evaluation modes
+3. Implement core logic in flagd to handle null defaults and omit value/variant fields
+4. Update OpenFeature providers with the latest schema and test harness to ensure they handle the new behavior correctly
+5. Documentation updates, migration guides, and playground examples to demonstrate the new configuration options
 
 ### Testing Considerations
 
 To ensure correct implementation across all components:
 
-1. **Wire Format Tests**: Verify that protobuf messages with omitted fields are correctly serialized without the fields (not with zero values)
-2. **Provider Tests**: Each provider must have tests confirming they detect missing fields correctly in their language
-3. **Integration Tests**: End-to-end tests across different language combinations (e.g., Go flagd with Java provider)
-4. **OFREP Tests**: Verify JSON responses correctly omit fields (not set to null)
-5. **Backward Compatibility Tests**: Ensure old providers handle new responses gracefully
-6. **Consistency Tests**: Verify identical behavior across in-process, RPC, and OFREP modes
+1. **Provider Tests**: Each component (flagd, providers) must have unit tests verifying the handling of `null` as a default variant
+2. **Integration Tests**: End-to-end tests across different language combinations (e.g., Go flagd with Java provider)
+3. **OFREP Tests**: Verify JSON responses correctly omits flags with a `null` default variant
+4. **Backward Compatibility Tests**: Ensure old providers handle new responses gracefully
+5. **Consistency Tests**: Verify identical behavior across in-process, RPC, and OFREP modes
 
 ### Open questions
 
