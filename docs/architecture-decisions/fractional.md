@@ -65,7 +65,7 @@ If the bucking value does not resolve to a string, or the `targeting key` is und
 
 #### Bucketing strategy implementation
 
-After retrieving the bucketing value, and hashing it to a [0, 100] range, the algorithm iterates through variants, accumulating their relative weights until finding the bucket containing the hash value.
+After retrieving the bucketing value, and hashing it to a [0, 99] range, the algorithm iterates through variants, accumulating their relative weights until finding the bucket containing the hash value.
 
 ```go
 // Simplified implementation structure
