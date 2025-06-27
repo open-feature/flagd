@@ -21,6 +21,8 @@ type syncMock struct {
 
 	initError     error
 	ctxCloseError error
+
+	mu sync.Mutex
 }
 
 func newMockSync() *syncMock {
@@ -38,6 +40,8 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 	for {
 		select {
 		case <-ctx.Done():
+			s.mu.Lock()
+			defer s.mu.Unlock()
 			return s.ctxCloseError
 		case d := <-s.dataSyncChanIn:
 			dataSync <- d
@@ -48,6 +52,8 @@ func (s *syncMock) Sync(ctx context.Context, dataSync chan<- isync.DataSync) err
 }
 
 func (s *syncMock) ReSync(_ context.Context, dataSync chan<- isync.DataSync) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.resyncData != nil {
 		dataSync <- *s.resyncData
 	}

@@ -2,6 +2,8 @@ package sync
 
 import (
 	"context"
+
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type Type int
@@ -56,6 +58,7 @@ type ISync interface {
 // DataSync is the data contract between Runtime and sync implementations
 type DataSync struct {
 	FlagData string
+	SyncContext *structpb.Struct
 	Source   string
 	Selector string
 	Type
