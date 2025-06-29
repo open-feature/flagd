@@ -372,7 +372,12 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 
 		// check if string is "null" before we strip quotes, so we can differentiate between JSON null and "null"
 		trimmed := strings.TrimSpace(result.String())
+
 		if trimmed == "null" {
+			if flag.DefaultVariant == "" {
+				return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+			}
+
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
 		}
 
@@ -387,6 +392,11 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
 		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 	}
+
+	if flag.DefaultVariant == "" {
+		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+	}
+
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
 }
 
@@ -479,6 +489,11 @@ func configToFlagDefinition(log *logger.Logger, config string, definition *Defin
 // validateDefaultVariants returns an error if any of the default variants aren't valid
 func validateDefaultVariants(flags *Definition) error {
 	for name, flag := range flags.Flags {
+		// Default Variant is not provided in the config
+		if flag.DefaultVariant == "" {
+			continue
+		}
+
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
 				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,

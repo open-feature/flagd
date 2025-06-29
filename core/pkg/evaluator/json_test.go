@@ -325,8 +325,8 @@ func TestSetState_Invalid_Error(t *testing.T) {
 
 	// set state with an invalid flag definition
 	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
-	if err == nil {
-		t.Fatalf("expected error")
+	if err != nil {
+		t.Fatalf("unexpected error")
 	}
 }
 
