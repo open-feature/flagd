@@ -133,9 +133,12 @@ This behavior is not ideal and should be addressed in a separate ADR.
 - One source can provide flags with the same keys.
 - Flag set ID no longer bound to a source, so one source can have multiple flag sets.
 - No breaking change of the API definition and the API behaviors.
+- No significant change on the flagd stores and how selections work.
 
 #### The bad
 
 - The proposal still leverages the concept of flag set in the flagd storage.
 
 - The schema does not guarantee that flags of the same flag set from the same source will not have the same keys. This is guaranteed in the proposal of #1634.
+
+- The flag array is less readable compared to the flag sets object proposed in #1634.
