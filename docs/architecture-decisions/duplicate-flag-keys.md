@@ -32,7 +32,7 @@ We will update the `flagd` flag configuration schema to support receiving flags 
 
 #### Flag Configuration Schema
 
-We'll add a new schema as a [subschema](https://json-schema.org/learn/glossary#subschema) to the existing flagd flag configuration schema. It will be a composite of the original schema except `flags` (`#/definitions/base`), with a new schema for `flags` that allows flags array in addition to the currently supported flags object. The existing main schema will be the composite of the
+We'll add a new schema as a [subschema](https://json-schema.org/learn/glossary#subschema) to the existing flagd flag configuration schema. It will be a composite of the original schema except `flags` (`#/definitions/base`), with a new schema for `flags` that allows flags array in addition to the currently supported flags object. The existing main schema will be the composite of `#/definitions/base` and the subschema for the flags object.
 
 ```json
 ...
