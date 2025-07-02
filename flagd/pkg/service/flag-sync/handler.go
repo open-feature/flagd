@@ -54,7 +54,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 
 			metadata, err := structpb.NewStruct(metadataSrc)
 			if err != nil {
-				s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
+				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
 				return fmt.Errorf("error constructing metadata response")
 			}
 
