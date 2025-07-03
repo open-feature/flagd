@@ -10,7 +10,7 @@ require (
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.2
 	github.com/diegoholiveira/jsonlogic/v3 v3.7.4
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47
 	github.com/open-feature/open-feature-operator/apis v0.2.44
