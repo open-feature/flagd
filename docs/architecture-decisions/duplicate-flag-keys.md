@@ -16,7 +16,7 @@ Currently, the `flagd` [flag configuration](https://flagd.dev/schema/v0/flags.js
 This limitation prevents use cases for flag modularization and multi-tenancy, such as:
 
 - **Component-based Flags:** Two different services, each with its own in-process provider, cannot independently define a flag with the same key when communicating with the same `flagd` daemon.
-- **Multi-Tenant Targeting:** A single flagd daemon uses the same flag key with different targeting rules for different tenants
+- **Multi-Tenant Targeting:** A single flagd daemon cannot use the same flag key with different targeting rules for different tenants
 
 ## Requirements
 
@@ -88,13 +88,13 @@ We'll add a new schema as a [subschema](https://json-schema.org/learn/glossary#s
 ...
 ```
 
-If the config level flag set ID is not specified, `metadata.flagSetID` of each flag will be interpreted as its flag set ID.
+If the config level flag set ID is not specified, `metadata.flagSetId` of each flag will be interpreted as its flag set ID.
 
-A flag will be uniquely identified by the composite key `(flagKey, flagSetID)`. The following three flags will be considered as three different flags.
+A flag will be uniquely identified by the composite key `(flagKey, flagSetId)`. The following three flags will be considered as three different flags.
 
-1. `{"flagKey": "enable-feature", "flagSetID": ""}`
-2. `{"flagKey": "enable-feature", "flagSetID": "default"}`
-3. `{"flagKey": "enable-feature", "flagSetID": "beta"}`
+1. `{"flagKey": "enable-feature", "flagSetId": ""}`
+2. `{"flagKey": "enable-feature", "flagSetId": "default"}`
+3. `{"flagKey": "enable-feature", "flagSetId": "beta"}`
 
 ### Flagd daemon
 
@@ -112,19 +112,19 @@ If the request from in-process flagd providers result in a config that has dupli
 
 1. `selector` will be removed from the store
 
-1. `flagSetID` will be moved from `source` metadata to `flag` metadata.
+1. `flagSetId` will be moved from `source` metadata to `flag` metadata.
 
 ### Flags Lifecycle
 
-Currently, the flags configurations from the latest update of a source will override the existing ones. If a flag was presented in the previous configuration but not in the current configuration, it will **NOT** get removed. Flags removals can only be triggerred when a source is removed, or a full resync is triggered.
+Currently, the flags configurations from the latest update of a source will trigger a `sync.ALL` sync. If a flag was presented in the previous configuration but not in the current configuration, it will be removed. In another word, the latest source that provides the config for a flag will take the ownership of a flag, and any subsequent configs are considered as the full states of the flags that are owned by the source.
 
 We'll keep the same behaviors with this proposal:
 
 1. If two sources provide the flags with the same composite key, the latest one will be stored.
 
-1. If a flag from a source no longer presents in the latest configuration of the same source, it will be kept.
+2. If a flag from a source no longer presents in the latest configuration of the same source, it will be removed.
 
-This behavior is not ideal and should be addressed in a separate ADR.
+This behavior is less ideal as the ownership management depends on the ordre of the sync. This should be addressed in a separate ADR.
 
 ### Consequences
 
@@ -141,4 +141,4 @@ This behavior is not ideal and should be addressed in a separate ADR.
 
 - The schema does not guarantee that flags of the same flag set from the same source will not have the same keys. This is guaranteed in the proposal of #1634.
 
-- The flag array is less readable compared to the flag sets object proposed in #1634.
+- Compared to #1634, this proposal does not allow to define flag set wide metadata.
