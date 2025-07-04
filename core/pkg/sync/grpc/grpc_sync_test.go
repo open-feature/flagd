@@ -26,6 +26,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func Test_InitWithMockCredentialBuilder(t *testing.T) {
@@ -215,11 +217,16 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 		{
 			name: "State All maps to Sync All",
 			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
+				metadata, err := structpb.NewStruct(map[string]any{"sources": "A,B,C"})
+				if err != nil {
+					t.Fatalf("Failed to create sync context: %v", err)
+				}
 				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
 				gomock.InOrder(
 					clientResponse.EXPECT().Recv().Return(
 						&v1.SyncFlagsResponse{
 							FlagConfiguration: "{}",
+							SyncContext:       metadata,
 						},
 						nil,
 					),
@@ -287,6 +294,11 @@ func TestSync_BasicFlagSyncStates(t *testing.T) {
 func Test_StreamListener(t *testing.T) {
 	const target = "localBufCon"
 
+	metadata, err := structpb.NewStruct(map[string]any{"sources": "A,B,C"})
+	if err != nil {
+		t.Fatalf("Failed to create sync context: %v", err)
+	}
+
 	tests := []struct {
 		name   string
 		input  []serverPayload
@@ -301,8 +313,9 @@ func Test_StreamListener(t *testing.T) {
 			},
 			output: []sync.DataSync{
 				{
-					FlagData: "{\"flags\": {}}",
-					Type:     sync.ALL,
+					FlagData:    "{\"flags\": {}}",
+					SyncContext: metadata,
+					Type:        sync.ALL,
 				},
 			},
 		},
@@ -319,11 +332,13 @@ func Test_StreamListener(t *testing.T) {
 			output: []sync.DataSync{
 				{
 					FlagData: "{}",
+					SyncContext: metadata,
 					Type:     sync.ALL,
 				},
 				{
-					FlagData: "{\"flags\": {}}",
-					Type:     sync.ALL,
+					FlagData:    "{\"flags\": {}}",
+					SyncContext: metadata,
+					Type:        sync.ALL,
 				},
 			},
 		},
@@ -382,6 +397,10 @@ func Test_StreamListener(t *testing.T) {
 
 			if expected.FlagData != out.FlagData {
 				t.Errorf("Returned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
+			}
+
+			if !proto.Equal(expected.SyncContext, out.SyncContext) {
+				t.Errorf("Returned sync context = %v, wanted = %v", out.SyncContext, expected.SyncContext)
 			}
 		}
 
@@ -575,8 +594,10 @@ type bufferedServer struct {
 
 func (b *bufferedServer) SyncFlags(_ *v1.SyncFlagsRequest, stream syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	for _, response := range b.mockResponses {
+		metadata, _ := structpb.NewStruct(map[string]any{"sources": "A,B,C"})
 		err := stream.Send(&v1.SyncFlagsResponse{
 			FlagConfiguration: response.flags,
+			SyncContext:       metadata,
 		})
 		if err != nil {
 			fmt.Printf("Error with stream: %s", err.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"time"
@@ -43,7 +44,24 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	for {
 		select {
 		case payload := <-muxPayload:
-			err := server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: payload.flags})
+
+			metadataSrc := make(map[string]any)
+			maps.Copy(metadataSrc, s.contextValues)
+
+			if sources := s.mux.SourcesAsMetadata(); sources != "" {
+				metadataSrc["sources"] = sources
+			}
+
+			metadata, err := structpb.NewStruct(metadataSrc)
+			if err != nil {
+				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
+				return fmt.Errorf("error constructing metadata response")
+			}
+
+			err = server.Send(&syncv1.SyncFlagsResponse{
+				FlagConfiguration: payload.flags,
+				SyncContext:       metadata,
+			})
 			if err != nil {
 				s.log.Debug(fmt.Sprintf("error sending stream response: %v", err))
 				return fmt.Errorf("error sending stream response: %w", err)
@@ -74,6 +92,8 @@ func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsR
 	}, nil
 }
 
+// Deprecated - GetMetadata is deprecated and will be removed in a future release.
+// Use the sync_context field in syncv1.SyncFlagsResponse, providing same info.
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
 ) {
