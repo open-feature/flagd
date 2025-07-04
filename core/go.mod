@@ -12,7 +12,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.8.4
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
-	github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47
+	github.com/open-feature/flagd-schemas v0.2.9-0.20250529171004-2852d7772e6b
 	github.com/open-feature/open-feature-operator/apis v0.2.45
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron v1.2.0
@@ -33,7 +33,7 @@ require (
 	go.uber.org/zap v1.27.0
 	gocloud.dev v0.42.0
 	golang.org/x/crypto v0.39.0
-	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/mod v0.25.0
 	golang.org/x/sync v0.15.0
 	google.golang.org/grpc v1.73.0
