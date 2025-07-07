@@ -64,7 +64,7 @@ func (hs *Sync) IsReady() bool {
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Initial fetch
-	fetch, err := hs.Fetch(ctx)
+	fetch, _, err := hs.fetchBody(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -188,10 +188,7 @@ func (hs *Sync) generateSha(body []byte) string {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
-// Deprecated: Fetch won't be exposed in the future.
-// Use fetchBody instead for internal use
-// Use Sync instead for external use
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
-	body, _, err := hs.fetchBody(ctx, true)
+	body, _, err := hs.fetchBody(ctx, false)
 	return body, err
 }
