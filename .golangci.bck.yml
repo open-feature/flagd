@@ -1,0 +1,30 @@
+run:
+  timeout: 3m
+linters-settings:
+  funlen:
+    statements: 50
+  golint:
+    min-confidence: 0.6
+  enable-all: true
+issues:
+  exclude:
+    - pkg/generated
+  exclude-rules:
+    - path: _test.go
+      linters:
+        - funlen
+        - maligned
+        - noctx
+        - scopelint
+        - bodyclose
+        - lll
+        - goconst
+        - gocognit
+        - gocyclo
+        - dupl
+        - staticcheck
+  exclude-dirs:
+    - (^|/)bin($|/)
+    - (^|/)examples($|/)
+    - (^|/)schemas($|/)
+    - (^|/)test-harness($|/)

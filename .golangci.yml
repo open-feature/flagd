@@ -1,30 +1,43 @@
-run:
-  timeout: 3m
-linters-settings:
-  funlen:
-    statements: 50
-  golint:
-    min-confidence: 0.6
-  enable-all: true
-issues:
-  exclude:
-    - pkg/generated
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - funlen
-        - maligned
-        - noctx
-        - scopelint
-        - bodyclose
-        - lll
-        - goconst
-        - gocognit
-        - gocyclo
-        - dupl
-        - staticcheck
-  exclude-dirs:
-    - (^|/)bin($|/)
-    - (^|/)examples($|/)
-    - (^|/)schemas($|/)
-    - (^|/)test-harness($|/)
+version: "2"
+linters:
+  settings:
+    funlen:
+      statements: 50
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - bodyclose
+          - dupl
+          - funlen
+          - gocognit
+          - goconst
+          - gocyclo
+          - lll
+          - maligned
+          - noctx
+          - scopelint
+          - staticcheck
+        path: _test.go
+      - path: (.+)\.go$
+        text: pkg/generated
+    paths:
+      - (^|/)bin($|/)
+      - (^|/)examples($|/)
+      - (^|/)schemas($|/)
+      - (^|/)test-harness($|/)
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
