@@ -47,14 +47,24 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 flagd exposes the following metrics:
 
-- `http.server.duration`
-- `http.server.response.size`
-- `http.server.active_requests`
-- `feature_flag.flagd.impression`
-- `feature_flag.flagd.evaluation.reason`
+- `http.server.request.duration` - Measures the duration of inbound HTTP requests
+- `http.server.response.body.size` - Measures the size of HTTP response messages
+- `http.server.active_requests` - Measures the number of concurrent HTTP requests that are currently in-flight
+- `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
+- `feature_flag.flagd.evaluation.reason` - Measures the number of evaluations for a given reason
 
 > Please note that metric names may vary based on the consuming monitoring tool naming requirements.
 > For example, the transformation of OTLP metrics to Prometheus is described [here](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/compatibility/prometheus_and_openmetrics.md#otlp-metric-points-to-prometheus).
+
+### HTTP Metric Attributes
+
+flagd uses OpenTelemetry Semantic Conventions v1.34.0 for HTTP metrics. The following attributes are included with HTTP metrics:
+
+- `service.name` - The name of the service
+- `http.route` - The matched route (path template)
+- `http.request.method` - The HTTP request method (GET, POST, etc.)
+- `http.response.status_code` - The HTTP response status code
+- `url.scheme` - The URI scheme (http or https)
 
 ## Traces
 
