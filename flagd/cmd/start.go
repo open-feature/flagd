@@ -37,6 +37,8 @@ const (
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	contextValueFlagName       = "context-value"
+	headerToContextKeyFlagName = "context-from-header"
+	streamDeadlineFlagName     = "stream-deadline"
 )
 
 func init() {
@@ -84,6 +86,9 @@ func init() {
 		"from disk")
 	flags.StringToStringP(contextValueFlagName, "X", map[string]string{}, "add arbitrary key value pairs "+
 		"to the flag evaluation context")
+	flags.StringToStringP(headerToContextKeyFlagName, "H", map[string]string{}, "add key-value pairs to map "+
+		"header values to context values, where key is Header name, value is context key")
+	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 
 	bindFlags(flags)
 }
@@ -107,6 +112,8 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
+	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
+	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 }
 
 // startCmd represents the start command
@@ -156,25 +163,32 @@ var startCmd = &cobra.Command{
 			contextValuesToMap[k] = v
 		}
 
+		headerToContextKeyMappings := make(map[string]string)
+		for k, v := range viper.GetStringMapString(headerToContextKeyFlagName) {
+			headerToContextKeyMappings[k] = v
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:                  viper.GetStringSlice(corsFlagName),
-			MetricExporter:        viper.GetString(metricsExporter),
-			ManagementPort:        viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:      viper.GetUint16(ofrepPortFlagName),
-			OtelCollectorURI:      viper.GetString(otelCollectorURI),
-			OtelCertPath:          viper.GetString(otelCertPathFlagName),
-			OtelKeyPath:           viper.GetString(otelKeyPathFlagName),
-			OtelReloadInterval:    viper.GetDuration(otelReloadIntervalFlagName),
-			OtelCAPath:            viper.GetString(otelCAPathFlagName),
-			ServiceCertPath:       viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:        viper.GetString(serverKeyPathFlagName),
-			ServicePort:           viper.GetUint16(portFlagName),
-			ServiceSocketPath:     viper.GetString(socketPathFlagName),
-			SyncServicePort:       viper.GetUint16(syncPortFlagName),
-			SyncServiceSocketPath: viper.GetString(syncSocketPathFlagName),
-			SyncProviders:         syncProviders,
-			ContextValues:         contextValuesToMap,
+			CORS:                       viper.GetStringSlice(corsFlagName),
+			MetricExporter:             viper.GetString(metricsExporter),
+			ManagementPort:             viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:           viper.GetUint16(ofrepPortFlagName),
+			OtelCollectorURI:           viper.GetString(otelCollectorURI),
+			OtelCertPath:               viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:                viper.GetString(otelKeyPathFlagName),
+			OtelReloadInterval:         viper.GetDuration(otelReloadIntervalFlagName),
+			OtelCAPath:                 viper.GetString(otelCAPathFlagName),
+			ServiceCertPath:            viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:             viper.GetString(serverKeyPathFlagName),
+			ServicePort:                viper.GetUint16(portFlagName),
+			ServiceSocketPath:          viper.GetString(socketPathFlagName),
+			SyncServicePort:            viper.GetUint16(syncPortFlagName),
+			SyncServiceSocketPath:      viper.GetString(syncSocketPathFlagName),
+			StreamDeadline:             viper.GetDuration(streamDeadlineFlagName),
+			SyncProviders:              syncProviders,
+			ContextValues:              contextValuesToMap,
+			HeaderToContextKeyMappings: headerToContextKeyMappings,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

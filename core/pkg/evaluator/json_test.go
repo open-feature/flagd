@@ -44,9 +44,90 @@ const ValidFlags = `{
   }
 }`
 
+const NullDefault = `{
+  "flags": {
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": null
+    }
+  }
+}`
+
+const UndefinedDefault = `{
+  "flags": {
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      }
+    }
+  }
+}`
+
+const NullDefaultWithTargetting = `{
+  "flags": {
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": null,
+	  "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "key"
+                ]
+              },
+              "value"
+            ]
+          },
+          "on"
+        ]
+      }
+    }
+  }
+}`
+
+const UndefinedDefaultWithTargetting = `{
+  "flags": {
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+	  "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "key"
+                ]
+              },
+              "value"
+            ]
+          },
+          "on"
+        ]
+      }
+    }
+  }
+}`
+
 const (
 	FlagSetID                  = "testSetId"
 	Version                    = "v33"
+	ValidFlag 				   = "validFlag"
 	MissingFlag                = "missingFlag"
 	StaticBoolFlag             = "staticBoolFlag"
 	StaticBoolValue            = true
@@ -325,8 +406,8 @@ func TestSetState_Invalid_Error(t *testing.T) {
 
 	// set state with an invalid flag definition
 	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
-	if err == nil {
-		t.Fatalf("expected error")
+	if err != nil {
+		t.Fatalf("unexpected error")
 	}
 }
 
@@ -869,6 +950,37 @@ func TestResolveAsAnyValue(t *testing.T) {
 				assert.Equal(t, model.ErrorReason, anyResult.Reason)
 				assert.EqualError(t, anyResult.Error, test.errorCode)
 			}
+		})
+	}
+}
+
+func TestResolve_DefaultVariant(t *testing.T) {
+	tests := []struct {
+		flags string
+		flagKey   string
+		context   map[string]interface{}
+		reason    string
+		errorCode string
+	}{
+		{NullDefault, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{UndefinedDefault, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{NullDefaultWithTargetting, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{UndefinedDefaultWithTargetting, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
+	}
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			_, _, err := evaluator.SetState(sync.DataSync{FlagData: test.flags})
+			
+			if err != nil {
+				t.Fatalf("expected no error")
+			}
+
+			anyResult := evaluator.ResolveAsAnyValue(context.TODO(), "", test.flagKey, test.context)
+			
+			assert.Equal(t, model.ErrorReason, anyResult.Reason)
+			assert.EqualError(t, anyResult.Error, test.errorCode)
 		})
 	}
 }

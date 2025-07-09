@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 )
@@ -23,16 +24,18 @@ type Notification struct {
 type ReadinessProbe func() bool
 
 type Configuration struct {
-	ReadinessProbe ReadinessProbe
-	Port           uint16
-	ManagementPort uint16
-	ServiceName    string
-	CertPath       string
-	KeyPath        string
-	SocketPath     string
-	CORS           []string
-	Options        []connect.HandlerOption
-	ContextValues  map[string]any
+	ReadinessProbe             ReadinessProbe
+	Port                       uint16
+	ManagementPort             uint16
+	ServiceName                string
+	CertPath                   string
+	KeyPath                    string
+	SocketPath                 string
+	CORS                       []string
+	Options                    []connect.HandlerOption
+	ContextValues              map[string]any
+	HeaderToContextKeyMappings map[string]string
+	StreamDeadline             time.Duration
 }
 
 /*

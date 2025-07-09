@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -20,12 +21,14 @@ import (
 )
 
 type FlagEvaluationService struct {
-	logger                *logger.Logger
-	eval                  evaluator.IEvaluator
-	metrics               telemetry.IMetricsRecorder
-	eventingConfiguration IEvents
-	flagEvalTracer        trace.Tracer
-	contextValues         map[string]any
+	logger                     *logger.Logger
+	eval                       evaluator.IEvaluator
+	metrics                    telemetry.IMetricsRecorder
+	eventingConfiguration      IEvents
+	flagEvalTracer             trace.Tracer
+	contextValues              map[string]any
+	headerToContextKeyMappings map[string]string
+	deadline                   time.Duration
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
@@ -34,14 +37,18 @@ func NewFlagEvaluationService(log *logger.Logger,
 	eventingCfg IEvents,
 	metricsRecorder telemetry.IMetricsRecorder,
 	contextValues map[string]any,
+	headerToContextKeyMappings map[string]string,
+	streamDeadline time.Duration,
 ) *FlagEvaluationService {
 	svc := &FlagEvaluationService{
-		logger:                log,
-		eval:                  eval,
-		metrics:               &telemetry.NoopMetricsRecorder{},
-		eventingConfiguration: eventingCfg,
-		flagEvalTracer:        otel.Tracer("flagd.evaluation.v1"),
-		contextValues:         contextValues,
+		logger:                     log,
+		eval:                       eval,
+		metrics:                    &telemetry.NoopMetricsRecorder{},
+		eventingConfiguration:      eventingCfg,
+		flagEvalTracer:             otel.Tracer("flagd.evaluation.v1"),
+		contextValues:              contextValues,
+		headerToContextKeyMappings: headerToContextKeyMappings,
+		deadline:                   streamDeadline,
 	}
 
 	if metricsRecorder != nil {
@@ -66,8 +73,9 @@ func (s *FlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, mergeContexts(req.Msg.GetContext().AsMap(),
-		s.contextValues))
+	context := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
+
+	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, context)
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
@@ -139,6 +147,15 @@ func (s *FlagEvaluationService) EventStream(
 	req *connect.Request[evalV1.EventStreamRequest],
 	stream *connect.ServerStream[evalV1.EventStreamResponse],
 ) error {
+	serviceCtx := ctx
+	// attach server-side stream deadline to context
+	if s.deadline != 0 {
+		streamDeadline := time.Now().Add(s.deadline)
+		deadlineCtx, cancel := context.WithDeadline(ctx, streamDeadline)
+		serviceCtx = deadlineCtx
+		defer cancel()
+	}
+
 	requestNotificationChan := make(chan service.Notification, 1)
 	s.eventingConfiguration.Subscribe(req, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
@@ -167,7 +184,11 @@ func (s *FlagEvaluationService) EventStream(
 			if err != nil {
 				s.logger.Error(err.Error())
 			}
-		case <-ctx.Done():
+		case <-serviceCtx.Done():
+			if errors.Is(serviceCtx.Err(), context.DeadlineExceeded) {
+				s.logger.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
+				return connect.NewError(connect.CodeDeadlineExceeded, fmt.Errorf("%s", "stream closed due to server-side timeout"))
+			}
 			return nil
 		}
 	}
@@ -185,11 +206,13 @@ func (s *FlagEvaluationService) ResolveBoolean(
 		sCtx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&booleanResponse{evalV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		s.headerToContextKeyMappings,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -211,11 +234,13 @@ func (s *FlagEvaluationService) ResolveString(
 		sCtx,
 		s.logger,
 		s.eval.ResolveStringValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&stringResponse{evalV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		s.headerToContextKeyMappings,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -237,11 +262,13 @@ func (s *FlagEvaluationService) ResolveInt(
 		sCtx,
 		s.logger,
 		s.eval.ResolveIntValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&intResponse{evalV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		s.headerToContextKeyMappings,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -263,11 +290,13 @@ func (s *FlagEvaluationService) ResolveFloat(
 		sCtx,
 		s.logger,
 		s.eval.ResolveFloatValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&floatResponse{evalV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		s.headerToContextKeyMappings,
 	)
 	if err != nil {
 		span.RecordError(err)
@@ -289,11 +318,13 @@ func (s *FlagEvaluationService) ResolveObject(
 		sCtx,
 		s.logger,
 		s.eval.ResolveObjectValue,
+		req.Header(),
 		req.Msg.GetFlagKey(),
 		req.Msg.GetContext(),
 		&objectResponse{evalV1Resp: res},
 		s.metrics,
 		s.contextValues,
+		s.headerToContextKeyMappings,
 	)
 	if err != nil {
 		span.RecordError(err)

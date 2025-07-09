@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.3...flagd-proxy/v0.7.4) (2025-05-28)
+
+
+### 🧹 Chore
+
+* **deps:** update dependency go to v1.24.1 ([#1559](https://github.com/open-feature/flagd/issues/1559)) ([cd46044](https://github.com/open-feature/flagd/commit/cd4604471bba0a1df67bf87653a38df3caf9d20f))
+* **security:** upgrade dependency versions ([#1632](https://github.com/open-feature/flagd/issues/1632)) ([761d870](https://github.com/open-feature/flagd/commit/761d870a3c563b8eb1b83ee543b41316c98a1d48))
+
 ## [0.7.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.2...flagd-proxy/v0.7.3) (2025-03-25)
 
 

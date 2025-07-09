@@ -25,14 +25,15 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger        *logger.Logger
-	Port          uint16
-	Sources       []string
-	Store         *store.State
-	ContextValues map[string]any
-	CertPath      string
-	KeyPath       string
-	SocketPath    string
+	Logger         *logger.Logger
+	Port           uint16
+	Sources        []string
+	Store          *store.State
+	ContextValues  map[string]any
+	CertPath       string
+	KeyPath        string
+	SocketPath     string
+	StreamDeadline time.Duration
 }
 
 type Service struct {
@@ -84,6 +85,7 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		mux:           mux,
 		log:           l,
 		contextValues: cfg.ContextValues,
+		deadline:      cfg.StreamDeadline,
 	})
 
 	var lis net.Listener
