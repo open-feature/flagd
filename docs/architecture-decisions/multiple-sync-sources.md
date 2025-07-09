@@ -1,6 +1,5 @@
 ---
-# Valid statuses: draft | proposed | rejected | accepted | superseded
-status: draft
+status: accepted
 author: Dave Josephsen
 created: 2025-05-21
 updated: 2025-05-21
