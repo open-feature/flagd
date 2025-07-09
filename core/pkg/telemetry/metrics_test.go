@@ -211,7 +211,7 @@ func TestMetrics(t *testing.T) {
 // some really simple tests just to make sure all methods are actually implemented and nothing panics
 func TestNoopMetricsRecorder_HTTPAttributes(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	got := no.HTTPAttributes("", "", "", "")
+	got := no.HTTPAttributes("", "", "", "", "")
 	require.Empty(t, got)
 }
 

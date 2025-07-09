@@ -14,7 +14,7 @@ const provider = "flagd"
 func SemConvFeatureFlagAttributes(ffKey string, ffVariant string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.FeatureFlagKey(ffKey),
-		semconv.FeatureFlagVariant(ffVariant),
+		semconv.FeatureFlagResultVariant(ffVariant),
 		semconv.FeatureFlagProviderName(provider),
 	}
 }
