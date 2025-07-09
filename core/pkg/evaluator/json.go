@@ -104,7 +104,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 		context.Background(),
 		"flagSync",
 		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
-		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.Type.String())))
+		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.String())))
 	defer span.End()
 
 	var definition Definition
