@@ -1,9 +1,11 @@
 ---
-status: proposed
+status: rejected
 author: @alexandraoberaigner
 created: 2025-05-28
 updated: -
 ---
+
+⚠️ REJECTED IN FAVOR OF https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/duplicate-flag-keys.md ⚠️
 
 # Add support for dynamic usage of Flag Sets to `flagd`
 
