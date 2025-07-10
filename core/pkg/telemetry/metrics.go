@@ -23,7 +23,7 @@ const (
 	httpResponseSizeMetric    = "http.server.response.body.size"
 	httpActiveRequestsMetric  = "http.server.active_requests"
 	impressionMetric          = "feature_flag." + ProviderName + ".impression"
-	reasonMetric              = "feature_flag." + ProviderName + ".evaluation.reason"
+	reasonMetric              = "feature_flag." + ProviderName + ".result.reason"
 )
 
 type IMetricsRecorder interface {

@@ -51,7 +51,7 @@ flagd exposes the following metrics:
 - `http.server.response.body.size` - Measures the size of HTTP response messages
 - `http.server.active_requests` - Measures the number of concurrent HTTP requests that are currently in-flight
 - `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
-- `feature_flag.flagd.evaluation.reason` - Measures the number of evaluations for a given reason
+- `feature_flag.flagd.result.reason` - Measures the number of evaluations for a given reason
 
 > Please note that metric names may vary based on the consuming monitoring tool naming requirements.
 > For example, the transformation of OTLP metrics to Prometheus is described [here](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/compatibility/prometheus_and_openmetrics.md#otlp-metric-points-to-prometheus).
