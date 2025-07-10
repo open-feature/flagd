@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.6](https://github.com/open-feature/flagd/compare/flagd/v0.12.5...flagd/v0.12.6) (2025-07-10)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.3.0 [security] ([#1667](https://github.com/open-feature/flagd/issues/1667)) ([caa0ed0](https://github.com/open-feature/flagd/commit/caa0ed04eb9d5d01136deb71b8fcc4da72aa1910))
+
+
+### ✨ New Features
+
+* add sync_context to SyncFlags ([#1642](https://github.com/open-feature/flagd/issues/1642)) ([07a45d9](https://github.com/open-feature/flagd/commit/07a45d9b2275584fa92ff33cbe5e5c7d7864db38))
+
 ## [0.12.5](https://github.com/open-feature/flagd/compare/flagd/v0.12.4...flagd/v0.12.5) (2025-06-13)
 
 

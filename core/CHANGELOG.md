@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.6](https://github.com/open-feature/flagd/compare/core/v0.11.5...core/v0.11.6) (2025-07-10)
+
+
+### ✨ New Features
+
+* add sync_context to SyncFlags ([#1642](https://github.com/open-feature/flagd/issues/1642)) ([07a45d9](https://github.com/open-feature/flagd/commit/07a45d9b2275584fa92ff33cbe5e5c7d7864db38))
+* allowing null/missing defaultValue ([#1659](https://github.com/open-feature/flagd/issues/1659)) ([3f6b78c](https://github.com/open-feature/flagd/commit/3f6b78c8ccab75e9c07d26741c4b206fd0b722ee))
+
 ## [0.11.5](https://github.com/open-feature/flagd/compare/core/v0.11.4...core/v0.11.5) (2025-06-13)
 
 
