@@ -58,7 +58,7 @@ flagd exposes the following metrics:
 
 ### HTTP Metric Attributes
 
-flagd uses OpenTelemetry Semantic Conventions v1.34.0 for HTTP metrics. The following attributes are included with HTTP metrics:
+flagd uses the following OpenTelemetry Semantic Conventions for HTTP metrics:
 
 - `service.name` - The name of the service
 - `http.route` - The matched route (path template)
@@ -93,9 +93,8 @@ official [OTEL collector example](https://github.com/open-telemetry/opentelemetr
 
 ```yaml
 services:
-  # Jaeger
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.8.0
     restart: always
     ports:
       - "16686:16686"
@@ -116,7 +115,7 @@ services:
       - "4317:4317"   # OTLP gRPC receiver
       - "55679:55679" # zpages extension
     depends_on:
-      - jaeger-all-in-one
+      - jaeger
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
@@ -138,10 +137,8 @@ receivers:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-    const_labels:
-      label1: value1
   otlp/jaeger:
-    endpoint: jaeger-all-in-one:4317
+    endpoint: jaeger:4317
     tls:
       insecure: true
 processors:
@@ -158,7 +155,7 @@ service:
       exporters: [ prometheus ]
 ```
 
-#### prometheus.yml
+#### prometheus.yaml
 
 ```yaml
 scrape_configs:
@@ -166,10 +163,9 @@ scrape_configs:
     scrape_interval: 10s
     static_configs:
       - targets: [ 'otel-collector:8889' ]
-      - targets: [ 'otel-collector:8888' ]
 ```
 
-Once, configuration files are ready, use `docker-compose up` to start the local setup. With successful startup, you can
+Once, configuration files are ready, use `docker compose up` to start the local setup. With successful startup, you can
 access metrics through [Prometheus](http://localhost:9090/graph) & traces through [Jaeger](http://localhost:16686/).
 
 ## Metadata
