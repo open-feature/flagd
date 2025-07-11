@@ -102,7 +102,7 @@ services:
       - "14250"
   # Collector
   otel-collector:
-    image: otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector:0.129.1
     restart: always
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
@@ -118,7 +118,7 @@ services:
       - jaeger
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.5
     restart: always
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
