@@ -2,7 +2,7 @@ package telemetry
 
 import (
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
 
 // utils contain common utilities to help with telemetry
@@ -14,7 +14,7 @@ const provider = "flagd"
 func SemConvFeatureFlagAttributes(ffKey string, ffVariant string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.FeatureFlagKey(ffKey),
-		semconv.FeatureFlagVariant(ffVariant),
+		semconv.FeatureFlagResultVariant(ffVariant),
 		semconv.FeatureFlagProviderName(provider),
 	}
 }

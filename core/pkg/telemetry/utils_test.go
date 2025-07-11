@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
 
 func TestSemConvFeatureFlagAttributes(t *testing.T) {
@@ -35,7 +35,7 @@ func TestSemConvFeatureFlagAttributes(t *testing.T) {
 			case semconv.FeatureFlagKeyKey:
 				require.Equal(t, test.key, attribute.Value.AsString(),
 					"expected flag key: %s, but received: %s", test.key, attribute.Value.AsString())
-			case semconv.FeatureFlagVariantKey:
+			case semconv.FeatureFlagResultVariantKey:
 				require.Equal(t, test.variant, attribute.Value.AsString(),
 					"expected flag variant: %s, but received %s", test.variant, attribute.Value.AsString())
 			case semconv.FeatureFlagProviderNameKey:

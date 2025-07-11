@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.13.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
 
 const svcName = "mySvc"
@@ -38,9 +38,10 @@ func TestHTTPAttributes(t *testing.T) {
 			},
 			want: []attribute.KeyValue{
 				semconv.ServiceNameKey.String(""),
-				semconv.HTTPURLKey.String(""),
-				semconv.HTTPMethodKey.String(""),
-				semconv.HTTPStatusCodeKey.String(""),
+				semconv.HTTPRouteKey.String(""),
+				semconv.HTTPRequestMethodKey.String(""),
+				semconv.HTTPResponseStatusCodeKey.String(""),
+				semconv.URLSchemeKey.String("http"),
 			},
 		},
 		{
@@ -53,9 +54,10 @@ func TestHTTPAttributes(t *testing.T) {
 			},
 			want: []attribute.KeyValue{
 				semconv.ServiceNameKey.String("myService"),
-				semconv.HTTPURLKey.String("#123"),
-				semconv.HTTPMethodKey.String("POST"),
-				semconv.HTTPStatusCodeKey.String("300"),
+				semconv.HTTPRouteKey.String("#123"),
+				semconv.HTTPRequestMethodKey.String("POST"),
+				semconv.HTTPResponseStatusCodeKey.String("300"),
+				semconv.URLSchemeKey.String("http"),
 			},
 		},
 		{
@@ -68,16 +70,17 @@ func TestHTTPAttributes(t *testing.T) {
 			},
 			want: []attribute.KeyValue{
 				semconv.ServiceNameKey.String("!@#$%^&*()_+|}{[];',./<>"),
-				semconv.HTTPURLKey.String(""),
-				semconv.HTTPMethodKey.String(""),
-				semconv.HTTPStatusCodeKey.String(""),
+				semconv.HTTPRouteKey.String(""),
+				semconv.HTTPRequestMethodKey.String(""),
+				semconv.HTTPResponseStatusCodeKey.String(""),
+				semconv.URLSchemeKey.String("http"),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := MetricsRecorder{}
-			res := rec.HTTPAttributes(tt.req.Service, tt.req.ID, tt.req.Method, tt.req.Code)
+			res := rec.HTTPAttributes(tt.req.Service, tt.req.ID, tt.req.Method, tt.req.Code, "http")
 			require.Equal(t, tt.want, res)
 		})
 	}
@@ -208,7 +211,7 @@ func TestMetrics(t *testing.T) {
 // some really simple tests just to make sure all methods are actually implemented and nothing panics
 func TestNoopMetricsRecorder_HTTPAttributes(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	got := no.HTTPAttributes("", "", "", "")
+	got := no.HTTPAttributes("", "", "", "", "")
 	require.Empty(t, got)
 }
 

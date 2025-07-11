@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	msdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
 
 const (
@@ -19,15 +19,15 @@ const (
 	FeatureFlagReasonKey = attribute.Key("feature_flag.reason")
 	ExceptionTypeKey     = attribute.Key("ExceptionTypeKeyName")
 
-	httpRequestDurationMetric = "http.server.duration"
-	httpResponseSizeMetric    = "http.server.response.size"
+	httpRequestDurationMetric = "http.server.request.duration"
+	httpResponseSizeMetric    = "http.server.response.body.size"
 	httpActiveRequestsMetric  = "http.server.active_requests"
 	impressionMetric          = "feature_flag." + ProviderName + ".impression"
-	reasonMetric              = "feature_flag." + ProviderName + ".evaluation.reason"
+	reasonMetric              = "feature_flag." + ProviderName + ".result.reason"
 )
 
 type IMetricsRecorder interface {
-	HTTPAttributes(svcName, url, method, code string) []attribute.KeyValue
+	HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue
 	HTTPRequestDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
 	HTTPResponseSize(ctx context.Context, sizeBytes int64, attrs []attribute.KeyValue)
 	InFlightRequestStart(ctx context.Context, attrs []attribute.KeyValue)
@@ -38,7 +38,7 @@ type IMetricsRecorder interface {
 
 type NoopMetricsRecorder struct{}
 
-func (NoopMetricsRecorder) HTTPAttributes(_, _, _, _ string) []attribute.KeyValue {
+func (NoopMetricsRecorder) HTTPAttributes(_, _, _, _, _ string) []attribute.KeyValue {
 	return []attribute.KeyValue{}
 }
 
@@ -68,12 +68,13 @@ type MetricsRecorder struct {
 	reasons                   metric.Int64Counter
 }
 
-func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code string) []attribute.KeyValue {
+func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
-		semconv.HTTPURLKey.String(url),
-		semconv.HTTPMethodKey.String(method),
-		semconv.HTTPStatusCodeKey.String(code),
+		semconv.HTTPRouteKey.String(url),
+		semconv.HTTPRequestMethodKey.String(method),
+		semconv.HTTPResponseStatusCodeKey.String(code),
+		semconv.URLSchemeKey.String(scheme),
 	}
 }
 

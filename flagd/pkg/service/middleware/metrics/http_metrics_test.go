@@ -190,6 +190,10 @@ func (m *MockReporter) BytesWritten() int64 {
 	return m.Bytes
 }
 
+func (m *MockReporter) Scheme() string {
+	return "http"
+}
+
 func (m *MockReporter) URLCalled() bool    { return m.urlCalled }
 func (m *MockReporter) MethodCalled() bool { return m.methodCalled }
 func (m *MockReporter) StatusCalled() bool { return m.statusCalled }
