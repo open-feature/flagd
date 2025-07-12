@@ -34,6 +34,9 @@ invoked with **HTTP GET** request.
 The polling interval, port, TLS settings, and authentication information can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
+HTTP entity tag protocol will be honored if an `ETag` header is included in the response. No action
+will be performed if 304 Not Modified is returned from the server.
+
 ---
 
 ### gRPC sync
