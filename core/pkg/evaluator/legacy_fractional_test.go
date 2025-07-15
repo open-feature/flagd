@@ -196,7 +196,7 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 			expectedVariant:   "",
 			expectedValue:     "",
 			expectedReason:    model.ErrorReason,
-			expectedErrorCode: model.ParseErrorCode,
+			expectedErrorCode: model.GeneralErrorCode,
 		},
 		"fallback to default variant if invalid variant as result of fractional evaluation": {
 			flags: Flags{
@@ -229,7 +229,7 @@ func TestLegacyFractionalEvaluation(t *testing.T) {
 			expectedVariant:   "",
 			expectedValue:     "",
 			expectedReason:    model.ErrorReason,
-			expectedErrorCode: model.ParseErrorCode,
+			expectedErrorCode: model.GeneralErrorCode,
 		},
 		"fallback to default variant if percentages don't sum to 100": {
 			flags: Flags{
