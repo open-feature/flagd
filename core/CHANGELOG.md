@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.7](https://github.com/open-feature/flagd/compare/core/v0.11.6...core/v0.11.7) (2025-07-15)
+
+
+### 🐛 Bug Fixes
+
+* general err if targeting variant not in variants ([#1680](https://github.com/open-feature/flagd/issues/1680)) ([6cabfc8](https://github.com/open-feature/flagd/commit/6cabfc8ff3bd4ad69699a72724495e84cdec0cc3))
+
 ## [0.11.6](https://github.com/open-feature/flagd/compare/core/v0.11.5...core/v0.11.6) (2025-07-10)
 
 
