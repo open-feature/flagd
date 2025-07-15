@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.8](https://github.com/open-feature/flagd/compare/core/v0.11.7...core/v0.11.8) (2025-07-15)
+
+
+### 🧹 Chore
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 08b4c52 ([#1682](https://github.com/open-feature/flagd/issues/1682)) ([68d04e2](https://github.com/open-feature/flagd/commit/68d04e21e63c63d6054fcd6aebfb864e8b3a597e))
+
 ## [0.11.7](https://github.com/open-feature/flagd/compare/core/v0.11.6...core/v0.11.7) (2025-07-15)
 
 
