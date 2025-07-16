@@ -12,7 +12,7 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/gorilla/mux v1.8.1
 	github.com/mattn/go-colorable v0.1.14
-	github.com/open-feature/flagd/core v0.11.6
+	github.com/open-feature/flagd/core v0.11.8
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/cors v1.11.1
 	github.com/rs/xid v1.6.0
@@ -122,7 +122,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-feature/flagd-schemas v0.2.9-0.20250319190911-9b0ee43ecc47 // indirect
+	github.com/open-feature/flagd-schemas v0.2.9-0.20250707123415-08b4c52d3b86 // indirect
 	github.com/open-feature/open-feature-operator/apis v0.2.45 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
