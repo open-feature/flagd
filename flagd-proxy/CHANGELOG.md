@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.7](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.6...flagd-proxy/v0.7.7) (2025-07-17)
+
+
+### 🧹 Chore
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.8 ([#1685](https://github.com/open-feature/flagd/issues/1685)) ([c07ffba](https://github.com/open-feature/flagd/commit/c07ffba55426d538224d8564be5f35339d2258d0))
+
 ## [0.7.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.5...flagd-proxy/v0.7.6) (2025-07-15)
 
 
