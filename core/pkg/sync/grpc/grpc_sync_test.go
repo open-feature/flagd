@@ -16,7 +16,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
-	grpcmock "github.com/open-feature/flagd/core/pkg/sync/grpc/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
@@ -124,7 +123,6 @@ func Test_ReSyncTests(t *testing.T) {
 			notifications: []sync.DataSync{
 				{
 					FlagData: "success",
-					Type:     sync.ALL,
 				},
 			},
 			shouldError: false,
@@ -181,9 +179,6 @@ func Test_ReSyncTests(t *testing.T) {
 
 		for _, expected := range test.notifications {
 			out := <-syncChan
-			if expected.Type != out.Type {
-				t.Errorf("Returned sync type = %v, wanted %v", out.Type, expected.Type)
-			}
 
 			if expected.FlagData != out.FlagData {
 				t.Errorf("Returned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
@@ -194,100 +189,6 @@ func Test_ReSyncTests(t *testing.T) {
 		if len(syncChan) != 0 {
 			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
 		}
-	}
-}
-
-func TestSync_BasicFlagSyncStates(t *testing.T) {
-	grpcSyncImpl := Sync{
-		URI:        "grpc://test",
-		ProviderID: "",
-		Logger:     logger.NewLogger(nil, false),
-	}
-
-	mockError := errors.New("could not sync")
-
-	tests := []struct {
-		name      string
-		stream    syncv1grpc.FlagSyncService_SyncFlagsClient
-		setup     func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse)
-		want      sync.Type
-		wantError error
-		ready     bool
-	}{
-		{
-			name: "State All maps to Sync All",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				metadata, err := structpb.NewStruct(map[string]any{"sources": "A,B,C"})
-				if err != nil {
-					t.Fatalf("Failed to create sync context: %v", err)
-				}
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				gomock.InOrder(
-					clientResponse.EXPECT().Recv().Return(
-						&v1.SyncFlagsResponse{
-							FlagConfiguration: "{}",
-							SyncContext:       metadata,
-						},
-						nil,
-					),
-					clientResponse.EXPECT().Recv().Return(
-						nil, io.EOF,
-					),
-				)
-			},
-			want:  sync.ALL,
-			ready: true,
-		},
-		{
-			name: "Error during flag sync",
-			setup: func(t *testing.T, client *grpcmock.MockFlagSyncServiceClient, clientResponse *grpcmock.MockFlagSyncServiceClientResponse) {
-				client.EXPECT().SyncFlags(gomock.Any(), gomock.Any(), gomock.Any()).Return(clientResponse, nil)
-				clientResponse.EXPECT().Recv().Return(
-					nil,
-					mockError,
-				)
-			},
-			ready: true,
-			want:  -1,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			syncChan := make(chan sync.DataSync, 1)
-
-			mockClient := grpcmock.NewMockFlagSyncServiceClient(ctrl)
-			mockClientResponse := grpcmock.NewMockFlagSyncServiceClientResponse(ctrl)
-			test.setup(t, mockClient, mockClientResponse)
-
-			waitChan := make(chan struct{})
-			go func() {
-				grpcSyncImpl.client = mockClient
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-				defer cancel()
-				err := grpcSyncImpl.Sync(ctx, syncChan)
-				if err != nil {
-					t.Errorf("Error handling flag sync: %v", err)
-				}
-				close(waitChan)
-			}()
-			<-waitChan
-
-			if test.want < 0 {
-				require.Empty(t, syncChan)
-				return
-			}
-			data := <-syncChan
-
-			if grpcSyncImpl.IsReady() != test.ready {
-				t.Errorf("expected grpcSyncImpl.ready to be: '%v', got: '%v'", test.ready, grpcSyncImpl.ready)
-			}
-
-			if data.Type != test.want {
-				t.Errorf("Returned data sync state = %v, wanted %v", data.Type, test.want)
-			}
-		})
 	}
 }
 
@@ -315,7 +216,6 @@ func Test_StreamListener(t *testing.T) {
 				{
 					FlagData:    "{\"flags\": {}}",
 					SyncContext: metadata,
-					Type:        sync.ALL,
 				},
 			},
 		},
@@ -331,14 +231,12 @@ func Test_StreamListener(t *testing.T) {
 			},
 			output: []sync.DataSync{
 				{
-					FlagData: "{}",
+					FlagData:    "{}",
 					SyncContext: metadata,
-					Type:     sync.ALL,
 				},
 				{
 					FlagData:    "{\"flags\": {}}",
 					SyncContext: metadata,
-					Type:        sync.ALL,
 				},
 			},
 		},
@@ -390,10 +288,6 @@ func Test_StreamListener(t *testing.T) {
 
 		for _, expected := range test.output {
 			out := <-syncChan
-
-			if expected.Type != out.Type {
-				t.Errorf("Returned sync type = %v, wanted %v", out.Type, expected.Type)
-			}
 
 			if expected.FlagData != out.FlagData {
 				t.Errorf("Returned sync data = %v, wanted %v", out.FlagData, expected.FlagData)
@@ -485,8 +379,7 @@ func Test_SyncRetry(t *testing.T) {
 	// Setup
 	target := "grpc://local"
 	bufListener := bufconn.Listen(1)
-
-	expectType := sync.ALL
+	emptyFlagData := "{}"
 
 	// buffer based server. response ignored purposefully
 	bServer := bufferedServer{listener: bufListener, mockResponses: []serverPayload{
@@ -540,7 +433,7 @@ func Test_SyncRetry(t *testing.T) {
 		t.Errorf("timeout waiting for conditions to fulfil")
 		break
 	case data := <-syncChan:
-		if data.Type != expectType {
+		if data.FlagData != emptyFlagData {
 			t.Errorf("sync start error: %s", err.Error())
 		}
 	}
@@ -560,9 +453,9 @@ func Test_SyncRetry(t *testing.T) {
 	case <-tCtx.Done():
 		cancelFunc()
 		t.Error("timeout waiting for conditions to fulfil")
-	case rsp := <-syncChan:
-		if rsp.Type != expectType {
-			t.Errorf("expected response: %s, but got: %s", expectType, rsp.Type)
+	case data := <-syncChan:
+		if data.FlagData != emptyFlagData {
+			t.Errorf("sync start error: %s", err.Error())
 		}
 	}
 }

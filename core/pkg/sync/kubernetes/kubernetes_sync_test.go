@@ -607,6 +607,7 @@ func TestInit(t *testing.T) {
 func TestSync_ReSync(t *testing.T) {
 	const name = "myFF"
 	const ns = "myNS"
+	const payload = "{\"flags\":null}"
 	s := runtime.NewScheme()
 	ff := &unstructured.Unstructured{}
 	ff.SetUnstructuredContent(getCFG(name, ns))
@@ -668,8 +669,8 @@ func TestSync_ReSync(t *testing.T) {
 				i := tt.countMsg
 				for i > 0 {
 					d := <-dataChannel
-					if d.Type != sync.ALL {
-						t.Errorf("Expected %v, got %v", sync.ALL, d)
+					if d.FlagData != payload {
+						t.Errorf("Expected %v, got %v", payload, d.FlagData)
 					}
 					i--
 				}

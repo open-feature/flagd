@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -289,6 +288,8 @@ func TestSync_Init(t *testing.T) {
 
 func TestHTTPSync_Resync(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	source := "http://localhost"
+	emptyeFlagData := "{}"
 
 	tests := map[string]struct {
 		setup             func(t *testing.T, client *syncmock.MockClient)
@@ -303,11 +304,11 @@ func TestHTTPSync_Resync(t *testing.T) {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Header:     map[string][]string{"Content-Type": {"application/json"}},
-					Body:       io.NopCloser(strings.NewReader("")),
+					Body:       io.NopCloser(strings.NewReader(emptyeFlagData)),
 					StatusCode: http.StatusOK,
 				}, nil)
 			},
-			uri: "http://localhost",
+			uri: source,
 			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
@@ -320,9 +321,8 @@ func TestHTTPSync_Resync(t *testing.T) {
 			wantErr: false,
 			wantNotifications: []sync.DataSync{
 				{
-					Type:     sync.ALL,
-					FlagData: "",
-					Source:   "",
+					FlagData: emptyeFlagData,
+					Source:   source,
 				},
 			},
 		},
@@ -364,8 +364,8 @@ func TestHTTPSync_Resync(t *testing.T) {
 			for _, dataSync := range tt.wantNotifications {
 				select {
 				case x := <-d:
-					if !reflect.DeepEqual(x.String(), dataSync.String()) {
-						t.Error("unexpected datasync received", x, dataSync)
+					if x.FlagData != dataSync.FlagData || x.Source != dataSync.Source {
+						t.Errorf("unexpected datasync received %v vs %v", x, dataSync)
 					}
 				case <-time.After(2 * time.Second):
 					t.Error("expected datasync not received", dataSync)
