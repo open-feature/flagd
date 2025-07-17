@@ -68,6 +68,7 @@ func (m Middleware) Measure(ctx context.Context, handlerID string, reporter Repo
 		hid,
 		reporter.Method(),
 		code,
+		reporter.Scheme(),
 	)
 
 	m.cfg.MetricRecorder.InFlightRequestStart(ctx, httpAttrs)
@@ -112,6 +113,7 @@ type Reporter interface {
 	URLPath() string
 	StatusCode() int
 	BytesWritten() int64
+	Scheme() string
 }
 
 type stdReporter struct {
@@ -126,6 +128,13 @@ func (s *stdReporter) URLPath() string { return s.r.URL.Path }
 func (s *stdReporter) StatusCode() int { return s.w.statusCode }
 
 func (s *stdReporter) BytesWritten() int64 { return int64(s.w.bytesWritten) }
+
+func (s *stdReporter) Scheme() string {
+	if s.r.TLS != nil {
+		return "https"
+	}
+	return "http"
+}
 
 // responseWriterInterceptor is a simple wrapper to intercept set data on a
 // ResponseWriter.
