@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.9](https://github.com/open-feature/flagd/compare/core/v0.11.8...core/v0.11.9) (2025-07-17)
+
+
+### 🐛 Bug Fixes
+
+* update to latest otel semconv ([#1668](https://github.com/open-feature/flagd/issues/1668)) ([81855d7](https://github.com/open-feature/flagd/commit/81855d76f94a09251a19a05f830cc1d11ab6b566))
+
 ## [0.11.8](https://github.com/open-feature/flagd/compare/core/v0.11.7...core/v0.11.8) (2025-07-15)
 
 
