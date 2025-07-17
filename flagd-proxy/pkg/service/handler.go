@@ -104,7 +104,6 @@ func (l *oldHandler) SyncFlags(
 		case d := <-dataSync:
 			if err := stream.Send(&syncv1.SyncFlagsResponse{
 				FlagConfiguration: d.FlagData,
-				State:             dataSyncToGrpcState(d),
 			}); err != nil {
 				return fmt.Errorf("error sending configuration change event: %w", err)
 			}
@@ -114,9 +113,4 @@ func (l *oldHandler) SyncFlags(
 			return nil
 		}
 	}
-}
-
-//nolint:staticcheck
-func dataSyncToGrpcState(s sync.DataSync) syncv1.SyncState {
-	return syncv1.SyncState(s.Type + 1)
 }

@@ -103,8 +103,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"flagSync",
-		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)),
-		trace.WithAttributes(attribute.String("feature_flag.sync_type", payload.String())))
+		trace.WithAttributes(attribute.String("feature_flag.source", payload.Source)))
 	defer span.End()
 
 	var definition Definition
@@ -119,19 +118,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	var events map[string]interface{}
 	var reSync bool
 
-	// TODO: We do not handle metadata in ADD/UPDATE operations. These are only relevant for grpc sync implementations.
-	switch payload.Type {
-	case sync.ALL:
-		events, reSync = je.store.Merge(je.Logger, payload.Source, payload.Selector, definition.Flags, definition.Metadata)
-	case sync.ADD:
-		events = je.store.Add(je.Logger, payload.Source, payload.Selector, definition.Flags)
-	case sync.UPDATE:
-		events = je.store.Update(je.Logger, payload.Source, payload.Selector, definition.Flags)
-	case sync.DELETE:
-		events = je.store.DeleteFlags(je.Logger, payload.Source, definition.Flags)
-	default:
-		return nil, false, fmt.Errorf("unsupported sync type: %d", payload.Type)
-	}
+	events, reSync = je.store.Update(je.Logger, payload.Source, payload.Selector, definition.Flags, definition.Metadata)
 
 	// Number of events correlates to the number of flags changed through this sync, record it
 	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))

@@ -57,7 +57,7 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	if err != nil {
 		return fmt.Errorf("unable to fetch flag configuration: %w", err)
 	}
-	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
 
 	notifies := make(chan INotify)
 
@@ -136,7 +136,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
 			case DefaultEventTypeModify:
 				k.logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
@@ -145,7 +145,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI, Type: sync.ALL}
+				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
 			case DefaultEventTypeDelete:
 				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:

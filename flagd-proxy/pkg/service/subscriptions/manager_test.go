@@ -110,7 +110,6 @@ func Test_watchResource(t *testing.T) {
 	in := isync.DataSync{
 		FlagData: "im a flag",
 		Source:   "im a flag source",
-		Type:     isync.ALL,
 	}
 	syncMock.dataSyncChanIn <- in
 
@@ -335,7 +334,6 @@ func Test_FetchAllFlags(t *testing.T) {
 			mockData: &isync.DataSync{
 				FlagData: "im a flag",
 				Source:   "im a flag source",
-				Type:     isync.ALL,
 			},
 			setHandler: true,
 		},
@@ -402,7 +400,6 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 			data: &isync.DataSync{
 				FlagData: "im a flag",
 				Source:   "im a flag source",
-				Type:     isync.ALL,
 			},
 			expectErr: false,
 		},
