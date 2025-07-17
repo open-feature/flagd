@@ -390,7 +390,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		}
 		je.Logger.ErrorWithID(reqID,
 			fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
+		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
 	}
 
 	if flag.DefaultVariant == "" {
