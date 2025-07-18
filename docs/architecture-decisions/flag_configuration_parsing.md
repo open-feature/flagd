@@ -48,6 +48,20 @@ This proposal recommends adopting schema validation as the primary method for pa
 4. **Invalid Flag Handling**: A invalid flag configuration should not affect the whole configuration. Other valid flags might still be important, and an error on one flag should not hinder updates or changes to the flag configuration.
 5. **Testability**: Design the framework to be testable using the existing testbed/test-harness. This ensures that the implementation is robust and meets the defined requirements.
 
+#### Parsing Flow
+
+```mermaid
+flowchart TD
+    A[Start Parsing] --> B{Is it valid JSON?}
+    B -->|No| C[Throw Error]
+    B -->|Yes| D[Check and Parse Configuration Metadata]
+    D --> E[Iterate Over All Flags]
+    E --> F{Does the Flag Pass Schema Validation?}
+    F -->|Yes| G[Add Flag with Key to Store]
+    F -->|No| H[Add Null Object with Key to Store]
+    E@{ shape: processes, label: "each Flag" }
+```
+[Double click to switch code/render]
 ### API Changes
 
 No immediate API changes are proposed. However, the internal logic for flag parsing and handling will be standardized, which may indirectly impact APIs that rely on these processes.
@@ -58,6 +72,7 @@ No immediate API changes are proposed. However, the internal logic for flag pars
     - Improved consistency across implementations.
     - Easier maintenance and debugging.
     - Enhanced testability and reliability.
+    - Robustness of Configuration issues (one invalid flag can not stop and update of others)
 - **Negative Consequences**:
     - Initial development effort to implement the unified framework.
     - Potential learning curve for contributors to adapt to the new framework.
@@ -67,6 +82,7 @@ No immediate API changes are proposed. However, the internal logic for flag pars
 ### Open Questions
 
 - Are there any edge cases that need to be addressed in the schema validation rules?
+- Should and error in the global metadata cause and issue with the parsing?
 
 ## More Information
 
@@ -75,3 +91,4 @@ For additional context, refer to the following issues:
 - [BUG] Inconsistency in file provider and JSON parsing for different languages (#1627)
 - [BUG] [File Provider] Support File Formats (#1689)
 - [FEATURE] Provider option to reject flag set with invalid rules (#1487)
+
