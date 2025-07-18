@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.11.8](https://github.com/open-feature/flagd/compare/core/v0.11.7...core/v0.11.8) (2025-07-15)
+
+
+### 🧹 Chore
+
+* **deps:** update github.com/open-feature/flagd-schemas digest to 08b4c52 ([#1682](https://github.com/open-feature/flagd/issues/1682)) ([68d04e2](https://github.com/open-feature/flagd/commit/68d04e21e63c63d6054fcd6aebfb864e8b3a597e))
+
+## [0.11.7](https://github.com/open-feature/flagd/compare/core/v0.11.6...core/v0.11.7) (2025-07-15)
+
+
+### 🐛 Bug Fixes
+
+* general err if targeting variant not in variants ([#1680](https://github.com/open-feature/flagd/issues/1680)) ([6cabfc8](https://github.com/open-feature/flagd/commit/6cabfc8ff3bd4ad69699a72724495e84cdec0cc3))
+
+## [0.11.6](https://github.com/open-feature/flagd/compare/core/v0.11.5...core/v0.11.6) (2025-07-10)
+
+
+### ✨ New Features
+
+* add sync_context to SyncFlags ([#1642](https://github.com/open-feature/flagd/issues/1642)) ([07a45d9](https://github.com/open-feature/flagd/commit/07a45d9b2275584fa92ff33cbe5e5c7d7864db38))
+* allowing null/missing defaultValue ([#1659](https://github.com/open-feature/flagd/issues/1659)) ([3f6b78c](https://github.com/open-feature/flagd/commit/3f6b78c8ccab75e9c07d26741c4b206fd0b722ee))
+
 ## [0.11.5](https://github.com/open-feature/flagd/compare/core/v0.11.4...core/v0.11.5) (2025-06-13)
 
 

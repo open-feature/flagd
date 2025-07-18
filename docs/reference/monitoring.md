@@ -47,14 +47,24 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 flagd exposes the following metrics:
 
-- `http.server.duration`
-- `http.server.response.size`
-- `http.server.active_requests`
-- `feature_flag.flagd.impression`
-- `feature_flag.flagd.evaluation.reason`
+- `http.server.request.duration` - Measures the duration of inbound HTTP requests
+- `http.server.response.body.size` - Measures the size of HTTP response messages
+- `http.server.active_requests` - Measures the number of concurrent HTTP requests that are currently in-flight
+- `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
+- `feature_flag.flagd.result.reason` - Measures the number of evaluations for a given reason
 
 > Please note that metric names may vary based on the consuming monitoring tool naming requirements.
 > For example, the transformation of OTLP metrics to Prometheus is described [here](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/compatibility/prometheus_and_openmetrics.md#otlp-metric-points-to-prometheus).
+
+### HTTP Metric Attributes
+
+flagd uses the following OpenTelemetry Semantic Conventions for HTTP metrics:
+
+- `service.name` - The name of the service
+- `http.route` - The matched route (path template)
+- `http.request.method` - The HTTP request method (GET, POST, etc.)
+- `http.response.status_code` - The HTTP response status code
+- `url.scheme` - The URI scheme (http or https)
 
 ## Traces
 
@@ -83,9 +93,8 @@ official [OTEL collector example](https://github.com/open-telemetry/opentelemetr
 
 ```yaml
 services:
-  # Jaeger
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.8.0
     restart: always
     ports:
       - "16686:16686"
@@ -93,7 +102,7 @@ services:
       - "14250"
   # Collector
   otel-collector:
-    image: otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector:0.129.1
     restart: always
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
@@ -106,10 +115,10 @@ services:
       - "4317:4317"   # OTLP gRPC receiver
       - "55679:55679" # zpages extension
     depends_on:
-      - jaeger-all-in-one
+      - jaeger
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.5
     restart: always
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
@@ -128,10 +137,8 @@ receivers:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-    const_labels:
-      label1: value1
   otlp/jaeger:
-    endpoint: jaeger-all-in-one:4317
+    endpoint: jaeger:4317
     tls:
       insecure: true
 processors:
@@ -148,7 +155,7 @@ service:
       exporters: [ prometheus ]
 ```
 
-#### prometheus.yml
+#### prometheus.yaml
 
 ```yaml
 scrape_configs:
@@ -156,10 +163,9 @@ scrape_configs:
     scrape_interval: 10s
     static_configs:
       - targets: [ 'otel-collector:8889' ]
-      - targets: [ 'otel-collector:8888' ]
 ```
 
-Once, configuration files are ready, use `docker-compose up` to start the local setup. With successful startup, you can
+Once, configuration files are ready, use `docker compose up` to start the local setup. With successful startup, you can
 access metrics through [Prometheus](http://localhost:9090/graph) & traces through [Jaeger](http://localhost:16686/).
 
 ## Metadata
