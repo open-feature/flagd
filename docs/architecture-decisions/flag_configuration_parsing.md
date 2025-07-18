@@ -64,6 +64,39 @@ flowchart TD
     E@{ shape: processes, label: "each Flag" }
 ```
 
+#### Resolution flow
+
+> [!NOTE]
+> This was generated with AI and enhanced based on the java flagd provider
+
+```mermaid
+flowchart TD
+    A[Start Evaluation] --> B[Retrieve flag from store]
+    B --> B1{Is an entry in the store}
+    B1 -->|No| D[Return FLAG_NOT_FOUND with error message]
+    B1 -->|Yes| B2{Is the flag null}
+    B2 -->|Yes| B3[Return PARSE_ERROR]
+    B2 -->|No| E{Is flag state DISABLED?}
+    E -->|Yes| F[Return FLAG_NOT_FOUND with disabled error]
+    E -->|No| G{Is targeting string empty?}
+    G -->|Yes| H[Set resolvedVariant to defaultVariant and reason to STATIC]
+    G -->|No| I[Evaluate targeting rule]
+    I --> J{Targeting evaluation successful?}
+    J -->|No| K[Throw ParseError for targeting rule]
+    J -->|Yes| L{Is targeting result null?}
+    L -->|Yes| M[Set resolvedVariant to defaultVariant and reason to DEFAULT]
+    L -->|No| N[Set resolvedVariant to targeting result and reason to TARGETING_MATCH]
+    M --> O[Check variant existence]
+    N --> O[Check variant existence]
+    O --> P{Is variant found in flag?}
+    P -->|No| Q[Throw General for missing variant]
+    P -->|Yes| R[Check variant type compatibility]
+    R --> S{Is type compatible?}
+    S -->|No| T[Throw TypeMismatchError for invalid type]
+    S -->|Yes| U[Return ProviderEvaluation with resolved value, variant, and reason]
+
+```
+
 [Double click to switch code/render]
 
 ### API Changes
