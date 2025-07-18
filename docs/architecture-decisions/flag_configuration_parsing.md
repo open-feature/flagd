@@ -12,7 +12,9 @@ The goal of this proposal is to standardize how flags are parsed and handled acr
 
 ## Background
 
-Over time, the project has grown with contributions from various developers, leading to inconsistencies in how flags are parsed and handled. These inconsistencies have resulted in bugs, unexpected behaviors, and challenges in maintaining the codebase. For example, the file provider and JSON parsing behave differently across languages, and there is no clear definition of what constitutes a parsing error versus a flag-not-found error.
+Initially we did not have a JSON schema, and validation was done manually after the configuration was parsed; in this case parsing was not consistent at all.
+These inconsistencies have resulted in bugs, unexpected behaviors, and challenges in maintaining the codebase.
+For example, the file provider and JSON parsing behave differently across languages, and there is no clear definition of what constitutes a parsing error versus a flag-not-found error.
 
 Several issues have been raised that highlight the need for a unified approach:
 
@@ -25,7 +27,7 @@ To address these issues, it is essential to establish a consistent and testable 
 ## Requirements
 
 - Utilize schema validation as much as possible, instead of custom logic, on a flag level rather than a configuration level.
-- Define what consistutes a `PARSE_ERROR` versus a `FLAG_NOT_FOUND`.
+- Define what constitutes a `PARSE_ERROR` versus what prevents the flag set from being updated.
 - Define if an invalid flag entry within a configuration can invalidate the whole configuration.
 - Define which file formats are supported (e.g., JSON, YAML, etc.).
 - Ensure the framework is testable via the existing testbed/test-harness.
@@ -61,7 +63,9 @@ flowchart TD
     F -->|No| H[Add Null Object with Key to Store]
     E@{ shape: processes, label: "each Flag" }
 ```
+
 [Double click to switch code/render]
+
 ### API Changes
 
 No immediate API changes are proposed. However, the internal logic for flag parsing and handling will be standardized, which may indirectly impact APIs that rely on these processes.
@@ -91,4 +95,3 @@ For additional context, refer to the following issues:
 - [BUG] Inconsistency in file provider and JSON parsing for different languages (#1627)
 - [BUG] [File Provider] Support File Formats (#1689)
 - [FEATURE] Provider option to reject flag set with invalid rules (#1487)
-
