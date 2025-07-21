@@ -110,6 +110,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		uri            string
 		bearerToken    string
 		authHeader     string
+		eTagHeader     string
 		lastBodySHA    string
 		handleResponse func(*testing.T, Sync, string, error)
 	}{
@@ -240,6 +241,85 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 			},
 		},
+		"not modified response etag matched": {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
+				expectedIfNoneMatch := `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`
+				client.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					actualIfNoneMatch := req.Header.Get("If-None-Match")
+					if actualIfNoneMatch != expectedIfNoneMatch {
+						t.Fatalf("expected If-None-Match header to be '%s', got %s", expectedIfNoneMatch, actualIfNoneMatch)
+					}
+					return &http.Response{
+						Header:     map[string][]string{"ETag": {expectedIfNoneMatch}},
+						Body:       io.NopCloser(strings.NewReader("")),
+						StatusCode: http.StatusNotModified,
+					}, nil
+				})
+			},
+			uri:        "http://localhost",
+			eTagHeader: `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`,
+			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+				if err != nil {
+					t.Fatalf("fetch: %v", err)
+				}
+
+				expectedLastBodySHA := ""
+				expectedETag := `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`
+				if httpSync.LastBodySHA != expectedLastBodySHA {
+					t.Errorf(
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+					)
+				}
+				if httpSync.eTag != expectedETag {
+					t.Errorf(
+						"expected last etag to be: '%s', got: '%s'", expectedETag, httpSync.eTag,
+					)
+				}
+			},
+		},
+		"modified response etag mismatched": {
+			setup: func(t *testing.T, client *syncmock.MockClient) {
+				expectedIfNoneMatch := `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`
+				client.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					actualIfNoneMatch := req.Header.Get("If-None-Match")
+					if actualIfNoneMatch != expectedIfNoneMatch {
+						t.Fatalf("expected If-None-Match header to be '%s', got %s", expectedIfNoneMatch, actualIfNoneMatch)
+					}
+
+					newContent := "\"Hey there!\""
+					newETag := `"c2e01ce63d90109c4c7f4f6dcea97ed1bb2b51e3647f36caf5acbe27413a24bb"`
+
+					return &http.Response{
+						Header:     map[string][]string{
+							"Content-Type": {"application/json"},
+							"Etag":        {newETag},
+						},
+						Body:       io.NopCloser(strings.NewReader(newContent)),
+						StatusCode: http.StatusOK,
+					}, nil
+				})
+			},
+			uri:         "http://localhost",
+			eTagHeader: `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`,
+			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+				if err != nil {
+					t.Fatalf("fetch: %v", err)
+				}
+
+				expectedLastBodySHA := "wuAc5j2QEJxMf09tzql-0bsrUeNkfzbK9ay-J0E6JLs="
+				expectedETag := `"c2e01ce63d90109c4c7f4f6dcea97ed1bb2b51e3647f36caf5acbe27413a24bb"`
+				if httpSync.LastBodySHA != expectedLastBodySHA {
+					t.Errorf(
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+					)
+				}
+				if httpSync.eTag != expectedETag {
+					t.Errorf(
+						"expected last etag to be: '%s', got: '%s'", expectedETag, httpSync.eTag,
+					)
+				}
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -255,6 +335,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				AuthHeader:  tt.authHeader,
 				LastBodySHA: tt.lastBodySHA,
 				Logger:      logger.NewLogger(nil, false),
+				eTag:        tt.eTagHeader,
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())

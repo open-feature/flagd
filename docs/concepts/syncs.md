@@ -34,6 +34,11 @@ invoked with **HTTP GET** request.
 The polling interval, port, TLS settings, and authentication information can be configured.
 See [sync source](../reference/sync-configuration.md#source-configuration) configuration for details.
 
+To optimize network usage, it honors the HTTP ETag protocol: if the server includes an `ETag` header in its response,
+flagd will store this value and send it in the `If-None-Match` header on subsequent requests. If the flag data has
+not changed, the server responds with 304 Not Modified, and flagd will skip updating its state. If the data has
+changed, the server returns the new content and a new ETag, prompting flagd to update its flags.
+
 ---
 
 ### gRPC sync
