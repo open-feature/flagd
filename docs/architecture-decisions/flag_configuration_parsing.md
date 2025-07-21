@@ -37,6 +37,7 @@ To address these issues, it is essential to establish a consistent and testable 
 - Standardize flag parsing and handling using schema validation (Option 1).
 - Continue with the current approach but document the inconsistencies (Option 2).
 - Develop separate parsing logic for each implementation to address specific needs (Option 3).
+- Be rigid and enforce the JSON Schema Validation for all updates, even if that means ignoring updates if just one flag is violating the schema (Option 3).
 
 ## Proposal
 
