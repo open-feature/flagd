@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.6...flagd-proxy/v0.8.0) (2025-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove sync.Type ([#1691](https://github.com/open-feature/flagd/issues/1691))
+
+### ✨ New Features
+
+* remove sync.Type ([#1691](https://github.com/open-feature/flagd/issues/1691)) ([ac647e0](https://github.com/open-feature/flagd/commit/ac647e065636071f5bc065a9a084461cea692166))
+
+
+### 🧹 Chore
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.8 ([#1685](https://github.com/open-feature/flagd/issues/1685)) ([c07ffba](https://github.com/open-feature/flagd/commit/c07ffba55426d538224d8564be5f35339d2258d0))
+
 ## [0.7.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.5...flagd-proxy/v0.7.6) (2025-07-15)
 
 

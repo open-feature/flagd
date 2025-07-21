@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.8](https://github.com/open-feature/flagd/compare/flagd/v0.12.7...flagd/v0.12.8) (2025-07-21)
+
+
+### 🐛 Bug Fixes
+
+* update to latest otel semconv ([#1668](https://github.com/open-feature/flagd/issues/1668)) ([81855d7](https://github.com/open-feature/flagd/commit/81855d76f94a09251a19a05f830cc1d11ab6b566))
+
+
+### 🧹 Chore
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.11.8 ([#1685](https://github.com/open-feature/flagd/issues/1685)) ([c07ffba](https://github.com/open-feature/flagd/commit/c07ffba55426d538224d8564be5f35339d2258d0))
+
 ## [0.12.7](https://github.com/open-feature/flagd/compare/flagd/v0.12.6...flagd/v0.12.7) (2025-07-15)
 
 
