@@ -6,35 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type Type int
-
-// Type of the sync operation
-const (
-	// ALL - All flags of sync provider. This is the default if unset due to primitive default
-	ALL Type = iota
-	// ADD - Additional flags from sync provider
-	ADD
-	// UPDATE - Update for flag(s) previously provided
-	UPDATE
-	// DELETE - Delete for flag(s) previously provided
-	DELETE
-)
-
-func (t Type) String() string {
-	switch t {
-	case ALL:
-		return "ALL"
-	case ADD:
-		return "ADD"
-	case UPDATE:
-		return "UPDATE"
-	case DELETE:
-		return "DELETE"
-	default:
-		return "UNKNOWN"
-	}
-}
-
 /*
 ISync implementations watch for changes in the flag sources (HTTP backend, local file, K8s CRDs ...),fetch the latest
 value and communicate to the Runtime with DataSync channel
@@ -57,11 +28,10 @@ type ISync interface {
 
 // DataSync is the data contract between Runtime and sync implementations
 type DataSync struct {
-	FlagData string
+	FlagData    string
 	SyncContext *structpb.Struct
-	Source   string
-	Selector string
-	Type
+	Source      string
+	Selector    string
 }
 
 // SourceConfig is configuration option for flagd. This maps to startup parameter sources

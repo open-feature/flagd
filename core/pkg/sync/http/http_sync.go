@@ -47,7 +47,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	if err != nil {
 		return err
 	}
-	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
 	return nil
 }
 
@@ -89,16 +89,16 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		if previousBodySHA == "" {
 			hs.Logger.Debug("configuration created")
-			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI}
 		} else if previousBodySHA != hs.LastBodySHA {
 			hs.Logger.Debug("configuration updated")
-			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI, Type: sync.ALL}
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI}
 		}
 	})
 
 	hs.Cron.Start()
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI}
 
 	<-ctx.Done()
 	hs.Cron.Stop()

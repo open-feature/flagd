@@ -106,7 +106,6 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	dataSync <- sync.DataSync{
 		FlagData: res.GetFlagConfiguration(),
 		Source:   g.URI,
-		Type:     sync.ALL,
 	}
 	return nil
 }
@@ -200,11 +199,10 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		}
 
 		dataSync <- sync.DataSync{
-			FlagData: data.FlagConfiguration,
+			FlagData:    data.FlagConfiguration,
 			SyncContext: data.SyncContext,
-			Source:   g.URI,
-			Selector: g.Selector,
-			Type:     sync.ALL,
+			Source:      g.URI,
+			Selector:    g.Selector,
 		}
 
 		g.Logger.Debug("received full configuration payload")

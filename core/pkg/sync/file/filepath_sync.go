@@ -52,7 +52,7 @@ func NewFileSync(uri string, watchType string, logger *logger.Logger) *Sync {
 const defaultState = "{}"
 
 func (fs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	fs.sendDataSync(ctx, sync.ALL, dataSync)
+	fs.sendDataSync(ctx, dataSync)
 	return nil
 }
 
@@ -94,7 +94,7 @@ func (fs *Sync) setReady(val bool) {
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
-	fs.sendDataSync(ctx, sync.ALL, dataSync)
+	fs.sendDataSync(ctx, dataSync)
 	fs.setReady(true)
 	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
 	for {
@@ -108,7 +108,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			fs.Logger.Info(fmt.Sprintf("filepath event: %s %s", event.Name, event.Op.String()))
 			switch {
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
-				fs.sendDataSync(ctx, sync.ALL, dataSync)
+				fs.sendDataSync(ctx, dataSync)
 			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
@@ -116,20 +116,20 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
-					fs.sendDataSync(ctx, sync.DELETE, dataSync)
+					fs.sendDataSync(ctx, dataSync)
 					continue
 				}
 
 				// Counterintuitively, remove events are the only meaningful ones seen in K8s.
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
 				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
-				fs.sendDataSync(ctx, sync.ALL, dataSync)
+				fs.sendDataSync(ctx, dataSync)
 			case event.Has(fsnotify.Chmod):
 				// on linux the REMOVE event will not fire until all file descriptors are closed, this cannot happen
 				// while the file is being watched, os.Stat is used here to infer deletion
 				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
 					fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
-					fs.sendDataSync(ctx, sync.DELETE, dataSync)
+					fs.sendDataSync(ctx, dataSync)
 				}
 			}
 
@@ -147,14 +147,8 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync chan<- sync.DataSync) {
-	fs.Logger.Debug(fmt.Sprintf("Configuration %s:  %s", fs.URI, syncType.String()))
-
-	if syncType == sync.DELETE {
-		// Skip fetching and emit default state to avoid EOF errors
-		dataSync <- sync.DataSync{FlagData: defaultState, Source: fs.URI, Type: syncType}
-		return
-	}
+func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync) {
+	fs.Logger.Debug(fmt.Sprintf("Data sync received for %s", fs.URI))
 
 	msg := defaultState
 	m, err := fs.fetch(ctx)
@@ -167,7 +161,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, syncType sync.Type, dataSync c
 		msg = m
 	}
 
-	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI, Type: syncType}
+	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {

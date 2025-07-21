@@ -8,6 +8,24 @@ TLDR: be respectful.
 Any contributions are expected to include unit tests.
 These can be validated with `make test` or the automated github workflow will run them on PR creation.
 
+## Development
+
+### Prerequisites
+
+You'll need:
+
+- Go
+- make
+- docker
+
+You'll want:
+
+- curl (for calling HTTP endpoints)
+- [grpcurl](https://github.com/fullstorydev/grpcurl) (for making gRPC calls)
+- jq (for pretty printing responses)
+
+### Workspace Initialization
+
 This project uses a go workspace, to setup the project run
 
 ```shell
@@ -20,6 +38,63 @@ The project uses remote buf packages, changing the remote generation source will
 
 ```shell
 export GOPRIVATE=buf.build/gen/go
+```
+
+### Manual testing
+
+flagd has a number of interfaces (you can read more about than at [flagd.dev](https://flagd.dev/)) which can be used to evaluate flags, or deliver flag configurations so that they can be evaluated by _in-process_ providers.
+
+You can manually test this functionality by starting flagd (from the flagd/ directory) with `go run main.go start -f file:../config/samples/example_flags.flagd.json`.
+
+NOTE: you will need `go, curl`
+
+#### Remote single flag evaluation via HTTP1.1/Connect
+
+```sh
+# evaluates a single boolean flag
+curl -X POST -d '{"flagKey":"myBoolFlag","context":{}}' -H "Content-Type: application/json" "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean" | jq
+```
+
+#### Remote single flag evaluation via HTTP1.1/OFREP
+
+```sh
+# evaluates a single boolean flag
+curl -X POST  -d '{"context":{}}' 'http://localhost:8016/ofrep/v1/evaluate/flags/myBoolFlag' | jq
+```
+
+#### Remote single flag evaluation via gRPC
+
+```sh
+# evaluates a single boolean flag
+grpcurl -import-path schemas/protobuf/flagd/evaluation/v1/ -proto evaluation.proto -plaintext -d '{"flagKey":"myBoolFlag"}' localhost:8013 flagd.evaluation.v1.Service/ResolveBoolean | jq
+```
+
+#### Remote bulk evaluation via via HTTP1.1/OFREP
+
+```sh
+# evaluates flags in bulk
+curl -X POST  -d '{"context":{}}' 'http://localhost:8016/ofrep/v1/evaluate/flags' | jq
+```
+
+#### Remote bulk evaluation via gRPC
+
+```sh
+# evaluates flags in bulk
+grpcurl -import-path schemas/protobuf/flagd/evaluation/v1/ -proto evaluation.proto -plaintext -d '{}' localhost:8013 flagd.evaluation.v1.Service/ResolveAll | jq
+```
+
+#### Flag configuration fetch via gRPC
+
+```sh
+# sends back a representation of all flags
+grpcurl -import-path schemas/protobuf/flagd/sync/v1/ -proto sync.proto -plaintext localhost:8015 flagd.sync.v1.FlagSyncService/FetchAllFlags | jq
+```
+
+#### Flag synchronization stream via gRPC
+
+```sh
+# will open a persistent stream which sends flag changes when the watched source is modified 
+grpcurl -import-path schemas/protobuf/flagd/sync/v1/ -proto sync.proto -plaintext localhost:8015 flagd.sync.v1.FlagSyncService/SyncFlags | jq
 ```
 
 ## DCO Sign-Off

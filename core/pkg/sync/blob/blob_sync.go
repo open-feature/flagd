@@ -104,7 +104,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChe
 	if !skipCheckingModTime {
 		hs.lastUpdated = updated
 	}
-	dataSync <- sync.DataSync{FlagData: msg, Source: hs.Bucket + hs.Object, Type: sync.ALL}
+	dataSync <- sync.DataSync{FlagData: msg, Source: hs.Bucket + hs.Object}
 	return nil
 }
 
