@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"maps"
 	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
@@ -17,10 +17,11 @@ import (
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	mux           *Multiplexer
-	log           *logger.Logger
-	contextValues map[string]any
-	deadline      time.Duration
+	mux               *Multiplexer
+	log               *logger.Logger
+	contextValues     map[string]any
+	deadline          time.Duration
+	enableSyncContext bool
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
@@ -44,24 +45,25 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	for {
 		select {
 		case payload := <-muxPayload:
+			response := &syncv1.SyncFlagsResponse{FlagConfiguration: payload.flags}
 
-			metadataSrc := make(map[string]any)
-			maps.Copy(metadataSrc, s.contextValues)
+			if s.enableSyncContext {
+				metadataSrc := make(map[string]any)
+				maps.Copy(metadataSrc, s.contextValues)
 
-			if sources := s.mux.SourcesAsMetadata(); sources != "" {
-				metadataSrc["sources"] = sources
+				if sources := s.mux.SourcesAsMetadata(); sources != "" {
+					metadataSrc["sources"] = sources
+				}
+
+				metadata, err := structpb.NewStruct(metadataSrc)
+				if err != nil {
+					s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
+					return fmt.Errorf("error constructing metadata response")
+				}
+				response.SyncContext = metadata
 			}
 
-			metadata, err := structpb.NewStruct(metadataSrc)
-			if err != nil {
-				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
-				return fmt.Errorf("error constructing metadata response")
-			}
-
-			err = server.Send(&syncv1.SyncFlagsResponse{
-				FlagConfiguration: payload.flags,
-				SyncContext:       metadata,
-			})
+			err = server.Send(response)
 			if err != nil {
 				s.log.Debug(fmt.Sprintf("error sending stream response: %v", err))
 				return fmt.Errorf("error sending stream response: %w", err)
@@ -97,6 +99,9 @@ func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsR
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
 ) {
+	if s.enableSyncContext {
+		return nil, fmt.Errorf("metadata endpoint disabled")
+	}
 	metadataSrc := make(map[string]any)
 	for k, v := range s.contextValues {
 		metadataSrc[k] = v

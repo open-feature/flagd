@@ -54,54 +54,60 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Shared handler for testing both GetMetadata & SyncFlags methods
-			flagStore := store.NewFlags()
-			mp, err := NewMux(flagStore, tt.sources)
-			require.NoError(t, err)
+	for _, enableSyncContext := range []bool{true, false} {
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// Shared handler for testing both GetMetadata & SyncFlags methods
+				flagStore := store.NewFlags()
+				mp, err := NewMux(flagStore, tt.sources)
+				require.NoError(t, err)
 
-			handler := syncHandler{
-				mux:           mp,
-				contextValues: tt.contextValues,
-				log:           logger.NewLogger(nil, false),
-			}
+				handler := syncHandler{
+					mux:               mp,
+					contextValues:     tt.contextValues,
+					log:               logger.NewLogger(nil, false),
+					enableSyncContext: enableSyncContext,
+				}
 
-			// Test getting metadata from `GetMetadata` (deprecated)
-			// remove when `GetMetadata` is full removed and deprecated
-			metaResp, err := handler.GetMetadata(context.Background(), &syncv1.GetMetadataRequest{})
-			require.NoError(t, err)
-			respMetadata := metaResp.GetMetadata().AsMap()
-			assert.Equal(t, tt.wantMetadata, respMetadata)
-
-			// Test metadata from sync_context
-			stream := &mockSyncFlagsServer{
-				ctx:       context.Background(),
-				mu:        sync.Mutex{},
-				respReady: make(chan struct{}, 1),
-			}
-
-			go func() {
-				err := handler.SyncFlags(&syncv1.SyncFlagsRequest{}, stream)
-				assert.NoError(t, err)
-			}()
-
-			select {
-			case <-stream.respReady:
-				syncResp := stream.GetLastResponse()
-				assert.NotNil(t, syncResp)
-
-				syncMetadata := syncResp.GetSyncContext().AsMap()
-				assert.Equal(t, tt.wantMetadata, syncMetadata)
-
-				// Check the two metadatas are equal
+				// Test getting metadata from `GetMetadata` (deprecated)
 				// remove when `GetMetadata` is full removed and deprecated
-				assert.Equal(t, respMetadata, syncMetadata)
-			case <-time.After(time.Second):
-				t.Fatal("timeout waiting for response")
-			}
+				metaResp, err := handler.GetMetadata(context.Background(), &syncv1.GetMetadataRequest{})
+				if !enableSyncContext {
+					require.NoError(t, err)
+					respMetadata := metaResp.GetMetadata().AsMap()
+					assert.Equal(t, tt.wantMetadata, respMetadata)
+				} else {
+					assert.NotNil(t, err)
+				}
 
-		})
+				// Test metadata from sync_context
+				stream := &mockSyncFlagsServer{
+					ctx:       context.Background(),
+					mu:        sync.Mutex{},
+					respReady: make(chan struct{}, 1),
+				}
+
+				go func() {
+					err := handler.SyncFlags(&syncv1.SyncFlagsRequest{}, stream)
+					assert.NoError(t, err)
+				}()
+
+				select {
+				case <-stream.respReady:
+					syncResp := stream.GetLastResponse()
+					assert.NotNil(t, syncResp)
+
+					if enableSyncContext {
+						syncMetadata := syncResp.GetSyncContext().AsMap()
+						assert.Equal(t, tt.wantMetadata, syncMetadata)
+					} else {
+						assert.Nil(t, syncResp.GetSyncContext())
+					}
+				case <-time.After(time.Second):
+					t.Fatal("timeout waiting for response")
+				}
+			})
+		}
 	}
 }
 
