@@ -290,16 +290,16 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					newETag := `"c2e01ce63d90109c4c7f4f6dcea97ed1bb2b51e3647f36caf5acbe27413a24bb"`
 
 					return &http.Response{
-						Header:     map[string][]string{
+						Header: map[string][]string{
 							"Content-Type": {"application/json"},
-							"Etag":        {newETag},
+							"Etag":         {newETag},
 						},
 						Body:       io.NopCloser(strings.NewReader(newContent)),
 						StatusCode: http.StatusOK,
 					}, nil
 				})
 			},
-			uri:         "http://localhost",
+			uri:        "http://localhost",
 			eTagHeader: `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`,
 			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
 				if err != nil {
@@ -370,7 +370,7 @@ func TestSync_Init(t *testing.T) {
 func TestHTTPSync_Resync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	source := "http://localhost"
-	emptyeFlagData := "{}"
+	emptyFlagData := "{}"
 
 	tests := map[string]struct {
 		setup             func(t *testing.T, client *syncmock.MockClient)
@@ -385,7 +385,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
 					Header:     map[string][]string{"Content-Type": {"application/json"}},
-					Body:       io.NopCloser(strings.NewReader(emptyeFlagData)),
+					Body:       io.NopCloser(strings.NewReader(emptyFlagData)),
 					StatusCode: http.StatusOK,
 				}, nil)
 			},
@@ -402,7 +402,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 			wantErr: false,
 			wantNotifications: []sync.DataSync{
 				{
-					FlagData: emptyeFlagData,
+					FlagData: emptyFlagData,
 					Source:   source,
 				},
 			},
