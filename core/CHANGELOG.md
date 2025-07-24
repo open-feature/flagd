@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/open-feature/flagd/compare/core/v0.12.0...core/v0.12.1) (2025-07-24)
+
+
+### 🧹 Chore
+
+* add back file-delete test ([#1694](https://github.com/open-feature/flagd/issues/1694)) ([750aa17](https://github.com/open-feature/flagd/commit/750aa176b5a8dd24a9daaff985ff6efeb084c758))
+
 ## [0.12.0](https://github.com/open-feature/flagd/compare/core/v0.11.8...core/v0.12.0) (2025-07-21)
 
 
