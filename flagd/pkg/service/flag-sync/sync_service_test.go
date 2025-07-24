@@ -7,6 +7,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,7 +36,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		{title: "with unix socket connection", certPath: "", keyPath: "", clientCertPath: "", socketPath: "/tmp/flagd", tls: false, wantStartErr: false},
 	}
 
-	for _, enableSyncContext := range []bool{true, false} {
+	for _, disableSyncMetadata := range []bool{true, false} {
 		for _, tc := range testCases {
 			t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
 				// given
@@ -52,7 +55,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					tc.socketPath,
 					ctx,
 					0,
-					enableSyncContext,
+					disableSyncMetadata,
 				)
 
 				if tc.wantStartErr {
@@ -87,29 +90,24 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					t.Error("expected non empty sync response, but got empty")
 				}
 
-				var asMap map[string]any
-				if enableSyncContext {
-					// checks sync context actually set
-					syncContext := syncRsp.GetSyncContext()
-					if syncContext == nil {
-						t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
-					}
-					asMap = syncContext.AsMap()
-				} else {
-					// metadata request
-					metadataRsp, err := serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
-					if err != nil {
-						t.Fatal(fmt.Printf("metadata error: %v", err))
-						return
-					}
-					asMap = metadataRsp.GetMetadata().AsMap()
+				// checks sync context actually set
+				syncContext := syncRsp.GetSyncContext()
+				if syncContext == nil {
+					t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
 				}
-				// expect `sources` to be present
-				if asMap["sources"] == nil {
-					t.Fatal("expected sources entry in the metadata, but got nil")
+
+				syncAsMap := syncContext.AsMap()
+				if syncAsMap["sources"] == nil {
+					t.Fatalf("expected sources in sync_context, but got nil")
 				}
-				if asMap["sources"] != "A,B,C" {
-					t.Fatal("incorrect sources entry in metadata")
+
+				sourcesStr := syncAsMap["sources"].(string)
+				sourcesArray := strings.Split(sourcesStr, ",")
+				sort.Strings(sourcesArray)
+
+				expectedSources := []string{"A", "B", "C"}
+				if !reflect.DeepEqual(sourcesArray, expectedSources) {
+					t.Fatalf("sources entry in sync_context does not match expected: got %v, want %v", sourcesArray, expectedSources)
 				}
 
 				// validate emits
@@ -153,6 +151,25 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 				if allRsp.GetFlagConfiguration() != syncRsp.GetFlagConfiguration() {
 					t.Errorf("expected both sync and fetch all responses to be same, but got %s from sync & %s from fetch all",
 						syncRsp.GetFlagConfiguration(), allRsp.GetFlagConfiguration())
+				}
+
+				// metadata request
+				metadataRsp, err := serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
+
+				if disableSyncMetadata {
+					if err == nil {
+						t.Fatal(fmt.Printf("getMetadata disabled, error should not be nil"))
+						return
+					}
+				} else {
+					asMap := metadataRsp.GetMetadata().AsMap()
+					// expect `sources` to be present
+					if asMap["sources"] == nil {
+						t.Fatal("expected sources entry in the metadata, but got nil")
+					}
+					if asMap["sources"] != "A,B,C" {
+						t.Fatal("incorrect sources entry in metadata")
+					}
 				}
 
 				// validate shutdown from context cancellation
@@ -261,18 +278,18 @@ func createAndStartSyncService(
 	socketPath string,
 	ctx context.Context,
 	deadline time.Duration,
-	enableSyncContext bool,
+	disableSyncMetadata bool,
 ) (*Service, chan interface{}, error) {
 	service, err := NewSyncService(SvcConfigurations{
-		Logger:            logger.NewLogger(nil, false),
-		Port:              uint16(port),
-		Sources:           sources,
-		Store:             store,
-		CertPath:          certPath,
-		KeyPath:           keyPath,
-		SocketPath:        socketPath,
-		StreamDeadline:    deadline,
-		EnableSyncContext: enableSyncContext,
+		Logger:              logger.NewLogger(nil, false),
+		Port:                uint16(port),
+		Sources:             sources,
+		Store:               store,
+		CertPath:            certPath,
+		KeyPath:             keyPath,
+		SocketPath:          socketPath,
+		StreamDeadline:      deadline,
+		DisableSyncMetadata: disableSyncMetadata,
 	})
 	if err != nil {
 		return nil, nil, err

@@ -14,7 +14,7 @@ flagd start [flags]
   -H, --context-from-header stringToString   add key-value pairs to map header values to context values, where key is Header name, value is context key (default [])
   -X, --context-value stringToString         add arbitrary key value pairs to the flag evaluation context (default [])
   -C, --cors-origin strings                  CORS allowed origins, * will allow all origins
-      --enable-sync-context                  Enable or disable sync context. Defaults to false.
+      --disable-sync-metadata                Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.
   -h, --help                                 help for start
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)

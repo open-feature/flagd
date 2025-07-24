@@ -25,16 +25,16 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger            *logger.Logger
-	Port              uint16
-	Sources           []string
-	Store             *store.State
-	ContextValues     map[string]any
-	CertPath          string
-	KeyPath           string
-	SocketPath        string
-	StreamDeadline    time.Duration
-	EnableSyncContext bool
+	Logger              *logger.Logger
+	Port                uint16
+	Sources             []string
+	Store               *store.State
+	ContextValues       map[string]any
+	CertPath            string
+	KeyPath             string
+	SocketPath          string
+	StreamDeadline      time.Duration
+	DisableSyncMetadata bool
 }
 
 type Service struct {
@@ -83,11 +83,11 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	}
 
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
-		mux:               mux,
-		log:               l,
-		contextValues:     cfg.ContextValues,
-		deadline:          cfg.StreamDeadline,
-		enableSyncContext: cfg.EnableSyncContext,
+		mux:                 mux,
+		log:                 l,
+		contextValues:       cfg.ContextValues,
+		deadline:            cfg.StreamDeadline,
+		disableSyncMetadata: cfg.DisableSyncMetadata,
 	})
 
 	var lis net.Listener

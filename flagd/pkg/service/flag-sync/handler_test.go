@@ -54,7 +54,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		},
 	}
 
-	for _, enableSyncContext := range []bool{true, false} {
+	for _, disableSyncMetadata := range []bool{true, false} {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				// Shared handler for testing both GetMetadata & SyncFlags methods
@@ -63,16 +63,16 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 				require.NoError(t, err)
 
 				handler := syncHandler{
-					mux:               mp,
-					contextValues:     tt.contextValues,
-					log:               logger.NewLogger(nil, false),
-					enableSyncContext: enableSyncContext,
+					mux:                 mp,
+					contextValues:       tt.contextValues,
+					log:                 logger.NewLogger(nil, false),
+					disableSyncMetadata: disableSyncMetadata,
 				}
 
 				// Test getting metadata from `GetMetadata` (deprecated)
 				// remove when `GetMetadata` is full removed and deprecated
 				metaResp, err := handler.GetMetadata(context.Background(), &syncv1.GetMetadataRequest{})
-				if !enableSyncContext {
+				if !disableSyncMetadata {
 					require.NoError(t, err)
 					respMetadata := metaResp.GetMetadata().AsMap()
 					assert.Equal(t, tt.wantMetadata, respMetadata)
@@ -96,13 +96,8 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 				case <-stream.respReady:
 					syncResp := stream.GetLastResponse()
 					assert.NotNil(t, syncResp)
-
-					if enableSyncContext {
-						syncMetadata := syncResp.GetSyncContext().AsMap()
-						assert.Equal(t, tt.wantMetadata, syncMetadata)
-					} else {
-						assert.Nil(t, syncResp.GetSyncContext())
-					}
+					syncMetadata := syncResp.GetSyncContext().AsMap()
+					assert.Equal(t, tt.wantMetadata, syncMetadata)
 				case <-time.After(time.Second):
 					t.Fatal("timeout waiting for response")
 				}
