@@ -58,6 +58,7 @@ func TestSimpleReSync(t *testing.T) {
 func TestSimpleSync(t *testing.T) {
 	readDirName := t.TempDir()
 	updateDirName := t.TempDir()
+	deleteDirName := t.TempDir()
 	tests := map[string]struct {
 		manipulationFuncs []func(t *testing.T)
 		expectedDataSync  []sync.DataSync
@@ -95,6 +96,27 @@ func TestSimpleSync(t *testing.T) {
 				{
 					FlagData: "new content",
 					Source:   fmt.Sprintf("%s/%s", updateDirName, fetchFileName),
+				},
+			},
+		},
+		"delete-event": {
+			fetchDirName: deleteDirName,
+			manipulationFuncs: []func(t *testing.T){
+				func(t *testing.T) {
+					writeToFile(t, deleteDirName, fetchFileContents)
+				},
+				func(t *testing.T) {
+					deleteFile(t, deleteDirName, fetchFileName)
+				},
+			},
+			expectedDataSync: []sync.DataSync{
+				{
+					FlagData: fetchFileContents,
+					Source:   fmt.Sprintf("%s/%s", deleteDirName, fetchFileName),
+				},
+				{
+					FlagData: defaultState,
+					Source:   fmt.Sprintf("%s/%s", deleteDirName, fetchFileName),
 				},
 			},
 		},
