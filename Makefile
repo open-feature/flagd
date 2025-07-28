@@ -49,6 +49,8 @@ test-flagd-proxy:
 	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out
 flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/flags/testing-flags.json -f file:test-harness/flags/custom-ops.json -f file:test-harness/flags/evaluator-refs.json -f file:test-harness/flags/zero-flags.json
 	go test -cover ./test/integration $(ARGS)
+flagd-benchmark-test:
+	go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee benchmark.txt
 run: # default to flagd
 	make run-flagd
 run-flagd:

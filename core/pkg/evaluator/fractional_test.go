@@ -508,7 +508,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 						},
 						{
 						"fractional": [
-							"email",
+							{"var": "email"},
 							[
 							"red",
 							25
@@ -542,41 +542,41 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		expectedReason    string
 		expectedErrorCode string
 	}{
-		"test@faas.com": {
+		"test_a@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test@faas.com",
+				"email": "test_a@faas.com",
+			},
+			expectedVariant: "blue",
+			expectedValue:   "#0000FF",
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"test_b@faas.com": {
+			flags:   flags,
+			flagKey: "headerColor",
+			context: map[string]any{
+				"email": "test_b@faas.com",
 			},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"test2@faas.com": {
+		"test_c@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test2@faas.com",
+				"email": "test_c@faas.com",
 			},
-			expectedVariant: "yellow",
-			expectedValue:   "#FFFF00",
+			expectedVariant: "green",
+			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
-		"test3@faas.com": {
+		"test_d@faas.com": {
 			flags:   flags,
 			flagKey: "headerColor",
 			context: map[string]any{
-				"email": "test3@faas.com",
-			},
-			expectedVariant: "red",
-			expectedValue:   "#FF0000",
-			expectedReason:  model.TargetingMatchReason,
-		},
-		"test4@faas.com": {
-			flags:   flags,
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "test4@faas.com",
+				"email": "test_d@faas.com",
 			},
 			expectedVariant: "blue",
 			expectedValue:   "#0000FF",
