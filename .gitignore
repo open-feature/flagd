@@ -21,3 +21,6 @@ site
 
 # coverage results
 *coverage.out
+
+# benchmark results
+benchmark.txt
