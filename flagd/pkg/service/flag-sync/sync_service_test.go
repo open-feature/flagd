@@ -36,143 +36,156 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		{title: "with unix socket connection", certPath: "", keyPath: "", clientCertPath: "", socketPath: "/tmp/flagd", tls: false, wantStartErr: false},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
-			// given
-			port := 18016
-			flagStore, sources := getSimpleFlagStore()
+	for _, disableSyncMetadata := range []bool{true, false} {
+		for _, tc := range testCases {
+			t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
+				// given
+				port := 18016
+				flagStore, sources := getSimpleFlagStore()
 
-			ctx, cancelFunc := context.WithCancel(context.Background())
-			defer cancelFunc()
+				ctx, cancelFunc := context.WithCancel(context.Background())
+				defer cancelFunc()
 
-			service, doneChan, err := createAndStartSyncService(port, sources, flagStore, tc.certPath, tc.keyPath, tc.socketPath, ctx, 0)
+				service, doneChan, err := createAndStartSyncService(
+					port,
+					sources,
+					flagStore,
+					tc.certPath,
+					tc.keyPath,
+					tc.socketPath,
+					ctx,
+					0,
+					disableSyncMetadata,
+				)
 
-			if tc.wantStartErr {
-				if err == nil {
-					t.Fatal("expected error creating the service!")
-				}
-				return
-			} else if err != nil {
-				t.Fatal("unexpected error creating the service: %w", err)
-				return
-			}
-
-			// when - derive a client for sync service
-			serviceClient := getSyncClient(t, tc.clientCertPath, tc.socketPath, tc.tls, port, ctx)
-
-			// then
-
-			// sync flags request
-			flags, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{})
-			if err != nil {
-				t.Fatal(fmt.Printf("error from sync request: %v", err))
-				return
-			}
-
-			syncRsp, err := flags.Recv()
-			if err != nil {
-				t.Fatal(fmt.Printf("stream error: %v", err))
-				return
-			}
-
-			if len(syncRsp.GetFlagConfiguration()) == 0 {
-				t.Error("expected non empty sync response, but got empty")
-			}
-
-			// checks sync context actually set
-			syncContext := syncRsp.GetSyncContext()
-			if syncContext == nil {
-				t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
-			}
-
-			syncAsMap := syncContext.AsMap()
-			if syncAsMap["sources"] == nil {
-				t.Fatalf("expected sources in sync_context, but got nil")
-			}
-
-			sourcesStr := syncAsMap["sources"].(string)
-			sourcesArray := strings.Split(sourcesStr, ",")
-			sort.Strings(sourcesArray)
-
-			expectedSources := []string{"A", "B", "C"}
-			if !reflect.DeepEqual(sourcesArray, expectedSources) {
-				t.Fatalf("sources entry in sync_context does not match expected: got %v, want %v", sourcesArray, expectedSources)
-			}
-
-			// validate emits
-			dataReceived := make(chan interface{})
-			go func() {
-				_, err := flags.Recv()
-				if err != nil {
+				if tc.wantStartErr {
+					if err == nil {
+						t.Fatal("expected error creating the service!")
+					}
+					return
+				} else if err != nil {
+					t.Fatal("unexpected error creating the service: %w", err)
 					return
 				}
 
-				dataReceived <- nil
-			}()
+				// when - derive a client for sync service
+				serviceClient := getSyncClient(t, tc.clientCertPath, tc.socketPath, tc.tls, port, ctx)
 
-			// Emit as a resync
-			service.Emit(true, "A")
+				// then
 
-			select {
-			case <-dataReceived:
-				t.Fatal("expected no data as this is a resync")
-			case <-time.After(1 * time.Second):
-				break
-			}
+				// sync flags request
+				flags, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{})
+				if err != nil {
+					t.Fatal(fmt.Printf("error from sync request: %v", err))
+					return
+				}
 
-			// Emit as a resync
-			service.Emit(false, "A")
+				syncRsp, err := flags.Recv()
+				if err != nil {
+					t.Fatal(fmt.Printf("stream error: %v", err))
+					return
+				}
 
-			select {
-			case <-dataReceived:
-				break
-			case <-time.After(1 * time.Second):
-				t.Fatal("expected data but timeout waiting for sync")
-			}
+				if len(syncRsp.GetFlagConfiguration()) == 0 {
+					t.Error("expected non empty sync response, but got empty")
+				}
 
-			// fetch all flags
-			allRsp, err := serviceClient.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
-			if err != nil {
-				t.Fatal(fmt.Printf("fetch all error: %v", err))
-				return
-			}
+				// checks sync context actually set
+				syncContext := syncRsp.GetSyncContext()
+				if syncContext == nil {
+					t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
+				}
 
-			if allRsp.GetFlagConfiguration() != syncRsp.GetFlagConfiguration() {
-				t.Errorf("expected both sync and fetch all responses to be same, but got %s from sync & %s from fetch all",
-					syncRsp.GetFlagConfiguration(), allRsp.GetFlagConfiguration())
-			}
+				syncAsMap := syncContext.AsMap()
+				if syncAsMap["sources"] == nil {
+					t.Fatalf("expected sources in sync_context, but got nil")
+				}
 
-			// metadata request
-			metadataRsp, err := serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
-			if err != nil {
-				t.Fatal(fmt.Printf("metadata error: %v", err))
-				return
-			}
+				sourcesStr := syncAsMap["sources"].(string)
+				sourcesArray := strings.Split(sourcesStr, ",")
+				sort.Strings(sourcesArray)
 
-			asMap := metadataRsp.GetMetadata().AsMap()
+				expectedSources := []string{"A", "B", "C"}
+				if !reflect.DeepEqual(sourcesArray, expectedSources) {
+					t.Fatalf("sources entry in sync_context does not match expected: got %v, want %v", sourcesArray, expectedSources)
+				}
 
-			// expect `sources` to be present
-			if asMap["sources"] == nil {
-				t.Fatal("expected sources entry in the metadata, but got nil")
-			}
+				// validate emits
+				dataReceived := make(chan interface{})
+				go func() {
+					_, err := flags.Recv()
+					if err != nil {
+						return
+					}
 
-			if asMap["sources"] != "A,B,C" {
-				t.Fatal("incorrect sources entry in metadata")
-			}
+					dataReceived <- nil
+				}()
 
-			// validate shutdown from context cancellation
-			go func() {
-				cancelFunc()
-			}()
+				// Emit as a resync
+				service.Emit(true, "A")
 
-			select {
-			case <-doneChan:
-				// exit successful
-				return
-			case <-time.After(2 * time.Second):
-				t.Fatal("service did not exist within sufficient timeframe")
-			}
-		})
+				select {
+				case <-dataReceived:
+					t.Fatal("expected no data as this is a resync")
+				case <-time.After(1 * time.Second):
+					break
+				}
+
+				// Emit as a resync
+				service.Emit(false, "A")
+
+				select {
+				case <-dataReceived:
+					break
+				case <-time.After(1 * time.Second):
+					t.Fatal("expected data but timeout waiting for sync")
+				}
+
+				// fetch all flags
+				allRsp, err := serviceClient.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
+				if err != nil {
+					t.Fatal(fmt.Printf("fetch all error: %v", err))
+					return
+				}
+
+				if allRsp.GetFlagConfiguration() != syncRsp.GetFlagConfiguration() {
+					t.Errorf("expected both sync and fetch all responses to be same, but got %s from sync & %s from fetch all",
+						syncRsp.GetFlagConfiguration(), allRsp.GetFlagConfiguration())
+				}
+
+				// metadata request
+				metadataRsp, err := serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
+
+				if disableSyncMetadata {
+					if err == nil {
+						t.Fatal(fmt.Printf("getMetadata disabled, error should not be nil"))
+						return
+					}
+				} else {
+					asMap := metadataRsp.GetMetadata().AsMap()
+					// expect `sources` to be present
+					if asMap["sources"] == nil {
+						t.Fatal("expected sources entry in the metadata, but got nil")
+					}
+					if asMap["sources"] != "A,B,C" {
+						t.Fatal("incorrect sources entry in metadata")
+					}
+				}
+
+				// validate shutdown from context cancellation
+				go func() {
+					cancelFunc()
+				}()
+
+				select {
+				case <-doneChan:
+					// exit successful
+					return
+				case <-time.After(2 * time.Second):
+					t.Fatal("service did not exist within sufficient timeframe")
+				}
+			})
+		}
 	}
 }
 
@@ -198,7 +211,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			defer cancelFunc()
 
-			_, _, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline)
+			_, _, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
 			if err != nil {
 				t.Fatal("error creating sync service")
 			}
@@ -256,16 +269,27 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 	}
 }
 
-func createAndStartSyncService(port int, sources []string, store *store.State, certPath string, keyPath string, socketPath string, ctx context.Context, deadline time.Duration) (*Service, chan interface{}, error) {
+func createAndStartSyncService(
+	port int,
+	sources []string,
+	store *store.State,
+	certPath string,
+	keyPath string,
+	socketPath string,
+	ctx context.Context,
+	deadline time.Duration,
+	disableSyncMetadata bool,
+) (*Service, chan interface{}, error) {
 	service, err := NewSyncService(SvcConfigurations{
-		Logger:         logger.NewLogger(nil, false),
-		Port:           uint16(port),
-		Sources:        sources,
-		Store:          store,
-		CertPath:       certPath,
-		KeyPath:        keyPath,
-		SocketPath:     socketPath,
-		StreamDeadline: deadline,
+		Logger:              logger.NewLogger(nil, false),
+		Port:                uint16(port),
+		Sources:             sources,
+		Store:               store,
+		CertPath:            certPath,
+		KeyPath:             keyPath,
+		SocketPath:          socketPath,
+		StreamDeadline:      deadline,
+		DisableSyncMetadata: disableSyncMetadata,
 	})
 	if err != nil {
 		return nil, nil, err
