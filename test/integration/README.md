@@ -16,13 +16,13 @@ make build
 then run the `flagd` binary
 
 ```shell
-./bin/flagd start -f file:test-harness/symlink_testing-flags.json
+make flagd-e2e-test-harness
 ```
 
 and finally run
 
 ```shell
-make integration-test
+make flagd-e2e-test
 ```
 
 ## TLS

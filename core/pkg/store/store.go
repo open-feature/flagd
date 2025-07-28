@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 )
@@ -22,9 +23,10 @@ type IStore interface {
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
 }
 
-type State struct {
+type Store struct {
 	mx                sync.RWMutex
-	Flags             map[string]model.Flag `json:"flags"`
+	db                *memdb.MemDB
+	logger            *logger.Logger
 	FlagSources       []string
 	SourceDetails     map[string]SourceDetails  `json:"sourceMetadata,omitempty"`
 	MetadataPerSource map[string]model.Metadata `json:"metadata,omitempty"`
@@ -35,7 +37,7 @@ type SourceDetails struct {
 	Selector string
 }
 
-func (f *State) hasPriority(stored string, new string) bool {
+func (f *Store) hasPriority(stored string, new string) bool {
 	if stored == new {
 		return true
 	}
@@ -50,49 +52,76 @@ func (f *State) hasPriority(stored string, new string) bool {
 	return true
 }
 
-func NewFlags() *State {
-	return &State{
-		Flags:             map[string]model.Flag{},
+func NewStore(logger *logger.Logger) (*Store, error) {
+
+	schema := &memdb.DBSchema{
+		Tables: map[string]*memdb.TableSchema{
+			"flags": {
+				Name: "flags",
+				Indexes: map[string]*memdb.IndexSchema{
+
+					"id": {
+						Name:    "id",
+						Unique:  true,
+						Indexer: &memdb.StringFieldIndex{Field: "Key", Lowercase: false},
+					},
+				},
+			},
+		},
+	}
+
+	// Create a new data base
+	db, err := memdb.NewMemDB(schema)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize flag database: %w", err)
+	}
+
+	return &Store{
 		SourceDetails:     map[string]SourceDetails{},
 		MetadataPerSource: map[string]model.Metadata{},
-	}
+		db:                db,
+		logger:            logger,
+	}, nil
 }
 
-func (f *State) Set(key string, flag model.Flag) {
-	f.mx.Lock()
-	defer f.mx.Unlock()
-	f.Flags[key] = flag
+// Deprecated: use NewStore instead
+func NewFlags() *Store {
+	state, _ := NewStore(logger.NewLogger(nil, false))
+	return state
 }
 
-func (f *State) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
+func (f *Store) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
+	f.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	metadata := f.getMetadata()
-	flag, ok := f.Flags[key]
-	if ok {
-		metadata = f.GetMetadataForSource(flag.Source)
-	}
+	txn := f.db.Txn(false)
 
-	return flag, metadata, ok
+	raw, err := txn.First("flags", "id", key)
+	flag, ok := raw.(model.Flag)
+	if err != nil || !ok {
+		return model.Flag{}, f.getMetadata(), false
+	}
+	return flag, f.GetMetadataForSource(flag.Source), true
 }
 
-func (f *State) SelectorForFlag(_ context.Context, flag model.Flag) string {
+func (f *Store) SelectorForFlag(_ context.Context, flag model.Flag) string {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
 	return f.SourceDetails[flag.Source].Selector
 }
 
-func (f *State) Delete(key string) {
-	f.mx.Lock()
-	defer f.mx.Unlock()
-	delete(f.Flags, key)
-}
-
-func (f *State) String() (string, error) {
+func (f *Store) String() (string, error) {
+	f.logger.Debug(fmt.Sprintf("dumping flags to string"))
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	bytes, err := json.Marshal(f)
+
+	state, _, err := f.GetAll(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("unable to get all flags: %w", err)
+	}
+
+	bytes, err := json.Marshal(state)
 	if err != nil {
 		return "", fmt.Errorf("unable to marshal flags: %w", err)
 	}
@@ -101,54 +130,28 @@ func (f *State) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (f *State) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
+func (f *Store) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	flags := make(map[string]model.Flag, len(f.Flags))
+	txn := f.db.Txn(false)
 
-	for key, flag := range f.Flags {
-		flags[key] = flag
+	flags := make(map[string]model.Flag)
+	it, err := txn.Get("flags", "id")
+
+	if err != nil {
+		return flags, model.Metadata{}, err
+	}
+
+	for obj := it.Next(); obj != nil; obj = it.Next() {
+		flag := obj.(model.Flag)
+		flags[flag.Key] = flag
 	}
 
 	return flags, f.getMetadata(), nil
 }
 
-// Add new flags from source.
-func (f *State) Add(logger *logger.Logger, source string, selector string, flags map[string]model.Flag,
-) map[string]interface{} {
-	notifications := map[string]interface{}{}
-
-	for k, newFlag := range flags {
-		storedFlag, _, ok := f.Get(context.Background(), k)
-		if ok && !f.hasPriority(storedFlag.Source, source) {
-			logger.Debug(
-				fmt.Sprintf(
-					"not overwriting: flag %s from source %s does not have priority over %s",
-					k,
-					source,
-					storedFlag.Source,
-				),
-			)
-			continue
-		}
-
-		notifications[k] = map[string]interface{}{
-			"type":   string(model.NotificationCreate),
-			"source": source,
-		}
-
-		// Store the new version of the flag
-		newFlag.Source = source
-		newFlag.Selector = selector
-		f.Set(k, newFlag)
-	}
-
-	return notifications
-}
-
 // Update the flag state with the provided flags.
-func (f *State) Update(
-	logger *logger.Logger,
+func (f *Store) Update(
 	source string,
 	selector string,
 	flags map[string]model.Flag,
@@ -156,23 +159,33 @@ func (f *State) Update(
 ) (map[string]interface{}, bool) {
 	notifications := map[string]interface{}{}
 	resyncRequired := false
+
+	txn := f.db.Txn(true)
+	defer txn.Abort()
+
+	storedFlags, _, _ := f.GetAll(context.Background())
 	f.mx.Lock()
 	f.setSourceMetadata(source, metadata)
 
-	for k, v := range f.Flags {
+	for key, v := range storedFlags {
 		if v.Source == source && v.Selector == selector {
-			if _, ok := flags[k]; !ok {
+			if _, ok := flags[key]; !ok {
 				// flag has been deleted
-				delete(f.Flags, k)
-				notifications[k] = map[string]interface{}{
+				_, err := txn.DeleteAll("flags", "id", key)
+				if err != nil {
+					f.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", key, err))
+					continue
+				}
+
+				notifications[key] = map[string]interface{}{
 					"type":   string(model.NotificationDelete),
 					"source": source,
 				}
 				resyncRequired = true
-				logger.Debug(
+				f.logger.Debug(
 					fmt.Sprintf(
 						"store resync triggered: flag %s has been deleted from source %s",
-						k, source,
+						key, source,
 					),
 				)
 				continue
@@ -180,16 +193,17 @@ func (f *State) Update(
 		}
 	}
 	f.mx.Unlock()
-	for k, newFlag := range flags {
+	for key, newFlag := range flags {
 		newFlag.Source = source
 		newFlag.Selector = selector
-		storedFlag, _, ok := f.Get(context.Background(), k)
+		newFlag.Key = key
+		storedFlag, _, ok := f.Get(context.Background(), key)
 		if ok {
 			if !f.hasPriority(storedFlag.Source, source) {
-				logger.Debug(
+				f.logger.Debug(
 					fmt.Sprintf(
 						"not merging: flag %s from source %s does not have priority over %s",
-						k, source, storedFlag.Source,
+						key, source, storedFlag.Source,
 					),
 				)
 				continue
@@ -199,23 +213,29 @@ func (f *State) Update(
 			}
 		}
 		if !ok {
-			notifications[k] = map[string]interface{}{
+			notifications[key] = map[string]interface{}{
 				"type":   string(model.NotificationCreate),
 				"source": source,
 			}
 		} else {
-			notifications[k] = map[string]interface{}{
+			notifications[key] = map[string]interface{}{
 				"type":   string(model.NotificationUpdate),
 				"source": source,
 			}
 		}
 		// Store the new version of the flag
-		f.Set(k, newFlag)
+		err := txn.Insert("flags", newFlag)
+		if err != nil {
+			f.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", key, err))
+			continue
+		}
 	}
+
+	txn.Commit()
 	return notifications, resyncRequired
 }
 
-func (f *State) GetMetadataForSource(source string) model.Metadata {
+func (f *Store) GetMetadataForSource(source string) model.Metadata {
 	perSource, ok := f.MetadataPerSource[source]
 	if ok && perSource != nil {
 		return maps.Clone(perSource)
@@ -223,7 +243,7 @@ func (f *State) GetMetadataForSource(source string) model.Metadata {
 	return model.Metadata{}
 }
 
-func (f *State) getMetadata() model.Metadata {
+func (f *Store) getMetadata() model.Metadata {
 	metadata := model.Metadata{}
 	for _, perSource := range f.MetadataPerSource {
 		for key, entry := range perSource {
@@ -244,7 +264,7 @@ func (f *State) getMetadata() model.Metadata {
 	return metadata
 }
 
-func (f *State) setSourceMetadata(source string, metadata model.Metadata) {
+func (f *Store) setSourceMetadata(source string, metadata model.Metadata) {
 	if f.MetadataPerSource == nil {
 		f.MetadataPerSource = map[string]model.Metadata{}
 	}

@@ -6,43 +6,42 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"google.golang.org/grpc/credentials"
 )
 
 // getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
-func getSimpleFlagStore() (*store.State, []string) {
+func getSimpleFlagStore() (*store.Store, []string) {
 	variants := map[string]any{
 		"true":  true,
 		"false": false,
 	}
 
-	flagStore := store.NewFlags()
+	flagStore, _ := store.NewStore(logger.NewLogger(nil, false))
 
-	flagStore.Set("flagA", model.Flag{
-		State:          "ENABLED",
-		DefaultVariant: "false",
-		Variants:       variants,
-		Source:         "A",
-	})
-
-	flagStore.Set("flagB", model.Flag{
-		State:          "ENABLED",
-		DefaultVariant: "true",
-		Variants:       variants,
-		Source:         "B",
-	})
-
-	flagStore.MetadataPerSource["A"] = model.Metadata{
+	flagStore.Update("A", "", map[string]model.Flag{
+		"flagA": {
+			State:          "ENABLED",
+			DefaultVariant: "false",
+			Variants:       variants,
+		},
+	}, model.Metadata{
 		"keyDuped": "value",
 		"keyA":     "valueA",
-	}
+	})
 
-	flagStore.MetadataPerSource["B"] = model.Metadata{
+	flagStore.Update("B", "", map[string]model.Flag{
+		"flagB": {
+			State:          "ENABLED",
+			DefaultVariant: "true",
+			Variants:       variants,
+		},
+	}, model.Metadata{
 		"keyDuped": "value",
 		"keyB":     "valueB",
-	}
+	})
 
 	return flagStore, []string{"A", "B", "C"}
 }

@@ -186,7 +186,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
 			je := NewJSON(log, store.NewFlags())
-			je.store.Flags = tt.flags.Flags
+			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -383,8 +383,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
 			je := NewJSON(log, store.NewFlags())
-
-			je.store.Flags = tt.flags.Flags
+			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 

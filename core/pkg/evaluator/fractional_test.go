@@ -459,7 +459,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
 			je := NewJSON(log, store.NewFlags())
-			je.store.Flags = tt.flags.Flags
+			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -587,7 +587,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, &store.State{Flags: tt.flags.Flags})
+			je := NewJSON(log, store.NewFlags())
+			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](
 					ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)

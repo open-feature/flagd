@@ -64,13 +64,13 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 
 // JSON evaluator
 type JSON struct {
-	store          *store.State
+	store          *store.Store
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s *store.State, opts ...JSONEvaluatorOption) *JSON {
+func NewJSON(logger *logger.Logger, s *store.Store, opts ...JSONEvaluatorOption) *JSON {
 	logger = logger.WithFields(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
@@ -118,7 +118,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	var events map[string]interface{}
 	var reSync bool
 
-	events, reSync = je.store.Update(je.Logger, payload.Source, payload.Selector, definition.Flags, definition.Metadata)
+	events, reSync = je.store.Update(payload.Source, payload.Selector, definition.Flags, definition.Metadata)
 
 	// Number of events correlates to the number of flags changed through this sync, record it
 	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))

@@ -51,6 +51,11 @@ flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/fl
 	go test -cover ./test/integration $(ARGS)
 flagd-benchmark-test:
 	go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee benchmark.txt
+flagd-integration-test-harness:
+# target used to start a locally built flagd with the e2e flags
+	cd flagd; go run main.go start -f file:../test-harness/flags/testing-flags.json -f file:../test-harness/flags/custom-ops.json -f file:../test-harness/flags/evaluator-refs.json -f file:../test-harness/flags/zero-flags.json -f file:../test-harness/flags/edge-case-flags.json
+flagd-integration-test: # dependent on flagd-e2e-test-harness if not running in github actions
+	go test -count=1 -cover ./test/integration $(ARGS)
 run: # default to flagd
 	make run-flagd
 run-flagd:
