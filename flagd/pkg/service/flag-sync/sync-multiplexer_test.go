@@ -14,7 +14,7 @@ const emptyConfigString = "{\"flags\":{}}"
 
 func TestRegistration(t *testing.T) {
 	// given
-	mux, err := NewMux(getSimpleFlagStore())
+	mux, err := NewMux(getSimpleFlagStore(t))
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -106,7 +106,7 @@ func TestRegistration(t *testing.T) {
 
 func TestUpdateAndRemoval(t *testing.T) {
 	// given
-	mux, err := NewMux(getSimpleFlagStore())
+	mux, err := NewMux(getSimpleFlagStore(t))
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -161,7 +161,7 @@ func TestUpdateAndRemoval(t *testing.T) {
 
 func TestGetAllFlags(t *testing.T) {
 	// given
-	mux, err := NewMux(getSimpleFlagStore())
+	mux, err := NewMux(getSimpleFlagStore(t))
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return
@@ -203,7 +203,7 @@ func TestGetAllFlags(t *testing.T) {
 
 func TestGetAllFlagsMetadata(t *testing.T) {
 	// given
-	mux, err := NewMux(getSimpleFlagStore())
+	mux, err := NewMux(getSimpleFlagStore(t))
 	if err != nil {
 		t.Fatal("error during flag extraction")
 		return

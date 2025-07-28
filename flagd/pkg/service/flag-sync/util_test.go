@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
@@ -12,14 +13,17 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// getSimpleFlagStore returns a flag store pre-filled with flags from sources A & B & C, which C empty
-func getSimpleFlagStore() (*store.Store, []string) {
+// getSimpleFlagStore is a test util which returns a flag store pre-filled with flags from sources A & B & C, which C empty
+func getSimpleFlagStore(t *testing.T) (*store.Store, []string) {
 	variants := map[string]any{
 		"true":  true,
 		"false": false,
 	}
 
-	flagStore, _ := store.NewStore(logger.NewLogger(nil, false))
+	flagStore, err := store.NewStore(logger.NewLogger(nil, false))
+	if err != nil {
+		t.Fatalf("error creating flag store: %v", err)
+	}
 
 	flagStore.Update("A", "", map[string]model.Flag{
 		"flagA": {

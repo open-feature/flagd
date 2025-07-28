@@ -42,7 +42,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
 				// given
 				port := 18016
-				flagStore, sources := getSimpleFlagStore()
+				flagStore, sources := getSimpleFlagStore(t)
 
 				ctx, cancelFunc := context.WithCancel(context.Background())
 				defer cancelFunc()
@@ -204,7 +204,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 
 			// given
 			port := 18016
-			flagStore, sources := getSimpleFlagStore()
+			flagStore, sources := getSimpleFlagStore(t)
 			certPath := "./test-cert/server-cert.pem"
 			keyPath := "./test-cert/server-key.pem"
 			socketPath := ""
