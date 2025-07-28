@@ -86,7 +86,10 @@ func NewStore(logger *logger.Logger) (*Store, error) {
 
 // Deprecated: use NewStore instead
 func NewFlags() *Store {
-	state, _ := NewStore(logger.NewLogger(nil, false))
+	state, err := NewStore(logger.NewLogger(nil, false))
+	if err != nil {
+		panic(fmt.Sprintf("unable to create flag store: %v", err))
+	}
 	return state
 }
 

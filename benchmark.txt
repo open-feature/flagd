@@ -1,0 +1,72 @@
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/certreloader	15.986s
+goos: linux
+goarch: amd64
+pkg: github.com/open-feature/flagd/core/pkg/evaluator
+cpu: 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz
+BenchmarkFractionalEvaluation/test_a@faas.com-16         	  423930	     13316 ns/op	    7229 B/op	     135 allocs/op
+BenchmarkFractionalEvaluation/test_b@faas.com-16         	  469594	     13677 ns/op	    7229 B/op	     135 allocs/op
+BenchmarkFractionalEvaluation/test_c@faas.com-16         	  569103	     13286 ns/op	    7229 B/op	     135 allocs/op
+BenchmarkFractionalEvaluation/test_d@faas.com-16         	  412386	     13023 ns/op	    7229 B/op	     135 allocs/op
+BenchmarkResolveBooleanValue/test_staticBoolFlag-16      	 3106903	      1792 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveBooleanValue/test_targetingBoolFlag-16   	  448164	     11250 ns/op	    6065 B/op	      87 allocs/op
+BenchmarkResolveBooleanValue/test_staticObjectFlag-16    	 3958750	      1476 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveBooleanValue/test_missingFlag-16         	 5331808	      1353 ns/op	     784 B/op	      12 allocs/op
+BenchmarkResolveBooleanValue/test_disabledFlag-16        	 4530751	      1301 ns/op	    1072 B/op	      13 allocs/op
+BenchmarkResolveStringValue/test_staticStringFlag-16     	 4583056	      1525 ns/op	    1040 B/op	      13 allocs/op
+BenchmarkResolveStringValue/test_targetingStringFlag-16  	  839954	     10388 ns/op	    6097 B/op	      89 allocs/op
+BenchmarkResolveStringValue/test_staticObjectFlag-16     	 4252830	      1677 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveStringValue/test_missingFlag-16          	 3743324	      1495 ns/op	     784 B/op	      12 allocs/op
+BenchmarkResolveStringValue/test_disabledFlag-16         	 3495699	      1709 ns/op	    1072 B/op	      13 allocs/op
+BenchmarkResolveFloatValue/test:_staticFloatFlag-16      	 4382868	      1511 ns/op	    1024 B/op	      13 allocs/op
+BenchmarkResolveFloatValue/test:_targetingFloatFlag-16   	  867987	     10344 ns/op	    6081 B/op	      89 allocs/op
+BenchmarkResolveFloatValue/test:_staticObjectFlag-16     	 3913120	      1695 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveFloatValue/test:_missingFlag-16          	 3910468	      1349 ns/op	     784 B/op	      12 allocs/op
+BenchmarkResolveFloatValue/test:_disabledFlag-16         	 3642919	      1666 ns/op	    1072 B/op	      13 allocs/op
+BenchmarkResolveIntValue/test_staticIntFlag-16           	 4077288	      1349 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveIntValue/test_targetingNumberFlag-16     	  922383	      7601 ns/op	    6065 B/op	      87 allocs/op
+BenchmarkResolveIntValue/test_staticObjectFlag-16        	 4995128	      1229 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveIntValue/test_missingFlag-16             	 5574153	      1274 ns/op	     768 B/op	      12 allocs/op
+BenchmarkResolveIntValue/test_disabledFlag-16            	 3633708	      1734 ns/op	    1072 B/op	      13 allocs/op
+BenchmarkResolveObjectValue/test_staticObjectFlag-16     	 1624102	      4559 ns/op	    2243 B/op	      37 allocs/op
+BenchmarkResolveObjectValue/test_targetingObjectFlag-16  	  443880	     11995 ns/op	    7283 B/op	     109 allocs/op
+BenchmarkResolveObjectValue/test_staticBoolFlag-16       	 3462445	      1665 ns/op	    1008 B/op	      11 allocs/op
+BenchmarkResolveObjectValue/test_missingFlag-16          	 4207567	      1458 ns/op	     784 B/op	      12 allocs/op
+BenchmarkResolveObjectValue/test_disabledFlag-16         	 3407262	      1848 ns/op	    1072 B/op	      13 allocs/op
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/evaluator	239.506s
+?   	github.com/open-feature/flagd/core/pkg/evaluator/mock	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/logger	0.003s
+?   	github.com/open-feature/flagd/core/pkg/model	[no test files]
+?   	github.com/open-feature/flagd/core/pkg/service	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/service/ofrep	0.002s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/store	0.003s
+?   	github.com/open-feature/flagd/core/pkg/sync	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/blob	0.016s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/builder	0.018s
+?   	github.com/open-feature/flagd/core/pkg/sync/builder/mock	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/file	1.007s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/grpc	8.011s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/grpc/credentials	0.008s
+?   	github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock	[no test files]
+?   	github.com/open-feature/flagd/core/pkg/sync/grpc/mock	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/grpc/nameresolvers	0.002s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/http	4.006s
+?   	github.com/open-feature/flagd/core/pkg/sync/http/mock	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/sync/kubernetes	0.016s
+?   	github.com/open-feature/flagd/core/pkg/sync/testing	[no test files]
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/telemetry	0.016s
+PASS
+ok  	github.com/open-feature/flagd/core/pkg/utils	0.002s
