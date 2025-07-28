@@ -16,13 +16,13 @@ make build
 then run the `flagd` binary
 
 ```shell
-make flagd-e2e-test-harness
+make flagd-integration-test-harness
 ```
 
 and finally run
 
 ```shell
-make flagd-e2e-test
+make flagd-integration-test
 ```
 
 ## TLS
