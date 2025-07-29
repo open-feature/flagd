@@ -243,6 +243,7 @@ func (f *Store) GetMetadataForSource(source string) model.Metadata {
 	return model.Metadata{}
 }
 
+// TODO: this is a temporary solution to merge metadata in the case of error; properly handle it with https://github.com/open-feature/flagd/issues/1675
 func (f *Store) getMetadata() model.Metadata {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
