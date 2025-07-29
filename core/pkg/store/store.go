@@ -113,7 +113,7 @@ func (f *Store) SelectorForFlag(_ context.Context, flag model.Flag) string {
 }
 
 func (f *Store) String() (string, error) {
-	f.logger.Debug(fmt.Sprintf("dumping flags to string"))
+	f.logger.Debug("dumping flags to string")
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
