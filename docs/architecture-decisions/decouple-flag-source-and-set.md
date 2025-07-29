@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accpted
 author: @tangenti
 created: 2025-06-16
 updated: 2025-06-16
