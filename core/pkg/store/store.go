@@ -95,8 +95,6 @@ func NewFlags() *Store {
 
 func (f *Store) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
 	f.logger.Debug(fmt.Sprintf("getting flag %s", key))
-	f.mx.RLock()
-	defer f.mx.RUnlock()
 	txn := f.db.Txn(false)
 
 	raw, err := txn.First("flags", "id", key)
@@ -134,8 +132,6 @@ func (f *Store) String() (string, error) {
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
 func (f *Store) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
-	f.mx.RLock()
-	defer f.mx.RUnlock()
 	txn := f.db.Txn(false)
 
 	flags := make(map[string]model.Flag)
@@ -165,11 +161,10 @@ func (f *Store) Update(
 
 	txn := f.db.Txn(true)
 	defer txn.Abort()
-
 	storedFlags, _, _ := f.GetAll(context.Background())
+
 	f.mx.Lock()
 	f.setSourceMetadata(source, metadata)
-
 	for key, v := range storedFlags {
 		if v.Source == source && v.Selector == selector {
 			if _, ok := flags[key]; !ok {
@@ -239,6 +234,8 @@ func (f *Store) Update(
 }
 
 func (f *Store) GetMetadataForSource(source string) model.Metadata {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
 	perSource, ok := f.MetadataPerSource[source]
 	if ok && perSource != nil {
 		return maps.Clone(perSource)
@@ -247,6 +244,8 @@ func (f *Store) GetMetadataForSource(source string) model.Metadata {
 }
 
 func (f *Store) getMetadata() model.Metadata {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
 	metadata := model.Metadata{}
 	for _, perSource := range f.MetadataPerSource {
 		for key, entry := range perSource {
