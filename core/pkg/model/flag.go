@@ -3,6 +3,7 @@ package model
 import "encoding/json"
 
 type Flag struct {
+	Key            string          `json:"-"`
 	State          string          `json:"state"`
 	DefaultVariant string          `json:"defaultVariant"`
 	Variants       map[string]any  `json:"variants"`

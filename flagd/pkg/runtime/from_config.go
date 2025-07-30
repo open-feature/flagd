@@ -80,7 +80,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// build flag store, collect flag sources & fill sources details
-	s := store.NewFlags()
+	s, err := store.NewStore(logger)
+	if err != nil {
+		return nil, fmt.Errorf("error creating flag store: %w", err)
+	}
+
 	sources := []string{}
 
 	for _, provider := range config.SyncProviders {
@@ -112,7 +116,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		config.HeaderToContextKeyMappings,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating ofrep service")
+		return nil, fmt.Errorf("error creating OFREP service: %w", err)
 	}
 
 	// flag sync service

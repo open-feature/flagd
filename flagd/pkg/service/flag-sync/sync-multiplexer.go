@@ -20,7 +20,7 @@ var emptyConfigBytes, _ = json.Marshal(map[string]map[string]string{
 // Multiplexer abstract subscription handling and storage processing.
 // Flag configurations will be lazy loaded using reFill logic upon the calls to publish.
 type Multiplexer struct {
-	store   *store.State
+	store   *store.Store
 	sources []string
 
 	subs         map[interface{}]subscription            // subscriptions on all sources
@@ -42,7 +42,7 @@ type payload struct {
 }
 
 // NewMux creates a new sync multiplexer
-func NewMux(store *store.State, sources []string) (*Multiplexer, error) {
+func NewMux(store *store.Store, sources []string) (*Multiplexer, error) {
 	m := &Multiplexer{
 		store:         store,
 		sources:       sources,

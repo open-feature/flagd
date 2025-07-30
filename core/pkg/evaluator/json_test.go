@@ -1377,8 +1377,8 @@ func TestState_Evaluator(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(expectedOutputJSON["flags"], gotOutputJSON["flags"]) {
-				t.Errorf("expected state: %v got state: %v", expectedOutputJSON, gotOutputJSON)
+			if !reflect.DeepEqual(expectedOutputJSON["flags"], gotOutputJSON) {
+				t.Errorf("expected state: %v got state: %v", expectedOutputJSON["flags"], gotOutputJSON)
 			}
 		})
 	}

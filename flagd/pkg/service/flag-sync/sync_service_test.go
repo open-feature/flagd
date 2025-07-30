@@ -3,15 +3,16 @@ package sync
 import (
 	"context"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/store"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/open-feature/flagd/core/pkg/store"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	v1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
@@ -41,7 +42,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 			t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
 				// given
 				port := 18016
-				flagStore, sources := getSimpleFlagStore()
+				flagStore, sources := getSimpleFlagStore(t)
 
 				ctx, cancelFunc := context.WithCancel(context.Background())
 				defer cancelFunc()
@@ -203,7 +204,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 
 			// given
 			port := 18016
-			flagStore, sources := getSimpleFlagStore()
+			flagStore, sources := getSimpleFlagStore(t)
 			certPath := "./test-cert/server-cert.pem"
 			keyPath := "./test-cert/server-key.pem"
 			socketPath := ""
@@ -272,7 +273,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 func createAndStartSyncService(
 	port int,
 	sources []string,
-	store *store.State,
+	store *store.Store,
 	certPath string,
 	keyPath string,
 	socketPath string,
