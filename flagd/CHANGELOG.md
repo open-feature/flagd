@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.10](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.12.10) (2025-07-30)
+
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+
 ## [0.12.9](https://github.com/open-feature/flagd/compare/flagd/v0.12.8...flagd/v0.12.9) (2025-07-28)
 
 
