@@ -14,7 +14,7 @@ import (
 )
 
 // getSimpleFlagStore is a test util which returns a flag store pre-filled with flags from sources A & B & C, which C empty
-func getSimpleFlagStore(t testing.TB) (*store.Store, []string) {
+func getSimpleFlagStore(t testing.TB) (store.IStore, []string) {
 	t.Helper()
 
 	variants := map[string]any{

@@ -21,6 +21,14 @@ type IStore interface {
 	GetAll(ctx context.Context) (map[string]model.Flag, model.Metadata, error)
 	Get(ctx context.Context, key string) (model.Flag, model.Metadata, bool)
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
+	String() (string, error)
+	Update(
+		source string,
+		selector string,
+		flags map[string]model.Flag,
+		metadata model.Metadata,
+	) (map[string]interface{}, bool)
+	GetMetadataForSource(source string) model.Metadata
 }
 
 type Store struct {

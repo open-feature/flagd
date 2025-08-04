@@ -273,7 +273,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 func createAndStartSyncService(
 	port int,
 	sources []string,
-	store *store.Store,
+	store store.IStore,
 	certPath string,
 	keyPath string,
 	socketPath string,
