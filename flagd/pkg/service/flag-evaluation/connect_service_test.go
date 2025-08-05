@@ -15,8 +15,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
+	middlewaremock "github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -81,7 +82,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			rs := resource.NewWithAttributes("testSchema")
 			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
-			svc := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+			svc := NewConnectService(logger.NewLogger(nil, false), eval, &store.Store{}, metricRecorder)
 			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
@@ -136,7 +137,7 @@ func TestAddMiddleware(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	svc := NewConnectService(logger.NewLogger(nil, false), nil, metricRecorder)
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, &store.Store{}, metricRecorder)
 
 	serveConf := iservice.Configuration{
 		ReadinessProbe: func() bool {
@@ -173,16 +174,22 @@ func TestConnectServiceNotify(t *testing.T) {
 	// given
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
 
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.Subscribe("key", sChan)
+	eventing.Subscribe(context.Background(), "key", nil, sChan)
 
 	// notification type
 	ofType := iservice.ConfigurationChange
@@ -211,16 +218,22 @@ func TestConnectServiceShutdown(t *testing.T) {
 	// given
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
 
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.Subscribe("key", sChan)
+	eventing.Subscribe(context.Background(), "key", nil, sChan)
 
 	// notification type
 	ofType := iservice.Shutdown

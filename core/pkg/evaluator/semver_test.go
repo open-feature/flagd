@@ -316,6 +316,8 @@ func TestSemVerOperator_Compare(t *testing.T) {
 }
 
 func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
+	const source = "testSource"
+	var sources = []string{source}
 	ctx := context.Background()
 
 	tests := map[string]struct {
@@ -922,8 +924,12 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, store.NewFlags())
-			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
+			s, err := store.NewStore(log, sources)
+			if err != nil {
+				t.Fatalf("NewStore failed: %v", err)
+			}
+			je := NewJSON(log, s)
+			je.store.Update(source, tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 

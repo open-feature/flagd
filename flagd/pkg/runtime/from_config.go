@@ -79,25 +79,25 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		logger.Error(fmt.Sprintf("error building metrics recorder: %v", err))
 	}
 
+	sources := []string{}
+
+	for _, provider := range config.SyncProviders {
+		// s.FlagSources = append(s.FlagSources, provider.URI)
+		// s.SourceDetails[provider.URI] = store.SourceDetails{
+		// 	Source:   provider.URI,
+		// 	Selector: provider.Selector,
+		// }
+		sources = append(sources, provider.URI)
+	}
+
 	// build flag store, collect flag sources & fill sources details
-	s, err := store.NewStore(logger)
+	store, err := store.NewStore(logger, sources)
 	if err != nil {
 		return nil, fmt.Errorf("error creating flag store: %w", err)
 	}
 
-	sources := []string{}
-
-	for _, provider := range config.SyncProviders {
-		s.FlagSources = append(s.FlagSources, provider.URI)
-		s.SourceDetails[provider.URI] = store.SourceDetails{
-			Source:   provider.URI,
-			Selector: provider.Selector,
-		}
-		sources = append(sources, provider.URI)
-	}
-
 	// derive evaluator
-	jsonEvaluator := evaluator.NewJSON(logger, s)
+	jsonEvaluator := evaluator.NewJSON(logger, store)
 
 	// derive services
 
@@ -105,6 +105,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	connectService := flageval.NewConnectService(
 		logger.WithFields(zap.String("component", "service")),
 		jsonEvaluator,
+		store,
 		recorder)
 
 	// ofrep service
@@ -124,7 +125,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
 		Port:                config.SyncServicePort,
 		Sources:             sources,
-		Store:               s,
+		Store:               store,
 		ContextValues:       config.ContextValues,
 		KeyPath:             config.ServiceKeyPath,
 		CertPath:            config.ServiceCertPath,
@@ -150,11 +151,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	return &Runtime{
-		Logger:       logger.WithFields(zap.String("component", "runtime")),
-		Evaluator:    jsonEvaluator,
-		FlagSync:     flagSyncService,
-		OfrepService: ofrepService,
-		Service:      connectService,
+		Logger:            logger.WithFields(zap.String("component", "runtime")),
+		Evaluator:         jsonEvaluator,
+		SyncService:       flagSyncService,
+		OfrepService:      ofrepService,
+		EvaluationService: connectService,
 		ServiceConfig: service.Configuration{
 			Port:                       config.ServicePort,
 			ManagementPort:             config.ManagementPort,
@@ -168,7 +169,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			HeaderToContextKeyMappings: config.HeaderToContextKeyMappings,
 			StreamDeadline:             config.StreamDeadline,
 		},
-		SyncImpl: iSyncs,
+		Syncs: iSyncs,
 	}, nil
 }
 

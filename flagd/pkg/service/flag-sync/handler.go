@@ -2,22 +2,26 @@ package sync
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"maps"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	mux                 *Multiplexer
+	//mux                 *Multiplexer
+	store               *store.Store
 	log                 *logger.Logger
 	contextValues       map[string]any
 	deadline            time.Duration
@@ -25,47 +29,59 @@ type syncHandler struct {
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
-	muxPayload := make(chan payload, 1)
-	selector := req.GetSelector()
+	watcher := make(chan store.Payload, 1)
+	selectorExpression := req.GetSelector()
+	selector := store.NewSelector(selectorExpression)
 	ctx := server.Context()
+
+	syncContextMap := make(map[string]any)
+	maps.Copy(syncContextMap, s.contextValues)
+	syncContext, err := structpb.NewStruct(syncContextMap)
+	if err != nil {
+		return status.Error(codes.DataLoss, "error constructing sync context")
+	}
 
 	// attach server-side stream deadline to context
 	if s.deadline != 0 {
 		streamDeadline := time.Now().Add(s.deadline)
-		deadlineCtx, cancel := context.WithDeadline(server.Context(), streamDeadline)
+		deadlineCtx, cancel := context.WithDeadline(ctx, streamDeadline)
 		ctx = deadlineCtx
 		defer cancel()
 	}
 
-	err := s.mux.Register(ctx, selector, muxPayload)
+	flags, _, err := s.store.GetAll(ctx, &selector, watcher)
+	if err != nil {
+		return status.Error(codes.Internal, "error retrieving flags from store")
+	}
+	flagsString, err := json.Marshal(flags)
+	if err != nil {
+		return status.Error(codes.DataLoss, "error marshalling flags")
+	}
+	err = server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: string(flagsString), SyncContext: syncContext})
+
 	if err != nil {
 		return err
 	}
 
 	for {
 		select {
-		case payload := <-muxPayload:
-			metadataSrc := make(map[string]any)
-			maps.Copy(metadataSrc, s.contextValues)
-
-			if sources := s.mux.SourcesAsMetadata(); sources != "" {
-				metadataSrc["sources"] = sources
-			}
-
-			metadata, err := structpb.NewStruct(metadataSrc)
+		case payload := <-watcher:
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
 				return fmt.Errorf("error constructing metadata response")
 			}
+			flags, err := json.Marshal(payload.Flags)
+			if err != nil {
+				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
+				return status.Error(codes.DataLoss, "error marshalling flags")
+			}
 
-			err = server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: payload.flags, SyncContext: metadata})
+			err = server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: string(flags), SyncContext: syncContext})
 			if err != nil {
 				s.log.Debug(fmt.Sprintf("error sending stream response: %v", err))
 				return fmt.Errorf("error sending stream response: %w", err)
 			}
 		case <-ctx.Done():
-			s.mux.Unregister(ctx, selector)
-
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
 				return status.Error(codes.DeadlineExceeded, "stream closed due to server-side timeout")
@@ -76,16 +92,25 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
-func (s syncHandler) FetchAllFlags(_ context.Context, req *syncv1.FetchAllFlagsRequest) (
+func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
-	flags, err := s.mux.GetAllFlags(req.GetSelector())
+	selectorExpression := req.GetSelector()
+	selector := store.NewSelector(selectorExpression)
+	flags, _, err := s.store.GetAll(ctx, &selector, nil)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
+		return nil, status.Error(codes.Internal, "error retrieving flags from store")
+	}
+
+	flagsString, err := json.Marshal(flags)
+
 	if err != nil {
 		return nil, err
 	}
 
 	return &syncv1.FetchAllFlagsResponse{
-		FlagConfiguration: flags,
+		FlagConfiguration: string(flagsString),
 	}, nil
 }
 
@@ -100,9 +125,6 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest
 	metadataSrc := make(map[string]any)
 	for k, v := range s.contextValues {
 		metadataSrc[k] = v
-	}
-	if sources := s.mux.SourcesAsMetadata(); sources != "" {
-		metadataSrc["sources"] = sources
 	}
 
 	metadata, err := structpb.NewStruct(metadataSrc)
