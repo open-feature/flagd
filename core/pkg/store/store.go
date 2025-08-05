@@ -126,8 +126,6 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 	s := slices.Clone(sources)
 
 	return &Store{
-		// SourceDetails:     map[string]SourceDetails{},
-		// MetadataPerSource: map[string]model.Metadata{},
 		sources: s,
 		db:      db,
 		logger:  logger,
@@ -169,7 +167,9 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 			return model.Flag{}, queryMeta, false
 		}
 		flag := model.Flag{}
+		var found bool
 		for raw := it.Next(); raw != nil; raw = it.Next() {
+			found = true
 			s.logger.Debug(fmt.Sprintf("got range scan: %v", raw))
 			nextFlag, ok := raw.(model.Flag)
 			if !ok {
@@ -182,7 +182,7 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 			}
 
 		}
-		return flag, queryMeta, true
+		return flag, queryMeta, found
 	}
 }
 
