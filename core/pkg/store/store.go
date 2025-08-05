@@ -43,6 +43,8 @@ type SourceDetails struct {
 
 func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 
+	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
+	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
 	schema := &memdb.DBSchema{
 		Tables: map[string]*memdb.TableSchema{
 			flagsTable: {
@@ -59,16 +61,19 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 							},
 						},
 					},
+					// for looking up by source
 					sourceIndex: {
 						Name:    sourceIndex,
 						Unique:  false,
 						Indexer: &memdb.StringFieldIndex{Field: model.Source, Lowercase: false},
 					},
+					// for looking up by priority, used to maintain highest priority flag when there are duplicates and no selector is provided
 					priorityIndex: {
 						Name:    priorityIndex,
 						Unique:  false,
 						Indexer: &memdb.IntFieldIndex{Field: model.Priority},
 					},
+					// for looking up by flagSetId
 					flagSetIdIndex: {
 						Name:    flagSetIdIndex,
 						Unique:  false,
