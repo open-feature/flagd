@@ -12,14 +12,6 @@
         "dupe2": "dupe2"
       },
       "defaultVariant": "dupe1"
-    },
-        "myNewStringFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "dupe1": "dupe1",
-        "dupe2": "dupe2"
-      },
-      "defaultVariant": "dupe1"
     }
   }
 }
