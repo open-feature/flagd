@@ -448,3 +448,31 @@ func TestGetAllWithWatcher(t *testing.T) {
 		})
 	}
 }
+
+func TestQueryMetadata(t *testing.T) {
+
+	sourceA := "sourceA"
+	otherSource := "otherSource"
+	nonExistingFlagSetId := "nonExistingFlagSetId"
+	var sources = []string{sourceA}
+	sourceAFlags := map[string]model.Flag{
+		"flagA": {Key: "flagA", DefaultVariant: "off"},
+		"flagB": {Key: "flagB", DefaultVariant: "on"},
+	}
+
+	store, err := NewStore(logger.NewLogger(nil, false), sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+
+	// setup initial flags
+	store.Update(sourceA, sourceAFlags, model.Metadata{})
+
+	selector := NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
+	_, metadata, _ := store.GetAll(context.Background(), &selector, nil)
+	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+
+	selector = NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
+	_, metadata, _ = store.Get(context.Background(), "key", &selector)
+	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+}
