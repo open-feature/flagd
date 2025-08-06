@@ -139,7 +139,6 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
 	jsonlogic.AddOperator(EndsWithEvaluationName, NewStringComparisonEvaluator(logger).EndsWithEvaluation)
 	jsonlogic.AddOperator(SemVerEvaluationName, NewSemVerComparison(logger).SemVerEvaluation)
-	jsonlogic.AddOperator(LegacyFractionEvaluationName, NewLegacyFractional(logger).LegacyFractionalEvaluation)
 
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
