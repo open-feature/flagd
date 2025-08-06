@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0](https://github.com/open-feature/flagd/compare/core/v0.12.1...core/v0.13.0) (2025-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* removes the `fractionalEvaluation` operator since it has been replaced with `fractional`. ([#1704](https://github.com/open-feature/flagd/issues/1704))
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+* removes the `fractionalEvaluation` operator since it has been replaced with `fractional`. ([#1704](https://github.com/open-feature/flagd/issues/1704)) ([3228ad8](https://github.com/open-feature/flagd/commit/3228ad895117ed179325f80d3b0b318f575a4584))
+
 ## [0.12.1](https://github.com/open-feature/flagd/compare/core/v0.12.0...core/v0.12.1) (2025-07-28)
 
 
