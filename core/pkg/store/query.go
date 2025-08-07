@@ -35,7 +35,7 @@ type Selector interface {
 	WithIndex(key string, value string) Selector
 }
 
-var _ Selector = selector{}
+var _ Selector = (*selector)(nil)
 
 type selector struct {
 	indexMap map[string]string
