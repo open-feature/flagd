@@ -282,7 +282,7 @@ func (s *Store) Update(
 		newFlag.Priority = priority
 		newFlag.Metadata = patchMetadata(metadata, newFlag.Metadata)
 
-		// flagSetId defaults to a UUID generated at startup to make our quires isomorphic
+		// flagSetId defaults to a UUID generated at startup to make our queries isomorphic
 		flagSetId := nilFlagSetId
 		// flagSetId is inherited from the set, but can be overridden by the flag
 		setFlagSetId, ok := newFlag.Metadata["flagSetId"].(string)
