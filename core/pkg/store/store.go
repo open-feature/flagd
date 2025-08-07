@@ -11,19 +11,26 @@ import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	syncpkg "github.com/open-feature/flagd/core/pkg/sync"
 )
 
 type del = struct{}
 
 var deleteMarker *del
 
+// IStore is the interface for a flag store. All consumers should use this interface.
 type IStore interface {
 	GetAll(ctx context.Context) (map[string]model.Flag, model.Metadata, error)
 	Get(ctx context.Context, key string) (model.Flag, model.Metadata, bool)
 	SelectorForFlag(ctx context.Context, flag model.Flag) string
+	GetMetadataForSource(source string) model.Metadata
+	Update(source string, selector string, flags map[string]model.Flag, metadata model.Metadata) (map[string]interface{}, bool)
+	String() (string, error)
+	SyncConfig(providers []syncpkg.SourceConfig) []string
 }
 
-type Store struct {
+// store is the in-memory implementation of IStore. It should not be used directly by consumers.
+type store struct {
 	mx                sync.RWMutex
 	db                *memdb.MemDB
 	logger            *logger.Logger
@@ -37,7 +44,7 @@ type SourceDetails struct {
 	Selector string
 }
 
-func (f *Store) hasPriority(stored string, new string) bool {
+func (f *store) hasPriority(stored string, new string) bool {
 	if stored == new {
 		return true
 	}
@@ -52,7 +59,8 @@ func (f *Store) hasPriority(stored string, new string) bool {
 	return true
 }
 
-func NewStore(logger *logger.Logger) (*Store, error) {
+// NewStore returns a new in-memory implementation of IStore.
+func NewStore(logger *logger.Logger) (IStore, error) {
 
 	schema := &memdb.DBSchema{
 		Tables: map[string]*memdb.TableSchema{
@@ -76,7 +84,7 @@ func NewStore(logger *logger.Logger) (*Store, error) {
 		return nil, fmt.Errorf("unable to initialize flag database: %w", err)
 	}
 
-	return &Store{
+	return &store{
 		SourceDetails:     map[string]SourceDetails{},
 		MetadataPerSource: map[string]model.Metadata{},
 		db:                db,
@@ -85,7 +93,7 @@ func NewStore(logger *logger.Logger) (*Store, error) {
 }
 
 // Deprecated: use NewStore instead
-func NewFlags() *Store {
+func NewFlags() IStore {
 	state, err := NewStore(logger.NewLogger(nil, false))
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
@@ -93,7 +101,7 @@ func NewFlags() *Store {
 	return state
 }
 
-func (f *Store) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
+func (f *store) Get(_ context.Context, key string) (model.Flag, model.Metadata, bool) {
 	f.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := f.db.Txn(false)
 
@@ -105,14 +113,14 @@ func (f *Store) Get(_ context.Context, key string) (model.Flag, model.Metadata, 
 	return flag, f.GetMetadataForSource(flag.Source), true
 }
 
-func (f *Store) SelectorForFlag(_ context.Context, flag model.Flag) string {
+func (f *store) SelectorForFlag(_ context.Context, flag model.Flag) string {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
 	return f.SourceDetails[flag.Source].Selector
 }
 
-func (f *Store) String() (string, error) {
+func (f *store) String() (string, error) {
 	f.logger.Debug("dumping flags to string")
 	f.mx.RLock()
 	defer f.mx.RUnlock()
@@ -131,7 +139,7 @@ func (f *Store) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (f *Store) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
+func (f *store) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata, error) {
 	txn := f.db.Txn(false)
 
 	flags := make(map[string]model.Flag)
@@ -150,7 +158,7 @@ func (f *Store) GetAll(_ context.Context) (map[string]model.Flag, model.Metadata
 }
 
 // Update the flag state with the provided flags.
-func (f *Store) Update(
+func (f *store) Update(
 	source string,
 	selector string,
 	flags map[string]model.Flag,
@@ -233,7 +241,7 @@ func (f *Store) Update(
 	return notifications, resyncRequired
 }
 
-func (f *Store) GetMetadataForSource(source string) model.Metadata {
+func (f *store) GetMetadataForSource(source string) model.Metadata {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	perSource, ok := f.MetadataPerSource[source]
@@ -243,8 +251,25 @@ func (f *Store) GetMetadataForSource(source string) model.Metadata {
 	return model.Metadata{}
 }
 
+func (f *store) SyncConfig(providers []syncpkg.SourceConfig) []string {
+	f.mx.Lock()
+	defer f.mx.Unlock()
+	f.FlagSources = nil
+	f.SourceDetails = map[string]SourceDetails{}
+	sources := make([]string, 0, len(providers))
+	for _, provider := range providers {
+		f.FlagSources = append(f.FlagSources, provider.URI)
+		f.SourceDetails[provider.URI] = SourceDetails{
+			Source:   provider.URI,
+			Selector: provider.Selector,
+		}
+		sources = append(sources, provider.URI)
+	}
+	return sources
+}
+
 // TODO: this is a temporary solution to merge metadata in the case of error; properly handle it with https://github.com/open-feature/flagd/issues/1675
-func (f *Store) getMetadata() model.Metadata {
+func (f *store) getMetadata() model.Metadata {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	metadata := model.Metadata{}
@@ -267,7 +292,7 @@ func (f *Store) getMetadata() model.Metadata {
 	return metadata
 }
 
-func (f *Store) setSourceMetadata(source string, metadata model.Metadata) {
+func (f *store) setSourceMetadata(source string, metadata model.Metadata) {
 	if f.MetadataPerSource == nil {
 		f.MetadataPerSource = map[string]model.Metadata{}
 	}

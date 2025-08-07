@@ -64,13 +64,13 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 
 // JSON evaluator
 type JSON struct {
-	store          *store.Store
+	store          store.IStore
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s *store.Store, opts ...JSONEvaluatorOption) *JSON {
+func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) *JSON {
 	logger = logger.WithFields(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
