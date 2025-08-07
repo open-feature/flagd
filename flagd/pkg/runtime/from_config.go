@@ -85,16 +85,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error creating flag store: %w", err)
 	}
 
-	sources := []string{}
-
-	for _, provider := range config.SyncProviders {
-		s.FlagSources = append(s.FlagSources, provider.URI)
-		s.SourceDetails[provider.URI] = store.SourceDetails{
-			Source:   provider.URI,
-			Selector: provider.Selector,
-		}
-		sources = append(sources, provider.URI)
-	}
+	sources := s.SyncConfig(config.SyncProviders)
 
 	// derive evaluator
 	jsonEvaluator := evaluator.NewJSON(logger, s)

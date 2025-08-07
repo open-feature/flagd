@@ -28,7 +28,7 @@ type SvcConfigurations struct {
 	Logger              *logger.Logger
 	Port                uint16
 	Sources             []string
-	Store               *store.Store
+	Store               store.IStore
 	ContextValues       map[string]any
 	CertPath            string
 	KeyPath             string

@@ -13,7 +13,7 @@ func TestMergeFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name        string
-		setup       func(t *testing.T) *Store
+		setup       func(t *testing.T) IStore
 		new         map[string]model.Flag
 		newSource   string
 		newSelector string
@@ -23,7 +23,7 @@ func TestMergeFlags(t *testing.T) {
 	}{
 		{
 			name: "both nil",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -36,7 +36,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "both empty flags",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -49,7 +49,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "empty new",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -62,7 +62,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "merging with new source",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -84,7 +84,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "override by new update",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -110,7 +110,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "identical update so empty notifications",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -130,7 +130,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "deleted flag & trigger resync for same source",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -150,7 +150,7 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "no deleted & no resync for same source but different selector",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -171,12 +171,12 @@ func TestMergeFlags(t *testing.T) {
 		},
 		{
 			name: "no merge due to low priority",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false))
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.FlagSources = []string{"B", "A"}
+				s.(*store).FlagSources = []string{"B", "A"}
 				s.Update("A", "", map[string]model.Flag{
 					"hello": {DefaultVariant: "off"},
 				}, model.Metadata{})
