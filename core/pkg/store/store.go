@@ -301,7 +301,7 @@ func (s *Store) Update(
 		if ok {
 			if oldFlag.FlagSetId != newFlag.FlagSetId {
 				// If the flagSetId is different, we need to delete the, since flagSetId+key represents the primary index, and it's now been changed.
-				// Yhis is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
+				// This is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
 				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, key)
 				if err != nil {
 					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", key, oldFlag.FlagSetId, err))
