@@ -107,7 +107,7 @@ func (s selector) SelectorMapToQuery() (indexId string, constraints []interface{
 
 	indexId = strings.TrimSuffix(indexId, "+")
 	// Convert []string to []interface{}
-	c := make([]interface{}, 0, len(qs)+1)
+	c := make([]interface{}, 0, len(qs))
 	for _, v := range qs {
 		c = append(c, v)
 	}
