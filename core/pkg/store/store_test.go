@@ -403,7 +403,8 @@ func TestWatch(t *testing.T) {
 			watcher := make(chan FlagQueryResult, 1)
 			time.Sleep(pauseTime)
 
-			store.Watch(context.Background(), tt.selector, watcher)
+			ctx, cancel := context.WithCancel(context.Background())
+			store.Watch(ctx, tt.selector, watcher)
 
 			// perform updates
 			go func() {
@@ -439,13 +440,18 @@ func TestWatch(t *testing.T) {
 
 			updates := 0
 
-			for true {
+			for {
 				select {
-				case <-watcher:
-					updates++
 				case <-time.After(timeout):
 					assert.Equal(t, tt.wantUpdates, updates, "expected %d updates, got %d", tt.wantUpdates, updates)
+					cancel()
+					_, open := <-watcher
+					assert.False(t, open, "watcher channel should be closed after cancel")
 					return
+				case q := <-watcher:
+					if q.Flags != nil {
+						updates++
+					}
 				}
 			}
 		})
