@@ -170,7 +170,7 @@ func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Fla
 		return flag, queryMeta, true
 
 	}
-	// otherwise, get all flags with the given key, and keep the one with the highest priority
+	// otherwise, get all flags with the given key, and keep the last one with the highest priority
 	s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
 	it, err := txn.Get(flagsTable, keyIndex, key)
 	if err != nil {
