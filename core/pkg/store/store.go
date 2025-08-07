@@ -31,7 +31,8 @@ type IStore interface {
 
 // store is the in-memory implementation of IStore. It should not be used directly by consumers.
 type store struct {
-	mx                sync.RWMutex
+	flagMx            sync.RWMutex
+	metaMx            sync.RWMutex
 	db                *memdb.MemDB
 	logger            *logger.Logger
 	FlagSources       []string
@@ -114,16 +115,15 @@ func (f *store) Get(_ context.Context, key string) (model.Flag, model.Metadata, 
 }
 
 func (f *store) SelectorForFlag(_ context.Context, flag model.Flag) string {
-	f.mx.RLock()
-	defer f.mx.RUnlock()
-
+	f.metaMx.RLock()
+	defer f.metaMx.RUnlock()
 	return f.SourceDetails[flag.Source].Selector
 }
 
 func (f *store) String() (string, error) {
 	f.logger.Debug("dumping flags to string")
-	f.mx.RLock()
-	defer f.mx.RUnlock()
+	f.flagMx.RLock()
+	defer f.flagMx.RUnlock()
 
 	state, _, err := f.GetAll(context.Background())
 	if err != nil {
@@ -171,8 +171,11 @@ func (f *store) Update(
 	defer txn.Abort()
 	storedFlags, _, _ := f.GetAll(context.Background())
 
-	f.mx.Lock()
+	f.metaMx.Lock()
 	f.setSourceMetadata(source, metadata)
+	f.metaMx.Unlock()
+
+	f.flagMx.Lock()
 	for key, v := range storedFlags {
 		if v.Source == source && v.Selector == selector {
 			if _, ok := flags[key]; !ok {
@@ -198,7 +201,7 @@ func (f *store) Update(
 			}
 		}
 	}
-	f.mx.Unlock()
+	f.flagMx.Unlock()
 	for key, newFlag := range flags {
 		newFlag.Source = source
 		newFlag.Selector = selector
@@ -242,8 +245,8 @@ func (f *store) Update(
 }
 
 func (f *store) GetMetadataForSource(source string) model.Metadata {
-	f.mx.RLock()
-	defer f.mx.RUnlock()
+	f.metaMx.RLock()
+	defer f.metaMx.RUnlock()
 	perSource, ok := f.MetadataPerSource[source]
 	if ok && perSource != nil {
 		return maps.Clone(perSource)
@@ -252,8 +255,8 @@ func (f *store) GetMetadataForSource(source string) model.Metadata {
 }
 
 func (f *store) SyncConfig(providers []syncpkg.SourceConfig) []string {
-	f.mx.Lock()
-	defer f.mx.Unlock()
+	f.metaMx.Lock()
+	defer f.metaMx.Unlock()
 	f.FlagSources = nil
 	f.SourceDetails = map[string]SourceDetails{}
 	sources := make([]string, 0, len(providers))
@@ -270,8 +273,8 @@ func (f *store) SyncConfig(providers []syncpkg.SourceConfig) []string {
 
 // TODO: this is a temporary solution to merge metadata in the case of error; properly handle it with https://github.com/open-feature/flagd/issues/1675
 func (f *store) getMetadata() model.Metadata {
-	f.mx.RLock()
-	defer f.mx.RUnlock()
+	f.metaMx.RLock()
+	defer f.metaMx.RUnlock()
 	metadata := model.Metadata{}
 	for _, perSource := range f.MetadataPerSource {
 		for key, entry := range perSource {
