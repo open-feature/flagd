@@ -10,22 +10,24 @@ import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/utils"
+	"github.com/open-feature/flagd/core/pkg/notifications"
 )
 
 var noValidatedSources = []string{}
 
 type SelectorContextKey struct{}
 
-// do we really need this?
-type Payload struct {
+type FlagQueryResult struct {
 	Flags map[string]model.Flag
 }
 
 type IStore interface {
-	GetAll(ctx context.Context, selector *Selector, watcher chan Payload) (map[string]model.Flag, model.Metadata, error)
-	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, bool)
+	Get(ctx context.Context, key string, selector Selector) (model.Flag, model.Metadata, bool)
+	GetAll(ctx context.Context, selector Selector) (map[string]model.Flag, model.Metadata, error)
+	Watch(ctx context.Context, selector Selector, watcher chan FlagQueryResult)
 }
+
+var _ IStore = (*Store)(nil)
 
 type Store struct {
 	mx      sync.RWMutex
@@ -149,14 +151,15 @@ func NewFlags() *Store {
 	return state
 }
 
-func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, bool) {
+func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Flag, model.Metadata, bool) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
 	queryMeta := model.Metadata{}
 
-	if selector != nil {
+	// if present, use the selector to query the flags
+	if selector != nil && !selector.IsEmpty() {
 		queryMeta = selector.SelectorToMetadata()
-		selector := selector.withIndex("key", key)
+		selector := selector.WithIndex("key", key)
 		indexId, constraints := selector.SelectorMapToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
 		raw, err := txn.First(flagsTable, indexId, constraints...)
@@ -166,31 +169,29 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 		}
 		return flag, queryMeta, true
 
-	} else {
-		// get all flags with the given key, and keep the one with the highest priority
-		s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
-		it, err := txn.Get(flagsTable, keyIndex, key)
-		if err != nil {
-			return model.Flag{}, queryMeta, false
-		}
-		flag := model.Flag{}
-		var found bool
-		for raw := it.Next(); raw != nil; raw = it.Next() {
-			found = true
-			s.logger.Debug(fmt.Sprintf("got range scan: %v", raw))
-			nextFlag, ok := raw.(model.Flag)
-			if !ok {
-				continue
-			}
-			if nextFlag.Priority >= flag.Priority {
-				flag = nextFlag
-			} else {
-				s.logger.Debug(fmt.Sprintf("discarding flag %s from lower priority source %s in favor of flag from source %s", nextFlag.Key, s.sources[nextFlag.Priority], s.sources[flag.Priority]))
-			}
-
-		}
-		return flag, queryMeta, found
 	}
+	// otherwise, get all flags with the given key, and keep the one with the highest priority
+	s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
+	it, err := txn.Get(flagsTable, keyIndex, key)
+	if err != nil {
+		return model.Flag{}, queryMeta, false
+	}
+	flag := model.Flag{}
+	var found bool
+	for raw := it.Next(); raw != nil; raw = it.Next() {
+		s.logger.Debug(fmt.Sprintf("got range scan: %v", raw))
+		nextFlag, ok := raw.(model.Flag)
+		found = true
+		if !ok {
+			continue
+		}
+		if nextFlag.Priority >= flag.Priority {
+			flag = nextFlag
+		} else {
+			s.logger.Debug(fmt.Sprintf("discarding flag %s from lower priority source %s in favor of flag from source %s", nextFlag.Key, s.sources[nextFlag.Priority], s.sources[flag.Priority]))
+		}
+	}
+	return flag, queryMeta, found
 }
 
 func (f *Store) String() (string, error) {
@@ -198,7 +199,7 @@ func (f *Store) String() (string, error) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
-	state, _, err := f.GetAll(context.Background(), nil, nil)
+	state, _, err := f.GetAll(context.Background(), nil)
 	if err != nil {
 		return "", fmt.Errorf("unable to get all flags: %w", err)
 	}
@@ -212,68 +213,19 @@ func (f *Store) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (s *Store) GetAll(ctx context.Context, selector *Selector, watcher chan Payload) (map[string]model.Flag, model.Metadata, error) {
-	txn := s.db.Txn(false)
+func (s *Store) GetAll(ctx context.Context, selector Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
 	queryMeta := model.Metadata{}
-
-	var it memdb.ResultIterator
-	var err error
-	if selector != nil && !selector.isEmpty() {
+	if selector != nil && !selector.IsEmpty() {
 		queryMeta = selector.SelectorToMetadata()
-		indexId, constraints := selector.SelectorMapToQuery()
-		s.logger.Debug(fmt.Sprintf("getting all flags with query: %s, %v", indexId, constraints))
-		it, err = txn.Get("flags", indexId, constraints...)
-	} else {
-		// no selector, get all flags
-		it, err = txn.Get(flagsTable, idIndex)
 	}
+	it, err := s.selectOrAll(selector)
 
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("query error: %v", err))
+		s.logger.Error(fmt.Sprintf("flag query error: %v", err))
 		return flags, queryMeta, err
 	}
-
-	for raw := it.Next(); raw != nil; raw = it.Next() {
-		flag := raw.(model.Flag)
-		if existing, ok := flags[flag.Key]; ok {
-			if flag.Priority < existing.Priority {
-				s.logger.Debug(fmt.Sprintf("discarding duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[flag.Priority], s.sources[existing.Priority]))
-				continue // we already have a higher priority flag
-			} else {
-				s.logger.Debug(fmt.Sprintf("overwriting duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[existing.Priority], s.sources[flag.Priority]))
-			}
-		}
-		flags[flag.Key] = flag
-	}
-
-	if watcher != nil {
-
-		// a "one-time" watcher that will be notified of changes to the query
-		changes := it.WatchCh()
-
-		go func() {
-			select {
-			case <-changes:
-				s.logger.Debug("flags store has changed, notifying watchers")
-
-				// recursively get all flags again in bytes new goroutine to keep the watcher responsive
-				// as long as we do this in bytes new goroutine, we don't risk stack overflow
-				bytes, _, err := s.GetAll(ctx, selector, watcher)
-				if err != nil {
-					s.logger.Error(fmt.Sprintf("error getting flags in watcher: %v", err))
-					break
-				}
-				watcher <- Payload{
-					Flags: bytes,
-				}
-
-			case <-ctx.Done():
-				close(watcher)
-			}
-		}()
-	}
-
+	flags = s.collect(it)
 	return flags, queryMeta, nil
 }
 
@@ -304,7 +256,7 @@ func (s *Store) Update(
 
 	// get all flags for the source we are updating
 	selector := NewSelector(sourceIndex + "=" + source)
-	oldFlags, _, _ := s.GetAll(context.Background(), &selector, nil)
+	oldFlags, _, _ := s.GetAll(context.Background(), selector)
 
 	s.mx.Lock()
 	for key := range oldFlags {
@@ -317,15 +269,7 @@ func (s *Store) Update(
 
 			if err != nil {
 				s.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", key, err))
-				continue
 			}
-
-			s.logger.Debug(
-				fmt.Sprintf(
-					"store resync triggered: flag %s has been deleted from source %s",
-					key, source,
-				),
-			)
 			continue
 		}
 	}
@@ -336,7 +280,7 @@ func (s *Store) Update(
 		newFlag.Key = key
 		newFlag.Source = source
 		newFlag.Priority = priority
-		newFlag.Metadata = mergeMetadata(metadata, newFlag.Metadata)
+		newFlag.Metadata = patchMetadata(metadata, newFlag.Metadata)
 
 		// flagSetId defaults to a UUID generated at startup to make our quires isomorphic
 		flagSetId := nilFlagSetId
@@ -353,9 +297,11 @@ func (s *Store) Update(
 			continue
 		}
 		oldFlag, ok := raw.(model.Flag)
-		// if we already have a flag with the same key and source, we need to check if it has the same flagSetId
+		// If we already have a flag with the same key and source, we need to check if it has the same flagSetId
 		if ok {
 			if oldFlag.FlagSetId != newFlag.FlagSetId {
+				// If the flagSetId is different, we need to delete the, since flagSetId+key represents the primary index, and it's now been changed.
+				// Yhis is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
 				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, key)
 				if err != nil {
 					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", key, oldFlag.FlagSetId, err))
@@ -373,19 +319,70 @@ func (s *Store) Update(
 	}
 
 	txn.Commit()
-	return utils.BuildNotifications(oldFlags, flags), resyncRequired
+	return notifications.NewFromFlags(oldFlags, flags), resyncRequired
 }
 
-func mergeMetadata(m1, m2 model.Metadata) model.Metadata {
-	merged := make(model.Metadata)
-	if m1 == nil && m2 == nil {
+// Watch the result-set of a selector for changes, sending updates to the watcher channel.
+func (s *Store) Watch(ctx context.Context, selector Selector, watcher chan FlagQueryResult) {
+	go func() {
+		for {
+			ws := memdb.NewWatchSet()
+			it, err := s.selectOrAll(selector)
+			ws.Add(it.WatchCh())
+
+			flags := s.collect(it)
+			watcher <- FlagQueryResult{
+				Flags: flags,
+			}
+
+			if err = ws.WatchCtx(ctx); err != nil {
+				close(watcher)
+				return // cancelled or deadline
+			}
+		}
+	}()
+}
+
+// returns an iterator for the given selector, or all flags if the selector is nil or empty
+func (s *Store) selectOrAll(selector Selector) (it memdb.ResultIterator, err error) {
+	txn := s.db.Txn(false)
+	if selector != nil && !selector.IsEmpty() {
+		indexId, constraints := selector.SelectorMapToQuery()
+		s.logger.Debug(fmt.Sprintf("getting all flags with query: %s, %v", indexId, constraints))
+		return txn.Get(flagsTable, indexId, constraints...)
+	} else {
+		// no selector, get all flags
+		return txn.Get(flagsTable, idIndex)
+	}
+}
+
+// collects flags from an iterator, ensuring that only the highest priority flag is kept when there are duplicates
+func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
+	flags := make(map[string]model.Flag)
+	for raw := it.Next(); raw != nil; raw = it.Next() {
+		flag := raw.(model.Flag)
+		if existing, ok := flags[flag.Key]; ok {
+			if flag.Priority < existing.Priority {
+				s.logger.Debug(fmt.Sprintf("discarding duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[flag.Priority], s.sources[existing.Priority]))
+				continue // we already have a higher priority flag
+			}
+			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[existing.Priority], s.sources[flag.Priority]))
+		}
+		flags[flag.Key] = flag
+	}
+	return flags
+}
+
+func patchMetadata(original, patch model.Metadata) model.Metadata {
+	patched := make(model.Metadata)
+	if original == nil && patch == nil {
 		return nil
 	}
-	for key, value := range m1 {
-		merged[key] = value
+	for key, value := range original {
+		patched[key] = value
 	}
-	for key, value := range m2 { // m2 values overwrite m1 values on key conflict
-		merged[key] = value
+	for key, value := range patch { // patch values overwrite m1 values on key conflict
+		patched[key] = value
 	}
-	return merged
+	return patched
 }

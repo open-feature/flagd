@@ -18,7 +18,7 @@ const sourceIndex = "source"
 const priorityIndex = "priority"
 const flagSetIdIndex = "flagSetId"
 
-// compound indices; maintain sub-indexes alphabetically; order matters; these must match what's generated in
+// compound indices; maintain sub-indexes alphabetically; order matters; these must match what's generated in the SelectorMapToQuery func.
 const flagSetIdSourceCompoundIndex = flagSetIdIndex + "+" + sourceIndex
 const keySourceCompoundIndex = keyIndex + "+" + sourceIndex
 const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + sourceIndex
@@ -28,7 +28,16 @@ const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + 
 var nilFlagSetId = uuid.New().String()
 
 // A selector represents a set of constraints used to query the store.
-type Selector struct {
+type Selector interface {
+	SelectorMapToQuery() (indexId string, constraints []interface{})
+	SelectorToMetadata() model.Metadata
+	IsEmpty() bool
+	WithIndex(key string, value string) Selector
+}
+
+var _ Selector = selector{}
+
+type selector struct {
 	indexMap map[string]string
 }
 
@@ -36,7 +45,7 @@ type Selector struct {
 // For example, to select flags from source "./mySource" and flagSetId "1234", use the expression:
 // "source=./mySource,flagSetId=1234"
 func NewSelector(selectorExpression string) Selector {
-	return Selector{
+	return selector{
 		indexMap: expressionToMap(selectorExpression),
 	}
 }
@@ -61,22 +70,22 @@ func expressionToMap(selector string) map[string]string {
 	return selectorMap
 }
 
-func (s Selector) withIndex(key string, value string) Selector {
+func (s selector) WithIndex(key string, value string) Selector {
 	m := maps.Clone(s.indexMap)
 	m[key] = value
-	return Selector{
+	return selector{
 		indexMap: m,
 	}
 }
 
-func (s Selector) isEmpty() bool {
+func (s selector) IsEmpty() bool {
 	return len(s.indexMap) == 0
 }
 
 // SelectorMapToQuery converts the selector map to an indexId and constraints for querying the store.
 // For a given index, a specific order and number of constraints are required.
 // Both the indexId and constraints are generated based on the keys present in the selector's internal map.
-func (s Selector) SelectorMapToQuery() (indexId string, constraints []interface{}) {
+func (s selector) SelectorMapToQuery() (indexId string, constraints []interface{}) {
 
 	if len(s.indexMap) == 2 && s.indexMap[flagSetIdIndex] != "" && s.indexMap[keyIndex] != "" {
 		// special case for flagSetId and key (this is the "id" index)
@@ -109,7 +118,7 @@ func (s Selector) SelectorMapToQuery() (indexId string, constraints []interface{
 
 // SelectorToMetadata converts the selector's internal map to metadata for logging or tracing purposes.
 // Only includes known indices to avoid leaking sensitive information, and is usually returned as the "top level" metadata
-func (s Selector) SelectorToMetadata() model.Metadata {
+func (s selector) SelectorToMetadata() model.Metadata {
 	meta := model.Metadata{}
 
 	if s.indexMap[flagSetIdIndex] != "" {

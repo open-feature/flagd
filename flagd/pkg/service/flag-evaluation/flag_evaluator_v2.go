@@ -166,7 +166,7 @@ func (s *FlagEvaluationService) EventStream(
 	requestNotificationChan := make(chan service.Notification, 1)
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
-	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
+	s.eventingConfiguration.Subscribe(ctx, req, selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
 	requestNotificationChan <- service.Notification{

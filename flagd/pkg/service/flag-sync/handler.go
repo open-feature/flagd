@@ -29,7 +29,7 @@ type syncHandler struct {
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
-	watcher := make(chan store.Payload, 1)
+	watcher := make(chan store.FlagQueryResult, 1)
 	selectorExpression := req.GetSelector()
 	selector := store.NewSelector(selectorExpression)
 	ctx := server.Context()
@@ -49,19 +49,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 		defer cancel()
 	}
 
-	flags, _, err := s.store.GetAll(ctx, &selector, watcher)
-	if err != nil {
-		return status.Error(codes.Internal, "error retrieving flags from store")
-	}
-	flagsString, err := json.Marshal(flags)
-	if err != nil {
-		return status.Error(codes.DataLoss, "error marshalling flags")
-	}
-	err = server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: string(flagsString), SyncContext: syncContext})
-
-	if err != nil {
-		return err
-	}
+	s.store.Watch(ctx, selector, watcher)
 
 	for {
 		select {
@@ -97,7 +85,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 ) {
 	selectorExpression := req.GetSelector()
 	selector := store.NewSelector(selectorExpression)
-	flags, _, err := s.store.GetAll(ctx, &selector, nil)
+	flags, _, err := s.store.GetAll(ctx, selector)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")

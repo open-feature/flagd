@@ -151,7 +151,7 @@ func TestUpdateFlags(t *testing.T) {
 			t.Parallel()
 			store := tt.setup(t)
 			gotNotifs, resyncRequired := store.Update(tt.source, tt.newFlags, tt.setMetadata)
-			gotFlags, _, _ := store.GetAll(context.Background(), nil, nil)
+			gotFlags, _, _ := store.GetAll(context.Background(), nil)
 
 			require.Equal(t, tt.wantFlags, gotFlags)
 			require.Equal(t, tt.wantNotifs, gotNotifs)
@@ -176,7 +176,7 @@ func TestGet(t *testing.T) {
 	tests := []struct {
 		name      string
 		key       string
-		selector  *Selector
+		selector  Selector
 		wantFlag  model.Flag
 		wantFound bool
 	}{
@@ -190,28 +190,28 @@ func TestGet(t *testing.T) {
 		{
 			name:      "flagSetId selector",
 			key:       "dupe",
-			selector:  &flagSetIdCSelector,
+			selector:  flagSetIdCSelector,
 			wantFlag:  model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			wantFound: true,
 		},
 		{
 			name:      "source selector",
 			key:       "dupe",
-			selector:  &sourceASelector,
+			selector:  sourceASelector,
 			wantFlag:  model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			wantFound: true,
 		},
 		{
 			name:      "flag not found with source selector",
 			key:       "flagB",
-			selector:  &sourceASelector,
+			selector:  sourceASelector,
 			wantFlag:  model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantFound: false,
 		},
 		{
 			name:      "flag not found with flagSetId selector",
 			key:       "flagB",
-			selector:  &flagSetIdCSelector,
+			selector:  flagSetIdCSelector,
 			wantFlag:  model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantFound: false,
 		},
@@ -268,7 +268,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name      string
-		selector  *Selector
+		selector  Selector
 		wantFlags map[string]model.Flag
 	}{
 		{
@@ -284,7 +284,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 		},
 		{
 			name:     "source selector",
-			selector: &sourceASelector,
+			selector: sourceASelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from sourceA
 				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
@@ -293,7 +293,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 		},
 		{
 			name:     "flagSetId selector",
-			selector: &flagSetIdCSelector,
+			selector: flagSetIdCSelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from flagSetIdC
 				"flagC": {Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
@@ -327,7 +327,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 			store.Update(sourceA, sourceAFlags, nil)
 			store.Update(sourceB, sourceBFlags, nil)
 			store.Update(sourceC, sourceCFlags, nil)
-			gotFlags, _, _ := store.GetAll(context.Background(), tt.selector, nil)
+			gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
 
 			require.Equal(t, len(tt.wantFlags), len(gotFlags))
 			require.Equal(t, tt.wantFlags, gotFlags)
@@ -335,13 +335,15 @@ func TestGetAllNoWatcher(t *testing.T) {
 	}
 }
 
-func TestGetAllWithWatcher(t *testing.T) {
+func TestWatch(t *testing.T) {
 
 	sourceA := "sourceA"
 	sourceB := "sourceB"
 	sourceC := "sourceC"
 	myFlagSetId := "myFlagSet"
 	var sources = []string{sourceA, sourceB, sourceC}
+	pauseTime := 100 * time.Millisecond // time for updates to settle
+	timeout := 1000 * time.Millisecond  // time to make sure we get enough updates, and no extras
 
 	sourceASelector := NewSelector("source=" + sourceA)
 	flagSetIdCSelector := NewSelector("flagSetId=" + myFlagSetId)
@@ -350,28 +352,28 @@ func TestGetAllWithWatcher(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		selector    *Selector
+		selector    Selector
 		wantUpdates int
 	}{
 		{
-			name:        "flag source selector (1 update)",
-			selector:    &sourceASelector,
-			wantUpdates: 1,
+			name:        "flag source selector (initial, plus 1 update)",
+			selector:    sourceASelector,
+			wantUpdates: 2,
 		},
 		{
-			name:        "flag set selector (3 updates)",
-			selector:    &flagSetIdCSelector,
-			wantUpdates: 3,
-		},
-		{
-			name:        "no selector (all updates)",
-			selector:    &emptySelector,
+			name:        "flag set selector (initial, plus 3 updates)",
+			selector:    flagSetIdCSelector,
 			wantUpdates: 4,
 		},
 		{
-			name:        "flag source selector for unchanged source (no updates)",
-			selector:    &sourceCSelector,
-			wantUpdates: 0,
+			name:        "no selector (all updates)",
+			selector:    emptySelector,
+			wantUpdates: 5,
+		},
+		{
+			name:        "flag source selector for unchanged source (initial, plus no updates)",
+			selector:    sourceCSelector,
+			wantUpdates: 1,
 		},
 	}
 
@@ -398,35 +400,36 @@ func TestGetAllWithWatcher(t *testing.T) {
 			store.Update(sourceA, sourceAFlags, model.Metadata{})
 			store.Update(sourceB, sourceBFlags, model.Metadata{})
 			store.Update(sourceC, sourceCFlags, model.Metadata{})
-			watcher := make(chan Payload, 10)
-			_, _, err = store.GetAll(context.Background(), tt.selector, watcher)
-			if err != nil {
-				t.Fatalf("GetAll failed: %v", err)
-			}
+			watcher := make(chan FlagQueryResult, 1)
+			time.Sleep(pauseTime)
+
+			store.Watch(context.Background(), tt.selector, watcher)
 
 			// perform updates
 			go func() {
+
+				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
 				store.Update(sourceA, map[string]model.Flag{
 					"flagA": {Key: "flagA", DefaultVariant: "on"},
 				}, model.Metadata{})
 
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
 				store.Update(sourceB, map[string]model.Flag{
 					"flagB": {Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
 				}, model.Metadata{})
 
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(pauseTime)
 
 				// removing a flag set id should trigger an update (even for flag set id selectors; it should remove the flag from the set)
 				store.Update(sourceB, map[string]model.Flag{
 					"flagB": {Key: "flagB", DefaultVariant: "on"},
 				}, model.Metadata{})
 
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(pauseTime)
 
 				// adding a flag set id should trigger an update
 				store.Update(sourceB, map[string]model.Flag{
@@ -440,7 +443,7 @@ func TestGetAllWithWatcher(t *testing.T) {
 				select {
 				case <-watcher:
 					updates++
-				case <-time.After(1000 * time.Millisecond):
+				case <-time.After(timeout):
 					assert.Equal(t, tt.wantUpdates, updates, "expected %d updates, got %d", tt.wantUpdates, updates)
 					return
 				}
@@ -469,10 +472,10 @@ func TestQueryMetadata(t *testing.T) {
 	store.Update(sourceA, sourceAFlags, model.Metadata{})
 
 	selector := NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
-	_, metadata, _ := store.GetAll(context.Background(), &selector, nil)
+	_, metadata, _ := store.GetAll(context.Background(), selector)
 	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 
 	selector = NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
-	_, metadata, _ = store.Get(context.Background(), "key", &selector)
+	_, metadata, _ = store.Get(context.Background(), "key", selector)
 	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 }
