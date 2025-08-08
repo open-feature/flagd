@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
@@ -71,15 +72,17 @@ type ConnectService struct {
 
 // NewConnectService creates a ConnectService with provided parameters
 func NewConnectService(
-	logger *logger.Logger, evaluator evaluator.IEvaluator, mRecorder telemetry.IMetricsRecorder,
+	logger *logger.Logger, evaluator evaluator.IEvaluator, store store.IStore, mRecorder telemetry.IMetricsRecorder,
 ) *ConnectService {
 	cs := &ConnectService{
 		logger:  logger,
 		eval:    evaluator,
 		metrics: &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: &eventingConfiguration{
-			subs: make(map[interface{}]chan service.Notification),
-			mu:   &sync.RWMutex{},
+			subs:   make(map[interface{}]chan service.Notification),
+			mu:     &sync.RWMutex{},
+			store:  store,
+			logger: logger,
 		},
 	}
 	if mRecorder != nil {

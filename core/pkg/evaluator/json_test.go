@@ -383,7 +383,7 @@ var Flags = fmt.Sprintf(`{
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
@@ -405,7 +405,7 @@ func TestSetState_Invalid_Error(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with an invalid flag definition
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("unexpected error")
 	}
@@ -415,7 +415,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with a valid flag definition
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -423,7 +423,7 @@ func TestSetState_Valid_NoError(t *testing.T) {
 
 func TestResolveAllValues(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -476,62 +476,6 @@ func TestResolveAllValues(t *testing.T) {
 	}
 }
 
-func TestMetadataResolveType(t *testing.T) {
-	tests := []struct {
-		flagKey  string
-		metadata model.Metadata
-	}{
-		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetID, "version": Version}},
-		{MetadataFlag, model.Metadata{"flagSetId": FlagSetID, "version": VersionOverride}},
-	}
-	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
-	if err != nil {
-		t.Fatalf("expected no error")
-	}
-
-	for _, test := range tests {
-		_, _, _, metadata, _ := evaluator.ResolveBooleanValue(context.TODO(), reqID, test.flagKey, nil)
-		if !reflect.DeepEqual(test.metadata, metadata) {
-			t.Errorf("expected metadata to be %v, but got %v", test.metadata, metadata)
-		}
-	}
-}
-
-func TestMetadataResolveAll(t *testing.T) {
-	expectedFlagSetMetadata := model.Metadata{"flagSetId": FlagSetID, "version": Version}
-
-	tests := []struct {
-		flagKey  string
-		metadata model.Metadata
-	}{
-		{StaticBoolFlag, model.Metadata{"flagSetId": FlagSetID, "version": Version}},
-		{MetadataFlag, model.Metadata{"flagSetId": FlagSetID, "version": VersionOverride}},
-	}
-	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
-	if err != nil {
-		t.Fatalf("expected no error")
-	}
-
-	for _, test := range tests {
-		resolutions, flagSetMetadata, _ := evaluator.ResolveAllValues(context.TODO(), reqID, nil)
-
-		for _, resolved := range resolutions {
-			if resolved.FlagKey == test.flagKey {
-				if !reflect.DeepEqual(test.metadata, resolved.Metadata) {
-					t.Errorf("expected flag metadata to be %v, but got %v", test.metadata, resolved.Metadata)
-				}
-			}
-		}
-		if !reflect.DeepEqual(expectedFlagSetMetadata, flagSetMetadata) {
-			t.Errorf("expected flag set metadata to be %v, but got %v", expectedFlagSetMetadata, flagSetMetadata)
-		}
-	}
-}
-
 func TestResolveBooleanValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
@@ -548,7 +492,7 @@ func TestResolveBooleanValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -583,7 +527,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -623,7 +567,7 @@ func TestResolveStringValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -659,7 +603,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -699,7 +643,7 @@ func TestResolveFloatValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -735,7 +679,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -775,7 +719,7 @@ func TestResolveIntValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -811,7 +755,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -851,7 +795,7 @@ func TestResolveObjectValue(t *testing.T) {
 	}
 	const reqID = "default"
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -890,7 +834,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -935,7 +879,7 @@ func TestResolveAsAnyValue(t *testing.T) {
 	}
 
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags})
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -971,7 +915,7 @@ func TestResolve_DefaultVariant(t *testing.T) {
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-			_, _, err := evaluator.SetState(sync.DataSync{FlagData: test.flags})
+			_, _, err := evaluator.SetState(sync.DataSync{FlagData: test.flags, Source: "testSource"})
 
 			if err != nil {
 				t.Fatalf("expected no error")
@@ -1038,7 +982,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags})
+			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags, Source: "testSource"})
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -1097,7 +1041,7 @@ func TestState_Evaluator(t *testing.T) {
 						  },
 						  "defaultVariant": "recursive",
 						  "state": "ENABLED",
-						  "source":"",
+						  "source":"testSource",
 						  "selector":"",
 						  "targeting": {
 							"if": [
@@ -1157,7 +1101,7 @@ func TestState_Evaluator(t *testing.T) {
 						  },
 						  "defaultVariant": "recursive",
 						  "state": "ENABLED",
-						  "source":"",
+						  "source":"testSource",
 						  "selector":"",
 						  "targeting": {
 							"if": [
@@ -1233,7 +1177,7 @@ func TestState_Evaluator(t *testing.T) {
 							"off": false
 						},
 						"defaultVariant": "off",
-						"source":"",
+						"source":"testSource",
 						"targeting": {
 							"if": [
 								{
@@ -1267,7 +1211,7 @@ func TestState_Evaluator(t *testing.T) {
 						},
 						"defaultVariant": "recursive",
 						"state": "ENABLED",
-						"source":"",
+						"source":"testSource",
 						"selector":"",
 						"targeting": {
 						"if": [
@@ -1286,7 +1230,7 @@ func TestState_Evaluator(t *testing.T) {
 							"off": false
 						},
 						"defaultVariant": "off",
-						"source":"",
+						"source":"testSource",
 						"selector":"",
 						"targeting": {
 							"if": [
@@ -1344,7 +1288,7 @@ func TestState_Evaluator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, resync, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState})
+			_, resync, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState, Source: "testSource"})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
@@ -1451,7 +1395,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags})
+			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1474,7 +1418,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 						errChan <- nil
 						return
 					default:
-						_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags})
+						_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
 						if err != nil {
 							errChan <- err
 							return
@@ -1516,7 +1460,7 @@ func TestFlagdAmbientProperties(t *testing.T) {
 	t.Run("flagKeyIsInTheContext", func(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"welcome-banner": {
 					"state": "ENABLED",
@@ -1556,7 +1500,7 @@ func TestFlagdAmbientProperties(t *testing.T) {
 	t.Run("timestampIsInTheContext", func(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"welcome-banner": {
 					"state": "ENABLED",
@@ -1590,7 +1534,7 @@ func TestTargetingVariantBehavior(t *testing.T) {
 	t.Run("missing variant error", func(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"missing-variant": {
 					"state": "ENABLED",
@@ -1618,7 +1562,7 @@ func TestTargetingVariantBehavior(t *testing.T) {
 	t.Run("null fallback", func(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"null-fallback": {
 					"state": "ENABLED",
@@ -1651,7 +1595,7 @@ func TestTargetingVariantBehavior(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		//nolint:dupword
-		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
+		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"match-boolean": {
 					"state": "ENABLED",

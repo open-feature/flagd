@@ -11,6 +11,8 @@ import (
 )
 
 func TestFractionalEvaluation(t *testing.T) {
+	const source = "testSource"
+	var sources = []string{source}
 	ctx := context.Background()
 
 	commonFlags := Flags{
@@ -458,8 +460,13 @@ func TestFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, store.NewFlags())
-			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
+			s, err := store.NewStore(log, sources)
+			if err != nil {
+				t.Fatalf("NewStore failed: %v", err)
+			}
+
+			je := NewJSON(log, s)
+			je.store.Update(source, tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -486,6 +493,8 @@ func TestFractionalEvaluation(t *testing.T) {
 }
 
 func BenchmarkFractionalEvaluation(b *testing.B) {
+	const source = "testSource"
+	var sources = []string{source}
 	ctx := context.Background()
 
 	flags := Flags{
@@ -587,8 +596,13 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, store.NewFlags())
-			je.store.Update("", "", tt.flags.Flags, model.Metadata{})
+			s, err := store.NewStore(log, sources)
+			if err != nil {
+				b.Fatalf("NewStore failed: %v", err)
+			}
+			je := NewJSON(log, s)
+			je.store.Update(source, tt.flags.Flags, model.Metadata{})
+
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](
 					ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)

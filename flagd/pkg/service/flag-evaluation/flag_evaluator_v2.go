@@ -11,7 +11,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -66,16 +68,19 @@ func (s *FlagEvaluationService) ResolveAll(
 	reqID := xid.New().String()
 	defer s.logger.ClearFields(reqID)
 
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveAll", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveAll", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
 	res := &evalV1.ResolveAllResponse{
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	context := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
-	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(sCtx, reqID, context)
+	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(ctx, reqID, evaluationContext)
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
@@ -84,7 +89,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	span.SetAttributes(attribute.Int("feature_flag.count", len(resolutions)))
 	for _, resolved := range resolutions {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(sCtx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
+		s.metrics.RecordEvaluation(ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
 		switch v := resolved.Value.(type) {
 		case bool:
 			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
@@ -147,17 +152,21 @@ func (s *FlagEvaluationService) EventStream(
 	req *connect.Request[evalV1.EventStreamRequest],
 	stream *connect.ServerStream[evalV1.EventStreamResponse],
 ) error {
-	serviceCtx := ctx
 	// attach server-side stream deadline to context
+	s.logger.Debug("starting event stream for request")
+
 	if s.deadline != 0 {
 		streamDeadline := time.Now().Add(s.deadline)
 		deadlineCtx, cancel := context.WithDeadline(ctx, streamDeadline)
-		serviceCtx = deadlineCtx
+		ctx = deadlineCtx
 		defer cancel()
 	}
 
+	s.logger.Debug("starting event stream for request")
 	requestNotificationChan := make(chan service.Notification, 1)
-	s.eventingConfiguration.Subscribe(req, requestNotificationChan)
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
 	requestNotificationChan <- service.Notification{
@@ -184,8 +193,8 @@ func (s *FlagEvaluationService) EventStream(
 			if err != nil {
 				s.logger.Error(err.Error())
 			}
-		case <-serviceCtx.Done():
-			if errors.Is(serviceCtx.Err(), context.DeadlineExceeded) {
+		case <-ctx.Done():
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				s.logger.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
 				return connect.NewError(connect.CodeDeadlineExceeded, fmt.Errorf("%s", "stream closed due to server-side timeout"))
 			}
@@ -198,12 +207,16 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveBooleanRequest],
 ) (*connect.Response[evalV1.ResolveBooleanResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveBooleanResponse{})
 	err := resolve(
-		sCtx,
+		ctx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
 		req.Header(),
@@ -226,12 +239,16 @@ func (s *FlagEvaluationService) ResolveString(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveStringRequest],
 ) (*connect.Response[evalV1.ResolveStringResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveString", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveString", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveStringResponse{})
 	err := resolve(
-		sCtx,
+		ctx,
 		s.logger,
 		s.eval.ResolveStringValue,
 		req.Header(),
@@ -254,12 +271,16 @@ func (s *FlagEvaluationService) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveIntRequest],
 ) (*connect.Response[evalV1.ResolveIntResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveInt", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveInt", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveIntResponse{})
 	err := resolve(
-		sCtx,
+		ctx,
 		s.logger,
 		s.eval.ResolveIntValue,
 		req.Header(),
@@ -282,12 +303,16 @@ func (s *FlagEvaluationService) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveFloatRequest],
 ) (*connect.Response[evalV1.ResolveFloatResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveFloat", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveFloat", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveFloatResponse{})
 	err := resolve(
-		sCtx,
+		ctx,
 		s.logger,
 		s.eval.ResolveFloatValue,
 		req.Header(),
@@ -310,12 +335,16 @@ func (s *FlagEvaluationService) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[evalV1.ResolveObjectRequest],
 ) (*connect.Response[evalV1.ResolveObjectResponse], error) {
-	sCtx, span := s.flagEvalTracer.Start(ctx, "resolveObject", trace.WithSpanKind(trace.SpanKindServer))
+	ctx, span := s.flagEvalTracer.Start(ctx, "resolveObject", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
+
+	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveObjectResponse{})
 	err := resolve(
-		sCtx,
+		ctx,
 		s.logger,
 		s.eval.ResolveObjectValue,
 		req.Header(),

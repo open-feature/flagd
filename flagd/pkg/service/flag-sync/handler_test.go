@@ -22,21 +22,18 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		wantMetadata  map[string]any
 	}{
 		{
-			name:    "with sources and context",
-			sources: []string{"A, B, C"},
+			name: "with sources and context",
 			contextValues: map[string]any{
 				"env":    "prod",
 				"region": "us-west",
 			},
 			wantMetadata: map[string]any{
-				"sources": "A, B, C",
-				"env":     "prod",
-				"region":  "us-west",
+				"env":    "prod",
+				"region": "us-west",
 			},
 		},
 		{
-			name:    "with empty sources",
-			sources: []string{},
+			name: "with empty sources",
 			contextValues: map[string]any{
 				"env": "dev",
 			},
@@ -46,11 +43,8 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		},
 		{
 			name:          "with empty context",
-			sources:       []string{"A,B,C"},
 			contextValues: map[string]any{},
-			wantMetadata: map[string]any{
-				"sources": "A,B,C",
-			},
+			wantMetadata:  map[string]any{},
 		},
 	}
 
@@ -58,12 +52,11 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				// Shared handler for testing both GetMetadata & SyncFlags methods
-				flagStore := store.NewFlags()
-				mp, err := NewMux(flagStore, tt.sources)
+				flagStore, err := store.NewStore(logger.NewLogger(nil, false), tt.sources)
 				require.NoError(t, err)
 
 				handler := syncHandler{
-					mux:                 mp,
+					store:               flagStore,
 					contextValues:       tt.contextValues,
 					log:                 logger.NewLogger(nil, false),
 					disableSyncMetadata: disableSyncMetadata,

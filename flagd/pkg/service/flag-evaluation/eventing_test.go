@@ -1,18 +1,29 @@
 package service
 
 import (
+	"context"
 	"sync"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSubscribe(t *testing.T) {
 	// given
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+
 	eventing := &eventingConfiguration{
-		subs: make(map[interface{}]chan iservice.Notification),
-		mu:   &sync.RWMutex{},
+		subs:  make(map[interface{}]chan iservice.Notification),
+		mu:    &sync.RWMutex{},
+		store: s,
 	}
 
 	idA := "a"
@@ -22,8 +33,8 @@ func TestSubscribe(t *testing.T) {
 	chanB := make(chan iservice.Notification, 1)
 
 	// when
-	eventing.Subscribe(idA, chanA)
-	eventing.Subscribe(idB, chanB)
+	eventing.Subscribe(context.Background(), idA, nil, chanA)
+	eventing.Subscribe(context.Background(), idB, nil, chanB)
 
 	// then
 	require.Equal(t, chanA, eventing.subs[idA], "incorrect subscription association")
@@ -32,9 +43,16 @@ func TestSubscribe(t *testing.T) {
 
 func TestUnsubscribe(t *testing.T) {
 	// given
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
 	eventing := &eventingConfiguration{
-		subs: make(map[interface{}]chan iservice.Notification),
-		mu:   &sync.RWMutex{},
+		subs:  make(map[interface{}]chan iservice.Notification),
+		mu:    &sync.RWMutex{},
+		store: s,
 	}
 
 	idA := "a"
@@ -43,8 +61,8 @@ func TestUnsubscribe(t *testing.T) {
 	chanB := make(chan iservice.Notification, 1)
 
 	// when
-	eventing.Subscribe(idA, chanA)
-	eventing.Subscribe(idB, chanB)
+	eventing.Subscribe(context.Background(), idA, nil, chanA)
+	eventing.Subscribe(context.Background(), idB, nil, chanB)
 
 	eventing.Unsubscribe(idA)
 

@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -47,7 +46,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 				ctx, cancelFunc := context.WithCancel(context.Background())
 				defer cancelFunc()
 
-				service, doneChan, err := createAndStartSyncService(
+				_, doneChan, err := createAndStartSyncService(
 					port,
 					sources,
 					flagStore,
@@ -97,20 +96,6 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
 				}
 
-				syncAsMap := syncContext.AsMap()
-				if syncAsMap["sources"] == nil {
-					t.Fatalf("expected sources in sync_context, but got nil")
-				}
-
-				sourcesStr := syncAsMap["sources"].(string)
-				sourcesArray := strings.Split(sourcesStr, ",")
-				sort.Strings(sourcesArray)
-
-				expectedSources := []string{"A", "B", "C"}
-				if !reflect.DeepEqual(sourcesArray, expectedSources) {
-					t.Fatalf("sources entry in sync_context does not match expected: got %v, want %v", sourcesArray, expectedSources)
-				}
-
 				// validate emits
 				dataReceived := make(chan interface{})
 				go func() {
@@ -122,18 +107,11 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					dataReceived <- nil
 				}()
 
-				// Emit as a resync
-				service.Emit(true, "A")
-
-				select {
-				case <-dataReceived:
-					t.Fatal("expected no data as this is a resync")
-				case <-time.After(1 * time.Second):
-					break
-				}
-
-				// Emit as a resync
-				service.Emit(false, "A")
+				// make a change
+				flagStore.Update(testSource1, testSource1Flags, model.Metadata{
+					"keyDuped": "value",
+					"keyA":     "valueA",
+				})
 
 				select {
 				case <-dataReceived:
@@ -164,13 +142,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					}
 				} else {
 					asMap := metadataRsp.GetMetadata().AsMap()
-					// expect `sources` to be present
-					if asMap["sources"] == nil {
-						t.Fatal("expected sources entry in the metadata, but got nil")
-					}
-					if asMap["sources"] != "A,B,C" {
-						t.Fatal("incorrect sources entry in metadata")
-					}
+					assert.NotNil(t, asMap, "expected metadata to be non-nil")
 				}
 
 				// validate shutdown from context cancellation
@@ -304,7 +276,7 @@ func createAndStartSyncService(
 	}()
 	// trigger manual emits matching sources, so that service can start
 	for _, source := range sources {
-		service.Emit(false, source)
+		service.Emit(source)
 	}
 	return service, doneChan, err
 }

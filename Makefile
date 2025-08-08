@@ -47,8 +47,6 @@ test-flagd:
 	go test -race -covermode=atomic -cover -short ./flagd/pkg/... -coverprofile=flagd-coverage.out
 test-flagd-proxy:
 	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out
-flagd-integration-test: # dependent on ./bin/flagd start -f file:test-harness/flags/testing-flags.json -f file:test-harness/flags/custom-ops.json -f file:test-harness/flags/evaluator-refs.json -f file:test-harness/flags/zero-flags.json
-	go test -cover ./test/integration $(ARGS)
 flagd-benchmark-test:
 	go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee benchmark.txt
 flagd-integration-test-harness:
@@ -59,7 +57,9 @@ flagd-integration-test: # dependent on flagd-e2e-test-harness if not running in 
 run: # default to flagd
 	make run-flagd
 run-flagd:
-	cd flagd; go run main.go start -f file:../config/samples/example_flags.flagd.json
+	cd flagd; go run main.go start -f file:../config/samples/example_flags.flagd.json 
+run-flagd-selector-demo:
+	cd flagd; go run main.go start -f file:../config/samples/example_flags.flagd.json -f file:../config/samples/example_flags.flagd.2.json
 install:
 	cp systemd/flagd.service /etc/systemd/system/flagd.service
 	mkdir -p /etc/flagd
