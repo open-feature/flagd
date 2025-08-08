@@ -156,7 +156,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	} else {
 		selector = store.NewSelector("")
 	}
-	allFlags, flagSetMetadata, err := je.store.GetAll(ctx, selector)
+	allFlags, flagSetMetadata, err := je.store.GetAll(ctx, &selector)
 	if err != nil {
 		return nil, flagSetMetadata, fmt.Errorf("error retreiving flags from the store: %w", err)
 	}
@@ -318,7 +318,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	if s != nil {
 		selector = s.(store.Selector)
 	}
-	flag, metadata, err := je.store.Get(ctx, flagKey, selector)
+	flag, metadata, err := je.store.Get(ctx, flagKey, &selector)
 	if err != nil {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))

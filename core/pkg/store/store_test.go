@@ -176,7 +176,7 @@ func TestGet(t *testing.T) {
 	tests := []struct {
 		name     string
 		key      string
-		selector Selector
+		selector *Selector
 		wantFlag model.Flag
 		wantErr  bool
 	}{
@@ -190,28 +190,28 @@ func TestGet(t *testing.T) {
 		{
 			name:     "flagSetId selector",
 			key:      "dupe",
-			selector: flagSetIdCSelector,
+			selector: &flagSetIdCSelector,
 			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			wantErr:  false,
 		},
 		{
 			name:     "source selector",
 			key:      "dupe",
-			selector: sourceASelector,
+			selector: &sourceASelector,
 			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
 			name:     "flag not found with source selector",
 			key:      "flagB",
-			selector: sourceASelector,
+			selector: &sourceASelector,
 			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantErr:  true,
 		},
 		{
 			name:     "flag not found with flagSetId selector",
 			key:      "flagB",
-			selector: flagSetIdCSelector,
+			selector: &flagSetIdCSelector,
 			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantErr:  true,
 		},
@@ -268,7 +268,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name      string
-		selector  Selector
+		selector  *Selector
 		wantFlags map[string]model.Flag
 	}{
 		{
@@ -284,7 +284,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 		},
 		{
 			name:     "source selector",
-			selector: sourceASelector,
+			selector: &sourceASelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from sourceA
 				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
@@ -293,7 +293,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 		},
 		{
 			name:     "flagSetId selector",
-			selector: flagSetIdCSelector,
+			selector: &flagSetIdCSelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from flagSetIdC
 				"flagC": {Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
@@ -352,27 +352,27 @@ func TestWatch(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		selector    Selector
+		selector    *Selector
 		wantUpdates int
 	}{
 		{
 			name:        "flag source selector (initial, plus 1 update)",
-			selector:    sourceASelector,
+			selector:    &sourceASelector,
 			wantUpdates: 2,
 		},
 		{
 			name:        "flag set selector (initial, plus 3 updates)",
-			selector:    flagSetIdCSelector,
+			selector:    &flagSetIdCSelector,
 			wantUpdates: 4,
 		},
 		{
 			name:        "no selector (all updates)",
-			selector:    emptySelector,
+			selector:    &emptySelector,
 			wantUpdates: 5,
 		},
 		{
 			name:        "flag source selector for unchanged source (initial, plus no updates)",
-			selector:    sourceCSelector,
+			selector:    &sourceCSelector,
 			wantUpdates: 1,
 		},
 	}
@@ -478,10 +478,10 @@ func TestQueryMetadata(t *testing.T) {
 	store.Update(sourceA, sourceAFlags, model.Metadata{})
 
 	selector := NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
-	_, metadata, _ := store.GetAll(context.Background(), selector)
+	_, metadata, _ := store.GetAll(context.Background(), &selector)
 	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 
 	selector = NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
-	_, metadata, _ = store.Get(context.Background(), "key", selector)
+	_, metadata, _ = store.Get(context.Background(), "key", &selector)
 	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 }

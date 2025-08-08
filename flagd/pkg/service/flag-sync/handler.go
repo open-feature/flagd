@@ -49,7 +49,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 		defer cancel()
 	}
 
-	s.store.Watch(ctx, selector, watcher)
+	s.store.Watch(ctx, &selector, watcher)
 
 	for {
 		select {
@@ -85,7 +85,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 ) {
 	selectorExpression := req.GetSelector()
 	selector := store.NewSelector(selectorExpression)
-	flags, _, err := s.store.GetAll(ctx, selector)
+	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")

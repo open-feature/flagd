@@ -14,7 +14,7 @@ import (
 
 // IEvents is an interface for event subscriptions
 type IEvents interface {
-	Subscribe(ctx context.Context, id any, selector store.Selector, notifyChan chan iservice.Notification)
+	Subscribe(ctx context.Context, id any, selector *store.Selector, notifyChan chan iservice.Notification)
 	Unsubscribe(id any)
 	EmitToAll(n iservice.Notification)
 }
@@ -29,7 +29,7 @@ type eventingConfiguration struct {
 	logger *logger.Logger
 }
 
-func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, selector store.Selector, notifier chan iservice.Notification) {
+func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, selector *store.Selector, notifier chan iservice.Notification) {
 	eventing.mu.Lock()
 	defer eventing.mu.Unlock()
 

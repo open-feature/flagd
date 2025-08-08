@@ -22,9 +22,9 @@ type FlagQueryResult struct {
 }
 
 type IStore interface {
-	Get(ctx context.Context, key string, selector Selector) (model.Flag, model.Metadata, error)
-	GetAll(ctx context.Context, selector Selector) (map[string]model.Flag, model.Metadata, error)
-	Watch(ctx context.Context, selector Selector, watcher chan FlagQueryResult)
+	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
+	GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error)
+	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
 }
 
 var _ IStore = (*Store)(nil)
@@ -151,16 +151,16 @@ func NewFlags() *Store {
 	return state
 }
 
-func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Flag, model.Metadata, error) {
+func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
 	queryMeta := model.Metadata{}
 
 	// if present, use the selector to query the flags
-	if selector != nil && !selector.IsEmpty() {
-		queryMeta = selector.SelectorToMetadata()
+	if !selector.IsEmpty() {
+		queryMeta = selector.ToMetadata()
 		selector := selector.WithIndex("key", key)
-		indexId, constraints := selector.SelectorMapToQuery()
+		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
 		raw, err := txn.First(flagsTable, indexId, constraints...)
 		flag, ok := raw.(model.Flag)
@@ -216,11 +216,11 @@ func (f *Store) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (s *Store) GetAll(ctx context.Context, selector Selector) (map[string]model.Flag, model.Metadata, error) {
+func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
 	queryMeta := model.Metadata{}
 	if selector != nil && !selector.IsEmpty() {
-		queryMeta = selector.SelectorToMetadata()
+		queryMeta = selector.ToMetadata()
 	}
 	it, err := s.selectOrAll(selector)
 
@@ -259,7 +259,7 @@ func (s *Store) Update(
 
 	// get all flags for the source we are updating
 	selector := NewSelector(sourceIndex + "=" + source)
-	oldFlags, _, _ := s.GetAll(context.Background(), selector)
+	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
 
 	s.mx.Lock()
 	for key := range oldFlags {
@@ -326,11 +326,16 @@ func (s *Store) Update(
 }
 
 // Watch the result-set of a selector for changes, sending updates to the watcher channel.
-func (s *Store) Watch(ctx context.Context, selector Selector, watcher chan FlagQueryResult) {
+func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult) {
 	go func() {
 		for {
 			ws := memdb.NewWatchSet()
 			it, err := s.selectOrAll(selector)
+			if err != nil {
+				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				close(watcher)
+				return
+			}
 			ws.Add(it.WatchCh())
 
 			flags := s.collect(it)
@@ -339,18 +344,19 @@ func (s *Store) Watch(ctx context.Context, selector Selector, watcher chan FlagQ
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
+				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
 				close(watcher)
-				return // cancelled or deadline
+				return
 			}
 		}
 	}()
 }
 
 // returns an iterator for the given selector, or all flags if the selector is nil or empty
-func (s *Store) selectOrAll(selector Selector) (it memdb.ResultIterator, err error) {
+func (s *Store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err error) {
 	txn := s.db.Txn(false)
-	if selector != nil && !selector.IsEmpty() {
-		indexId, constraints := selector.SelectorMapToQuery()
+	if !selector.IsEmpty() {
+		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting all flags with query: %s, %v", indexId, constraints))
 		return txn.Get(flagsTable, indexId, constraints...)
 	} else {
