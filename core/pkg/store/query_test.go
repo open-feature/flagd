@@ -3,6 +3,8 @@ package store
 import (
 	"reflect"
 	"testing"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 func TestSelector_IsEmpty(t *testing.T) {
@@ -100,25 +102,92 @@ func TestSelector_ToQuery(t *testing.T) {
 }
 
 func TestSelector_ToMetadata(t *testing.T) {
-	s := Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}}
-	meta := s.ToMetadata()
-	if meta["flagSetId"] != "fsid" {
-		t.Errorf("ToMetadata missing flagSetId")
+	tests := []struct {
+		name     string
+		selector *Selector
+		want     model.Metadata
+	}{
+		{
+			name:     "nil selector",
+			selector: nil,
+			want:     model.Metadata{},
+		},
+		{
+			name:     "nil indexMap",
+			selector: &Selector{indexMap: nil},
+			want:     model.Metadata{},
+		},
+		{
+			name:     "empty indexMap",
+			selector: &Selector{indexMap: map[string]string{}},
+			want:     model.Metadata{},
+		},
+		{
+			name:     "flagSetId only",
+			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid"}},
+			want:     model.Metadata{"flagSetId": "fsid"},
+		},
+		{
+			name:     "source only",
+			selector: &Selector{indexMap: map[string]string{"source": "src"}},
+			want:     model.Metadata{"source": "src"},
+		},
+		{
+			name:     "flagSetId and source",
+			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src"}},
+			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
+		},
+		{
+			name:     "flagSetId, source, and key (key should be ignored)",
+			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}},
+			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
+		},
 	}
-	if meta["source"] != "src" {
-		t.Errorf("ToMetadata missing source")
-	}
-	if _, ok := meta["key"]; ok {
-		t.Errorf("ToMetadata should not include key")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.selector.ToMetadata()
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToMetadata() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNewSelector(t *testing.T) {
-	s := NewSelector("source=abc,flagSetId=1234")
-	if s.indexMap["source"] != "abc" {
-		t.Errorf("NewSelector did not parse source")
+	tests := []struct {
+		name    string
+		input   string
+		wantMap map[string]string
+	}{
+		{
+			name:    "source and flagSetId",
+			input:   "source=abc,flagSetId=1234",
+			wantMap: map[string]string{"source": "abc", "flagSetId": "1234"},
+		},
+		{
+			name:    "source",
+			input:   "source=abc",
+			wantMap: map[string]string{"source": "abc"},
+		},
+		{
+			name:    "no equals, treat as source",
+			input:   "mysource",
+			wantMap: map[string]string{"source": "mysource"},
+		},
+		{
+			name:    "empty string",
+			input:   "",
+			wantMap: map[string]string{},
+		},
 	}
-	if s.indexMap["flagSetId"] != "1234" {
-		t.Errorf("NewSelector did not parse flagSetId")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewSelector(tt.input)
+			if !reflect.DeepEqual(s.indexMap, tt.wantMap) {
+				t.Errorf("NewSelector(%q) indexMap = %v, want %v", tt.input, s.indexMap, tt.wantMap)
+			}
+		})
 	}
 }

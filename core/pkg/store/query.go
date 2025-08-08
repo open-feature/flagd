@@ -41,14 +41,21 @@ func NewSelector(selectorExpression string) Selector {
 	}
 }
 
-func expressionToMap(selector string) map[string]string {
+func expressionToMap(sExp string) map[string]string {
 	selectorMap := make(map[string]string)
-	if selector == "" {
+	if sExp == "" {
+		return selectorMap
+	}
+
+	if strings.Index(sExp, "=") == -1 {
+		// if no '=' is found, treat the whole string as as source (backwards compatibility)
+		// we may may support interpreting this as a flagSetId in the future as an option
+		selectorMap[sourceIndex] = sExp
 		return selectorMap
 	}
 
 	// Split the selector by commas
-	pairs := strings.Split(selector, ",")
+	pairs := strings.Split(sExp, ",")
 	for _, pair := range pairs {
 		// Split each pair by the first equal sign
 		parts := strings.Split(pair, "=")
@@ -109,8 +116,12 @@ func (s Selector) ToQuery() (indexId string, constraints []interface{}) {
 
 // SelectorToMetadata converts the selector's internal map to metadata for logging or tracing purposes.
 // Only includes known indices to avoid leaking sensitive information, and is usually returned as the "top level" metadata
-func (s Selector) ToMetadata() model.Metadata {
+func (s *Selector) ToMetadata() model.Metadata {
 	meta := model.Metadata{}
+
+	if s == nil || s.indexMap == nil {
+		return meta
+	}
 
 	if s.indexMap[flagSetIdIndex] != "" {
 		meta[flagSetIdIndex] = s.indexMap[flagSetIdIndex]

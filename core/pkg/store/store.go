@@ -154,11 +154,10 @@ func NewFlags() *Store {
 func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
-	queryMeta := model.Metadata{}
+	queryMeta := selector.ToMetadata()
 
 	// if present, use the selector to query the flags
 	if !selector.IsEmpty() {
-		queryMeta = selector.ToMetadata()
 		selector := selector.WithIndex("key", key)
 		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
@@ -218,10 +217,7 @@ func (f *Store) String() (string, error) {
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
 func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
-	queryMeta := model.Metadata{}
-	if selector != nil && !selector.IsEmpty() {
-		queryMeta = selector.ToMetadata()
-	}
+	queryMeta := selector.ToMetadata()
 	it, err := s.selectOrAll(selector)
 
 	if err != nil {
