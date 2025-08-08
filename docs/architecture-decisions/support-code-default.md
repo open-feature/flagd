@@ -193,10 +193,11 @@ A single flag evaluation returns a `200` status code:
 - Good, because it treats code default usage as successful evaluation with proper telemetry
 - Good, because telemetry can distinguish between configured defaults (variant present) and code defaults (variant absent)
 - Good, because it uses a simple field presence pattern that works across all protocols
-- Good, because it maintains full backward compatibility
+- Good, because it maintains backward compatibility for existing flag configurations
 - Bad, because it requires protobuf schema changes to use `optional` fields
 - Bad, because it requires updates across multiple components (flagd, providers, testbed)
 - Bad, because it introduces a new concept that users need to understand
+- Bad, because it creates a breaking change for older clients evaluating flags configured with `defaultVariant: null` (they would receive zero values instead of using code defaults)
 - Bad, because providers must be updated to handle field presence detection
 - Neutral, because existing configurations continue to work unchanged
 
@@ -208,10 +209,11 @@ A single flag evaluation returns a `200` status code:
 4. Implement core logic in flagd to handle null defaults by conditionally omitting fields in responses
 5. Update OpenFeature providers to check field presence rather than just reading field values
 6. Regenerate protobuf client libraries for all supported languages with new optional field support
-7. Update provider documentation with field presence detection patterns for each language
-8. Add backward compatibility testing to ensure existing clients continue to work
-9. Update CI/CD pipelines to validate protobuf schema changes and field presence behavior
-10. Documentation updates, migration guides, and playground examples to demonstrate the new configuration options
+7. Release updated clients before configuring any flags with `defaultVariant: null` to avoid zero-value issues with older clients
+8. Update provider documentation with field presence detection patterns for each language
+9. Add backward compatibility testing to ensure existing clients continue to work
+10. Update CI/CD pipelines to validate protobuf schema changes and field presence behavior
+11. Documentation updates, migration guides, and playground examples to demonstrate the new configuration options
 
 ### Testing Considerations
 
@@ -234,6 +236,8 @@ To ensure correct implementation across all components:
     - Yes, we'll support both `null` and absent fields to maximize flexibility. An absent `defaultVariant` will be the equivalent of `null`.
 - What migration path should we recommend for users currently using workarounds?
     - Update the flag configurations to use `defaultVariant: null` and remove any misconfigured rulesets that force code defaults.
+- How should we handle the breaking change for older clients evaluating `defaultVariant: null` flags?
+    - Older clients built without optional protobuf fields will receive zero values (false, 0, "") instead of using code defaults. This requires coordinated rollout: (1) Update and deploy all clients with new protobuf definitions, (2) Only then configure flags with `defaultVariant: null`. Alternatively, maintain separate flag configurations during transition period.
 - Should this feature be gated behind a configuration flag during initial rollout?
     - We'll avoid public facing documentation until the feature is fully implemented and tested.
 - How do we ensure consistent behavior across all provider implementations?
