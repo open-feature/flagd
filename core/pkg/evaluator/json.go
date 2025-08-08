@@ -149,10 +149,12 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
 
-	selector := store.NewSelector("")
+	var selector store.Selector
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
 		selector = s.(store.Selector)
+	} else {
+		selector = store.NewSelector("")
 	}
 	allFlags, flagSetMetadata, err := je.store.GetAll(ctx, selector)
 	if err != nil {
