@@ -20,107 +20,107 @@ import (
 
 const InvalidFlags = `{
   "flags": {
-    "invalidFlag": {
-      "notState": "ENABLED",
-      "notVariants": {
-        "on": true,
-        "off": false
-      },
-      "notDefaultVariant": "on"
-    }
+	"invalidFlag": {
+	  "notState": "ENABLED",
+	  "notVariants": {
+		"on": true,
+		"off": false
+	  },
+	  "notDefaultVariant": "on"
+	}
   }
 }`
 
 const ValidFlags = `{
   "flags": {
-    "validFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": "on"
-    }
+	"validFlag": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
+	  "defaultVariant": "on"
+	}
   }
 }`
 
 const NullDefault = `{
   "flags": {
-    "validFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": null
-    }
+	"validFlag": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
+	  "defaultVariant": null
+	}
   }
 }`
 
 const UndefinedDefault = `{
   "flags": {
-    "validFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      }
-    }
+	"validFlag": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  }
+	}
   }
 }`
 
 const NullDefaultWithTargetting = `{
   "flags": {
-    "validFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": null,
+	"validFlag": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
+	  "defaultVariant": null,
 	  "targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "key"
-                ]
-              },
-              "value"
-            ]
-          },
-          "on"
-        ]
-      }
-    }
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "key"
+				]
+			  },
+			  "value"
+			]
+		  },
+		  "on"
+		]
+	  }
+	}
   }
 }`
 
 const UndefinedDefaultWithTargetting = `{
   "flags": {
-    "validFlag": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
+	"validFlag": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
 	  "targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "key"
-                ]
-              },
-              "value"
-            ]
-          },
-          "on"
-        ]
-      }
-    }
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "key"
+				]
+			  },
+			  "value"
+			]
+		  },
+		  "on"
+		]
+	  }
+	}
   }
 }`
 
@@ -162,30 +162,30 @@ var Flags = fmt.Sprintf(`{
 		"version": "%s"
 	},
   "flags": {
-    "%s": {
-      "state": "ENABLED",
-      "variants": {
-        "on": %t,
-        "off": false
-      },
-      "defaultVariant": "on"
-    },
+	"%s": {
+	  "state": "ENABLED",
+	  "variants": {
+		"on": %t,
+		"off": false
+	  },
+	  "defaultVariant": "on"
+	},
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "red": "%s",
-        "blue": "#0000CC"
-      },
-      "defaultVariant": "red"
-    },
+	  "state": "ENABLED",
+	  "variants": {
+		"red": "%s",
+		"blue": "#0000CC"
+	  },
+	  "defaultVariant": "red"
+	},
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "one": %f,
-        "two": 2
-      },
-      "defaultVariant": "one"
-    },
+	  "state": "ENABLED",
+	  "variants": {
+		"one": %f,
+		"two": 2
+	  },
+	  "defaultVariant": "one"
+	},
 	"%s": {
 		"state": "ENABLED",
 		"variants": {
@@ -195,87 +195,87 @@ var Flags = fmt.Sprintf(`{
 		"defaultVariant": "one"
 	  },
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "obj1": %s,
-        "obj2": {
+	  "state": "ENABLED",
+	  "variants": {
+		"obj1": %s,
+		"obj2": {
 					"xyz": true
 				}
-      },
-      "defaultVariant": "obj1"
-    },
+	  },
+	  "defaultVariant": "obj1"
+	},
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "bool1": %t,
-        "bool2": false
-      },
-      "defaultVariant": "bool2",
+	  "state": "ENABLED",
+	  "variants": {
+		"bool1": %t,
+		"bool2": false
+	  },
+	  "defaultVariant": "bool2",
 			"targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "%s"
-                ]
-              },
-              "%s"
-            ]
-          },
-          "bool1",
-          null
-        ]
-      }
-    },
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "%s"
+				]
+			  },
+			  "%s"
+			]
+		  },
+		  "bool1",
+		  null
+		]
+	  }
+	},
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "str1": "%s",
-        "str2": "other"
-      },
-      "defaultVariant": "str2",
+	  "state": "ENABLED",
+	  "variants": {
+		"str1": "%s",
+		"str2": "other"
+	  },
+	  "defaultVariant": "str2",
 			"targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "%s"
-                ]
-              },
-              "%s"
-            ]
-          },
-          "str1",
-          null
-        ]
-      }
-    },
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "%s"
+				]
+			  },
+			  "%s"
+			]
+		  },
+		  "str1",
+		  null
+		]
+	  }
+	},
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "number1": %f,
-        "number2": 200
-      },
-      "defaultVariant": "number2",
+	  "state": "ENABLED",
+	  "variants": {
+		"number1": %f,
+		"number2": 200
+	  },
+	  "defaultVariant": "number2",
 			"targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "%s"
-                ]
-              },
-              "%s"
-            ]
-          },
-          "number1",
-          null
-        ]
-      }
-    },
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "%s"
+				]
+			  },
+			  "%s"
+			]
+		  },
+		  "number1",
+		  null
+		]
+	  }
+	},
 	"%s": {
 		"state": "ENABLED",
 		"variants": {
@@ -301,48 +301,48 @@ var Flags = fmt.Sprintf(`{
 		}
 	  },
 		"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "object1": %s,
-        "object2": {}
-      },
-      "defaultVariant": "object2",
+	  "state": "ENABLED",
+	  "variants": {
+		"object1": %s,
+		"object2": {}
+	  },
+	  "defaultVariant": "object2",
 			"targeting": {
-        "if": [
-          {
-            "==": [
-              {
-                "var": [
-                  "%s"
-                ]
-              },
-              "%s"
-            ]
-          },
-          "object1",
-          null
-        ]
-      }
-    },
+		"if": [
+		  {
+			"==": [
+			  {
+				"var": [
+				  "%s"
+				]
+			  },
+			  "%s"
+			]
+		  },
+		  "object1",
+		  null
+		]
+	  }
+	},
 	"%s": {
-      "state": "DISABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": "on"
-    },
+	  "state": "DISABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
+	  "defaultVariant": "on"
+	},
 	"%s": {
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": "on",
+	  "state": "ENABLED",
+	  "variants": {
+		"on": true,
+		"off": false
+	  },
+	  "defaultVariant": "on",
 			"metadata": {
 				"version": "%s"
 			}
-    }
+	}
   }
 }`,
 	FlagSetID,
@@ -1011,7 +1011,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 					  "defaultVariant": "black"
 					}
 				  }
-			    }
+				}
 			`,
 			valid: true,
 		},
@@ -1028,7 +1028,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 					  "defaultVariant": "yellow"
 					}
 				  }
-			    }
+				}
 			`,
 			valid: false,
 		},
@@ -1057,7 +1057,7 @@ func TestState_Evaluator(t *testing.T) {
 		"success": {
 			inputState: `
 				{
-  					"flags": {
+					"flags": {
 						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
@@ -1074,7 +1074,7 @@ func TestState_Evaluator(t *testing.T) {
 							  }, "binet", null
 							]
 						  }
-    					}
+						}
 					},
 					"$evaluators": {
 						"emailWithFaas": {
@@ -1082,12 +1082,12 @@ func TestState_Evaluator(t *testing.T) {
 								"var": ["email"]
 							  }]
 						}
-  					}
+					}
 				}
 			`,
 			expectedOutputState: `
 				{
-  					"flags": {
+					"flags": {
 						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
@@ -1108,7 +1108,7 @@ func TestState_Evaluator(t *testing.T) {
 							  }, "binet", null
 							]
 						  }
-    					}
+						}
 					},
 					"flagSources":null
 				}
@@ -1147,7 +1147,7 @@ func TestState_Evaluator(t *testing.T) {
 			`,
 			expectedOutputState: `
 				{
-  					"flags": {
+					"flags": {
 						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
@@ -1168,7 +1168,7 @@ func TestState_Evaluator(t *testing.T) {
 							  }, "binet", null
 							]
 						  }
-    					}
+						}
 					},
 					"flagSources":null
 				}
@@ -1177,7 +1177,7 @@ func TestState_Evaluator(t *testing.T) {
 		"invalid evaluator json": {
 			inputState: `
 				{
-  					"flags": {
+					"flags": {
 						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
@@ -1194,11 +1194,11 @@ func TestState_Evaluator(t *testing.T) {
 							  }, "binet", null
 							]
 						  }
-    					}
+						}
 					},
 					"$evaluators": {
 						"emailWithFaas": "foo"
-  					}
+					}
 				}
 			`,
 			expectedError: true,
@@ -1312,7 +1312,7 @@ func TestState_Evaluator(t *testing.T) {
 		"empty evaluator": {
 			inputState: `
 				{
-  					"flags": {
+					"flags": {
 						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
@@ -1329,11 +1329,11 @@ func TestState_Evaluator(t *testing.T) {
 							  }, "binet", null
 							]
 						  }
-    					}
+						}
 					},
 					"$evaluators": {
 						"emailWithFaas": ""
-  					}
+					}
 				}
 			`,
 			expectedError: true,
@@ -1679,4 +1679,175 @@ func TestTargetingVariantBehavior(t *testing.T) {
 			t.Fatal("did not map to stringified boolean")
 		}
 	})
+}
+
+// TestMixedTypeVariants_TypeConsistency verifies type consistency for mixed-type variants and defaultVariant logic.
+func TestMixedTypeVariants_TypeConsistency(t *testing.T) {
+	// Config with defaultVariant: "off" (bool), "on" is int
+	flagConfigBoolDefault := `{
+			   "flags": {
+				 "is-enabled": {
+				   "defaultVariant": "off",
+				   "state": "ENABLED",
+				   "targeting": {
+					 "if": [
+					   {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
+					   "on",
+					   "off"
+					 ]
+				   },
+				   "variants": {
+					 "on": 1,
+					 "off": false
+				   }
+				 }
+			   }
+			 }`
+
+	// Config with defaultVariant: "on" (int), "off" is bool
+	flagConfigIntDefault := `{
+			   "flags": {
+				 "is-enabled": {
+				   "defaultVariant": "on",
+				   "state": "ENABLED",
+				   "targeting": {
+					 "if": [
+					   {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
+					   "on",
+					   "off"
+					 ]
+				   },
+				   "variants": {
+					 "on": 1,
+					 "off": false
+				   }
+				 }
+			   }
+			 }`
+
+	type testCase struct {
+		config           string
+		context          map[string]interface{}
+		expectBoolErr    bool
+		expectIntErr     bool
+		expectBoolVal    bool
+		expectIntVal     int64
+		expectBoolReason string
+		expectIntReason  string
+		expectAllType    string
+		expectAllReason  string
+	}
+
+	tests := []struct {
+		name string
+		tc   testCase
+	}{
+		{
+			name: "defaultVariant=off, request_id=42 (should resolve to 'on', type mismatch for bool, ok for int)",
+			tc: testCase{
+				config:           flagConfigBoolDefault,
+				context:          map[string]interface{}{"request_id": 42},
+				expectBoolErr:    true,
+				expectIntErr:     true,
+				expectIntVal:     1,
+				expectIntReason:  model.ErrorReason,
+				expectBoolReason: model.ErrorReason,
+				expectAllType:    "bool", // fallback to default type (off=false)
+				expectAllReason:  model.ErrorReason,
+			},
+		},
+		{
+			name: "defaultVariant=off, request_id=420 (should resolve to 'off', ok for bool, type mismatch for int)",
+			tc: testCase{
+				config:           flagConfigBoolDefault,
+				context:          map[string]interface{}{"request_id": 420},
+				expectBoolErr:    false,
+				expectBoolVal:    false,
+				expectBoolReason: model.TargetingMatchReason,
+				expectIntErr:     true,
+				expectAllType:    "bool",
+				expectAllReason:  model.TargetingMatchReason,
+			},
+		},
+		{
+			name: "defaultVariant=on, request_id=42 (should resolve to 'on', ok for int, type mismatch for bool)",
+			tc: testCase{
+				config:          flagConfigIntDefault,
+				context:         map[string]interface{}{"request_id": 42},
+				expectIntErr:    false,
+				expectIntVal:    1,
+				expectIntReason: model.TargetingMatchReason,
+				expectBoolErr:   true,
+				expectAllType:   "double",
+				expectAllReason: model.TargetingMatchReason,
+			},
+		},
+		{
+			name: "defaultVariant=on, request_id=420 (should resolve to 'off', type mismatch for int, ok for bool)",
+			tc: testCase{
+				config:           flagConfigIntDefault,
+				context:          map[string]interface{}{"request_id": 420},
+				expectIntErr:     true,
+				expectBoolErr:    true,
+				expectBoolReason: model.ErrorReason,
+				expectAllType:    "double",
+				expectAllReason:  model.ErrorReason,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			_, _, err := evaluator.SetState(sync.DataSync{FlagData: test.tc.config})
+			if err != nil {
+				t.Fatalf("SetState error: %v", err)
+			}
+			reqID := "test"
+
+			// Test ResolveBooleanValue
+			boolVal, _, boolReason, _, boolErr := evaluator.ResolveBooleanValue(context.TODO(), reqID, "is-enabled", test.tc.context)
+			if test.tc.expectBoolErr {
+				if assert.Error(t, boolErr, "expected bool type error") {
+					assert.Equal(t, model.TypeMismatchErrorCode, boolErr.Error(), "bool error code")
+				}
+			} else {
+				assert.NoError(t, boolErr, "expected no bool error")
+				assert.Equal(t, test.tc.expectBoolVal, boolVal, "bool value")
+				assert.Equal(t, test.tc.expectBoolReason, boolReason, "bool reason")
+			}
+
+			// Test ResolveIntValue
+			intVal, _, intReason, _, intErr := evaluator.ResolveIntValue(context.TODO(), reqID, "is-enabled", test.tc.context)
+			if test.tc.expectIntErr {
+				if assert.Error(t, intErr, "expected int type error") {
+					assert.Equal(t, model.TypeMismatchErrorCode, intErr.Error(), "int error code")
+				}
+			} else {
+				assert.NoError(t, intErr, "expected no int error")
+				assert.Equal(t, test.tc.expectIntVal, intVal, "int value")
+				assert.Equal(t, test.tc.expectIntReason, intReason, "int reason")
+			}
+
+			// Test ResolveAllValues
+			allVals, _, allErr := evaluator.ResolveAllValues(context.TODO(), reqID, test.tc.context)
+			assert.NoError(t, allErr, "expected no error from ResolveAllValues")
+			found := false
+			for _, v := range allVals {
+				if v.FlagKey == "is-enabled" {
+					found = true
+					switch test.tc.expectAllType {
+					case "bool":
+						_, ok := v.Value.(bool)
+						assert.True(t, ok, "expected bool value in ResolveAll")
+					case "double":
+						_, ok := v.Value.(float64)
+						assert.True(t, ok, "expected float64 value in ResolveAll")
+					}
+					assert.Equal(t, test.tc.expectAllReason, v.Reason, "ResolveAll reason")
+				}
+			}
+			assert.True(t, found, "is-enabled flag should be present in ResolveAllValues")
+		})
+	}
 }
