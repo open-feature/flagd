@@ -255,8 +255,8 @@ To ensure correct implementation across all components:
 
 | Date       | Author    | Change Summary                                                                                                                                                              |
 | ---------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2025-06-06 | @beeme1mr | Initial ADR creation with error-based approach                                                                                                                              |
-| 2025-08-08 | @beeme1mr | **Major revision**: Changed from error-based (`FLAG_NOT_FOUND`) to success-based approach (`DEFAULT` reason) following OFREP improvements that enable optional value fields |
+| 2025-06-06 | Michael Beemer | Initial ADR creation with error-based approach                                                                                                                              |
+| 2025-08-08 | Michael Beemer | **Major revision**: Changed from error-based (`FLAG_NOT_FOUND`) to success-based approach (`DEFAULT` reason) following OFREP improvements that enable optional value fields |
 
 ## More Information
 
