@@ -174,46 +174,46 @@ func TestGet(t *testing.T) {
 
 	t.Parallel()
 	tests := []struct {
-		name      string
-		key       string
-		selector  Selector
-		wantFlag  model.Flag
-		wantFound bool
+		name     string
+		key      string
+		selector Selector
+		wantFlag model.Flag
+		wantErr  bool
 	}{
 		{
-			name:      "nil selector",
-			key:       "flagA",
-			selector:  nil,
-			wantFlag:  model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-			wantFound: true,
+			name:     "nil selector",
+			key:      "flagA",
+			selector: nil,
+			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantErr:  false,
 		},
 		{
-			name:      "flagSetId selector",
-			key:       "dupe",
-			selector:  flagSetIdCSelector,
-			wantFlag:  model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-			wantFound: true,
+			name:     "flagSetId selector",
+			key:      "dupe",
+			selector: flagSetIdCSelector,
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			wantErr:  false,
 		},
 		{
-			name:      "source selector",
-			key:       "dupe",
-			selector:  sourceASelector,
-			wantFlag:  model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-			wantFound: true,
+			name:     "source selector",
+			key:      "dupe",
+			selector: sourceASelector,
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantErr:  false,
 		},
 		{
-			name:      "flag not found with source selector",
-			key:       "flagB",
-			selector:  sourceASelector,
-			wantFlag:  model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
-			wantFound: false,
+			name:     "flag not found with source selector",
+			key:      "flagB",
+			selector: sourceASelector,
+			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			wantErr:  true,
 		},
 		{
-			name:      "flag not found with flagSetId selector",
-			key:       "flagB",
-			selector:  flagSetIdCSelector,
-			wantFlag:  model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
-			wantFound: false,
+			name:     "flag not found with flagSetId selector",
+			key:      "flagB",
+			selector: flagSetIdCSelector,
+			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			wantErr:  true,
 		},
 	}
 
@@ -242,12 +242,12 @@ func TestGet(t *testing.T) {
 			store.Update(sourceA, sourceAFlags, nil)
 			store.Update(sourceB, sourceBFlags, nil)
 			store.Update(sourceC, sourceCFlags, nil)
-			gotFlag, _, found := store.Get(context.Background(), tt.key, tt.selector)
+			gotFlag, _, err := store.Get(context.Background(), tt.key, tt.selector)
 
-			require.Equal(t, tt.wantFound, found, "expected found to be %v, got %v", tt.wantFound, found)
-
-			if tt.wantFound {
+			if !tt.wantErr {
 				require.Equal(t, tt.wantFlag, gotFlag)
+			} else {
+				require.Error(t, err, "expected an error for key %s with selector %v", tt.key, tt.selector)
 			}
 		})
 	}

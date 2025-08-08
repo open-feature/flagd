@@ -37,17 +37,21 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 	watcher := make(chan store.FlagQueryResult, 1)
 	go func() {
 		// store the previous flags to compare against new notifications, to compute proper diffs for RPC mode
-		oldFlags := map[string]model.Flag{}
-		for payload := range watcher {
-			newFlags := payload.Flags
-			notifications := notifications.NewFromFlags(oldFlags, newFlags)
-			notifier <- iservice.Notification{
-				Type: iservice.ConfigurationChange,
-				Data: map[string]interface{}{
-					"flags": notifications,
-				},
+		var oldFlags map[string]model.Flag
+		for result := range watcher {
+			newFlags := result.Flags
+
+			// ignore the first notification (nil old flags), the watcher emits on initialization, but for RPC we don't care until there's a change
+			if oldFlags != nil {
+				notifications := notifications.NewFromFlags(oldFlags, newFlags)
+				notifier <- iservice.Notification{
+					Type: iservice.ConfigurationChange,
+					Data: map[string]interface{}{
+						"flags": notifications,
+					},
+				}
 			}
-			oldFlags = newFlags
+			oldFlags = result.Flags
 		}
 
 		eventing.logger.Debug(fmt.Sprintf("closing notify channel for id %v", id))

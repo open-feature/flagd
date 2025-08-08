@@ -308,13 +308,18 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 
-	selector := store.NewSelector("")
+	var selector store.Selector
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
 		selector = s.(store.Selector)
+	} else {
+		selector = store.NewSelector("")
 	}
-	flag, metadata, ok := je.store.Get(ctx, flagKey, selector)
-	if !ok {
+	if s != nil {
+		selector = s.(store.Selector)
+	}
+	flag, metadata, err := je.store.Get(ctx, flagKey, selector)
+	if err != nil {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
 		return "", map[string]interface{}{}, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)

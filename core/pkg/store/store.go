@@ -22,7 +22,7 @@ type FlagQueryResult struct {
 }
 
 type IStore interface {
-	Get(ctx context.Context, key string, selector Selector) (model.Flag, model.Metadata, bool)
+	Get(ctx context.Context, key string, selector Selector) (model.Flag, model.Metadata, error)
 	GetAll(ctx context.Context, selector Selector) (map[string]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector Selector, watcher chan FlagQueryResult)
 }
@@ -151,7 +151,7 @@ func NewFlags() *Store {
 	return state
 }
 
-func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Flag, model.Metadata, bool) {
+func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Flag, model.Metadata, error) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
 	queryMeta := model.Metadata{}
@@ -165,33 +165,36 @@ func (s *Store) Get(_ context.Context, key string, selector Selector) (model.Fla
 		raw, err := txn.First(flagsTable, indexId, constraints...)
 		flag, ok := raw.(model.Flag)
 		if (err != nil) || !ok {
-			return model.Flag{}, queryMeta, false
+			return model.Flag{}, queryMeta, fmt.Errorf("flag %s not found: %w", key, err)
 		}
-		return flag, queryMeta, true
+		return flag, queryMeta, nil
 
 	}
 	// otherwise, get all flags with the given key, and keep the last one with the highest priority
 	s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
 	it, err := txn.Get(flagsTable, keyIndex, key)
 	if err != nil {
-		return model.Flag{}, queryMeta, false
+		return model.Flag{}, queryMeta, fmt.Errorf("flag %s not found: %w", key, err)
 	}
 	flag := model.Flag{}
-	var found bool
+	found := false
 	for raw := it.Next(); raw != nil; raw = it.Next() {
-		s.logger.Debug(fmt.Sprintf("got range scan: %v", raw))
 		nextFlag, ok := raw.(model.Flag)
-		found = true
 		if !ok {
 			continue
 		}
+		found = true
 		if nextFlag.Priority >= flag.Priority {
 			flag = nextFlag
 		} else {
 			s.logger.Debug(fmt.Sprintf("discarding flag %s from lower priority source %s in favor of flag from source %s", nextFlag.Key, s.sources[nextFlag.Priority], s.sources[flag.Priority]))
 		}
 	}
-	return flag, queryMeta, found
+
+	if !found {
+		return flag, queryMeta, fmt.Errorf("flag %s not found", key)
+	}
+	return flag, queryMeta, nil
 }
 
 func (f *Store) String() (string, error) {

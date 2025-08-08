@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -209,6 +210,53 @@ func TestConnectServiceNotify(t *testing.T) {
 	select {
 	case n := <-sChan:
 		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
+	case <-timeout.Done():
+		t.Error("timeout while waiting for notifications")
+	}
+}
+
+func TestConnectServiceWatcher(t *testing.T) {
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+
+	sChan := make(chan iservice.Notification, 1)
+	eventing := eventingConfiguration{
+		store:  s,
+		logger: log,
+		mu:     &sync.RWMutex{},
+		subs:   make(map[any]chan iservice.Notification),
+	}
+
+	// subscribe and wait for for the sub to be active
+	eventing.Subscribe(context.Background(), "anything", nil, sChan)
+	time.Sleep(100 * time.Millisecond)
+
+	// make a change
+	s.Update(sources[0], map[string]model.Flag{
+		"flag1": {
+			Key:            "flag1",
+			DefaultVariant: "off",
+		},
+	}, model.Metadata{})
+
+	// notification type
+	ofType := iservice.ConfigurationChange
+
+	timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	select {
+	case n := <-sChan:
+		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
+		notifications := n.Data["flags"].(map[string]interface{})
+		flag1, ok := notifications["flag1"].(map[string]interface{})
+		require.True(t, ok, "flag1 notification should be a map[string]interface{}")
+		require.Equal(t, flag1["type"], string(model.NotificationCreate), "expected notification type: %s, but received %s", model.NotificationCreate, flag1["type"])
 	case <-timeout.Done():
 		t.Error("timeout while waiting for notifications")
 	}
