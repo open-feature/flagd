@@ -153,8 +153,6 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
 		selector = s.(store.Selector)
-	} else {
-		selector = store.NewSelector("")
 	}
 	allFlags, flagSetMetadata, err := je.store.GetAll(ctx, &selector)
 	if err != nil {
