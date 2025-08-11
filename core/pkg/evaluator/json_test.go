@@ -20,107 +20,107 @@ import (
 
 const InvalidFlags = `{
   "flags": {
-	"invalidFlag": {
-	  "notState": "ENABLED",
-	  "notVariants": {
-		"on": true,
-		"off": false
-	  },
-	  "notDefaultVariant": "on"
-	}
+    "invalidFlag": {
+      "notState": "ENABLED",
+      "notVariants": {
+        "on": true,
+        "off": false
+      },
+      "notDefaultVariant": "on"
+    }
   }
 }`
 
 const ValidFlags = `{
   "flags": {
-	"validFlag": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "defaultVariant": "on"
-	}
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
+    }
   }
 }`
 
 const NullDefault = `{
   "flags": {
-	"validFlag": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "defaultVariant": null
-	}
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": null
+    }
   }
 }`
 
 const UndefinedDefault = `{
   "flags": {
-	"validFlag": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  }
-	}
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      }
+    }
   }
 }`
 
 const NullDefaultWithTargetting = `{
   "flags": {
-	"validFlag": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "defaultVariant": null,
-	  "targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "key"
-				]
-			  },
-			  "value"
-			]
-		  },
-		  "on"
-		]
-	  }
-	}
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": null,
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "key"
+                ]
+              },
+              "value"
+            ]
+          },
+          "on"
+        ]
+      }
+    }
   }
 }`
 
 const UndefinedDefaultWithTargetting = `{
   "flags": {
-	"validFlag": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "key"
-				]
-			  },
-			  "value"
-			]
-		  },
-		  "on"
-		]
-	  }
-	}
+    "validFlag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "key"
+                ]
+              },
+              "value"
+            ]
+          },
+          "on"
+        ]
+      }
+    }
   }
 }`
 
@@ -157,192 +157,192 @@ const (
 )
 
 var Flags = fmt.Sprintf(`{
-	"metadata": {
-		"flagSetId": "%s",
-		"version": "%s"
-	},
+    "metadata": {
+        "flagSetId": "%s",
+        "version": "%s"
+    },
   "flags": {
-	"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": %t,
-		"off": false
-	  },
-	  "defaultVariant": "on"
-	},
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"red": "%s",
-		"blue": "#0000CC"
-	  },
-	  "defaultVariant": "red"
-	},
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"one": %f,
-		"two": 2
-	  },
-	  "defaultVariant": "one"
-	},
-	"%s": {
-		"state": "ENABLED",
-		"variants": {
-		  "one": %d,
-		  "two": 2
-		},
-		"defaultVariant": "one"
-	  },
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"obj1": %s,
-		"obj2": {
-					"xyz": true
-				}
-	  },
-	  "defaultVariant": "obj1"
-	},
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"bool1": %t,
-		"bool2": false
-	  },
-	  "defaultVariant": "bool2",
-			"targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "%s"
-				]
-			  },
-			  "%s"
-			]
-		  },
-		  "bool1",
-		  null
-		]
-	  }
-	},
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"str1": "%s",
-		"str2": "other"
-	  },
-	  "defaultVariant": "str2",
-			"targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "%s"
-				]
-			  },
-			  "%s"
-			]
-		  },
-		  "str1",
-		  null
-		]
-	  }
-	},
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"number1": %f,
-		"number2": 200
-	  },
-	  "defaultVariant": "number2",
-			"targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "%s"
-				]
-			  },
-			  "%s"
-			]
-		  },
-		  "number1",
-		  null
-		]
-	  }
-	},
-	"%s": {
-		"state": "ENABLED",
-		"variants": {
-		  "number1": %d,
-		  "number2": 200
-		},
-		"defaultVariant": "number2",
-			  "targeting": {
-		  "if": [
-			{
-			  "==": [
-				{
-				  "var": [
-					"%s"
-				  ]
-				},
-				"%s"
-			  ]
-			},
-			"number1",
-			null
-		  ]
-		}
-	  },
-		"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"object1": %s,
-		"object2": {}
-	  },
-	  "defaultVariant": "object2",
-			"targeting": {
-		"if": [
-		  {
-			"==": [
-			  {
-				"var": [
-				  "%s"
-				]
-			  },
-			  "%s"
-			]
-		  },
-		  "object1",
-		  null
-		]
-	  }
-	},
-	"%s": {
-	  "state": "DISABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "defaultVariant": "on"
-	},
-	"%s": {
-	  "state": "ENABLED",
-	  "variants": {
-		"on": true,
-		"off": false
-	  },
-	  "defaultVariant": "on",
-			"metadata": {
-				"version": "%s"
-			}
-	}
+    "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "on": %t,
+        "off": false
+      },
+      "defaultVariant": "on"
+    },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "red": "%s",
+        "blue": "#0000CC"
+      },
+      "defaultVariant": "red"
+    },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "one": %f,
+        "two": 2
+      },
+      "defaultVariant": "one"
+    },
+    "%s": {
+        "state": "ENABLED",
+        "variants": {
+          "one": %d,
+          "two": 2
+        },
+        "defaultVariant": "one"
+      },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "obj1": %s,
+        "obj2": {
+                    "xyz": true
+                }
+      },
+      "defaultVariant": "obj1"
+    },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "bool1": %t,
+        "bool2": false
+      },
+      "defaultVariant": "bool2",
+            "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "%s"
+                ]
+              },
+              "%s"
+            ]
+          },
+          "bool1",
+          null
+        ]
+      }
+    },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "str1": "%s",
+        "str2": "other"
+      },
+      "defaultVariant": "str2",
+            "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "%s"
+                ]
+              },
+              "%s"
+            ]
+          },
+          "str1",
+          null
+        ]
+      }
+    },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "number1": %f,
+        "number2": 200
+      },
+      "defaultVariant": "number2",
+            "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "%s"
+                ]
+              },
+              "%s"
+            ]
+          },
+          "number1",
+          null
+        ]
+      }
+    },
+    "%s": {
+        "state": "ENABLED",
+        "variants": {
+          "number1": %d,
+          "number2": 200
+        },
+        "defaultVariant": "number2",
+              "targeting": {
+          "if": [
+            {
+              "==": [
+                {
+                  "var": [
+                    "%s"
+                  ]
+                },
+                "%s"
+              ]
+            },
+            "number1",
+            null
+          ]
+        }
+      },
+        "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "object1": %s,
+        "object2": {}
+      },
+      "defaultVariant": "object2",
+            "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": [
+                  "%s"
+                ]
+              },
+              "%s"
+            ]
+          },
+          "object1",
+          null
+        ]
+      }
+    },
+    "%s": {
+      "state": "DISABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
+    },
+    "%s": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+            "metadata": {
+                "version": "%s"
+            }
+    }
   }
 }`,
 	FlagSetID,
@@ -992,44 +992,44 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 	}{
 		"is valid": {
 			jsonFlags: `
-				{
-				  "flags": {
-					"foo": {
-					  "state": "ENABLED",
-					  "variants": {
-						"on": true,
-						"off": false
-					  },
-					  "defaultVariant": "on"
-					},
-					"bar": {
-					  "state": "ENABLED",
-					  "variants": {
-						"black": "#000000",
-						"white": "#FFFFFF"
-					  },
-					  "defaultVariant": "black"
-					}
-				  }
-				}
-			`,
+                {
+                  "flags": {
+                    "foo": {
+                      "state": "ENABLED",
+                      "variants": {
+                        "on": true,
+                        "off": false
+                      },
+                      "defaultVariant": "on"
+                    },
+                    "bar": {
+                      "state": "ENABLED",
+                      "variants": {
+                        "black": "#000000",
+                        "white": "#FFFFFF"
+                      },
+                      "defaultVariant": "black"
+                    }
+                  }
+                }
+            `,
 			valid: true,
 		},
 		"is not valid": {
 			jsonFlags: `
-				{
-				  "flags": {
-					"foo": {
-					  "state": "ENABLED",
-					  "variants": {
-						"black": "#000000",
-						"white": "#FFFFFF"
-					  },
-					  "defaultVariant": "yellow"
-					}
-				  }
-				}
-			`,
+                {
+                  "flags": {
+                    "foo": {
+                      "state": "ENABLED",
+                      "variants": {
+                        "black": "#000000",
+                        "white": "#FFFFFF"
+                      },
+                      "defaultVariant": "yellow"
+                    }
+                  }
+                }
+            `,
 			valid: false,
 		},
 	}
@@ -1056,286 +1056,286 @@ func TestState_Evaluator(t *testing.T) {
 	}{
 		"success": {
 			inputState: `
-				{
-					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-						}
-					},
-					"$evaluators": {
-						"emailWithFaas": {
-							  "in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-						}
-					}
-				}
-			`,
+                {
+                    "flags": {
+                        "fibAlgo": {
+                          "variants": {
+                            "recursive": "recursive",
+                            "memo": "memo",
+                            "loop": "loop",
+                            "binet": "binet"
+                          },
+                          "defaultVariant": "recursive",
+                          "state": "ENABLED",
+                          "targeting": {
+                            "if": [
+                              {
+                                "$ref": "emailWithFaas"
+                              }, "binet", null
+                            ]
+                          }
+                        }
+                    },
+                    "$evaluators": {
+                        "emailWithFaas": {
+                              "in": ["@faas.com", {
+                                "var": ["email"]
+                              }]
+                        }
+                    }
+                }
+            `,
 			expectedOutputState: `
-				{
-					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"",
-						  "selector":"",
-						  "targeting": {
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }
-						}
-					},
-					"flagSources":null
-				}
-			`,
+                {
+                    "flags": {
+                        "fibAlgo": {
+                          "variants": {
+                            "recursive": "recursive",
+                            "memo": "memo",
+                            "loop": "loop",
+                            "binet": "binet"
+                          },
+                          "defaultVariant": "recursive",
+                          "state": "ENABLED",
+                          "source":"",
+                          "selector":"",
+                          "targeting": {
+                            "if": [
+                              {
+                                "in": ["@faas.com", {
+                                "var": ["email"]
+                              }]
+                              }, "binet", null
+                            ]
+                          }
+                        }
+                    },
+                    "flagSources":null
+                }
+            `,
 		},
 		"no-indentation": {
 			inputState: `
-				{
-				"flags": {
-				"fibAlgo": {
-				"variants": {
-				"recursive": "recursive",
-				"memo": "memo",
-				"loop": "loop",
-				"binet": "binet"
-				},
-				"defaultVariant": "recursive",
-				"state": "ENABLED",
-				"targeting": {
-				"if": [
-				{
-				"$ref": "emailWithFaas"
-				}, "binet", null
-				]
-				}
-				}
-				},
-				"$evaluators": {
-				"emailWithFaas": {
-				"in": ["@faas.com", {
-				"var": ["email"]
-				}]
-				}
-				}
-				}
-			`,
+                {
+                "flags": {
+                "fibAlgo": {
+                "variants": {
+                "recursive": "recursive",
+                "memo": "memo",
+                "loop": "loop",
+                "binet": "binet"
+                },
+                "defaultVariant": "recursive",
+                "state": "ENABLED",
+                "targeting": {
+                "if": [
+                {
+                "$ref": "emailWithFaas"
+                }, "binet", null
+                ]
+                }
+                }
+                },
+                "$evaluators": {
+                "emailWithFaas": {
+                "in": ["@faas.com", {
+                "var": ["email"]
+                }]
+                }
+                }
+                }
+            `,
 			expectedOutputState: `
-				{
-					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"",
-						  "selector":"",
-						  "targeting": {
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }
-						}
-					},
-					"flagSources":null
-				}
-			`,
+                {
+                    "flags": {
+                        "fibAlgo": {
+                          "variants": {
+                            "recursive": "recursive",
+                            "memo": "memo",
+                            "loop": "loop",
+                            "binet": "binet"
+                          },
+                          "defaultVariant": "recursive",
+                          "state": "ENABLED",
+                          "source":"",
+                          "selector":"",
+                          "targeting": {
+                            "if": [
+                              {
+                                "in": ["@faas.com", {
+                                "var": ["email"]
+                              }]
+                              }, "binet", null
+                            ]
+                          }
+                        }
+                    },
+                    "flagSources":null
+                }
+            `,
 		},
 		"invalid evaluator json": {
 			inputState: `
-				{
-					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-						}
-					},
-					"$evaluators": {
-						"emailWithFaas": "foo"
-					}
-				}
-			`,
+                {
+                    "flags": {
+                        "fibAlgo": {
+                          "variants": {
+                            "recursive": "recursive",
+                            "memo": "memo",
+                            "loop": "loop",
+                            "binet": "binet"
+                          },
+                          "defaultVariant": "recursive",
+                          "state": "ENABLED",
+                          "targeting": {
+                            "if": [
+                              {
+                                "$ref": "emailWithFaas"
+                              }, "binet", null
+                            ]
+                          }
+                        }
+                    },
+                    "$evaluators": {
+                        "emailWithFaas": "foo"
+                    }
+                }
+            `,
 			expectedError: true,
 		},
 		"invalid targeting": {
 			inputState: `
-			{
-					"flags": {
-					"fibAlgo": {
-						"variants": {
-						"recursive": "recursive",
-						"memo": "memo",
-						"loop": "loop",
-						"binet": "binet"
-						},
-						"defaultVariant": "recursive",
-						"state": "ENABLED",
-						"targeting": {
-						"if": [
-							{
-							"in": ["@faas.com", {
-							"var": ["email"]
-							}]
-							}, "binet", "null", "loop"
-						]
-						}
-						},
-					"isColorYellow": {
-						"state": "ENABLED",
-						"variants": {
-							"on": true,
-							"off": false
-						},
-						"defaultVariant": "off",
-						"source":"",
-						"targeting": {
-							"if": [
-								{
-									"==": [
-										{
-											"varr": ["color"]
-										},
-										"yellow"
-									]
-								},
-								"on",
-								"off",
-								"none"
-							]
-						}
-					}
-				},
-				"flagSources":null
-			}
-		`,
+            {
+                    "flags": {
+                    "fibAlgo": {
+                        "variants": {
+                        "recursive": "recursive",
+                        "memo": "memo",
+                        "loop": "loop",
+                        "binet": "binet"
+                        },
+                        "defaultVariant": "recursive",
+                        "state": "ENABLED",
+                        "targeting": {
+                        "if": [
+                            {
+                            "in": ["@faas.com", {
+                            "var": ["email"]
+                            }]
+                            }, "binet", "null", "loop"
+                        ]
+                        }
+                        },
+                    "isColorYellow": {
+                        "state": "ENABLED",
+                        "variants": {
+                            "on": true,
+                            "off": false
+                        },
+                        "defaultVariant": "off",
+                        "source":"",
+                        "targeting": {
+                            "if": [
+                                {
+                                    "==": [
+                                        {
+                                            "varr": ["color"]
+                                        },
+                                        "yellow"
+                                    ]
+                                },
+                                "on",
+                                "off",
+                                "none"
+                            ]
+                        }
+                    }
+                },
+                "flagSources":null
+            }
+        `,
 			expectedError: false,
 			expectedOutputState: `
-			{
-					"flags": {
-					"fibAlgo": {
-						"variants": {
-						"recursive": "recursive",
-						"memo": "memo",
-						"loop": "loop",
-						"binet": "binet"
-						},
-						"defaultVariant": "recursive",
-						"state": "ENABLED",
-						"source":"",
-						"selector":"",
-						"targeting": {
-						"if": [
-							{
-							"in": ["@faas.com", {
-							"var": ["email"]
-							}]
-							}, "binet", "null", "loop"
-						]
-						}
-						},
-					"isColorYellow": {
-						"state": "ENABLED",
-						"variants": {
-							"on": true,
-							"off": false
-						},
-						"defaultVariant": "off",
-						"source":"",
-						"selector":"",
-						"targeting": {
-							"if": [
-								{
-									"==": [
-										{
-											"varr": ["color"]
-										},
-										"yellow"
-									]
-								},
-								"on",
-								"off",
-								"none"
-							]
-						}
-					}
-				},
-				"flagSources":null
-			}
-		`,
+            {
+                    "flags": {
+                    "fibAlgo": {
+                        "variants": {
+                        "recursive": "recursive",
+                        "memo": "memo",
+                        "loop": "loop",
+                        "binet": "binet"
+                        },
+                        "defaultVariant": "recursive",
+                        "state": "ENABLED",
+                        "source":"",
+                        "selector":"",
+                        "targeting": {
+                        "if": [
+                            {
+                            "in": ["@faas.com", {
+                            "var": ["email"]
+                            }]
+                            }, "binet", "null", "loop"
+                        ]
+                        }
+                        },
+                    "isColorYellow": {
+                        "state": "ENABLED",
+                        "variants": {
+                            "on": true,
+                            "off": false
+                        },
+                        "defaultVariant": "off",
+                        "source":"",
+                        "selector":"",
+                        "targeting": {
+                            "if": [
+                                {
+                                    "==": [
+                                        {
+                                            "varr": ["color"]
+                                        },
+                                        "yellow"
+                                    ]
+                                },
+                                "on",
+                                "off",
+                                "none"
+                            ]
+                        }
+                    }
+                },
+                "flagSources":null
+            }
+        `,
 		},
 		"empty evaluator": {
 			inputState: `
-				{
-					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-						}
-					},
-					"$evaluators": {
-						"emailWithFaas": ""
-					}
-				}
-			`,
+                {
+                    "flags": {
+                        "fibAlgo": {
+                          "variants": {
+                            "recursive": "recursive",
+                            "memo": "memo",
+                            "loop": "loop",
+                            "binet": "binet"
+                          },
+                          "defaultVariant": "recursive",
+                          "state": "ENABLED",
+                          "targeting": {
+                            "if": [
+                              {
+                                "$ref": "emailWithFaas"
+                              }, "binet", null
+                            ]
+                          }
+                        }
+                    },
+                    "$evaluators": {
+                        "emailWithFaas": ""
+                    }
+                }
+            `,
 			expectedError: true,
 		},
 	}
@@ -1517,20 +1517,20 @@ func TestFlagdAmbientProperties(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
-			"flags": {
-				"welcome-banner": {
-					"state": "ENABLED",
-					"variants": {
-						"true": true,
-						"false": false
-					},
-					"defaultVariant": "false",
-					"targeting": {
-						"==": [ { "var": "$flagd.flagKey" }, "welcome-banner" ]
-					}
-				}
-			}
-		}`})
+            "flags": {
+                "welcome-banner": {
+                    "state": "ENABLED",
+                    "variants": {
+                        "true": true,
+                        "false": false
+                    },
+                    "defaultVariant": "false",
+                    "targeting": {
+                        "==": [ { "var": "$flagd.flagKey" }, "welcome-banner" ]
+                    }
+                }
+            }
+        }`})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1557,20 +1557,20 @@ func TestFlagdAmbientProperties(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
-			"flags": {
-				"welcome-banner": {
-					"state": "ENABLED",
-					"variants": {
-						"true": true,
-						"false": false
-					},
-					"defaultVariant": "false",
-					"targeting": {
-						"<": [ 1696904426, { "var": "$flagd.timestamp" } ]
-					}
-				}
-			}
-		}`})
+            "flags": {
+                "welcome-banner": {
+                    "state": "ENABLED",
+                    "variants": {
+                        "true": true,
+                        "false": false
+                    },
+                    "defaultVariant": "false",
+                    "targeting": {
+                        "<": [ 1696904426, { "var": "$flagd.timestamp" } ]
+                    }
+                }
+            }
+        }`})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1591,20 +1591,20 @@ func TestTargetingVariantBehavior(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
-			"flags": {
-				"missing-variant": {
-					"state": "ENABLED",
-					"variants": {
-						"foo": true,
-						"bar": false
-					},
-					"defaultVariant": "foo",
-					"targeting": {
-						"if": [ true, "buz", "baz"]
-					}
-				}
-			}
-		}`})
+            "flags": {
+                "missing-variant": {
+                    "state": "ENABLED",
+                    "variants": {
+                        "foo": true,
+                        "bar": false
+                    },
+                    "defaultVariant": "foo",
+                    "targeting": {
+                        "if": [ true, "buz", "baz"]
+                    }
+                }
+            }
+        }`})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1619,20 +1619,20 @@ func TestTargetingVariantBehavior(t *testing.T) {
 		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
-			"flags": {
-				"null-fallback": {
-					"state": "ENABLED",
-					"variants": {
-						"foo": true,
-						"bar": false
-					},
-					"defaultVariant": "foo",
-					"targeting": {
-						"if": [ true, null, "baz"]
-					}
-				}
-			}
-		}`})
+            "flags": {
+                "null-fallback": {
+                    "state": "ENABLED",
+                    "variants": {
+                        "foo": true,
+                        "bar": false
+                    },
+                    "defaultVariant": "foo",
+                    "targeting": {
+                        "if": [ true, null, "baz"]
+                    }
+                }
+            }
+        }`})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1652,20 +1652,20 @@ func TestTargetingVariantBehavior(t *testing.T) {
 
 		//nolint:dupword
 		_, _, err := evaluator.SetState(sync.DataSync{FlagData: `{
-			"flags": {
-				"match-boolean": {
-					"state": "ENABLED",
-					"variants": {
-						"false": 1,
-						"true": 2
-					},
-					"defaultVariant": "false",
-					"targeting": {
-						"if": [ true, true, false]
-					}
-				}
-			}
-		}`})
+            "flags": {
+                "match-boolean": {
+                    "state": "ENABLED",
+                    "variants": {
+                        "false": 1,
+                        "true": 2
+                    },
+                    "defaultVariant": "false",
+                    "targeting": {
+                        "if": [ true, true, false]
+                    }
+                }
+            }
+        }`})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1685,45 +1685,45 @@ func TestTargetingVariantBehavior(t *testing.T) {
 func TestMixedTypeVariants_TypeConsistency(t *testing.T) {
 	// Config with defaultVariant: "off" (bool), "on" is int
 	flagConfigBoolDefault := `{
-			   "flags": {
-				 "is-enabled": {
-				   "defaultVariant": "off",
-				   "state": "ENABLED",
-				   "targeting": {
-					 "if": [
-					   {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
-					   "on",
-					   "off"
-					 ]
-				   },
-				   "variants": {
-					 "on": 1,
-					 "off": false
-				   }
-				 }
-			   }
-			 }`
+               "flags": {
+                 "is-enabled": {
+                   "defaultVariant": "off",
+                   "state": "ENABLED",
+                   "targeting": {
+                     "if": [
+                       {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
+                       "on",
+                       "off"
+                     ]
+                   },
+                   "variants": {
+                     "on": 1,
+                     "off": false
+                   }
+                 }
+               }
+             }`
 
 	// Config with defaultVariant: "on" (int), "off" is bool
 	flagConfigIntDefault := `{
-			   "flags": {
-				 "is-enabled": {
-				   "defaultVariant": "on",
-				   "state": "ENABLED",
-				   "targeting": {
-					 "if": [
-					   {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
-					   "on",
-					   "off"
-					 ]
-				   },
-				   "variants": {
-					 "on": 1,
-					 "off": false
-				   }
-				 }
-			   }
-			 }`
+               "flags": {
+                 "is-enabled": {
+                   "defaultVariant": "on",
+                   "state": "ENABLED",
+                   "targeting": {
+                     "if": [
+                       {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
+                       "on",
+                       "off"
+                     ]
+                   },
+                   "variants": {
+                     "on": 1,
+                     "off": false
+                   }
+                 }
+               }
+             }`
 
 	type testCase struct {
 		config           string
@@ -1778,7 +1778,7 @@ func TestMixedTypeVariants_TypeConsistency(t *testing.T) {
 				expectIntVal:    1,
 				expectIntReason: model.TargetingMatchReason,
 				expectBoolErr:   true,
-				expectAllType:   "double",
+				expectAllType:   "float64", // fallback to default type (on=1)
 				expectAllReason: model.TargetingMatchReason,
 			},
 		},
@@ -1790,7 +1790,7 @@ func TestMixedTypeVariants_TypeConsistency(t *testing.T) {
 				expectIntErr:     true,
 				expectBoolErr:    true,
 				expectBoolReason: model.ErrorReason,
-				expectAllType:    "double",
+				expectAllType:    "float64", // fallback to default type (on=1)
 				expectAllReason:  model.ErrorReason,
 			},
 		},

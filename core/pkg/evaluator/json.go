@@ -407,11 +407,11 @@ func getTypeName(value any) string {
 	case string:
 		return "string"
 	case float64:
-		return "double"
+		return "float64"
 	case map[string]any:
 		return "object"
 	}
-	return ""
+	return "" // empty string means we don't care about the type, so we can return any type
 }
 
 func setFlagdProperties(
