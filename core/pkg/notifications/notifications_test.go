@@ -31,13 +31,13 @@ func TestNewFromFlags(t *testing.T) {
 		name     string
 		oldFlags map[string]model.Flag
 		newFlags map[string]model.Flag
-		want     map[string]interface{}
+		want     Notifications
 	}{
 		{
 			name:     "flag added",
 			oldFlags: map[string]model.Flag{},
 			newFlags: map[string]model.Flag{"flagA": flagA},
-			want: map[string]interface{}{
+			want: Notifications{
 				"flagA": map[string]interface{}{
 					"type": string(model.NotificationCreate),
 				},
@@ -47,7 +47,7 @@ func TestNewFromFlags(t *testing.T) {
 			name:     "flag deleted",
 			oldFlags: map[string]model.Flag{"flagA": flagA},
 			newFlags: map[string]model.Flag{},
-			want: map[string]interface{}{
+			want: Notifications{
 				"flagA": map[string]interface{}{
 					"type": string(model.NotificationDelete),
 				},
@@ -57,7 +57,7 @@ func TestNewFromFlags(t *testing.T) {
 			name:     "flag changed",
 			oldFlags: map[string]model.Flag{"flagA": flagA},
 			newFlags: map[string]model.Flag{"flagA": flagAUpdated},
-			want: map[string]interface{}{
+			want: Notifications{
 				"flagA": map[string]interface{}{
 					"type": string(model.NotificationUpdate),
 				},
@@ -67,7 +67,7 @@ func TestNewFromFlags(t *testing.T) {
 			name:     "flag unchanged",
 			oldFlags: map[string]model.Flag{"flagA": flagA},
 			newFlags: map[string]model.Flag{"flagA": flagA},
-			want:     map[string]interface{}{},
+			want:     Notifications{},
 		},
 		{
 			name: "mixed changes",
@@ -79,7 +79,7 @@ func TestNewFromFlags(t *testing.T) {
 				"flagA": flagAUpdated, // updated
 				"flagC": flagA,        // added
 			},
-			want: map[string]interface{}{
+			want: Notifications{
 				"flagA": map[string]interface{}{
 					"type": string(model.NotificationUpdate),
 				},

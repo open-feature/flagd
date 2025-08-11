@@ -12,7 +12,7 @@ const typeField = "type"
 type Notifications map[string]any
 
 // Generate notifications (deltas) from old and new flag sets for use in RPC mode PROVIDER_CONFIGURATION_CHANGE events.
-func NewFromFlags(oldFlags, newFlags map[string]model.Flag) map[string]interface{} {
+func NewFromFlags(oldFlags, newFlags map[string]model.Flag) Notifications {
 	notifications := map[string]interface{}{}
 
 	// flags removed

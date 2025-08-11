@@ -15,6 +15,7 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/notifications"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
@@ -253,7 +254,7 @@ func TestConnectServiceWatcher(t *testing.T) {
 	select {
 	case n := <-sChan:
 		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
-		notifications := n.Data["flags"].(map[string]interface{})
+		notifications := n.Data["flags"].(notifications.Notifications)
 		flag1, ok := notifications["flag1"].(map[string]interface{})
 		require.True(t, ok, "flag1 notification should be a map[string]interface{}")
 		require.Equal(t, flag1["type"], string(model.NotificationCreate), "expected notification type: %s, but received %s", model.NotificationCreate, flag1["type"])

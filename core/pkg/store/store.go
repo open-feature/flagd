@@ -163,8 +163,11 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
 		raw, err := txn.First(flagsTable, indexId, constraints...)
 		flag, ok := raw.(model.Flag)
-		if (err != nil) || !ok {
+		if err != nil {
 			return model.Flag{}, queryMeta, fmt.Errorf("flag %s not found: %w", key, err)
+		}
+		if !ok {
+			return model.Flag{}, queryMeta, fmt.Errorf("flag %s is not a valid flag", key)
 		}
 		return flag, queryMeta, nil
 

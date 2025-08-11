@@ -312,11 +312,6 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
 		selector = s.(store.Selector)
-	} else {
-		selector = store.NewSelector("")
-	}
-	if s != nil {
-		selector = s.(store.Selector)
 	}
 	flag, metadata, err := je.store.Get(ctx, flagKey, &selector)
 	if err != nil {
