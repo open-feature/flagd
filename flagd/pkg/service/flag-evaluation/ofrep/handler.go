@@ -1,6 +1,7 @@
 package ofrep
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
+	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -64,9 +67,12 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
-	context := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
-	evaluation := h.evaluator.ResolveAsAnyValue(r.Context(), requestID, flagKey, context)
+	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
 		h.writeJSONToResponse(status, evaluationError, w)
@@ -85,9 +91,12 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	context := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
-	evaluations, metadata, err := h.evaluator.ResolveAllValues(r.Context(), requestID, context)
+	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
 
@@ -127,7 +136,7 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	return request, nil
 }
 
-// flagdContext returns combined context values from headers, static context (from cli) and request context. 
+// flagdContext returns combined context values from headers, static context (from cli) and request context.
 // highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func flagdContext(
 	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,

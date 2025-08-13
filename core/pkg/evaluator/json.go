@@ -118,7 +118,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	var events map[string]interface{}
 	var reSync bool
 
-	events, reSync = je.store.Update(payload.Source, payload.Selector, definition.Flags, definition.Metadata)
+	events, reSync = je.store.Update(payload.Source, definition.Flags, definition.Metadata)
 
 	// Number of events correlates to the number of flags changed through this sync, record it
 	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
@@ -149,8 +149,12 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	_, span := je.tracer.Start(ctx, "resolveAll")
 	defer span.End()
 
-	var err error
-	allFlags, flagSetMetadata, err := je.store.GetAll(ctx)
+	var selector store.Selector
+	s := ctx.Value(store.SelectorContextKey{})
+	if s != nil {
+		selector = s.(store.Selector)
+	}
+	allFlags, flagSetMetadata, err := je.store.GetAll(ctx, &selector)
 	if err != nil {
 		return nil, flagSetMetadata, fmt.Errorf("error retreiving flags from the store: %w", err)
 	}
@@ -301,17 +305,17 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
-	flag, metadata, ok := je.store.Get(ctx, flagKey)
-	if !ok {
+
+	var selector store.Selector
+	s := ctx.Value(store.SelectorContextKey{})
+	if s != nil {
+		selector = s.(store.Selector)
+	}
+	flag, metadata, err := je.store.Get(ctx, flagKey, &selector)
+	if err != nil {
 		// flag not found
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag could not be found: %s", flagKey))
 		return "", map[string]interface{}{}, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
-	}
-
-	// add selector to evaluation metadata
-	selector := je.store.SelectorForFlag(ctx, flag)
-	if selector != "" {
-		metadata[SelectorMetadataKey] = selector
 	}
 
 	for key, value := range flag.Metadata {

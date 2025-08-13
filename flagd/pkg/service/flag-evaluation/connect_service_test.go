@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,9 +15,11 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/notifications"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
+	middlewaremock "github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -81,7 +84,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			rs := resource.NewWithAttributes("testSchema")
 			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
-			svc := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+			svc := NewConnectService(logger.NewLogger(nil, false), eval, &store.Store{}, metricRecorder)
 			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
@@ -136,7 +139,7 @@ func TestAddMiddleware(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	svc := NewConnectService(logger.NewLogger(nil, false), nil, metricRecorder)
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, &store.Store{}, metricRecorder)
 
 	serveConf := iservice.Configuration{
 		ReadinessProbe: func() bool {
@@ -173,16 +176,22 @@ func TestConnectServiceNotify(t *testing.T) {
 	// given
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
 
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.Subscribe("key", sChan)
+	eventing.Subscribe(context.Background(), "key", nil, sChan)
 
 	// notification type
 	ofType := iservice.ConfigurationChange
@@ -207,20 +216,73 @@ func TestConnectServiceNotify(t *testing.T) {
 	}
 }
 
+func TestConnectServiceWatcher(t *testing.T) {
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+
+	sChan := make(chan iservice.Notification, 1)
+	eventing := eventingConfiguration{
+		store:  s,
+		logger: log,
+		mu:     &sync.RWMutex{},
+		subs:   make(map[any]chan iservice.Notification),
+	}
+
+	// subscribe and wait for for the sub to be active
+	eventing.Subscribe(context.Background(), "anything", nil, sChan)
+	time.Sleep(100 * time.Millisecond)
+
+	// make a change
+	s.Update(sources[0], map[string]model.Flag{
+		"flag1": {
+			Key:            "flag1",
+			DefaultVariant: "off",
+		},
+	}, model.Metadata{})
+
+	// notification type
+	ofType := iservice.ConfigurationChange
+
+	timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	select {
+	case n := <-sChan:
+		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
+		notifications := n.Data["flags"].(notifications.Notifications)
+		flag1, ok := notifications["flag1"].(map[string]interface{})
+		require.True(t, ok, "flag1 notification should be a map[string]interface{}")
+		require.Equal(t, flag1["type"], string(model.NotificationCreate), "expected notification type: %s, but received %s", model.NotificationCreate, flag1["type"])
+	case <-timeout.Done():
+		t.Error("timeout while waiting for notifications")
+	}
+}
+
 func TestConnectServiceShutdown(t *testing.T) {
 	// given
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
+	sources := []string{"source1", "source2"}
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, sources)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
 
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
-	eventing.Subscribe("key", sChan)
+	eventing.Subscribe(context.Background(), "key", nil, sChan)
 
 	// notification type
 	ofType := iservice.Shutdown
