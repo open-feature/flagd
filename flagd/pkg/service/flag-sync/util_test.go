@@ -35,7 +35,7 @@ var testSource2Flags = map[string]model.Flag{
 }
 
 // getSimpleFlagStore is a test util which returns a flag store pre-filled with flags from sources testSource1 and testSource2.
-func getSimpleFlagStore(t testing.TB) (*store.Store, []string) {
+func getSimpleFlagStore(t testing.TB) (store.IStore, []string) {
 	t.Helper()
 
 	sources := []string{testSource1, testSource2}

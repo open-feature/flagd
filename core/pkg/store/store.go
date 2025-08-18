@@ -25,10 +25,15 @@ type IStore interface {
 	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
 	GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
+	Update(source string, flags map[string]model.Flag, metadata model.Metadata) (map[string]interface{}, bool)
+	String() (string, error)
 }
 
 var _ IStore = (*Store)(nil)
 
+// TODO: once we remove depricated FlagSources (which are used in go-sdk-contrib/providers)
+// we need to encapsulate this struct and make it private, so that the store can only be created using NewStore.
+// Deprecated: use NewStore() IStore instead.
 type Store struct {
 	mx      sync.RWMutex
 	db      *memdb.MemDB
@@ -45,7 +50,7 @@ type SourceDetails struct {
 
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
-func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
+func NewStore(logger *logger.Logger, sources []string) (IStore, error) {
 
 	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
 	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
@@ -142,7 +147,7 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 }
 
 // Deprecated: use NewStore instead - will be removed very soon.
-func NewFlags() *Store {
+func NewFlags() IStore {
 	state, err := NewStore(logger.NewLogger(nil, false), noValidatedSources)
 
 	if err != nil {
