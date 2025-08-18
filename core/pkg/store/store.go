@@ -29,12 +29,9 @@ type IStore interface {
 	String() (string, error)
 }
 
-var _ IStore = (*Store)(nil)
+var _ IStore = (*store)(nil)
 
-// TODO: once we remove depricated FlagSources (which are used in go-sdk-contrib/providers)
-// we need to encapsulate this struct and make it private, so that the store can only be created using NewStore.
-// Deprecated: use NewStore() IStore instead.
-type Store struct {
+type store struct {
 	mx      sync.RWMutex
 	db      *memdb.MemDB
 	logger  *logger.Logger
@@ -139,7 +136,7 @@ func NewStore(logger *logger.Logger, sources []string) (IStore, error) {
 	// clone the sources to avoid modifying the original slice
 	s := slices.Clone(sources)
 
-	return &Store{
+	return &store{
 		sources: s,
 		db:      db,
 		logger:  logger,
@@ -147,16 +144,16 @@ func NewStore(logger *logger.Logger, sources []string) (IStore, error) {
 }
 
 // Deprecated: use NewStore instead - will be removed very soon.
-func NewFlags() IStore {
+func NewFlags() *store {
 	state, err := NewStore(logger.NewLogger(nil, false), noValidatedSources)
 
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
 	}
-	return state
+	return state.(*store)
 }
 
-func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
+func (s *store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
 	queryMeta := selector.ToMetadata()
@@ -204,7 +201,7 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 	return flag, queryMeta, nil
 }
 
-func (f *Store) String() (string, error) {
+func (f *store) String() (string, error) {
 	f.logger.Debug("dumping flags to string")
 	f.mx.RLock()
 	defer f.mx.RUnlock()
@@ -223,7 +220,7 @@ func (f *Store) String() (string, error) {
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
+func (s *store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
 	queryMeta := selector.ToMetadata()
 	it, err := s.selectOrAll(selector)
@@ -237,7 +234,7 @@ func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]mode
 }
 
 // Update the flag state with the provided flags.
-func (s *Store) Update(
+func (s *store) Update(
 	source string,
 	flags map[string]model.Flag,
 	metadata model.Metadata,
@@ -330,7 +327,7 @@ func (s *Store) Update(
 }
 
 // Watch the result-set of a selector for changes, sending updates to the watcher channel.
-func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult) {
+func (s *store) Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult) {
 	go func() {
 		for {
 			ws := memdb.NewWatchSet()
@@ -357,7 +354,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 }
 
 // returns an iterator for the given selector, or all flags if the selector is nil or empty
-func (s *Store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err error) {
+func (s *store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err error) {
 	txn := s.db.Txn(false)
 	if !selector.IsEmpty() {
 		indexId, constraints := selector.ToQuery()
@@ -370,7 +367,7 @@ func (s *Store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err er
 }
 
 // collects flags from an iterator, ensuring that only the highest priority flag is kept when there are duplicates
-func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
+func (s *store) collect(it memdb.ResultIterator) map[string]model.Flag {
 	flags := make(map[string]model.Flag)
 	for raw := it.Next(); raw != nil; raw = it.Next() {
 		flag := raw.(model.Flag)
