@@ -177,6 +177,8 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
 		case map[string]any:
 			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+		case nil:
+			value, variant, reason, metadata, err = resolve[interface{}](ctx, reqID, flagKey, context, je.evaluateVariant)
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
