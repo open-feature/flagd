@@ -37,7 +37,7 @@ This proposal is to extend the flag definition with an optional `type` property.
 
 By introducing an explicit `type` field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
 
-The new `type` field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `Object`, and no type validation will be performed against the `defaultVariant`. When the `type` field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
+The new `type` field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`. When the `type` field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
 
 This change will make the behavior of `flagd` more predictable and reliable.
 
@@ -114,17 +114,16 @@ Similar changes will be made to `stringFlag`, `numberFlag`, and `objectFlag` to 
 
 ### Timeline
 
-* **Phase 1: Core Implementation (2-4 weeks)**
-    *   Update the `flagd` core to support the new `type` field.
-    *   Implement the type validation logic.
-    *   Update the JSON schema.
-    *   Add unit and integration tests.
-* **Phase 2: SDK Updates (4-8 weeks)**
-    *   Update all official `flagd` SDKs to support the new `type` field.
-    *   This will involve coordination with the maintainers of each SDK.
-* **Phase 3: Documentation and Communication (1-2 weeks)**
-    *   Update the `flagd` documentation to reflect the changes.
-    *   Communicate the changes to the community through blog posts, and other channels.
+* **Phase 1: Core Implementation**
+    * Update the `flagd` core to support the new `type` field.
+    * Implement the type validation logic.
+    * Update the JSON schema.
+    * Add unit and integration tests.
+* **Phase 2: SDK Updates**
+    * Update all `flagd` SDKs to support the new `type` field.
+    * Update flag manifest
+* **Phase 3: Documentation**
+    * Update the `flagd` documentation to reflect the changes.
 
 
 
