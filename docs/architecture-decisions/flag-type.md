@@ -1,5 +1,4 @@
 ---
-# Valid statuses: draft | proposed | rejected | accepted | superseded
 status: proposed
 author: @andreyturkov
 created: 2025-08-14
