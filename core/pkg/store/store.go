@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"sync"
 
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -32,7 +31,6 @@ type IStore interface {
 var _ IStore = (*store)(nil)
 
 type store struct {
-	mx      sync.RWMutex
 	db      *memdb.MemDB
 	logger  *logger.Logger
 	sources []string
@@ -203,8 +201,6 @@ func (s *store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 
 func (f *store) String() (string, error) {
 	f.logger.Debug("dumping flags to string")
-	f.mx.RLock()
-	defer f.mx.RUnlock()
 
 	state, _, err := f.GetAll(context.Background(), nil)
 	if err != nil {
@@ -262,7 +258,6 @@ func (s *store) Update(
 	selector := NewSelector(sourceIndex + "=" + source)
 	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
 
-	s.mx.Lock()
 	for key := range oldFlags {
 		if _, ok := flags[key]; !ok {
 			// flag has been deleted
@@ -277,7 +272,7 @@ func (s *store) Update(
 			continue
 		}
 	}
-	s.mx.Unlock()
+
 	for key, newFlag := range flags {
 		s.logger.Debug(fmt.Sprintf("got metadata %v", metadata))
 
