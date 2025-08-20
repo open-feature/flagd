@@ -83,6 +83,13 @@ curl -X POST  -d '{"context":{}}' 'http://localhost:8016/ofrep/v1/evaluate/flags
 grpcurl -import-path schemas/protobuf/flagd/evaluation/v1/ -proto evaluation.proto -plaintext -d '{}' localhost:8013 flagd.evaluation.v1.Service/ResolveAll | jq
 ```
 
+#### Remote event streaming via gRPC
+
+```sh
+# notifies of flag changes (but does not evaluate)
+grpcurl -import-path schemas/protobuf/flagd/evaluation/v1/ -proto evaluation.proto -plaintext -d '{}' localhost:8013 flagd.evaluation.v1.Service/EventStream
+```
+
 #### Flag configuration fetch via gRPC
 
 ```sh
