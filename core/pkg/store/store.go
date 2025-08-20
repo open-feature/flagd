@@ -45,7 +45,7 @@ type SourceDetails struct {
 
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
-func NewStore(logger *logger.Logger, sources []string) (IStore, error) {
+func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 
 	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
 	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
@@ -148,7 +148,7 @@ func NewFlags() *Store {
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
 	}
-	return state.(*Store)
+	return state
 }
 
 func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
