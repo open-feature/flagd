@@ -38,11 +38,6 @@ type Store struct {
 	FlagSources []string
 }
 
-type SourceDetails struct {
-	Source   string
-	Selector string
-}
-
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
 func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
