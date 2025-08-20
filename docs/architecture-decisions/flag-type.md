@@ -17,39 +17,39 @@ The root cause of this issue is the absence of a dedicated, authoritative type d
 
 ## Requirements
 
-* The new `flagdType`field in the flag definition must be optional to ensure backward compatibility.
-* If the `flagdType`field is present, `flagd` must validate that all variant values of the flag conform to this type during initialization.
+* The new `flagType`field in the flag definition must be optional to ensure backward compatibility.
+* If the `flagType`field is present, `flagd` must validate that all variant values of the flag conform to this type during initialization.
 * Type mismatches found during initialization must be reported as errors.
-* The `Resolve<T>` and `ResolveAll` methods must use the `flagdType`field for validation when it is available.
+* The `Resolve<T>` and `ResolveAll` methods must use the `flagType`field for validation when it is available.
 * The implementation must be consistent with the OpenFeature specification and the flag manifest schema.
 
 
 ## Considered Options
 
 * **Consistent `defaultVariant` Validation:** Align the behavior of `Resolve<T>` with `ResolveAll` by making `Resolve<T>` validate the evaluated variant against the type of the `defaultVariant`.
-* **API Extension with Explicit Flag Type:** Introduce an optional `flagdType`property to the flag definition to serve as the single source for type validation.
+* **API Extension with Explicit Flag Type:** Introduce an optional `flagType`property to the flag definition to serve as the single source for type validation.
 
 
 ## Proposal
 
-This proposal is to extend the flag definition with an optional `flagdType`property. This approach is chosen over simply aligning the `Resolve<T>` and `ResolveAll` validation because it addresses the root cause of the type inconsistency and provides a more robust, long-term solution.
+This proposal is to extend the flag definition with an optional `flagType`property. This approach is chosen over simply aligning the `Resolve<T>` and `ResolveAll` validation because it addresses the root cause of the type inconsistency and provides a more robust, long-term solution.
 
-By introducing an explicit `flagdType`field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
+By introducing an explicit `flagType`field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
 
-The new `flagdType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`. When the `flagdType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
+The new `flagType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`. When the `flagType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
 
 This change will make the behavior of `flagd` more predictable and reliable.
 
 
 ### API changes
 
-The `flagd` flag definition will be updated to include an optional `flagdType`property. This property will be a string enum with the following possible values: `"boolean"`, `"string"`, `"integer"`, `"float"`, and `"object"`. This aligns with the OpenFeature CLI and the flag manifest schema.
+The `flagd` flag definition will be updated to include an optional `flagType`property. This property will be a string enum with the following possible values: `"boolean"`, `"string"`, `"integer"`, `"float"`, and `"object"`. This aligns with the OpenFeature CLI and the flag manifest schema.
 
 #### JSON Schema
 
 The following changes will be made to the `schemas/json/flags.json` file:
 
-1.  A new `flagdType`property will be added to the `flag` definition:
+1.  A new `flagType`property will be added to the `flag` definition:
 
 ```json
 "flag": {
@@ -75,7 +75,7 @@ The following changes will be made to the `schemas/json/flags.json` file:
 }
 ```
 
-2.  The `booleanFlag`, `stringFlag`, `integerFlag`, `floatFlag`, and `objectFlag` definitions will be updated to enforce the `flagdType`property:
+2.  The `booleanFlag`, `stringFlag`, `integerFlag`, `floatFlag`, and `objectFlag` definitions will be updated to enforce the `flagType`property:
 
 ```json
 "booleanFlag": {
@@ -114,11 +114,11 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
 
 * **Phase 1: Core Implementation**
     * Update the JSON schema.
-    * Update the `flagd` core to support the new `flagdType`field.
+    * Update the `flagd` core to support the new `flagType`field.
     * Implement the type validation logic.
     * Add unit and integration tests.
 * **Phase 2: SDK Updates**
-    * Update all `flagd` SDKs to support the new `flagdType`field.
+    * Update all `flagd` SDKs to support the new `flagType`field.
 * **Phase 3: Documentation**
     * Update the `flagd` documentation to reflect the changes.
 
