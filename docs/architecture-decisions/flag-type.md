@@ -55,7 +55,7 @@ The following changes will be made to the `schemas/json/flags.json` file:
 "flag": {
   "type": "object",
   "properties": {
-    "type": {
+    "flagType": {
       "title": "Flag Type",
       "description": "The type of the flag. If specified, all variants must conform to this type.",
       "type": "string",
@@ -88,7 +88,7 @@ The following changes will be made to the `schemas/json/flags.json` file:
     },
     {
       "properties": {
-        "type": {
+        "flagType": {
           "const": "boolean"
         }
       }
