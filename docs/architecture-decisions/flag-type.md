@@ -12,7 +12,7 @@ updated: 2025-08-14
 
 Currently, `flagd` has inconsistent behavior in type validation between its `Resolve<T>` and `ResolveAll` API methods. The `Resolve<T>` method validates the evaluated flag variant against the type `T` requested by the client, while `ResolveAll` validates it against the type of the `defaultVariant` specified in the flag's definition. This discrepancy can lead to situations where a flag evaluation succeeds with one method but fails with the other, depending on the evaluation context and the variant returned. This inconsistent behavior is further detailed in bug report #1481.
 
-The root cause of this issue is the absence of a dedicated, authoritative type definition for the flag itself. Instead, the type is inferred from the `defaultVariant` or API itself (`T` from `Resolve<T>`) , which is not always a reliable source of truth for all possible variants. This issue is compounded by the planned support for code-defined defaults (as detailed in the [Support Code Default ADR](./support-code-default.md)), which allows the `defaultVariant` to be `null`. This makes it impossible to infer the flag's type from the `defaultVariant`, increasing the risk of runtime errors.
+The root cause of this issue is the absence of a dedicated, authoritative type definition for the flag itself. Instead, the type is inferred from the `defaultVariant` or API itself (`T` from `Resolve<T>`) , which is not always a reliable source of truth for all possible variants. This problem is getting worse by the planned support for code-defined defaults (as detailed in the [Support Code Default ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/support-code-default.md)), which allows the `defaultVariant` to be `null`. This makes it impossible to resolve the flag's type from the `defaultVariant`, increasing the risk of runtime errors.
 
 
 ## Requirements
@@ -27,7 +27,7 @@ The root cause of this issue is the absence of a dedicated, authoritative type d
 ## Considered Options
 
 * **Consistent `defaultVariant` Validation:** Align the behavior of `Resolve<T>` with `ResolveAll` by making `Resolve<T>` validate the evaluated variant against the type of the `defaultVariant`.
-* **API Extension with Explicit Flag Type:** Introduce an optional `flagdType`property to the flag definition to serve as the authoritative source for type validation.
+* **API Extension with Explicit Flag Type:** Introduce an optional `flagdType`property to the flag definition to serve as the single source for type validation.
 
 
 ## Proposal
@@ -102,28 +102,25 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
 ### Consequences
 
 #### The good
-* It improves the reliability and predictability of flag evaluations.
-* It allows for early error detection of type mismatches.
-* It improves the developer experience by making the API more explicit.
+  * It improves the reliability and predictability of flag evaluations.
+  * It allows for early error detection of type mismatches.
+  * It improves the developer experience by making the API more explicit.
 
 #### The bad
-* It adds a new field to the flag definition, which developers need to be aware of.
-* It requires updating all `flagd` SDKs to support the new field.
-* It requires updating flag manifest schema
+  * It adds a new field to the flag definition, which developers need to be aware of.
+  * It requires updating all `flagd` SDKs to support the new field.
 
 ### Timeline
 
 * **Phase 1: Core Implementation**
+    * Update the JSON schema.
     * Update the `flagd` core to support the new `flagdType`field.
     * Implement the type validation logic.
-    * Update the JSON schema.
     * Add unit and integration tests.
 * **Phase 2: SDK Updates**
     * Update all `flagd` SDKs to support the new `flagdType`field.
-    * Update flag manifest
 * **Phase 3: Documentation**
     * Update the `flagd` documentation to reflect the changes.
-
 
 
 ## More Information
