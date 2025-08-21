@@ -16,7 +16,6 @@ type Flag struct {
 	Variants       map[string]any  `json:"variants"`
 	Targeting      json.RawMessage `json:"targeting,omitempty"`
 	Source         string          `json:"source"`
-	Selector       string          `json:"selector"`
 	Metadata       Metadata        `json:"metadata,omitempty"`
 }
 

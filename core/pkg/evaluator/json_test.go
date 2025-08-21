@@ -1042,7 +1042,6 @@ func TestState_Evaluator(t *testing.T) {
 						  "defaultVariant": "recursive",
 						  "state": "ENABLED",
 						  "source":"testSource",
-						  "selector":"",
 						  "targeting": {
 							"if": [
 							  {
@@ -1102,7 +1101,6 @@ func TestState_Evaluator(t *testing.T) {
 						  "defaultVariant": "recursive",
 						  "state": "ENABLED",
 						  "source":"testSource",
-						  "selector":"",
 						  "targeting": {
 							"if": [
 							  {
@@ -1212,7 +1210,6 @@ func TestState_Evaluator(t *testing.T) {
 						"defaultVariant": "recursive",
 						"state": "ENABLED",
 						"source":"testSource",
-						"selector":"",
 						"targeting": {
 						"if": [
 							{
@@ -1231,7 +1228,6 @@ func TestState_Evaluator(t *testing.T) {
 						},
 						"defaultVariant": "off",
 						"source":"testSource",
-						"selector":"",
 						"targeting": {
 							"if": [
 								{
