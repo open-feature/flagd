@@ -1,0 +1,19 @@
+{
+    "flags": {
+        "is-enabled": {
+            "defaultVariant": null,
+            "state": "ENABLED",
+            "targeting": {
+                "if": [
+                {"<": [ {"%": [ {"var": "request_id" }, 1000 ] }, 100 ] },
+                "on",
+                "off"
+                ]
+            },
+            "variants": {
+                "on": 1,
+                "off": false
+            }
+        }
+    }
+}
