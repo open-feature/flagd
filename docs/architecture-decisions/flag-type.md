@@ -108,7 +108,6 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
 
 #### The bad
   * It adds a new field to the flag definition, which developers need to be aware of.
-  * It requires updating all `flagd` SDKs to support the new field.
 
 ### Timeline
 
@@ -117,9 +116,7 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
     * Update the `flagd` core to support the new `flagType`field.
     * Implement the type validation logic.
     * Add unit and integration tests.
-* **Phase 2: SDK Updates**
-    * Update all `flagd` SDKs to support the new `flagType`field.
-* **Phase 3: Documentation**
+* **Phase 2: Documentation**
     * Update the `flagd` documentation to reflect the changes.
 
 
