@@ -20,7 +20,7 @@ func TestUpdateFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name        string
-		setup       func(t *testing.T) *Store
+		setup       func(t *testing.T) IStore
 		newFlags    map[string]model.Flag
 		source      string
 		wantFlags   map[string]model.Flag
@@ -30,7 +30,7 @@ func TestUpdateFlags(t *testing.T) {
 	}{
 		{
 			name: "both nil",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -44,7 +44,7 @@ func TestUpdateFlags(t *testing.T) {
 		},
 		{
 			name: "both empty flags",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -58,7 +58,7 @@ func TestUpdateFlags(t *testing.T) {
 		},
 		{
 			name: "empty new",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -72,7 +72,7 @@ func TestUpdateFlags(t *testing.T) {
 		},
 		{
 			name: "update from source 1 (old flag removed)",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -96,7 +96,7 @@ func TestUpdateFlags(t *testing.T) {
 		},
 		{
 			name: "update from source 1 (new flag added)",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
@@ -118,7 +118,7 @@ func TestUpdateFlags(t *testing.T) {
 		},
 		{
 			name: "flag set inheritance",
-			setup: func(t *testing.T) *Store {
+			setup: func(t *testing.T) IStore {
 				s, err := NewStore(logger.NewLogger(nil, false), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)

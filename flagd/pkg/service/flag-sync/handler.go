@@ -21,7 +21,7 @@ import (
 // syncHandler implements the sync contract
 type syncHandler struct {
 	//mux                 *Multiplexer
-	store               *store.Store
+	store               store.IStore
 	log                 *logger.Logger
 	contextValues       map[string]any
 	deadline            time.Duration
