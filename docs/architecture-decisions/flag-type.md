@@ -7,13 +7,17 @@ updated: 2025-08-14
 
 # Extending Flag Definition with a Type Property
 
-
 ## Background
 
-Currently, `flagd` has inconsistent behavior in type validation between its `Resolve<T>` and `ResolveAll` API methods. The `Resolve<T>` method validates the evaluated flag variant against the type `T` requested by the client, while `ResolveAll` validates it against the type of the `defaultVariant` specified in the flag's definition. This discrepancy can lead to situations where a flag evaluation succeeds with one method but fails with the other, depending on the evaluation context and the variant returned. This inconsistent behavior is further detailed in bug report #1481.
+Currently, `flagd` has inconsistent behavior in type validation between its `Resolve<T>` and `ResolveAll` API methods.
+The `Resolve<T>` method validates the evaluated flag variant against the type `T` requested by the client, while `ResolveAll` validates it against the type of the `defaultVariant` specified in the flag's definition.
+This discrepancy can lead to situations where a flag evaluation succeeds with one method but fails with the other, depending on the evaluation context and the variant returned.
+This inconsistent behavior is further detailed in bug report #1481.
 
-The root cause of this issue is the absence of a dedicated, authoritative type definition for the flag itself. Instead, the type is inferred from the `defaultVariant` or API itself (`T` from `Resolve<T>`) , which is not always a reliable source of truth for all possible variants. This problem is getting worse by the planned support for code-defined defaults (as detailed in the [Support Code Default ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/support-code-default.md)), which allows the `defaultVariant` to be `null`. This makes it impossible to resolve the flag's type from the `defaultVariant`, increasing the risk of runtime errors.
-
+The root cause of this issue is the absence of a dedicated, authoritative type definition for the flag itself.
+Instead, the type is inferred from the `defaultVariant` or API itself (`T` from `Resolve<T>`), which is not always a reliable source of truth for all possible variants.
+This problem is getting worse by the planned support for code-defined defaults (as detailed in the [Support Code Default ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/support-code-default.md)), which allows the `defaultVariant` to be `null`.
+This makes it impossible to resolve the flag's type from the `defaultVariant`, increasing the risk of runtime errors.
 
 ## Requirements
 
@@ -23,12 +27,10 @@ The root cause of this issue is the absence of a dedicated, authoritative type d
 * The `Resolve<T>` and `ResolveAll` methods must use the `flagType`field for validation when it is available.
 * The implementation must be consistent with the OpenFeature specification and the flag manifest schema.
 
-
 ## Considered Options
 
 * **Consistent `defaultVariant` Validation:** Align the behavior of `Resolve<T>` with `ResolveAll` by making `Resolve<T>` validate the evaluated variant against the type of the `defaultVariant`.
 * **API Extension with Explicit Flag Type:** Introduce an optional `flagType`property to the flag definition to serve as the single source for type validation.
-
 
 ## Proposal
 
@@ -36,10 +38,10 @@ This proposal is to extend the flag definition with an optional `flagType`proper
 
 By introducing an explicit `flagType`field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
 
-The new `flagType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`. When the `flagType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
+The new `flagType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`.
+When the `flagType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
 
 This change will make the behavior of `flagd` more predictable and reliable.
-
 
 ### API changes
 
@@ -49,7 +51,7 @@ The `flagd` flag definition will be updated to include an optional `flagType`pro
 
 The following changes will be made to the `schemas/json/flags.json` file:
 
-1.  A new `flagType`property will be added to the `flag` definition:
+1. A new `flagType`property will be added to the `flag` definition:
 
 ```json
 "flag": {
@@ -75,7 +77,7 @@ The following changes will be made to the `schemas/json/flags.json` file:
 }
 ```
 
-2.  The `booleanFlag`, `stringFlag`, `integerFlag`, `floatFlag`, and `objectFlag` definitions will be updated to enforce the `flagType`property:
+1. The `booleanFlag`, `stringFlag`, `integerFlag`, `floatFlag`, and `objectFlag` definitions will be updated to enforce the `flagType`property:
 
 ```json
 "booleanFlag": {
@@ -102,12 +104,14 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
 ### Consequences
 
 #### The good
-  * It improves the reliability and predictability of flag evaluations.
-  * It allows for early error detection of type mismatches.
-  * It improves the developer experience by making the API more explicit.
+
+* It improves the reliability and predictability of flag evaluations.
+* It allows for early error detection of type mismatches.
+* It improves the developer experience by making the API more explicit.
 
 #### The bad
-  * It adds a new field to the flag definition, which developers need to be aware of.
+
+* It adds a new field to the flag definition, which developers need to be aware of.
 
 ### Timeline
 
@@ -118,7 +122,6 @@ Similar changes will be made to `stringFlag`, `integerFlag`, `floatFlag`, and `o
     * Add unit and integration tests.
 * **Phase 2: Documentation**
     * Update the `flagd` documentation to reflect the changes.
-
 
 ## More Information
 
