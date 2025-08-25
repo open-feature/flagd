@@ -1,6 +1,6 @@
 ---
 status: accepted
-author: Michael Beemer
+author: Michael Beemer `@beeme1mr`
 created: 2025-06-06
 updated: 2025-08-08
 ---
@@ -80,12 +80,14 @@ The absence of a value field provides an unambiguous signal that distinguishes b
    ```
 
 2. **Evaluation Behavior**:
+
    - When flag has `defaultVariant: null` and targeting returns no match
    - Server responds with reason "DEFAULT" and omits value and variant fields
    - Client detects the omitted fields and uses its code-defined default
    - This pattern works consistently across all evaluation modes
 
 3. **Protobuf Schema Changes**:
+
    - Update response message definitions to use `optional` fields for `value` and `variant`
    - This enables proper field presence detection for code default signaling
 
@@ -108,7 +110,15 @@ The absence of a value field provides an unambiguous signal that distinguishes b
    ```
 
 4. **Provider Implementation**:
+
+   **RPC Providers**:
+
    - Providers must be updated to check field presence rather than just reading field values
+
+   **In-Process Providers**:
+
+   - Check if both the resolved variant (from targeting evaluation) AND the configured default variant are null/undefined
+   - When both conditions are true, use the application's code default value with reason "DEFAULT" and no variant
 
 ### Design Rationale
 
