@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.0...flagd-proxy/v0.8.1) (2025-08-29)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+
 ## [0.8.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.6...flagd-proxy/v0.8.0) (2025-07-21)
 
 
