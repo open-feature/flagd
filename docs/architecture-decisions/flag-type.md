@@ -38,14 +38,28 @@ This proposal is to extend the flag definition with an optional `flagType`proper
 
 By introducing an explicit `flagType`field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
 
-The new `flagType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will treat the flag as having `object`, and no type validation will be performed against the `defaultVariant`.
-When the `flagType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
+The new `flagdType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will fall back to infer the flag type from its variants. As the flag schema enforces that all variants are of the same type, the type of the first variant will be used. When the `flagdType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
 
 This change will make the behavior of `flagd` more predictable and reliable.
 
 ### API changes
 
-The `flagd` flag definition will be updated to include an optional `flagType`property. This property will be a string enum with the following possible values: `"boolean"`, `"string"`, `"integer"`, `"float"`, and `"object"`. This aligns with the OpenFeature CLI and the flag manifest schema.
+The `flagd` flag definition will be updated to include an optional `flagType`property. This property will be a string enum with the following possible values: `"boolean"`, `"string"`, `"integer"`, `"float"`, and `"object"`.
+This aligns with the OpenFeature CLI and the flag manifest schema.
+
+#### Handling of numeric types
+
+A known challenge with this approach is the differentiation between `integer` and `float` types, as JSON does not natively distinguish between them. However, maintaining this distinction is important for several reasons:
+
+* **Precision**: For certain use cases, such as when a flag's value represents a project number or other identifier, using floating-point numbers can lead to precision loss and unexpected behavior. Enforcing an integer type ensures that the value remains consistent and accurate.
+* **Alignment with OpenFeature**: The OpenFeature specification includes both `integer` and `float` types. By supporting both, `flagd` remains consistent with the broader OpenFeature ecosystem, including the flag manifest used in the OpenFeature CLI.
+
+To address this, `flagd` will implement the following validation logic:
+
+* If `flagType` is set to `integer`, `flagd` will validate that all variants of the flag are whole numbers.
+* If `flagType` is set to `float`, `flagd` will accept any numeric value.
+
+This validation will be performed during the initialization of the flag definition, allowing for early detection of type mismatches.
 
 #### JSON Schema
 
