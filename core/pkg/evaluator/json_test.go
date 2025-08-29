@@ -43,6 +43,23 @@ const ValidFlags = `{
     }
   }
 }`
+const ValidMapFlags = `{
+  "flags": [
+    {
+      "key": "validFlag",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+      "metadata": {
+        "flagSetId": "test",
+        "version": 3
+      }
+    }
+  ]
+}`
 
 const NullDefault = `{
   "flags": {
@@ -384,6 +401,25 @@ var Flags = fmt.Sprintf(`{
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
 	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+
+	// get the state
+	state, err := evaluator.GetState()
+	if err != nil {
+		t.Fatalf("expected no error")
+	}
+
+	// validate it contains the flag
+	wants := "validFlag"
+	if !strings.Contains(state, wants) {
+		t.Fatalf("expected: %s to contain: %s", state, wants)
+	}
+}
+func TestGetState_ValidMap_ContainsFlag(t *testing.T) {
+	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidMapFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}

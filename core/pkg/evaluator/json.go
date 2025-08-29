@@ -6,17 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	flagd_definitions "github.com/open-feature/flagd-schemas/json"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
-	schema "github.com/open-feature/flagd-schemas/json"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/xeipuuv/gojsonschema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -35,10 +37,49 @@ const (
 	Disabled        = "DISABLED"
 )
 
+var compiledSchema *jsonschema.Schema
 var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
+
+	// Create a new JSON Schema compiler
+	compiler := jsonschema.NewCompiler()
+
+	// Add the Flagd Daemon schema
+	flagdFile := strings.NewReader(flagd_definitions.FlagdSchema)
+	schema, err := jsonschema.UnmarshalJSON(flagdFile)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
+	}
+	if err := compiler.AddResource("https://flagd.dev/schema/v0/flagd.json", schema); err != nil {
+		log.Fatalf("Failed to add flagd schema: %v", err)
+	}
+
+	// Add the Flag schema
+	flagsFile := strings.NewReader(flagd_definitions.FlagSchema)
+	schema, err = jsonschema.UnmarshalJSON(flagsFile)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
+	}
+	if err := compiler.AddResource("https://flagd.dev/schema/v0/flags.json", schema); err != nil {
+		log.Fatalf("Failed to add flags schema: %v", err)
+	}
+
+	// Add the Targeting schema
+	targetingFile := strings.NewReader(flagd_definitions.TargetingSchema)
+	schema, err = jsonschema.UnmarshalJSON(targetingFile)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
+	}
+	if err := compiler.AddResource("https://flagd.dev/schema/v0/targeting.json", schema); err != nil {
+		log.Fatalf("Failed to add targeting schema: %v", err)
+	}
+	compiledSchema, err = compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
+	if err != nil {
+		log.Fatalf("Failed to compile flagd schema: %v", err)
+	}
+
 }
 
 type constraints interface {
@@ -429,51 +470,112 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-func loadAndCompileSchema(log *logger.Logger) *gojsonschema.Schema {
-	schemaLoader := gojsonschema.NewSchemaLoader()
+type JsonDef struct {
+	Flags    interface{}            `json:"flags"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
 
-	// compile dependency schema
-	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.TargetingSchema)
-	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
-		log.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
-	}
-
-	// compile root schema
-	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagSchema)
-	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
-	if err != nil {
-		log.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
-	}
-
-	return compiledSchema
+type Flag struct {
+	model.Flag
+	Key       string `json:"key,omitempty"`
+	FlagSetId string `json:"flagSetId,omitempty"`
 }
 
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
 func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
-	compiledSchema := loadAndCompileSchema(log)
-
-	flagStringLoader := gojsonschema.NewStringLoader(config)
-
-	result, err := compiledSchema.Validate(flagStringLoader)
-	if err != nil {
-		log.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
-	} else if !result.Valid() {
-		log.Logger.Warn(fmt.Sprintf(
-			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
-		))
-	}
-
+	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &definition)
+	var intermediateConfig JsonDef
+	err = json.Unmarshal([]byte(transposedConfig), &intermediateConfig)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
 
+	definition.Metadata = intermediateConfig.Metadata
+	definition.Flags = map[string]model.Flag{}
+
+	// Process flags directly
+	switch v := intermediateConfig.Flags.(type) {
+	case map[string]interface{}: // Handle ValidFlags format
+		for k, e := range v {
+			flag, err := convertToModelFlag(e)
+			if err != nil {
+				return fmt.Errorf("failed to process flag for key %s: %w", k, err)
+			}
+			flag.Key = k // Populate the `Key` field explicitly
+			definition.Flags[k] = flag
+		}
+
+	case []interface{}: // Handle ValidMapFlags format
+		for _, value := range v {
+			flag, err := convertToModelFlag(value)
+			if err != nil {
+				return fmt.Errorf("failed to process flag: %w", err)
+			}
+			definition.Flags[flag.Key] = flag
+		}
+
+	default:
+		return fmt.Errorf("unexpected type for flags property: %T", v)
+	}
+
 	return validateDefaultVariants(definition)
+}
+
+// Helper function to convert a generic interface{} to model.Flag
+func convertToModelFlag(data interface{}) (model.Flag, error) {
+	flag := model.Flag{}
+
+	// Assert the data is a map[string]interface{}
+	flagData, ok := data.(map[string]interface{})
+	if !ok {
+		return flag, fmt.Errorf("unexpected type for flag data: %T", data)
+	}
+
+	// Populate fields of model.Flag
+	if key, ok := flagData["key"].(string); ok {
+		flag.Key = key
+	}
+
+	if state, ok := flagData["state"].(string); ok {
+		flag.State = state
+	}
+
+	if defaultVariant, ok := flagData["defaultVariant"].(string); ok {
+		flag.DefaultVariant = defaultVariant
+	}
+
+	if variants, ok := flagData["variants"].(map[string]interface{}); ok {
+		flag.Variants = variants
+	}
+
+	if targeting, ok := flagData["targeting"].(json.RawMessage); ok {
+		flag.Targeting = targeting
+	} else if targetingRaw, ok := flagData["targeting"].(string); ok {
+		flag.Targeting = json.RawMessage(targetingRaw)
+	} else if flagData["targeting"] != nil {
+		marshal, err := json.Marshal(flagData["targeting"])
+		if err != nil {
+			return flag, fmt.Errorf("marshalling targeting: %w", err)
+		}
+
+		flag.Targeting = json.RawMessage(marshal)
+	}
+
+	if source, ok := flagData["source"].(string); ok {
+		flag.Source = source
+	}
+
+	if metadata, ok := flagData["metadata"].(map[string]interface{}); ok {
+		// Assuming Metadata is a struct that can be populated directly
+		flag.Metadata = model.Metadata(metadata)
+	}
+
+	return flag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
