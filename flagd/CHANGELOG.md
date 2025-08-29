@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.12.10](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.12.10) (2025-08-29)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+
+
+### ✨ New Features
+
+* multi-project support via selectors and flagSetId namespacing ([#1702](https://github.com/open-feature/flagd/issues/1702)) ([f9ce46f](https://github.com/open-feature/flagd/commit/f9ce46f1032e7cb423e0e5c75a7c02f91ab5a88f))
+
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+
+
+### 🔄 Refactoring
+
+* store cleanup ([#1705](https://github.com/open-feature/flagd/issues/1705)) ([bcff8d7](https://github.com/open-feature/flagd/commit/bcff8d757b6d0ca69bccee26ba41880bdf2b5040))
+
 ## [0.12.9](https://github.com/open-feature/flagd/compare/flagd/v0.12.8...flagd/v0.12.9) (2025-07-28)
 
 
