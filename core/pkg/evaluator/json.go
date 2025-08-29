@@ -52,7 +52,7 @@ type flagdProperties struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
-type variantEvaluator func(context.Context, string, string, map[string]any) (
+type variantEvaluator func(context.Context, string, string, map[string]any, string) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
 // Deprecated - this will be remove in the next release
@@ -181,6 +181,8 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
 		case map[string]any:
 			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+		case nil:
+			value, variant, reason, metadata, err = resolve[interface{}](ctx, reqID, flagKey, context, je.evaluateVariant)
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
@@ -287,7 +289,8 @@ func (je *Resolver) ResolveAsAnyValue(
 func resolve[T constraints](ctx context.Context, reqID string, key string, context map[string]any,
 	variantEval variantEvaluator) (value T, variant string, reason string, metadata map[string]interface{}, err error,
 ) {
-	variant, variants, reason, metadata, err := variantEval(ctx, reqID, key, context)
+	resolveType := getTypeName(value)
+	variant, variants, reason, metadata, err := variantEval(ctx, reqID, key, context, resolveType)
 	if err != nil {
 		return value, variant, reason, metadata, err
 	}
@@ -302,7 +305,13 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 }
 
 // nolint: funlen
-func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
+func (je *Resolver) evaluateVariant(
+	ctx context.Context,
+	reqID string,
+	flagKey string,
+	evalCtx map[string]any,
+	resolveType string,
+) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
 
@@ -328,6 +337,13 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	if flag.State == Disabled {
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
 		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
+	}
+
+	defaultValue := flag.Variants[flag.DefaultVariant]
+	defaultValueType := getTypeName(defaultValue)
+
+	if resolveType != "" && defaultValueType != resolveType {
+		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
 	}
 
 	// get the targeting logic, if any
@@ -388,6 +404,20 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
+}
+
+func getTypeName(value any) string {
+	switch value.(type) {
+	case bool:
+		return "bool"
+	case string:
+		return "string"
+	case float64:
+		return "float64"
+	case map[string]any:
+		return "object"
+	}
+	return "" // empty string means we don't care about the type, so we can return any type
 }
 
 func setFlagdProperties(
