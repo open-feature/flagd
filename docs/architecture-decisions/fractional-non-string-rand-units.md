@@ -9,6 +9,7 @@ updated: 2025-09-01
 # Harden Hashing Consistency And Add Support For Non-string Attributes in Fractional Evaluation
 
 This proposal aims to enhance the `fractional` operator to:
+
 1. Explicitly ensure hashes are consistent across all providers and platforms.
 2. Support non-string values as the hashing input (i.e., the randomization unit).
 
@@ -47,6 +48,7 @@ This proposal seeks to resolve these issues by allowing `fractional` to operate 
 * Same "value" (e.g. 57.2, "some text", true, etc) should result in the same bucket assignment no matter the language of the provider and platform used.
 
 ## Non-requirements
+
 * This change does not need to be backward-compatible. Nevertheless, care should be taken to minimize disrputions - strings should be encoded using UTF-8 (already a default on most platforms and providers).
 * Support advnaced features like salting non-string types in JSON directly (that will be a separate ADR)
 * Bucketing improvements (that will be a separate ADR)
