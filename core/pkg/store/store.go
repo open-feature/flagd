@@ -295,9 +295,26 @@ func (s *Store) Update(
 
 	for key, newFlag := range newFlags {
 		s.logger.Debug(fmt.Sprintf("got metadata %v", metadata))
-
+		raw, err := txn.First(flagsTable, keySourceCompoundIndex, key, source)
+		if err != nil {
+			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", key, source, err))
+			continue
+		}
+		oldFlag, ok := raw.(model.Flag)
+		// If we already have a flag with the same key and source, we need to check if it has the same flagSetId
+		if ok {
+			if oldFlag.FlagSetId != newFlag.FlagSetId {
+				// If the flagSetId is different, we need to delete the entry, since flagSetId+key represents the primary index, and it's now been changed.
+				// This is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
+				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, key)
+				if err != nil {
+					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", key, oldFlag.FlagSetId, err))
+					continue
+				}
+			}
+		}
 		// Store the new version of the flag. `memdb`'s Insert acts as an upsert, replacing the record if the primary key exists.		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
-		err := txn.Insert(flagsTable, newFlag)
+		err = txn.Insert(flagsTable, newFlag)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", key, err))
 			continue

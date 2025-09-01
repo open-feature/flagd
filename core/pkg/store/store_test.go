@@ -363,7 +363,7 @@ func TestWatch(t *testing.T) {
 		{
 			name:        "flag set selector (initial, plus 3 updates)",
 			selector:    &flagSetIdCSelector,
-			wantUpdates: 3,
+			wantUpdates: 4,
 		},
 		{
 			name:        "no selector (all updates)",
