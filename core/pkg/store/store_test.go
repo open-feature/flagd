@@ -87,11 +87,11 @@ func TestUpdateFlags(t *testing.T) {
 			},
 			source: source1,
 			wantFlags: map[string]model.Flag{
-				NilFlagSetId + "|paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: NilFlagSetId, Priority: 0},
+				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
 			},
 			wantNotifs: map[string]interface{}{
-				NilFlagSetId + "|paka": map[string]interface{}{"type": "write"},
-				NilFlagSetId + "|waka": map[string]interface{}{"type": "delete"},
+				"paka": map[string]interface{}{"type": "write"},
+				"waka": map[string]interface{}{"type": "delete"},
 			},
 		},
 		{
@@ -111,10 +111,10 @@ func TestUpdateFlags(t *testing.T) {
 			},
 			source: source2,
 			wantFlags: map[string]model.Flag{
-				NilFlagSetId + "|waka": {Key: "waka", DefaultVariant: "off", Source: source1, FlagSetId: NilFlagSetId, Priority: 0},
-				NilFlagSetId + "|paka": {Key: "paka", DefaultVariant: "on", Source: source2, FlagSetId: NilFlagSetId, Priority: 1},
+				"waka": {Key: "waka", DefaultVariant: "off", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
+				"paka": {Key: "paka", DefaultVariant: "on", Source: source2, FlagSetId: nilFlagSetId, Priority: 1},
 			},
-			wantNotifs: map[string]interface{}{NilFlagSetId + "|paka": map[string]interface{}{"type": "write"}},
+			wantNotifs: map[string]interface{}{"paka": map[string]interface{}{"type": "write"}},
 		},
 		{
 			name: "flag set inheritance",
@@ -135,12 +135,12 @@ func TestUpdateFlags(t *testing.T) {
 			},
 			source: source1,
 			wantFlags: map[string]model.Flag{
-				"topLevelSet|waka":  {Key: "waka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
-				"flagLevelSet|paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
+				"waka": {Key: "waka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
+				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
 			},
 			wantNotifs: map[string]interface{}{
-				"flagLevelSet|paka": map[string]interface{}{"type": "write"},
-				"topLevelSet|waka":  map[string]interface{}{"type": "write"},
+				"paka": map[string]interface{}{"type": "write"},
+				"waka": map[string]interface{}{"type": "write"},
 			},
 		},
 	}
@@ -184,7 +184,7 @@ func TestGet(t *testing.T) {
 			name:     "nil selector",
 			key:      "flagA",
 			selector: nil,
-			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
@@ -198,7 +198,7 @@ func TestGet(t *testing.T) {
 			name:     "source selector",
 			key:      "dupe",
 			selector: &sourceASelector,
-			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
@@ -276,7 +276,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: nil,
 			wantFlags: map[string]model.Flag{
 				// "dupe" should be overwritten by higher priority flag
-				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
+				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 				"flagB": {Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 				"flagC": {Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
@@ -287,8 +287,8 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: &sourceASelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from sourceA
-				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
-				"dupe":  {Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
+				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				"dupe":  {Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			},
 		},
 		{
@@ -363,7 +363,7 @@ func TestWatch(t *testing.T) {
 		{
 			name:        "flag set selector (initial, plus 3 updates)",
 			selector:    &flagSetIdCSelector,
-			wantUpdates: 4,
+			wantUpdates: 3,
 		},
 		{
 			name:        "no selector (all updates)",
@@ -424,6 +424,7 @@ func TestWatch(t *testing.T) {
 				time.Sleep(pauseTime)
 
 				// removing a flag set id should trigger an update (even for flag set id selectors; it should remove the flag from the set)
+				// TODO: challenge this test and behaviour
 				store.Update(sourceB, []model.Flag{
 					{Key: "flagB", DefaultVariant: "on"},
 				}, model.Metadata{})

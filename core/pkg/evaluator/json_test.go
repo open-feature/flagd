@@ -1065,10 +1065,10 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
-			expectedOutputState: fmt.Sprintf(`
+			expectedOutputState: `
 				{
   					"flags": {
-						"%s|fibAlgo": {
+						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
 							"memo": "memo",
@@ -1091,7 +1091,7 @@ func TestState_Evaluator(t *testing.T) {
 					},
 					"flagSources":null
 				}
-			`, store.NilFlagSetId),
+			`,
 		},
 		"no-indentation": {
 			inputState: `
@@ -1124,10 +1124,10 @@ func TestState_Evaluator(t *testing.T) {
 				}
 				}
 			`,
-			expectedOutputState: fmt.Sprintf(`
+			expectedOutputState: `
 				{
   					"flags": {
-						"%s|fibAlgo": {
+						"fibAlgo": {
 						  "variants": {
 							"recursive": "recursive",
 							"memo": "memo",
@@ -1150,7 +1150,7 @@ func TestState_Evaluator(t *testing.T) {
 					},
 					"flagSources":null
 				}
-			`, store.NilFlagSetId),
+			`,
 		},
 		"invalid evaluator json": {
 			inputState: `
@@ -1233,10 +1233,10 @@ func TestState_Evaluator(t *testing.T) {
 			}
 		`,
 			expectedError: false,
-			expectedOutputState: fmt.Sprintf(`
+			expectedOutputState: `
 			{
 				"flags": {
-					"%s|fibAlgo": {
+					"fibAlgo": {
 						"variants": {
 						"recursive": "recursive",
 						"memo": "memo",
@@ -1256,7 +1256,7 @@ func TestState_Evaluator(t *testing.T) {
 						]
 						}
 						},
-					"%s|isColorYellow": {
+					"isColorYellow": {
 						"state": "ENABLED",
 						"variants": {
 							"on": true,
@@ -1283,7 +1283,7 @@ func TestState_Evaluator(t *testing.T) {
 				},
 				"flagSources":null
 			}
-		`, store.NilFlagSetId, store.NilFlagSetId),
+		`,
 		},
 		"empty evaluator": {
 			inputState: `

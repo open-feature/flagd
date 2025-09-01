@@ -49,10 +49,11 @@ func init() {
 	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd")
 	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags")
 	addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting")
-	compiledSchema, err = compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
+	schema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
 	if err != nil {
 		log.Fatalf("Failed to compile flagd schema: %v", err)
 	}
+	compiledSchema = schema
 
 }
 
@@ -134,7 +135,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var definition Definition
 
-	err := configToFlagDefinition(payload.FlagData, &definition)
+	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -461,14 +462,16 @@ type JsonDef struct {
 }
 
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
-func configToFlagDefinition(config string, definition *Definition) error {
+func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
 	// json schema validation
 	inst, err := jsonschema.UnmarshalJSON(strings.NewReader(config))
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
 	}
 	if err := compiledSchema.Validate(inst); err != nil {
-		return fmt.Errorf("flag definition does not conform to the schema; validation errors: %s", err)
+		log.Logger.Warn(fmt.Sprintf(
+			"flag definition does not conform to the schema; validation errors: %s", err),
+		)
 	}
 
 	// Transpose evaluators and unmarshal directly into JsonDef
@@ -516,9 +519,9 @@ func configToFlagDefinition(config string, definition *Definition) error {
 // Helper function to convert a generic interface{} to model.Flag
 func convertToModelFlag(data interface{}) (model.Flag, error) {
 	type Flag struct {
-		model.Flag
 		Key       string `json:"key,omitempty"`
 		FlagSetId string `json:"flagSetId,omitempty"`
+		model.Flag
 	}
 	var flag Flag
 	jsonBytes, err := json.Marshal(data)
@@ -528,7 +531,10 @@ func convertToModelFlag(data interface{}) (model.Flag, error) {
 	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
 		return flag.Flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
 	}
-	return flag.Flag, nil
+	exportFlag := flag.Flag
+	exportFlag.Key = flag.Key
+	exportFlag.FlagSetId = flag.FlagSetId
+	return exportFlag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid

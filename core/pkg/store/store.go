@@ -255,14 +255,14 @@ func (s *Store) Update(
 		newFlag.Metadata = patchMetadata(metadata, newFlag.Metadata)
 
 		// flagSetId defaults to a UUID generated at startup to make our queries isomorphic
-		flagSetId := NilFlagSetId
+		flagSetId := nilFlagSetId
 		// flagSetId is inherited from the set, but can be overridden by the flag
 		setFlagSetId, ok := newFlag.Metadata["flagSetId"].(string)
 		if ok {
 			flagSetId = setFlagSetId
 		}
 		newFlag.FlagSetId = flagSetId
-		newFlags[generateCombinedKey(newFlag)] = newFlag
+		newFlags[newFlag.Key] = newFlag
 	}
 
 	txn := s.db.Txn(true)
@@ -355,7 +355,7 @@ func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
 		flag := raw.(model.Flag)
 
 		// checking for multiple flags with the same key, as they can be defined multiple times in different sources
-		if existing, ok := flags[generateCombinedKey(flag)]; ok {
+		if existing, ok := flags[flag.Key]; ok {
 			if flag.Priority < existing.Priority {
 				s.logger.Debug(fmt.Sprintf("discarding duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[flag.Priority], s.sources[existing.Priority]))
 				continue // we already have a higher priority flag
@@ -363,7 +363,7 @@ func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
 			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[existing.Priority], s.sources[flag.Priority]))
 		}
 
-		flags[generateCombinedKey(flag)] = flag
+		flags[flag.Key] = flag
 	}
 	return flags
 }
@@ -380,8 +380,4 @@ func patchMetadata(original, patch model.Metadata) model.Metadata {
 		patched[key] = value
 	}
 	return patched
-}
-
-func generateCombinedKey(newFlag model.Flag) string {
-	return newFlag.FlagSetId + "|" + newFlag.Key
 }
