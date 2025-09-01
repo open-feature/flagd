@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	flagd_definitions "github.com/open-feature/flagd-schemas/json"
 	"log"
 	"regexp"
@@ -486,7 +487,7 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 	switch v := intermediateConfig.Flags.(type) {
 	case map[string]interface{}: // Handle ValidFlags format
 		for k, e := range v {
-			flag, err := convertToModelFlag(e)
+			flag, err := convertToModelFlag(e.(map[string]interface{}))
 			if err != nil {
 				return fmt.Errorf("failed to process flag for key %s: %w", k, err)
 			}
@@ -496,7 +497,7 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 
 	case []interface{}: // Handle ValidMapFlags format
 		for _, value := range v {
-			flag, err := convertToModelFlag(value)
+			flag, err := convertToModelFlag(value.(map[string]interface{}))
 			if err != nil {
 				return fmt.Errorf("failed to process flag: %w", err)
 			}
@@ -510,25 +511,23 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 	return validateDefaultVariants(definition)
 }
 
-// Helper function to convert a generic interface{} to model.Flag
-func convertToModelFlag(data interface{}) (model.Flag, error) {
+// Refactored Helper Function to Convert interface{} to model.Flag
+func convertToModelFlag(data map[string]interface{}) (model.Flag, error) {
+
 	type Flag struct {
 		Key       string `json:"key,omitempty"`
 		FlagSetId string `json:"flagSetId,omitempty"`
 		model.Flag
 	}
+
 	var flag Flag
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return flag.Flag, fmt.Errorf("failed to marshal flag data: %w", err)
+
+	// Use mapstructure to decode the data into the Flag struct
+	if err := mapstructure.Decode(data, &flag); err != nil {
+		return flag.Flag, fmt.Errorf("failed to decode flag data: %w", err)
 	}
-	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
-		return flag.Flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
-	}
-	exportFlag := flag.Flag
-	exportFlag.Key = flag.Key
-	exportFlag.FlagSetId = flag.FlagSetId
-	return exportFlag, nil
+
+	return flag.Flag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid

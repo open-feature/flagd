@@ -14,6 +14,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-memdb v1.3.5
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/open-feature/flagd-schemas v0.2.9-0.20250829095801-c0108fa92a83
 	github.com/open-feature/open-feature-operator/apis v0.2.45
 	github.com/prometheus/client_golang v1.22.0
