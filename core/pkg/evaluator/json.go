@@ -50,7 +50,7 @@ func init() {
 	flagdFile := strings.NewReader(flagd_definitions.FlagdSchema)
 	schema, err := jsonschema.UnmarshalJSON(flagdFile)
 	if err != nil {
-		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
+log.Fatalf("Failed to unmarshal flagd schema: %v", err)
 	}
 	if err := compiler.AddResource("https://flagd.dev/schema/v0/flagd.json", schema); err != nil {
 		log.Fatalf("Failed to add flagd schema: %v", err)
@@ -60,7 +60,7 @@ func init() {
 	flagsFile := strings.NewReader(flagd_definitions.FlagSchema)
 	schema, err = jsonschema.UnmarshalJSON(flagsFile)
 	if err != nil {
-		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
+		log.Fatalf("Failed to unmarshal flags schema: %v", err)
 	}
 	if err := compiler.AddResource("https://flagd.dev/schema/v0/flags.json", schema); err != nil {
 		log.Fatalf("Failed to add flags schema: %v", err)
