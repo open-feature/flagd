@@ -460,12 +460,6 @@ type JsonDef struct {
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
-type Flag struct {
-	model.Flag
-	Key       string `json:"key,omitempty"`
-	FlagSetId string `json:"flagSetId,omitempty"`
-}
-
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
 func configToFlagDefinition(config string, definition *Definition) error {
 	// json schema validation
@@ -521,15 +515,20 @@ func configToFlagDefinition(config string, definition *Definition) error {
 
 // Helper function to convert a generic interface{} to model.Flag
 func convertToModelFlag(data interface{}) (model.Flag, error) {
-	var flag model.Flag
+	type Flag struct {
+		model.Flag
+		Key       string `json:"key,omitempty"`
+		FlagSetId string `json:"flagSetId,omitempty"`
+	}
+	var flag Flag
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		return flag, fmt.Errorf("failed to marshal flag data: %w", err)
+		return flag.Flag, fmt.Errorf("failed to marshal flag data: %w", err)
 	}
 	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
-		return flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
+		return flag.Flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
 	}
-	return flag, nil
+	return flag.Flag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
