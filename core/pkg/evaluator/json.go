@@ -44,7 +44,6 @@ func init() {
 }
 
 func addSchemaResource(compiler *jsonschema.Compiler, url, schemaData, schemaName string) error {
-	// This code is deprecated, but if we use only the strings.newReader in the AddResource, we get an error in the tests
 	unmarshalJSON, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaData))
 	if err != nil {
 		return err
