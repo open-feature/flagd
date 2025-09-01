@@ -325,7 +325,8 @@ func (s *Store) Update(
 				}
 			}
 		}
-		// Store the new version of the flag. `memdb`'s Insert acts as an upsert, replacing the record if the primary key exists.		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
+		// Store the new version of the flag. `memdb`'s Insert acts as an upsert, replacing the record if the primary key exists.
+		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
 		err = txn.Insert(flagsTable, newFlag)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", key, err))

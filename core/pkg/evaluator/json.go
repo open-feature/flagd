@@ -524,10 +524,8 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 
 // Refactored Helper Function to Convert interface{} to model.Flag
 func convertToModelFlag(data map[string]interface{}) (model.Flag, error) {
-
 	type Flag struct {
-		Key       string `json:"key,omitempty"`
-		FlagSetId string `json:"flagSetId,omitempty"`
+		Key string `json:"key,omitempty"`
 		model.Flag
 	}
 
@@ -538,6 +536,7 @@ func convertToModelFlag(data map[string]interface{}) (model.Flag, error) {
 		return flag.Flag, fmt.Errorf("failed to decode flag data: %w", err)
 	}
 
+	flag.Flag.Key = flag.Key
 	return flag.Flag, nil
 }
 
