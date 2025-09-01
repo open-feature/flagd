@@ -928,7 +928,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
-			je := NewJSON(log, s)
+			je, _ := NewJSON(log, s)
 			je.store.Update(source, tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)

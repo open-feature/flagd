@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	flagd_definitions "github.com/open-feature/flagd-schemas/json"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -44,10 +43,16 @@ func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
 }
 
-func addSchemaResource(compiler *jsonschema.Compiler, url, schemaData, schemaName string) {
-	if err := compiler.AddResource(url, strings.NewReader(schemaData)); err != nil {
-		log.Fatalf("Failed to add %s schema: %v", schemaName, err)
+func addSchemaResource(compiler *jsonschema.Compiler, url, schemaData, schemaName string) error {
+	// This code is deprecated, but if we use only the strings.newReader in the AddResource, we get an error in the tests
+	unmarshalJSON, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaData))
+	if err != nil {
+		return err
 	}
+	if err := compiler.AddResource(url, unmarshalJSON); err != nil {
+		return err
+	}
+	return nil
 }
 
 type constraints interface {
@@ -80,7 +85,7 @@ type JSON struct {
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) *JSON {
+func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) (*JSON, error) {
 	logger = logger.WithFields(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
@@ -90,12 +95,18 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	// Create a new JSON Schema compiler
 	compiler := jsonschema.NewCompiler()
 
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd")
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags")
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting")
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd"); err != nil {
+		return nil, err
+	}
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags"); err != nil {
+		return nil, err
+	}
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting"); err != nil {
+		return nil, err
+	}
 	schema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
 	if err != nil {
-		log.Fatalf("Failed to compile flagd schema: %v", err)
+		return nil, err
 	}
 
 	ev := JSON{
@@ -110,7 +121,7 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 		o(&ev)
 	}
 
-	return &ev
+	return &ev, nil
 }
 
 func (je *JSON) GetState() (string, error) {
