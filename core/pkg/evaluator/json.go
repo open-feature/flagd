@@ -149,7 +149,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var definition Definition
 
-	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
+	err := configToFlagDefinition(payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -482,7 +482,16 @@ type Flag struct {
 }
 
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
-func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
+func configToFlagDefinition(config string, definition *Definition) error {
+	// json schema validation
+	inst, err := jsonschema.UnmarshalJSON(strings.NewReader(config))
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
+	}
+	if err := compiledSchema.Validate(inst); err != nil {
+		return fmt.Errorf("flag definition does not conform to the schema; validation errors: %s", err)
+	}
+
 	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
@@ -494,7 +503,6 @@ func configToFlagDefinition(log *logger.Logger, config string, definition *Defin
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
-
 	definition.Metadata = intermediateConfig.Metadata
 	definition.Flags = []model.Flag{}
 
