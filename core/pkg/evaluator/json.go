@@ -37,33 +37,14 @@ const (
 	Disabled        = "DISABLED"
 )
 
-var compiledSchema *jsonschema.Schema
 var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
-
-	// Create a new JSON Schema compiler
-	compiler := jsonschema.NewCompiler()
-
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd")
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags")
-	addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting")
-	schema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
-	if err != nil {
-		log.Fatalf("Failed to compile flagd schema: %v", err)
-	}
-	compiledSchema = schema
-
 }
 
 func addSchemaResource(compiler *jsonschema.Compiler, url, schemaData, schemaName string) {
-	reader := strings.NewReader(schemaData)
-	schema, err := jsonschema.UnmarshalJSON(reader)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal %s schema: %v", schemaName, err)
-	}
-	if err := compiler.AddResource(url, schema); err != nil {
+	if err := compiler.AddResource(url, strings.NewReader(schemaData)); err != nil {
 		log.Fatalf("Failed to add %s schema: %v", schemaName, err)
 	}
 }
@@ -94,6 +75,7 @@ type JSON struct {
 	store          store.IStore
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
+	jsonSchema     *jsonschema.Schema
 	Resolver
 }
 
@@ -104,10 +86,22 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	)
 	tracer := otel.Tracer("jsonEvaluator")
 
+	// Create a new JSON Schema compiler
+	compiler := jsonschema.NewCompiler()
+
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd")
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags")
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting")
+	schema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
+	if err != nil {
+		log.Fatalf("Failed to compile flagd schema: %v", err)
+	}
+
 	ev := JSON{
 		store:          s,
 		Logger:         logger,
 		jsonEvalTracer: tracer,
+		jsonSchema:     schema,
 		Resolver:       NewResolver(s, logger, tracer),
 	}
 
@@ -135,7 +129,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var definition Definition
 
-	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
+	err := je.configToFlagDefinition(payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -462,14 +456,14 @@ type JsonDef struct {
 }
 
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
-func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
+func (je *JSON) configToFlagDefinition(config string, definition *Definition) error {
 	// json schema validation
 	inst, err := jsonschema.UnmarshalJSON(strings.NewReader(config))
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
 	}
-	if err := compiledSchema.Validate(inst); err != nil {
-		log.Logger.Warn(fmt.Sprintf(
+	if err := je.jsonSchema.Validate(inst); err != nil {
+		je.Logger.Warn(fmt.Sprintf(
 			"flag definition does not conform to the schema; validation errors: %s", err),
 		)
 	}
