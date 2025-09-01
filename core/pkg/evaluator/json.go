@@ -206,7 +206,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var reason string
 	var metadata map[string]interface{}
 
-	for flagKey, flag := range allFlags {
+	for _, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
 			continue
@@ -215,18 +215,18 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case string:
-			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case float64:
-			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case map[string]any:
-			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		}
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flag.Key, err.Error()))
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
+		values = append(values, NewAnyValue(value, variant, reason, flag.Key, metadata, err))
 	}
 
 	return values, flagSetMetadata, nil
@@ -496,7 +496,7 @@ func configToFlagDefinition(log *logger.Logger, config string, definition *Defin
 	}
 
 	definition.Metadata = intermediateConfig.Metadata
-	definition.Flags = map[string]model.Flag{}
+	definition.Flags = []model.Flag{}
 
 	// Process flags directly
 	switch v := intermediateConfig.Flags.(type) {
@@ -507,7 +507,7 @@ func configToFlagDefinition(log *logger.Logger, config string, definition *Defin
 				return fmt.Errorf("failed to process flag for key %s: %w", k, err)
 			}
 			flag.Key = k // Populate the `Key` field explicitly
-			definition.Flags[k] = flag
+			definition.Flags = append(definition.Flags, flag)
 		}
 
 	case []interface{}: // Handle ValidMapFlags format
@@ -516,7 +516,7 @@ func configToFlagDefinition(log *logger.Logger, config string, definition *Defin
 			if err != nil {
 				return fmt.Errorf("failed to process flag: %w", err)
 			}
-			definition.Flags[flag.Key] = flag
+			definition.Flags = append(definition.Flags, flag)
 		}
 
 	default:
@@ -580,7 +580,7 @@ func convertToModelFlag(data interface{}) (model.Flag, error) {
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
 func validateDefaultVariants(flags *Definition) error {
-	for name, flag := range flags.Flags {
+	for _, flag := range flags.Flags {
 		// Default Variant is not provided in the config
 		if flag.DefaultVariant == "" {
 			continue
@@ -588,7 +588,7 @@ func validateDefaultVariants(flags *Definition) error {
 
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
-				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
+				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, flag.Key,
 			)
 		}
 	}

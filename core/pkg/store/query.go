@@ -25,7 +25,7 @@ const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + 
 
 // flagSetId defaults to a UUID generated at startup to make our queries consistent
 // any flag without a "flagSetId" is assigned this one; it's never exposed externally
-var nilFlagSetId = uuid.New().String()
+var NilFlagSetId = uuid.New().String()
 
 // A selector represents a set of constraints used to query the store.
 type Selector struct {

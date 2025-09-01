@@ -21,7 +21,7 @@ func TestUpdateFlags(t *testing.T) {
 	tests := []struct {
 		name        string
 		setup       func(t *testing.T) IStore
-		newFlags    map[string]model.Flag
+		newFlags    []model.Flag
 		source      string
 		wantFlags   map[string]model.Flag
 		setMetadata model.Metadata
@@ -52,7 +52,7 @@ func TestUpdateFlags(t *testing.T) {
 				return s
 			},
 			source:     source1,
-			newFlags:   map[string]model.Flag{},
+			newFlags:   []model.Flag{},
 			wantFlags:  map[string]model.Flag{},
 			wantNotifs: map[string]interface{}{},
 		},
@@ -77,21 +77,21 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, map[string]model.Flag{
-					"waka": {DefaultVariant: "off"},
+				s.Update(source1, []model.Flag{
+					{Key: "waka", DefaultVariant: "off"},
 				}, nil)
 				return s
 			},
-			newFlags: map[string]model.Flag{
-				"paka": {DefaultVariant: "on"},
+			newFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on"},
 			},
 			source: source1,
 			wantFlags: map[string]model.Flag{
-				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
+				NilFlagSetId + "|paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: NilFlagSetId, Priority: 0},
 			},
 			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write"},
-				"waka": map[string]interface{}{"type": "delete"},
+				NilFlagSetId + "|paka": map[string]interface{}{"type": "write"},
+				NilFlagSetId + "|waka": map[string]interface{}{"type": "delete"},
 			},
 		},
 		{
@@ -101,20 +101,20 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, map[string]model.Flag{
-					"waka": {DefaultVariant: "off"},
+				s.Update(source1, []model.Flag{
+					{Key: "waka", DefaultVariant: "off"},
 				}, nil)
 				return s
 			},
-			newFlags: map[string]model.Flag{
-				"paka": {DefaultVariant: "on"},
+			newFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on"},
 			},
 			source: source2,
 			wantFlags: map[string]model.Flag{
-				"waka": {Key: "waka", DefaultVariant: "off", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
-				"paka": {Key: "paka", DefaultVariant: "on", Source: source2, FlagSetId: nilFlagSetId, Priority: 1},
+				NilFlagSetId + "|waka": {Key: "waka", DefaultVariant: "off", Source: source1, FlagSetId: NilFlagSetId, Priority: 0},
+				NilFlagSetId + "|paka": {Key: "paka", DefaultVariant: "on", Source: source2, FlagSetId: NilFlagSetId, Priority: 1},
 			},
-			wantNotifs: map[string]interface{}{"paka": map[string]interface{}{"type": "write"}},
+			wantNotifs: map[string]interface{}{NilFlagSetId + "|paka": map[string]interface{}{"type": "write"}},
 		},
 		{
 			name: "flag set inheritance",
@@ -123,24 +123,24 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, map[string]model.Flag{}, model.Metadata{})
+				s.Update(source1, []model.Flag{}, model.Metadata{})
 				return s
 			},
 			setMetadata: model.Metadata{
 				"flagSetId": "topLevelSet", // top level set metadata, including flagSetId
 			},
-			newFlags: map[string]model.Flag{
-				"waka": {DefaultVariant: "on"},
-				"paka": {DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet"}}, // overrides set level flagSetId
+			newFlags: []model.Flag{
+				{Key: "waka", DefaultVariant: "on"},
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet"}}, // overrides set level flagSetId
 			},
 			source: source1,
 			wantFlags: map[string]model.Flag{
-				"waka": {Key: "waka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
-				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
+				"topLevelSet|waka":  {Key: "waka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
+				"flagLevelSet|paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
 			},
 			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write"},
-				"waka": map[string]interface{}{"type": "write"},
+				"flagLevelSet|paka": map[string]interface{}{"type": "write"},
+				"topLevelSet|waka":  map[string]interface{}{"type": "write"},
 			},
 		},
 	}
@@ -184,7 +184,7 @@ func TestGet(t *testing.T) {
 			name:     "nil selector",
 			key:      "flagA",
 			selector: nil,
-			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
@@ -198,7 +198,7 @@ func TestGet(t *testing.T) {
 			name:     "source selector",
 			key:      "dupe",
 			selector: &sourceASelector,
-			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
@@ -222,16 +222,16 @@ func TestGet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			sourceAFlags := map[string]model.Flag{
-				"flagA": {Key: "flagA", DefaultVariant: "off"},
-				"dupe":  {Key: "dupe", DefaultVariant: "on"},
+			sourceAFlags := []model.Flag{
+				{Key: "flagA", DefaultVariant: "off"},
+				{Key: "dupe", DefaultVariant: "on"},
 			}
-			sourceBFlags := map[string]model.Flag{
-				"flagB": {Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			sourceBFlags := []model.Flag{
+				{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			}
-			sourceCFlags := map[string]model.Flag{
-				"flagC": {Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			sourceCFlags := []model.Flag{
+				{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
 			store, err := NewStore(logger.NewLogger(nil, false), sources)
@@ -276,7 +276,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: nil,
 			wantFlags: map[string]model.Flag{
 				// "dupe" should be overwritten by higher priority flag
-				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
 				"flagB": {Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 				"flagC": {Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
@@ -287,8 +287,8 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: &sourceASelector,
 			wantFlags: map[string]model.Flag{
 				// we should get the "dupe" from sourceA
-				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				"dupe":  {Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				"flagA": {Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
+				"dupe":  {Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: NilFlagSetId, Priority: 0},
 			},
 		},
 		{
@@ -307,16 +307,16 @@ func TestGetAllNoWatcher(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			sourceAFlags := map[string]model.Flag{
-				"flagA": {Key: "flagA", DefaultVariant: "off"},
-				"dupe":  {Key: "dupe", DefaultVariant: "on"},
+			sourceAFlags := []model.Flag{
+				{Key: "flagA", DefaultVariant: "off"},
+				{Key: "dupe", DefaultVariant: "on"},
 			}
-			sourceBFlags := map[string]model.Flag{
-				"flagB": {Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			sourceBFlags := []model.Flag{
+				{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			}
-			sourceCFlags := map[string]model.Flag{
-				"flagC": {Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			sourceCFlags := []model.Flag{
+				{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
 			store, err := NewStore(logger.NewLogger(nil, false), sources)
@@ -381,14 +381,12 @@ func TestWatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			sourceAFlags := map[string]model.Flag{
-				"flagA": {Key: "flagA", DefaultVariant: "off"},
+			sourceAFlags := []model.Flag{
+				{Key: "flagA", DefaultVariant: "off"},
 			}
-			sourceBFlags := map[string]model.Flag{
-				"flagB": {Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
-			}
-			sourceCFlags := map[string]model.Flag{
-				"flagC": {Key: "flagC", DefaultVariant: "off"},
+			sourceBFlags := []model.Flag{{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": myFlagSetId}}}
+			sourceCFlags := []model.Flag{
+				{Key: "flagC", DefaultVariant: "off"},
 			}
 
 			store, err := NewStore(logger.NewLogger(nil, false), sources)
@@ -412,29 +410,29 @@ func TestWatch(t *testing.T) {
 				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
-				store.Update(sourceA, map[string]model.Flag{
-					"flagA": {Key: "flagA", DefaultVariant: "on"},
+				store.Update(sourceA, []model.Flag{
+					{Key: "flagA", DefaultVariant: "on"},
 				}, model.Metadata{})
 
 				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
-				store.Update(sourceB, map[string]model.Flag{
-					"flagB": {Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
+				store.Update(sourceB, []model.Flag{
+					{Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
 				}, model.Metadata{})
 
 				time.Sleep(pauseTime)
 
 				// removing a flag set id should trigger an update (even for flag set id selectors; it should remove the flag from the set)
-				store.Update(sourceB, map[string]model.Flag{
-					"flagB": {Key: "flagB", DefaultVariant: "on"},
+				store.Update(sourceB, []model.Flag{
+					{Key: "flagB", DefaultVariant: "on"},
 				}, model.Metadata{})
 
 				time.Sleep(pauseTime)
 
 				// adding a flag set id should trigger an update
-				store.Update(sourceB, map[string]model.Flag{
-					"flagB": {Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
+				store.Update(sourceB, []model.Flag{
+					{Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
 				}, model.Metadata{})
 			}()
 
@@ -464,9 +462,9 @@ func TestQueryMetadata(t *testing.T) {
 	otherSource := "otherSource"
 	nonExistingFlagSetId := "nonExistingFlagSetId"
 	var sources = []string{sourceA}
-	sourceAFlags := map[string]model.Flag{
-		"flagA": {Key: "flagA", DefaultVariant: "off"},
-		"flagB": {Key: "flagB", DefaultVariant: "on"},
+	sourceAFlags := []model.Flag{
+		{Key: "flagA", DefaultVariant: "off"},
+		{Key: "flagB", DefaultVariant: "on"},
 	}
 
 	store, err := NewStore(logger.NewLogger(nil, false), sources)
