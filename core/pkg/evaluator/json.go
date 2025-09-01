@@ -46,40 +46,25 @@ func init() {
 	// Create a new JSON Schema compiler
 	compiler := jsonschema.NewCompiler()
 
-	// Add the Flagd Daemon schema
-	flagdFile := strings.NewReader(flagd_definitions.FlagdSchema)
-	schema, err := jsonschema.UnmarshalJSON(flagdFile)
-	if err != nil {
-log.Fatalf("Failed to unmarshal flagd schema: %v", err)
-	}
-	if err := compiler.AddResource("https://flagd.dev/schema/v0/flagd.json", schema); err != nil {
-		log.Fatalf("Failed to add flagd schema: %v", err)
-	}
-
-	// Add the Flag schema
-	flagsFile := strings.NewReader(flagd_definitions.FlagSchema)
-	schema, err = jsonschema.UnmarshalJSON(flagsFile)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal flags schema: %v", err)
-	}
-	if err := compiler.AddResource("https://flagd.dev/schema/v0/flags.json", schema); err != nil {
-		log.Fatalf("Failed to add flags schema: %v", err)
-	}
-
-	// Add the Targeting schema
-	targetingFile := strings.NewReader(flagd_definitions.TargetingSchema)
-	schema, err = jsonschema.UnmarshalJSON(targetingFile)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal targeting schema: %v", err)
-	}
-	if err := compiler.AddResource("https://flagd.dev/schema/v0/targeting.json", schema); err != nil {
-		log.Fatalf("Failed to add targeting schema: %v", err)
-	}
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", flagd_definitions.FlagdSchema, "flagd")
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", flagd_definitions.FlagSchema, "flags")
+	addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", flagd_definitions.TargetingSchema, "targeting")
 	compiledSchema, err = compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
 	if err != nil {
 		log.Fatalf("Failed to compile flagd schema: %v", err)
 	}
 
+}
+
+func addSchemaResource(compiler *jsonschema.Compiler, url, schemaData, schemaName string) {
+	reader := strings.NewReader(schemaData)
+	schema, err := jsonschema.UnmarshalJSON(reader)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal %s schema: %v", schemaName, err)
+	}
+	if err := compiler.AddResource(url, schema); err != nil {
+		log.Fatalf("Failed to add %s schema: %v", schemaName, err)
+	}
 }
 
 type constraints interface {

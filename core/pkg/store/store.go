@@ -275,10 +275,10 @@ func (s *Store) Update(
 	for key, oldFlag := range oldFlags {
 		if _, ok := newFlags[key]; !ok {
 			// flag has been deleted
-			s.logger.Debug(fmt.Sprintf("flag %s has been deleted from source %s", key, source))
+			s.logger.Debug(fmt.Sprintf("flag '%s' and flagSetId '%s' has been deleted from source '%s'", oldFlag.Key, oldFlag.FlagSetId, source))
 
 			count, err := txn.DeleteAll(flagsTable, flagSetIdKeySourceCompoundIndex, oldFlag.FlagSetId, oldFlag.Key, source)
-			s.logger.Debug(fmt.Sprintf("deleted %d flags with key %s from source %s", count, key, source))
+			s.logger.Debug(fmt.Sprintf("deleted %d flags with key '%s' and flagSetId '%s' from source '%s'", count, oldFlag.Key, source))
 
 			if err != nil {
 				s.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", key, err))
@@ -369,10 +369,10 @@ func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
 
 		if existing, ok := flags[generateCombinedKey(flag)]; ok {
 			if flag.Priority < existing.Priority {
-				s.logger.Debug(fmt.Sprintf("discarding duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[flag.Priority], s.sources[existing.Priority]))
+				s.logger.Debug(fmt.Sprintf("discarding duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[flag.Priority], s.sources[existing.Priority]))
 				continue // we already have a higher priority flag
 			}
-			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[existing.Priority], s.sources[flag.Priority]))
+			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[existing.Priority], s.sources[flag.Priority]))
 		}
 
 		flags[generateCombinedKey(flag)] = flag
