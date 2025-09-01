@@ -262,6 +262,11 @@ func (s *Store) Update(
 			flagSetId = setFlagSetId
 		}
 		newFlag.FlagSetId = flagSetId
+		/*
+			todo: A source can have multiple flags with the same name but a different id,
+			we either update the return value of the update method (bigger change) or
+			we use a compoundKey in the map containing of FlagsetId and key - no api change
+		*/
 		newFlags[newFlag.Key] = newFlag
 	}
 
@@ -295,6 +300,13 @@ func (s *Store) Update(
 
 	for key, newFlag := range newFlags {
 		s.logger.Debug(fmt.Sprintf("got metadata %v", metadata))
+		/*
+			todo: evaluate this:
+			is this an error, i can have multiple different flags with the same key within a source.
+			also i can have multiple source with the same flagkey and the same flagset id
+			when i select now based on the keySourceCompoundIndex, i might delete a flag, something i do not want to?
+			or am i missing something?
+		*/
 		raw, err := txn.First(flagsTable, keySourceCompoundIndex, key, source)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", key, source, err))
