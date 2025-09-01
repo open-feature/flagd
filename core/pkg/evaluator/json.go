@@ -521,53 +521,14 @@ func configToFlagDefinition(config string, definition *Definition) error {
 
 // Helper function to convert a generic interface{} to model.Flag
 func convertToModelFlag(data interface{}) (model.Flag, error) {
-	flag := model.Flag{}
-
-	// Assert the data is a map[string]interface{}
-	flagData, ok := data.(map[string]interface{})
-	if !ok {
-		return flag, fmt.Errorf("unexpected type for flag data: %T", data)
+	var flag model.Flag
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return flag, fmt.Errorf("failed to marshal flag data: %w", err)
 	}
-
-	// Populate fields of model.Flag
-	if key, ok := flagData["key"].(string); ok {
-		flag.Key = key
+	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
+		return flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
 	}
-
-	if state, ok := flagData["state"].(string); ok {
-		flag.State = state
-	}
-
-	if defaultVariant, ok := flagData["defaultVariant"].(string); ok {
-		flag.DefaultVariant = defaultVariant
-	}
-
-	if variants, ok := flagData["variants"].(map[string]interface{}); ok {
-		flag.Variants = variants
-	}
-
-	if targeting, ok := flagData["targeting"].(json.RawMessage); ok {
-		flag.Targeting = targeting
-	} else if targetingRaw, ok := flagData["targeting"].(string); ok {
-		flag.Targeting = json.RawMessage(targetingRaw)
-	} else if flagData["targeting"] != nil {
-		marshal, err := json.Marshal(flagData["targeting"])
-		if err != nil {
-			return flag, fmt.Errorf("marshalling targeting: %w", err)
-		}
-
-		flag.Targeting = json.RawMessage(marshal)
-	}
-
-	if source, ok := flagData["source"].(string); ok {
-		flag.Source = source
-	}
-
-	if metadata, ok := flagData["metadata"].(map[string]interface{}); ok {
-		// Assuming Metadata is a struct that can be populated directly
-		flag.Metadata = model.Metadata(metadata)
-	}
-
 	return flag, nil
 }
 

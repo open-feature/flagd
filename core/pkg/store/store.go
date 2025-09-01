@@ -278,7 +278,13 @@ func (s *Store) Update(
 			s.logger.Debug(fmt.Sprintf("flag '%s' and flagSetId '%s' has been deleted from source '%s'", oldFlag.Key, oldFlag.FlagSetId, source))
 
 			count, err := txn.DeleteAll(flagsTable, flagSetIdKeySourceCompoundIndex, oldFlag.FlagSetId, oldFlag.Key, source)
-			s.logger.Debug(fmt.Sprintf("deleted %d flags with key '%s' and flagSetId '%s' from source '%s'", count, oldFlag.Key, source))
+			s.logger.Debug(fmt.Sprintf(
+				"deleted %d flags with key '%s' and flagSetId '%s' from source '%s'",
+				count,
+				oldFlag.Key,
+				oldFlag.FlagSetId,
+				source,
+			))
 
 			if err != nil {
 				s.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", key, err))
@@ -290,27 +296,9 @@ func (s *Store) Update(
 	for key, newFlag := range newFlags {
 		s.logger.Debug(fmt.Sprintf("got metadata %v", metadata))
 
-		raw, err := txn.First(flagsTable, keySourceCompoundIndex, key, source)
-		if err != nil {
-			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", key, source, err))
-			continue
-		}
-		oldFlag, ok := raw.(model.Flag)
-		// If we already have a flag with the same key and source, we need to check if it has the same flagSetId
-		if ok {
-			if oldFlag.FlagSetId != newFlag.FlagSetId {
-				// If the flagSetId is different, we need to delete the entry, since flagSetId+key represents the primary index, and it's now been changed.
-				// This is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
-				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, key)
-				if err != nil {
-					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", key, oldFlag.FlagSetId, err))
-					continue
-				}
-			}
-		}
-		// Store the new version of the flag
+		// Store the new version of the flag - we do not need to check for updates, as we differentiate between sources now.
 		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
-		err = txn.Insert(flagsTable, newFlag)
+		err := txn.Insert(flagsTable, newFlag)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", key, err))
 			continue
@@ -367,6 +355,7 @@ func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
 	for raw := it.Next(); raw != nil; raw = it.Next() {
 		flag := raw.(model.Flag)
 
+		// checking for multiple flags with the same key, as they can be defined multiple times in different sources
 		if existing, ok := flags[generateCombinedKey(flag)]; ok {
 			if flag.Priority < existing.Priority {
 				s.logger.Debug(fmt.Sprintf("discarding duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[flag.Priority], s.sources[existing.Priority]))
