@@ -3,7 +3,7 @@
 status: draft
 author: Maks Osowski (@cupofcat)
 created: 2025-08-21
-updated: 2025-09-01
+updated: 2025-09-02
 ---
 
 # Harden Hashing Consistency And Add Support For Non-string Attributes in Fractional Evaluation
@@ -13,9 +13,9 @@ This proposal aims to enhance the `fractional` operator to:
 1. Explicitly ensure hashes are consistent across all providers and platforms.
 2. Support non-string values as the hashing input (i.e., the randomization unit).
 
-Currently, all inputs are coerced to strings before hashing, which, in some reare cases, can lead to inconsistent bucketing across different provider implementations (e.g. Java provider running on a non UTF-8 platform). By this change, the targeting attributes of various types will be supported and will always be explicitly encoded in a consistent, language and platform independent, manner in every provider.
+Currently, all inputs are coerced to strings before hashing, which, in some rare cases, can lead to inconsistent bucketing across different provider implementations (e.g. Java provider running on a non UTF-8 platform). With this change, the targeting attributes of various types will be supported and will always be explicitly encoded in a consistent, language- and platform-independent manner in every provider
 
-This change will be implemented in a *mostly* backward-compatible manner, preserving existing bucketing for all string-based inputs where UTF-8 was used (great majority of cases). There might be some rebucketing for users that were using certain providers on platforms with non UTF-8 locale and a provider that was enforcing UTF-8 encodings for strings.
+This change will be backward-compatible in terms of flags schema but will be a breaking behavioral change for 100% of the users due to rebucketing.
 
 ```json
 "fractional": [
@@ -44,18 +44,37 @@ This proposal seeks to resolve these issues by allowing `fractional` to operate 
 
 ## Requirements
 
-* Users must be able to use both string and non-string variables (e.g., integers, booleans) as the primary input for `fractional` evaluation.
-* Same "value" (e.g. 57.2, "some text", true, etc) should result in the same bucket assignment no matter the language of the provider and platform used.
+### 1. Users must be able to use both string and non-string variables (e.g., integers, booleans) as the primary input for `fractional` evaluation.
+
+### 2. Same "value" (e.g. 57.2, "some text", true, etc) should result in the same bucket assignment no matter the language of the provider and platform used.
+
+Please note:
+
+* some languages (e.g. Python) don't necessarily have standard types by default (e.g. int32 vs int64).
+* [OpenFeature spec 312](https://openfeature.dev/specification/sections/evaluation-context/#requirement-312) dictates that evaluation context needs to support `boolean` | `string` | `number` | `structure` | `datetime` types.
+* JSON supports 6 fundamental types: `boolean` | `string` | `number` | `object` | `array` | `null`
+
+As such, the encodings for the following types as first argument (either as literals or results of evaluation) will be standardized:
+
+1. boolean
+2. string
+3. integer (any integer number, Python style)
+4. float (any floating point number, Python style)
+5. object (structure / map)
+6. datetime
+7. null
+
+**array / sequence** will be explicitly not supported as the first argument in fractional so it's possible to distinguish between hashing input and variant bucket. Nevertheless, it can be a part of object type and its encoding needs to be standardized as well.
 
 ## Non-requirements
 
-* This change does not need to be backward-compatible. Nevertheless, care should be taken to minimize disrputions - strings should be encoded using UTF-8 (already a default on most platforms and providers).
-* Support advnaced features like salting non-string types in JSON directly (that will be a separate ADR)
-* Bucketing improvements (that will be a separate ADR)
+* This change does not need to be backward-compatible.
+* Support advanced features like salting non-string types in JSON directly (that will be a separate ADR).
+* Bucketing improvements (that will be a separate ADR).
 
 ## Considered Options
 
-1. **Proposed:** *Type-Aware Hashing:* Extend the current behavior to support non-string types as first arguments to `fractional` and in `targetingKey`.
+1. **Proposed:** *Type-Aware Hashing:* Extend the current behavior to support non-string types as first arguments to `fractional`.
 2. *New Operator:* Introduce a new operator, such as `"bytesVar"`, to explicitly signal that the variable's raw bytes should be hashed.
 3. *Operator Overloading:* Reuse an existing operator (e.g., `"merge"`) or structure (e.g., providing a list) to imply byte-based hashing.
 
@@ -67,9 +86,10 @@ We will modify the evaluation logic for the `fractional` operator.
 
 When inspecting the first element of the `fractional` array:
 
-1. If the first element in `fractional` evaluates to a non-array type then deterministically encode it to a well defined byte array (using UTF-8 for strings) and hash the bytes.
-2. Otherwise, if `targetingKey` is a string, concatenate `flagKey` and `targetingKey`, encode to UTF-8 and hash that (current behavior).
-3. Otherwise, if `targetingKey` is non-string, create a 2 element array of [`flagKey`, `targetingKey`] and hash that.
+1. If the first element in `fractional` evaluates to a non-array type then deterministically encode it to a well defined byte array and hash the bytes.
+2. Otherwise, if `targetingKey` is a string, build a 2-elements array of `flagKey` and `targetingKey`, deterministically encode that and hash (**NOTE:** This is different than string concatenation used today).
+3. Otherwise, if `targetingKey` is non-string, report an error and return a default value (as this breaks the [OpenFeature spec](https://openfeature.dev/specification/glossary/#targeting-key)).
+4. Otherwise, if `targetingKey` is missing, report an error and return a default value.
 
 ```json
 // Will use the new logic
@@ -80,7 +100,7 @@ When inspecting the first element of the `fractional` array:
   ["a", 50], ...
 ]
 
-// Will use the new logic but in a mostly backward-copmpatible way
+// Will use new logic
 "fractional": [
   {
     "cat": [{"var" : "$flagd.flagKey"}, {"var" : "some-var"}]
@@ -88,7 +108,7 @@ When inspecting the first element of the `fractional` array:
   ["a", 50], ...
 ]
 
-// Will use the targetingKey
+// Will use targetingKey
 "fractional": [
   ["a", 50], ...
 ]
@@ -102,28 +122,46 @@ When inspecting the first element of the `fractional` array:
 ]
 ```
 
+### Deterministic and consistent byte encodings
+
+To meet requirement (2) [RFC 8949 Concise Binary Object Representation (CBOR)](https://www.rfc-editor.org/rfc/rfc8949.html) will be used to decide on byte encodings.
+
+* `boolean` is major type 7
+* `null` is major type 7
+* `string` is major type 3
+* `integer`:
+  * `unsigned integer` is major type 0
+  * `negative integer` is major type 1
+* `float` is major type 7
+* `map` (object, structure, dict) is major type 5
+* `array` (list, sequence) is major type 4
+* `datetime` is converted to POSIX epoch time (including fractional seconds for sub-second precision) and CBOR Tag 1 is used
+
+**ATTENTION: When encoding strings, CBOR appends the size of the encoding in first bytes. As such, even though the actual encoding of the string is still UTF-8, the resulting byte array will differ from raw UTF-8 encoding. As such, after this change, all hashes will change, which will result in rebucketing.**
+
+Additionally, it is required to use [4.2.1. Core Deterministic Encoding Requirements](https://www.rfc-editor.org/rfc/rfc8949.html#section-4.2.1) (which includes Preferred Serizalization), to ensure:
+
+1. **Map Key Ordering**: Implementations must strictly adhere to the requirement that keys in maps (objects/structures) must be sorted using bytewise lexicographic order of their deterministic encodings.
+2. **Preferred Serialization (Numbers)**: CBOR mandates using the shortest possible encoding. Providers must ensure consistency, especially between integer and float representations, and across different precisions. For example, if a value fits within a 32-bit float, it must be used instead of a 64-bit float, regardless of the native type in the provider's language.
+
 ### API changes
 
 There are **no** changes to the flagd JSON schema. The change is purely semantic, affecting the evaluation logic within providers.
 
 ### Consequences
 
-* Good, because any variable can be used for hashing
-* Good, because it avoids unnecessary casting
-* Bad, because some users will experience rebucketing, if they are on a combination of provider and platform that encodes strings differently than UTF-8
+* Good, because any variable can be used for hashing.
+* Good, because it avoids unnecessary casting.
+* Bad, because all of the users will experience rebucketing.
 
 ### Timeline
 
-Pre flagd 1.0.
+Prior to flagd 1.0 launch.
 
 ## More Information
 
-Today, flagd recommends to salt the variable with flagKey directly in the `fractional` logic, using the `"cat"` operator. This will not be possible for non-string types. Advanced features like that will be considered in a separate ADR.
+Today, flagd recommends salting the variable with flagKey directly in the `fractional` logic, using the `"cat"` operator. This will not be possible for non-string types. Advanced features like that will be considered in a separate ADR.
 
-### Implementation considerations
+### Testing considerations
 
-The details of how to achieve the requirements of this ADR are left as the implementation detail at the discretion of contributors. However, one option worth considering is to use [CBOR](https://cbor.io/). CBOR libraries in each language ensure that the same values get the same byte encoding and murmur3 libraries will ensure that same byte arrays will get the same hash. This works across any type, even for strings.
-
-That way we have langauge-agnostic, stable, and consistent bucketing.
-
-CBOR is specified in an Internet Standard RFC by IETF, which should mean this stays stable for foreseeable future.
+As part of implementation of this ADR, the current Gherkin suite will need to be updated to ensure more in-depth testing of consistency (e.g. by looking at the distribution of buckets for many samples), as well as support for many new types.
