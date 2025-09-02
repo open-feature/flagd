@@ -15,6 +15,7 @@ type Notifications map[string]any
 func NewFromFlags(oldFlags, newFlags map[string]model.Flag) Notifications {
 	notifications := map[string]interface{}{}
 
+	// NOTE: we do not care about the events here for flagd itself, those are only needed for the provider, except for the openTelemetry information!!!!
 	// flags removed
 	for key := range oldFlags {
 		if _, ok := newFlags[key]; !ok {

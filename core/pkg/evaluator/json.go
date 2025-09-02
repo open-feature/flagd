@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	flagd_definitions "github.com/open-feature/flagd-schemas/json"
 	"regexp"
 	"strconv"
@@ -131,7 +130,7 @@ func (je *JSON) GetState() (string, error) {
 	return s, nil
 }
 
-func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
+func (je *JSON) SetState(payload sync.DataSync) error {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"flagSync",
@@ -144,18 +143,12 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
-		return nil, false, err
+		return err
 	}
 
-	var events map[string]interface{}
-	var reSync bool
+	je.store.Update(payload.Source, definition.Flags, definition.Metadata)
 
-	events, reSync = je.store.Update(payload.Source, definition.Flags, definition.Metadata)
-
-	// Number of events correlates to the number of flags changed through this sync, record it
-	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
-
-	return events, reSync, nil
+	return nil
 }
 
 // Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
@@ -497,7 +490,7 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 	switch v := intermediateConfig.Flags.(type) {
 	case map[string]interface{}: // Handle ValidFlags format
 		for k, e := range v {
-			flag, err := convertToModelFlag(e.(map[string]interface{}))
+			flag, err := convertToModelFlag(e)
 			if err != nil {
 				return fmt.Errorf("failed to process flag for key %s: %w", k, err)
 			}
@@ -507,7 +500,7 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 
 	case []interface{}: // Handle ValidMapFlags format
 		for _, value := range v {
-			flag, err := convertToModelFlag(value.(map[string]interface{}))
+			flag, err := convertToModelFlag(value)
 			if err != nil {
 				return fmt.Errorf("failed to process flag: %w", err)
 			}
@@ -522,21 +515,28 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 }
 
 // Refactored Helper Function to Convert interface{} to model.Flag
-func convertToModelFlag(data map[string]interface{}) (model.Flag, error) {
+func convertToModelFlag(data interface{}) (model.Flag, error) {
+
 	type Flag struct {
 		Key string `json:"key,omitempty"`
 		model.Flag
 	}
 
 	var flag Flag
+	jsonBytes, err := json.Marshal(data)
 
-	// Use mapstructure to decode the data into the Flag struct
-	if err := mapstructure.Decode(data, &flag); err != nil {
-		return flag.Flag, fmt.Errorf("failed to decode flag data: %w", err)
+	if err != nil {
+		return flag.Flag, fmt.Errorf("failed to marshal flag data: %w", err)
 	}
 
-	flag.Flag.Key = flag.Key
-	return flag.Flag, nil
+	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
+		return flag.Flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
+	}
+
+	exportFlag := flag.Flag
+	exportFlag.Key = flag.Key
+
+	return exportFlag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid

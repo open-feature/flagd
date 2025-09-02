@@ -35,7 +35,7 @@ IEvaluator is an extension of IResolver, allowing storage updates and retrievals
 */
 type IEvaluator interface {
 	GetState() (string, error)
-	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
+	SetState(payload sync.DataSync) (map[string]interface{}, bool, error) // TODO: here we are returning the notifications, should we maybe declare a more specific type? - we ignore this in the runtime :)
 	IResolver
 }
 
