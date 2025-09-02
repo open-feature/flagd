@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,8 @@ import (
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"gocloud.dev/blob"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -193,11 +196,24 @@ func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) 
 		interval = config.Interval
 	}
 
-	return &httpSync.Sync{
-		URI: config.URI,
-		Client: &http.Client{
+	var client *http.Client
+	if config.OAuthConfig != nil {
+		oauth := clientcredentials.Config{
+			ClientID:     config.OAuthConfig.ClientId,
+			ClientSecret: config.OAuthConfig.ClientSecret,
+			TokenURL:     config.OAuthConfig.TokenUrl,
+			AuthStyle:    oauth2.AuthStyleInParams,
+		}
+		client = oauth.Client(context.Background())
+	} else {
+		client = &http.Client{
 			Timeout: time.Second * 10,
-		},
+		}
+	}
+
+	return &httpSync.Sync{
+		URI:    config.URI,
+		Client: client,
 		Logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "remote"),
