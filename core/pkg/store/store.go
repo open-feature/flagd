@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 
@@ -24,7 +23,6 @@ type IStore interface {
 	GetAll(ctx context.Context, selector *Selector) ([]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
 	Update(source string, flags []model.Flag, metadata model.Metadata)
-	String() (string, error)
 }
 
 var _ IStore = (*Store)(nil)
@@ -191,26 +189,6 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 		return flag, queryMeta, fmt.Errorf("flag %s not found", key)
 	}
 	return flag, queryMeta, nil
-}
-
-func (f *Store) String() (string, error) {
-	f.logger.Debug("dumping flags to string")
-
-	state, _, err := f.GetAll(context.Background(), nil)
-	if err != nil {
-		return "", fmt.Errorf("unable to get all flags: %w", err)
-	}
-
-	output := make(map[string]model.Flag, len(state))
-	for _, v := range state {
-		output[v.Key] = v
-	}
-	bytes, err := json.Marshal(output)
-	if err != nil {
-		return "", fmt.Errorf("unable to marshal flags: %w", err)
-	}
-
-	return string(bytes), nil
 }
 
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)

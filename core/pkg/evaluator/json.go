@@ -122,14 +122,6 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	return &ev, nil
 }
 
-func (je *JSON) GetState() (string, error) {
-	s, err := je.store.String()
-	if err != nil {
-		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
-	}
-	return s, nil
-}
-
 func (je *JSON) SetState(payload sync.DataSync) error {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
