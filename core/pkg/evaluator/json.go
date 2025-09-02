@@ -504,6 +504,9 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 			if err != nil {
 				return fmt.Errorf("failed to process flag: %w", err)
 			}
+			if flag.Key == "" {
+				return fmt.Errorf("invalid key for flag: %s", value)
+			}
 			definition.Flags = append(definition.Flags, flag)
 		}
 

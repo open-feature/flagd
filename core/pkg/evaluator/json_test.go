@@ -46,7 +46,7 @@ const ValidFlags = `{
 const ValidMapFlags = `{
   "flags": [
     {
-      "key": "validFlag",
+      "key": "validFlags"
       "state": "ENABLED",
       "variants": {
         "on": true,

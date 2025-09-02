@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -193,6 +192,9 @@ func TestUpdateFlags(t *testing.T) {
 			store := tt.setup(t)
 			store.Update(tt.source, tt.newFlags, tt.setMetadata)
 			gotFlags, _, _ := store.GetAll(context.Background(), nil)
+			sort.Slice(tt.wantFlags, func(i, j int) bool {
+				return tt.wantFlags[i].FlagSetId+"|"+tt.wantFlags[i].Key > tt.wantFlags[j].FlagSetId+"|"+tt.wantFlags[j].Key
+			})
 			sort.Slice(gotFlags, func(i, j int) bool {
 				return gotFlags[i].FlagSetId+"|"+gotFlags[i].Key > gotFlags[j].FlagSetId+"|"+gotFlags[j].Key
 			})
@@ -378,17 +380,12 @@ func TestGetAllNoWatcher(t *testing.T) {
 			gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
 
 			require.Equal(t, len(tt.wantFlags), len(gotFlags))
+			sort.Slice(tt.wantFlags, func(i, j int) bool {
+				return tt.wantFlags[i].FlagSetId+"|"+tt.wantFlags[i].Key > tt.wantFlags[j].FlagSetId+"|"+tt.wantFlags[j].Key
+			})
 			sort.Slice(gotFlags, func(i, j int) bool {
 				return gotFlags[i].FlagSetId+"|"+gotFlags[i].Key > gotFlags[j].FlagSetId+"|"+gotFlags[j].Key
 			})
-			wants := []string{}
-			for _, want := range tt.wantFlags {
-				wants = append(wants, fmt.Sprintf("%s|%s", want.FlagSetId, want.Key))
-			}
-			gots := []string{}
-			for _, got := range gotFlags {
-				gots = append(gots, fmt.Sprintf("%s|%s", got.FlagSetId, got.Key))
-			}
 			require.Equal(t, tt.wantFlags, gotFlags)
 		})
 	}
