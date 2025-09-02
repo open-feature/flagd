@@ -44,9 +44,9 @@ This proposal seeks to resolve these issues by allowing `fractional` to operate 
 
 ## Requirements
 
-### 1. Users must be able to use both string and non-string variables (e.g., integers, booleans) as the primary input for `fractional` evaluation.
+### 1. Users must be able to use both string and non-string variables (e.g., integers, booleans) as the primary input for `fractional` evaluation
 
-### 2. Same "value" (e.g. 57.2, "some text", true, etc) should result in the same bucket assignment no matter the language of the provider and platform used.
+### 2. Same "value" (e.g. 57.2, "some text", true, etc) should result in the same bucket assignment no matter the language of the provider and platform used
 
 Please note:
 
@@ -130,8 +130,8 @@ To meet requirement (2) [RFC 8949 Concise Binary Object Representation (CBOR)](h
 * `null` is major type 7
 * `string` is major type 3
 * `integer`:
-  * `unsigned integer` is major type 0
-  * `negative integer` is major type 1
+    * `unsigned integer` is major type 0
+    * `negative integer` is major type 1
 * `float` is major type 7
 * `map` (object, structure, dict) is major type 5
 * `array` (list, sequence) is major type 4
