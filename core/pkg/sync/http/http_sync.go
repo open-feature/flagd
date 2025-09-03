@@ -10,11 +10,16 @@ import (
 	"net/http"
 	parseUrl "net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/utils"
+	"github.com/robfig/cron"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3" //nolint:gosec
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Sync struct {
@@ -191,4 +196,40 @@ func (hs *Sync) generateSha(body []byte) string {
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 	body, _, err := hs.fetchBody(ctx, false)
 	return body, err
+}
+
+func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
+	// Default to 5 seconds
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+
+	var client *http.Client
+	if config.OAuthConfig != nil {
+		oauth := clientcredentials.Config{
+			ClientID:     config.OAuthConfig.ClientId,
+			ClientSecret: config.OAuthConfig.ClientSecret,
+			TokenURL:     config.OAuthConfig.TokenUrl,
+			AuthStyle:    oauth2.AuthStyleInParams,
+		}
+		client = oauth.Client(context.Background())
+	} else {
+		client = &http.Client{
+			Timeout: time.Second * 10,
+		}
+	}
+
+	return &Sync{
+		URI:    config.URI,
+		Client: client,
+		Logger: logger.WithFields(
+			zap.String("component", "sync"),
+			zap.String("sync", "http"),
+		),
+		BearerToken: config.BearerToken,
+		AuthHeader:  config.AuthHeader,
+		Interval:    interval,
+		Cron:        cron.New(),
+	}
 }

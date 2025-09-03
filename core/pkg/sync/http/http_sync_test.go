@@ -2,9 +2,12 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncmock "github.com/open-feature/flagd/core/pkg/sync/http/mock"
 	synctesting "github.com/open-feature/flagd/core/pkg/sync/testing"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -459,4 +463,64 @@ func TestHTTPSync_Resync(t *testing.T) {
 			}
 		})
 	}
+}
+
+type oauthHttpMock struct {
+	count      int
+	lastParams url.Values
+	lastHeader http.Header
+}
+
+func TestHTTPSync_OAuth(t *testing.T) {
+	// given
+	const clientID = "clientID"
+	const clientSecret = "clientSecret"
+	const oauthPath = "/oauth"
+	const bearerToken = "mySecretBearerToken"
+
+	oauthMock := &oauthHttpMock{}
+	httpMock := &oauthHttpMock{}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, oauthPath) {
+			body, _ := io.ReadAll(r.Body)
+			params, _ := url.ParseQuery(string(body))
+			oauthMock.lastParams = params
+			oauthMock.lastHeader = r.Header
+			oauthMock.count++
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+			w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+			return
+		}
+		httpMock.lastHeader = r.Header
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+	l := logger.NewLogger(nil, false)
+	s := NewHTTP(sync.SourceConfig{
+		URI:         ts.URL,
+		BearerToken: "it_should_be_replaced_by_oauth",
+		OAuthConfig: &sync.OAuthCredentialHandler{
+			ClientId:     clientID,
+			ClientSecret: clientSecret,
+			TokenUrl:     ts.URL + oauthPath,
+		},
+	}, l)
+	d := make(chan sync.DataSync, 1)
+	// when we call resync multiple times
+	err := s.ReSync(context.Background(), d)
+	err2 := s.ReSync(context.Background(), d)
+	// then
+
+	// we only get errors when fetching the HTTP data
+	require.ErrorContains(t, err, "500 Internal Server Error")
+	require.ErrorContains(t, err2, "500 Internal Server Error")
+
+	// the OAuth endpoint is only called once
+	require.Equal(t, 1, oauthMock.count)
+
+	// the Beaerer token is replaced by the OAuth values
+	require.Equal(t, fmt.Sprintf("Bearer %s", bearerToken), httpMock.lastHeader.Get("Authorization"))
+
 }
