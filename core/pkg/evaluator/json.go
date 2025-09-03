@@ -446,18 +446,9 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-type JsonDef struct {
-	Flags    interface{}            `json:"flags"`
+type JsonRawDef struct {
+	Flags    json.RawMessage        `json:"flags"`
 	Metadata map[string]interface{} `json:"metadata"`
-}
-
-type JsonArrayDef struct {
-	JsonDef
-	Flags []model.Flag `json:"flags"`
-}
-type JsonMapDef struct {
-	JsonDef
-	Flags map[string]model.Flag `json:"flags"`
 }
 
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
@@ -479,39 +470,36 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	var intermediateConfig JsonDef
-	err = json.Unmarshal([]byte(transposedConfig), &intermediateConfig)
+	var rawDef JsonRawDef
+	err = json.Unmarshal([]byte(transposedConfig), &rawDef)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
-	definition.Metadata = intermediateConfig.Metadata
+	definition.Metadata = rawDef.Metadata
 	definition.Flags = []model.Flag{}
 
-	// Process flags directly
-	switch v := intermediateConfig.Flags.(type) {
-	case map[string]interface{}: // Handle ValidFlags format
-		var jsonDef JsonMapDef
-		err = json.Unmarshal([]byte(transposedConfig), &jsonDef)
-		if err != nil {
-			return fmt.Errorf("unmarshalling provided configurations: %w", err)
-		}
+	// Check if flags is an array or object
+	trimmed := strings.TrimSpace(string(rawDef.Flags))
+	if strings.HasPrefix(trimmed, "[") {
+		// It's an array
 		var flags []model.Flag
-		for key, flagDef := range jsonDef.Flags {
-			flagDef.Key = key
-			flags = append(flags, flagDef)
+		if err := json.Unmarshal(rawDef.Flags, &flags); err != nil {
+			return fmt.Errorf("unmarshalling flags array: %w", err)
 		}
 		definition.Flags = flags
-
-	case []interface{}: // Handle ValidMapFlags format
-		var jsonDef JsonArrayDef
-		err = json.Unmarshal([]byte(transposedConfig), &jsonDef)
-		if err != nil {
-			return fmt.Errorf("unmarshalling provided configurations: %w", err)
+	} else {
+		// It's an object
+		var flagsMap map[string]model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flagsMap); err != nil {
+			return fmt.Errorf("unmarshalling flags map: %w", err)
 		}
-		definition.Flags = jsonDef.Flags
-
-	default:
-		return fmt.Errorf("unexpected type for flags property: %T", v)
+		// convert map to slice
+		var flags []model.Flag
+		for k, v := range flagsMap {
+			v.Key = k
+			flags = append(flags, v)
+		}
+		definition.Flags = flags
 	}
 
 	return validateDefaultVariants(definition)
