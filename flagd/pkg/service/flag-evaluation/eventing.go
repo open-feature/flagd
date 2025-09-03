@@ -39,7 +39,12 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 		// store the previous flags to compare against new notifications, to compute proper diffs for RPC mode
 		var oldFlags map[string]model.Flag
 		for result := range watcher {
-			newFlags := result.Flags
+			newFlags := make(map[string]model.Flag)
+
+			// we are expecting to only have one flagset here, hence there should not be any duplication
+			for _, flag := range result.Flags {
+				newFlags[flag.Key] = flag
+			}
 
 			// ignore the first notification (nil old flags), the watcher emits on initialization, but for RPC we don't care until there's a change
 			if oldFlags != nil {
@@ -51,7 +56,7 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 					},
 				}
 			}
-			oldFlags = result.Flags
+			oldFlags = newFlags
 		}
 
 		eventing.logger.Debug(fmt.Sprintf("closing notify channel for id %v", id))

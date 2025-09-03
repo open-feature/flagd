@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sort"
 
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -350,6 +351,10 @@ func (s *Store) collect(it memdb.ResultIterator) []model.Flag {
 	for _, value := range flags {
 		flattenedFlags = append(flattenedFlags, value)
 	}
+	// we should order to keep the same order all the time in our response
+	sort.Slice(flattenedFlags, func(i, j int) bool {
+		return fmt.Sprintf("%s|%s", flattenedFlags[i].FlagSetId, flattenedFlags[i].Key) < fmt.Sprintf("%s|%s", flattenedFlags[j].FlagSetId, flattenedFlags[j].Key)
+	})
 	return flattenedFlags
 }
 
