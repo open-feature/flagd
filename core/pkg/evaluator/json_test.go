@@ -396,7 +396,7 @@ var FlagsConfig = fmt.Sprintf(`{
 	MetadataFlag,
 	VersionOverride)
 
-func TestGetState_Valid_ContainsFlag(t *testing.T) {
+func TestSetState_WithValidFlags_ResolvesSuccessfully(t *testing.T) {
 	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
 	if err != nil {
