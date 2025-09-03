@@ -428,7 +428,7 @@ func TestGetState_ValidMap_ContainsFlag(t *testing.T) {
 	}
 }
 
-func TestSetState_Invalid_Error(t *testing.T) {
+func TestSetState_WithInvalidFlags_NoError(t *testing.T) {
 	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with an invalid flag definition
