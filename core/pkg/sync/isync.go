@@ -56,4 +56,6 @@ type OAuthCredentialHandler struct {
 	ClientId     string `json:"clientID,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
 	TokenUrl     string `json:"tokenUrl,omitempty"`
+	Folder       string `json:"folder,omitempty"`
+	ReloadDelayS int    `json:"reloadDelayS,omitempty"`
 }
