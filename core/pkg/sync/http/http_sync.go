@@ -33,6 +33,28 @@ type Sync struct {
 	interval    uint32
 	ready       bool
 	eTag        string
+
+	oauthCredential *oauthCredentialHandler
+}
+
+type oauthCredentialHandler struct {
+	clientId           string
+	clientSecret       string
+	tokenUrl           string
+	folderSource       string
+	reloadDelaySeconds int
+
+	lastUpdate time.Time
+}
+
+func (och *oauthCredentialHandler) loadOAuthConfiguration() (*clientcredentials.Config, error) {
+	oauth := &clientcredentials.Config{
+		ClientID:     och.clientId,
+		ClientSecret: och.clientSecret,
+		TokenURL:     och.tokenUrl,
+		AuthStyle:    oauth2.AuthStyleAutoDetect,
+	}
+	return oauth, nil
 }
 
 // Client defines the behaviour required of a http client
@@ -205,15 +227,24 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 		interval = config.Interval
 	}
 
+	// TODO: move this into a get client function
+	// 	and replace all access to client to this f
+	//  the Sync has client nil at this place in code
 	var client *http.Client
+	var oauthCredential *oauthCredentialHandler
 	if config.OAuthConfig != nil {
-		oauth := clientcredentials.Config{
-			ClientID:     config.OAuthConfig.ClientId,
-			ClientSecret: config.OAuthConfig.ClientSecret,
-			TokenURL:     config.OAuthConfig.TokenUrl,
-			AuthStyle:    oauth2.AuthStyleAutoDetect,
+		oauthCredential = &oauthCredentialHandler{
+			clientId:           config.OAuthConfig.ClientId,
+			clientSecret:       config.OAuthConfig.ClientSecret,
+			tokenUrl:           config.OAuthConfig.TokenUrl,
+			folderSource:       config.OAuthConfig.Folder,
+			reloadDelaySeconds: config.OAuthConfig.ReloadDelayS,
 		}
-		client = oauth.Client(context.Background())
+		if oauth, err := oauthCredential.loadOAuthConfiguration(); err != nil && oauth != nil {
+			client = oauth.Client(context.Background())
+		} else {
+			logger.Error(fmt.Sprintf("Cannot init OAuth: %v", err))
+		}
 	} else {
 		client = &http.Client{
 			Timeout: time.Second * 10,
@@ -227,9 +258,10 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "http"),
 		),
-		bearerToken: config.BearerToken,
-		authHeader:  config.AuthHeader,
-		interval:    interval,
-		cron:        cron.New(),
+		bearerToken:     config.BearerToken,
+		authHeader:      config.AuthHeader,
+		interval:        interval,
+		cron:            cron.New(),
+		oauthCredential: oauthCredential,
 	}
 }

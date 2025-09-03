@@ -538,7 +538,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			require.ErrorContains(t, err, "500 Internal Server Error")
 			require.ErrorContains(t, err2, "500 Internal Server Error")
 
-			// the OAuth endpoint is only called once
+			// the OAuth endpoint is the right amount of times
 			require.Equal(t, tt.expectedOauthCallCount, oauthMock.count)
 
 			// the Beaerer token is replaced by the OAuth values
@@ -546,5 +546,4 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			require.Equal(t, tt.expectedHttpCallCount, httpMock.count)
 		})
 	}
-
 }
