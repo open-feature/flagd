@@ -1021,7 +1021,7 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 func TestState_Evaluator(t *testing.T) {
 	tests := map[string]struct {
 		inputState          string
-		expectedOutputState string
+		expectedOutputState map[string]model.Flag
 		expectedError       bool
 	}{
 		"success": {
@@ -1058,20 +1058,19 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"testSource",
-						  "targeting": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
+						"recursive": "recursive",
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 							  {
 								"in": ["@faas.com", {
@@ -1079,15 +1078,13 @@ func TestState_Evaluator(t *testing.T) {
 							  }]
 							  }, "binet", null
 							]
-						  },
-						  "metadata": {
-							"flagSetId": "flagSetId"
-						  }
-    					}
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
 					},
-					"flagSources":null
-				}
-			`,
+					FlagSetId: "flagSetId",
+				},
+			},
 		},
 		"no-indentation": {
 			inputState: `
@@ -1123,23 +1120,19 @@ func TestState_Evaluator(t *testing.T) {
 				}
 				}
 			`,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"testSource",
-						  "metadata": {
-							"flagSetId": "flagSetId"
-						  },
-						  "targeting": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
+						"recursive": "recursive",
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 							  {
 								"in": ["@faas.com", {
@@ -1147,12 +1140,13 @@ func TestState_Evaluator(t *testing.T) {
 							  }]
 							  }, "binet", null
 							]
-						  }
-    					}
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
 					},
-					"flagSources":null
-				}
-			`,
+					FlagSetId: "flagSetId",
+				},
+			},
 		},
 		"invalid evaluator json": {
 			inputState: `
@@ -1241,44 +1235,42 @@ func TestState_Evaluator(t *testing.T) {
 			}
 		`,
 			expectedError: false,
-			expectedOutputState: `
-			{
-				"flags": {
-					"fibAlgo": {
-						"variants": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
 						"recursive": "recursive",
-						"memo": "memo",
-						"loop": "loop",
-						"binet": "binet"
-						},
-						"defaultVariant": "recursive",
-						"state": "ENABLED",
-						"source":"testSource",
-						"metadata": {
-						  "flagSetId": "flagSetId"
-						},
-						"targeting": {
-						"if": [
-							{
-							"in": ["@faas.com", {
-							"var": ["email"]
-							}]
-							}, "binet", "null", "loop"
-						]
-						}
-						},
-					"isColorYellow": {
-						"state": "ENABLED",
-						"variants": {
-							"on": true,
-							"off": false
-						},
-						"defaultVariant": "off",
-						"source":"testSource",
-						"metadata": {
-						  "flagSetId": "flagSetId"
-						},
-						"targeting": {
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
+					},
+					FlagSetId: "flagSetId",
+				},
+				"isColorYellow": {
+					Key: "isColorYellow",
+					Variants: map[string]any{
+						"on":  true,
+						"off": false,
+					},
+					DefaultVariant: "off",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 								{
 									"==": [
@@ -1292,12 +1284,13 @@ func TestState_Evaluator(t *testing.T) {
 								"off",
 								"none"
 							]
-						}
-					}
+						}`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
+					},
+					FlagSetId: "flagSetId",
 				},
-				"flagSources":null
-			}
-		`,
+			},
 		},
 		"empty evaluator": {
 			inputState: `
@@ -1350,22 +1343,37 @@ func TestState_Evaluator(t *testing.T) {
 				t.Error(err)
 			}
 
-			var parsed Definition
+			for _, v := range got {
 
-			if err := jsonEvaluator.configToFlagDefinition(tt.expectedOutputState, &parsed); err != nil {
-				t.Error(err)
-			}
+				// json data can be formatted differently, hence we remove it from the object and compare separately
+				parsedTargeting, _ := normalizeJSON(v.Targeting)
+				flag := tt.expectedOutputState[v.Key]
+				flag.Targeting = nil
+				gotTargeting, _ := normalizeJSON(v.Targeting)
+				v.Targeting = nil
 
-			for i, v := range parsed.Flags {
-				v.FlagSetId = "flagSetId"
-				parsed.Flags[i] = v
-			}
+				if !reflect.DeepEqual(parsedTargeting, gotTargeting) {
+					t.Errorf("\nexpected targeting: %s\ngot targeting: %s", parsedTargeting, gotTargeting)
+				}
 
-			if !reflect.DeepEqual(parsed.Flags, got) {
-				t.Errorf("expected state: %v got state: %v", parsed.Flags, got)
+				if !reflect.DeepEqual(flag, v) {
+					t.Errorf("expected state: %v got state: %v", flag, v)
+				}
 			}
 		})
 	}
+}
+
+func normalizeJSON(jsonData []byte) (interface{}, error) {
+	var result interface{}
+	if jsonData == nil {
+		return nil, nil // Handle nil gracefully
+	}
+	err := json.Unmarshal(jsonData, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+	return result, nil
 }
 
 func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {

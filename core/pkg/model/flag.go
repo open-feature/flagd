@@ -8,7 +8,7 @@ const Source = "Source"
 const Priority = "Priority"
 
 type Flag struct {
-	Key            string          `json:"-"` // not serialized, used only for indexing
+	Key            string          `json:"key" json:"-"`
 	FlagSetId      string          `json:"-"` // not serialized, used only for indexing
 	Priority       int             `json:"-"` // not serialized, used only for indexing
 	State          string          `json:"state"`

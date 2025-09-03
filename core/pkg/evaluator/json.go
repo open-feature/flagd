@@ -451,6 +451,15 @@ type JsonDef struct {
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
+type JsonArrayDef struct {
+	JsonDef
+	Flags []model.Flag `json:"flags"`
+}
+type JsonMapDef struct {
+	JsonDef
+	Flags map[string]model.Flag `json:"flags"`
+}
+
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
 func (je *JSON) configToFlagDefinition(config string, definition *Definition) error {
 	// json schema validation
@@ -481,57 +490,31 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 	// Process flags directly
 	switch v := intermediateConfig.Flags.(type) {
 	case map[string]interface{}: // Handle ValidFlags format
-		for k, e := range v {
-			flag, err := convertToModelFlag(e)
-			if err != nil {
-				return fmt.Errorf("failed to process flag for key %s: %w", k, err)
-			}
-			flag.Key = k // Populate the `Key` field explicitly
-			definition.Flags = append(definition.Flags, flag)
+		var jsonDef JsonMapDef
+		err = json.Unmarshal([]byte(transposedConfig), &jsonDef)
+		if err != nil {
+			return fmt.Errorf("unmarshalling provided configurations: %w", err)
 		}
+		var flags []model.Flag
+		for key, flagDef := range jsonDef.Flags {
+			flagDef.Key = key
+			flags = append(flags, flagDef)
+		}
+		definition.Flags = flags
 
 	case []interface{}: // Handle ValidMapFlags format
-		for _, value := range v {
-			flag, err := convertToModelFlag(value)
-			if err != nil {
-				return fmt.Errorf("failed to process flag: %w", err)
-			}
-			if flag.Key == "" {
-				return fmt.Errorf("invalid key for flag: %s", value)
-			}
-			definition.Flags = append(definition.Flags, flag)
+		var jsonDef JsonArrayDef
+		err = json.Unmarshal([]byte(transposedConfig), &jsonDef)
+		if err != nil {
+			return fmt.Errorf("unmarshalling provided configurations: %w", err)
 		}
+		definition.Flags = jsonDef.Flags
 
 	default:
 		return fmt.Errorf("unexpected type for flags property: %T", v)
 	}
 
 	return validateDefaultVariants(definition)
-}
-
-// Refactored Helper Function to Convert interface{} to model.Flag
-func convertToModelFlag(data interface{}) (model.Flag, error) {
-
-	type Flag struct {
-		Key string `json:"key,omitempty"`
-		model.Flag
-	}
-
-	var flag Flag
-	jsonBytes, err := json.Marshal(data)
-
-	if err != nil {
-		return flag.Flag, fmt.Errorf("failed to marshal flag data: %w", err)
-	}
-
-	if err := json.Unmarshal(jsonBytes, &flag); err != nil {
-		return flag.Flag, fmt.Errorf("failed to unmarshal flag data: %w", err)
-	}
-
-	exportFlag := flag.Flag
-	exportFlag.Key = flag.Key
-
-	return exportFlag, nil
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
