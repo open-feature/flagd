@@ -23,14 +23,14 @@ import (
 )
 
 type Sync struct {
-	URI         string
-	Client      Client
-	Cron        Cron
-	LastBodySHA string
-	Logger      *logger.Logger
-	BearerToken string
-	AuthHeader  string
-	Interval    uint32
+	uri         string
+	client      Client
+	cron        Cron
+	lastBodySHA string
+	logger      *logger.Logger
+	bearerToken string
+	authHeader  string
+	interval    uint32
 	ready       bool
 	eTag        string
 }
@@ -52,13 +52,13 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	if err != nil {
 		return err
 	}
-	dataSync <- sync.DataSync{FlagData: msg, Source: hs.URI}
+	dataSync <- sync.DataSync{FlagData: msg, Source: hs.uri}
 	return nil
 }
 
 func (hs *Sync) Init(_ context.Context) error {
-	if hs.BearerToken != "" {
-		hs.Logger.Warn("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
+	if hs.bearerToken != "" {
+		hs.logger.Warn("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
 	}
 	return nil
 }
@@ -77,57 +77,57 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Set ready state
 	hs.ready = true
 
-	hs.Logger.Debug(fmt.Sprintf("polling %s every %d seconds", hs.URI, hs.Interval))
-	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
-		hs.Logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.URI))
-		previousBodySHA := hs.LastBodySHA
+	hs.logger.Debug(fmt.Sprintf("polling %s every %d seconds", hs.uri, hs.interval))
+	_ = hs.cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.interval), func() {
+		hs.logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.uri))
+		previousBodySHA := hs.lastBodySHA
 		body, noChange, err := hs.fetchBody(ctx, false)
 		if err != nil {
-			hs.Logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
+			hs.logger.Error(fmt.Sprintf("error fetching: %s", err.Error()))
 			return
 		}
 
 		if body == "" && !noChange {
-			hs.Logger.Debug("configuration deleted")
+			hs.logger.Debug("configuration deleted")
 			return
 		}
 
 		if previousBodySHA == "" {
-			hs.Logger.Debug("configuration created")
-			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI}
-		} else if previousBodySHA != hs.LastBodySHA {
-			hs.Logger.Debug("configuration updated")
-			dataSync <- sync.DataSync{FlagData: body, Source: hs.URI}
+			hs.logger.Debug("configuration created")
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
+		} else if previousBodySHA != hs.lastBodySHA {
+			hs.logger.Debug("configuration updated")
+			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
 		}
 	})
 
-	hs.Cron.Start()
+	hs.cron.Start()
 
-	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.URI}
+	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.uri}
 
 	<-ctx.Done()
-	hs.Cron.Stop()
+	hs.cron.Stop()
 
 	return nil
 }
 
 func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, error) {
-	if hs.URI == "" {
+	if hs.uri == "" {
 		return "", false, errors.New("no HTTP URL string set")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", hs.URI, bytes.NewBuffer(nil))
+	req, err := http.NewRequestWithContext(ctx, "GET", hs.uri, bytes.NewBuffer(nil))
 	if err != nil {
-		return "", false, fmt.Errorf("error creating request for url %s: %w", hs.URI, err)
+		return "", false, fmt.Errorf("error creating request for url %s: %w", hs.uri, err)
 	}
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Accept", "application/yaml")
 
-	if hs.AuthHeader != "" {
-		req.Header.Set("Authorization", hs.AuthHeader)
-	} else if hs.BearerToken != "" {
-		bearer := fmt.Sprintf("Bearer %s", hs.BearerToken)
+	if hs.authHeader != "" {
+		req.Header.Set("Authorization", hs.authHeader)
+	} else if hs.bearerToken != "" {
+		bearer := fmt.Sprintf("Bearer %s", hs.bearerToken)
 		req.Header.Set("Authorization", bearer)
 	}
 
@@ -135,25 +135,25 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 		req.Header.Set("If-None-Match", hs.eTag)
 	}
 
-	resp, err := hs.Client.Do(req)
+	resp, err := hs.client.Do(req)
 	if err != nil {
-		return "", false, fmt.Errorf("error calling endpoint %s: %w", hs.URI, err)
+		return "", false, fmt.Errorf("error calling endpoint %s: %w", hs.uri, err)
 	}
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			hs.Logger.Error(fmt.Sprintf("error closing the response body: %s", err.Error()))
+			hs.logger.Error(fmt.Sprintf("error closing the response body: %s", err.Error()))
 		}
 	}()
 
 	if resp.StatusCode == 304 {
-		hs.Logger.Debug("no changes detected")
+		hs.logger.Debug("no changes detected")
 		return "", true, nil
 	}
 
 	statusOK := resp.StatusCode >= 200 && resp.StatusCode < 300
 	if !statusOK {
-		return "", false, fmt.Errorf("error fetching from url %s: %s", hs.URI, resp.Status)
+		return "", false, fmt.Errorf("error fetching from url %s: %s", hs.uri, resp.Status)
 	}
 
 	if resp.Header.Get("ETag") != "" {
@@ -165,13 +165,13 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 		return "", false, fmt.Errorf("unable to read body to bytes: %w", err)
 	}
 
-	json, err := utils.ConvertToJSON(body, getFileExtensions(hs.URI), resp.Header.Get("Content-Type"))
+	json, err := utils.ConvertToJSON(body, getFileExtensions(hs.uri), resp.Header.Get("Content-Type"))
 	if err != nil {
 		return "", false, fmt.Errorf("error converting response body to json: %w", err)
 	}
 
 	if json != "" {
-		hs.LastBodySHA = hs.generateSha([]byte(body))
+		hs.lastBodySHA = hs.generateSha([]byte(body))
 	}
 
 	return json, false, nil
@@ -211,7 +211,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 			ClientID:     config.OAuthConfig.ClientId,
 			ClientSecret: config.OAuthConfig.ClientSecret,
 			TokenURL:     config.OAuthConfig.TokenUrl,
-			AuthStyle:    oauth2.AuthStyleInParams,
+			AuthStyle:    oauth2.AuthStyleAutoDetect,
 		}
 		client = oauth.Client(context.Background())
 	} else {
@@ -221,15 +221,15 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 	}
 
 	return &Sync{
-		URI:    config.URI,
-		Client: client,
-		Logger: logger.WithFields(
+		uri:    config.URI,
+		client: client,
+		logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "http"),
 		),
-		BearerToken: config.BearerToken,
-		AuthHeader:  config.AuthHeader,
-		Interval:    interval,
-		Cron:        cron.New(),
+		bearerToken: config.BearerToken,
+		authHeader:  config.AuthHeader,
+		interval:    interval,
+		cron:        cron.New(),
 	}
 }

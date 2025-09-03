@@ -38,11 +38,11 @@ func TestSimpleSync(t *testing.T) {
 	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
 	httpSync := Sync{
-		URI:         "http://localhost/flags",
-		Client:      mockClient,
-		Cron:        mockCron,
-		LastBodySHA: "",
-		Logger:      logger.NewLogger(nil, false),
+		uri:         "http://localhost/flags",
+		client:      mockClient,
+		cron:        mockCron,
+		lastBodySHA: "",
+		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
@@ -81,11 +81,11 @@ func TestExtensionWithQSSync(t *testing.T) {
 	mockClient.EXPECT().Do(gomock.Any()).Return(resp, nil)
 
 	httpSync := Sync{
-		URI:         "http://localhost/flags.json?env=dev",
-		Client:      mockClient,
-		Cron:        mockCron,
-		LastBodySHA: "",
-		Logger:      logger.NewLogger(nil, false),
+		uri:         "http://localhost/flags.json?env=dev",
+		client:      mockClient,
+		cron:        mockCron,
+		lastBodySHA: "",
+		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
@@ -161,9 +161,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 
 				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
-				if httpSync.LastBodySHA != expectedLastBodySHA {
+				if httpSync.lastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
 					)
 				}
 			},
@@ -192,9 +192,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 
 				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
-				if httpSync.LastBodySHA != expectedLastBodySHA {
+				if httpSync.lastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
 					)
 				}
 			},
@@ -223,9 +223,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}
 
 				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
-				if httpSync.LastBodySHA != expectedLastBodySHA {
+				if httpSync.lastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
 					)
 				}
 			},
@@ -269,9 +269,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 				expectedLastBodySHA := ""
 				expectedETag := `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`
-				if httpSync.LastBodySHA != expectedLastBodySHA {
+				if httpSync.lastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
 					)
 				}
 				if httpSync.eTag != expectedETag {
@@ -312,9 +312,9 @@ func TestHTTPSync_Fetch(t *testing.T) {
 
 				expectedLastBodySHA := "wuAc5j2QEJxMf09tzql-0bsrUeNkfzbK9ay-J0E6JLs="
 				expectedETag := `"c2e01ce63d90109c4c7f4f6dcea97ed1bb2b51e3647f36caf5acbe27413a24bb"`
-				if httpSync.LastBodySHA != expectedLastBodySHA {
+				if httpSync.lastBodySHA != expectedLastBodySHA {
 					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.LastBodySHA,
+						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
 					)
 				}
 				if httpSync.eTag != expectedETag {
@@ -333,12 +333,12 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			tt.setup(t, mockClient)
 
 			httpSync := Sync{
-				URI:         tt.uri,
-				Client:      mockClient,
-				BearerToken: tt.bearerToken,
-				AuthHeader:  tt.authHeader,
-				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil, false),
+				uri:         tt.uri,
+				client:      mockClient,
+				bearerToken: tt.bearerToken,
+				authHeader:  tt.authHeader,
+				lastBodySHA: tt.lastBodySHA,
+				logger:      logger.NewLogger(nil, false),
 				eTag:        tt.eTagHeader,
 			}
 
@@ -360,8 +360,8 @@ func TestSync_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			httpSync := Sync{
-				BearerToken: tt.bearerToken,
-				Logger:      logger.NewLogger(nil, false),
+				bearerToken: tt.bearerToken,
+				logger:      logger.NewLogger(nil, false),
 			}
 
 			if err := httpSync.Init(context.Background()); err != nil {
@@ -432,11 +432,11 @@ func TestHTTPSync_Resync(t *testing.T) {
 			tt.setup(t, mockClient)
 
 			httpSync := Sync{
-				URI:         tt.uri,
-				Client:      mockClient,
-				BearerToken: tt.bearerToken,
-				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil, false),
+				uri:         tt.uri,
+				client:      mockClient,
+				bearerToken: tt.bearerToken,
+				lastBodySHA: tt.lastBodySHA,
+				logger:      logger.NewLogger(nil, false),
 			}
 
 			err := httpSync.ReSync(context.Background(), d)
@@ -522,5 +522,4 @@ func TestHTTPSync_OAuth(t *testing.T) {
 
 	// the Beaerer token is replaced by the OAuth values
 	require.Equal(t, fmt.Sprintf("Bearer %s", bearerToken), httpMock.lastHeader.Get("Authorization"))
-
 }
