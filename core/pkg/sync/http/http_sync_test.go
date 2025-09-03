@@ -478,48 +478,73 @@ func TestHTTPSync_OAuth(t *testing.T) {
 	const oauthPath = "/oauth"
 	const bearerToken = "mySecretBearerToken"
 
-	oauthMock := &oauthHttpMock{}
-	httpMock := &oauthHttpMock{}
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, oauthPath) {
-			body, _ := io.ReadAll(r.Body)
-			params, _ := url.ParseQuery(string(body))
-			oauthMock.lastParams = params
-			oauthMock.lastHeader = r.Header
-			oauthMock.count++
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-			w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
-			return
-		}
-		httpMock.lastHeader = r.Header
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-	l := logger.NewLogger(nil, false)
-	s := NewHTTP(sync.SourceConfig{
-		URI:         ts.URL,
-		BearerToken: "it_should_be_replaced_by_oauth",
-		OAuthConfig: &sync.OAuthCredentialHandler{
-			ClientId:     clientID,
-			ClientSecret: clientSecret,
-			TokenUrl:     ts.URL + oauthPath,
+	tests := map[string]struct {
+		oauthResponse          int
+		expectedHttpCallCount  int
+		expectedOauthCallCount int
+		expectedBeaerToken     string
+	}{
+		"success": {
+			oauthResponse:          http.StatusOK,
+			expectedHttpCallCount:  2,
+			expectedOauthCallCount: 1,
+			expectedBeaerToken:     fmt.Sprintf("Bearer %s", bearerToken),
 		},
-	}, l)
-	d := make(chan sync.DataSync, 1)
-	// when we call resync multiple times
-	err := s.ReSync(context.Background(), d)
-	err2 := s.ReSync(context.Background(), d)
-	// then
+		"oauth error": {
+			oauthResponse:          http.StatusInternalServerError,
+			expectedHttpCallCount:  0,
+			expectedOauthCallCount: 4,
+			expectedBeaerToken:     "",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			oauthMock := &oauthHttpMock{}
+			httpMock := &oauthHttpMock{}
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasSuffix(r.URL.Path, oauthPath) {
+					body, _ := io.ReadAll(r.Body)
+					params, _ := url.ParseQuery(string(body))
+					oauthMock.lastParams = params
+					oauthMock.lastHeader = r.Header
+					oauthMock.count++
+					w.WriteHeader(tt.oauthResponse)
+					w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+					w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+					return
+				}
+				httpMock.lastHeader = r.Header
+				httpMock.count++
+				w.WriteHeader(http.StatusInternalServerError)
+			}))
+			defer ts.Close()
+			l := logger.NewLogger(nil, false)
+			s := NewHTTP(sync.SourceConfig{
+				URI:         ts.URL,
+				BearerToken: "it_should_be_replaced_by_oauth",
+				OAuthConfig: &sync.OAuthCredentialHandler{
+					ClientId:     clientID,
+					ClientSecret: clientSecret,
+					TokenUrl:     ts.URL + oauthPath,
+				},
+			}, l)
+			d := make(chan sync.DataSync, 1)
+			// when we call resync multiple times
+			err := s.ReSync(context.Background(), d)
+			err2 := s.ReSync(context.Background(), d)
+			// then
 
-	// we only get errors when fetching the HTTP data
-	require.ErrorContains(t, err, "500 Internal Server Error")
-	require.ErrorContains(t, err2, "500 Internal Server Error")
+			// we only get errors when fetching the HTTP data
+			require.ErrorContains(t, err, "500 Internal Server Error")
+			require.ErrorContains(t, err2, "500 Internal Server Error")
 
-	// the OAuth endpoint is only called once
-	require.Equal(t, 1, oauthMock.count)
+			// the OAuth endpoint is only called once
+			require.Equal(t, tt.expectedOauthCallCount, oauthMock.count)
 
-	// the Beaerer token is replaced by the OAuth values
-	require.Equal(t, fmt.Sprintf("Bearer %s", bearerToken), httpMock.lastHeader.Get("Authorization"))
+			// the Beaerer token is replaced by the OAuth values
+			require.Equal(t, tt.expectedBeaerToken, httpMock.lastHeader.Get("Authorization"))
+			require.Equal(t, tt.expectedHttpCallCount, httpMock.count)
+		})
+	}
+
 }
