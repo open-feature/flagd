@@ -1,12 +1,9 @@
 package builder
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -19,8 +16,6 @@ import (
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"gocloud.dev/blob"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -115,7 +110,7 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 		return sb.newK8s(sourceConfig.URI, logger)
 	case syncProviderHTTP:
 		logger.Debug(fmt.Sprintf("using remote sync-provider for: %s", sourceConfig.URI))
-		return sb.newHTTP(sourceConfig, logger), nil
+		return httpSync.NewHTTP(sourceConfig, logger), nil
 	case syncProviderGrpc:
 		logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", sourceConfig.URI))
 		return sb.newGRPC(sourceConfig, logger), nil
@@ -187,42 +182,6 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 		regCrd.ReplaceAllString(uri, ""),
 		dynamicClient,
 	), nil
-}
-
-func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
-	// Default to 5 seconds
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
-	}
-
-	var client *http.Client
-	if config.OAuthConfig != nil {
-		oauth := clientcredentials.Config{
-			ClientID:     config.OAuthConfig.ClientId,
-			ClientSecret: config.OAuthConfig.ClientSecret,
-			TokenURL:     config.OAuthConfig.TokenUrl,
-			AuthStyle:    oauth2.AuthStyleInParams,
-		}
-		client = oauth.Client(context.Background())
-	} else {
-		client = &http.Client{
-			Timeout: time.Second * 10,
-		}
-	}
-
-	return &httpSync.Sync{
-		URI:    config.URI,
-		Client: client,
-		Logger: logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "remote"),
-		),
-		BearerToken: config.BearerToken,
-		AuthHeader:  config.AuthHeader,
-		Interval:    interval,
-		Cron:        cron.New(),
-	}
 }
 
 func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
