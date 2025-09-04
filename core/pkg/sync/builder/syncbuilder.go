@@ -2,10 +2,8 @@ package builder
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -112,7 +110,7 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 		return sb.newK8s(sourceConfig.URI, logger)
 	case syncProviderHTTP:
 		logger.Debug(fmt.Sprintf("using remote sync-provider for: %s", sourceConfig.URI))
-		return sb.newHTTP(sourceConfig, logger), nil
+		return httpSync.NewHTTP(sourceConfig, logger), nil
 	case syncProviderGrpc:
 		logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", sourceConfig.URI))
 		return sb.newGRPC(sourceConfig, logger), nil
@@ -184,29 +182,6 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 		regCrd.ReplaceAllString(uri, ""),
 		dynamicClient,
 	), nil
-}
-
-func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
-	// Default to 5 seconds
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
-	}
-
-	return &httpSync.Sync{
-		URI: config.URI,
-		Client: &http.Client{
-			Timeout: time.Second * 10,
-		},
-		Logger: logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "remote"),
-		),
-		BearerToken: config.BearerToken,
-		AuthHeader:  config.AuthHeader,
-		Interval:    interval,
-		Cron:        cron.New(),
-	}
 }
 
 func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
