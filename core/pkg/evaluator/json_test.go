@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -1217,14 +1217,22 @@ func TestState_Evaluator(t *testing.T) {
 					State:          "ENABLED",
 					Source:         "testSource",
 					Targeting: json.RawMessage(`{
-							"if": [
-							  {
-								"in": ["@faas.com", {
-								"var": ["email"]
-							  }]
-							  }, "binet", null
-							]
-						  }`),
+					  "if": [
+						{
+						  "in": [
+							"@faas.com",
+							{
+							  "var": [
+								"email"
+							  ]
+							}
+						  ]
+						},
+						"binet",
+						"null",
+						"loop"
+					  ]
+					}`),
 					Metadata: map[string]interface{}{
 						"flagSetId": "flagSetId",
 					},
@@ -1243,6 +1251,13 @@ func TestState_Evaluator(t *testing.T) {
 							"if": [
 								{
 									"==": [
+										{
+											"varr": ["color"]
+										},
+										"yellow"
+									]
+								},
+								"on",
 								"off",
 								"none"
 							]
@@ -1305,22 +1320,24 @@ func TestState_Evaluator(t *testing.T) {
 				t.Error(err)
 			}
 
+			require.Len(t, got, len(tt.expectedOutputState))
+
 			for _, v := range got {
+				expectedFlag, ok := tt.expectedOutputState[v.Key]
+				require.True(t, ok, "unexpected flag in results: %s", v.Key)
 
 				// json data can be formatted differently, hence we remove it from the object and compare separately
-				parsedTargeting, _ := normalizeJSON(v.Targeting)
-				flag := tt.expectedOutputState[v.Key]
-				flag.Targeting = nil
-				gotTargeting, _ := normalizeJSON(v.Targeting)
+				gotTargeting, err := normalizeJSON(v.Targeting)
+				require.NoError(t, err)
+				expectedTargeting, err := normalizeJSON(expectedFlag.Targeting)
+				require.NoError(t, err)
+				assert.Equal(t, expectedTargeting, gotTargeting)
+
+				// nil out targeting for struct comparison
 				v.Targeting = nil
+				expectedFlag.Targeting = nil
 
-				if !reflect.DeepEqual(parsedTargeting, gotTargeting) {
-					t.Errorf("\nexpected targeting: %s\ngot targeting: %s", parsedTargeting, gotTargeting)
-				}
-
-				if !reflect.DeepEqual(flag, v) {
-					t.Errorf("expected state: %v got state: %v", flag, v)
-				}
+				assert.Equal(t, expectedFlag, v)
 			}
 		})
 	}
