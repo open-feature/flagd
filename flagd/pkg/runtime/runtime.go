@@ -127,7 +127,7 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	_, _, err := r.Evaluator.SetState(payload)
+	err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
 		return
