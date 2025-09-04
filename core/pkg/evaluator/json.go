@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/xeipuuv/gojsonschema"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -39,6 +38,17 @@ var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
+}
+
+func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
+	unmarshalJSON, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaData))
+	if err != nil {
+		return err
+	}
+	if err := compiler.AddResource(url, unmarshalJSON); err != nil {
+		return err
+	}
+	return nil
 }
 
 type constraints interface {
@@ -67,6 +77,7 @@ type JSON struct {
 	store          store.IStore
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
+	jsonSchema     *jsonschema.Schema
 	Resolver
 }
 
@@ -77,10 +88,25 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	)
 	tracer := otel.Tracer("jsonEvaluator")
 
+	// Create a new JSON Schema compiler
+	compiler := jsonschema.NewCompiler()
+
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", schema.FlagSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", schema.TargetingSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
+
+	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flags.json")
+	if err != nil {
+		logger.Fatal("Failed to compile schema", zap.Error(err))
+	}
 	ev := JSON{
 		store:          s,
 		Logger:         logger,
 		jsonEvalTracer: tracer,
+		jsonSchema:     jsonSchema,
 		Resolver:       NewResolver(s, logger, tracer),
 	}
 
@@ -108,7 +134,7 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var definition Definition
 
-	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
+	err := je.configToFlagDefinition(payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
@@ -429,38 +455,17 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-func loadAndCompileSchema(log *logger.Logger) *gojsonschema.Schema {
-	schemaLoader := gojsonschema.NewSchemaLoader()
-
-	// compile dependency schema
-	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.TargetingSchema)
-	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
-		log.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
-	}
-
-	// compile root schema
-	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagSchema)
-	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
-	if err != nil {
-		log.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
-	}
-
-	return compiledSchema
-}
-
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
-func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
-	compiledSchema := loadAndCompileSchema(log)
-
-	flagStringLoader := gojsonschema.NewStringLoader(config)
-
-	result, err := compiledSchema.Validate(flagStringLoader)
+func (je *JSON) configToFlagDefinition(config string, definition *Definition) error {
+	// json schema validation
+	inst, err := jsonschema.UnmarshalJSON(strings.NewReader(config))
 	if err != nil {
-		log.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
-	} else if !result.Valid() {
-		log.Logger.Warn(fmt.Sprintf(
-			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
-		))
+		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
+	}
+	if err := je.jsonSchema.Validate(inst); err != nil {
+		je.Logger.Warn(fmt.Sprintf(
+			"flag definition does not conform to the schema; validation errors: %s", err),
+		)
 	}
 
 	transposedConfig, err := transposeEvaluators(config)
@@ -521,19 +526,4 @@ func transposeEvaluators(state string) (string, error) {
 	}
 
 	return state, nil
-}
-
-// buildErrorString efficiently converts json schema errors to a formatted string, usable for logging
-func buildErrorString(errors []gojsonschema.ResultError) string {
-	var builder strings.Builder
-
-	for i, err := range errors {
-		builder.WriteByte(' ')
-		builder.WriteString(strconv.Itoa(i + 1))
-		builder.WriteByte(':')
-		builder.WriteString(err.String())
-		builder.WriteByte(' ')
-	}
-
-	return builder.String()
 }
