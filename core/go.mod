@@ -14,10 +14,11 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-memdb v1.3.5
-	github.com/open-feature/flagd-schemas v0.2.9-0.20250707123415-08b4c52d3b86
+	github.com/open-feature/flagd-schemas v0.2.13
 	github.com/open-feature/open-feature-operator/apis v0.2.45
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron v1.2.0
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/murmur3 v1.1.8
 	github.com/xeipuuv/gojsonschema v1.2.0

@@ -92,7 +92,10 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// derive evaluator
-	jsonEvaluator := evaluator.NewJSON(logger, store)
+	jsonEvaluator, err := evaluator.NewJSON(logger, store)
+	if err != nil {
+		return nil, fmt.Errorf("error creating flag evaluator: %w", err)
+	}
 
 	// derive services
 

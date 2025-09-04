@@ -22,6 +22,9 @@ require (
 	google.golang.org/grpc v1.73.0
 )
 
+// local developement
+replace github.com/open-feature/flagd/core => ../core
+
 require (
 	cel.dev/expr v0.23.0 // indirect
 	cloud.google.com/go v0.121.1 // indirect
@@ -101,7 +104,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-feature/flagd-schemas v0.2.9-0.20250707123415-08b4c52d3b86 // indirect
+	github.com/open-feature/flagd-schemas v0.2.13 // indirect
 	github.com/open-feature/open-feature-operator/apis v0.2.45 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect

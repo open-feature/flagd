@@ -34,8 +34,7 @@ func NewAnyValue(
 IEvaluator is an extension of IResolver, allowing storage updates and retrievals
 */
 type IEvaluator interface {
-	GetState() (string, error)
-	SetState(payload sync.DataSync) (map[string]interface{}, bool, error)
+	SetState(payload sync.DataSync) error
 	IResolver
 }
 

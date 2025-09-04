@@ -16,8 +16,9 @@ func TestFractionalEvaluation(t *testing.T) {
 	ctx := context.Background()
 
 	commonFlags := Flags{
-		Flags: map[string]model.Flag{
-			"headerColor": {
+		Flags: []model.Flag{
+			{
+				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
 				Variants: map[string]any{
@@ -57,7 +58,8 @@ func TestFractionalEvaluation(t *testing.T) {
 											]
 										  }`),
 			},
-			"customSeededHeaderColor": {
+			{
+				Key:            "customSeededHeaderColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
 				Variants: map[string]any{
@@ -179,8 +181,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"ross@faas.com with different flag key": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"footerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "footerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -232,8 +235,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"non even split": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -281,8 +285,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"fallback to default variant if no email provided": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -323,8 +328,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"get variant for non-percentage weight values": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -359,8 +365,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"get variant for non-specified weight values": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -393,8 +400,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"default to targetingKey if no bucket key provided": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -428,8 +436,9 @@ func TestFractionalEvaluation(t *testing.T) {
 		},
 		"missing email - parser should ignore nil/missing custom variables and continue": {
 			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
+				Flags: []model.Flag{
+					{
+						Key:            "headerColor",
 						State:          "ENABLED",
 						DefaultVariant: "red",
 						Variants: map[string]any{
@@ -465,7 +474,10 @@ func TestFractionalEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 
-			je := NewJSON(log, s)
+			je, err := NewJSON(log, s)
+			if err != nil {
+				t.Fatalf("NewJSON failed: %v", err)
+			}
 			je.store.Update(source, tt.flags.Flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
@@ -498,8 +510,9 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	ctx := context.Background()
 
 	flags := Flags{
-		Flags: map[string]model.Flag{
-			"headerColor": {
+		Flags: []model.Flag{
+			{
+				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
 				Variants: map[string]any{
@@ -600,7 +613,10 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			if err != nil {
 				b.Fatalf("NewStore failed: %v", err)
 			}
-			je := NewJSON(log, s)
+			je, err := NewJSON(log, s)
+			if err != nil {
+				b.Fatalf("NewJSON failed: %v", err)
+			}
 			je.store.Update(source, tt.flags.Flags, model.Metadata{})
 
 			for i := 0; i < b.N; i++ {

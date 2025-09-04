@@ -1,16 +1,14 @@
 //nolint:wrapcheck
-package evaluator_test
+package evaluator
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
@@ -42,6 +40,23 @@ const ValidFlags = `{
       "defaultVariant": "on"
     }
   }
+}`
+const ValidMapFlags = `{
+  "flags": [
+    {
+      "key": "validFlag",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+      "metadata": {
+        "flagSetId": "test",
+        "version": 3
+      }
+    }
+  ]
 }`
 
 const NullDefault = `{
@@ -156,7 +171,7 @@ const (
 	VersionOverride            = "v66"
 )
 
-var Flags = fmt.Sprintf(`{
+var FlagsConfig = fmt.Sprintf(`{
 	"metadata": {
 		"flagSetId": "%s",
 		"version": "%s"
@@ -381,49 +396,61 @@ var Flags = fmt.Sprintf(`{
 	MetadataFlag,
 	VersionOverride)
 
-func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
+func TestSetState_WithValidFlags_ResolvesSuccessfully(t *testing.T) {
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("Expected no error")
 	}
 
 	// get the state
-	state, err := evaluator.GetState()
-	if err != nil {
+	state := evaluator.ResolveAsAnyValue(context.Background(), "", "validFlag", nil)
+	if state.Error != nil {
 		t.Fatalf("expected no error")
 	}
+}
+func TestGetState_ValidMap_ContainsFlag(t *testing.T) {
+	newLogger := logger.NewLogger(nil, false)
+	newStore, err := store.NewStore(newLogger, []string{"testSource"})
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+	evaluator, _ := NewJSON(newLogger, newStore)
+	err = evaluator.SetState(sync.DataSync{FlagData: ValidMapFlags, Source: "testSource"})
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
 
-	// validate it contains the flag
-	wants := "validFlag"
-	if !strings.Contains(state, wants) {
-		t.Fatalf("expected: %s to contain: %s", state, wants)
+	// get the state
+	state := evaluator.ResolveAsAnyValue(context.Background(), "", ValidFlag, nil)
+	if state.Error != nil {
+		t.Fatalf("expected no error")
 	}
 }
 
-func TestSetState_Invalid_Error(t *testing.T) {
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+func TestSetState_WithInvalidFlags_NoError(t *testing.T) {
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with an invalid flag definition
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
+	err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("unexpected error")
 	}
 }
 
 func TestSetState_Valid_NoError(t *testing.T) {
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 	// set state with a valid flag definition
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
+	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
 }
 
 func TestResolveAllValues(t *testing.T) {
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -491,8 +518,8 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -526,8 +553,8 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -566,8 +593,8 @@ func TestResolveStringValue(t *testing.T) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -602,8 +629,8 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -642,8 +669,8 @@ func TestResolveFloatValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -678,8 +705,8 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -718,8 +745,8 @@ func TestResolveIntValue(t *testing.T) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -754,8 +781,8 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -794,8 +821,8 @@ func TestResolveObjectValue(t *testing.T) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 	const reqID = "default"
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -833,8 +860,8 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		b.Fatalf("expected no error")
 	}
@@ -878,8 +905,8 @@ func TestResolveAsAnyValue(t *testing.T) {
 		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
 	}
 
-	evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	_, _, err := evaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+	evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	err := evaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 	if err != nil {
 		t.Fatalf("expected no error")
 	}
@@ -914,8 +941,8 @@ func TestResolve_DefaultVariant(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-			_, _, err := evaluator.SetState(sync.DataSync{FlagData: test.flags, Source: "testSource"})
+			evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			err := evaluator.SetState(sync.DataSync{FlagData: test.flags, Source: "testSource"})
 
 			if err != nil {
 				t.Fatalf("expected no error")
@@ -980,9 +1007,9 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			jsonEvaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags, Source: "testSource"})
+			err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.jsonFlags, Source: "testSource"})
 
 			if tt.valid && err != nil {
 				t.Error(err)
@@ -994,9 +1021,8 @@ func TestSetState_DefaultVariantValidation(t *testing.T) {
 func TestState_Evaluator(t *testing.T) {
 	tests := map[string]struct {
 		inputState          string
-		expectedOutputState string
+		expectedOutputState map[string]model.Flag
 		expectedError       bool
-		expectedResync      bool
 	}{
 		"success": {
 			inputState: `
@@ -1017,6 +1043,9 @@ func TestState_Evaluator(t *testing.T) {
 								"$ref": "emailWithFaas"
 							  }, "binet", null
 							]
+						  },
+						  "metadata": {
+							"flagSetId": "flagSetId"
 						  }
     					}
 					},
@@ -1029,20 +1058,19 @@ func TestState_Evaluator(t *testing.T) {
   					}
 				}
 			`,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"testSource",
-						  "targeting": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
+						"recursive": "recursive",
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 							  {
 								"in": ["@faas.com", {
@@ -1050,12 +1078,13 @@ func TestState_Evaluator(t *testing.T) {
 							  }]
 							  }, "binet", null
 							]
-						  }
-    					}
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
 					},
-					"flagSources":null
-				}
-			`,
+					FlagSetId: "flagSetId",
+				},
+			},
 		},
 		"no-indentation": {
 			inputState: `
@@ -1070,6 +1099,9 @@ func TestState_Evaluator(t *testing.T) {
 				},
 				"defaultVariant": "recursive",
 				"state": "ENABLED",
+				"metadata": {
+				"flagSetId": "flagSetId"
+				},
 				"targeting": {
 				"if": [
 				{
@@ -1088,20 +1120,19 @@ func TestState_Evaluator(t *testing.T) {
 				}
 				}
 			`,
-			expectedOutputState: `
-				{
-  					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "source":"testSource",
-						  "targeting": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
+						"recursive": "recursive",
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 							  {
 								"in": ["@faas.com", {
@@ -1109,12 +1140,13 @@ func TestState_Evaluator(t *testing.T) {
 							  }]
 							  }, "binet", null
 							]
-						  }
-    					}
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
 					},
-					"flagSources":null
-				}
-			`,
+					FlagSetId: "flagSetId",
+				},
+			},
 		},
 		"invalid evaluator json": {
 			inputState: `
@@ -1158,6 +1190,9 @@ func TestState_Evaluator(t *testing.T) {
 						},
 						"defaultVariant": "recursive",
 						"state": "ENABLED",
+						"metadata": {
+						  "flagSetId": "flagSetId"
+						},
 						"targeting": {
 						"if": [
 							{
@@ -1176,6 +1211,9 @@ func TestState_Evaluator(t *testing.T) {
 						},
 						"defaultVariant": "off",
 						"source":"testSource",
+						"metadata": {
+						  "flagSetId": "flagSetId"
+						},
 						"targeting": {
 							"if": [
 								{
@@ -1197,38 +1235,42 @@ func TestState_Evaluator(t *testing.T) {
 			}
 		`,
 			expectedError: false,
-			expectedOutputState: `
-			{
-					"flags": {
-					"fibAlgo": {
-						"variants": {
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
 						"recursive": "recursive",
-						"memo": "memo",
-						"loop": "loop",
-						"binet": "binet"
-						},
-						"defaultVariant": "recursive",
-						"state": "ENABLED",
-						"source":"testSource",
-						"targeting": {
-						"if": [
-							{
-							"in": ["@faas.com", {
-							"var": ["email"]
-							}]
-							}, "binet", "null", "loop"
-						]
-						}
-						},
-					"isColorYellow": {
-						"state": "ENABLED",
-						"variants": {
-							"on": true,
-							"off": false
-						},
-						"defaultVariant": "off",
-						"source":"testSource",
-						"targeting": {
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
+					},
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
+							"if": [
+							  {
+								"in": ["@faas.com", {
+								"var": ["email"]
+							  }]
+							  }, "binet", null
+							]
+						  }`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
+					},
+					FlagSetId: "flagSetId",
+				},
+				"isColorYellow": {
+					Key: "isColorYellow",
+					Variants: map[string]any{
+						"on":  true,
+						"off": false,
+					},
+					DefaultVariant: "off",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting: json.RawMessage(`{
 							"if": [
 								{
 									"==": [
@@ -1242,12 +1284,13 @@ func TestState_Evaluator(t *testing.T) {
 								"off",
 								"none"
 							]
-						}
-					}
+						}`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
+					},
+					FlagSetId: "flagSetId",
 				},
-				"flagSources":null
-			}
-		`,
+			},
 		},
 		"empty evaluator": {
 			inputState: `
@@ -1282,15 +1325,12 @@ func TestState_Evaluator(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			jsonEvaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, resync, err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState, Source: "testSource"})
+			err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.inputState, Source: "testSource"})
 			if err != nil {
 				if !tt.expectedError {
 					t.Error(err)
-				}
-				if resync != tt.expectedResync {
-					t.Errorf("expected resync %t got %t", tt.expectedResync, resync)
 				}
 				return
 			} else if tt.expectedError {
@@ -1298,38 +1338,50 @@ func TestState_Evaluator(t *testing.T) {
 				return
 			}
 
-			if resync != tt.expectedResync {
-				t.Errorf("expected resync %t got %t", tt.expectedResync, resync)
-			}
-
-			got, err := jsonEvaluator.GetState()
+			got, _, err := jsonEvaluator.store.GetAll(context.Background(), nil)
 			if err != nil {
 				t.Error(err)
 			}
 
-			var expectedOutputJSON map[string]interface{}
-			if err := json.Unmarshal([]byte(tt.expectedOutputState), &expectedOutputJSON); err != nil {
-				t.Fatal(err)
-			}
+			for _, v := range got {
 
-			var gotOutputJSON map[string]interface{}
-			if err := json.Unmarshal([]byte(got), &gotOutputJSON); err != nil {
-				t.Fatal(err)
-			}
+				// json data can be formatted differently, hence we remove it from the object and compare separately
+				parsedTargeting, _ := normalizeJSON(v.Targeting)
+				flag := tt.expectedOutputState[v.Key]
+				flag.Targeting = nil
+				gotTargeting, _ := normalizeJSON(v.Targeting)
+				v.Targeting = nil
 
-			if !reflect.DeepEqual(expectedOutputJSON["flags"], gotOutputJSON) {
-				t.Errorf("expected state: %v got state: %v", expectedOutputJSON["flags"], gotOutputJSON)
+				if !reflect.DeepEqual(parsedTargeting, gotTargeting) {
+					t.Errorf("\nexpected targeting: %s\ngot targeting: %s", parsedTargeting, gotTargeting)
+				}
+
+				if !reflect.DeepEqual(flag, v) {
+					t.Errorf("expected state: %v got state: %v", flag, v)
+				}
 			}
 		})
 	}
 }
 
+func normalizeJSON(jsonData []byte) (interface{}, error) {
+	var result interface{}
+	if jsonData == nil {
+		return nil, nil // Handle nil gracefully
+	}
+	err := json.Unmarshal(jsonData, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+	return result, nil
+}
+
 func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 	tests := map[string]struct {
-		flagResolution func(evaluator *evaluator.JSON) error
+		flagResolution func(evaluator *JSON) error
 	}{
 		"Add_ResolveAllValues": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
@@ -1338,7 +1390,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 			},
 		},
 		"Update_ResolveAllValues": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
@@ -1347,7 +1399,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 			},
 		},
 		"Delete_ResolveAllValues": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, err := evaluator.ResolveAllValues(context.TODO(), "", nil)
 				if err != nil {
 					return err
@@ -1356,31 +1408,31 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 			},
 		},
 		"Add_ResolveBooleanValue": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticBoolFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveStringValue": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticStringValue, nil)
 				return err
 			},
 		},
 		"Delete_ResolveIntValue": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, _, _, err := evaluator.ResolveIntValue(context.TODO(), "", StaticIntFlag, nil)
 				return err
 			},
 		},
 		"Add_ResolveFloatValue": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, _, _, err := evaluator.ResolveFloatValue(context.TODO(), "", StaticFloatFlag, nil)
 				return err
 			},
 		},
 		"Update_ResolveObjectValue": {
-			flagResolution: func(evaluator *evaluator.JSON) error {
+			flagResolution: func(evaluator *JSON) error {
 				_, _, _, _, err := evaluator.ResolveObjectValue(context.TODO(), "", StaticObjectFlag, nil)
 				return err
 			},
@@ -1389,9 +1441,9 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			jsonEvaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			jsonEvaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-			_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+			err := jsonEvaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1414,7 +1466,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 						errChan <- nil
 						return
 					default:
-						_, _, err := jsonEvaluator.SetState(sync.DataSync{FlagData: Flags, Source: "testSource"})
+						err := jsonEvaluator.SetState(sync.DataSync{FlagData: FlagsConfig, Source: "testSource"})
 						if err != nil {
 							errChan <- err
 							return
@@ -1454,9 +1506,9 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 
 func TestFlagdAmbientProperties(t *testing.T) {
 	t.Run("flagKeyIsInTheContext", func(t *testing.T) {
-		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+		evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"welcome-banner": {
 					"state": "ENABLED",
@@ -1494,9 +1546,9 @@ func TestFlagdAmbientProperties(t *testing.T) {
 	})
 
 	t.Run("timestampIsInTheContext", func(t *testing.T) {
-		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+		evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"welcome-banner": {
 					"state": "ENABLED",
@@ -1528,9 +1580,9 @@ func TestFlagdAmbientProperties(t *testing.T) {
 
 func TestTargetingVariantBehavior(t *testing.T) {
 	t.Run("missing variant error", func(t *testing.T) {
-		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+		evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"missing-variant": {
 					"state": "ENABLED",
@@ -1556,9 +1608,9 @@ func TestTargetingVariantBehavior(t *testing.T) {
 	})
 
 	t.Run("null fallback", func(t *testing.T) {
-		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+		evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
-		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"null-fallback": {
 					"state": "ENABLED",
@@ -1588,10 +1640,10 @@ func TestTargetingVariantBehavior(t *testing.T) {
 	})
 
 	t.Run("match booleans", func(t *testing.T) {
-		evaluator := evaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+		evaluator, _ := NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 
 		//nolint:dupword
-		_, _, err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
 			"flags": {
 				"match-boolean": {
 					"state": "ENABLED",
