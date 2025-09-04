@@ -15,12 +15,6 @@ func TestFractionalEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	colorVariants := map[string]any{
-		"red":    "#FF0000",
-		"blue":   "#0000FF",
-		"green":  "#00FF00",
-		"yellow": "#FFFF00",
-	}
 	commonFlags := map[string]model.Flag{
 		"headerColor": {
 			State:          "ENABLED",
@@ -451,12 +445,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 		"headerColor": {
 			State:          "ENABLED",
 			DefaultVariant: "red",
-			Variants: map[string]any{
-				"red":    "#FF0000",
-				"blue":   "#0000FF",
-				"green":  "#00FF00",
-				"yellow": "#FFFF00",
-			},
+			Variants:       colorVariants,
 			Targeting: []byte(`{
 					"if": [
 						{
