@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"maps"
 	"time"
 
@@ -58,7 +59,10 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
 				return fmt.Errorf("error constructing metadata response")
 			}
-			flags, err := json.Marshal(payload.Flags)
+
+			flagMap := s.convertMap(payload.Flags)
+
+			flags, err := json.Marshal(flagMap)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				return status.Error(codes.DataLoss, "error marshalling flags")
@@ -80,6 +84,23 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
+type exportFlag struct {
+	State          string          `json:"state"`
+	DefaultVariant string          `json:"defaultVariant"`
+	Variants       map[string]any  `json:"variants"`
+	Targeting      json.RawMessage `json:"targeting,omitempty"`
+	Source         string          `json:"source"`
+	Metadata       model.Metadata  `json:"metadata,omitempty"`
+}
+
+func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {
+	flagMap := make(map[string]model.Flag, len(flags))
+	for _, flag := range flags {
+		flagMap[flag.Key] = flag
+	}
+	return flagMap
+}
+
 func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
@@ -91,7 +112,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
-	flagsString, err := json.Marshal(flags)
+	flagsString, err := json.Marshal(s.convertMap(flags))
 
 	if err != nil {
 		return nil, err
