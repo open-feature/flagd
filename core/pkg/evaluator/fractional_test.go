@@ -15,16 +15,17 @@ func TestFractionalEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
+	colorVariants := map[string]any{
+		"red":    "#FF0000",
+		"blue":   "#0000FF",
+		"green":  "#00FF00",
+		"yellow": "#FFFF00",
+	}
 	commonFlags := map[string]model.Flag{
 		"headerColor": {
 			State:          "ENABLED",
 			DefaultVariant: "red",
-			Variants: map[string]any{
-				"red":    "#FF0000",
-				"blue":   "#0000FF",
-				"green":  "#00FF00",
-				"yellow": "#FFFF00",
-			},
+			Variants:       colorVariants,
 			Targeting: []byte(`{
 											"if": [
 											  {
@@ -59,12 +60,7 @@ func TestFractionalEvaluation(t *testing.T) {
 		"customSeededHeaderColor": {
 			State:          "ENABLED",
 			DefaultVariant: "red",
-			Variants: map[string]any{
-				"red":    "#FF0000",
-				"blue":   "#0000FF",
-				"green":  "#00FF00",
-				"yellow": "#FFFF00",
-			},
+			Variants:       colorVariants,
 			Targeting: []byte(`{
 					"if": [
 						{
@@ -180,12 +176,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"footerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 							"if": [
 								{
@@ -231,12 +222,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 											"if": [
 											  {
@@ -278,12 +264,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
@@ -318,12 +299,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
@@ -352,12 +328,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
@@ -384,12 +355,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":    "#FF0000",
-						"blue":   "#0000FF",
-						"green":  "#00FF00",
-						"yellow": "#FFFF00",
-					},
+					Variants:       colorVariants,
 					Targeting: []byte(`{
 							"fractional": [
 								[
