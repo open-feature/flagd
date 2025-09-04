@@ -575,7 +575,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 		"oauth error": {
 			oauthResponse:          http.StatusInternalServerError,
 			expectedHttpCallCount:  0,
-			expectedOauthCallCount: 4,
+			expectedOauthCallCount: 2,
 			expectedBeaerToken:     "",
 		},
 	}
@@ -608,6 +608,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 					ClientId:     clientID,
 					ClientSecret: clientSecret,
 					TokenUrl:     ts.URL + oauthPath,
+					ReloadDelayS: 10000,
 				},
 			}, l)
 			d := make(chan sync.DataSync, 1)
