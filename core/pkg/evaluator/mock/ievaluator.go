@@ -23,7 +23,6 @@ import (
 type MockIEvaluator struct {
 	ctrl     *gomock.Controller
 	recorder *MockIEvaluatorMockRecorder
-	isgomock struct{}
 }
 
 // MockIEvaluatorMockRecorder is the mock recorder for MockIEvaluator.
@@ -179,10 +178,10 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, co
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(payload sync.DataSync) (model.Metadata, bool, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]any, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", payload)
-	ret0, _ := ret[0].(model.Metadata)
+	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -198,7 +197,6 @@ func (mr *MockIEvaluatorMockRecorder) SetState(payload any) *gomock.Call {
 type MockIResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockIResolverMockRecorder
-	isgomock struct{}
 }
 
 // MockIResolverMockRecorder is the mock recorder for MockIResolver.
