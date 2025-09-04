@@ -152,4 +152,4 @@ jobs:
           envoy -c ./test/integration/config/envoy.yaml &
 
       - name: Run evaluation test suite
-        run: cd test/integraction && go clean -testcache && go test -cover
+        run: make workspace-clean && cd test/integration && go clean -testcache && go test -cover
