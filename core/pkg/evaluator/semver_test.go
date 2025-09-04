@@ -320,12 +320,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	colorVariants := map[string]any{
-		"red":    "#FF0000",
-		"blue":   "#0000FF",
-		"green":  "#00FF00",
-		"yellow": "#FFFF00",
-	}
 	tests := map[string]struct {
 		flags           map[string]model.Flag
 		flagKey         string
