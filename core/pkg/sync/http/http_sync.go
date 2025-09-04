@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	parseUrl "net/url"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -48,13 +49,39 @@ type oauthCredentialHandler struct {
 }
 
 func (och *oauthCredentialHandler) loadOAuthConfiguration() (*clientcredentials.Config, error) {
-	oauth := &clientcredentials.Config{
-		ClientID:     och.clientId,
-		ClientSecret: och.clientSecret,
-		TokenURL:     och.tokenUrl,
-		AuthStyle:    oauth2.AuthStyleAutoDetect,
+	if och.folderSource == "" {
+		oauth := &clientcredentials.Config{
+			ClientID:     och.clientId,
+			ClientSecret: och.clientSecret,
+			TokenURL:     och.tokenUrl,
+			AuthStyle:    oauth2.AuthStyleInParams,
+		}
+		return oauth, nil
 	}
-	return oauth, nil
+	// we load from files
+	id, err := os.ReadFile(och.folderSource + "/" + och.clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := os.ReadFile(och.folderSource + "/" + och.clientSecret)
+	if err != nil {
+		return nil, err
+	}
+	return &clientcredentials.Config{
+		ClientID:     string(id),
+		ClientSecret: string(secret),
+		TokenURL:     och.tokenUrl,
+		AuthStyle:    oauth2.AuthStyleInParams,
+	}, nil
+}
+
+func (och *oauthCredentialHandler) getOAuthClient() (*http.Client, error) {
+	oauth, err := och.loadOAuthConfiguration()
+	if err != nil {
+		return nil, err
+	}
+	return oauth.Client(context.Background()), nil
 }
 
 // Client defines the behaviour required of a http client
@@ -156,8 +183,8 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 	if hs.eTag != "" && !fetchAll {
 		req.Header.Set("If-None-Match", hs.eTag)
 	}
-
-	resp, err := hs.client.Do(req)
+	client := hs.getClient()
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", false, fmt.Errorf("error calling endpoint %s: %w", hs.uri, err)
 	}
@@ -220,6 +247,31 @@ func (hs *Sync) Fetch(ctx context.Context) (string, error) {
 	return body, err
 }
 
+func (hs *Sync) getClient() Client {
+	if hs.oauthCredential != nil {
+		delta := time.Since(hs.oauthCredential.lastUpdate).Seconds()
+		if delta <= float64(hs.oauthCredential.reloadDelaySeconds) && hs.client != nil {
+			return hs.client
+		}
+	} else if hs.client != nil {
+		return hs.client
+	}
+	// if we cannot reuse the cached one, let's create a new one
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	if hs.oauthCredential != nil {
+		if c, err := hs.oauthCredential.getOAuthClient(); err == nil {
+			client = c
+			hs.oauthCredential.lastUpdate = time.Now()
+		} else {
+			hs.logger.Error(fmt.Sprintf("Cannot init OAuth. Default to normal HTTP client: %v", err))
+		}
+	}
+	hs.client = client
+	return client
+}
+
 func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 	// Default to 5 seconds
 	var interval uint32 = 5
@@ -227,10 +279,6 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 		interval = config.Interval
 	}
 
-	// TODO: move this into a get client function
-	// 	and replace all access to client to this f
-	//  the Sync has client nil at this place in code
-	var client *http.Client
 	var oauthCredential *oauthCredentialHandler
 	if config.OAuthConfig != nil {
 		oauthCredential = &oauthCredentialHandler{
@@ -239,21 +287,12 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 			tokenUrl:           config.OAuthConfig.TokenUrl,
 			folderSource:       config.OAuthConfig.Folder,
 			reloadDelaySeconds: config.OAuthConfig.ReloadDelayS,
-		}
-		if oauth, err := oauthCredential.loadOAuthConfiguration(); err != nil && oauth != nil {
-			client = oauth.Client(context.Background())
-		} else {
-			logger.Error(fmt.Sprintf("Cannot init OAuth: %v", err))
-		}
-	} else {
-		client = &http.Client{
-			Timeout: time.Second * 10,
+			lastUpdate:         time.Now(),
 		}
 	}
 
 	return &Sync{
-		uri:    config.URI,
-		client: client,
+		uri: config.URI,
 		logger: logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "http"),
