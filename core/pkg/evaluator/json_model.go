@@ -11,7 +11,7 @@ type Evaluators struct {
 }
 
 type Definition struct {
-	Flags    map[string]model.Flag  `json:"flags"`
+	Flags    []model.Flag           `json:"flags"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 

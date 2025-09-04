@@ -177,7 +177,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var reason string
 	var metadata map[string]interface{}
 
-	for flagKey, flag := range allFlags {
+	for _, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
 			continue
@@ -186,18 +186,18 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case string:
-			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case float64:
-			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case map[string]any:
-			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		}
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flag.Key, err.Error()))
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
+		values = append(values, NewAnyValue(value, variant, reason, flag.Key, metadata, err))
 	}
 
 	return values, flagSetMetadata, nil
@@ -453,23 +453,32 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 			"flag definition does not conform to the schema; validation errors: %s", err),
 		)
 	}
-
+	type JsonRawDef struct {
+		Flags    map[string]model.Flag  `json:"flags"`
+		Metadata map[string]interface{} `json:"metadata"`
+	}
+	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &definition)
+	var rawDef JsonRawDef
+	err = json.Unmarshal([]byte(transposedConfig), &rawDef)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
-
+	definition.Metadata = rawDef.Metadata
+	for s, flag := range rawDef.Flags {
+		flag.Key = s
+		definition.Flags = append(definition.Flags, flag)
+	}
 	return validateDefaultVariants(definition)
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
 func validateDefaultVariants(flags *Definition) error {
-	for name, flag := range flags.Flags {
+	for _, flag := range flags.Flags {
 		// Default Variant is not provided in the config
 		if flag.DefaultVariant == "" {
 			continue
@@ -477,7 +486,7 @@ func validateDefaultVariants(flags *Definition) error {
 
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
-				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
+				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, flag.Key,
 			)
 		}
 	}
