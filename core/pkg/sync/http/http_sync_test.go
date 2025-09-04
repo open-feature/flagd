@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +19,8 @@ import (
 	synctesting "github.com/open-feature/flagd/core/pkg/sync/testing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 func TestSimpleSync(t *testing.T) {
@@ -465,6 +468,85 @@ func TestHTTPSync_Resync(t *testing.T) {
 	}
 }
 
+func TestHTTPSync_getClient(t *testing.T) {
+	oauth := &sync.OAuthCredentialHandler{
+		ClientId:     "myClientID",
+		ClientSecret: "myClientSecret",
+		TokenUrl:     "http://localhost",
+	}
+	oauthDelay := &sync.OAuthCredentialHandler{
+		ClientId:     "myClientID",
+		ClientSecret: "myClientSecret",
+		TokenUrl:     "http://localhost",
+		ReloadDelayS: 10000,
+	}
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	oauthClientCredential := &clientcredentials.Config{
+		ClientID:     oauth.ClientId,
+		ClientSecret: oauth.ClientSecret,
+		TokenURL:     oauth.TokenUrl,
+		AuthStyle:    oauth2.AuthStyleAutoDetect,
+	}
+	tests := map[string]struct {
+		config sync.SourceConfig
+		client *http.Client
+	}{
+		"no http client no oauth": {
+			config: sync.SourceConfig{},
+		},
+		"no http client yes oauth": {
+			config: sync.SourceConfig{
+				OAuthConfig: oauth,
+			},
+		},
+		"no http client yes oauth reload": {
+			config: sync.SourceConfig{
+				OAuthConfig: oauthDelay,
+			},
+		},
+		"yes http client no oauth": {
+			config: sync.SourceConfig{},
+			client: client,
+		},
+		"yes http client yes oauth": {
+			config: sync.SourceConfig{
+				OAuthConfig: oauth,
+			},
+			client: client,
+		},
+		"yes http client yes oauth reload": {
+			config: sync.SourceConfig{
+				OAuthConfig: oauthDelay,
+			},
+			client: oauthClientCredential.Client(context.Background()),
+		},
+	}
+
+	l := logger.NewLogger(nil, false)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			httpSync := NewHTTP(tt.config, l)
+			if tt.client != nil {
+				// we have a cached HTTP client already
+				httpSync.client = tt.client
+				httpClient, ok := httpSync.getClient().(*http.Client)
+				require.True(t, ok, "expected http client")
+				if tt.config.OAuthConfig != nil {
+					// we use oauth so client should be different
+					require.IsType(t, &oauth2.Transport{}, httpClient.Transport)
+				} else {
+					// we don't use oauth so client should be the same
+					require.Equal(t, tt.client, httpClient)
+				}
+
+			}
+			require.NotNil(t, httpSync.getClient())
+		})
+	}
+}
+
 type oauthHttpMock struct {
 	count      int
 	lastParams url.Values
@@ -546,4 +628,81 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			require.Equal(t, tt.expectedHttpCallCount, httpMock.count)
 		})
 	}
+}
+
+func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
+	// given
+	const (
+		clientID               = "clientID"
+		clientSecret           = "clientSecret"
+		oauthPath              = "/oauth"
+		bearerToken            = "mySecretBearerToken"
+		folderName             = "flagd_oauth_test"
+		secretClientID         = "mySecretClientID"
+		secretClientSecret     = "mySecretClientSecret"
+		secretClientID_new     = "newClientID"
+		secretClientSecret_new = "newClientSecret"
+	)
+	// given an oauth server
+	oauthMock := &oauthHttpMock{}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, oauthPath) {
+			body, _ := io.ReadAll(r.Body)
+			params, _ := url.ParseQuery(string(body))
+			oauthMock.lastParams = params
+			oauthMock.lastHeader = r.Header
+			oauthMock.count++
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+			w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+	// given credentials stored on a folder
+	dir, err := os.MkdirTemp("", folderName)
+	defer func(path string) {
+		e := os.RemoveAll(path)
+		if e != nil {
+			fmt.Printf("Cannot delete %s: %v", path, e)
+		}
+	}(dir)
+	require.NoError(t, err)
+
+	err = os.WriteFile(dir+"/"+clientID, []byte(secretClientID), 0644)
+	require.NoError(t, err)
+	err = os.WriteFile(dir+"/"+clientSecret, []byte(secretClientSecret), 0644)
+	require.NoError(t, err)
+
+	l := logger.NewLogger(nil, false)
+	s := NewHTTP(sync.SourceConfig{
+		URI:         ts.URL,
+		BearerToken: "it_should_be_replaced_by_oauth",
+		OAuthConfig: &sync.OAuthCredentialHandler{
+			ClientId:     clientID,
+			ClientSecret: clientSecret,
+			Folder:       dir,
+			TokenUrl:     ts.URL + oauthPath,
+			ReloadDelayS: 0, // we force loading the secret at each req
+		},
+	}, l)
+	d := make(chan sync.DataSync, 1)
+	// when we fire the HTTP call
+	err = s.ReSync(context.Background(), d)
+	// then the right secrets are used
+	require.Equal(t, secretClientID, oauthMock.lastParams.Get("client_id"))
+	require.Equal(t, secretClientSecret, oauthMock.lastParams.Get("client_secret"))
+
+	// when we change the secrets
+	err = os.WriteFile(dir+"/"+clientID, []byte(secretClientID_new), 0644)
+	require.NoError(t, err)
+	err = os.WriteFile(dir+"/"+clientSecret, []byte(secretClientSecret_new), 0644)
+	require.NoError(t, err)
+
+	// then the new HTTP call will use the new valus
+	err = s.ReSync(context.Background(), d)
+	require.Equal(t, secretClientID_new, oauthMock.lastParams.Get("client_id"))
+	require.Equal(t, secretClientSecret_new, oauthMock.lastParams.Get("client_secret"))
+
 }
