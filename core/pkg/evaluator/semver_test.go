@@ -321,7 +321,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		flags           Flags
+		flags           map[string]model.Flag
 		flagKey         string
 		context         map[string]any
 		expectedValue   string
@@ -330,18 +330,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 		expectedError   error
 	}{
 		"versions and operator provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", ">", "0.1.0"]
@@ -349,7 +348,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -361,18 +359,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [{"var": "version"}, ">", "1.0.0"]
@@ -380,7 +377,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -392,18 +388,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and operator provided - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", ">", "1.0.0"]
@@ -411,7 +406,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -423,18 +417,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and major-version operator provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.2.3", "^", "1.5.6"]
@@ -442,7 +435,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -454,18 +446,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and minor-version operator provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.2.3", "~", "1.2.6"]
@@ -473,7 +464,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -485,18 +475,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions given as double - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [1.2, "=", "1.2"]
@@ -504,7 +493,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -516,18 +504,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions given as int - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [1, "=", "v1.0.0"]
@@ -535,7 +522,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -547,18 +533,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and minor-version without patch version operator provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [1.2, "=", "1.2"]
@@ -566,7 +551,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -578,18 +562,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions with prefixed v operator provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [{"var": "version"}, "<", "v1.2"]
@@ -597,7 +580,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -609,18 +591,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and major-version operator provided - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["2.2.3", "^", "1.2.3"]
@@ -628,7 +609,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -640,18 +620,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"versions and minor-version operator provided - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.3.3", "~", "1.2.6"]
@@ -659,7 +638,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -671,18 +649,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [{"var": "version"}, ">", "1.0.0"]
@@ -690,7 +667,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -702,18 +678,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (not an array) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": "not an array"
@@ -721,7 +696,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -733,18 +707,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (wrong number of items in array) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["not", "enough"]
@@ -752,7 +725,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -764,18 +736,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (invalid property value) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["invalid", ">", "1.0.0"]
@@ -783,7 +754,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -795,18 +765,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (invalid property type) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": [1.0, ">", "1.0.0"]
@@ -814,7 +783,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -826,18 +794,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (invalid operator) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", "invalid", "1.0.0"]
@@ -845,7 +812,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -857,18 +823,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (invalid operator type) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", 1, "1.0.0"]
@@ -876,7 +841,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -888,18 +852,17 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing (invalid target version) - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"sem_ver": ["1.0.0", ">", "invalid"]
@@ -907,7 +870,6 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -929,7 +891,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags.Flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 

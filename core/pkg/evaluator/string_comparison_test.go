@@ -18,7 +18,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		flags           Flags
+		flags           map[string]model.Flag
 		flagKey         string
 		context         map[string]any
 		expectedValue   string
@@ -27,18 +27,17 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 		expectedError   error
 	}{
 		"two strings provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"starts_with": ["user@faas.com", "user@faas"]
@@ -46,7 +45,6 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -58,18 +56,17 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"starts_with": [{"var": "email"}, "user@faas"]
@@ -77,7 +74,6 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -89,18 +85,17 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"two strings provided - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"starts_with": ["user@faas.com", "nope"]
@@ -108,7 +103,6 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -120,18 +114,17 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"starts_with": [{"var": "email"}, "nope"]
@@ -139,7 +132,6 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -151,18 +143,17 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"starts_with": "no-array"
@@ -170,7 +161,6 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -192,7 +182,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags.Flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -221,7 +211,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		flags           Flags
+		flags           map[string]model.Flag
 		flagKey         string
 		context         map[string]any
 		expectedValue   string
@@ -230,18 +220,17 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 		expectedError   error
 	}{
 		"two strings provided - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"ends_with": ["user@faas.com", "faas.com"]
@@ -249,7 +238,6 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -261,18 +249,17 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"ends_with": [{"var": "email"}, "faas.com"]
@@ -280,7 +267,6 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 											  "red", null
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -292,18 +278,17 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"two strings provided - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"ends_with": ["user@faas.com", "nope"]
@@ -311,7 +296,6 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -323,18 +307,17 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"resolve target property using nested operation - no match": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"ends_with": [{"var": "email"}, "nope"]
@@ -342,7 +325,6 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -354,18 +336,17 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"error during parsing - return default": {
-			flags: Flags{
-				Flags: map[string]model.Flag{
-					"headerColor": {
-						State:          "ENABLED",
-						DefaultVariant: "red",
-						Variants: map[string]any{
-							"red":    "#FF0000",
-							"blue":   "#0000FF",
-							"green":  "#00FF00",
-							"yellow": "#FFFF00",
-						},
-						Targeting: []byte(`{
+			flags: map[string]model.Flag{
+				"headerColor": {
+					State:          "ENABLED",
+					DefaultVariant: "red",
+					Variants: map[string]any{
+						"red":    "#FF0000",
+						"blue":   "#0000FF",
+						"green":  "#00FF00",
+						"yellow": "#FFFF00",
+					},
+					Targeting: []byte(`{
 											"if": [
 											  {
 												"ends_with": "no-array"
@@ -373,7 +354,6 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 											  "red", "green"
 											]
 										  }`),
-					},
 				},
 			},
 			flagKey: "headerColor",
@@ -395,7 +375,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags.Flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{})
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
