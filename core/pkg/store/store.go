@@ -2,14 +2,12 @@ package store
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/notifications"
 )
 
 var noValidatedSources = []string{}
@@ -24,8 +22,7 @@ type IStore interface {
 	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
 	GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
-	Update(source string, flags map[string]model.Flag, metadata model.Metadata) (map[string]interface{}, bool)
-	String() (string, error)
+	Update(source string, flags map[string]model.Flag, metadata model.Metadata)
 }
 
 var _ IStore = (*Store)(nil)
@@ -194,22 +191,6 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 	return flag, queryMeta, nil
 }
 
-func (f *Store) String() (string, error) {
-	f.logger.Debug("dumping flags to string")
-
-	state, _, err := f.GetAll(context.Background(), nil)
-	if err != nil {
-		return "", fmt.Errorf("unable to get all flags: %w", err)
-	}
-
-	bytes, err := json.Marshal(state)
-	if err != nil {
-		return "", fmt.Errorf("unable to marshal flags: %w", err)
-	}
-
-	return string(bytes), nil
-}
-
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
 func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
@@ -229,9 +210,7 @@ func (s *Store) Update(
 	source string,
 	flags map[string]model.Flag,
 	metadata model.Metadata,
-) (map[string]interface{}, bool) {
-	resyncRequired := false
-
+) {
 	if source == "" {
 		panic("source cannot be empty")
 	}
@@ -313,7 +292,6 @@ func (s *Store) Update(
 	}
 
 	txn.Commit()
-	return notifications.NewFromFlags(oldFlags, flags), resyncRequired
 }
 
 // Watch the result-set of a selector for changes, sending updates to the watcher channel.

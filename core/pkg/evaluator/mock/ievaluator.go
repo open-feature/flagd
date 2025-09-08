@@ -42,21 +42,6 @@ func (m *MockIEvaluator) EXPECT() *MockIEvaluatorMockRecorder {
 	return m.recorder
 }
 
-// GetState mocks base method.
-func (m *MockIEvaluator) GetState() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetState")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetState indicates an expected call of GetState.
-func (mr *MockIEvaluatorMockRecorder) GetState() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockIEvaluator)(nil).GetState))
-}
-
 // ResolveAllValues mocks base method.
 func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
 	m.ctrl.T.Helper()
@@ -178,13 +163,11 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, co
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(payload sync.DataSync) (map[string]any, bool, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", payload)
-	ret0, _ := ret[0].(map[string]any)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetState indicates an expected call of SetState.
