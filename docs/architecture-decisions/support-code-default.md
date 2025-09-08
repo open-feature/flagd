@@ -1,8 +1,8 @@
 ---
 status: accepted
-author: @beeme1mr
+author: Michael Beemer `@beeme1mr`
 created: 2025-06-06
-updated: 2025-06-20
+updated: 2025-08-08
 ---
 
 # Support Explicit Code Default Values in flagd Configuration
@@ -49,14 +49,17 @@ Related discussions and context can be found in the [OpenFeature specification](
 
 We propose implementing **Option 1: Allow `null` as Default Variant**, potentially combined with **Option 2: Make Default Variant Optional** for maximum flexibility.
 
-The implementation leverages field presence in evaluation responses across all protocols (in-process, RPC, and OFREP). When a flag configuration has `defaultVariant: null`, the evaluation response omits the value field entirely, which serves as a programmatic signal to the client to use its code-defined default value.
+The implementation leverages field presence in evaluation responses across all protocols.
+When a flag configuration has `defaultVariant: null`, the evaluation response omits the value field entirely and uses the "DEFAULT" reason code, which serves as a programmatic signal to the client to use its code-defined default value.
 
 This approach offers several key advantages:
 
-1. **No Protocol Changes**: RPC and OFREP protocols remain unchanged
-2. **Clear Semantics**: Omitted value field = "use your code default"
-3. **Backward Compatible**: Existing clients and servers continue to work
-4. **Universal Pattern**: Works consistently across all evaluation modes
+1. **Semantically Correct**: Uses "DEFAULT" reason code which accurately represents the evaluation outcome
+2. **Success Responses**: Treats code default usage as successful evaluation, not an error
+3. **Clear Semantics**: Omitted value field = "use your code default"
+4. **Backward Compatible**: Existing clients and servers continue to work
+5. **Universal Pattern**: Works consistently across all evaluation modes
+6. **Accurate Telemetry**: Metrics correctly reflect successful evaluations rather than false errors
 
 The absence of a value field provides an unambiguous signal that distinguishes between "the server evaluated to null/false/empty" (value field present) and "the server delegates to your code default" (value field absent).
 
@@ -77,22 +80,57 @@ The absence of a value field provides an unambiguous signal that distinguishes b
    ```
 
 2. **Evaluation Behavior**:
-   - When flag has `defaultVariant: null` and targeting returns no match
-   - Server responds with reason set to reason "ERROR" and error code "FLAG_NOT_FOUND"
-   - Client detects this reason value field and uses its code-defined default
-   - This same pattern works across all evaluation modes
 
-3. **Provider Implementation**:
-   - No changes to existing providers
+   - When flag has `defaultVariant: null` and targeting returns no match
+   - Server responds with reason "DEFAULT" and omits value and variant fields
+   - Client detects the omitted fields and uses its code-defined default
+   - This pattern works consistently across all evaluation modes
+
+3. **Protobuf Schema Changes**:
+
+   - Update response message definitions to use `optional` fields for `value` and `variant`
+   - This enables proper field presence detection for code default signaling
+
+   Example protobuf changes:
+
+   ```protobuf
+   message ResolveBooleanResponse {
+     // The response value, will be unset when deferring to code defaults
+     optional bool value = 1;
+   
+     // The reason for the given return value
+     string reason = 2;
+   
+     // The variant name, will be unset when deferring to code defaults
+     optional string variant = 3;
+   
+     // Metadata for this evaluation
+     google.protobuf.Struct metadata = 4;
+   }
+   ```
+
+4. **Provider Implementation**:
+
+   **RPC Providers**:
+
+   - Providers must be updated to check field presence rather than just reading field values
+
+   **In-Process Providers**:
+
+   - Check if both the resolved variant (from targeting evaluation) AND the configured default variant are null/undefined
+   - When both conditions are true, use the application's code default value with reason "DEFAULT" and no variant
 
 ### Design Rationale
 
-**Using "ERROR" reason**: We intentionally reuse the existing "ERROR" reason code rather than introducing a new one (like "CODE_DEFAULT"). This retains the current behavior of an disabled flag and allows for progressive enablement of a flag without unexpected variations in flag evaluation behavior.
+**Using "DEFAULT" reason with omitted value fields**: We use the "DEFAULT" reason code to accurately represent that a default value is being used, combined with omitting the value and variant fields to signal code default deferral. This approach leverages recent OFREP improvements and requires updating protobuf definitions to use `optional` fields for proper field presence detection.
 
 Advantages of this approach:
 
-- The "ERROR" reason is already used for cases where the flag is not found or misconfigured, so it aligns with the intent of using code defaults.
-- This approach avoids introducing new reason codes that would require additional handling in providers and clients.
+- **Accurate Semantics**: "DEFAULT" reason correctly represents the evaluation outcome
+- **Proper Telemetry**: Evaluations are recorded as successful rather than errors  
+- **Clear Field Presence**: Optional fields provide unambiguous signaling across all protocols
+- **Standards Aligned**: Leverages accepted patterns for optional values
+- **Backward Compatible**: Existing clients continue to work while new clients can detect code defaults
 
 ### API changes
 
@@ -118,15 +156,14 @@ flags:
 
 #### Single flag evaluation response
 
-A single flag evaluation returns a `404` status code.
+A single flag evaluation returns a `200` status code:
 
 ```json
 {
   "key": "my-feature",
-  "errorCode": "FLAG_NOT_FOUND",
-  // Optional error details
-  "errorDetails": "Targeting not matched, using code default",
+  "reason": "DEFAULT",
   "metadata": {}
+  // Note: No value field - indicates code default usage
 }
 ```
 
@@ -135,7 +172,12 @@ A single flag evaluation returns a `404` status code.
 ```json
 {
   "flags": [
-    // Flag is omitted from bulk response
+    {
+      "key": "my-feature", 
+      "reason": "DEFAULT",
+      "metadata": {}
+      // Note: No value field - indicates code default usage
+    }
   ]
 }
 ```
@@ -144,9 +186,9 @@ A single flag evaluation returns a `404` status code.
 
 ```protobuf
 {
-  "reason": "ERROR",
-  "errorCode": "FLAG_NOT_FOUND",
+  "reason": "DEFAULT",
   "metadata": {}
+  // Note: value and variant fields omitted to indicate code default
 }
 ```
 
@@ -157,20 +199,31 @@ A single flag evaluation returns a `404` status code.
 - Good, because it aligns flagd more closely with OpenFeature specification principles
 - Good, because it supports gradual flag rollout patterns more naturally
 - Good, because it provides the ability to delegate to whatever is defined in code
-- Good, because it requires no changes to existing RPC or protocol signatures
-- Good, because it uses established patterns (field presence) for clear semantics
-- Good, because it maintains full backward compatibility
+- Good, because it uses the "DEFAULT" reason code which accurately represents the evaluation outcome
+- Good, because it treats code default usage as successful evaluation with proper telemetry
+- Good, because telemetry can distinguish between configured defaults (variant present) and code defaults (variant absent)
+- Good, because it uses a simple field presence pattern that works across all protocols
+- Good, because it maintains backward compatibility for existing flag configurations
+- Bad, because it requires protobuf schema changes to use `optional` fields
 - Bad, because it requires updates across multiple components (flagd, providers, testbed)
 - Bad, because it introduces a new concept that users need to understand
-- Neutral, because existing configurations continue to work unchange
+- Bad, because it creates a breaking change for older clients evaluating flags configured with `defaultVariant: null` (they would receive zero values instead of using code defaults)
+- Bad, because providers must be updated to handle field presence detection
+- Neutral, because existing configurations continue to work unchanged
 
 ### Implementation Plan
 
-1. Update flagd-schemas with new JSON schema supporting null default variants
-2. Update flagd-testbed with comprehensive test cases for all evaluation modes
-3. Implement core logic in flagd to handle null defaults and omit value/variant fields
-4. Update OpenFeature providers with the latest schema and test harness to ensure they handle the new behavior correctly
-5. Documentation updates, migration guides, and playground examples to demonstrate the new configuration options
+1. Update flagd protobuf schemas to use `optional` fields for `value` and `variant` in response messages
+2. Update flagd-schemas with new JSON schema supporting null default variants
+3. Update flagd-testbed with comprehensive test cases for all evaluation modes
+4. Implement core logic in flagd to handle null defaults by conditionally omitting fields in responses
+5. Update OpenFeature providers to check field presence rather than just reading field values
+6. Regenerate protobuf client libraries for all supported languages with new optional field support
+7. Release updated clients before configuring any flags with `defaultVariant: null` to avoid zero-value issues with older clients
+8. Update provider documentation with field presence detection patterns for each language
+9. Add backward compatibility testing to ensure existing clients continue to work
+10. Update CI/CD pipelines to validate protobuf schema changes and field presence behavior
+11. Documentation updates, migration guides, and playground examples to demonstrate the new configuration options
 
 ### Testing Considerations
 
@@ -178,9 +231,12 @@ To ensure correct implementation across all components:
 
 1. **Provider Tests**: Each component (flagd, providers) must have unit tests verifying the handling of `null` as a default variant
 2. **Integration Tests**: End-to-end tests across different language combinations (e.g., Go flagd with Java provider)
-3. **OFREP Tests**: Verify JSON responses correctly omits flags with a `null` default variant
-4. **Backward Compatibility Tests**: Ensure old providers handle new responses gracefully
-5. **Consistency Tests**: Verify identical behavior across in-process, RPC, and OFREP modes
+3. **Schema Tests**: Verify protobuf schemas correctly define `optional` fields and generate appropriate client code
+4. **Field Presence Tests**: Verify that providers can correctly detect field presence vs. absence across all languages
+5. **OFREP Tests**: Verify JSON responses correctly omit value fields for code default scenarios
+6. **RPC Tests**: Verify protobuf responses correctly omit optional fields for code default scenarios
+7. **Backward Compatibility Tests**: Ensure old providers handle new responses gracefully
+8. **Consistency Tests**: Verify consistent field presence behavior across all evaluation modes
 
 ### Open questions
 
@@ -190,18 +246,27 @@ To ensure correct implementation across all components:
     - Yes, we'll support both `null` and absent fields to maximize flexibility. An absent `defaultVariant` will be the equivalent of `null`.
 - What migration path should we recommend for users currently using workarounds?
     - Update the flag configurations to use `defaultVariant: null` and remove any misconfigured rulesets that force code defaults.
+- How should we handle the breaking change for older clients evaluating `defaultVariant: null` flags?
+    - Older clients built without optional protobuf fields will receive zero values (false, 0, "") instead of using code defaults. This requires coordinated rollout: (1) Update and deploy all clients with new protobuf definitions, (2) Only then configure flags with `defaultVariant: null`. Alternatively, maintain separate flag configurations during transition period.
 - Should this feature be gated behind a configuration flag during initial rollout?
     - We'll avoid public facing documentation until the feature is fully implemented and tested.
 - How do we ensure consistent behavior across all provider implementations?
     - Gherkin tests will be added to the flagd testbed to ensure all providers handle the new behavior consistently.
-- Should providers validate that the reason is "DEFAULT" when value is omitted, or accept any omitted value as delegation?
-    - Providers should accept any omitted value as delegation.
-- How do we handle edge cases where network protocols might strip empty fields?
-    - It would behaving as expected, as the absence of fields is the intended signal.
+- How do OFREP providers detect and handle responses with omitted value fields?
+    - Providers should check for the absence of the `value` field in successful responses and treat it as a signal to use code defaults.
+- Should we maintain backward compatibility for providers that don't yet support omitted value fields?
+    - Yes, older providers will continue to work but may not benefit from the code default deferral feature until updated.
 - When the client uses its code default after receiving a delegation response, what variant should be reported in telemetry/analytics?
-    - The variant will be omitted, indicating that the code default was used.
-- Should we add explicit proto comments documenting the field omission behavior?
-    - Leave this to the implementers, but it would be beneficial to add comments in the proto files to clarify this behavior for future maintainers.
+    - No variant will be reported since the variant is unknown when using code defaults. The absence of a variant in telemetry indicates that a code default was used.
+- Should we add explicit documentation about the field omission behavior?
+    - Yes, clear documentation should explain how omitted value fields signal code default deferral for implementers.
+
+## Revision History
+
+| Date       | Author    | Change Summary                                                                                                                                                              |
+| ---------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-06-06 | Michael Beemer | Initial ADR creation with error-based approach                                                                                                                              |
+| 2025-08-08 | Michael Beemer | **Major revision**: Changed from error-based (`FLAG_NOT_FOUND`) to success-based approach (`DEFAULT` reason) following OFREP improvements that enable optional value fields |
 
 ## More Information
 
@@ -209,3 +274,4 @@ To ensure correct implementation across all components:
 - [flagd Flag Definitions Reference](https://flagd.dev/reference/flag-definitions/)
 - [flagd JSON Schema Repository](https://github.com/open-feature/flagd-schemas)
 - [flagd Testbed](https://github.com/open-feature/flagd-testbed)
+- [OFREP ADR: Optional value field for code default deferral](https://github.com/open-feature/protocol/blob/main/service/adrs/0006-optional-value-for-code-defaults.md)
