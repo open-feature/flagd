@@ -117,15 +117,7 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	return &ev
 }
 
-func (je *JSON) GetState() (string, error) {
-	s, err := je.store.String()
-	if err != nil {
-		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
-	}
-	return s, nil
-}
-
-func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
+func (je *JSON) SetState(payload sync.DataSync) error {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"flagSync",
@@ -138,18 +130,12 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
-		return nil, false, err
+		return err
 	}
 
-	var events map[string]interface{}
-	var reSync bool
+	je.store.Update(payload.Source, definition.Flags, definition.Metadata)
 
-	events, reSync = je.store.Update(payload.Source, definition.Flags, definition.Metadata)
-
-	// Number of events correlates to the number of flags changed through this sync, record it
-	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
-
-	return events, reSync, nil
+	return nil
 }
 
 // Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
