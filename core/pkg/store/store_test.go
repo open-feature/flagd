@@ -322,10 +322,16 @@ func TestGetAllNoWatcher(t *testing.T) {
 
 			require.Equal(t, len(tt.wantFlags), len(gotFlags))
 			sort.Slice(tt.wantFlags, func(i, j int) bool {
-				return tt.wantFlags[i].FlagSetId+"|"+tt.wantFlags[i].Key > tt.wantFlags[j].FlagSetId+"|"+tt.wantFlags[j].Key
+				if tt.wantFlags[i].FlagSetId != tt.wantFlags[j].FlagSetId {
+					return tt.wantFlags[i].FlagSetId < tt.wantFlags[j].FlagSetId
+				}
+				return tt.wantFlags[i].Key < tt.wantFlags[j].Key
 			})
 			sort.Slice(gotFlags, func(i, j int) bool {
-				return gotFlags[i].FlagSetId+"|"+gotFlags[i].Key > gotFlags[j].FlagSetId+"|"+gotFlags[j].Key
+				if gotFlags[i].FlagSetId != gotFlags[j].FlagSetId {
+					return gotFlags[i].FlagSetId < gotFlags[j].FlagSetId
+				}
+				return gotFlags[i].Key < gotFlags[j].Key
 			})
 			require.Equal(t, tt.wantFlags, gotFlags)
 		})
