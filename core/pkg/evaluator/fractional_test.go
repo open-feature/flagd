@@ -377,10 +377,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: map[string]any{
-						"red":  "#FF0000",
-						"blue": "#0000FF",
-					},
+					Variants: colorVariants,
 					Targeting: []byte(
 						`{
 								"fractional": [
