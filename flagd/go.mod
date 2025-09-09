@@ -33,8 +33,6 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
-replace github.com/open-feature/flagd/core v0.11.8 => ../core/
-
 require (
 	cel.dev/expr v0.23.0 // indirect
 	cloud.google.com/go v0.121.1 // indirect
