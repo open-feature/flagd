@@ -41,6 +41,7 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 		for result := range watcher {
 			newFlags := make(map[string]model.Flag)
 			for _, flag := range result.Flags {
+                // we should be either selecting on a flag set here, or using the source-priority - duplicates are already handled, so we don't have to worry about overwrites
 				newFlags[flag.Key] = flag
 			}
 
