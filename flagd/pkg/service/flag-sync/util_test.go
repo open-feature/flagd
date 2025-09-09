@@ -40,7 +40,7 @@ func getSimpleFlagStore(t testing.TB) (store.IStore, []string) {
 
 	sources := []string{testSource1, testSource2}
 
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), sources)
+	flagStore, err := store.NewStore(logger.NewLogger(nil, false), store.StoreConfig{Sources: sources})
 	if err != nil {
 		t.Fatalf("error creating flag store: %v", err)
 	}

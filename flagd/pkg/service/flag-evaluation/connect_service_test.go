@@ -178,7 +178,7 @@ func TestConnectServiceNotify(t *testing.T) {
 	eval := mock.NewMockIEvaluator(ctrl)
 	sources := []string{"source1", "source2"}
 	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
+	s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 	if err != nil {
 		t.Fatalf("NewStore failed: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestConnectServiceNotify(t *testing.T) {
 func TestConnectServiceWatcher(t *testing.T) {
 	sources := []string{"source1", "source2"}
 	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
+	s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 
 	if err != nil {
 		t.Fatalf("NewStore failed: %v", err)
@@ -269,7 +269,7 @@ func TestConnectServiceShutdown(t *testing.T) {
 	eval := mock.NewMockIEvaluator(ctrl)
 	sources := []string{"source1", "source2"}
 	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
+	s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 	if err != nil {
 		t.Fatalf("NewStore failed: %v", err)
 	}

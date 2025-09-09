@@ -52,7 +52,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				// Shared handler for testing both GetMetadata & SyncFlags methods
-				flagStore, err := store.NewStore(logger.NewLogger(nil, false), tt.sources)
+				flagStore, err := store.NewStore(logger.NewLogger(nil, false), store.StoreConfig{Sources: tt.sources})
 				require.NoError(t, err)
 
 				handler := syncHandler{
