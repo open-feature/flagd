@@ -55,6 +55,7 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 							Indexes: []memdb.Indexer{
 								&memdb.StringFieldIndex{Field: model.FlagSetId, Lowercase: false},
 								&memdb.StringFieldIndex{Field: model.Key, Lowercase: false},
+								&memdb.StringFieldIndex{Field: model.Source, Lowercase: false},
 							},
 						},
 					},
@@ -75,6 +76,17 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 						Name:    flagSetIdIndex,
 						Unique:  false,
 						Indexer: &memdb.StringFieldIndex{Field: model.FlagSetId, Lowercase: false},
+					},
+					// for looking up by flagSetId and key
+					flagSetIdKeyIndex: {
+						Name:   flagSetIdKeyIndex,
+						Unique: false,
+						Indexer: &memdb.CompoundIndex{
+							Indexes: []memdb.Indexer{
+								&memdb.StringFieldIndex{Field: model.FlagSetId, Lowercase: false},
+								&memdb.StringFieldIndex{Field: model.Key, Lowercase: false},
+							},
+						},
 					},
 					keyIndex: {
 						Name:    keyIndex,
@@ -154,17 +166,17 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 		selector := selector.WithIndex("key", key)
 		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
-		raw, err := txn.First(flagsTable, indexId, constraints...)
-		flag, ok := raw.(model.Flag)
-		if err != nil {
+		raw, err := txn.Last(flagsTable, indexId, constraints...)
+		if err != nil || raw == nil {
 			return model.Flag{}, queryMeta, fmt.Errorf("flag %s not found: %w", key, err)
 		}
+		flag, ok := raw.(model.Flag)
 		if !ok {
 			return model.Flag{}, queryMeta, fmt.Errorf("flag %s is not a valid flag", key)
 		}
 		return flag, queryMeta, nil
-
 	}
+
 	// otherwise, get all flags with the given key, and keep the last one with the highest priority
 	s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
 	it, err := txn.Get(flagsTable, keyIndex, key)
@@ -278,28 +290,9 @@ func (s *Store) Update(
 	}
 
 	for _, newFlag := range newFlags {
-
-		raw, err := txn.First(flagsTable, keySourceCompoundIndex, newFlag.Key, source)
-		if err != nil {
-			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", newFlag.Key, source, err))
-			continue
-		}
-		oldFlag, ok := raw.(model.Flag)
-		// If we already have a flag with the same key and source, we need to check if it has the same flagSetId
-		if ok {
-			if oldFlag.FlagSetId != newFlag.FlagSetId {
-				// If the flagSetId is different, we need to delete the entry, since flagSetId+key represents the primary index, and it's now been changed.
-				// This is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
-				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, newFlag.Key)
-				if err != nil {
-					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", newFlag.Key, oldFlag.FlagSetId, err))
-					continue
-				}
-			}
-		}
 		// Store the new version of the flag
 		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
-		err = txn.Insert(flagsTable, newFlag)
+		err := txn.Insert(flagsTable, newFlag)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", newFlag.Key, err))
 			continue

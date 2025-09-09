@@ -71,7 +71,7 @@ func TestSelector_ToQuery(t *testing.T) {
 		{
 			name:       "flagSetId and key primary index special case",
 			selector:   Selector{indexMap: map[string]string{"flagSetId": "fsid", "key": "myKey"}},
-			wantIndex:  "id",
+			wantIndex:  "flagSetIdKey",
 			wantConstr: []interface{}{"fsid", "myKey"},
 		},
 		{

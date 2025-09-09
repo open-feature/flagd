@@ -130,6 +130,59 @@ func TestUpdateFlags(t *testing.T) {
 				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
 			},
 		},
+		{
+			name: "flag set same for different sets",
+			setup: func(t *testing.T) IStore {
+				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				if err != nil {
+					t.Fatalf("NewStore failed: %v", err)
+				}
+				s.Update(source1, []model.Flag{}, model.Metadata{})
+				return s
+
+			},
+			setMetadata: model.Metadata{},
+			newFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on"},
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet1"}}, // overrides set level flagSetId
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet2"}}, // overrides set level flagSetId
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet3"}}, // overrides set level flagSetId
+			},
+			source: source1,
+			wantFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet3", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet3"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet2", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet2"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet1", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet1"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: nilFlagSetId, Priority: 0, Metadata: model.Metadata{}},
+			},
+		},
+		{
+			name: "flag set same for different sets - toplevelflagset",
+			setup: func(t *testing.T) IStore {
+				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				if err != nil {
+					t.Fatalf("NewStore failed: %v", err)
+				}
+				s.Update(source1, []model.Flag{}, model.Metadata{})
+				return s
+			},
+			setMetadata: model.Metadata{
+				"flagSetId": "topLevelSet", // top level set metadata, including flagSetId
+			},
+			newFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on"},
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet1"}}, // overrides set level flagSetId
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet2"}}, // overrides set level flagSetId
+				{Key: "paka", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": "flagLevelSet3"}}, // overrides set level flagSetId
+			},
+			source: source1,
+			wantFlags: []model.Flag{
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet3", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet3"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet2", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet2"}},
+				{Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet1", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet1"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -185,6 +238,13 @@ func TestGet(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:     "flagSetId selector - MultiSource",
+			key:      "dupeMultiSource",
+			selector: &flagSetIdCSelector,
+			wantFlag: model.Flag{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			wantErr:  false,
+		},
+		{
 			name:     "source selector",
 			key:      "dupe",
 			selector: &sourceASelector,
@@ -218,10 +278,12 @@ func TestGet(t *testing.T) {
 			}
 			sourceBFlags := []model.Flag{
 				{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+				{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 			sourceCFlags := []model.Flag{
 				{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
 			store, err := NewStore(logger.NewLogger(nil, false), sources)
@@ -229,9 +291,9 @@ func TestGet(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 
-			store.Update(sourceA, sourceAFlags, nil)
-			store.Update(sourceB, sourceBFlags, nil)
 			store.Update(sourceC, sourceCFlags, nil)
+			store.Update(sourceB, sourceBFlags, nil)
+			store.Update(sourceA, sourceAFlags, nil)
 			gotFlag, _, err := store.Get(context.Background(), tt.key, tt.selector)
 
 			if !tt.wantErr {
@@ -248,12 +310,12 @@ func TestGetAllNoWatcher(t *testing.T) {
 	sourceA := "sourceA"
 	sourceB := "sourceB"
 	sourceC := "sourceC"
-	flagSetIdB := "flagSetIdA"
 	flagSetIdC := "flagSetIdC"
 	sources := []string{sourceA, sourceB, sourceC}
 
 	sourceASelector := NewSelector("source=" + sourceA)
 	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
+	flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC)
 
 	t.Parallel()
 	tests := []struct {
@@ -266,11 +328,13 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: nil,
 			wantFlags: []model.Flag{
 				// "dupe" should be overwritten by higher priority flag
-				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
-				{Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: nilFlagSetId, Priority: 2},
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
 				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: nilFlagSetId, Priority: 1},
+				{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 			},
 		},
 		{
@@ -278,8 +342,11 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: &sourceASelector,
 			wantFlags: []model.Flag{
 				// we should get the "dupe" from sourceA
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
 				{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
 				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
 			},
 		},
 		{
@@ -287,7 +354,16 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: &flagSetIdCSelector,
 			wantFlags: []model.Flag{
 				// we should get the "dupe" from flagSetIdC
-				{Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
+				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			},
+		},
+		{
+			name:     "flagSetId and source selector",
+			selector: &flagSetIdAndCSelector,
+			wantFlags: []model.Flag{
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
 				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			},
 		},
@@ -301,13 +377,19 @@ func TestGetAllNoWatcher(t *testing.T) {
 			sourceAFlags := []model.Flag{
 				{Key: "flagA", DefaultVariant: "off"},
 				{Key: "dupe", DefaultVariant: "on"},
+				{Key: "dupe", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeSingleSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeSingleSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 			sourceBFlags := []model.Flag{
-				{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+				{Key: "flagB", DefaultVariant: "off"},
 			}
 			sourceCFlags := []model.Flag{
-				{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "flagC", DefaultVariant: "off"},
 				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
 			store, err := NewStore(logger.NewLogger(nil, false), sources)
@@ -315,9 +397,9 @@ func TestGetAllNoWatcher(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 
-			store.Update(sourceA, sourceAFlags, nil)
-			store.Update(sourceB, sourceBFlags, nil)
 			store.Update(sourceC, sourceCFlags, nil)
+			store.Update(sourceB, sourceBFlags, nil)
+			store.Update(sourceA, sourceAFlags, nil)
 			gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
 
 			require.Equal(t, len(tt.wantFlags), len(gotFlags))
