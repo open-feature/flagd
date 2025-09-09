@@ -91,6 +91,9 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	// Create a new JSON Schema compiler
 	compiler := jsonschema.NewCompiler()
 
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", schema.FlagdSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
 	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", schema.FlagSchema); err != nil {
 		logger.Warn("Failed to add schema resource", zap.Error(err))
 	}
@@ -98,7 +101,7 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 		logger.Warn("Failed to add schema resource", zap.Error(err))
 	}
 
-	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flags.json")
+	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
 	if err != nil {
 		logger.Fatal("Failed to compile schema", zap.Error(err))
 	}
@@ -453,10 +456,12 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 			"flag definition does not conform to the schema; validation errors: %s", err),
 		)
 	}
+
 	type JsonRawDef struct {
-		Flags    map[string]model.Flag  `json:"flags"`
+		Flags    json.RawMessage        `json:"flags"`
 		Metadata map[string]interface{} `json:"metadata"`
 	}
+
 	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
@@ -469,9 +474,30 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
 	definition.Metadata = rawDef.Metadata
-	for s, flag := range rawDef.Flags {
-		flag.Key = s
-		definition.Flags = append(definition.Flags, flag)
+	definition.Flags = []model.Flag{}
+
+	// Check if flags is an array or object
+	trimmed := strings.TrimSpace(string(rawDef.Flags))
+	if strings.HasPrefix(trimmed, "[") {
+		// It's an array
+		var flags []model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flags); err != nil {
+			return fmt.Errorf("unmarshalling flags array: %w", err)
+		}
+		definition.Flags = flags
+	} else {
+		// It's an object
+		var flagsMap map[string]model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flagsMap); err != nil {
+			return fmt.Errorf("unmarshalling flags map: %w", err)
+		}
+		// convert map to slice
+		var flags []model.Flag
+		for k, v := range flagsMap {
+			v.Key = k
+			flags = append(flags, v)
+		}
+		definition.Flags = flags
 	}
 	return validateDefaultVariants(definition)
 }
