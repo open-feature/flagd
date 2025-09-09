@@ -28,16 +28,22 @@ type IStore interface {
 var _ IStore = (*Store)(nil)
 
 type Store struct {
-	db      *memdb.MemDB
-	logger  *logger.Logger
-	sources []string
+	db                    *memdb.MemDB
+	logger                *logger.Logger
+	sources               []string
+	expressionFallbackKey string
 	// deprecated: has no effect and will be removed soon.
 	FlagSources []string
 }
 
+type StoreConfig struct {
+	Sources             []string
+	SelectorFallbackKey string
+}
+
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
-func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
+func NewStore(logger *logger.Logger, storeConfig StoreConfig) (*Store, error) {
 
 	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
 	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
@@ -124,18 +130,19 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 	}
 
 	// clone the sources to avoid modifying the original slice
-	s := slices.Clone(sources)
+	s := slices.Clone(storeConfig.Sources)
 
 	return &Store{
-		sources: s,
-		db:      db,
-		logger:  logger,
+		sources:               s,
+		db:                    db,
+		logger:                logger,
+		expressionFallbackKey: storeConfig.SelectorFallbackKey,
 	}, nil
 }
 
 // Deprecated: use NewStore instead - will be removed very soon.
 func NewFlags() *Store {
-	state, err := NewStore(logger.NewLogger(nil, false), noValidatedSources)
+	state, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: noValidatedSources})
 
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
@@ -229,7 +236,7 @@ func (s *Store) Update(
 	defer txn.Abort()
 
 	// get all flags for the source we are updating
-	selector := NewSelector(sourceIndex + "=" + source)
+	selector := NewSelectorWithFallback(sourceIndex+"="+source, s.expressionFallbackKey)
 	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
 
 	for key := range oldFlags {

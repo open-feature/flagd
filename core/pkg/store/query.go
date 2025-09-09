@@ -36,21 +36,25 @@ type Selector struct {
 // For example, to select flags from source "./mySource" and flagSetId "1234", use the expression:
 // "source=./mySource,flagSetId=1234"
 func NewSelector(selectorExpression string) Selector {
+	return NewSelectorWithFallback(selectorExpression, "")
+}
+func NewSelectorWithFallback(selectorExpression string, fallbackExpressionKey string) Selector {
 	return Selector{
-		indexMap: expressionToMap(selectorExpression),
+		indexMap: expressionToMap(selectorExpression, fallbackExpressionKey),
 	}
 }
-
-func expressionToMap(sExp string) map[string]string {
+func expressionToMap(sExp string, fallbackExpressionKey string) map[string]string {
 	selectorMap := make(map[string]string)
 	if sExp == "" {
 		return selectorMap
 	}
 
 	if strings.Index(sExp, "=") == -1 {
+		if fallbackExpressionKey == "" {
+			fallbackExpressionKey = sourceIndex
+		}
 		// if no '=' is found, treat the whole string as as source (backwards compatibility)
-		// we may may support interpreting this as a flagSetId in the future as an option
-		selectorMap[sourceIndex] = sExp
+		selectorMap[fallbackExpressionKey] = sExp
 		return selectorMap
 	}
 

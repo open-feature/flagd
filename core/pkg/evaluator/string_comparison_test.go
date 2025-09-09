@@ -152,7 +152,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
+			s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -320,7 +320,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
+			s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}

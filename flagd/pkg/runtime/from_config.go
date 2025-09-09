@@ -44,6 +44,8 @@ type Config struct {
 	SyncProviders []sync.SourceConfig
 	CORS          []string
 
+	SelectorFallbackKey string
+
 	ContextValues              map[string]any
 	HeaderToContextKeyMappings map[string]string
 }
@@ -86,7 +88,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// build flag store, collect flag sources & fill sources details
-	store, err := store.NewStore(logger, sources)
+	store, err := store.NewStore(logger, store.StoreConfig{Sources: sources, SelectorFallbackKey: config.SelectorFallbackKey})
 	if err != nil {
 		return nil, fmt.Errorf("error creating flag store: %w", err)
 	}

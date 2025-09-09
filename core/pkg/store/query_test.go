@@ -156,9 +156,10 @@ func TestSelector_ToMetadata(t *testing.T) {
 
 func TestNewSelector(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   string
-		wantMap map[string]string
+		name                  string
+		input                 string
+		fallbackExpressionKey string
+		wantMap               map[string]string
 	}{
 		{
 			name:    "source and flagSetId",
@@ -176,6 +177,12 @@ func TestNewSelector(t *testing.T) {
 			wantMap: map[string]string{"source": "mysource"},
 		},
 		{
+			name:                  "no equals, treat as flagSetId",
+			input:                 "flagSetId",
+			fallbackExpressionKey: "flagSetId",
+			wantMap:               map[string]string{"flagSetId": "flagSetId"},
+		},
+		{
 			name:    "empty string",
 			input:   "",
 			wantMap: map[string]string{},
@@ -184,7 +191,12 @@ func TestNewSelector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSelector(tt.input)
+			var s Selector
+			if tt.fallbackExpressionKey != "" {
+				s = NewSelectorWithFallback(tt.input, tt.fallbackExpressionKey)
+			} else {
+				s = NewSelector(tt.input)
+			}
 			if !reflect.DeepEqual(s.indexMap, tt.wantMap) {
 				t.Errorf("NewSelector(%q) indexMap = %v, want %v", tt.input, s.indexMap, tt.wantMap)
 			}
