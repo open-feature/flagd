@@ -236,7 +236,7 @@ func (s *Store) Update(
 	defer txn.Abort()
 
 	// get all flags for the source we are updating
-	selector := NewSelectorWithFallback(sourceIndex+"="+source, s.expressionFallbackKey)
+	selector := NewSelector(sourceIndex + "=" + source)
 	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
 
 	for key := range oldFlags {
