@@ -377,7 +377,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: colorVariants,
+					Variants:       colorVariants,
 					Targeting: []byte(
 						`{
 								"fractional": [
@@ -401,7 +401,7 @@ func TestFractionalEvaluation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
+			s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -530,7 +530,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
+			s, err := store.NewStore(log, store.StoreConfig{Sources: sources})
 			if err != nil {
 				b.Fatalf("NewStore failed: %v", err)
 			}
