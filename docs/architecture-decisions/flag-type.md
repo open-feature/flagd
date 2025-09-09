@@ -38,7 +38,7 @@ This proposal is to extend the flag definition with an optional `flagType`proper
 
 By introducing an explicit `flagType`field, it establishes a single source of truth for the flag's type, independent of its variants. This allows for early and consistent type validation during flag definition parsing, preventing type-related errors at runtime.
 
-The new `flagdType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will fall back to infer the flag type from its variants. As the flag schema enforces that all variants are of the same type, the type of the first variant will be used. When the `flagdType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
+The new `flagType`field will be optional to maintain backward compatibility with existing flag configurations. If the field is omitted, `flagd` will fall back to infer the flag type from its variants. As the flag schema enforces that all variants are of the same type, the type of the first variant will be used. When the `flagType`field is present, `flagd` will enforce that all variants of the flag conform to the specified type.
 
 This change will make the behavior of `flagd` more predictable and reliable.
 
