@@ -92,7 +92,7 @@ func init() {
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
-	flags.String(selectorFallbackKeyFlagName, "", "Fallback key to be used if the old selector is used")
+flags.String(selectorFallbackKeyFlagName, "", "Fallback key for a selector expression that does not contain an '='. Defaults to 'source'.")
 
 	bindFlags(flags)
 }
