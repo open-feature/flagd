@@ -186,7 +186,7 @@ func calculateBucketAllocations(variants []fractionalEvaluationVariant, totalWei
             allocations[i] = bucketAllocation{variant: variant.variant, buckets: 0}
         } else {
             // Calculate proportional allocation
-            proportional := int(float64(variant.weight) / float64(totalWeight) * bucketCount)
+            proportional := int((int64(variant.weight) * bucketCount) / int64(totalWeight))
             // Ensure minimum allocation of 1 bucket for any positive weight
             buckets := max(1, proportional)
             allocations[i] = bucketAllocation{variant: variant.variant, buckets: buckets}
