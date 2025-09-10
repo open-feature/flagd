@@ -203,6 +203,9 @@ func calculateBucketAllocations(variants []fractionalEvaluationVariant, totalWei
             indices[i] = i
         }
         sort.Slice(indices, func(i, j int) bool {
+            if allocations[indices[i]].buckets == allocations[indices[j]].buckets {
+                return allocations[indices[i]].variant < allocations[indices[j]].variant // Tie-break by variant name
+            }
             return allocations[indices[i]].buckets > allocations[indices[j]].buckets
         })
         
