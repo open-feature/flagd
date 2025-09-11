@@ -24,3 +24,14 @@ type Evaluators struct {
 }
 
 type Metadata = map[string]interface{}
+
+func (f Flag) MarshalJSON() ([]byte, error) {
+	type flagAlias Flag
+	return json.Marshal(struct {
+		*flagAlias
+		Key interface{} `json:"key,omitempty"`
+	}{
+		flagAlias: (*flagAlias)(&f),
+		Key:       nil,
+	})
+}

@@ -16,7 +16,7 @@ var noValidatedSources = []string{}
 type SelectorContextKey struct{}
 
 type FlagQueryResult struct {
-	Flags map[string]model.Flag
+	Flags []model.Flag
 }
 
 type IStore interface {
@@ -317,13 +317,8 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 
 			flags := s.collect(it)
 
-			flagMap := make(map[string]model.Flag)
-			for _, flag := range flags {
-				flagMap[flag.Key] = flag
-			}
-
 			watcher <- FlagQueryResult{
-				Flags: flagMap,
+				Flags: flags,
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
