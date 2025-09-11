@@ -17,6 +17,7 @@ const keyIndex = "key"
 const sourceIndex = "source"
 const priorityIndex = "priority"
 const flagSetIdIndex = "flagSetId"
+const flagSetIdKeyIndex = "flagSetIdKey"
 
 // compound indices; maintain sub-indexes alphabetically; order matters; these must match what's generated in the SelectorMapToQuery func.
 const flagSetIdSourceCompoundIndex = flagSetIdIndex + "+" + sourceIndex
@@ -87,7 +88,7 @@ func (s Selector) ToQuery() (indexId string, constraints []interface{}) {
 
 	if len(s.indexMap) == 2 && s.indexMap[flagSetIdIndex] != "" && s.indexMap[keyIndex] != "" {
 		// special case for flagSetId and key (this is the "id" index)
-		return idIndex, []interface{}{s.indexMap[flagSetIdIndex], s.indexMap[keyIndex]}
+		return flagSetIdKeyIndex, []interface{}{s.indexMap[flagSetIdIndex], s.indexMap[keyIndex]}
 	}
 
 	qs := []string{}
