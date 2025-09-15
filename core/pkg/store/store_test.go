@@ -25,8 +25,6 @@ func TestUpdateFlags(t *testing.T) {
 		source      string
 		wantFlags   map[string]model.Flag
 		setMetadata model.Metadata
-		wantNotifs  map[string]interface{}
-		wantResync  bool
 	}{
 		{
 			name: "both nil",
@@ -37,10 +35,9 @@ func TestUpdateFlags(t *testing.T) {
 				}
 				return s
 			},
-			source:     source1,
-			newFlags:   nil,
-			wantFlags:  map[string]model.Flag{},
-			wantNotifs: map[string]interface{}{},
+			source:    source1,
+			newFlags:  nil,
+			wantFlags: map[string]model.Flag{},
 		},
 		{
 			name: "both empty flags",
@@ -51,10 +48,9 @@ func TestUpdateFlags(t *testing.T) {
 				}
 				return s
 			},
-			source:     source1,
-			newFlags:   map[string]model.Flag{},
-			wantFlags:  map[string]model.Flag{},
-			wantNotifs: map[string]interface{}{},
+			source:    source1,
+			newFlags:  map[string]model.Flag{},
+			wantFlags: map[string]model.Flag{},
 		},
 		{
 			name: "empty new",
@@ -65,10 +61,9 @@ func TestUpdateFlags(t *testing.T) {
 				}
 				return s
 			},
-			source:     source1,
-			newFlags:   nil,
-			wantFlags:  map[string]model.Flag{},
-			wantNotifs: map[string]interface{}{},
+			source:    source1,
+			newFlags:  nil,
+			wantFlags: map[string]model.Flag{},
 		},
 		{
 			name: "update from source 1 (old flag removed)",
@@ -88,10 +83,6 @@ func TestUpdateFlags(t *testing.T) {
 			source: source1,
 			wantFlags: map[string]model.Flag{
 				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
-			},
-			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write"},
-				"waka": map[string]interface{}{"type": "delete"},
 			},
 		},
 		{
@@ -114,7 +105,6 @@ func TestUpdateFlags(t *testing.T) {
 				"waka": {Key: "waka", DefaultVariant: "off", Source: source1, FlagSetId: nilFlagSetId, Priority: 0},
 				"paka": {Key: "paka", DefaultVariant: "on", Source: source2, FlagSetId: nilFlagSetId, Priority: 1},
 			},
-			wantNotifs: map[string]interface{}{"paka": map[string]interface{}{"type": "write"}},
 		},
 		{
 			name: "flag set inheritance",
@@ -138,10 +128,6 @@ func TestUpdateFlags(t *testing.T) {
 				"waka": {Key: "waka", DefaultVariant: "on", Source: source1, FlagSetId: "topLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "topLevelSet"}},
 				"paka": {Key: "paka", DefaultVariant: "on", Source: source1, FlagSetId: "flagLevelSet", Priority: 0, Metadata: model.Metadata{"flagSetId": "flagLevelSet"}},
 			},
-			wantNotifs: map[string]interface{}{
-				"paka": map[string]interface{}{"type": "write"},
-				"waka": map[string]interface{}{"type": "write"},
-			},
 		},
 	}
 
@@ -150,12 +136,10 @@ func TestUpdateFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			store := tt.setup(t)
-			gotNotifs, resyncRequired := store.Update(tt.source, tt.newFlags, tt.setMetadata)
+			store.Update(tt.source, tt.newFlags, tt.setMetadata)
 			gotFlags, _, _ := store.GetAll(context.Background(), nil)
 
 			require.Equal(t, tt.wantFlags, gotFlags)
-			require.Equal(t, tt.wantNotifs, gotNotifs)
-			require.Equal(t, tt.wantResync, resyncRequired)
 		})
 	}
 }
