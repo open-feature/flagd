@@ -38,7 +38,7 @@ func TestSimpleSync(t *testing.T) {
 		Client:      mockClient,
 		Cron:        mockCron,
 		LastBodySHA: "",
-		Logger:      logger.NewLogger(nil, false),
+		Logger:      logger.New("slog", false, "json"),
 	}
 
 	ctx := context.Background()
@@ -81,7 +81,7 @@ func TestExtensionWithQSSync(t *testing.T) {
 		Client:      mockClient,
 		Cron:        mockCron,
 		LastBodySHA: "",
-		Logger:      logger.NewLogger(nil, false),
+		Logger:      logger.New("slog", false, "json"),
 	}
 
 	ctx := context.Background()
@@ -334,7 +334,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				BearerToken: tt.bearerToken,
 				AuthHeader:  tt.authHeader,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil, false),
+				Logger:      logger.New("slog", false, "json"),
 				eTag:        tt.eTagHeader,
 			}
 
@@ -357,7 +357,7 @@ func TestSync_Init(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpSync := Sync{
 				BearerToken: tt.bearerToken,
-				Logger:      logger.NewLogger(nil, false),
+				Logger:      logger.New("slog", false, "json"),
 			}
 
 			if err := httpSync.Init(context.Background()); err != nil {
@@ -432,7 +432,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 				Client:      mockClient,
 				BearerToken: tt.bearerToken,
 				LastBodySHA: tt.lastBodySHA,
-				Logger:      logger.NewLogger(nil, false),
+				Logger:      logger.New("slog", false, "json"),
 			}
 
 			err := httpSync.ReSync(context.Background(), d)

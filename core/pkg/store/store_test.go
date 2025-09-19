@@ -12,10 +12,9 @@ import (
 )
 
 func TestUpdateFlags(t *testing.T) {
-
 	const source1 = "source1"
 	const source2 = "source2"
-	var sources = []string{source1, source2}
+	sources := []string{source1, source2}
 
 	t.Parallel()
 	tests := []struct {
@@ -29,7 +28,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "both nil",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -42,7 +41,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "both empty flags",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -55,7 +54,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "empty new",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -68,7 +67,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "update from source 1 (old flag removed)",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -88,7 +87,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "update from source 1 (new flag added)",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -109,7 +108,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "flag set inheritance",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.New("slog", false, "json"), sources)
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -145,13 +144,12 @@ func TestUpdateFlags(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-
 	sourceA := "sourceA"
 	sourceB := "sourceB"
 	sourceC := "sourceC"
 	flagSetIdB := "flagSetIdA"
 	flagSetIdC := "flagSetIdC"
-	var sources = []string{sourceA, sourceB, sourceC}
+	sources := []string{sourceA, sourceB, sourceC}
 
 	sourceASelector := NewSelector("source=" + sourceA)
 	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
@@ -218,7 +216,7 @@ func TestGet(t *testing.T) {
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.New("slog", false, "json"), sources)
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -238,7 +236,6 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetAllNoWatcher(t *testing.T) {
-
 	sourceA := "sourceA"
 	sourceB := "sourceB"
 	sourceC := "sourceC"
@@ -303,7 +300,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.New("slog", false, "json"), sources)
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -320,12 +317,11 @@ func TestGetAllNoWatcher(t *testing.T) {
 }
 
 func TestWatch(t *testing.T) {
-
 	sourceA := "sourceA"
 	sourceB := "sourceB"
 	sourceC := "sourceC"
 	myFlagSetId := "myFlagSet"
-	var sources = []string{sourceA, sourceB, sourceC}
+	sources := []string{sourceA, sourceB, sourceC}
 	pauseTime := 100 * time.Millisecond // time for updates to settle
 	timeout := 1000 * time.Millisecond  // time to make sure we get enough updates, and no extras
 
@@ -375,7 +371,7 @@ func TestWatch(t *testing.T) {
 				"flagC": {Key: "flagC", DefaultVariant: "off"},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.New("slog", false, "json"), sources)
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -392,7 +388,6 @@ func TestWatch(t *testing.T) {
 
 			// perform updates
 			go func() {
-
 				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
@@ -443,17 +438,16 @@ func TestWatch(t *testing.T) {
 }
 
 func TestQueryMetadata(t *testing.T) {
-
 	sourceA := "sourceA"
 	otherSource := "otherSource"
 	nonExistingFlagSetId := "nonExistingFlagSetId"
-	var sources = []string{sourceA}
+	sources := []string{sourceA}
 	sourceAFlags := map[string]model.Flag{
 		"flagA": {Key: "flagA", DefaultVariant: "off"},
 		"flagB": {Key: "flagB", DefaultVariant: "on"},
 	}
 
-	store, err := NewStore(logger.NewLogger(nil, false), sources)
+	store, err := NewStore(logger.New("slog", false, "json"), sources)
 	if err != nil {
 		t.Fatalf("NewStore failed: %v", err)
 	}

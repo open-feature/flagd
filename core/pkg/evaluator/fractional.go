@@ -12,7 +12,7 @@ import (
 const FractionEvaluationName = "fractional"
 
 type Fractional struct {
-	Logger *logger.Logger
+	Logger logger.Logger
 }
 
 type fractionalEvaluationDistribution struct {
@@ -33,7 +33,7 @@ func (v fractionalEvaluationVariant) getPercentage(totalWeight int) float64 {
 	return 100 * float64(v.weight) / float64(totalWeight)
 }
 
-func NewFractional(logger *logger.Logger) *Fractional {
+func NewFractional(logger logger.Logger) *Fractional {
 	return &Fractional{Logger: logger}
 }
 

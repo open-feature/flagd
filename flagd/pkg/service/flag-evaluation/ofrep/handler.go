@@ -26,14 +26,14 @@ const (
 )
 
 type handler struct {
-	Logger                     *logger.Logger
+	Logger                     logger.Logger
 	evaluator                  evaluator.IEvaluator
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	tracer                     trace.Tracer
 }
 
-func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any, headerToContextKeyMappings map[string]string) http.Handler {
+func NewOfrepHandler(logger logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any, headerToContextKeyMappings map[string]string) http.Handler {
 	h := handler{
 		Logger:                     logger,
 		evaluator:                  evaluator,
@@ -139,7 +139,7 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 // flagdContext returns combined context values from headers, static context (from cli) and request context.
 // highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func flagdContext(
-	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,
+	log logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,
 ) map[string]any {
 	context := make(map[string]any)
 	if res, ok := request.Context.(map[string]any); ok {

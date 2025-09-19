@@ -29,7 +29,7 @@ var _ IStore = (*Store)(nil)
 
 type Store struct {
 	db      *memdb.MemDB
-	logger  *logger.Logger
+	logger  logger.Logger
 	sources []string
 	// deprecated: has no effect and will be removed soon.
 	FlagSources []string
@@ -37,8 +37,7 @@ type Store struct {
 
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
-func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
-
+func NewStore(logger logger.Logger, sources []string) (*Store, error) {
 	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
 	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
 	schema := &memdb.DBSchema{
@@ -135,8 +134,7 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 
 // Deprecated: use NewStore instead - will be removed very soon.
 func NewFlags() *Store {
-	state, err := NewStore(logger.NewLogger(nil, false), noValidatedSources)
-
+	state, err := NewStore(logger.New("slog", false, "json"), noValidatedSources)
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
 	}
@@ -196,7 +194,6 @@ func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]mode
 	flags := make(map[string]model.Flag)
 	queryMeta := selector.ToMetadata()
 	it, err := s.selectOrAll(selector)
-
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("flag query error: %v", err))
 		return flags, queryMeta, err

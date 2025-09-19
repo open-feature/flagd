@@ -56,7 +56,7 @@ func (b bufSwitchHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 }
 
 type ConnectService struct {
-	logger                *logger.Logger
+	logger                logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
@@ -72,7 +72,7 @@ type ConnectService struct {
 
 // NewConnectService creates a ConnectService with provided parameters
 func NewConnectService(
-	logger *logger.Logger, evaluator evaluator.IEvaluator, store store.IStore, mRecorder telemetry.IMetricsRecorder,
+	logger logger.Logger, evaluator evaluator.IEvaluator, store store.IStore, mRecorder telemetry.IMetricsRecorder,
 ) *ConnectService {
 	cs := &ConnectService{
 		logger:  logger,
@@ -153,7 +153,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	// register handler for old flag evaluation schema
 	// can be removed as a part of https://github.com/open-feature/flagd/issues/1088
 	fes := NewOldFlagEvaluationService(
-		s.logger.WithFields(zap.String("component", "flagservice")),
+		s.logger.With(zap.String("component", "flagservice")),
 		s.eval,
 		s.eventingConfiguration,
 		s.metrics,
@@ -170,7 +170,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	// register handler for new flag evaluation schema
 
-	newFes := NewFlagEvaluationService(s.logger.WithFields(zap.String("component", "flagd.evaluation.v1")),
+	newFes := NewFlagEvaluationService(s.logger.With(zap.String("component", "flagd.evaluation.v1")),
 		s.eval,
 		s.eventingConfiguration,
 		s.metrics,

@@ -53,10 +53,10 @@ func (svo SemVerOperator) compare(v1, v2 string) (bool, error) {
 }
 
 type SemVerComparison struct {
-	Logger *logger.Logger
+	Logger logger.Logger
 }
 
-func NewSemVerComparison(log *logger.Logger) *SemVerComparison {
+func NewSemVerComparison(log logger.Logger) *SemVerComparison {
 	return &SemVerComparison{Logger: log}
 }
 

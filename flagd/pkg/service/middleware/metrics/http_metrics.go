@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	MetricRecorder     telemetry.IMetricsRecorder
-	Logger             *logger.Logger
+	Logger             logger.Logger
 	Service            string
 	GroupedStatus      bool
 	DisableMeasureSize bool

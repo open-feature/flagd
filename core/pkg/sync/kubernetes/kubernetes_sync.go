@@ -35,13 +35,13 @@ type Sync struct {
 	ready         bool
 	namespace     string
 	crdName       string
-	logger        *logger.Logger
+	logger        logger.Logger
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
 }
 
 func NewK8sSync(
-	logger *logger.Logger,
+	logger logger.Logger,
 	uri string,
 	dynamicClient dynamic.Interface,
 ) *Sync {

@@ -30,7 +30,7 @@ type resolverSignature[T constraints] func(context context.Context, reqID, flagK
 // OldFlagEvaluationService implements the methods required for the soon-to-be deprecated flag evaluation schema
 // this can be removed as a part of https://github.com/open-feature/flagd/issues/1088
 type OldFlagEvaluationService struct {
-	logger                *logger.Logger
+	logger                logger.Logger
 	eval                  evaluator.IEvaluator
 	metrics               telemetry.IMetricsRecorder
 	eventingConfiguration IEvents
@@ -40,7 +40,7 @@ type OldFlagEvaluationService struct {
 
 // NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
 func NewOldFlagEvaluationService(
-	log *logger.Logger,
+	log logger.Logger,
 	eval evaluator.IEvaluator,
 	eventingCfg IEvents,
 	metricsRecorder telemetry.IMetricsRecorder,
@@ -360,7 +360,7 @@ func mergeContexts(reqCtx, configFlagsCtx map[string]any, headers http.Header, h
 }
 
 // resolve is a generic flag resolver
-func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver resolverSignature[T], header http.Header, flagKey string,
+func resolve[T constraints](ctx context.Context, logger logger.Logger, resolver resolverSignature[T], header http.Header, flagKey string,
 	evaluationContext *structpb.Struct, resp response[T], metrics telemetry.IMetricsRecorder,
 	configContextValues map[string]any, configHeaderToContextKeyMappings map[string]string,
 ) error {

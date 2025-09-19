@@ -22,7 +22,7 @@ type Sync struct {
 	Object      string
 	BlobURLMux  *blob.URLMux
 	Cron        Cron
-	Logger      *logger.Logger
+	Logger      logger.Logger
 	Interval    uint32
 	ready       bool
 	lastUpdated time.Time

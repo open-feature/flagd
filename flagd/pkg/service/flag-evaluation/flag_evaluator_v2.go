@@ -23,7 +23,7 @@ import (
 )
 
 type FlagEvaluationService struct {
-	logger                     *logger.Logger
+	logger                     logger.Logger
 	eval                       evaluator.IEvaluator
 	metrics                    telemetry.IMetricsRecorder
 	eventingConfiguration      IEvents
@@ -34,7 +34,7 @@ type FlagEvaluationService struct {
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
-func NewFlagEvaluationService(log *logger.Logger,
+func NewFlagEvaluationService(log logger.Logger,
 	eval evaluator.IEvaluator,
 	eventingCfg IEvents,
 	metricsRecorder telemetry.IMetricsRecorder,

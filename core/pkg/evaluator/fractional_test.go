@@ -12,7 +12,7 @@ import (
 
 func TestFractionalEvaluation(t *testing.T) {
 	const source = "testSource"
-	var sources = []string{source}
+	sources := []string{source}
 	ctx := context.Background()
 
 	commonFlags := map[string]model.Flag{
@@ -377,7 +377,7 @@ func TestFractionalEvaluation(t *testing.T) {
 				"headerColor": {
 					State:          "ENABLED",
 					DefaultVariant: "red",
-					Variants: colorVariants,
+					Variants:       colorVariants,
 					Targeting: []byte(
 						`{
 								"fractional": [
@@ -400,7 +400,7 @@ func TestFractionalEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
+			log := logger.New("slog", false, "json")
 			s, err := store.NewStore(log, sources)
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
@@ -435,7 +435,7 @@ func TestFractionalEvaluation(t *testing.T) {
 
 func BenchmarkFractionalEvaluation(b *testing.B) {
 	const source = "testSource"
-	var sources = []string{source}
+	sources := []string{source}
 	ctx := context.Background()
 
 	flags := map[string]model.Flag{
@@ -529,7 +529,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	reqID := "test"
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
-			log := logger.NewLogger(nil, false)
+			log := logger.New("slog", false, "json")
 			s, err := store.NewStore(log, sources)
 			if err != nil {
 				b.Fatalf("NewStore failed: %v", err)

@@ -20,9 +20,9 @@ import (
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	//mux                 *Multiplexer
+	// mux                 *Multiplexer
 	store               store.IStore
-	log                 *logger.Logger
+	log                 logger.Logger
 	contextValues       map[string]any
 	deadline            time.Duration
 	disableSyncMetadata bool
@@ -92,7 +92,6 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	}
 
 	flagsString, err := json.Marshal(flags)
-
 	if err != nil {
 		return nil, err
 	}

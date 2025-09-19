@@ -49,7 +49,7 @@ func TestBlobSync(t *testing.T) {
 				Bucket: tt.scheme + "://" + tt.bucket,
 				Object: tt.object,
 				Cron:   mockCron,
-				Logger: logger.NewLogger(nil, false),
+				Logger: logger.New("slog", false, "json"),
 			}
 			blobMock := NewMockBlob(tt.scheme, func() *Sync {
 				return blobSync
@@ -126,7 +126,7 @@ func TestReSync(t *testing.T) {
 		Bucket: scheme + "://" + bucket,
 		Object: object,
 		Cron:   mockCron,
-		Logger: logger.NewLogger(nil, false),
+		Logger: logger.New("slog", false, "json"),
 	}
 	blobMock := NewMockBlob(scheme, func() *Sync {
 		return blobSync

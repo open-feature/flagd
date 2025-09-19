@@ -29,7 +29,7 @@ func TestSimpleReSync(t *testing.T) {
 	}
 	handler := Sync{
 		URI:    source,
-		Logger: logger.NewLogger(nil, false),
+		Logger: logger.New("slog", false, "json"),
 	}
 
 	createFile(t, fetchDirName)
@@ -132,7 +132,7 @@ func TestSimpleSync(t *testing.T) {
 
 			syncHandler := Sync{
 				URI:    fmt.Sprintf("%s/%s", tt.fetchDirName, fetchFileName),
-				Logger: logger.NewLogger(nil, false),
+				Logger: logger.New("slog", false, "json"),
 				Mux:    &msync.RWMutex{},
 			}
 
@@ -191,7 +191,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			fetchDirName: successDirName,
 			fpSync: Sync{
 				URI:    fmt.Sprintf("%s/%s", successDirName, fetchFileName),
-				Logger: logger.NewLogger(nil, false),
+				Logger: logger.New("slog", false, "json"),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err != nil {
@@ -207,7 +207,7 @@ func TestFilePathSync_Fetch(t *testing.T) {
 			fetchDirName: failureDirName,
 			fpSync: Sync{
 				URI:    fmt.Sprintf("%s/%s", failureDirName, "not_found"),
-				Logger: logger.NewLogger(nil, false),
+				Logger: logger.New("slog", false, "json"),
 			},
 			handleResponse: func(t *testing.T, fetched string, err error) {
 				if err == nil {
@@ -233,7 +233,7 @@ func TestIsReadySyncFlag(t *testing.T) {
 	fetchDirName := t.TempDir()
 	fpSync := Sync{
 		URI:    fmt.Sprintf("%s/%s", fetchDirName, fetchFileName),
-		Logger: logger.NewLogger(nil, false),
+		Logger: logger.New("slog", false, "json"),
 		Mux:    &msync.RWMutex{},
 	}
 
