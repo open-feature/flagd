@@ -26,7 +26,7 @@ type eventingConfiguration struct {
 	mu     *sync.RWMutex
 	subs   map[any]chan iservice.Notification
 	store  store.IStore
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, selector *store.Selector, notifier chan iservice.Notification) {

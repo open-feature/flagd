@@ -22,7 +22,7 @@ type Sync struct {
 	Client      Client
 	Cron        Cron
 	LastBodySHA string
-	Logger      *logger.Logger
+	Logger      logger.Logger
 	BearerToken string
 	AuthHeader  string
 	Interval    uint32

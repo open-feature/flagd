@@ -31,7 +31,7 @@ type Watcher interface {
 
 type Sync struct {
 	URI    string
-	Logger *logger.Logger
+	Logger logger.Logger
 	// watchType indicates how to watch the file FSNOTIFY|FILEINFO
 	watchType string
 	watcher   Watcher
@@ -39,7 +39,7 @@ type Sync struct {
 	Mux       *msync.RWMutex
 }
 
-func NewFileSync(uri string, watchType string, logger *logger.Logger) *Sync {
+func NewFileSync(uri string, watchType string, logger logger.Logger) *Sync {
 	return &Sync{
 		URI:       uri,
 		watchType: watchType,

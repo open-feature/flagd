@@ -317,7 +317,7 @@ func TestSemVerOperator_Compare(t *testing.T) {
 
 func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	const source = "testSource"
-	var sources = []string{source}
+	sources := []string{source}
 	ctx := context.Background()
 
 	tests := map[string]struct {
@@ -790,7 +790,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
+			log := logger.New("slog", false, "json")
 			s, err := store.NewStore(log, sources)
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)

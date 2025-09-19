@@ -19,12 +19,12 @@ type IOfrepService interface {
 }
 
 type SvcConfiguration struct {
-	Logger *logger.Logger
+	Logger logger.Logger
 	Port   uint16
 }
 
 type Service struct {
-	logger *logger.Logger
+	logger logger.Logger
 	port   uint16
 	server *http.Server
 }

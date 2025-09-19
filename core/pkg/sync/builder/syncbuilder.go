@@ -60,8 +60,8 @@ func init() {
 }
 
 type ISyncBuilder interface {
-	SyncFromURI(uri string, logger *logger.Logger) (sync.ISync, error)
-	SyncsFromConfig(sourceConfig []sync.SourceConfig, logger *logger.Logger) ([]sync.ISync, error)
+	SyncFromURI(uri string, logger logger.Logger) (sync.ISync, error)
+	SyncsFromConfig(sourceConfig []sync.SourceConfig, logger logger.Logger) ([]sync.ISync, error)
 }
 
 type SyncBuilder struct {
@@ -74,7 +74,7 @@ func NewSyncBuilder() *SyncBuilder {
 	}
 }
 
-func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (sync.ISync, error) {
+func (sb *SyncBuilder) SyncFromURI(uri string, logger logger.Logger) (sync.ISync, error) {
 	switch uriB := []byte(uri); {
 	// filepath may be used for debugging, not recommended in deployment
 	case regFile.Match(uriB):
@@ -85,7 +85,7 @@ func (sb *SyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (sync.ISyn
 	return nil, fmt.Errorf("unrecognized URI: %s", uri)
 }
 
-func (sb *SyncBuilder) SyncsFromConfig(sourceConfigs []sync.SourceConfig, logger *logger.Logger) ([]sync.ISync, error) {
+func (sb *SyncBuilder) SyncsFromConfig(sourceConfigs []sync.SourceConfig, logger logger.Logger) ([]sync.ISync, error) {
 	syncImpls := make([]sync.ISync, len(sourceConfigs))
 	for i, syncProvider := range sourceConfigs {
 		syncImpl, err := sb.syncFromConfig(syncProvider, logger)
@@ -97,7 +97,7 @@ func (sb *SyncBuilder) SyncsFromConfig(sourceConfigs []sync.SourceConfig, logger
 	return syncImpls, nil
 }
 
-func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *logger.Logger) (sync.ISync, error) {
+func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger logger.Logger) (sync.ISync, error) {
 	switch sourceConfig.Provider {
 	case syncProviderFile:
 		return sb.newFile(sourceConfig.URI, logger), nil
@@ -135,7 +135,7 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 }
 
 // newFile returns an fsinfo sync if we are in k8s or fileinfo if not
-func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
+func (sb *SyncBuilder) newFile(uri string, logger logger.Logger) *file.Sync {
 	switch os.Getenv("KUBERNETES_SERVICE_HOST") {
 	case "":
 		// no k8s service host env; use fileinfo
@@ -147,11 +147,11 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 }
 
 // return a new file.Sync that uses fsnotify under the hood
-func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync {
+func (sb *SyncBuilder) newFsNotify(uri string, logger logger.Logger) *file.Sync {
 	return file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FSNOTIFY,
-		logger.WithFields(
+		logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", syncProviderFsNotify),
 		),
@@ -159,25 +159,25 @@ func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync
 }
 
 // return a new file.Sync that uses os.Stat/fs.FileInfo under the hood
-func (sb *SyncBuilder) newFileInfo(uri string, logger *logger.Logger) *file.Sync {
+func (sb *SyncBuilder) newFileInfo(uri string, logger logger.Logger) *file.Sync {
 	return file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FILEINFO,
-		logger.WithFields(
+		logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", syncProviderFileInfo),
 		),
 	)
 }
 
-func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
+func (sb *SyncBuilder) newK8s(uri string, logger logger.Logger) (*kubernetes.Sync, error) {
 	dynamicClient, err := sb.k8sClientBuilder.GetK8sClient()
 	if err != nil {
 		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
 
 	return kubernetes.NewK8sSync(
-		logger.WithFields(
+		logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
@@ -186,7 +186,7 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 	), nil
 }
 
-func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) *httpSync.Sync {
+func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger logger.Logger) *httpSync.Sync {
 	// Default to 5 seconds
 	var interval uint32 = 5
 	if config.Interval != 0 {
@@ -198,7 +198,7 @@ func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) 
 		Client: &http.Client{
 			Timeout: time.Second * 10,
 		},
-		Logger: logger.WithFields(
+		Logger: logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "remote"),
 		),
@@ -209,10 +209,10 @@ func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) 
 	}
 }
 
-func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
+func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger logger.Logger) *grpc.Sync {
 	return &grpc.Sync{
 		URI: config.URI,
-		Logger: logger.WithFields(
+		Logger: logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
@@ -225,7 +225,7 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 	}
 }
 
-func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger logger.Logger) *blobSync.Sync {
 	// Extract bucket uri and object name from the full URI:
 	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
 	// path/to/object as an object name.
@@ -244,7 +244,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 
 		BlobURLMux: blob.DefaultURLMux(),
 
-		Logger: logger.WithFields(
+		Logger: logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "gcs"),
 		),
@@ -253,7 +253,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 	}
 }
 
-func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
+func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger logger.Logger) (*blobSync.Sync, error) {
 	// Required to generate the azblob service URL
 	storageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
 	if storageAccountName == "" {
@@ -281,7 +281,7 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 
 		BlobURLMux: blob.DefaultURLMux(),
 
-		Logger: logger.WithFields(
+		Logger: logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "azblob"),
 		),
@@ -290,7 +290,7 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 	}, nil
 }
 
-func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger logger.Logger) *blobSync.Sync {
 	// Extract bucket uri and object name from the full URI:
 	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
 	// path/to/object as an object name.
@@ -309,7 +309,7 @@ func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *b
 
 		BlobURLMux: blob.DefaultURLMux(),
 
-		Logger: logger.WithFields(
+		Logger: logger.With(
 			zap.String("component", "sync"),
 			zap.String("sync", "s3"),
 		),

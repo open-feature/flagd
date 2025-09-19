@@ -452,7 +452,7 @@ func TestSync_fetch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup with args
 			k := &Sync{
-				logger: logger.NewLogger(nil, false),
+				logger: logger.New("slog", false, "json"),
 			}
 
 			if tt.injectionFunc != nil {
@@ -539,7 +539,7 @@ func TestSync_watcher(t *testing.T) {
 						GetByKeyFunc: tt.args.InformerGetFunc,
 					},
 				},
-				logger: logger.NewLogger(nil, false),
+				logger: logger.New("slog", false, "json"),
 			}
 
 			// create communication channels with buffer to so that calls are non-blocking
@@ -630,7 +630,7 @@ func TestSync_ReSync(t *testing.T) {
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
-				logger:        logger.NewLogger(l, true),
+				logger:        logger.New("slog", false, "json"),
 			},
 			countMsg: 2, // one for sync and one for resync
 			async:    true,
@@ -641,7 +641,7 @@ func TestSync_ReSync(t *testing.T) {
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
-				logger:        logger.NewLogger(l, true),
+				logger:        logger.New("slog", false, "json"),
 			},
 			countMsg: 0,
 			async:    false,
@@ -702,7 +702,7 @@ func TestNotify(t *testing.T) {
 		URI:           fmt.Sprintf("%s/%s", ns, name),
 		dynamicClient: fc,
 		namespace:     ns,
-		logger:        logger.NewLogger(l, true),
+		logger:        logger.New("slog", false, "json"),
 	}
 	err = k.Init(context.TODO())
 	if err != nil {
@@ -788,7 +788,7 @@ func Test_NewK8sSync(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	const uri = "myURI"
-	log := logger.NewLogger(l, true)
+	log := logger.New("slog", false, "json")
 	dc := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	k := NewK8sSync(
 		log,

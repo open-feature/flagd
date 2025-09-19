@@ -50,7 +50,7 @@ type Config struct {
 
 // FromConfig builds a runtime from startup configurations
 // nolint: funlen
-func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
+func FromConfig(logger logger.Logger, version string, config Config) (*Runtime, error) {
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
 		CollectorConfig: telemetry.CollectorConfig{
@@ -98,14 +98,14 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// connect service
 	connectService := flageval.NewConnectService(
-		logger.WithFields(zap.String("component", "service")),
+		logger.With(zap.String("component", "service")),
 		jsonEvaluator,
 		store,
 		recorder)
 
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
-		Logger: logger.WithFields(zap.String("component", "OFREPService")),
+		Logger: logger.With(zap.String("component", "OFREPService")),
 		Port:   config.OfrepServicePort,
 	},
 		config.ContextValues,
@@ -117,7 +117,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
+		Logger:              logger.With(zap.String("component", "FlagSyncService")),
 		Port:                config.SyncServicePort,
 		Sources:             sources,
 		Store:               store,
@@ -133,7 +133,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// build sync providers
-	syncLogger := logger.WithFields(zap.String("component", "sync"))
+	syncLogger := logger.With(zap.String("component", "sync"))
 	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	return &Runtime{
-		Logger:            logger.WithFields(zap.String("component", "runtime")),
+		Logger:            logger.With(zap.String("component", "runtime")),
 		Evaluator:         jsonEvaluator,
 		SyncService:       flagSyncService,
 		OfrepService:      ofrepService,
@@ -169,7 +169,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 }
 
 // syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig
-func syncProvidersFromConfig(logger *logger.Logger, sources []sync.SourceConfig) ([]sync.ISync, error) {
+func syncProvidersFromConfig(logger logger.Logger, sources []sync.SourceConfig) ([]sync.ISync, error) {
 	builder := syncbuilder.NewSyncBuilder()
 	syncs, err := builder.SyncsFromConfig(sources, logger)
 	if err != nil {

@@ -110,7 +110,7 @@ func TestBuildSpanProcessor(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := BuildTraceProvider(gCtx, logger.NewLogger(nil, false), "svc", "0.0.1", test.cfg)
+		err := BuildTraceProvider(gCtx, logger.New("slog", false, "json"), "svc", "0.0.1", test.cfg)
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)

@@ -75,14 +75,14 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 // JSON evaluator
 type JSON struct {
 	store          store.IStore
-	Logger         *logger.Logger
+	Logger         logger.Logger
 	jsonEvalTracer trace.Tracer
 	jsonSchema     *jsonschema.Schema
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) *JSON {
-	logger = logger.WithFields(
+func NewJSON(logger logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) *JSON {
+	logger = logger.With(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
 	)
@@ -141,11 +141,11 @@ func (je *JSON) SetState(payload sync.DataSync) error {
 // Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
 type Resolver struct {
 	store  store.IStore
-	Logger *logger.Logger
+	Logger logger.Logger
 	tracer trace.Tracer
 }
 
-func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
+func NewResolver(store store.IStore, logger logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
 	// register supported json logic custom operator implementations
 	jsonlogic.AddOperator(FractionEvaluationName, NewFractional(logger).Evaluate)
 	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
@@ -317,7 +317,6 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
-
 	var selector store.Selector
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
@@ -403,7 +402,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 }
 
 func setFlagdProperties(
-	log *logger.Logger,
+	log logger.Logger,
 	context map[string]any,
 	properties flagdProperties,
 ) map[string]any {

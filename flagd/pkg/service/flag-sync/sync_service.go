@@ -25,7 +25,7 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger              *logger.Logger
+	Logger              logger.Logger
 	Port                uint16
 	Sources             []string
 	Store               store.IStore
@@ -39,7 +39,7 @@ type SvcConfigurations struct {
 
 type Service struct {
 	listener net.Listener
-	logger   *logger.Logger
+	logger   logger.Logger
 	server   *grpc.Server
 
 	startupTracker syncTracker

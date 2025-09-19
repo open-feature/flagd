@@ -20,7 +20,7 @@ import (
 
 type Runtime struct {
 	Evaluator         evaluator.IEvaluator
-	Logger            *logger.Logger
+	Logger            logger.Logger
 	SyncService       flagsync.ISyncService
 	OfrepService      ofrep.IOfrepService
 	EvaluationService service.IFlagEvaluationService

@@ -66,7 +66,7 @@ func Test_InitWithMockCredentialBuilder(t *testing.T) {
 
 		grpcSync := Sync{
 			URI:               "grpc-target",
-			Logger:            logger.NewLogger(nil, false),
+			Logger:            logger.New("slog", false, "json"),
 			CredentialBuilder: mockCredentialBulder,
 		}
 
@@ -94,7 +94,7 @@ func Test_InitWithSizeOverride(t *testing.T) {
 
 	grpcSync := Sync{
 		URI:               "grpc-target",
-		Logger:            logger.NewLogger(observedLogger, false),
+		Logger:            logger.New("slog", false, "json"),
 		CredentialBuilder: mockCredentialBulder,
 		MaxMsgSize:        10,
 	}
@@ -163,7 +163,7 @@ func Test_ReSyncTests(t *testing.T) {
 		grpcSync := Sync{
 			URI:        target,
 			ProviderID: "",
-			Logger:     logger.NewLogger(nil, false),
+			Logger:     logger.New("slog", false, "json"),
 			client:     c,
 		}
 
@@ -268,7 +268,7 @@ func Test_StreamListener(t *testing.T) {
 		grpcSync := Sync{
 			URI:        target,
 			ProviderID: "",
-			Logger:     logger.NewLogger(nil, false),
+			Logger:     logger.New("slog", false, "json"),
 
 			client: serviceClient,
 		}
@@ -324,7 +324,7 @@ func Test_ConnectWithRetry(t *testing.T) {
 
 	// minimal sync provider
 	grpcSync := Sync{
-		Logger: logger.NewLogger(nil, false),
+		Logger: logger.New("slog", false, "json"),
 		client: syncv1grpc.NewFlagSyncServiceClient(clientConn),
 	}
 
@@ -400,7 +400,7 @@ func Test_SyncRetry(t *testing.T) {
 
 	// minimal sync provider
 	grpcSync := Sync{
-		Logger: logger.NewLogger(nil, false),
+		Logger: logger.New("slog", false, "json"),
 		client: syncv1grpc.NewFlagSyncServiceClient(clientConn),
 	}
 

@@ -14,10 +14,10 @@ const (
 )
 
 type StringComparisonEvaluator struct {
-	Logger *logger.Logger
+	Logger logger.Logger
 }
 
-func NewStringComparisonEvaluator(log *logger.Logger) *StringComparisonEvaluator {
+func NewStringComparisonEvaluator(log logger.Logger) *StringComparisonEvaluator {
 	return &StringComparisonEvaluator{Logger: log}
 }
 

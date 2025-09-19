@@ -32,7 +32,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 			name: "kubernetes sync",
 			args: args{
 				uri:    "core.openfeature.dev/ff-config",
-				logger: logger.NewLogger(nil, false),
+				logger: logger.New("slog", false, "json"),
 			},
 			injectFunc: func(builder *SyncBuilder) {
 				ctrl := gomock.NewController(t)
@@ -49,7 +49,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 			name: "kubernetes sync - error when retrieving config",
 			args: args{
 				uri:    "core.openfeature.dev/ff-config",
-				logger: logger.NewLogger(nil, false),
+				logger: logger.New("slog", false, "json"),
 			},
 			injectFunc: func(builder *SyncBuilder) {
 				ctrl := gomock.NewController(t)
@@ -66,7 +66,7 @@ func TestSyncBuilder_SyncFromURI(t *testing.T) {
 			name: "file sync",
 			args: args{
 				uri:    "file:my-file",
-				logger: logger.NewLogger(nil, false),
+				logger: logger.New("slog", false, "json"),
 			},
 			want:    &file.Sync{},
 			wantErr: false,
@@ -118,7 +118,7 @@ func Test_k8sClusterConfig(t *testing.T) {
 }
 
 func Test_SyncsFromFromConfig(t *testing.T) {
-	lg := logger.NewLogger(nil, false)
+	lg := logger.New("slog", false, "json")
 
 	type args struct {
 		logger  *logger.Logger
@@ -284,7 +284,7 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 }
 
 func Test_GcsConfig(t *testing.T) {
-	lg := logger.NewLogger(nil, false)
+	lg := logger.New("slog", false, "json")
 	defaultInterval := uint32(5)
 	tests := []struct {
 		name             string
@@ -338,7 +338,7 @@ func Test_GcsConfig(t *testing.T) {
 }
 
 func Test_AzblobConfig(t *testing.T) {
-	lg := logger.NewLogger(nil, false)
+	lg := logger.New("slog", false, "json")
 	defaultInterval := uint32(5)
 	tests := []struct {
 		name             string
@@ -425,7 +425,7 @@ func Test_AzblobConfig(t *testing.T) {
 }
 
 func Test_S3Config(t *testing.T) {
-	lg := logger.NewLogger(nil, false)
+	lg := logger.New("slog", false, "json")
 	defaultInterval := uint32(5)
 	tests := []struct {
 		name             string

@@ -46,7 +46,7 @@ type Config struct {
 	CollectorConfig CollectorConfig
 }
 
-func RegisterErrorHandling(log *logger.Logger) {
+func RegisterErrorHandling(log logger.Logger) {
 	otel.SetErrorHandler(otelErrorsHandler{
 		logger: log,
 	})
@@ -75,7 +75,7 @@ func BuildMetricsRecorder(
 // attempt to register a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to
 // provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
 // This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
-func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
+func BuildTraceProvider(ctx context.Context, logger logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorConfig.Target == "" {
 		logger.Debug("skipping trace provider setup as collector target is not set." +
 			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
@@ -248,10 +248,10 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 
 // OTelErrorsHandler is a custom error interceptor for OpenTelemetry
 type otelErrorsHandler struct {
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 func (h otelErrorsHandler) Handle(err error) {
 	msg := fmt.Sprintf("OpenTelemetry Error: %s", err.Error())
-	h.logger.WithFields(zap.String("component", "otel")).Debug(msg)
+	h.logger.With(zap.String("component", "otel")).Debug(msg)
 }

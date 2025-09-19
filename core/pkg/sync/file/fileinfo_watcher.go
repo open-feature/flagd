@@ -20,7 +20,7 @@ type fileInfoWatcher struct {
 	// Errors Chan
 	erChan chan error
 	// logger
-	logger *logger.Logger
+	logger logger.Logger
 	// Func to wrap os.Stat (injection point for test helpers)
 	statFunc func(string) (fs.FileInfo, error)
 	// thread-safe interface to underlying files we are watching
@@ -29,7 +29,7 @@ type fileInfoWatcher struct {
 }
 
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
-func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
+func NewFileInfoWatcher(ctx context.Context, logger logger.Logger) Watcher {
 	fiw := &fileInfoWatcher{
 		evChan:   make(chan fsnotify.Event, 32),
 		erChan:   make(chan error, 32),

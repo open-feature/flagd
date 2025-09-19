@@ -47,7 +47,7 @@ type Sync struct {
 	GrpcDialOptionsOverride []grpc.DialOption
 	CertPath                string
 	CredentialBuilder       grpccredential.Builder
-	Logger                  *logger.Logger
+	Logger                  logger.Logger
 	ProviderID              string
 	Secure                  bool
 	Selector                string
