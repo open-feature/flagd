@@ -6,7 +6,7 @@ import (
 )
 
 /*
-This package wraps both zap and slog API for use across services without passing a shared logger.
+This package wraps both the zap and slog API for use across services without passing a shared logger.
 Fields can be added to a requestID using the WriteFields method, these will be added to any
 subsequent XxxWithID log calls. To preserve performance ClearFields must be called when the
 requestID's thread is closed as a sync map is used internally.
