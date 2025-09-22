@@ -27,6 +27,7 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	cfg := SvcConfiguration{
 		Logger: logger.NewLogger(nil, false),
 		Port:   uint16(port),
+		ServiceName:     "test-service",
 		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
