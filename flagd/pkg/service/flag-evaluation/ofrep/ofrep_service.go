@@ -10,7 +10,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 )
@@ -41,18 +40,14 @@ func NewOfrepService(
 		AllowedMethods: []string{http.MethodPost},
 	})
 
-	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
-		Service:        cfg.ServiceName,
-		MetricRecorder: cfg.MetricsRecorder,
-		Logger:         cfg.Logger,
-		HandlerID:      "",
-	})
-
-	h := NewOfrepHandler(cfg.Logger, evaluator, contextValues, headerToContextKeyMappings)
-
-	// Register middleware
-	h = corsMW.Handler(h)
-	h = metricsMiddleware.Handler(h)
+	h := corsMW.Handler(NewOfrepHandler(
+		cfg.Logger,
+		evaluator,
+		contextValues,
+		headerToContextKeyMappings,
+		cfg.MetricsRecorder,
+		cfg.ServiceName,
+	))
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),

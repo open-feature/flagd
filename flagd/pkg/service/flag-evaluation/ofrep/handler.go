@@ -12,7 +12,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service"
+	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -33,7 +35,14 @@ type handler struct {
 	tracer                     trace.Tracer
 }
 
-func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, contextValues map[string]any, headerToContextKeyMappings map[string]string) http.Handler {
+func NewOfrepHandler(
+	logger *logger.Logger,
+	evaluator evaluator.IEvaluator,
+	contextValues map[string]any,
+	headerToContextKeyMappings map[string]string,
+	metricsRecorder telemetry.IMetricsRecorder,
+	serviceName string,
+) http.Handler {
 	h := handler{
 		Logger:                     logger,
 		evaluator:                  evaluator,
@@ -43,11 +52,26 @@ func NewOfrepHandler(logger *logger.Logger, evaluator evaluator.IEvaluator, cont
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc(singleEvaluation, h.HandleFlagEvaluation).Methods("POST")
-	router.HandleFunc(bulkEvaluation, h.HandleBulkEvaluation).Methods("POST")
+	router.Handle(singleEvaluation,
+		metricsmw.NewHTTPMetric(metricsmw.Config{
+			Service:        serviceName,
+			MetricRecorder: metricsRecorder,
+			Logger:         logger,
+			HandlerID:      singleEvaluation,
+		}).Handler(http.HandlerFunc(h.HandleFlagEvaluation)),
+	).Methods("POST")
+
+	router.Handle(bulkEvaluation,
+		metricsmw.NewHTTPMetric(metricsmw.Config{
+			Service:        serviceName,
+			MetricRecorder: metricsRecorder,
+			Logger:         logger,
+			HandlerID:      bulkEvaluation,
+		}).Handler(http.HandlerFunc(h.HandleBulkEvaluation)),
+	).Methods("POST")
+
 	return otelhttp.NewHandler(router, "flagd.ofrep")
 }
-
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)
