@@ -34,14 +34,14 @@ To address these issues, it is essential to establish a consistent and testable 
 
 ## Considered Options
 
-- Standardize flag parsing and handling using schema validation (Option 1).
+- Standardize flag parsing and handling using schema validation ([Option 1](#option-1-standardize-flag-parsing-and-handling-using-schema-validation).
 - Continue with the current approach but document the inconsistencies (Option 2).
 - Develop separate parsing logic for each implementation to address specific needs (Option 3).
-- Be rigid and enforce the JSON Schema Validation for all updates, even if that means ignoring updates if just one flag is violating the schema (Option 3).
+- Be rigid and enforce the JSON Schema Validation for all updates, even if that means ignoring updates if just one flag is violating the schema ([Option 4](#option-4-full-document-validation-on-sync)).
 
 ## Proposal
 
-### Standardize Flag Parsing and Handling Using Schema Validation (Option 1)
+### Option 1: Standardize Flag Parsing and Handling Using Schema Validation
 
 This proposal recommends adopting schema validation as the primary method for parsing and handling flags. The key elements of this approach include:
 
@@ -98,13 +98,11 @@ flowchart TD
 
 ```
 
-[Double click to switch code/render]
-
-### API Changes
+#### API Changes
 
 No immediate API changes are proposed. However, the internal logic for flag parsing and handling will be standardized, which may indirectly impact APIs that rely on these processes.
 
-### Consequences
+#### Consequences Option 1
 
 - **Positive Consequences**:
     - Improved consistency across implementations.
@@ -115,12 +113,43 @@ No immediate API changes are proposed. However, the internal logic for flag pars
     - Initial development effort to implement the unified framework.
     - Potential learning curve for contributors to adapt to the new framework.
 
+### Option 4: Full Document Validation on Sync
+
+#### Summary
+
+This alternative proposal suggests validating the entire flags configuration document using the schema provided at [https://flagd.dev/schema/v0/flags.json](https://flagd.dev/schema/v0/flags.json). The validation would occur both at startup and during each sync update.
+
+#### Key Elements
+
+1. **Validation at Startup**:
+
+- If any part of the configuration is invalid, the application fails to start.
+- This aligns with the current behavior, where failure to parse the flags configuration prevents startup.
+
+1. **Validation on Sync Updates**:
+
+- If any part of the updated configuration is invalid, the update is ignored.
+- An error or warning message is logged prominently to alert the user.
+- This builds on the existing behavior, where unparseable configurations are rejected.
+
+#### Consequences Option 4
+
+- **Positive Consequences**:
+    - Ease of Implementation: The validation step can be added to the existing parsing logic with minimal changes.
+    - Simplified Testing: Many error-edge cases in the test suite can be removed, as invalid configurations will never be allowed.
+    - Schema-Driven Validation: Relying on the schema eliminates the need for detailed error-handling logic.
+
+- **Negative Consequences**:
+    - Blocking Updates Due to Errors: A single invalid flag will prevent the entire update from being applied.
+    - However, this is consistent with the current behavior, where unparseable flags already block updates.
+
 ### Timeline
 
 ### Open Questions
 
 - Are there any edge cases that need to be addressed in the schema validation rules?
 - Should and error in the global metadata cause and issue with the parsing?
+- What solution do we prefer?
 
 ## More Information
 
