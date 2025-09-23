@@ -12,6 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type source struct {
+	Name  string
+	flags []model.Flag
+}
+
 func TestUpdateFlags(t *testing.T) {
 
 	const source1 = "source1"
@@ -205,14 +210,35 @@ func TestUpdateFlags(t *testing.T) {
 
 func TestGet(t *testing.T) {
 
-	sourceA := "sourceA"
-	sourceB := "sourceB"
-	sourceC := "sourceC"
 	flagSetIdB := "flagSetIdA"
 	flagSetIdC := "flagSetIdC"
-	var sources = []string{sourceA, sourceB, sourceC}
 
-	sourceASelector := NewSelector("source=" + sourceA)
+	sourceA := source{
+		Name: "sourceA",
+		flags: []model.Flag{
+			{Key: "flagA", DefaultVariant: "off"},
+			{Key: "dupe", DefaultVariant: "on"},
+		},
+	}
+	sourceB := source{
+		Name: "sourceB",
+		flags: []model.Flag{
+			{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+		},
+	}
+	sourceC := source{
+		Name: "sourceC",
+		flags: []model.Flag{
+			{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+		},
+	}
+
+	sources := []string{sourceA.Name, sourceB.Name, sourceC.Name}
+
+	sourceASelector := NewSelector("source=" + sourceA.Name)
 	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
 
 	t.Parallel()
@@ -227,95 +253,133 @@ func TestGet(t *testing.T) {
 			name:     "nil selector",
 			key:      "flagA",
 			selector: nil,
-			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "flagA", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
 			name:     "flagSetId selector",
 			key:      "dupe",
 			selector: &flagSetIdCSelector,
-			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			wantErr:  false,
 		},
 		{
 			name:     "flagSetId selector - MultiSource",
 			key:      "dupeMultiSource",
 			selector: &flagSetIdCSelector,
-			wantFlag: model.Flag{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			wantFlag: model.Flag{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			wantErr:  false,
 		},
 		{
 			name:     "source selector",
 			key:      "dupe",
 			selector: &sourceASelector,
-			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+			wantFlag: model.Flag{Key: "dupe", DefaultVariant: "on", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
 			wantErr:  false,
 		},
 		{
 			name:     "flag not found with source selector",
 			key:      "flagB",
 			selector: &sourceASelector,
-			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB.Name, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantErr:  true,
 		},
 		{
 			name:     "flag not found with flagSetId selector",
 			key:      "flagB",
 			selector: &flagSetIdCSelector,
-			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
+			wantFlag: model.Flag{Key: "flagB", DefaultVariant: "off", Source: sourceB.Name, FlagSetId: flagSetIdB, Priority: 1, Metadata: model.Metadata{"flagSetId": flagSetIdB}},
 			wantErr:  true,
 		},
 	}
 
+	sourceOrder := []struct {
+		name  string
+		order []source
+	}{
+		{
+			name:  "normal",
+			order: []source{sourceA, sourceB, sourceC},
+		},
+		{
+			name:  "inverted",
+			order: []source{sourceC, sourceB, sourceA},
+		},
+		{
+			name:  "random1",
+			order: []source{sourceB, sourceA, sourceC},
+		},
+		{
+			name:  "random2",
+			order: []source{sourceB, sourceC, sourceA},
+		},
+		{
+			name:  "normal, loading sourceA twice",
+			order: []source{sourceA, sourceB, sourceC, sourceA},
+		},
+	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+		for _, s := range sourceOrder {
+			tt := tt
+			t.Run(tt.name+" - "+s.name, func(t *testing.T) {
+				t.Parallel()
 
-			sourceAFlags := []model.Flag{
-				{Key: "flagA", DefaultVariant: "off"},
-				{Key: "dupe", DefaultVariant: "on"},
-			}
-			sourceBFlags := []model.Flag{
-				{Key: "flagB", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdB}},
-				{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-			}
-			sourceCFlags := []model.Flag{
-				{Key: "flagC", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-			}
+				store, err := NewStore(logger.NewLogger(nil, false), sources)
+				if err != nil {
+					t.Fatalf("NewStore failed: %v", err)
+				}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
+				for _, source := range s.order {
+					store.Update(source.Name, source.flags, nil)
+				}
+				gotFlag, _, err := store.Get(context.Background(), tt.key, tt.selector)
 
-			store.Update(sourceC, sourceCFlags, nil)
-			store.Update(sourceB, sourceBFlags, nil)
-			store.Update(sourceA, sourceAFlags, nil)
-			gotFlag, _, err := store.Get(context.Background(), tt.key, tt.selector)
-
-			if !tt.wantErr {
-				require.Equal(t, tt.wantFlag, gotFlag)
-			} else {
-				require.Error(t, err, "expected an error for key %s with selector %v", tt.key, tt.selector)
-			}
-		})
+				if !tt.wantErr {
+					require.Equal(t, tt.wantFlag, gotFlag)
+				} else {
+					require.Error(t, err, "expected an error for key %s with selector %v", tt.key, tt.selector)
+				}
+			})
+		}
 	}
 }
 
 func TestGetAllNoWatcher(t *testing.T) {
 
-	sourceA := "sourceA"
-	sourceB := "sourceB"
-	sourceC := "sourceC"
 	flagSetIdC := "flagSetIdC"
-	sources := []string{sourceA, sourceB, sourceC}
 
-	sourceASelector := NewSelector("source=" + sourceA)
+	sourceA := source{
+		Name: "sourceA",
+		flags: []model.Flag{
+			{Key: "flagA", DefaultVariant: "off"},
+			{Key: "dupe", DefaultVariant: "on"},
+			{Key: "dupe", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeSingleSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeSingleSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+		},
+	}
+	sourceB := source{
+		Name: "sourceB",
+		flags: []model.Flag{
+			{Key: "flagB", DefaultVariant: "off"},
+		},
+	}
+	sourceC := source{
+		Name: "sourceC",
+		flags: []model.Flag{
+			{Key: "flagC", DefaultVariant: "off"},
+			{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+			{Key: "dupeMultiSource", DefaultVariant: "both", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+		},
+	}
+
+	sources := []string{sourceA.Name, sourceB.Name, sourceC.Name}
+
+	sourceASelector := NewSelector("source=" + sourceA.Name)
 	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
-	flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC)
+	flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC.Name)
 
 	t.Parallel()
 	tests := []struct {
@@ -328,25 +392,25 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: nil,
 			wantFlags: []model.Flag{
 				// "dupe" should be overwritten by higher priority flag
-				{Key: "flagC", DefaultVariant: "off", Source: sourceC, FlagSetId: nilFlagSetId, Priority: 2},
-				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
-				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
-				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "flagB", DefaultVariant: "off", Source: sourceB, FlagSetId: nilFlagSetId, Priority: 1},
-				{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "flagC", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: nilFlagSetId, Priority: 2},
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
+				{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "flagB", DefaultVariant: "off", Source: sourceB.Name, FlagSetId: nilFlagSetId, Priority: 1},
+				{Key: "flagA", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "dupe", DefaultVariant: "on", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
 			},
 		},
 		{
 			name:     "source selector",
 			selector: &sourceASelector,
 			wantFlags: []model.Flag{
-				// we should get the "dupe" from sourceA
-				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
-				{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
-				{Key: "flagA", DefaultVariant: "off", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: nilFlagSetId, Priority: 0},
-				{Key: "dupe", DefaultVariant: "on", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				// we should get the "dupe" from sourceAName
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "flagA", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "dupe", DefaultVariant: "on", Source: sourceA.Name, FlagSetId: nilFlagSetId, Priority: 0},
+				{Key: "dupe", DefaultVariant: "on", Source: sourceA.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
 			},
 		},
 		{
@@ -354,69 +418,79 @@ func TestGetAllNoWatcher(t *testing.T) {
 			selector: &flagSetIdCSelector,
 			wantFlags: []model.Flag{
 				// we should get the "dupe" from flagSetIdC
-				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
-				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
-				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeSingleSource", DefaultVariant: "off", Source: sourceA.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 0},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
+				{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			},
 		},
 		{
 			name:     "flagSetId and source selector",
 			selector: &flagSetIdAndCSelector,
 			wantFlags: []model.Flag{
-				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
-				{Key: "dupe", DefaultVariant: "off", Source: sourceC, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
+				{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			},
 		},
 	}
 
+	sourceOrder := []struct {
+		name  string
+		order []source
+	}{
+		{
+			name:  "normal",
+			order: []source{sourceA, sourceB, sourceC},
+		},
+		{
+			name:  "inverted",
+			order: []source{sourceC, sourceB, sourceA},
+		},
+		{
+			name:  "random1",
+			order: []source{sourceB, sourceA, sourceC},
+		},
+		{
+			name:  "random2",
+			order: []source{sourceB, sourceC, sourceA},
+		},
+		{
+			name:  "normal, loading sourceA twice",
+			order: []source{sourceA, sourceB, sourceC, sourceA},
+		},
+	}
+
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+		for _, s := range sourceOrder {
+			tt := tt
+			t.Run(tt.name+" - "+s.name, func(t *testing.T) {
+				t.Parallel()
 
-			sourceAFlags := []model.Flag{
-				{Key: "flagA", DefaultVariant: "off"},
-				{Key: "dupe", DefaultVariant: "on"},
-				{Key: "dupe", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeSingleSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeSingleSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeMultiSource", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeMultiSource", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-			}
-			sourceBFlags := []model.Flag{
-				{Key: "flagB", DefaultVariant: "off"},
-			}
-			sourceCFlags := []model.Flag{
-				{Key: "flagC", DefaultVariant: "off"},
-				{Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-				{Key: "dupeMultiSource", DefaultVariant: "both", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
-			}
-
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-
-			store.Update(sourceC, sourceCFlags, nil)
-			store.Update(sourceB, sourceBFlags, nil)
-			store.Update(sourceA, sourceAFlags, nil)
-			gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
-
-			require.Equal(t, len(tt.wantFlags), len(gotFlags))
-			sort.Slice(tt.wantFlags, func(i, j int) bool {
-				if tt.wantFlags[i].FlagSetId != tt.wantFlags[j].FlagSetId {
-					return tt.wantFlags[i].FlagSetId < tt.wantFlags[j].FlagSetId
+				store, err := NewStore(logger.NewLogger(nil, false), sources)
+				if err != nil {
+					t.Fatalf("NewStore failed: %v", err)
 				}
-				return tt.wantFlags[i].Key < tt.wantFlags[j].Key
-			})
-			sort.Slice(gotFlags, func(i, j int) bool {
-				if gotFlags[i].FlagSetId != gotFlags[j].FlagSetId {
-					return gotFlags[i].FlagSetId < gotFlags[j].FlagSetId
+
+				for _, source := range s.order {
+					store.Update(source.Name, source.flags, nil)
 				}
-				return gotFlags[i].Key < gotFlags[j].Key
+				gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
+
+				require.Equal(t, len(tt.wantFlags), len(gotFlags))
+				sort.Slice(tt.wantFlags, func(i, j int) bool {
+					if tt.wantFlags[i].FlagSetId != tt.wantFlags[j].FlagSetId {
+						return tt.wantFlags[i].FlagSetId < tt.wantFlags[j].FlagSetId
+					}
+					return tt.wantFlags[i].Key < tt.wantFlags[j].Key
+				})
+				sort.Slice(gotFlags, func(i, j int) bool {
+					if gotFlags[i].FlagSetId != gotFlags[j].FlagSetId {
+						return gotFlags[i].FlagSetId < gotFlags[j].FlagSetId
+					}
+					return gotFlags[i].Key < gotFlags[j].Key
+				})
+				require.Equal(t, tt.wantFlags, gotFlags)
 			})
-			require.Equal(t, tt.wantFlags, gotFlags)
-		})
+		}
 	}
 }
 
