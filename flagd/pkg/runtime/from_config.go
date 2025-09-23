@@ -107,6 +107,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
 		Logger: logger.WithFields(zap.String("component", "OFREPService")),
 		Port:   config.OfrepServicePort,
+		ServiceName: svcName,
+		MetricsRecorder: recorder,
 	},
 		config.ContextValues,
 		config.HeaderToContextKeyMappings,

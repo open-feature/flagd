@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 )
@@ -19,8 +20,10 @@ type IOfrepService interface {
 }
 
 type SvcConfiguration struct {
-	Logger *logger.Logger
-	Port   uint16
+	Logger          *logger.Logger
+	Port            uint16
+	ServiceName     string
+	MetricsRecorder telemetry.IMetricsRecorder
 }
 
 type Service struct {
@@ -36,7 +39,15 @@ func NewOfrepService(
 		AllowedOrigins: origins,
 		AllowedMethods: []string{http.MethodPost},
 	})
-	h := corsMW.Handler(NewOfrepHandler(cfg.Logger, evaluator, contextValues, headerToContextKeyMappings))
+
+	h := corsMW.Handler(NewOfrepHandler(
+		cfg.Logger,
+		evaluator,
+		contextValues,
+		headerToContextKeyMappings,
+		cfg.MetricsRecorder,
+		cfg.ServiceName,
+	))
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
