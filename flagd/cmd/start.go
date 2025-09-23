@@ -92,7 +92,7 @@ func init() {
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
-flags.String(selectorFallbackKeyFlagName, "", "Fallback key for a selector expression that does not contain an '='. Defaults to 'source'.")
+	flags.String(selectorFallbackKeyFlagName, "", "Fallback key for a selector expression that does not contain an '='. Defaults to 'source'.")
 
 	bindFlags(flags)
 }
@@ -119,6 +119,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
+	_ = viper.BindPFlag(selectorFallbackKeyFlagName, flags.Lookup(selectorFallbackKeyFlagName))
 }
 
 // startCmd represents the start command
@@ -193,6 +194,7 @@ var startCmd = &cobra.Command{
 			StreamDeadline:             viper.GetDuration(streamDeadlineFlagName),
 			DisableSyncMetadata:        viper.GetBool(disableSyncMetadata),
 			SyncProviders:              syncProviders,
+			SelectorFallbackKey:        viper.GetString(selectorFallbackKeyFlagName),
 			ContextValues:              contextValuesToMap,
 			HeaderToContextKeyMappings: headerToContextKeyMappings,
 		})

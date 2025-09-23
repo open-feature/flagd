@@ -191,7 +191,7 @@ func TestNewSelector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-s := NewSelectorWithFallback(tt.input, tt.fallbackExpressionKey)
+			s := NewSelectorWithFallback(tt.input, tt.fallbackExpressionKey)
 			if !reflect.DeepEqual(s.indexMap, tt.wantMap) {
 				t.Errorf("NewSelector(%q) indexMap = %v, want %v", tt.input, s.indexMap, tt.wantMap)
 			}

@@ -53,7 +53,6 @@ func expressionToMap(sExp string, fallbackExpressionKey string) map[string]strin
 		if fallbackExpressionKey == "" {
 			fallbackExpressionKey = sourceIndex
 		}
-		// if no '=' is found, treat the whole string as as source (backwards compatibility)
 		selectorMap[fallbackExpressionKey] = sExp
 		return selectorMap
 	}
