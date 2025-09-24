@@ -267,3 +267,61 @@ func TestParseSyncProviderURIs(t *testing.T) {
 		})
 	}
 }
+
+func TestParseOAuth(t *testing.T) {
+	test := map[string]struct {
+		in        string
+		expectErr bool
+		out       []sync.SourceConfig
+	}{
+		"noOauth": {
+			in:        "[{\"uri\":\"https://secure-remote\",\"provider\":\"http\",\"authHeader\":\"Bearer bearer-dji34ld2l\"}]",
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:        "https://secure-remote",
+					Provider:   "http",
+					AuthHeader: "Bearer bearer-dji34ld2l",
+				},
+			},
+		},
+		"oauth": {
+			in: `[{
+	"uri": "https://secure-remote",
+	"provider":"http", 
+	"oauthConfig": { 
+		"clientID": "myID",
+		"clientSecret": "mySecret",
+		"tokenUrl": "myTokenUrl" 
+	}}]`,
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:      "https://secure-remote",
+					Provider: "http",
+					OAuthConfig: &sync.OAuthCredentialHandler{
+						ClientId:     "myID",
+						ClientSecret: "mySecret",
+						TokenUrl:     "myTokenUrl",
+					},
+				},
+			},
+		},
+	}
+
+	for name, tt := range test {
+		t.Run(name, func(t *testing.T) {
+			out, err := ParseSources(tt.in)
+			if tt.expectErr {
+				if err == nil {
+					t.Error("expected error, got none")
+				}
+			} else if err != nil {
+				t.Errorf("did not expect error: %s", err.Error())
+			}
+			if !reflect.DeepEqual(out, tt.out) {
+				t.Errorf("unexpected output, expected %v, got %v", tt.out, out)
+			}
+		})
+	}
+}
