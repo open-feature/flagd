@@ -26,12 +26,14 @@ type syncHandler struct {
 	contextValues       map[string]any
 	deadline            time.Duration
 	disableSyncMetadata bool
+
+	selectorFallbackKey string
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	watcher := make(chan store.FlagQueryResult, 1)
 	selectorExpression := req.GetSelector()
-	selector := store.NewSelector(selectorExpression)
+	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
 	ctx := server.Context()
 
 	syncContextMap := make(map[string]any)

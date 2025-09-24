@@ -84,7 +84,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			rs := resource.NewWithAttributes("testSchema")
 			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
-			svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
+			svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder, "")
 			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
@@ -139,7 +139,7 @@ func TestAddMiddleware(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	svc := NewConnectService(logger.NewLogger(nil, false), nil, nil, metricRecorder)
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, nil, metricRecorder, "")
 
 	serveConf := iservice.Configuration{
 		ReadinessProbe: func() bool {
@@ -187,7 +187,7 @@ func TestConnectServiceNotify(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder, "")
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration
@@ -278,7 +278,7 @@ func TestConnectServiceShutdown(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder)
+	service := NewConnectService(logger.NewLogger(nil, false), eval, s, metricRecorder, "")
 
 	sChan := make(chan iservice.Notification, 1)
 	eventing := service.eventingConfiguration

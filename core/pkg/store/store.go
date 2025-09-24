@@ -28,10 +28,9 @@ type IStore interface {
 var _ IStore = (*Store)(nil)
 
 type Store struct {
-	db                    *memdb.MemDB
-	logger                *logger.Logger
-	sources               []string
-	expressionFallbackKey string
+	db      *memdb.MemDB
+	logger  *logger.Logger
+	sources []string
 	// deprecated: has no effect and will be removed soon.
 	FlagSources []string
 }
@@ -133,10 +132,9 @@ func NewStore(logger *logger.Logger, storeConfig StoreConfig) (*Store, error) {
 	s := slices.Clone(storeConfig.Sources)
 
 	return &Store{
-		sources:               s,
-		db:                    db,
-		logger:                logger,
-		expressionFallbackKey: storeConfig.SelectorFallbackKey,
+		sources: s,
+		db:      db,
+		logger:  logger,
 	}, nil
 }
 
