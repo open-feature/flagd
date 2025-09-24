@@ -16,6 +16,14 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func buildHeaders(m map[string]string) http.Header {
+	h := http.Header{}
+	for k, v := range m {
+		h.Set(k, v)
+	}
+	return h
+}
+
 func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCron := synctesting.NewMockCron(ctrl)
@@ -27,7 +35,7 @@ func TestSimpleSync(t *testing.T) {
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
 	resp := &http.Response{
-		Header:     map[string][]string{"Content-Type": {"application/json"}},
+		Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 		Body:       io.NopCloser(strings.NewReader(responseBody)),
 		StatusCode: http.StatusOK,
 	}
@@ -70,7 +78,7 @@ func TestExtensionWithQSSync(t *testing.T) {
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
 	resp := &http.Response{
-		Header:     map[string][]string{"Content-Type": {"application/json"}},
+		Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 		Body:       io.NopCloser(strings.NewReader(responseBody)),
 		StatusCode: http.StatusOK,
 	}
@@ -117,7 +125,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		"success": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Header:     map[string][]string{"Content-Type": {"application/json"}},
+					Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 					Body:       io.NopCloser(strings.NewReader("test response")),
 					StatusCode: http.StatusOK,
 				}, nil)
@@ -144,7 +152,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		"update last body sha": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Header:     map[string][]string{"Content-Type": {"application/json"}},
+					Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 					Body:       io.NopCloser(strings.NewReader("test response")),
 					StatusCode: http.StatusOK,
 				}, nil)
@@ -173,7 +181,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 						t.Fatalf("expected Authorization header to be 'Bearer %s', got %s", expectedToken, actualAuthHeader)
 					}
 					return &http.Response{
-						Header:     map[string][]string{"Content-Type": {"application/json"}},
+						Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 						Body:       io.NopCloser(strings.NewReader("test response")),
 						StatusCode: http.StatusOK,
 					}, nil
@@ -204,7 +212,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 						t.Fatalf("expected Authorization header to be '%s', got %s", expectedHeader, actualAuthHeader)
 					}
 					return &http.Response{
-						Header:     map[string][]string{"Content-Type": {"application/json"}},
+						Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 						Body:       io.NopCloser(strings.NewReader("test response")),
 						StatusCode: http.StatusOK,
 					}, nil
@@ -229,7 +237,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		"unauthorized request": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Header:     map[string][]string{"Content-Type": {"application/json"}},
+					Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 					Body:       io.NopCloser(strings.NewReader("test response")),
 					StatusCode: http.StatusUnauthorized,
 				}, nil)
@@ -250,7 +258,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 						t.Fatalf("expected If-None-Match header to be '%s', got %s", expectedIfNoneMatch, actualIfNoneMatch)
 					}
 					return &http.Response{
-						Header:     map[string][]string{"ETag": {expectedIfNoneMatch}},
+						Header:     buildHeaders(map[string]string{"ETag": expectedIfNoneMatch}),
 						Body:       io.NopCloser(strings.NewReader("")),
 						StatusCode: http.StatusNotModified,
 					}, nil
@@ -290,10 +298,10 @@ func TestHTTPSync_Fetch(t *testing.T) {
 					newETag := `"c2e01ce63d90109c4c7f4f6dcea97ed1bb2b51e3647f36caf5acbe27413a24bb"`
 
 					return &http.Response{
-						Header: map[string][]string{
-							"Content-Type": {"application/json"},
-							"Etag":         {newETag},
-						},
+						Header: buildHeaders(map[string]string{
+							"Content-Type": "application/json",
+							"ETag":         newETag,
+						}),
 						Body:       io.NopCloser(strings.NewReader(newContent)),
 						StatusCode: http.StatusOK,
 					}, nil
@@ -384,7 +392,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 		"success": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
 				client.EXPECT().Do(gomock.Any()).Return(&http.Response{
-					Header:     map[string][]string{"Content-Type": {"application/json"}},
+					Header:     buildHeaders(map[string]string{"Content-Type": "application/json"}),
 					Body:       io.NopCloser(strings.NewReader(emptyFlagData)),
 					StatusCode: http.StatusOK,
 				}, nil)
