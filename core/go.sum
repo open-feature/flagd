@@ -261,8 +261,8 @@ github.com/onsi/ginkgo/v2 v2.21.0 h1:7rg/4f3rB88pb5obDgNZrNHrQ4e6WpjonchcpuBRnZM
 github.com/onsi/ginkgo/v2 v2.21.0/go.mod h1:7Du3c42kxCUegi0IImZ1wUQzMBVecgIHjR1C+NkhLQo=
 github.com/onsi/gomega v1.35.1 h1:Cwbd75ZBPxFSuZ6T+rN/WCb/gOc6YgFBXLlZLhC7Ds4=
 github.com/onsi/gomega v1.35.1/go.mod h1:PvZbdDc8J6XJEpDK4HCuRBm8a6Fzp9/DmhC9C7yFlog=
-github.com/open-feature/flagd-schemas v0.2.9-0.20250707123415-08b4c52d3b86 h1:r3e+qs3QUdf4+lUi2ZZnSHgYkjeLIb5yu5jo+ypA8iw=
-github.com/open-feature/flagd-schemas v0.2.9-0.20250707123415-08b4c52d3b86/go.mod h1:WKtwo1eW9/K6D+4HfgTXWBqCDzpvMhDa5eRxW7R5B2U=
+github.com/open-feature/flagd-schemas v0.2.13 h1:LzoyQfirfpR8cxI4PKnoFRtpwPjpC/cOO8N0n8dpbRc=
+github.com/open-feature/flagd-schemas v0.2.13/go.mod h1:C0jnJ4C3j2LzGuqKgLDdTsdfKEWQp6sOHZyxu3QohFU=
 github.com/open-feature/open-feature-operator/apis v0.2.45 h1:URnUf22ZoAx7/W8ek8dXCBYgY8FmnFEuEOSDLROQafY=
 github.com/open-feature/open-feature-operator/apis v0.2.45/go.mod h1:PYh/Hfyna1lZYZUeu/8LM0qh0ZgpH7kKEXRLYaaRhGs=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
