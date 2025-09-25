@@ -34,6 +34,7 @@ type Sync struct {
 	interval    uint32
 	ready       bool
 	eTag        string
+	timeoutS    time.Duration
 
 	oauthCredential *oauthCredentialHandler
 }
@@ -59,12 +60,12 @@ func (och *oauthCredentialHandler) loadOAuthConfiguration() (*clientcredentials.
 		return oauth, nil
 	}
 	// we load from files
-	id, err := os.ReadFile(och.folderSource + "/" + och.clientId)
+	id, err := os.ReadFile(och.folderSource + "/client-id")
 	if err != nil {
 		return nil, err
 	}
 
-	secret, err := os.ReadFile(och.folderSource + "/" + och.clientSecret)
+	secret, err := os.ReadFile(och.folderSource + "/client-secret")
 	if err != nil {
 		return nil, err
 	}
@@ -258,11 +259,12 @@ func (hs *Sync) getClient() Client {
 	}
 	// if we cannot reuse the cached one, let's create a new one
 	client := &http.Client{
-		Timeout: time.Second * 10,
+		Timeout: time.Second * hs.timeoutS,
 	}
 	if hs.oauthCredential != nil {
 		if c, err := hs.oauthCredential.getOAuthClient(); err == nil {
 			client = c
+			client.Timeout = time.Second * hs.timeoutS
 			hs.oauthCredential.lastUpdate = time.Now()
 		} else {
 			hs.logger.Error(fmt.Sprintf("Cannot init OAuth. Default to normal HTTP client: %v", err))
@@ -280,13 +282,13 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 	}
 
 	var oauthCredential *oauthCredentialHandler
-	if config.OAuthConfig != nil {
+	if config.OAuth != nil {
 		oauthCredential = &oauthCredentialHandler{
-			clientId:           config.OAuthConfig.ClientId,
-			clientSecret:       config.OAuthConfig.ClientSecret,
-			tokenUrl:           config.OAuthConfig.TokenUrl,
-			folderSource:       config.OAuthConfig.Folder,
-			reloadDelaySeconds: config.OAuthConfig.ReloadDelayS,
+			clientId:           config.OAuth.ClientID,
+			clientSecret:       config.OAuth.ClientSecret,
+			tokenUrl:           config.OAuth.TokenURL,
+			folderSource:       config.OAuth.Folder,
+			reloadDelaySeconds: config.OAuth.ReloadDelayS,
 			lastUpdate:         time.Now(),
 		}
 	}
@@ -302,5 +304,6 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 		interval:        interval,
 		cron:            cron.New(),
 		oauthCredential: oauthCredential,
+		timeoutS:        time.Duration(config.TimeoutS),
 	}
 }

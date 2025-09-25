@@ -47,15 +47,16 @@ type SourceConfig struct {
 	Selector    string `json:"selector,omitempty"`
 	Interval    uint32 `json:"interval,omitempty"`
 	MaxMsgSize  int    `json:"maxMsgSize,omitempty"`
+	TimeoutS    int    `json:"timeoutS,omitempty"`
 
-	OAuthConfig *OAuthCredentialHandler `json:"oauthConfig,omitempty"`
+	OAuth *OAuthCredentialHandler `json:"oauth,omitempty"`
 }
 
 // OAuthCredentialHandler is a helper to manager OAuth 2.0 tokens, including re-loading of tokens.
 type OAuthCredentialHandler struct {
-	ClientId     string `json:"clientID,omitempty"`
+	ClientID     string `json:"clientID,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
-	TokenUrl     string `json:"tokenUrl,omitempty"`
+	TokenURL     string `json:"tokenUrl,omitempty"`
 	Folder       string `json:"folder,omitempty"`
 	ReloadDelayS int    `json:"reloadDelayS,omitempty"`
 }

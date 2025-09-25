@@ -289,20 +289,20 @@ func TestParseOAuth(t *testing.T) {
 			in: `[{
 	"uri": "https://secure-remote",
 	"provider":"http", 
-	"oauthConfig": { 
+	"oauth": { 
 		"clientID": "myID",
 		"clientSecret": "mySecret",
-		"tokenUrl": "myTokenUrl" 
+		"tokenURL": "myTokenUrl" 
 	}}]`,
 			expectErr: false,
 			out: []sync.SourceConfig{
 				{
 					URI:      "https://secure-remote",
 					Provider: "http",
-					OAuthConfig: &sync.OAuthCredentialHandler{
-						ClientId:     "myID",
+					OAuth: &sync.OAuthCredentialHandler{
+						ClientID:     "myID",
 						ClientSecret: "mySecret",
-						TokenUrl:     "myTokenUrl",
+						TokenURL:     "myTokenUrl",
 					},
 				},
 			},

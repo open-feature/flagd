@@ -470,23 +470,23 @@ func TestHTTPSync_Resync(t *testing.T) {
 
 func TestHTTPSync_getClient(t *testing.T) {
 	oauth := &sync.OAuthCredentialHandler{
-		ClientId:     "myClientID",
+		ClientID:     "myClientID",
 		ClientSecret: "myClientSecret",
-		TokenUrl:     "http://localhost",
+		TokenURL:     "http://localhost",
 	}
 	oauthDelay := &sync.OAuthCredentialHandler{
-		ClientId:     "myClientID",
+		ClientID:     "myClientID",
 		ClientSecret: "myClientSecret",
-		TokenUrl:     "http://localhost",
+		TokenURL:     "http://localhost",
 		ReloadDelayS: 10000,
 	}
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
 	oauthClientCredential := &clientcredentials.Config{
-		ClientID:     oauth.ClientId,
+		ClientID:     oauth.ClientID,
 		ClientSecret: oauth.ClientSecret,
-		TokenURL:     oauth.TokenUrl,
+		TokenURL:     oauth.TokenURL,
 		AuthStyle:    oauth2.AuthStyleAutoDetect,
 	}
 	tests := map[string]struct {
@@ -498,12 +498,12 @@ func TestHTTPSync_getClient(t *testing.T) {
 		},
 		"no http client yes oauth": {
 			config: sync.SourceConfig{
-				OAuthConfig: oauth,
+				OAuth: oauth,
 			},
 		},
 		"no http client yes oauth reload": {
 			config: sync.SourceConfig{
-				OAuthConfig: oauthDelay,
+				OAuth: oauthDelay,
 			},
 		},
 		"yes http client no oauth": {
@@ -512,13 +512,13 @@ func TestHTTPSync_getClient(t *testing.T) {
 		},
 		"yes http client yes oauth": {
 			config: sync.SourceConfig{
-				OAuthConfig: oauth,
+				OAuth: oauth,
 			},
 			client: client,
 		},
 		"yes http client yes oauth reload": {
 			config: sync.SourceConfig{
-				OAuthConfig: oauthDelay,
+				OAuth: oauthDelay,
 			},
 			client: oauthClientCredential.Client(context.Background()),
 		},
@@ -533,7 +533,7 @@ func TestHTTPSync_getClient(t *testing.T) {
 				httpSync.client = tt.client
 				httpClient, ok := httpSync.getClient().(*http.Client)
 				require.True(t, ok, "expected http client")
-				if tt.config.OAuthConfig != nil {
+				if tt.config.OAuth != nil {
 					// we use oauth so client should be different
 					require.IsType(t, &oauth2.Transport{}, httpClient.Transport)
 				} else {
@@ -604,10 +604,10 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			s := NewHTTP(sync.SourceConfig{
 				URI:         ts.URL,
 				BearerToken: "it_should_be_replaced_by_oauth",
-				OAuthConfig: &sync.OAuthCredentialHandler{
-					ClientId:     clientID,
+				OAuth: &sync.OAuthCredentialHandler{
+					ClientID:     clientID,
 					ClientSecret: clientSecret,
-					TokenUrl:     ts.URL + oauthPath,
+					TokenURL:     ts.URL + oauthPath,
 					ReloadDelayS: 10000,
 				},
 			}, l)
@@ -671,38 +671,38 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 	}(dir)
 	require.NoError(t, err)
 
-	err = os.WriteFile(dir+"/"+clientID, []byte(secretClientID), 0644)
+	err = os.WriteFile(dir+"/client-id", []byte(secretClientID), 0644)
 	require.NoError(t, err)
-	err = os.WriteFile(dir+"/"+clientSecret, []byte(secretClientSecret), 0644)
+	err = os.WriteFile(dir+"/client-secret", []byte(secretClientSecret), 0644)
 	require.NoError(t, err)
 
 	l := logger.NewLogger(nil, false)
 	s := NewHTTP(sync.SourceConfig{
 		URI:         ts.URL,
 		BearerToken: "it_should_be_replaced_by_oauth",
-		OAuthConfig: &sync.OAuthCredentialHandler{
-			ClientId:     clientID,
+		OAuth: &sync.OAuthCredentialHandler{
+			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			Folder:       dir,
-			TokenUrl:     ts.URL + oauthPath,
+			TokenURL:     ts.URL + oauthPath,
 			ReloadDelayS: 0, // we force loading the secret at each req
 		},
 	}, l)
 	d := make(chan sync.DataSync, 1)
 	// when we fire the HTTP call
-	err = s.ReSync(context.Background(), d)
+	s.ReSync(context.Background(), d)
 	// then the right secrets are used
 	require.Equal(t, secretClientID, oauthMock.lastParams.Get("client_id"))
 	require.Equal(t, secretClientSecret, oauthMock.lastParams.Get("client_secret"))
 
 	// when we change the secrets
-	err = os.WriteFile(dir+"/"+clientID, []byte(secretClientID_new), 0644)
+	err = os.WriteFile(dir+"/client-id", []byte(secretClientID_new), 0644)
 	require.NoError(t, err)
-	err = os.WriteFile(dir+"/"+clientSecret, []byte(secretClientSecret_new), 0644)
+	err = os.WriteFile(dir+"/client-secret", []byte(secretClientSecret_new), 0644)
 	require.NoError(t, err)
 
 	// then the new HTTP call will use the new valus
-	err = s.ReSync(context.Background(), d)
+	s.ReSync(context.Background(), d)
 	require.Equal(t, secretClientID_new, oauthMock.lastParams.Get("client_id"))
 	require.Equal(t, secretClientSecret_new, oauthMock.lastParams.Get("client_secret"))
 
