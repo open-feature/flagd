@@ -24,7 +24,6 @@ type SvcConfiguration struct {
 	Port            uint16
 	ServiceName     string
 	MetricsRecorder telemetry.IMetricsRecorder
-	SelectorFallbackKey string
 }
 
 type Service struct {
@@ -48,7 +47,6 @@ func NewOfrepService(
 		headerToContextKeyMappings,
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
-		cfg.SelectorFallbackKey,
 	))
 
 	server := http.Server{

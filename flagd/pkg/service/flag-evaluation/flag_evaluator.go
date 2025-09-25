@@ -36,7 +36,6 @@ type OldFlagEvaluationService struct {
 	eventingConfiguration IEvents
 	flagEvalTracer        trace.Tracer
 	contextValues         map[string]any
-	selectorFallbackKey   string
 }
 
 // NewOldFlagEvaluationService creates a OldFlagEvaluationService with provided parameters
@@ -46,7 +45,6 @@ func NewOldFlagEvaluationService(
 	eventingCfg IEvents,
 	metricsRecorder telemetry.IMetricsRecorder,
 	contextValues map[string]any,
-	selectorFallback string,
 ) *OldFlagEvaluationService {
 	svc := &OldFlagEvaluationService{
 		logger:                log,
@@ -55,7 +53,6 @@ func NewOldFlagEvaluationService(
 		eventingConfiguration: eventingCfg,
 		flagEvalTracer:        otel.Tracer("flagEvaluationService"),
 		contextValues:         contextValues,
-		selectorFallbackKey:   selectorFallback,
 	}
 
 	if metricsRecorder != nil {
@@ -79,7 +76,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	}
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	values, _, err := s.eval.ResolveAllValues(ctx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), make(map[string]string)))
@@ -146,7 +143,7 @@ func (s *OldFlagEvaluationService) EventStream(
 
 	requestNotificationChan := make(chan service.Notification, 1)
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
@@ -189,7 +186,7 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	err := resolve[bool](
@@ -221,7 +218,7 @@ func (s *OldFlagEvaluationService) ResolveString(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
@@ -254,7 +251,7 @@ func (s *OldFlagEvaluationService) ResolveInt(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
@@ -287,7 +284,7 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
@@ -320,7 +317,7 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})

@@ -15,6 +15,7 @@ const flagsTable = "flags"
 const idIndex = "id"
 const keyIndex = "key"
 const sourceIndex = "source"
+const defaultFallbackKey = sourceIndex
 const priorityIndex = "priority"
 const flagSetIdIndex = "flagSetId"
 
@@ -29,32 +30,32 @@ var nilFlagSetId = uuid.New().String()
 
 // A selector represents a set of constraints used to query the store.
 type Selector struct {
-	indexMap map[string]string
+	indexMap      map[string]string
+	usingFallback bool
 }
 
 // NewSelector creates a new Selector from a selector expression string.
 // For example, to select flags from source "./mySource" and flagSetId "1234", use the expression:
 // "source=./mySource,flagSetId=1234"
 func NewSelector(selectorExpression string) Selector {
-	return NewSelectorWithFallback(selectorExpression, "")
-}
-func NewSelectorWithFallback(selectorExpression string, fallbackExpressionKey string) Selector {
+	indexMap, usingFallback := expressionToMap(selectorExpression, "")
 	return Selector{
-		indexMap: expressionToMap(selectorExpression, fallbackExpressionKey),
+		indexMap:      indexMap,
+		usingFallback: usingFallback,
 	}
 }
-func expressionToMap(sExp string, fallbackExpressionKey string) map[string]string {
+func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]string, bool) {
 	selectorMap := make(map[string]string)
 	if sExp == "" {
-		return selectorMap
+		return selectorMap, false
 	}
 
 	if strings.Index(sExp, "=") == -1 {
 		if fallbackExpressionKey == "" {
-			fallbackExpressionKey = sourceIndex
+			fallbackExpressionKey = defaultFallbackKey
 		}
 		selectorMap[fallbackExpressionKey] = sExp
-		return selectorMap
+		return selectorMap, true
 	}
 
 	// Split the selector by commas
@@ -68,13 +69,33 @@ func expressionToMap(sExp string, fallbackExpressionKey string) map[string]strin
 			selectorMap[key] = value
 		}
 	}
-	return selectorMap
+	return selectorMap, false
 }
 
-func (s Selector) WithIndex(key string, value string) Selector {
+func (s *Selector) WithFallback(fallbackKey string) *Selector {
+
+	if s == nil || !s.usingFallback {
+		return s
+	}
+
+	m := maps.Clone(s.indexMap)
+	if fallbackKey == "" {
+		fallbackKey = defaultFallbackKey
+	}
+	_, ok := m[fallbackKey]
+	if !ok {
+		m[fallbackKey] = m[defaultFallbackKey]
+		delete(m, defaultFallbackKey)
+	}
+	return &Selector{
+		indexMap: m,
+	}
+}
+
+func (s *Selector) WithIndex(key string, value string) *Selector {
 	m := maps.Clone(s.indexMap)
 	m[key] = value
-	return Selector{
+	return &Selector{
 		indexMap: m,
 	}
 }

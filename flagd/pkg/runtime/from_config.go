@@ -103,16 +103,14 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		logger.WithFields(zap.String("component", "service")),
 		jsonEvaluator,
 		store,
-		recorder,
-		config.SelectorFallbackKey)
+		recorder)
 
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
-		Logger: logger.WithFields(zap.String("component", "OFREPService")),
-		Port:   config.OfrepServicePort,
-		ServiceName: svcName,
+		Logger:          logger.WithFields(zap.String("component", "OFREPService")),
+		Port:            config.OfrepServicePort,
+		ServiceName:     svcName,
 		MetricsRecorder: recorder,
-		SelectorFallbackKey: config.SelectorFallbackKey,
 	},
 		config.ContextValues,
 		config.HeaderToContextKeyMappings,
@@ -133,7 +131,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		SocketPath:          config.SyncServiceSocketPath,
 		StreamDeadline:      config.StreamDeadline,
 		DisableSyncMetadata: config.DisableSyncMetadata,
-		SelectorFallbackKey: config.SelectorFallbackKey,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)

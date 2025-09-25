@@ -31,7 +31,6 @@ type FlagEvaluationService struct {
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	deadline                   time.Duration
-	selectorFallbackKey        string
 }
 
 // NewFlagEvaluationService creates a FlagEvaluationService with provided parameters
@@ -42,7 +41,6 @@ func NewFlagEvaluationService(log *logger.Logger,
 	contextValues map[string]any,
 	headerToContextKeyMappings map[string]string,
 	streamDeadline time.Duration,
-	selectorFallbackKey string,
 ) *FlagEvaluationService {
 	svc := &FlagEvaluationService{
 		logger:                     log,
@@ -53,7 +51,6 @@ func NewFlagEvaluationService(log *logger.Logger,
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
 		deadline:                   streamDeadline,
-		selectorFallbackKey:        selectorFallbackKey,
 	}
 
 	if metricsRecorder != nil {
@@ -79,7 +76,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	}
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -168,7 +165,7 @@ func (s *FlagEvaluationService) EventStream(
 	s.logger.Debug("starting event stream for request")
 	requestNotificationChan := make(chan service.Notification, 1)
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
@@ -214,7 +211,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveBooleanResponse{})
@@ -246,7 +243,7 @@ func (s *FlagEvaluationService) ResolveString(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveStringResponse{})
@@ -278,7 +275,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveIntResponse{})
@@ -310,7 +307,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveFloatResponse{})
@@ -342,7 +339,7 @@ func (s *FlagEvaluationService) ResolveObject(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, s.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&evalV1.ResolveObjectResponse{})

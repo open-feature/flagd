@@ -68,12 +68,12 @@ type ConnectService struct {
 	metricsServerMtx sync.RWMutex
 
 	readinessEnabled bool
-
-	selectorFallbackKey string
 }
 
 // NewConnectService creates a ConnectService with provided parameters
-func NewConnectService(logger *logger.Logger, evaluator evaluator.IEvaluator, store store.IStore, mRecorder telemetry.IMetricsRecorder, selectorFallbackKey string) *ConnectService {
+func NewConnectService(
+	logger *logger.Logger, evaluator evaluator.IEvaluator, store store.IStore, mRecorder telemetry.IMetricsRecorder,
+) *ConnectService {
 	cs := &ConnectService{
 		logger:  logger,
 		eval:    evaluator,
@@ -84,7 +84,6 @@ func NewConnectService(logger *logger.Logger, evaluator evaluator.IEvaluator, st
 			store:  store,
 			logger: logger,
 		},
-		selectorFallbackKey: selectorFallbackKey,
 	}
 	if mRecorder != nil {
 		cs.metrics = mRecorder
@@ -159,7 +158,6 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		s.eventingConfiguration,
 		s.metrics,
 		svcConf.ContextValues,
-		s.selectorFallbackKey,
 	)
 
 	marshalOpts := WithJSON(
@@ -179,7 +177,6 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		svcConf.ContextValues,
 		svcConf.HeaderToContextKeyMappings,
 		svcConf.StreamDeadline,
-		s.selectorFallbackKey,
 	)
 
 	_, newHandler := evaluationV1.NewServiceHandler(newFes, append(svcConf.Options, marshalOpts)...)

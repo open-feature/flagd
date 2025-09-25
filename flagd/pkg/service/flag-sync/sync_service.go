@@ -35,7 +35,6 @@ type SvcConfigurations struct {
 	SocketPath          string
 	StreamDeadline      time.Duration
 	DisableSyncMetadata bool
-	SelectorFallbackKey string
 }
 
 type Service struct {
@@ -87,7 +86,6 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		contextValues:       cfg.ContextValues,
 		deadline:            cfg.StreamDeadline,
 		disableSyncMetadata: cfg.DisableSyncMetadata,
-		selectorFallbackKey: cfg.SelectorFallbackKey,
 	})
 
 	var lis net.Listener

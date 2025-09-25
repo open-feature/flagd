@@ -33,7 +33,6 @@ type handler struct {
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	tracer                     trace.Tracer
-	selectorFallbackKey        string
 }
 
 func NewOfrepHandler(
@@ -43,7 +42,6 @@ func NewOfrepHandler(
 	headerToContextKeyMappings map[string]string,
 	metricsRecorder telemetry.IMetricsRecorder,
 	serviceName string,
-	selectorFallbackKey string,
 ) http.Handler {
 	h := handler{
 		Logger:                     logger,
@@ -51,7 +49,6 @@ func NewOfrepHandler(
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
 		tracer:                     otel.Tracer("flagd.ofrep.v1"),
-		selectorFallbackKey:        selectorFallbackKey,
 	}
 
 	router := mux.NewRouter()
@@ -96,7 +93,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, h.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
@@ -120,7 +117,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelectorWithFallback(selectorExpression, h.selectorFallbackKey)
+	selector := store.NewSelector(selectorExpression)
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
