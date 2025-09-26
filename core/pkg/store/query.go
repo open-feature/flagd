@@ -73,8 +73,7 @@ func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]stri
 }
 
 func (s *Selector) WithFallback(fallbackKey string) *Selector {
-
-	if s == nil || !s.usingFallback {
+	if s == nil || !s.usingFallback || s.indexMap == nil {
 		return s
 	}
 
@@ -88,15 +87,26 @@ func (s *Selector) WithFallback(fallbackKey string) *Selector {
 		delete(m, defaultFallbackKey)
 	}
 	return &Selector{
-		indexMap: m,
+		indexMap:      m,
+		usingFallback: false, // After applying fallback, it's no longer a fallback selector
 	}
 }
 
 func (s *Selector) WithIndex(key string, value string) *Selector {
+	if s == nil {
+		// Handle nil selector gracefully
+		return &Selector{
+			indexMap: map[string]string{key: value},
+		}
+	}
 	m := maps.Clone(s.indexMap)
+	if m == nil {
+		m = make(map[string]string)
+	}
 	m[key] = value
 	return &Selector{
-		indexMap: m,
+		indexMap:      m,
+		usingFallback: s.usingFallback, // Preserve the fallback status
 	}
 }
 

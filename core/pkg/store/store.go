@@ -335,9 +335,8 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 // returns an iterator for the given selector, or all flags if the selector is nil or empty
 func (s *Store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err error) {
 	txn := s.db.Txn(false)
-	fallbackEnrichedSelector := selector.WithFallback(s.fallbackKey)
-	if !fallbackEnrichedSelector.IsEmpty() {
-		indexId, constraints := fallbackEnrichedSelector.ToQuery()
+	if !selector.IsEmpty() {
+		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting all flags with query: %s, %v", indexId, constraints))
 		return txn.Get(flagsTable, indexId, constraints...)
 	} else {
