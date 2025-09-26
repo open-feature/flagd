@@ -33,11 +33,17 @@ type Store struct {
 	sources []string
 	// deprecated: has no effect and will be removed soon.
 	FlagSources []string
+	fallbackKey string
+}
+
+type StoreConfig struct {
+	Sources             []string
+	SelectorFallbackKey string
 }
 
 // NewStore creates a new in-memory store with the given sources.
 // The order of sources in the slice determines their priority, when queries result in duplicate flags (queries without source or flagSetId), the higher priority source "wins".
-func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
+func NewStore(logger *logger.Logger, storeConfig StoreConfig) (*Store, error) {
 
 	// a unique index must exist for each set of constraints - for example, to look up by key and source, we need a compound index on key+source, etc
 	// we maybe want to generate these dynamically in the future to support more robust querying, but for now we will hardcode the ones we need
@@ -124,18 +130,19 @@ func NewStore(logger *logger.Logger, sources []string) (*Store, error) {
 	}
 
 	// clone the sources to avoid modifying the original slice
-	s := slices.Clone(sources)
+	s := slices.Clone(storeConfig.Sources)
 
 	return &Store{
-		sources: s,
-		db:      db,
-		logger:  logger,
+		sources:     s,
+		db:          db,
+		logger:      logger,
+		fallbackKey: storeConfig.SelectorFallbackKey,
 	}, nil
 }
 
 // Deprecated: use NewStore instead - will be removed very soon.
 func NewFlags() *Store {
-	state, err := NewStore(logger.NewLogger(nil, false), noValidatedSources)
+	state, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: noValidatedSources})
 
 	if err != nil {
 		panic(fmt.Sprintf("unable to create flag store: %v", err))
@@ -146,12 +153,14 @@ func NewFlags() *Store {
 func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error) {
 	s.logger.Debug(fmt.Sprintf("getting flag %s", key))
 	txn := s.db.Txn(false)
-	queryMeta := selector.ToMetadata()
+
+	fallbackEnrichedSelector := selector.WithFallback(s.fallbackKey)
+	queryMeta := fallbackEnrichedSelector.ToMetadata()
 
 	// if present, use the selector to query the flags
-	if !selector.IsEmpty() {
-		selector := selector.WithIndex("key", key)
-		indexId, constraints := selector.ToQuery()
+	if !fallbackEnrichedSelector.IsEmpty() {
+		fallbackEnrichedSelector = fallbackEnrichedSelector.WithIndex("key", key)
+		indexId, constraints := fallbackEnrichedSelector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
 		raw, err := txn.First(flagsTable, indexId, constraints...)
 		flag, ok := raw.(model.Flag)
@@ -194,8 +203,9 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
 func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
 	flags := make(map[string]model.Flag)
-	queryMeta := selector.ToMetadata()
-	it, err := s.selectOrAll(selector)
+	fallbackEnrichedSelector := selector.WithFallback(s.fallbackKey)
+	queryMeta := fallbackEnrichedSelector.ToMetadata()
+	it, err := s.selectOrAll(fallbackEnrichedSelector)
 
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("flag query error: %v", err))
@@ -299,7 +309,8 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 	go func() {
 		for {
 			ws := memdb.NewWatchSet()
-			it, err := s.selectOrAll(selector)
+			fallbackEnrichedSelector := selector.WithFallback(s.fallbackKey)
+			it, err := s.selectOrAll(fallbackEnrichedSelector)
 			if err != nil {
 				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
 				close(watcher)

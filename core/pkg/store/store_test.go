@@ -29,7 +29,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "both nil",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -42,7 +42,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "both empty flags",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -55,7 +55,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "empty new",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -68,7 +68,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "update from source 1 (old flag removed)",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -88,7 +88,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "update from source 1 (new flag added)",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -109,7 +109,7 @@ func TestUpdateFlags(t *testing.T) {
 		{
 			name: "flag set inheritance",
 			setup: func(t *testing.T) IStore {
-				s, err := NewStore(logger.NewLogger(nil, false), sources)
+				s, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
@@ -218,7 +218,7 @@ func TestGet(t *testing.T) {
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -303,7 +303,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 				"dupe":  {Key: "dupe", DefaultVariant: "off", Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -375,7 +375,7 @@ func TestWatch(t *testing.T) {
 				"flagC": {Key: "flagC", DefaultVariant: "off"},
 			}
 
-			store, err := NewStore(logger.NewLogger(nil, false), sources)
+			store, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 			if err != nil {
 				t.Fatalf("NewStore failed: %v", err)
 			}
@@ -453,7 +453,7 @@ func TestQueryMetadata(t *testing.T) {
 		"flagB": {Key: "flagB", DefaultVariant: "on"},
 	}
 
-	store, err := NewStore(logger.NewLogger(nil, false), sources)
+	store, err := NewStore(logger.NewLogger(nil, false), StoreConfig{Sources: sources})
 	if err != nil {
 		t.Fatalf("NewStore failed: %v", err)
 	}

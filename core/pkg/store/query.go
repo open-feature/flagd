@@ -15,6 +15,7 @@ const flagsTable = "flags"
 const idIndex = "id"
 const keyIndex = "key"
 const sourceIndex = "source"
+const defaultFallbackKey = sourceIndex
 const priorityIndex = "priority"
 const flagSetIdIndex = "flagSetId"
 
@@ -29,50 +30,99 @@ var nilFlagSetId = uuid.New().String()
 
 // A selector represents a set of constraints used to query the store.
 type Selector struct {
-	indexMap map[string]string
+	indexMap      map[string]string
+	usingFallback bool
 }
 
 // NewSelector creates a new Selector from a selector expression string.
 // For example, to select flags from source "./mySource" and flagSetId "1234", use the expression:
 // "source=./mySource,flagSetId=1234"
 func NewSelector(selectorExpression string) Selector {
+	indexMap, usingFallback := expressionToMap(selectorExpression, "")
 	return Selector{
-		indexMap: expressionToMap(selectorExpression),
+		indexMap:      indexMap,
+		usingFallback: usingFallback,
 	}
 }
 
-func expressionToMap(sExp string) map[string]string {
+func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]string, bool) {
 	selectorMap := make(map[string]string)
 	if sExp == "" {
-		return selectorMap
+		return selectorMap, false
 	}
 
+	// Handle pure fallback case (no equals anywhere)
 	if strings.Index(sExp, "=") == -1 {
-		// if no '=' is found, treat the whole string as as source (backwards compatibility)
-		// we may may support interpreting this as a flagSetId in the future as an option
-		selectorMap[sourceIndex] = sExp
-		return selectorMap
+		if fallbackExpressionKey == "" {
+			fallbackExpressionKey = defaultFallbackKey
+		}
+		selectorMap[fallbackExpressionKey] = sExp
+		return selectorMap, true
 	}
 
 	// Split the selector by commas
 	pairs := strings.Split(sExp, ",")
+	usingFallback := false
+
 	for _, pair := range pairs {
-		// Split each pair by the first equal sign
-		parts := strings.Split(pair, "=")
+		pair = strings.TrimSpace(pair) // Handle whitespace
+		if pair == "" {
+			continue // Skip empty pairs
+		}
+
+		// FIX 1: Use SplitN to split only on FIRST equals sign
+		parts := strings.SplitN(pair, "=", 2)
 		if len(parts) == 2 {
-			key := parts[0]
-			value := parts[1]
+			key := strings.TrimSpace(parts[0])   // FIX 3: Trim key
+			value := strings.TrimSpace(parts[1]) // FIX 3: Trim value
 			selectorMap[key] = value
+		} else {
+			// FIX 2: Handle fallback values in mixed expressions
+			if fallbackExpressionKey == "" {
+				fallbackExpressionKey = defaultFallbackKey
+			}
+			selectorMap[fallbackExpressionKey] = pair
+			usingFallback = true
 		}
 	}
-	return selectorMap
+	return selectorMap, usingFallback
 }
 
-func (s Selector) WithIndex(key string, value string) Selector {
+func (s *Selector) WithFallback(fallbackKey string) *Selector {
+	if s == nil || !s.usingFallback || s.indexMap == nil {
+		return s
+	}
+
 	m := maps.Clone(s.indexMap)
+	if fallbackKey == "" {
+		fallbackKey = defaultFallbackKey
+	}
+	_, ok := m[fallbackKey]
+	if !ok {
+		m[fallbackKey] = m[defaultFallbackKey]
+		delete(m, defaultFallbackKey)
+	}
+	return &Selector{
+		indexMap:      m,
+		usingFallback: false, // After applying fallback, it's no longer a fallback selector
+	}
+}
+
+func (s *Selector) WithIndex(key string, value string) *Selector {
+	if s == nil {
+		// Handle nil selector gracefully
+		return &Selector{
+			indexMap: map[string]string{key: value},
+		}
+	}
+	m := maps.Clone(s.indexMap)
+	if m == nil {
+		m = make(map[string]string)
+	}
 	m[key] = value
-	return Selector{
-		indexMap: m,
+	return &Selector{
+		indexMap:      m,
+		usingFallback: s.usingFallback, // Preserve the fallback status
 	}
 }
 

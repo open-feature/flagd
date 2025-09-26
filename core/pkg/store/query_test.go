@@ -2,6 +2,7 @@ package store
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/model"
@@ -45,20 +46,137 @@ func TestSelector_IsEmpty(t *testing.T) {
 	}
 }
 
-func TestSelector_WithIndex(t *testing.T) {
-	oldS := Selector{indexMap: map[string]string{"source": "abc"}}
-	newS := oldS.WithIndex("flagSetId", "1234")
+// Integration test for NewSelector + WithFallback behavior
+func TestNewSelector_WithFallback_Integration(t *testing.T) {
+	tests := []struct {
+		name                  string
+		input                 string
+		fallbackExpressionKey string
+		wantMap               map[string]string
+		wantUsingFallback     bool
+	}{
+		{
+			name:              "normal key-value pairs - no fallback needed",
+			input:             "source=abc,flagSetId=1234",
+			wantMap:           map[string]string{"source": "abc", "flagSetId": "1234"},
+			wantUsingFallback: false,
+		},
+		{
+			name:                  "fallback with default key",
+			input:                 "mysource",
+			fallbackExpressionKey: "",
+			wantMap:               map[string]string{"source": "mysource"},
+			wantUsingFallback:     false, // WithFallback sets this to false
+		},
+		{
+			name:                  "fallback with custom key",
+			input:                 "customvalue",
+			fallbackExpressionKey: "flagSetId",
+			wantMap:               map[string]string{"flagSetId": "customvalue"},
+			wantUsingFallback:     false, // WithFallback sets this to false
+		},
+		{
+			name:              "empty string - no change",
+			input:             "",
+			wantMap:           map[string]string{},
+			wantUsingFallback: false,
+		},
+		{
+			name:                  "fallback key already exists in parsed result",
+			input:                 "source=original",
+			fallbackExpressionKey: "source",
+			wantMap:               map[string]string{"source": "original"},
+			wantUsingFallback:     false,
+		},
+	}
 
-	if newS.indexMap["source"] != "abc" {
-		t.Errorf("WithIndex did not preserve existing keys")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			selector := NewSelector(tt.input)
+			result := selector.WithFallback(tt.fallbackExpressionKey)
+
+			if !reflect.DeepEqual(result.indexMap, tt.wantMap) {
+				t.Errorf("NewSelector(%q).WithFallback(%q).indexMap = %v, want %v",
+					tt.input, tt.fallbackExpressionKey, result.indexMap, tt.wantMap)
+			}
+
+			if result.usingFallback != tt.wantUsingFallback {
+				t.Errorf("NewSelector(%q).WithFallback(%q).usingFallback = %v, want %v",
+					tt.input, tt.fallbackExpressionKey, result.usingFallback, tt.wantUsingFallback)
+			}
+		})
 	}
-	if newS.indexMap["flagSetId"] != "1234" {
-		t.Errorf("WithIndex did not add new key")
-	}
-	// Ensure original is unchanged
-	if _, ok := oldS.indexMap["flagSetId"]; ok {
-		t.Errorf("WithIndex mutated original selector")
-	}
+}
+
+func TestSelector_WithIndex(t *testing.T) {
+	t.Run("basic functionality", func(t *testing.T) {
+		oldS := Selector{indexMap: map[string]string{"source": "abc"}}
+		newS := oldS.WithIndex("flagSetId", "1234")
+
+		if newS.indexMap["source"] != "abc" {
+			t.Errorf("WithIndex did not preserve existing keys")
+		}
+		if newS.indexMap["flagSetId"] != "1234" {
+			t.Errorf("WithIndex did not add new key")
+		}
+		// Ensure original is unchanged
+		if _, ok := oldS.indexMap["flagSetId"]; ok {
+			t.Errorf("WithIndex mutated original selector")
+		}
+	})
+
+	t.Run("nil selector", func(t *testing.T) {
+		var s *Selector
+		newS := s.WithIndex("key", "value")
+
+		if newS == nil {
+			t.Errorf("WithIndex on nil selector should return new selector")
+		}
+		if newS.indexMap["key"] != "value" {
+			t.Errorf("WithIndex on nil selector should set key-value pair")
+		}
+		if newS.usingFallback {
+			t.Errorf("WithIndex on nil selector should not set usingFallback to true")
+		}
+	})
+
+	t.Run("nil indexMap", func(t *testing.T) {
+		s := &Selector{indexMap: nil, usingFallback: true}
+		newS := s.WithIndex("key", "value")
+
+		if newS.indexMap["key"] != "value" {
+			t.Errorf("WithIndex with nil indexMap should set key-value pair")
+		}
+		if !newS.usingFallback {
+			t.Errorf("WithIndex should preserve usingFallback status")
+		}
+	})
+
+	t.Run("overwrite existing key", func(t *testing.T) {
+		s := &Selector{indexMap: map[string]string{"key": "oldvalue"}}
+		newS := s.WithIndex("key", "newvalue")
+
+		if newS.indexMap["key"] != "newvalue" {
+			t.Errorf("WithIndex should overwrite existing key")
+		}
+		if s.indexMap["key"] != "oldvalue" {
+			t.Errorf("WithIndex should not mutate original")
+		}
+	})
+
+	t.Run("empty values", func(t *testing.T) {
+		s := &Selector{indexMap: map[string]string{"existing": "value"}}
+		newS := s.WithIndex("", "emptykey")
+
+		if newS.indexMap[""] != "emptykey" {
+			t.Errorf("WithIndex should handle empty key")
+		}
+
+		newS2 := s.WithIndex("emptyvalue", "")
+		if newS2.indexMap["emptyvalue"] != "" {
+			t.Errorf("WithIndex should handle empty value")
+		}
+	})
 }
 
 func TestSelector_ToQuery(t *testing.T) {
@@ -85,6 +203,42 @@ func TestSelector_ToQuery(t *testing.T) {
 			selector:   Selector{indexMap: map[string]string{"source": "src"}},
 			wantIndex:  "source",
 			wantConstr: []interface{}{"src"},
+		},
+		{
+			name:       "empty selector",
+			selector:   Selector{indexMap: map[string]string{}},
+			wantIndex:  "",
+			wantConstr: []interface{}{},
+		},
+		{
+			name:       "three keys sorted alphabetically",
+			selector:   Selector{indexMap: map[string]string{"zebra": "z", "alpha": "a", "beta": "b"}},
+			wantIndex:  "alpha+beta+zebra",
+			wantConstr: []interface{}{"a", "b", "z"},
+		},
+		{
+			name:       "flagSetId and key with empty values",
+			selector:   Selector{indexMap: map[string]string{"flagSetId": "", "key": "myKey"}},
+			wantIndex:  "flagSetId+key",
+			wantConstr: []interface{}{"", "myKey"},
+		},
+		{
+			name:       "priority index",
+			selector:   Selector{indexMap: map[string]string{"priority": "high"}},
+			wantIndex:  "priority",
+			wantConstr: []interface{}{"high"},
+		},
+		{
+			name:       "compound index matching constants",
+			selector:   Selector{indexMap: map[string]string{"flagSetId": "123", "source": "file.yaml"}},
+			wantIndex:  "flagSetId+source",
+			wantConstr: []interface{}{"123", "file.yaml"},
+		},
+		{
+			name:       "three key compound including flagSetId key source",
+			selector:   Selector{indexMap: map[string]string{"flagSetId": "123", "key": "mykey", "source": "file.yaml"}},
+			wantIndex:  "flagSetId+key+source",
+			wantConstr: []interface{}{"123", "mykey", "file.yaml"},
 		},
 	}
 
@@ -142,6 +296,16 @@ func TestSelector_ToMetadata(t *testing.T) {
 			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}},
 			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
 		},
+		{
+			name:     "empty values should be excluded",
+			selector: &Selector{indexMap: map[string]string{"flagSetId": "", "source": ""}},
+			want:     model.Metadata{},
+		},
+		{
+			name:     "only unknown indices (should be ignored)",
+			selector: &Selector{indexMap: map[string]string{"unknown": "value", "other": "data"}},
+			want:     model.Metadata{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -156,38 +320,342 @@ func TestSelector_ToMetadata(t *testing.T) {
 
 func TestNewSelector(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   string
-		wantMap map[string]string
+		name              string
+		input             string
+		wantIndexMap      map[string]string
+		wantUsingFallback bool
 	}{
 		{
-			name:    "source and flagSetId",
-			input:   "source=abc,flagSetId=1234",
-			wantMap: map[string]string{"source": "abc", "flagSetId": "1234"},
+			name:              "key-value pairs",
+			input:             "source=abc,flagSetId=1234",
+			wantIndexMap:      map[string]string{"source": "abc", "flagSetId": "1234"},
+			wantUsingFallback: false,
 		},
 		{
-			name:    "source",
-			input:   "source=abc",
-			wantMap: map[string]string{"source": "abc"},
+			name:              "single key-value pair",
+			input:             "source=abc",
+			wantIndexMap:      map[string]string{"source": "abc"},
+			wantUsingFallback: false,
 		},
 		{
-			name:    "no equals, treat as source",
-			input:   "mysource",
-			wantMap: map[string]string{"source": "mysource"},
+			name:              "no equals - should use fallback with default key",
+			input:             "mysource",
+			wantIndexMap:      map[string]string{"source": "mysource"},
+			wantUsingFallback: true,
 		},
 		{
-			name:    "empty string",
-			input:   "",
-			wantMap: map[string]string{},
+			name:              "empty string",
+			input:             "",
+			wantIndexMap:      map[string]string{},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "complex expression",
+			input:             "flagSetId=123,key=mykey,source=file.yaml",
+			wantIndexMap:      map[string]string{"flagSetId": "123", "key": "mykey", "source": "file.yaml"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "single key only (fallback)",
+			input:             "fallbackvalue",
+			wantIndexMap:      map[string]string{"source": "fallbackvalue"},
+			wantUsingFallback: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSelector(tt.input)
-			if !reflect.DeepEqual(s.indexMap, tt.wantMap) {
-				t.Errorf("NewSelector(%q) indexMap = %v, want %v", tt.input, s.indexMap, tt.wantMap)
+			selector := NewSelector(tt.input)
+
+			if !reflect.DeepEqual(selector.indexMap, tt.wantIndexMap) {
+				t.Errorf("NewSelector(%q).indexMap = %v, want %v", tt.input, selector.indexMap, tt.wantIndexMap)
+			}
+
+			if selector.usingFallback != tt.wantUsingFallback {
+				t.Errorf("NewSelector(%q).usingFallback = %v, want %v", tt.input, selector.usingFallback, tt.wantUsingFallback)
 			}
 		})
+	}
+}
+
+func TestExpressionToMap(t *testing.T) {
+	tests := []struct {
+		name                  string
+		sExp                  string
+		fallbackExpressionKey string
+		wantMap               map[string]string
+		wantUsingFallback     bool
+	}{
+		{
+			name:              "empty expression",
+			sExp:              "",
+			wantMap:           map[string]string{},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "single key-value pair",
+			sExp:              "key=value",
+			wantMap:           map[string]string{"key": "value"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "multiple key-value pairs",
+			sExp:              "key1=value1,key2=value2,key3=value3",
+			wantMap:           map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "no equals sign - default fallback",
+			sExp:              "somevalue",
+			wantMap:           map[string]string{"source": "somevalue"},
+			wantUsingFallback: true,
+		},
+		{
+			name:                  "no equals sign - custom fallback",
+			sExp:                  "somevalue",
+			fallbackExpressionKey: "customKey",
+			wantMap:               map[string]string{"customKey": "somevalue"},
+			wantUsingFallback:     true,
+		},
+		{
+			name:              "malformed pair - missing value",
+			sExp:              "key1=value1,key2=,key3=value3",
+			wantMap:           map[string]string{"key1": "value1", "key2": "", "key3": "value3"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "malformed pair - missing key",
+			sExp:              "key1=value1,=value2,key3=value3",
+			wantMap:           map[string]string{"key1": "value1", "": "value2", "key3": "value3"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "multiple equals signs (should split on first)",
+			sExp:              "key=value=with=equals",
+			wantMap:           map[string]string{"key": "value=with=equals"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "single equals sign only",
+			sExp:              "=",
+			wantMap:           map[string]string{"": ""},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "whitespace properly trimmed",
+			sExp:              "key1=value1, key2 = value2 ",
+			wantMap:           map[string]string{"key1": "value1", "key2": "value2"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "leading/trailing spaces trimmed from keys and values",
+			sExp:              " spaced key = spaced value , normalkey=normalvalue",
+			wantMap:           map[string]string{"spaced key": "spaced value", "normalkey": "normalvalue"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "tabs and multiple spaces trimmed",
+			sExp:              "key1=value1,\tkey2\t=\tvalue2\t,key3 =   value3   ",
+			wantMap:           map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"},
+			wantUsingFallback: false,
+		},
+		{
+			name:              "mixed key=value and fallback override",
+			sExp:              "source=foo,bar",
+			wantMap:           map[string]string{"source": "bar"}, // "bar" is silently ignored!
+			wantUsingFallback: true,
+		},
+		{
+			name:              "mixed key=value and fallback",
+			sExp:              "flagset=foo,bar",
+			wantMap:           map[string]string{"flagset": "foo", "source": "bar"}, // "bar" is silently ignored!
+			wantUsingFallback: true,
+		},
+		{
+			name:                  "mixed key=value and fallback and fallbackKey",
+			sExp:                  "source=foo,bar",
+			fallbackExpressionKey: "flagset",
+			wantMap:               map[string]string{"source": "foo", "flagset": "bar"}, // "bar" is silently ignored!
+			wantUsingFallback:     true,
+		},
+		{
+			name:              "multiple fallbacks in mixed expression (current behavior)",
+			sExp:              "key1=value1,fallback1,key2=value2,fallback2",
+			wantMap:           map[string]string{"key1": "value1", "key2": "value2", "source": "fallback2"}, // fallbacks ignored!
+			wantUsingFallback: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMap, gotUsingFallback := expressionToMap(tt.sExp, tt.fallbackExpressionKey)
+			if !reflect.DeepEqual(gotMap, tt.wantMap) {
+				t.Errorf("expressionToMap() map = %v, want %v", gotMap, tt.wantMap)
+			}
+			if gotUsingFallback != tt.wantUsingFallback {
+				t.Errorf("expressionToMap() usingFallback = %v, want %v", gotUsingFallback, tt.wantUsingFallback)
+			}
+		})
+	}
+}
+
+func TestSelector_WithFallback(t *testing.T) {
+	tests := []struct {
+		name        string
+		selector    *Selector
+		fallbackKey string
+		want        *Selector
+	}{
+		{
+			name:     "nil selector",
+			selector: nil,
+			want:     nil,
+		},
+		{
+			name:     "selector not using fallback",
+			selector: &Selector{indexMap: map[string]string{"key": "value"}, usingFallback: false},
+			want:     &Selector{indexMap: map[string]string{"key": "value"}, usingFallback: false},
+		},
+		{
+			name:     "nil indexMap",
+			selector: &Selector{indexMap: nil, usingFallback: true},
+			want:     &Selector{indexMap: nil, usingFallback: true},
+		},
+		{
+			name:        "using fallback with default key",
+			selector:    &Selector{indexMap: map[string]string{"source": "defaultvalue"}, usingFallback: true},
+			fallbackKey: "",
+			want:        &Selector{indexMap: map[string]string{"source": "defaultvalue"}, usingFallback: false},
+		},
+		{
+			name:        "using fallback with custom key",
+			selector:    &Selector{indexMap: map[string]string{"source": "defaultvalue"}, usingFallback: true},
+			fallbackKey: "customKey",
+			want:        &Selector{indexMap: map[string]string{"customKey": "defaultvalue"}, usingFallback: false},
+		},
+		{
+			name:        "fallback key already exists",
+			selector:    &Selector{indexMap: map[string]string{"source": "defaultvalue", "customKey": "existingvalue"}, usingFallback: true},
+			fallbackKey: "customKey",
+			want:        &Selector{indexMap: map[string]string{"source": "defaultvalue", "customKey": "existingvalue"}, usingFallback: false},
+		},
+		{
+			name:        "fallback with multiple keys",
+			selector:    &Selector{indexMap: map[string]string{"source": "defaultvalue", "other": "othervalue"}, usingFallback: true},
+			fallbackKey: "newkey",
+			want:        &Selector{indexMap: map[string]string{"newkey": "defaultvalue", "other": "othervalue"}, usingFallback: false},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.selector.WithFallback(tt.fallbackKey)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("WithFallback() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestConstants(t *testing.T) {
+	tests := []struct {
+		name     string
+		actual   string
+		expected string
+	}{
+		{"flagsTable", flagsTable, "flags"},
+		{"idIndex", idIndex, "id"},
+		{"keyIndex", keyIndex, "key"},
+		{"sourceIndex", sourceIndex, "source"},
+		{"defaultFallbackKey", defaultFallbackKey, "source"},
+		{"priorityIndex", priorityIndex, "priority"},
+		{"flagSetIdIndex", flagSetIdIndex, "flagSetId"},
+		{"flagSetIdSourceCompoundIndex", flagSetIdSourceCompoundIndex, "flagSetId+source"},
+		{"keySourceCompoundIndex", keySourceCompoundIndex, "key+source"},
+		{"flagSetIdKeySourceCompoundIndex", flagSetIdKeySourceCompoundIndex, "flagSetId+key+source"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.actual != tt.expected {
+				t.Errorf("%s = %q, want %q", tt.name, tt.actual, tt.expected)
+			}
+		})
+	}
+
+	t.Run("compound indices consistency", func(t *testing.T) {
+		expectedFlagSetIdSource := flagSetIdIndex + "+" + sourceIndex
+		if flagSetIdSourceCompoundIndex != expectedFlagSetIdSource {
+			t.Errorf("flagSetIdSourceCompoundIndex = %q, want %q", flagSetIdSourceCompoundIndex, expectedFlagSetIdSource)
+		}
+
+		expectedKeySource := keyIndex + "+" + sourceIndex
+		if keySourceCompoundIndex != expectedKeySource {
+			t.Errorf("keySourceCompoundIndex = %q, want %q", keySourceCompoundIndex, expectedKeySource)
+		}
+
+		expectedFlagSetIdKeySource := flagSetIdIndex + "+" + keyIndex + "+" + sourceIndex
+		if flagSetIdKeySourceCompoundIndex != expectedFlagSetIdKeySource {
+			t.Errorf("flagSetIdKeySourceCompoundIndex = %q, want %q", flagSetIdKeySourceCompoundIndex, expectedFlagSetIdKeySource)
+		}
+	})
+
+	t.Run("defaultFallbackKey references sourceIndex", func(t *testing.T) {
+		if defaultFallbackKey != sourceIndex {
+			t.Errorf("defaultFallbackKey should equal sourceIndex, got %q vs %q", defaultFallbackKey, sourceIndex)
+		}
+	})
+
+	t.Run("nilFlagSetId format", func(t *testing.T) {
+		if len(nilFlagSetId) != 36 {
+			t.Errorf("nilFlagSetId should be 36 characters long, got %d", len(nilFlagSetId))
+		}
+		uuidPattern := `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
+		matched, err := regexp.MatchString(uuidPattern, nilFlagSetId)
+		if err != nil {
+			t.Errorf("Error checking UUID pattern: %v", err)
+		}
+		if !matched {
+			t.Errorf("nilFlagSetId %q does not match UUID pattern", nilFlagSetId)
+		}
+	})
+}
+
+func BenchmarkSelector_ToQuery(b *testing.B) {
+	selector := Selector{
+		indexMap: map[string]string{
+			"flagSetId": "benchmark-flagset",
+			"source":    "benchmark-source",
+			"key":       "benchmark-key",
+			"priority":  "high",
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = selector.ToQuery()
+	}
+}
+
+func BenchmarkNewSelector(b *testing.B) {
+	expression := "source=benchmark-source,flagSetId=benchmark-flagset,key=benchmark-key"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = NewSelector(expression)
+	}
+}
+
+func BenchmarkSelector_WithIndex(b *testing.B) {
+	selector := Selector{
+		indexMap: map[string]string{
+			"source":    "benchmark-source",
+			"flagSetId": "benchmark-flagset",
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = selector.WithIndex("key", "benchmark-key")
 	}
 }
