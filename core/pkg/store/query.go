@@ -44,12 +44,14 @@ func NewSelector(selectorExpression string) Selector {
 		usingFallback: usingFallback,
 	}
 }
+
 func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]string, bool) {
 	selectorMap := make(map[string]string)
 	if sExp == "" {
 		return selectorMap, false
 	}
 
+	// Handle pure fallback case (no equals anywhere)
 	if strings.Index(sExp, "=") == -1 {
 		if fallbackExpressionKey == "" {
 			fallbackExpressionKey = defaultFallbackKey
@@ -60,15 +62,30 @@ func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]stri
 
 	// Split the selector by commas
 	pairs := strings.Split(sExp, ",")
+	usingFallback := false
+
 	for _, pair := range pairs {
+		pair = strings.TrimSpace(pair) // Handle whitespace
+		if pair == "" {
+			continue // Skip empty pairs
+		}
+
+		// FIX 1: Use SplitN to split only on FIRST equals sign
 		parts := strings.SplitN(pair, "=", 2)
 		if len(parts) == 2 {
-			key := parts[0]
-			value := parts[1]
+			key := strings.TrimSpace(parts[0])   // FIX 3: Trim key
+			value := strings.TrimSpace(parts[1]) // FIX 3: Trim value
 			selectorMap[key] = value
+		} else {
+			// FIX 2: Handle fallback values in mixed expressions
+			if fallbackExpressionKey == "" {
+				fallbackExpressionKey = defaultFallbackKey
+			}
+			selectorMap[fallbackExpressionKey] = pair
+			usingFallback = true
 		}
 	}
-	return selectorMap, false
+	return selectorMap, usingFallback
 }
 
 func (s *Selector) WithFallback(fallbackKey string) *Selector {
