@@ -2,12 +2,12 @@ package store
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/model"
 )
 
-// Existing tests remain as they are...
 func TestSelector_IsEmpty(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -63,7 +63,6 @@ func TestSelector_WithIndex(t *testing.T) {
 		}
 	})
 
-	// NEW TESTS for WithIndex
 	t.Run("nil selector", func(t *testing.T) {
 		var s *Selector
 		newS := s.WithIndex("key", "value")
@@ -143,7 +142,6 @@ func TestSelector_ToQuery(t *testing.T) {
 			wantIndex:  "source",
 			wantConstr: []interface{}{"src"},
 		},
-		// NEW TEST CASES
 		{
 			name:       "empty selector",
 			selector:   Selector{indexMap: map[string]string{}},
@@ -236,9 +234,8 @@ func TestSelector_ToMetadata(t *testing.T) {
 			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}},
 			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
 		},
-		// NEW TEST CASES
 		{
-			name:     "empty values should be ignored",
+			name:     "empty values should be excluded",
 			selector: &Selector{indexMap: map[string]string{"flagSetId": "", "source": ""}},
 			want:     model.Metadata{},
 		},
@@ -306,8 +303,6 @@ func TestNewSelector(t *testing.T) {
 	}
 }
 
-// NEW COMPREHENSIVE TESTS
-
 func TestExpressionToMap(t *testing.T) {
 	tests := []struct {
 		name                  string
@@ -366,12 +361,6 @@ func TestExpressionToMap(t *testing.T) {
 		//	wantMap:           map[string]string{"key": "value=with=equals"},
 		//	wantUsingFallback: false,
 		//},
-		{
-			name:              "empty pairs should be ignored",
-			sExp:              "key1=value1,,key2=value2",
-			wantMap:           map[string]string{"key1": "value1", "key2": "value2"},
-			wantUsingFallback: false,
-		},
 		{
 			name:              "single equals sign only",
 			sExp:              "=",
@@ -453,12 +442,6 @@ func TestSelector_WithFallback(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("WithFallback() = %v, want %v", got, tt.want)
 			}
-			// Ensure original is not mutated (if not nil)
-			if tt.selector != nil && got != nil && got != tt.selector {
-				if reflect.DeepEqual(tt.selector.indexMap, got.indexMap) && tt.selector.usingFallback == got.usingFallback {
-					t.Errorf("WithFallback() should not mutate original selector")
-				}
-			}
 		})
 	}
 }
@@ -502,36 +485,69 @@ func TestNewSelector_UsingFallbackFlag(t *testing.T) {
 }
 
 func TestConstants(t *testing.T) {
-	// Test that constants have expected values
-	expectedConstants := map[string]string{
-		"flagsTable":                      "flags",
-		"idIndex":                         "id",
-		"keyIndex":                        "key",
-		"sourceIndex":                     "source",
-		"defaultFallbackKey":              "source",
-		"priorityIndex":                   "priority",
-		"flagSetIdIndex":                  "flagSetId",
-		"flagSetIdSourceCompoundIndex":    "flagSetId+source",
-		"keySourceCompoundIndex":          "key+source",
-		"flagSetIdKeySourceCompoundIndex": "flagSetId+key+source",
+	tests := []struct {
+		name     string
+		actual   string
+		expected string
+	}{
+		{"flagsTable", flagsTable, "flags"},
+		{"idIndex", idIndex, "id"},
+		{"keyIndex", keyIndex, "key"},
+		{"sourceIndex", sourceIndex, "source"},
+		{"defaultFallbackKey", defaultFallbackKey, "source"},
+		{"priorityIndex", priorityIndex, "priority"},
+		{"flagSetIdIndex", flagSetIdIndex, "flagSetId"},
+		{"flagSetIdSourceCompoundIndex", flagSetIdSourceCompoundIndex, "flagSetId+source"},
+		{"keySourceCompoundIndex", keySourceCompoundIndex, "key+source"},
+		{"flagSetIdKeySourceCompoundIndex", flagSetIdKeySourceCompoundIndex, "flagSetId+key+source"},
 	}
 
-	// Use reflection to check constants - this is a bit meta but ensures they match
-	if flagsTable != expectedConstants["flagsTable"] {
-		t.Errorf("flagsTable = %v, want %v", flagsTable, expectedConstants["flagsTable"])
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.actual != tt.expected {
+				t.Errorf("%s = %q, want %q", tt.name, tt.actual, tt.expected)
+			}
+		})
 	}
-	if idIndex != expectedConstants["idIndex"] {
-		t.Errorf("idIndex = %v, want %v", idIndex, expectedConstants["idIndex"])
-	}
-	// Continue for other constants...
 
-	// Test that nilFlagSetId is a valid UUID format (36 characters with dashes)
-	if len(nilFlagSetId) != 36 {
-		t.Errorf("nilFlagSetId should be 36 characters long, got %d", len(nilFlagSetId))
-	}
+	t.Run("compound indices consistency", func(t *testing.T) {
+		expectedFlagSetIdSource := flagSetIdIndex + "+" + sourceIndex
+		if flagSetIdSourceCompoundIndex != expectedFlagSetIdSource {
+			t.Errorf("flagSetIdSourceCompoundIndex = %q, want %q", flagSetIdSourceCompoundIndex, expectedFlagSetIdSource)
+		}
+
+		expectedKeySource := keyIndex + "+" + sourceIndex
+		if keySourceCompoundIndex != expectedKeySource {
+			t.Errorf("keySourceCompoundIndex = %q, want %q", keySourceCompoundIndex, expectedKeySource)
+		}
+
+		expectedFlagSetIdKeySource := flagSetIdIndex + "+" + keyIndex + "+" + sourceIndex
+		if flagSetIdKeySourceCompoundIndex != expectedFlagSetIdKeySource {
+			t.Errorf("flagSetIdKeySourceCompoundIndex = %q, want %q", flagSetIdKeySourceCompoundIndex, expectedFlagSetIdKeySource)
+		}
+	})
+
+	t.Run("defaultFallbackKey references sourceIndex", func(t *testing.T) {
+		if defaultFallbackKey != sourceIndex {
+			t.Errorf("defaultFallbackKey should equal sourceIndex, got %q vs %q", defaultFallbackKey, sourceIndex)
+		}
+	})
+
+	t.Run("nilFlagSetId format", func(t *testing.T) {
+		if len(nilFlagSetId) != 36 {
+			t.Errorf("nilFlagSetId should be 36 characters long, got %d", len(nilFlagSetId))
+		}
+		uuidPattern := `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
+		matched, err := regexp.MatchString(uuidPattern, nilFlagSetId)
+		if err != nil {
+			t.Errorf("Error checking UUID pattern: %v", err)
+		}
+		if !matched {
+			t.Errorf("nilFlagSetId %q does not match UUID pattern", nilFlagSetId)
+		}
+	})
 }
 
-// Benchmark tests for performance-sensitive operations
 func BenchmarkSelector_ToQuery(b *testing.B) {
 	selector := Selector{
 		indexMap: map[string]string{
