@@ -61,8 +61,7 @@ func expressionToMap(sExp string, fallbackExpressionKey string) (map[string]stri
 	// Split the selector by commas
 	pairs := strings.Split(sExp, ",")
 	for _, pair := range pairs {
-		// Split each pair by the first equal sign
-		parts := strings.Split(pair, "=")
+		parts := strings.SplitN(pair, "=", 2)
 		if len(parts) == 2 {
 			key := parts[0]
 			value := parts[1]

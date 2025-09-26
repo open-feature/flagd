@@ -354,13 +354,12 @@ func TestExpressionToMap(t *testing.T) {
 			wantMap:           map[string]string{"key1": "value1", "": "value2", "key3": "value3"},
 			wantUsingFallback: false,
 		},
-		// Not sure about this testcase how we should handle this cases
-		//{
-		//	name:              "multiple equals signs (should split on first)",
-		//	sExp:              "key=value=with=equals",
-		//	wantMap:           map[string]string{"key": "value=with=equals"},
-		//	wantUsingFallback: false,
-		//},
+		{
+			name:              "multiple equals signs (should split on first)",
+			sExp:              "key=value=with=equals",
+			wantMap:           map[string]string{"key": "value=with=equals"},
+			wantUsingFallback: false,
+		},
 		{
 			name:              "single equals sign only",
 			sExp:              "=",
