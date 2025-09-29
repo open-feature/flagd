@@ -145,7 +145,7 @@ sources:
 The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
 that requires OAuth-based authentication.
 To enable OAuth, you need to update your Flagd configuration setting the `oauth` object which contains parameters to configure
-the `clien_id`, `client_secret`, and the endpoint of the OAuth Server.
+the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
 
 ```sh
 ./bin/flagd start
