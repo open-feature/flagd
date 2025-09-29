@@ -175,7 +175,7 @@ the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
   "timeoutS": 10,
   "oauth": { 
     "folder": "/etc/secrets", 
-    "ReloadDelayS": "60", 
+    "ReloadDelayS": 60, 
     "tokenURL": "http://localhost:8180/sso/oauth2/token" 
   }}]'
 ```
