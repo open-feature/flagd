@@ -162,7 +162,7 @@ the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
 ```
 
 When deploying Flagd in Kubernetes, you can securely manage the secrets from the file system. In this case, the client id and secret
-will be read from the files `client-id` and `client-secret`, respectively.
+will be read from the files `client-id` and `client-secret`, respectively. If the `folder` attribute is set, client id and secret on top level will be ignored.
 To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force
 the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
 
