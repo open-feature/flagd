@@ -19,15 +19,17 @@ var testVariants = map[string]any{
 	"true":  true,
 	"false": false,
 }
-var testSource1Flags = map[string]model.Flag{
-	"flagA": {
+var testSource1Flags = []model.Flag{
+	{
+		Key:            "flagA",
 		State:          "ENABLED",
 		DefaultVariant: "false",
 		Variants:       testVariants,
 	},
 }
-var testSource2Flags = map[string]model.Flag{
-	"flagB": {
+var testSource2Flags = []model.Flag{
+	{
+		Key:            "flagB",
 		State:          "ENABLED",
 		DefaultVariant: "true",
 		Variants:       testVariants,

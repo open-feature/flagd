@@ -238,8 +238,8 @@ func TestConnectServiceWatcher(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// make a change
-	s.Update(sources[0], map[string]model.Flag{
-		"flag1": {
+	s.Update(sources[0], []model.Flag{
+		{
 			Key:            "flag1",
 			DefaultVariant: "off",
 		},
