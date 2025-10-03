@@ -458,7 +458,8 @@ func TestGetAllNoWatcher(t *testing.T) {
 
 	for _, tt := range tests {
 		for _, s := range sourceOrder {
-			tt := tt
+			wantFlags := make([]model.Flag, len(tt.wantFlags))
+			copy(wantFlags, tt.wantFlags)
 			t.Run(tt.name+" - "+s.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -472,12 +473,12 @@ func TestGetAllNoWatcher(t *testing.T) {
 				}
 				gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
 
-				require.Equal(t, len(tt.wantFlags), len(gotFlags))
-				sort.Slice(tt.wantFlags, func(i, j int) bool {
-					if tt.wantFlags[i].FlagSetId != tt.wantFlags[j].FlagSetId {
-						return tt.wantFlags[i].FlagSetId < tt.wantFlags[j].FlagSetId
+				require.Equal(t, len(wantFlags), len(gotFlags))
+				sort.Slice(wantFlags, func(i, j int) bool {
+					if wantFlags[i].FlagSetId != wantFlags[j].FlagSetId {
+						return wantFlags[i].FlagSetId < wantFlags[j].FlagSetId
 					}
-					return tt.wantFlags[i].Key < tt.wantFlags[j].Key
+					return wantFlags[i].Key < wantFlags[j].Key
 				})
 				sort.Slice(gotFlags, func(i, j int) bool {
 					if gotFlags[i].FlagSetId != gotFlags[j].FlagSetId {
@@ -485,7 +486,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 					}
 					return gotFlags[i].Key < gotFlags[j].Key
 				})
-				require.Equal(t, tt.wantFlags, gotFlags)
+				require.Equal(t, wantFlags, gotFlags)
 			})
 		}
 	}

@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/open-feature/flagd/core/pkg/model"
 	"maps"
 	"time"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -82,15 +83,6 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 			return nil
 		}
 	}
-}
-
-type exportFlag struct {
-	State          string          `json:"state"`
-	DefaultVariant string          `json:"defaultVariant"`
-	Variants       map[string]any  `json:"variants"`
-	Targeting      json.RawMessage `json:"targeting,omitempty"`
-	Source         string          `json:"source"`
-	Metadata       model.Metadata  `json:"metadata,omitempty"`
 }
 
 func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {

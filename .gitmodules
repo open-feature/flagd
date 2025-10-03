@@ -7,4 +7,3 @@
 [submodule "schemas"]
 	path = schemas
 	url = https://github.com/open-feature/flagd-schemas.git
-	branch = jsonschema-v0.2.13
