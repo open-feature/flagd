@@ -603,7 +603,10 @@ func TestHTTPSync_OAuth(t *testing.T) {
 					oauthMock.count++
 					w.WriteHeader(tt.oauthResponse)
 					w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-					w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+					_, err := w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+					if err != nil {
+						t.Fatalf("cannot write response: %v", err)
+					}
 					return
 				}
 				httpMock.lastHeader = r.Header
@@ -657,8 +660,11 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 	)
 	// given an oauth server
 	oauthMock := &oauthHttpMock{}
+	flagsPath := "/flags.json"
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, oauthPath) {
+			// mock token response
 			body, _ := io.ReadAll(r.Body)
 			params, _ := url.ParseQuery(string(body))
 			oauthMock.lastParams = params
@@ -666,7 +672,21 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 			oauthMock.count++
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-			w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+			_, err := w.Write([]byte(fmt.Sprintf("access_token=%s&scope=mockscope&token_type=bearer", bearerToken)))
+			if err != nil {
+				t.Fatalf("cannot write response: %v", err)
+			}
+			return
+		} else if strings.HasSuffix(r.URL.Path, flagsPath) {
+			// mock flags response
+			io.ReadAll(r.Body)
+
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/json")
+			_, err := w.Write([]byte(fmt.Sprintf(`{"flagKey": {"default": true}}`)))
+			if err != nil {
+				t.Fatalf("cannot write response: %v", err)
+			}
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -689,7 +709,7 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 
 	l := logger.NewLogger(nil, false)
 	s := NewHTTP(sync.SourceConfig{
-		URI:         ts.URL,
+		URI:         ts.URL + flagsPath,
 		BearerToken: "it_should_be_replaced_by_oauth",
 		OAuth: &sync.OAuthCredentialHandler{
 			ClientID:     clientID,
@@ -699,9 +719,13 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 			ReloadDelayS: 0, // we force loading the secret at each req
 		},
 	}, l)
-	d := make(chan sync.DataSync, 1)
+	d := make(chan sync.DataSync, 2)
 	// when we fire the HTTP call
-	s.ReSync(context.Background(), d)
+	err = s.ReSync(context.Background(), d)
+	if err != nil {
+		t.Fatalf("resync failed: %v", err)
+	}
+
 	// then the right secrets are used
 	require.Equal(t, secretClientID, oauthMock.lastParams.Get("client_id"))
 	require.Equal(t, secretClientSecret, oauthMock.lastParams.Get("client_secret"))
@@ -712,9 +736,11 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 	err = os.WriteFile(dir+"/client-secret", []byte(secretClientSecret_new), 0644)
 	require.NoError(t, err)
 
-	// then the new HTTP call will use the new valus
-	s.ReSync(context.Background(), d)
+	// then the new HTTP call will use the new value
+	err = s.ReSync(context.Background(), d)
+	if err != nil {
+		t.Fatalf("resync failed: %v", err)
+	}
 	require.Equal(t, secretClientID_new, oauthMock.lastParams.Get("client_id"))
 	require.Equal(t, secretClientSecret_new, oauthMock.lastParams.Get("client_secret"))
-
 }
