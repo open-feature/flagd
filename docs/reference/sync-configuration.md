@@ -78,7 +78,7 @@ Sync providers:
 - `file` - config/samples/example_flags.json
 - `fsnotify` - config/samples/example_flags.json
 - `fileinfo` - config/samples/example_flags.json
-- `http` - <http://my-flag-source.com/flags.json>
+- [`http`](#http-configuration) - <http://my-flag-source.com/flags.json>
 - `https` - <https://my-secure-flag-source.com/flags.json>
 - `kubernetes` - default/my-flag-config
 - `grpc`(insecure) - grpc-source:8080
@@ -138,4 +138,52 @@ sources:
     provider: gcs
   - uri: azblob://my-container/my-flags.json
     provider: azblob
+```
+
+### HTTP Configuration
+
+The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
+that requires OAuth-based authentication.
+
+#### CLI-based OAuth Configuration
+
+To enable OAuth, you need to update your Flagd configuration setting the `oauth` object which contains parameters to configure
+
+....
+
+#### File-based OAuth Configuration
+
+the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
+
+```sh
+./bin/flagd start
+--sources='[{ 
+  "uri": "http://localhost:8180/flags", 
+  "provider": "http", 
+  "interval": 1,
+  "timeoutS": 10,
+  "oauth": { 
+    "clientID": "test", 
+    "clientSecret": "test", 
+    "tokenURL": "http://localhost:8180/sso/oauth2/token" 
+  }}]'
+```
+
+Secrets can also be managed from the file system. This can be handy when, for example, deploying Flagd in Kubernetes. In this case, the client id and secret
+will be read from the files `client-id` and `client-secret`, respectively. If the `folder` attribute is set, client id and secret on top level will be ignored.
+To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force
+the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
+
+```sh
+./bin/flagd start
+--sources='[{ 
+  "uri": "http://localhost:8180/flags", 
+  "provider": "http", 
+  "interval": 1,
+  "timeoutS": 10,
+  "oauth": { 
+    "folder": "/etc/secrets", 
+    "ReloadDelayS": 60, 
+    "tokenURL": "http://localhost:8180/sso/oauth2/token" 
+  }}]'
 ```
