@@ -34,5 +34,5 @@
     "hostRequirements": {
         "memory": "8gb"
     },
-    "postCreateCommand": "git submodule update --init --recursive"
+    "postCreateCommand": "git submodule update --init --recursive && make workspace-init"
 }
