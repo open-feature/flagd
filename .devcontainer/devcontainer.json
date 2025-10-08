@@ -1,10 +1,14 @@
 {
     "name": "flagd dev container",
+    // Image details: https://github.com/devcontainers/images/tree/main/src/go
     "image": "mcr.microsoft.com/devcontainers/go:1.24",
     // Features to add to the dev container. More info: https://containers.dev/features.
     "features": {
         "ghcr.io/devcontainers/features/github-cli:1": {},
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            // The 'moby' option is not supported on Debian 'trixie' because 'moby-cli' and related system packages have been removed from that distribution.
+            "moby": false
+        }
     },
     // Configure tool-specific properties.
     "customizations": {
