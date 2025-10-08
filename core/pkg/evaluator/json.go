@@ -91,6 +91,9 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 	// Create a new JSON Schema compiler
 	compiler := jsonschema.NewCompiler()
 
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", schema.FlagdSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
 	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", schema.FlagSchema); err != nil {
 		logger.Warn("Failed to add schema resource", zap.Error(err))
 	}
@@ -98,7 +101,7 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 		logger.Warn("Failed to add schema resource", zap.Error(err))
 	}
 
-	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flags.json")
+	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
 	if err != nil {
 		logger.Fatal("Failed to compile schema", zap.Error(err))
 	}
@@ -177,7 +180,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var reason string
 	var metadata map[string]interface{}
 
-	for flagKey, flag := range allFlags {
+	for _, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
 			continue
@@ -186,18 +189,18 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case string:
-			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case float64:
-			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case map[string]any:
-			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		}
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flag.Key, err.Error()))
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
+		values = append(values, NewAnyValue(value, variant, reason, flag.Key, metadata, err))
 	}
 
 	return values, flagSetMetadata, nil
@@ -454,22 +457,54 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		)
 	}
 
+	type JsonRawDef struct {
+		Flags    json.RawMessage        `json:"flags"`
+		Metadata map[string]interface{} `json:"metadata"`
+	}
+
+	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &definition)
+	var rawDef JsonRawDef
+	err = json.Unmarshal([]byte(transposedConfig), &rawDef)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
+	definition.Metadata = rawDef.Metadata
+	definition.Flags = []model.Flag{}
 
+	// Check if flags is an array or object
+	trimmed := strings.TrimSpace(string(rawDef.Flags))
+	if strings.HasPrefix(trimmed, "[") {
+		// It's an array
+		var flags []model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flags); err != nil {
+			return fmt.Errorf("unmarshalling flags array: %w", err)
+		}
+		definition.Flags = flags
+	} else {
+		// It's an object
+		var flagsMap map[string]model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flagsMap); err != nil {
+			return fmt.Errorf("unmarshalling flags map: %w", err)
+		}
+		// convert map to slice
+		var flags []model.Flag
+		for k, v := range flagsMap {
+			v.Key = k
+			flags = append(flags, v)
+		}
+		definition.Flags = flags
+	}
 	return validateDefaultVariants(definition)
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
 func validateDefaultVariants(flags *Definition) error {
-	for name, flag := range flags.Flags {
+	for _, flag := range flags.Flags {
 		// Default Variant is not provided in the config
 		if flag.DefaultVariant == "" {
 			continue
@@ -477,7 +512,7 @@ func validateDefaultVariants(flags *Definition) error {
 
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
-				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
+				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, flag.Key,
 			)
 		}
 	}

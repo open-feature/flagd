@@ -43,6 +43,24 @@ const ValidFlags = `{
   }
 }`
 
+const ValidArrayFlags = `{
+  "flags": [
+    {
+      "key": "validFlag",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+      "metadata": {
+        "flagSetId": "test",
+        "version": 3
+      }
+    }
+  ]
+}`
+
 const NullDefault = `{
   "flags": {
     "validFlag": {
@@ -381,16 +399,26 @@ var flagConfig = fmt.Sprintf(`{
 	VersionOverride)
 
 func TestGetState_Valid_ContainsFlag(t *testing.T) {
-	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
-	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
-	if err != nil {
-		t.Fatalf("Expected no error")
+	testCases := map[string]string{
+		"map configuration":   ValidFlags,
+		"array configuration": ValidArrayFlags,
 	}
 
-	// get the state
-	state := evaluator.ResolveAsAnyValue(context.Background(), "", "validFlag", nil)
-	if state.Error != nil {
-		t.Fatalf("expected no error")
+	for name, tc := range testCases {
+		flagConfig := tc // Capture loop variable
+		t.Run(name, func(t *testing.T) {
+			evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+			err := evaluator.SetState(sync.DataSync{FlagData: flagConfig, Source: "testSource"})
+			if err != nil {
+				t.Fatalf("Expected no error")
+			}
+
+			// get the state
+			state := evaluator.ResolveAsAnyValue(context.Background(), "", ValidFlag, nil)
+			if state.Error != nil {
+				t.Fatalf("expected no error %v: %v", state.Error, state.Reason)
+			}
+		})
 	}
 }
 
