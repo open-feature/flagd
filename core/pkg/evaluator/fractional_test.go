@@ -15,11 +15,12 @@ func TestFractionalEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	commonFlags := map[string]model.Flag{
-		"headerColor": {
+	commonFlags := []model.Flag{
+		{
+			Key:            "headerColor",
 			State:          "ENABLED",
 			DefaultVariant: "red",
-			Variants:       colorVariants,
+			Variants: colorVariants,
 			Targeting: []byte(`{
 											"if": [
 											  {
@@ -51,10 +52,11 @@ func TestFractionalEvaluation(t *testing.T) {
 											]
 										  }`),
 		},
-		"customSeededHeaderColor": {
+		{
+			Key:            "customSeededHeaderColor",
 			State:          "ENABLED",
 			DefaultVariant: "red",
-			Variants:       colorVariants,
+			Variants: colorVariants,
 			Targeting: []byte(`{
 					"if": [
 						{
@@ -77,7 +79,7 @@ func TestFractionalEvaluation(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		flags             map[string]model.Flag
+		flags             []model.Flag
 		flagKey           string
 		context           map[string]any
 		expectedValue     string
@@ -166,12 +168,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with different flag key": {
-			flags: map[string]model.Flag{
-				"footerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "footerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 							"if": [
 								{
 									"in": ["@faas.com", {
@@ -201,7 +203,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								}, null
 							]
 						}`),
-				},
+			},
 			},
 			flagKey: "footerColor",
 			context: map[string]any{
@@ -212,12 +214,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non even split": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 											"if": [
 											  {
 												"in": ["@faas.com", {
@@ -243,7 +245,7 @@ func TestFractionalEvaluation(t *testing.T) {
 											  }, null
 											]
 										  }`),
-				},
+			},
 			},
 			flagKey: "headerColor",
 			context: map[string]any{
@@ -254,12 +256,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"fallback to default variant if no email provided": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
 								[
@@ -280,7 +282,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								]
 							]
 							}`),
-				},
+			},
 			},
 			flagKey:         "headerColor",
 			context:         map[string]any{},
@@ -289,12 +291,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.DefaultReason,
 		},
 		"get variant for non-percentage weight values": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
 								[
@@ -307,7 +309,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								]
 							]
 							}`),
-				},
+			},
 			},
 			flagKey: "headerColor",
 			context: map[string]any{
@@ -318,12 +320,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"get variant for non-specified weight values": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 							"fractional": [
 								{"var": "email"},
 								[
@@ -334,7 +336,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								]
 							]
 							}`),
-				},
+			},
 			},
 			flagKey: "headerColor",
 			context: map[string]any{
@@ -345,12 +347,12 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"default to targetingKey if no bucket key provided": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants:       colorVariants,
-					Targeting: []byte(`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(`{
 							"fractional": [
 								[
 								"blue",
@@ -362,7 +364,7 @@ func TestFractionalEvaluation(t *testing.T) {
 								]
 							]
 							}`),
-				},
+			},
 			},
 			flagKey: "headerColor",
 			context: map[string]any{
@@ -373,20 +375,20 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"missing email - parser should ignore nil/missing custom variables and continue": {
-			flags: map[string]model.Flag{
-				"headerColor": {
-					State:          "ENABLED",
-					DefaultVariant: "red",
-					Variants: colorVariants,
-					Targeting: []byte(
-						`{
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: "red",
+				Variants: colorVariants,
+				Targeting: []byte(
+					`{
 								"fractional": [
 									{"var": "email"},
 									["red",50],
 									["blue",50]
 								]
 							}`),
-				},
+			},
 			},
 			flagKey: "headerColor",
 			context: map[string]any{
@@ -438,12 +440,12 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	flags := map[string]model.Flag{
-		"headerColor": {
-			State:          "ENABLED",
-			DefaultVariant: "red",
-			Variants:       colorVariants,
-			Targeting: []byte(`{
+	flags := []model.Flag{{
+		Key:            "headerColor",
+		State:          "ENABLED",
+		DefaultVariant: "red",
+		Variants: colorVariants,
+		Targeting: []byte(`{
 					"if": [
 						{
 						"in": ["@faas.com", {
@@ -473,11 +475,11 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 						}, null
 					]
 					}`),
-		},
+	},
 	}
 
 	tests := map[string]struct {
-		flags             map[string]model.Flag
+		flags             []model.Flag
 		flagKey           string
 		context           map[string]any
 		expectedValue     string
