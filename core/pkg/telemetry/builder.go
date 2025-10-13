@@ -86,7 +86,7 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 		return nil
 	}
 
-	exporter, err := buildOtlpExporter(ctx, cfg.CollectorConfig)
+	exporter, err := buildGrpcTraceExporter(ctx, cfg.CollectorConfig)
 	if err != nil {
 		return err
 	}
@@ -238,8 +238,8 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	return metric.NewPeriodicReader(otelExporter), nil
 }
 
-// buildOtlpExporter is a helper to build grpc backed otlp trace exporter
-func buildOtlpExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
+// buildGrpcTraceExporter is a helper to build grpc backed otlp trace exporter
+func buildGrpcTraceExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
 	transportCredentials, err := buildTransportCredentials(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
