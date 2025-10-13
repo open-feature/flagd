@@ -79,7 +79,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// build metrics recorder with startup configurations
-	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
+	recorder, err := telemetry.BuildMetricsProvider(context.Background(), svcName, version, telCfg)
 	if err != nil {
 		// log the error but continue
 		logger.Error(fmt.Sprintf("error building metrics recorder: %v", err))

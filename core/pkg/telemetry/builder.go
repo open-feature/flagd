@@ -31,43 +31,50 @@ import (
 
 const (
 	metricsExporterOtel = "otel"
+	metricsExporterSDK  = "otel-sdk"
 )
 
+// CollectorConfig holds the configuration for connecting to an OpenTelemetry collector
 type CollectorConfig struct {
-	Target         string
-	CertPath       string
-	KeyPath        string
-	ReloadInterval time.Duration
-	CAPath         string
-	Headers        string
-	Protocol       string
-	Timeout        time.Duration
+	Target         string        // The collector endpoint (e.g., "localhost:4317")
+	CertPath       string        // Path to the TLS certificate file
+	KeyPath        string        // Path to the TLS key file
+	CAPath         string        // Path to the CA certificate file
+	Headers        string        // Additional headers in OTEL format (key1=value1,key2=value2)
+	Protocol       string        // Protocol to use (e.g., "grpc", "http")
+	ReloadInterval time.Duration // Interval for reloading certificates
+	Timeout        time.Duration // Timeout for exporter operations
 }
 
 // Config of the telemetry runtime. These are expected to be mapped to start-up arguments
 type Config struct {
-	MetricsExporter string
-	CollectorConfig CollectorConfig
+	MetricsExporter string          // Type of metrics exporter ("otel" or empty for default)
+	CollectorConfig CollectorConfig // Configuration for the collector
 }
 
+// RegisterErrorHandling sets up a global error handler for OpenTelemetry errors
 func RegisterErrorHandling(log *logger.Logger) {
 	otel.SetErrorHandler(otelErrorsHandler{
 		logger: log,
 	})
 }
 
-// BuildMetricsRecorder is a helper to build telemetry.MetricsRecorder based on configurations
-func BuildMetricsRecorder(
+// ============================================================================
+// Public API - Builders
+// ============================================================================
+
+// BuildMetricsProvider is a helper to build telemetry.MetricsRecorder based on configurations
+func BuildMetricsProvider(
 	ctx context.Context, svcName string, svcVersion string, config Config,
 ) (IMetricsRecorder, error) {
-	// Build metric reader based on configurations
-	mReader, err := buildMetricReader(ctx, config)
+	// Build metric exporter based on configurations
+	mReader, err := buildMetricExporter(ctx, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup metric reader: %w", err)
+		return nil, fmt.Errorf("failed to setup metric exporter: %w", err)
 	}
 
 	// Build telemetry resource identifier
-	rsc, err := buildResourceFor(ctx, svcName, svcVersion)
+	rsc, err := buildResource(ctx, svcName, svcVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup resource identifier: %w", err)
 	}
@@ -75,10 +82,10 @@ func BuildMetricsRecorder(
 	return NewOTelRecorder(mReader, rsc, svcName), nil
 }
 
-// BuildTraceProvider build and register the trace provider and propagator for the caller runtime. This method
-// attempt to register a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to
-// provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
-// This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
+// BuildTraceProvider builds and registers the trace provider and propagator for the caller runtime.
+// This method attempts to register a global TracerProvider backed by batch SpanProcessor.
+// If CollectorConfig.Target is empty, provider & propagator registration is skipped, resulting in
+// tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator.
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
 	if cfg.CollectorConfig.Target == "" {
 		logger.Debug("skipping trace provider setup as collector target is not set." +
@@ -88,12 +95,12 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 
 	exporter, err := buildGrpcTraceExporter(ctx, cfg.CollectorConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build trace exporter: %w", err)
 	}
 
-	res, err := buildResourceFor(ctx, svc, svcVersion)
+	res, err := buildResource(ctx, svc, svcVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build resource: %w", err)
 	}
 
 	provider := trace.NewTracerProvider(
@@ -102,7 +109,10 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 		trace.WithResource(res))
 
 	otel.SetTracerProvider(provider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 	return nil
 }
 
@@ -114,7 +124,7 @@ func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	if cfg.CollectorConfig.Target != "" {
 		interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
 		if err != nil {
-			return nil, fmt.Errorf("error creating interceptor, %w", err)
+			return nil, fmt.Errorf("error creating interceptor: %w", err)
 		}
 
 		options = append(options, connect.WithInterceptors(interceptor))
@@ -123,46 +133,95 @@ func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
 	return options, nil
 }
 
+// ============================================================================
+// Internal Helpers - Transport & Credentials
+// ============================================================================
+
+// buildTransportCredentials creates gRPC transport credentials based on the collector configuration.
+// Returns insecure credentials if no TLS configuration is provided.
 func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credentials.TransportCredentials, error) {
-	creds := insecure.NewCredentials()
-	if cfg.KeyPath != "" || cfg.CertPath != "" || cfg.CAPath != "" {
-		capool := x509.NewCertPool()
-		if cfg.CAPath != "" {
-			ca, err := os.ReadFile(cfg.CAPath)
-			if err != nil {
-				return nil, fmt.Errorf("can't read ca file from %s", cfg.CAPath)
-			}
-			if !capool.AppendCertsFromPEM(ca) {
-				return nil, fmt.Errorf("can't add CA '%s' to pool", cfg.CAPath)
-			}
-		}
-
-		reloader, err := certreloader.NewCertReloader(certreloader.Config{
-			KeyPath:        cfg.KeyPath,
-			CertPath:       cfg.CertPath,
-			ReloadInterval: cfg.ReloadInterval,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create certreloader: %w", err)
-		}
-
-		tlsConfig := &tls.Config{
-			RootCAs:    capool,
-			MinVersion: tls.VersionTLS12,
-			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				certs, err := reloader.GetCertificate()
-				if err != nil {
-					return nil, fmt.Errorf("failed to reload certs: %w", err)
-				}
-				return certs, nil
-			},
-		}
-
-		creds = credentials.NewTLS(tlsConfig)
+	// Use insecure credentials by default
+	if cfg.KeyPath == "" && cfg.CertPath == "" && cfg.CAPath == "" {
+		return insecure.NewCredentials(), nil
 	}
 
-	return creds, nil
+	// Build TLS configuration
+	capool, err := buildCAPool(cfg.CAPath)
+	if err != nil {
+		return nil, err
+	}
+
+	reloader, err := buildCertReloader(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs:    capool,
+		MinVersion: tls.VersionTLS12,
+		GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			certs, err := reloader.GetCertificate()
+			if err != nil {
+				return nil, fmt.Errorf("failed to reload certs: %w", err)
+			}
+			return certs, nil
+		},
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
 }
+
+// buildCAPool creates a certificate pool from the provided CA file path.
+// Returns an empty pool if no CA path is provided.
+func buildCAPool(caPath string) (*x509.CertPool, error) {
+	capool := x509.NewCertPool()
+	if caPath == "" {
+		return capool, nil
+	}
+
+	ca, err := os.ReadFile(caPath)
+	if err != nil {
+		return nil, fmt.Errorf("can't read ca file from %s: %w", caPath, err)
+	}
+
+	if !capool.AppendCertsFromPEM(ca) {
+		return nil, fmt.Errorf("can't add CA '%s' to pool", caPath)
+	}
+
+	return capool, nil
+}
+
+// buildCertReloader creates a certificate reloader for automatic certificate rotation
+func buildCertReloader(cfg CollectorConfig) (*certreloader.CertReloader, error) {
+	reloader, err := certreloader.NewCertReloader(certreloader.Config{
+		KeyPath:        cfg.KeyPath,
+		CertPath:       cfg.CertPath,
+		ReloadInterval: cfg.ReloadInterval,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create certreloader: %w", err)
+	}
+	return reloader, nil
+}
+
+// buildGrpcConnection creates a gRPC client connection with the appropriate credentials
+func buildGrpcConnection(ctx context.Context, target string, cfg CollectorConfig) (*grpc.ClientConn, error) {
+	transportCredentials, err := buildTransportCredentials(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build transport credentials: %w", err)
+	}
+
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(transportCredentials))
+	if err != nil {
+		return nil, fmt.Errorf("error creating client connection: %w", err)
+	}
+
+	return conn, nil
+}
+
+// ============================================================================
+// Internal Helpers - Headers & Options
+// ============================================================================
 
 // parseOTelHeaders parses the OTEL_EXPORTER_OTLP_HEADERS format (key1=value1,key2=value2)
 // into a map[string]string
@@ -184,52 +243,47 @@ func parseOTelHeaders(headersStr string) map[string]string {
 	return headers
 }
 
-// buildMetricReader builds a metric reader based on provided configurations
-func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
+// ============================================================================
+// Internal Helpers - Metric Exporter
+// ============================================================================
+
+// buildMetricExporter builds a metric exporter based on provided configurations.
+// Returns a Prometheus exporter by default, or an OTLP exporter if configured.
+func buildMetricExporter(ctx context.Context, cfg Config) (metric.Reader, error) {
+	// Use default (Prometheus) if no exporter is specified
 	if cfg.MetricsExporter == "" {
-		return buildDefaultMetricReader()
+		return buildDefaultMetricExporter()
 	}
 
-	// Handle metric reader override
-	if cfg.MetricsExporter != metricsExporterOtel && cfg.MetricsExporter != "otel-sdk" {
-		return nil, fmt.Errorf("provided metrics operator %s is not supported. currently only support %s",
-			cfg.MetricsExporter, metricsExporterOtel)
+	// Validate exporter type
+	if !isValidMetricsExporter(cfg.MetricsExporter) {
+		return nil, fmt.Errorf("provided metrics exporter %s is not supported. currently only support %s or %s",
+			cfg.MetricsExporter, metricsExporterOtel, metricsExporterSDK)
 	}
 
-	// Otel override require target configuration
+	// Validate collector configuration
 	if cfg.CollectorConfig.Target == "" {
-		return nil, fmt.Errorf("metric exporter is set(%s) without providing otel collector target."+
-			" collector target is required for this option", cfg.MetricsExporter)
+		return nil, fmt.Errorf("metric exporter is set(%s) without providing otel collector target. "+
+			"collector target is required for this option", cfg.MetricsExporter)
 	}
 
-	transportCredentials, err := buildTransportCredentials(ctx, cfg.CollectorConfig)
+	return buildOTLPMetricExporter(ctx, cfg.CollectorConfig)
+}
+
+// isValidMetricsExporter checks if the provided exporter type is supported
+func isValidMetricsExporter(exporter string) bool {
+	return exporter == metricsExporterOtel || exporter == metricsExporterSDK
+}
+
+// buildOTLPMetricExporter creates an OTLP metric exporter with gRPC
+func buildOTLPMetricExporter(ctx context.Context, cfg CollectorConfig) (metric.Reader, error) {
+	conn, err := buildGrpcConnection(ctx, cfg.Target, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
+		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.NewClient(cfg.CollectorConfig.Target, grpc.WithTransportCredentials(transportCredentials))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
-	}
+	exporterOpts := buildMetricExporterOptions(cfg, conn)
 
-	// Build OTLP exporter options
-	exporterOpts := []otlpmetricgrpc.Option{
-		otlpmetricgrpc.WithGRPCConn(conn),
-	}
-
-	// Add headers if provided
-	if cfg.CollectorConfig.Headers != "" {
-		headers := parseOTelHeaders(cfg.CollectorConfig.Headers)
-		exporterOpts = append(exporterOpts, otlpmetricgrpc.WithHeaders(headers))
-	}
-
-	// Add timeout if provided
-	if cfg.CollectorConfig.Timeout > 0 {
-		exporterOpts = append(exporterOpts, otlpmetricgrpc.WithTimeout(cfg.CollectorConfig.Timeout))
-	}
-
-	// Otel metric exporter
 	otelExporter, err := otlpmetricgrpc.New(ctx, exporterOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
@@ -238,54 +292,78 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	return metric.NewPeriodicReader(otelExporter), nil
 }
 
-// buildGrpcTraceExporter is a helper to build grpc backed otlp trace exporter
-func buildGrpcTraceExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
-	transportCredentials, err := buildTransportCredentials(ctx, cfg)
-	if err != nil {
-		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
+// buildMetricExporterOptions builds the options for OTLP metric exporter
+func buildMetricExporterOptions(cfg CollectorConfig, conn *grpc.ClientConn) []otlpmetricgrpc.Option {
+	opts := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithGRPCConn(conn),
 	}
 
-	// Non-blocking, grpc connection
-	conn, err := grpc.NewClient(cfg.Target, grpc.WithTransportCredentials(transportCredentials))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
-	}
-
-	// Build OTLP trace exporter options
-	traceOpts := []otlptracegrpc.Option{
-		otlptracegrpc.WithGRPCConn(conn),
-	}
-
-	// Add headers if provided
 	if cfg.Headers != "" {
 		headers := parseOTelHeaders(cfg.Headers)
-		traceOpts = append(traceOpts, otlptracegrpc.WithHeaders(headers))
+		opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
 	}
 
-	// Add timeout if provided
 	if cfg.Timeout > 0 {
-		traceOpts = append(traceOpts, otlptracegrpc.WithTimeout(cfg.Timeout))
+		opts = append(opts, otlpmetricgrpc.WithTimeout(cfg.Timeout))
 	}
 
-	traceClient := otlptracegrpc.NewClient(traceOpts...)
-	exporter, err := otlptrace.New(ctx, traceClient)
-	if err != nil {
-		return nil, fmt.Errorf("error starting otel exporter: %w", err)
-	}
-	return exporter, nil
+	return opts
 }
 
-// buildDefaultMetricReader provides the default metric reader
-func buildDefaultMetricReader() (metric.Reader, error) {
+// buildDefaultMetricExporter provides the default metric exporter (Prometheus)
+func buildDefaultMetricExporter() (metric.Reader, error) {
 	p, err := prometheus.New()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create default metric reader: %w", err)
+		return nil, fmt.Errorf("unable to create default metric exporter: %w", err)
 	}
 	return p, nil
 }
 
-// buildResourceFor builds a resource identifier with set of resources and service key as attributes
-func buildResourceFor(ctx context.Context, serviceName string, serviceVersion string) (*resource.Resource, error) {
+// ============================================================================
+// Internal Helpers - Trace Exporter
+// ============================================================================
+
+// buildGrpcTraceExporter builds a gRPC-backed OTLP trace exporter
+func buildGrpcTraceExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
+	conn, err := buildGrpcConnection(ctx, cfg.Target, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
+	}
+
+	traceOpts := buildTraceExporterOptions(cfg, conn)
+
+	traceClient := otlptracegrpc.NewClient(traceOpts...)
+	exporter, err := otlptrace.New(ctx, traceClient)
+	if err != nil {
+		return nil, fmt.Errorf("error creating otel trace exporter: %w", err)
+	}
+	return exporter, nil
+}
+
+// buildTraceExporterOptions builds the options for OTLP trace exporter
+func buildTraceExporterOptions(cfg CollectorConfig, conn *grpc.ClientConn) []otlptracegrpc.Option {
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithGRPCConn(conn),
+	}
+
+	if cfg.Headers != "" {
+		headers := parseOTelHeaders(cfg.Headers)
+		opts = append(opts, otlptracegrpc.WithHeaders(headers))
+	}
+
+	if cfg.Timeout > 0 {
+		opts = append(opts, otlptracegrpc.WithTimeout(cfg.Timeout))
+	}
+
+	return opts
+}
+
+// ============================================================================
+// Internal Helpers - Resource
+// ============================================================================
+
+// buildResource builds a resource identifier with set of resources and service key as attributes
+func buildResource(ctx context.Context, serviceName string, serviceVersion string) (*resource.Resource, error) {
 	r, err := resource.New(
 		ctx,
 		resource.WithOS(),
@@ -302,7 +380,11 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 	return r, nil
 }
 
-// OTelErrorsHandler is a custom error interceptor for OpenTelemetry
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+// otelErrorsHandler is a custom error interceptor for OpenTelemetry
 type otelErrorsHandler struct {
 	logger *logger.Logger
 }
