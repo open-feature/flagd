@@ -33,6 +33,7 @@ type Config struct {
 	OtelCAPath            string
 	OtelHeaders           string
 	OtelProtocol          string
+	OtelTimeout           time.Duration
 	OtelReloadInterval    time.Duration
 	ServiceCertPath       string
 	ServiceKeyPath        string
@@ -63,6 +64,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			ReloadInterval: config.OtelReloadInterval,
 			Headers:        config.OtelHeaders,
 			Protocol:       config.OtelProtocol,
+			Timeout:        config.OtelTimeout,
 		},
 	}
 

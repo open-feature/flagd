@@ -154,6 +154,21 @@ func getOtelProtocol() string {
 	return os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
 }
 
+func getOtelTimeout() time.Duration {
+	timeoutStr := os.Getenv("OTEL_EXPORTER_OTLP_TIMEOUT")
+	if timeoutStr == "" {
+		return 0 // No timeout set
+	}
+
+	// OTEL_EXPORTER_OTLP_TIMEOUT is in milliseconds
+	timeout, err := time.ParseDuration(timeoutStr + "ms")
+	if err != nil {
+		// If parsing fails, return 0
+		return 0
+	}
+	return timeout
+}
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -210,6 +225,7 @@ var startCmd = &cobra.Command{
 		var collectorUri = overrideOtelUri()
 		var otelHeaders = getOtelHeaders()
 		var otelProtocol = getOtelProtocol()
+		var otelTimeout = getOtelTimeout()
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
@@ -223,6 +239,7 @@ var startCmd = &cobra.Command{
 			OtelReloadInterval:         viper.GetDuration(otelReloadIntervalFlagName),
 			OtelHeaders:                otelHeaders,
 			OtelProtocol:               otelProtocol,
+			OtelTimeout:                otelTimeout,
 			OtelCAPath:                 viper.GetString(otelCAPathFlagName),
 			ServiceCertPath:            viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:             viper.GetString(serverKeyPathFlagName),

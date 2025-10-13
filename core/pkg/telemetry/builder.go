@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -40,6 +41,7 @@ type CollectorConfig struct {
 	CAPath         string
 	Headers        string
 	Protocol       string
+	Timeout        time.Duration
 }
 
 // Config of the telemetry runtime. These are expected to be mapped to start-up arguments
@@ -162,6 +164,26 @@ func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credenti
 	return creds, nil
 }
 
+// parseOTelHeaders parses the OTEL_EXPORTER_OTLP_HEADERS format (key1=value1,key2=value2)
+// into a map[string]string
+func parseOTelHeaders(headersStr string) map[string]string {
+	headers := make(map[string]string)
+	if headersStr == "" {
+		return headers
+	}
+
+	// Split by comma to get individual key=value pairs
+	pairs := strings.Split(headersStr, ",")
+	for _, pair := range pairs {
+		// Split by = to separate key and value
+		kv := strings.SplitN(strings.TrimSpace(pair), "=", 2)
+		if len(kv) == 2 {
+			headers[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		}
+	}
+	return headers
+}
+
 // buildMetricReader builds a metric reader based on provided configurations
 func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	if cfg.MetricsExporter == "" {
@@ -191,8 +213,24 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
 
+	// Build OTLP exporter options
+	exporterOpts := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithGRPCConn(conn),
+	}
+
+	// Add headers if provided
+	if cfg.CollectorConfig.Headers != "" {
+		headers := parseOTelHeaders(cfg.CollectorConfig.Headers)
+		exporterOpts = append(exporterOpts, otlpmetricgrpc.WithHeaders(headers))
+	}
+
+	// Add timeout if provided
+	if cfg.CollectorConfig.Timeout > 0 {
+		exporterOpts = append(exporterOpts, otlpmetricgrpc.WithTimeout(cfg.CollectorConfig.Timeout))
+	}
+
 	// Otel metric exporter
-	otelExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
+	otelExporter, err := otlpmetricgrpc.New(ctx, exporterOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
 	}
@@ -213,7 +251,23 @@ func buildOtlpExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exp
 		return nil, fmt.Errorf("error creating client connection: %w", err)
 	}
 
-	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
+	// Build OTLP trace exporter options
+	traceOpts := []otlptracegrpc.Option{
+		otlptracegrpc.WithGRPCConn(conn),
+	}
+
+	// Add headers if provided
+	if cfg.Headers != "" {
+		headers := parseOTelHeaders(cfg.Headers)
+		traceOpts = append(traceOpts, otlptracegrpc.WithHeaders(headers))
+	}
+
+	// Add timeout if provided
+	if cfg.Timeout > 0 {
+		traceOpts = append(traceOpts, otlptracegrpc.WithTimeout(cfg.Timeout))
+	}
+
+	traceClient := otlptracegrpc.NewClient(traceOpts...)
 	exporter, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
 		return nil, fmt.Errorf("error starting otel exporter: %w", err)
