@@ -38,6 +38,8 @@ type CollectorConfig struct {
 	KeyPath        string
 	ReloadInterval time.Duration
 	CAPath         string
+	Headers        string
+	Protocol       string
 }
 
 // Config of the telemetry runtime. These are expected to be mapped to start-up arguments

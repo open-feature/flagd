@@ -146,6 +146,14 @@ func overrideOtelUri() string {
 	return collectorUri
 }
 
+func getOtelHeaders() string {
+	return os.Getenv("OTEL_EXPORTER_OTLP_HEADERS")
+}
+
+func getOtelProtocol() string {
+	return os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+}
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -200,6 +208,8 @@ var startCmd = &cobra.Command{
 
 		var metricsExporter = overrideMetricsExporter()
 		var collectorUri = overrideOtelUri()
+		var otelHeaders = getOtelHeaders()
+		var otelProtocol = getOtelProtocol()
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
@@ -211,6 +221,8 @@ var startCmd = &cobra.Command{
 			OtelCertPath:               viper.GetString(otelCertPathFlagName),
 			OtelKeyPath:                viper.GetString(otelKeyPathFlagName),
 			OtelReloadInterval:         viper.GetDuration(otelReloadIntervalFlagName),
+			OtelHeaders:                otelHeaders,
+			OtelProtocol:               otelProtocol,
 			OtelCAPath:                 viper.GetString(otelCAPathFlagName),
 			ServiceCertPath:            viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:             viper.GetString(serverKeyPathFlagName),

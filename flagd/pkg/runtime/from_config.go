@@ -31,6 +31,8 @@ type Config struct {
 	OtelCertPath          string
 	OtelKeyPath           string
 	OtelCAPath            string
+	OtelHeaders           string
+	OtelProtocol          string
 	OtelReloadInterval    time.Duration
 	ServiceCertPath       string
 	ServiceKeyPath        string
@@ -59,6 +61,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			KeyPath:        config.OtelKeyPath,
 			CAPath:         config.OtelCAPath,
 			ReloadInterval: config.OtelReloadInterval,
+			Headers:        config.OtelHeaders,
+			Protocol:       config.OtelProtocol,
 		},
 	}
 
@@ -105,9 +109,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
-		Logger: logger.WithFields(zap.String("component", "OFREPService")),
-		Port:   config.OfrepServicePort,
-		ServiceName: svcName,
+		Logger:          logger.WithFields(zap.String("component", "OFREPService")),
+		Port:            config.OfrepServicePort,
+		ServiceName:     svcName,
 		MetricsRecorder: recorder,
 	},
 		config.ContextValues,
