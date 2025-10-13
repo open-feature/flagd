@@ -167,7 +167,7 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 	}
 
 	// Handle metric reader override
-	if cfg.MetricsExporter != metricsExporterOtel {
+	if cfg.MetricsExporter != metricsExporterOtel && cfg.MetricsExporter != "otel-sdk" {
 		return nil, fmt.Errorf("provided metrics operator %s is not supported. currently only support %s",
 			cfg.MetricsExporter, metricsExporterOtel)
 	}

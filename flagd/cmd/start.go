@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -119,6 +120,32 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
 }
 
+func overrideMetricsExporter() string {
+	var metricsExporter = viper.GetString(metricsExporter)
+	if metricsExporter != "" {
+		return metricsExporter
+	}
+
+	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "" {
+		metricsExporter = "otel-sdk"
+	}
+
+	return metricsExporter
+}
+
+func overrideOtelUri() string {
+	var collectorUri = viper.GetString(otelCollectorURI)
+	if collectorUri != "" {
+		return collectorUri
+	}
+
+	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "" {
+		collectorUri = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	}
+
+	return collectorUri
+}
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -171,13 +198,16 @@ var startCmd = &cobra.Command{
 			headerToContextKeyMappings[k] = v
 		}
 
+		var metricsExporter = overrideMetricsExporter()
+		var collectorUri = overrideOtelUri()
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:                       viper.GetStringSlice(corsFlagName),
-			MetricExporter:             viper.GetString(metricsExporter),
+			MetricExporter:             metricsExporter,
 			ManagementPort:             viper.GetUint16(managementPortFlagName),
 			OfrepServicePort:           viper.GetUint16(ofrepPortFlagName),
-			OtelCollectorURI:           viper.GetString(otelCollectorURI),
+			OtelCollectorURI:           collectorUri,
 			OtelCertPath:               viper.GetString(otelCertPathFlagName),
 			OtelKeyPath:                viper.GetString(otelKeyPathFlagName),
 			OtelReloadInterval:         viper.GetDuration(otelReloadIntervalFlagName),
