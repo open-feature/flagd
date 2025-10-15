@@ -379,7 +379,8 @@ func TestGetAllNoWatcher(t *testing.T) {
 
 	sourceASelector := NewSelector("source=" + sourceA.Name)
 	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
-	flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC.Name)
+	// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+	//flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC.Name)
 
 	t.Parallel()
 	tests := []struct {
@@ -420,14 +421,17 @@ func TestGetAllNoWatcher(t *testing.T) {
 				{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
 			},
 		},
-		{
-			name:     "flagSetId and source selector",
-			selector: &flagSetIdAndCSelector,
-			wantFlags: []model.Flag{
-				{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
-				{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+		// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+		/*
+			{
+				name:     "flagSetId and source selector",
+				selector: &flagSetIdAndCSelector,
+				wantFlags: []model.Flag{
+					{Key: "dupeMultiSource", DefaultVariant: "both", Source: sourceC.Name, FlagSetId: flagSetIdC, Metadata: model.Metadata{"flagSetId": flagSetIdC}, Priority: 2},
+					{Key: "dupe", DefaultVariant: "off", Source: sourceC.Name, FlagSetId: flagSetIdC, Priority: 2, Metadata: model.Metadata{"flagSetId": flagSetIdC}},
+				},
 			},
-		},
+		*/
 	}
 
 	sourceOrder := []struct {
@@ -633,11 +637,18 @@ func TestQueryMetadata(t *testing.T) {
 	// setup initial flags
 	store.Update(sourceA, sourceAFlags, model.Metadata{})
 
-	selector := NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
-	_, metadata, _ := store.GetAll(context.Background(), &selector)
-	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+	// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+	// 		 these tests should then also cover more complex selectors
 
-	selector = NewSelector("source=" + otherSource + ",flagSetId=" + nonExistingFlagSetId)
+	selector := NewSelector("flagSetId=" + nonExistingFlagSetId)
+	_, metadata, _ := store.GetAll(context.Background(), &selector)
+	assert.Equal(t, metadata, model.Metadata{"flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+
+	selector = NewSelector("flagSetId=" + nonExistingFlagSetId)
 	_, metadata, _ = store.Get(context.Background(), "key", &selector)
-	assert.Equal(t, metadata, model.Metadata{"source": otherSource, "flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+	assert.Equal(t, metadata, model.Metadata{"flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
+
+	selector = NewSelector("source=" + otherSource)
+	_, metadata, _ = store.Get(context.Background(), "key", &selector)
+	assert.Equal(t, metadata, model.Metadata{"source": otherSource}, "metadata did not match expected")
 }
