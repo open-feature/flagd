@@ -11,12 +11,14 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -32,7 +34,7 @@ type syncHandler struct {
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	watcher := make(chan store.FlagQueryResult, 1)
-	selectorExpression := req.GetSelector()
+	selectorExpression := s.getSelectorExpression(server.Context(), req)
 	selector := store.NewSelector(selectorExpression)
 	ctx := server.Context()
 
@@ -85,6 +87,35 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
+// getSelectorExpression extracts the selector expression from the request.
+// It first checks the Flagd-Selector header (metadata), then falls back to the request body selector.
+// A deprecation warning is logged when the request body selector is used.
+func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{}) string {
+	// Try to get selector from metadata (header)
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if values := md.Get(flagdService.FLAGD_SELECTOR_HEADER); len(values) > 0 {
+			return values[0]
+		}
+	}
+
+	// Fall back to request body selector for backward compatibility
+	var bodySelector string
+	switch r := req.(type) {
+	case *syncv1.SyncFlagsRequest:
+		bodySelector = r.GetSelector()
+	case *syncv1.FetchAllFlagsRequest:
+		bodySelector = r.GetSelector()
+	}
+
+	// Log deprecation warning if using request body selector
+	if bodySelector != "" {
+		s.log.Warn("Using selector from request body is deprecated. Please use the 'Flagd-Selector' header instead. " +
+			"Request body selector support will be removed in a future major version.")
+	}
+
+	return bodySelector
+}
+
 func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {
 	flagMap := make(map[string]model.Flag, len(flags))
 	for _, flag := range flags {
@@ -96,7 +127,7 @@ func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {
 func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
-	selectorExpression := req.GetSelector()
+	selectorExpression := s.getSelectorExpression(ctx, req)
 	selector := store.NewSelector(selectorExpression)
 	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
