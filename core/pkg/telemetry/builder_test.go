@@ -17,9 +17,9 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-func TestBuildMetricsProvider(t *testing.T) {
+func TestBuildMetricsRecorder(t *testing.T) {
 	// Simple happy-path test
-	recorder, err := BuildMetricsProvider(context.Background(), "service", "0.0.1", Config{
+	recorder, err := BuildMetricsRecorder(context.Background(), "service", "0.0.1", Config{
 		MetricsExporter: "otel",
 		CollectorConfig: CollectorConfig{
 			Target: "localhost:8080",
@@ -30,7 +30,7 @@ func TestBuildMetricsProvider(t *testing.T) {
 	require.NotNilf(t, recorder, "expected recorder to be non-nil")
 }
 
-func TestBuildMetricExporter(t *testing.T) {
+func TestBuildMetricReader(t *testing.T) {
 	gCtx := context.TODO()
 
 	tests := []struct {
@@ -39,7 +39,7 @@ func TestBuildMetricExporter(t *testing.T) {
 		error bool
 	}{
 		{
-			name:  "Default configurations produce default exporter",
+			name:  "Default configurations produce default reader",
 			cfg:   Config{},
 			error: false,
 		},
@@ -73,7 +73,7 @@ func TestBuildMetricExporter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		reader, err := buildMetricExporter(gCtx, test.cfg)
+		reader, err := buildMetricReader(gCtx, test.cfg)
 
 		if test.error {
 			require.NotNil(t, err, "test %s expected non-nil error", test.name)
@@ -81,7 +81,7 @@ func TestBuildMetricExporter(t *testing.T) {
 		}
 
 		require.Nilf(t, err, "test %s expected no error, but got: %v", test.name, err)
-		require.NotNil(t, reader, "test %s expected non-nil exporter", test.name)
+		require.NotNil(t, reader, "test %s expected non-nil reader", test.name)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestBuildResourceFor(t *testing.T) {
 	svc := "testSvc"
 	svcVersion := "0.0.1"
 
-	resource, err := buildResource(context.Background(), svc, svcVersion)
+	resource, err := buildResourceFor(context.Background(), svc, svcVersion)
 	require.Nil(t, err, "expected no error, but got: %v", err)
 
 	attributes := resource.Attributes()
@@ -179,7 +179,7 @@ func TestErrorIntercepted(t *testing.T) {
 	log := logger.NewLogger(observedLogger, true)
 	RegisterErrorHandling(log)
 
-	// configure a metric exporter with an exporter that only returns error
+	// configure a metric reader with an exporter that only returns error
 	reader := metric.NewPeriodicReader(&errorExp{}, metric.WithInterval(1*time.Millisecond))
 	rs := resource.NewWithAttributes("testSchema")
 	NewOTelRecorder(reader, rs, "testSvc")

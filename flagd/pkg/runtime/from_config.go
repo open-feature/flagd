@@ -31,9 +31,6 @@ type Config struct {
 	OtelCertPath          string
 	OtelKeyPath           string
 	OtelCAPath            string
-	OtelHeaders           string
-	OtelProtocol          string
-	OtelTimeout           time.Duration
 	OtelReloadInterval    time.Duration
 	ServiceCertPath       string
 	ServiceKeyPath        string
@@ -62,9 +59,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			KeyPath:        config.OtelKeyPath,
 			CAPath:         config.OtelCAPath,
 			ReloadInterval: config.OtelReloadInterval,
-			Headers:        config.OtelHeaders,
-			Protocol:       config.OtelProtocol,
-			Timeout:        config.OtelTimeout,
 		},
 	}
 
@@ -79,7 +73,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// build metrics recorder with startup configurations
-	recorder, err := telemetry.BuildMetricsProvider(context.Background(), svcName, version, telCfg)
+	recorder, err := telemetry.BuildMetricsRecorder(context.Background(), svcName, version, telCfg)
 	if err != nil {
 		// log the error but continue
 		logger.Error(fmt.Sprintf("error building metrics recorder: %v", err))
@@ -111,9 +105,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
-		Logger:          logger.WithFields(zap.String("component", "OFREPService")),
-		Port:            config.OfrepServicePort,
-		ServiceName:     svcName,
+		Logger: logger.WithFields(zap.String("component", "OFREPService")),
+		Port:   config.OfrepServicePort,
+		ServiceName: svcName,
 		MetricsRecorder: recorder,
 	},
 		config.ContextValues,
