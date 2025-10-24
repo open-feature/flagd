@@ -104,10 +104,11 @@ func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{})
 
 	// Fall back to request body selector for backward compatibility
 	var bodySelector string
-	switch r := req.(type) {
-	case *syncv1.SyncFlagsRequest:
-		bodySelector = r.GetSelector()
-	case *syncv1.FetchAllFlagsRequest:
+	type selectorGetter interface {
+		GetSelector() string
+	}
+
+	if r, ok := req.(selectorGetter); ok {
 		bodySelector = r.GetSelector()
 	}
 
