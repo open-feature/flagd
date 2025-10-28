@@ -119,10 +119,10 @@ MDL_CMD := docker run -v $(ROOT_DIR):/workdir --rm
 
 .PHONY: markdownlint markdownlint-fix
 markdownlint:
-	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
+	$(MDL_CMD) davidanson/markdownlint-cli2:$(MDL_DOCKER_VERSION) "**/*.md" 
 
 markdownlint-fix:
-	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"
+	$(MDL_CMD) davidanson/markdownlint-cli2:$(MDL_DOCKER_VERSION) --fix "**/*.md" 
 
 .PHONY: pull-schemas-submodule
 pull-schemas-submodule:
