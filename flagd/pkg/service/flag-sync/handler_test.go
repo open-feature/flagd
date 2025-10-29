@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -9,13 +10,11 @@ import (
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -134,219 +133,125 @@ func (m *mockSyncFlagsServer) GetLastResponse() *syncv1.SyncFlagsResponse {
 	return m.lastResp
 }
 
-// TestSyncHandler_SelectorFromHeader tests that the selector is correctly extracted from the header
-func TestSyncHandler_SelectorFromHeader(t *testing.T) {
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
-	require.NoError(t, err)
-
-	// Create a logger with observer to capture log messages
-	observedZapCore, observedLogs := observer.New(zapcore.WarnLevel)
-	observedLogger := zap.New(observedZapCore)
-	log := logger.NewLogger(observedLogger, false)
-
-	handler := syncHandler{
-		store:         flagStore,
-		log:           log,
-		contextValues: map[string]any{},
+// Test that selector from header takes precedence over selector from request body for FetchAllFlags and SyncFlags methods.
+func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
+	headerFlags := []model.Flag{
+		{
+			Key:            "header-flag",
+			State:          "ENABLED",
+			DefaultVariant: "true",
+			Variants:       testVariants,
+		},
 	}
 
-	// Create context with metadata containing the selector header
-	md := metadata.New(map[string]string{
-		flagdService.FLAGD_SELECTOR_HEADER: "source:my-source",
-	})
-	ctx := metadata.NewIncomingContext(context.Background(), md)
-
-	// Test with SyncFlags
-	stream := &mockSyncFlagsServer{
-		ctx:       ctx,
-		mu:        sync.Mutex{},
-		respReady: make(chan struct{}, 1),
+	bodyFlags := []model.Flag{
+		{
+			Key:            "body-flag",
+			State:          "DISABLED",
+			DefaultVariant: "false",
+			Variants:       testVariants,
+		},
 	}
 
-	go func() {
-		// Use empty request body selector to verify header is used
-		err := handler.SyncFlags(&syncv1.SyncFlagsRequest{Selector: ""}, stream)
-		assert.NoError(t, err)
-	}()
-
-	select {
-	case <-stream.respReady:
-		// Verify no deprecation warning was logged
-		logs := observedLogs.All()
-		for _, log := range logs {
-			assert.NotContains(t, log.Message, "deprecated", "Should not log deprecation warning when using header")
-		}
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for response")
+	tests := []struct {
+		name             string
+		hasHeader        bool
+		headerSelector   string
+		bodySelector     string
+		expectedFlag     string
+		expectedSource   string
+		shouldNotContain string
+	}{
+		{
+			name:             "SyncFlags with request body selector only",
+			hasHeader:        false,
+			bodySelector:     "source=body-source",
+			expectedFlag:     "body-flag",
+			expectedSource:   "body-source",
+			shouldNotContain: "header-flag",
+		},
+		{
+			name:             "SyncFlags header takes precedence over request body",
+			hasHeader:        true,
+			headerSelector:   "source=header-source",
+			bodySelector:     "source=body-source",
+			expectedFlag:     "header-flag",
+			expectedSource:   "header-source",
+			shouldNotContain: "body-flag",
+		},
+		{
+			name:             "FetchAllFlags with request body selector only",
+			hasHeader:        false,
+			bodySelector:     "source=body-source",
+			expectedFlag:     "body-flag",
+			expectedSource:   "body-source",
+			shouldNotContain: "header-flag",
+		},
+		{
+			name:             "FetchAllFlags header takes precedence over request body",
+			hasHeader:        true,
+			headerSelector:   "source=header-source",
+			bodySelector:     "source=body-source",
+			expectedFlag:     "header-flag",
+			expectedSource:   "header-source",
+			shouldNotContain: "body-flag",
+		},
 	}
-}
 
-// TestSyncHandler_SelectorFromRequestBody tests backward compatibility with request body selector
-func TestSyncHandler_SelectorFromRequestBody(t *testing.T) {
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
+			flagStore.Update("header-source", headerFlags, nil)
+			flagStore.Update("body-source", bodyFlags, nil)
+			require.NoError(t, err)
 
-	// Create a logger with observer to capture log messages
-	observedZapCore, observedLogs := observer.New(zapcore.WarnLevel)
-	observedLogger := zap.New(observedZapCore)
-	log := logger.NewLogger(observedLogger, false)
-
-	handler := syncHandler{
-		store:         flagStore,
-		log:           log,
-		contextValues: map[string]any{},
-	}
-
-	// Create context without metadata (no header)
-	ctx := context.Background()
-
-	// Test with SyncFlags
-	stream := &mockSyncFlagsServer{
-		ctx:       ctx,
-		mu:        sync.Mutex{},
-		respReady: make(chan struct{}, 1),
-	}
-
-	go func() {
-		// Use request body selector
-		err := handler.SyncFlags(&syncv1.SyncFlagsRequest{Selector: "source:legacy-source"}, stream)
-		assert.NoError(t, err)
-	}()
-
-	select {
-	case <-stream.respReady:
-		// Verify deprecation warning was logged
-		logs := observedLogs.All()
-		require.Greater(t, len(logs), 0, "Expected at least one log entry")
-		found := false
-		for _, log := range logs {
-			if log.Level == zapcore.WarnLevel {
-				assert.Contains(t, log.Message, "deprecated", "Should log deprecation warning when using request body selector")
-				assert.Contains(t, log.Message, "Flagd-Selector", "Deprecation message should mention the header name")
-				found = true
-				break
+			handler := syncHandler{
+				store:         flagStore,
+				log:           logger.NewLogger(nil, false),
+				contextValues: map[string]any{},
 			}
-		}
-		assert.True(t, found, "Expected to find deprecation warning in logs")
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for response")
+
+			// Create context with or without header metadata
+			var ctx context.Context
+			if tt.hasHeader {
+				md := metadata.New(map[string]string{
+					flagdService.FLAGD_SELECTOR_HEADER: tt.headerSelector,
+				})
+				ctx = metadata.NewIncomingContext(context.Background(), md)
+			} else {
+				ctx = context.Background()
+			}
+
+			if strings.Contains(tt.name, "SyncFlags") {
+				// Test SyncFlags
+				stream := &mockSyncFlagsServer{
+					ctx:       ctx,
+					mu:        sync.Mutex{},
+					respReady: make(chan struct{}, 1),
+				}
+
+				go func() {
+					err := handler.SyncFlags(&syncv1.SyncFlagsRequest{Selector: tt.bodySelector}, stream)
+					assert.NoError(t, err)
+				}()
+
+				select {
+				case <-stream.respReady:
+					assert.Contains(t, stream.lastResp.FlagConfiguration, tt.expectedFlag)
+					assert.Contains(t, stream.lastResp.FlagConfiguration, tt.expectedSource)
+					assert.NotContains(t, stream.lastResp.FlagConfiguration, tt.shouldNotContain)
+				case <-time.After(time.Second):
+					t.Fatal("timeout waiting for response")
+				}
+			} else {
+				// Test FetchAllFlags
+				resp, err := handler.FetchAllFlags(ctx, &syncv1.FetchAllFlagsRequest{Selector: tt.bodySelector})
+				require.NoError(t, err)
+
+				assert.Contains(t, resp.FlagConfiguration, tt.expectedFlag)
+				assert.Contains(t, resp.FlagConfiguration, tt.expectedSource)
+				assert.NotContains(t, resp.FlagConfiguration, tt.shouldNotContain)
+			}
+		})
 	}
-}
-
-// TestSyncHandler_SelectorHeaderTakesPrecedence tests that header takes precedence over request body
-func TestSyncHandler_SelectorHeaderTakesPrecedence(t *testing.T) {
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
-	require.NoError(t, err)
-
-	// Create a logger with observer to capture log messages
-	observedZapCore, observedLogs := observer.New(zapcore.WarnLevel)
-	observedLogger := zap.New(observedZapCore)
-	log := logger.NewLogger(observedLogger, false)
-
-	handler := syncHandler{
-		store:         flagStore,
-		log:           log,
-		contextValues: map[string]any{},
-	}
-
-	// Create context with metadata containing the selector header
-	md := metadata.New(map[string]string{
-		flagdService.FLAGD_SELECTOR_HEADER: "source:header-source",
-	})
-	ctx := metadata.NewIncomingContext(context.Background(), md)
-
-	// Test with SyncFlags
-	stream := &mockSyncFlagsServer{
-		ctx:       ctx,
-		mu:        sync.Mutex{},
-		respReady: make(chan struct{}, 1),
-	}
-
-	go func() {
-		// Provide both header and request body selector
-		err := handler.SyncFlags(&syncv1.SyncFlagsRequest{Selector: "source:body-source"}, stream)
-		assert.NoError(t, err)
-	}()
-
-	select {
-	case <-stream.respReady:
-		// Verify no deprecation warning was logged (header was used)
-		logs := observedLogs.All()
-		for _, log := range logs {
-			assert.NotContains(t, log.Message, "deprecated", "Should not log deprecation warning when header is present")
-		}
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for response")
-	}
-}
-
-// TestSyncHandler_FetchAllFlags_SelectorFromHeader tests FetchAllFlags with header selector
-func TestSyncHandler_FetchAllFlags_SelectorFromHeader(t *testing.T) {
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
-	require.NoError(t, err)
-
-	// Create a logger with observer to capture log messages
-	observedZapCore, observedLogs := observer.New(zapcore.WarnLevel)
-	observedLogger := zap.New(observedZapCore)
-	log := logger.NewLogger(observedLogger, false)
-
-	handler := syncHandler{
-		store:         flagStore,
-		log:           log,
-		contextValues: map[string]any{},
-	}
-
-	// Create context with metadata containing the selector header
-	md := metadata.New(map[string]string{
-		flagdService.FLAGD_SELECTOR_HEADER: "source:my-source",
-	})
-	ctx := metadata.NewIncomingContext(context.Background(), md)
-
-	// Call FetchAllFlags with empty request body selector
-	_, err = handler.FetchAllFlags(ctx, &syncv1.FetchAllFlagsRequest{Selector: ""})
-	require.NoError(t, err)
-
-	// Verify no deprecation warning was logged
-	logs := observedLogs.All()
-	for _, log := range logs {
-		assert.NotContains(t, log.Message, "deprecated", "Should not log deprecation warning when using header")
-	}
-}
-
-// TestSyncHandler_FetchAllFlags_SelectorFromRequestBody tests FetchAllFlags with request body selector
-func TestSyncHandler_FetchAllFlags_SelectorFromRequestBody(t *testing.T) {
-	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
-	require.NoError(t, err)
-
-	// Create a logger with observer to capture log messages
-	observedZapCore, observedLogs := observer.New(zapcore.WarnLevel)
-	observedLogger := zap.New(observedZapCore)
-	log := logger.NewLogger(observedLogger, false)
-
-	handler := syncHandler{
-		store:         flagStore,
-		log:           log,
-		contextValues: map[string]any{},
-	}
-
-	// Create context without metadata (no header)
-	ctx := context.Background()
-
-	// Call FetchAllFlags with request body selector
-	_, err = handler.FetchAllFlags(ctx, &syncv1.FetchAllFlagsRequest{Selector: "source:legacy-source"})
-	require.NoError(t, err)
-
-	// Verify deprecation warning was logged
-	logs := observedLogs.All()
-	require.Greater(t, len(logs), 0, "Expected at least one log entry")
-	found := false
-	for _, log := range logs {
-		if log.Level == zapcore.WarnLevel {
-			assert.Contains(t, log.Message, "deprecated", "Should log deprecation warning when using request body selector")
-			assert.Contains(t, log.Message, "Flagd-Selector", "Deprecation message should mention the header name")
-			found = true
-			break
-		}
-	}
-	assert.True(t, found, "Expected to find deprecation warning in logs")
 }

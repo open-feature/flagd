@@ -98,11 +98,14 @@ func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{})
 	// Try to get selector from metadata (header)
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if values := md.Get(flagdService.FLAGD_SELECTOR_HEADER); len(values) > 0 {
-			return values[0]
+			headerSelector := values[0]
+			s.log.Debug(fmt.Sprintf("using selector from request header: %s", headerSelector))
+			return headerSelector
 		}
 	}
 
 	// Fall back to request body selector for backward compatibility
+	// Eventually we will want to log a deprecation warning here and then remote it entirely
 	var bodySelector string
 	type selectorGetter interface {
 		GetSelector() string
@@ -112,12 +115,9 @@ func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{})
 		bodySelector = r.GetSelector()
 	}
 
-	// Log deprecation warning if using request body selector
 	if bodySelector != "" {
-		s.log.Warn("Using selector from request body is deprecated. Please use the 'Flagd-Selector' header instead. " +
-			"Request body selector support will be removed in a future major version.")
+		s.log.Debug(fmt.Sprintf("using selector from request body: %s", bodySelector))
 	}
-
 	return bodySelector
 }
 
