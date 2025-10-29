@@ -336,7 +336,7 @@ FetchAllFlagsResponse is the server response containing feature flag configurati
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/schemas/main/json/flagd-definitions.json |
+| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/flagd-schemas/main/json/flags.json |
 
 
 
@@ -357,6 +357,7 @@ GetMetadataRequest is the request for retrieving metadata from the sync service
 
 ### GetMetadataResponse
 GetMetadataResponse contains metadata from the sync service
+DEPRECATED; use flagd.sync.v1.SyncFlagsResponse.sync_context
 
 
 | Field | Type | Label | Description |
@@ -393,7 +394,8 @@ SyncFlagsResponse is the server response containing feature flag configurations 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/schemas/main/json/flagd-definitions.json |
+| flag_configuration | [string](#string) |  | flagd feature flag configuration. Must be validated to schema - https://raw.githubusercontent.com/open-feature/flagd-schemas/main/json/flags.json |
+| sync_context | [google.protobuf.Struct](#google-protobuf-Struct) | optional | Static context to be included in in-process evaluations (optional). |
 
 
 
