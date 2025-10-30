@@ -128,7 +128,7 @@ The flagd gRPC retry policy is specified below:
                 }
             ],
             "retryPolicy": {
-                "MaxAttempts": 3,
+                "MaxAttempts": 4,
                 "InitialBackoff": "1s",
                 "MaxBackoff": $FLAGD_RETRY_BACKOFF_MAX_MS, // from provider options
                 "BackoffMultiplier": 2.0,
