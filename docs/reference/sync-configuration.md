@@ -11,16 +11,16 @@ See [syncs](../concepts/syncs.md) for a conceptual overview.
 Any URI passed to flagd via the `--uri` (`-f`) flag must follow one of the 6 following patterns with prefixes to ensure that
 it is passed to the correct implementation:
 
-| Implied Sync Provider | Prefix                 | Example                               |
-| --------------------- | ---------------------- | ------------------------------------- |
-| `kubernetes`          | `core.openfeature.dev` | `core.openfeature.dev/default/my-crd` |
-| `file`                | `file:`                | `file:etc/flagd/my-flags.json`        |
-| `http`                | `http(s)://`           | `https://my-flags.com/flags`          |
-| `grpc`                | `grpc(s)://`           | `grpc://my-flags-server`              |
+| Implied Sync Provider                 | Prefix                             | Example                               |
+| ------------------------------------- | ---------------------------------- | ------------------------------------- |
+| `kubernetes`                          | `core.openfeature.dev`             | `core.openfeature.dev/default/my-crd` |
+| `file`                                | `file:`                            | `file:etc/flagd/my-flags.json`        |
+| `http`                                | `http(s)://`                       | `https://my-flags.com/flags`          |
+| `grpc`                                | `grpc(s)://`                       | `grpc://my-flags-server`              |
 | &nbsp;[grpc](#custom-grpc-target-uri) | `[ envoy \| dns \| uds\| xds ]://` | `envoy://localhost:9211/test.service` |
-| `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
-| `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
-| `s3`                  | `s3://`                | `s3://my-bucket/my-flags.json`        |
+| `gcs`                                 | `gs://`                            | `gs://my-bucket/my-flags.json`        |
+| `azblob`                              | `azblob://`                        | `azblob://my-container/my-flags.json` |
+| `s3`                                  | `s3://`                            | `s3://my-bucket/my-flags.json`        |
 
 ### Data Serialization
 
