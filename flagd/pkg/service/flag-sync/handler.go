@@ -89,7 +89,6 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 
 // getSelectorExpression extracts the selector expression from the request.
 // It first checks the Flagd-Selector header (metadata), then falls back to the request body selector.
-// A deprecation warning is logged when the request body selector is used.
 //
 // The req parameter accepts *syncv1.SyncFlagsRequest or *syncv1.FetchAllFlagsRequest.
 // Using interface{} here is intentional as both protobuf-generated types implement GetSelector()
