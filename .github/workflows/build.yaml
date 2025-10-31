@@ -124,32 +124,5 @@ jobs:
         with:
           go-version-file: 'flagd/go.mod'
 
-      - name: Install envoy
-        run: |
-          wget -O- https://apt.envoyproxy.io/signing.key | sudo gpg --dearmor -o /etc/apt/keyrings/envoy-keyring.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/envoy-keyring.gpg] https://apt.envoyproxy.io jammy main" | sudo tee /etc/apt/sources.list.d/envoy.list
-          sudo apt-get update
-          sudo apt-get install envoy
-          envoy --version
-
-      - name: Workspace init
-        run: make workspace-init
-
-      - name: Build flagd binary
-        run: make build
-
-      - name: Run flagd binary in background
-        run: |
-          ./bin/flagd start \
-          -f file:${{ github.workspace }}/test-harness/flags/testing-flags.json \
-          -f file:${{ github.workspace }}/test-harness/flags/custom-ops.json \
-          -f file:${{ github.workspace }}/test-harness/flags/evaluator-refs.json \
-          -f file:${{ github.workspace }}/test-harness/flags/zero-flags.json \
-          -f file:${{ github.workspace }}/test-harness/flags/edge-case-flags.json &
-
-      - name: Run envoy proxy in background
-        run: |
-          envoy -c ./test/integration/config/envoy.yaml &
-
       - name: Run evaluation test suite
         run: make workspace-clean && cd test/integration && go clean -testcache && go test -cover
