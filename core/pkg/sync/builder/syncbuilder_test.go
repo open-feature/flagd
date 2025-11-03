@@ -217,11 +217,6 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 						Selector:   "source=database",
 					},
 					{
-						URI:         "https://host:port",
-						Provider:    syncProviderHTTP,
-						BearerToken: "token",
-					},
-					{
 						URI:        "https://host:port",
 						Provider:   syncProviderHTTP,
 						AuthHeader: "scheme credentials/token",
@@ -250,7 +245,6 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 			},
 			wantSyncs: []sync.ISync{
 				&grpc.Sync{},
-				&http.Sync{},
 				&http.Sync{},
 				&file.Sync{},
 				&kubernetes.Sync{},
