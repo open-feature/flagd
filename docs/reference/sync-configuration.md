@@ -11,16 +11,16 @@ See [syncs](../concepts/syncs.md) for a conceptual overview.
 Any URI passed to flagd via the `--uri` (`-f`) flag must follow one of the 6 following patterns with prefixes to ensure that
 it is passed to the correct implementation:
 
-| Implied Sync Provider | Prefix                 | Example                               |
-| --------------------- | ---------------------- | ------------------------------------- |
-| `kubernetes`          | `core.openfeature.dev` | `core.openfeature.dev/default/my-crd` |
-| `file`                | `file:`                | `file:etc/flagd/my-flags.json`        |
-| `http`                | `http(s)://`           | `https://my-flags.com/flags`          |
-| `grpc`                | `grpc(s)://`           | `grpc://my-flags-server`              |
+| Implied Sync Provider                 | Prefix                             | Example                               |
+| ------------------------------------- | ---------------------------------- | ------------------------------------- |
+| `kubernetes`                          | `core.openfeature.dev`             | `core.openfeature.dev/default/my-crd` |
+| `file`                                | `file:`                            | `file:etc/flagd/my-flags.json`        |
+| `http`                                | `http(s)://`                       | `https://my-flags.com/flags`          |
+| `grpc`                                | `grpc(s)://`                       | `grpc://my-flags-server`              |
 | &nbsp;[grpc](#custom-grpc-target-uri) | `[ envoy \| dns \| uds\| xds ]://` | `envoy://localhost:9211/test.service` |
-| `gcs`                 | `gs://`                | `gs://my-bucket/my-flags.json`        |
-| `azblob`              | `azblob://`            | `azblob://my-container/my-flags.json` |
-| `s3`                  | `s3://`                | `s3://my-bucket/my-flags.json`        |
+| `gcs`                                 | `gs://`                            | `gs://my-bucket/my-flags.json`        |
+| `azblob`                              | `azblob://`                        | `azblob://my-container/my-flags.json` |
+| `s3`                                  | `s3://`                            | `s3://my-bucket/my-flags.json`        |
 
 ### Data Serialization
 
@@ -47,18 +47,17 @@ The flagd accepts a string argument, which should be a JSON representation of an
 
 Alternatively, these configurations can be passed to flagd via config file, specified using the `--config` flag.
 
-| Field       | Type               | Note                                                                                                                                                                                                             |
-| ----------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                                            |
-| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                                                  |
-| authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.). Cannot be used with `bearerToken` |
-| bearerToken | optional `string`  | (Deprecated) Used for http sync; token gets appended to `Authorization` header with [bearer schema](https://www.rfc-editor.org/rfc/rfc6750#section-2.1). Cannot be used with `authHeader`                        |
-| interval    | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                                              |
-| tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                                                 |
-| providerID  | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                                                |
-| selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                                          |
-| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                                         |
-| maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize)                       |
+| Field       | Type               | Note                                                                                                                                                                                    |
+| ----------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                   |
+| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                         |
+| authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).          |
+| interval    | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                     |
+| tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                        |
+| providerID  | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                       |
+| selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                 |
+| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                |
+| maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize) |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -94,7 +93,7 @@ Startup command:
 --sources='[{"uri":"config/samples/example_flags.json","provider":"file"},
             {"uri":"config/samples/example_flags.json","provider":"fsnotify"},
             {"uri":"config/samples/example_flags.json","provider":"fileinfo"},
-            {"uri":"http://my-flag-source/flags.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
+            {"uri":"http://my-flag-source/flags.json","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
             {"uri":"https://secure-remote/bearer-auth/flags.json","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
             {"uri":"https://secure-remote/basic-auth/flags.json","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
             {"uri":"default/my-flag-config","provider":"kubernetes"},
@@ -118,7 +117,7 @@ sources:
     provider: fileinfo
   - uri: http://my-flag-source/flags.json
     provider: http
-    bearerToken: bearer-dji34ld2l
+    authHeader: "Bearer bearer-dji34ld2l"
   - uri: default/my-flag-config
     provider: kubernetes
   - uri: my-flag-source:8080

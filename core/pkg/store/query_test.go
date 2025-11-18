@@ -33,6 +33,11 @@ func TestSelector_IsEmpty(t *testing.T) {
 			selector:  &Selector{indexMap: map[string]string{"source": "abc"}},
 			wantEmpty: false,
 		},
+		{
+			name:      "non-empty indexMap, empty value",
+			selector:  &Selector{indexMap: map[string]string{"flagSetId": ""}},
+			wantEmpty: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -68,23 +73,32 @@ func TestSelector_ToQuery(t *testing.T) {
 		wantIndex  string
 		wantConstr []interface{}
 	}{
-		{
-			name:       "flagSetId and key primary index special case",
-			selector:   Selector{indexMap: map[string]string{"flagSetId": "fsid", "key": "myKey"}},
-			wantIndex:  "id",
-			wantConstr: []interface{}{"fsid", "myKey"},
-		},
-		{
-			name:       "multiple keys sorted",
-			selector:   Selector{indexMap: map[string]string{"source": "src", "flagSetId": "fsid"}},
-			wantIndex:  "flagSetId+source",
-			wantConstr: []interface{}{"fsid", "src"},
-		},
+		// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+		/*
+			{
+				name:       "flagSetId and key primary index special case",
+				selector:   Selector{indexMap: map[string]string{"flagSetId": "fsid", "key": "myKey"}},
+				wantIndex:  "id",
+				wantConstr: []interface{}{"fsid", "myKey"},
+			},
+			{
+				name:       "multiple keys sorted",
+				selector:   Selector{indexMap: map[string]string{"source": "src", "flagSetId": "fsid"}},
+				wantIndex:  "flagSetId+source",
+				wantConstr: []interface{}{"fsid", "src"},
+			},
+		*/
 		{
 			name:       "single key",
 			selector:   Selector{indexMap: map[string]string{"source": "src"}},
 			wantIndex:  "source",
 			wantConstr: []interface{}{"src"},
+		},
+		{
+			name:       "flagSetId null",
+			selector:   Selector{indexMap: map[string]string{"flagSetId": ""}},
+			wantIndex:  "flagSetId",
+			wantConstr: []interface{}{""},
 		},
 	}
 
@@ -132,16 +146,19 @@ func TestSelector_ToMetadata(t *testing.T) {
 			selector: &Selector{indexMap: map[string]string{"source": "src"}},
 			want:     model.Metadata{"source": "src"},
 		},
-		{
-			name:     "flagSetId and source",
-			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src"}},
-			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
-		},
-		{
-			name:     "flagSetId, source, and key (key should be ignored)",
-			selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}},
-			want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
-		},
+		// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+		/*
+			{
+				name:     "flagSetId and source",
+				selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src"}},
+				want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
+			},
+			{
+				name:     "flagSetId, source, and key (key should be ignored)",
+				selector: &Selector{indexMap: map[string]string{"flagSetId": "fsid", "source": "src", "key": "myKey"}},
+				want:     model.Metadata{"flagSetId": "fsid", "source": "src"},
+			},
+		*/
 	}
 
 	for _, tt := range tests {
@@ -160,11 +177,14 @@ func TestNewSelector(t *testing.T) {
 		input   string
 		wantMap map[string]string
 	}{
-		{
-			name:    "source and flagSetId",
-			input:   "source=abc,flagSetId=1234",
-			wantMap: map[string]string{"source": "abc", "flagSetId": "1234"},
-		},
+		// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+		/*
+			{
+				name:    "source and flagSetId",
+				input:   "source=abc,flagSetId=1234",
+				wantMap: map[string]string{"source": "abc", "flagSetId": "1234"},
+			},
+		*/
 		{
 			name:    "source",
 			input:   "source=abc",
@@ -174,6 +194,11 @@ func TestNewSelector(t *testing.T) {
 			name:    "no equals, treat as source",
 			input:   "mysource",
 			wantMap: map[string]string{"source": "mysource"},
+		},
+		{
+			name:    "null flagSetId",
+			input:   "flagSetId=",
+			wantMap: map[string]string{"flagSetId": nilFlagSetId},
 		},
 		{
 			name:    "empty string",

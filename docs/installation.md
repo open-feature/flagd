@@ -32,7 +32,12 @@ For more information, see [OpenFeature Operator](./reference/openfeature-operato
 
 :fontawesome-brands-linux::fontawesome-brands-windows::fontawesome-brands-apple: Binaries are available in x86/ARM.
 
-[Release](https://github.com/open-feature/flagd/releases)
+[Releases](https://github.com/open-feature/flagd/releases)
+
+!!! note
+
+    Installing flagd with `go install github.com/open-feature/flagd/flagd@latest` is not recommended, because the module depends on potentially unpublished, local workspace modules.
+    Please use one of the official, versioned binary releases above.
 
 ### systemd
 
@@ -42,12 +47,6 @@ A systemd wrapper is available [here](https://github.com/open-feature/flagd/blob
 
 ```shell
 brew install flagd
-```
-
-### Go binary
-
-```shell
-go install github.com/open-feature/flagd/flagd@latest
 ```
 
 ## Summary
