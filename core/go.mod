@@ -31,11 +31,13 @@ require (
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	gocloud.dev v0.42.0
-	golang.org/x/crypto v0.41.0
+	google.golang.org/grpc v1.75.0
+	google.golang.org/protobuf v1.36.8
+	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
-	golang.org/x/mod v0.26.0
+	golang.org/x/mod v0.29.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.75.0
 	google.golang.org/protobuf v1.36.8
 	gopkg.in/yaml.v3 v3.0.1
@@ -156,7 +158,6 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.14.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/term v0.34.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
