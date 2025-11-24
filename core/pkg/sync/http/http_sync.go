@@ -29,7 +29,6 @@ type Sync struct {
 	cron        Cron
 	lastBodySHA string
 	logger      *logger.Logger
-	bearerToken string
 	authHeader  string
 	interval    uint32
 	ready       bool
@@ -107,9 +106,6 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 }
 
 func (hs *Sync) Init(_ context.Context) error {
-	if hs.bearerToken != "" {
-		hs.logger.Warn("Deprecation Alert: bearerToken option is deprecated, please use authHeader instead")
-	}
 	return nil
 }
 
@@ -176,9 +172,6 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 
 	if hs.authHeader != "" {
 		req.Header.Set("Authorization", hs.authHeader)
-	} else if hs.bearerToken != "" {
-		bearer := fmt.Sprintf("Bearer %s", hs.bearerToken)
-		req.Header.Set("Authorization", bearer)
 	}
 
 	if hs.eTag != "" && !fetchAll {
@@ -299,7 +292,6 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 			zap.String("component", "sync"),
 			zap.String("sync", "http"),
 		),
-		bearerToken:     config.BearerToken,
 		authHeader:      config.AuthHeader,
 		interval:        interval,
 		cron:            cron.New(),
