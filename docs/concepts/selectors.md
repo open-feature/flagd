@@ -119,7 +119,7 @@ When you make a request with a selector, flagd "reflects" the selector informati
 
 **Request with selector:**
 
-```
+```text
 Selector: "flagSetId=project-42"
 ```
 
