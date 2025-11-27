@@ -64,7 +64,7 @@ Add `flagSetId` to your flag configurations at the set level:
   },
   "flags": {
     "feature-a": {
-      "state": "ENABLED", 
+      "state": "ENABLED",
       "variants": {"on": true, "off": false},
       "defaultVariant": "on"
     }
