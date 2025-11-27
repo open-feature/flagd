@@ -63,9 +63,11 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				return fmt.Errorf("error constructing metadata response")
 			}
 
-			flagMap := s.convertMap(payload.Flags)
+			flagConfig := map[string]interface{}{
+				"flags": s.convertMap(payload.Flags),
+			}
 
-			flags, err := json.Marshal(flagMap)
+			flags, err := json.Marshal(flagConfig)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				return status.Error(codes.DataLoss, "error marshalling flags")
@@ -139,7 +141,11 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
-	flagsString, err := json.Marshal(s.convertMap(flags))
+	flagConfig := map[string]interface{}{
+		"flags": s.convertMap(flags),
+	}
+
+	flagsString, err := json.Marshal(flagConfig)
 
 	if err != nil {
 		return nil, err
