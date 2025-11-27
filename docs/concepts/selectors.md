@@ -149,7 +149,7 @@ This helps you:
 # Tenant A's flags
 selector: "flagSetId=tenant-a"
 
-# Tenant B's flags  
+# Tenant B's flags
 selector: "flagSetId=tenant-b"
 ```
 
