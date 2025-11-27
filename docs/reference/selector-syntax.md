@@ -27,11 +27,13 @@ When no `=` is present, the value is treated as a source selector for backward c
 Selects flags belonging to a specific flag set.
 
 **Syntax:**
+
 ```
 flagSetId=<set-identifier>
 ```
 
 **Examples:**
+
 ```
 flagSetId=project-42
 flagSetId=dev-environment
@@ -39,9 +41,11 @@ flagSetId=team-payments
 ```
 
 **Special Case - Empty Flag Set:**
+
 ```
 flagSetId=
 ```
+
 Selects flags that don't belong to any named flag set (equivalent to the "null" flag set).
 
 ### `source`
@@ -49,11 +53,13 @@ Selects flags that don't belong to any named flag set (equivalent to the "null" 
 Selects flags from a specific source.
 
 **Syntax:**
+
 ```
 source=<source-identifier>
 ```
 
 **Examples:**
+
 ```
 source=config/flags.json
 source=http://flag-server/config
@@ -87,11 +93,13 @@ Flagd reflects selector information back in response metadata, providing transpa
 ### Reflection Behavior
 
 **Input Selector:**
+
 ```
 flagSetId=project-42
 ```
 
 **Reflected in Response Metadata:**
+
 ```json
 {
   "metadata": {
@@ -103,6 +111,7 @@ flagSetId=project-42
 ### Multiple Metadata Sources
 
 Reflected metadata includes:
+
 - **Selector Information**: The parsed selector key-value pairs
 - **Set-Level Metadata**: Metadata from the flag configuration itself
 - **Source Context**: Additional context from sync operations
@@ -112,6 +121,7 @@ Reflected metadata includes:
 Flagd uses a hierarchical metadata system where flags inherit metadata from their flag set:
 
 **Set-Level Metadata (Inherited):**
+
 ```json
 {
   "metadata": {
@@ -129,6 +139,7 @@ Flagd uses a hierarchical metadata system where flags inherit metadata from thei
 ```
 
 **Flag-Level Metadata (Override):**
+
 ```json
 {
   "metadata": {
@@ -177,6 +188,7 @@ curl -H "Flagd-Selector: flagSetId=" \
 ### Provider SDK Usage
 
 #### Go Provider
+
 ```go
 import "github.com/open-feature/go-sdk-contrib/providers/flagd"
 
@@ -188,6 +200,7 @@ provider := flagd.NewProvider(
 ```
 
 #### Java Provider
+
 ```java
 FlagdProvider provider = new FlagdProvider(
     FlagdOptions.builder()
@@ -199,6 +212,7 @@ FlagdProvider provider = new FlagdProvider(
 ```
 
 #### JavaScript Provider
+
 ```javascript
 const provider = new FlagdProvider({
   host: 'localhost',
@@ -223,10 +237,12 @@ The selector syntax is designed to be extensible. Future versions may support:
 ### gRPC Services
 
 **Sync Service:**
+
 - `SyncFlags(SyncFlagsRequest)`: Supports selector in header and request body
 - `FetchAllFlags(FetchAllFlagsRequest)`: Supports selector in header and request body
 
 **Evaluation Service:**  
+
 - `ResolveBoolean(ResolveBooleanRequest)`: Supports selector in header
 - `ResolveString(ResolveStringRequest)`: Supports selector in header
 - `ResolveInt(ResolveIntRequest)`: Supports selector in header
@@ -237,6 +253,7 @@ The selector syntax is designed to be extensible. Future versions may support:
 ### HTTP/OFREP Services
 
 **OFREP Endpoints:**
+
 - `POST /ofrep/v1/evaluate/flags/{key}`: Supports selector in header
 - `POST /ofrep/v1/evaluate/flags`: Supports selector in header
 
