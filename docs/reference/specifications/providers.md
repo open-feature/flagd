@@ -311,7 +311,7 @@ Below are the supported configuration parameters (note that not all apply to bot
 | offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri                                             | string                       | null                          | file                    |
 | offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                                                                 | int                          | 5000                          | file                    |
 | contextEnricher       | -                              | sync-metadata to evaluation context mapping function                                                            | function                     | identity function             | in-process              |
-| fatalStatusCodes      | -                              | a list of gRPC status codes, which will cause streams to give up and put the provider in a PROVIDER_FATAL state | array                        | []                            | rpc & in-process        |
+| fatalStatusCodes      | FLAGD_FATAL_STATUS_CODES                             | a list of gRPC status codes, which will cause streams to give up and put the provider in a PROVIDER_FATAL state | array                        | []                            | rpc & in-process        |
 
 ### Custom Name Resolution
 
