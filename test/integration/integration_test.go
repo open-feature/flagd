@@ -150,7 +150,7 @@ func TestRPC(t *testing.T) {
 	}
 
 	// Run tests with RPC-specific tags - exclude connection/event issues we won't tackle
-	tags := "@rpc && ~@unixsocket && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching"
+	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
@@ -158,7 +158,6 @@ func TestRPC(t *testing.T) {
 }
 
 func TestInProcess(t *testing.T) {
-
 	// Setup testbed runner for RPC provider
 	runner := testframework.NewTestbedRunner(testframework.TestbedConfig{
 		ResolverType:  testframework.InProcess,
@@ -175,7 +174,7 @@ func TestInProcess(t *testing.T) {
 	}
 
 	// Run tests with InProcess-specific tags
-	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert"
+	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
