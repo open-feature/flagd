@@ -241,7 +241,7 @@ The selector syntax is designed to be extensible. Future versions may support:
 - `SyncFlags(SyncFlagsRequest)`: Supports selector in header and request body
 - `FetchAllFlags(FetchAllFlagsRequest)`: Supports selector in header and request body
 
-**Evaluation Service:**  
+**Evaluation Service:**
 
 - `ResolveBoolean(ResolveBooleanRequest)`: Supports selector in header
 - `ResolveString(ResolveStringRequest)`: Supports selector in header
