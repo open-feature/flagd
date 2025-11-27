@@ -104,9 +104,11 @@ stateDiagram-v2
 
 ### Stream Reconnection
 
-When either stream (sync or event) disconnects, whether due to the associated deadline being exceeded, network error or any other cause, the provider attempts to re-establish the stream immediately.
-Both the RPC and sync streams will forever attempt to reconnect unless the stream response indicates a [fatal status code](#fatal-status-codes).
+When either stream (sync or event) fails or completes, whether due to the associated deadline being exceeded, network error or any other cause, the provider attempts to re-establish the stream.
+Both the RPC and sync streams will forever attempt to be re-established unless the stream response indicates a [fatal status code](#fatal-status-codes).
 This is distinct from the [gRPC retry-policy](#grpc-retry-policy), which automatically retries *all RPCs* (streams or otherwise) a limited number of times to make the provider resilient to transient errors.
+It's also distinct from the [gRPC layer 4 reconnection mechanism](https://grpc.github.io/grpc/core/md_doc_connection-backoff.html) which only reconnects the TCP connection, but not any streams.
+When the stream is reconnecting, providers transition to the [STALE](https://openfeature.dev/docs/reference/concepts/events/#provider_stale) state, and after `retryGracePeriod`, transition to the ERROR state, emitting the respective events during these transitions.
 
 ## gRPC Retry Policy
 
@@ -311,7 +313,7 @@ Below are the supported configuration parameters (note that not all apply to bot
 | offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | offline, file-based flag definitions, overrides host/port/targetUri                                             | string                       | null                          | file                    |
 | offlinePollIntervalMs | FLAGD_OFFLINE_POLL_MS          | poll interval for reading offlineFlagSourcePath                                                                 | int                          | 5000                          | file                    |
 | contextEnricher       | -                              | sync-metadata to evaluation context mapping function                                                            | function                     | identity function             | in-process              |
-| fatalStatusCodes      | FLAGD_FATAL_STATUS_CODES                             | a list of gRPC status codes, which will cause streams to give up and put the provider in a PROVIDER_FATAL state | array                        | []                            | rpc & in-process        |
+| fatalStatusCodes      | FLAGD_FATAL_STATUS_CODES       | a list of gRPC status codes, which will cause streams to give up and put the provider in a PROVIDER_FATAL state | array                        | []                            | rpc & in-process        |
 
 ### Custom Name Resolution
 
