@@ -8,13 +8,13 @@ Selectors use a simple key-value syntax to filter flags. Currently, selectors su
 
 ### Basic Syntax
 
-```
+```text
 <key>=<value>
 ```
 
 ### Backward Compatibility Syntax
 
-```
+```text
 <value>
 ```
 
@@ -28,13 +28,13 @@ Selects flags belonging to a specific flag set.
 
 **Syntax:**
 
-```
+```text
 flagSetId=<set-identifier>
 ```
 
 **Examples:**
 
-```
+```text
 flagSetId=project-42
 flagSetId=dev-environment
 flagSetId=team-payments
@@ -42,7 +42,7 @@ flagSetId=team-payments
 
 **Special Case - Empty Flag Set:**
 
-```
+```text
 flagSetId=
 ```
 
@@ -54,13 +54,13 @@ Selects flags from a specific source.
 
 **Syntax:**
 
-```
+```text
 source=<source-identifier>
 ```
 
 **Examples:**
 
-```
+```text
 source=config/flags.json
 source=http://flag-server/config
 source=./local-flags.yaml
@@ -94,7 +94,7 @@ Flagd reflects selector information back in response metadata, providing transpa
 
 **Input Selector:**
 
-```
+```text
 flagSetId=project-42
 ```
 

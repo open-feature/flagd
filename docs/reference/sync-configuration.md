@@ -47,17 +47,17 @@ The flagd accepts a string argument, which should be a JSON representation of an
 
 Alternatively, these configurations can be passed to flagd via config file, specified using the `--config` flag.
 
-| Field       | Type               | Note                                                                                                                                                                                    |
-| ----------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                   |
-| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                         |
-| authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).          |
-| interval    | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                     |
-| tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                        |
-| providerID  | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                       |
-| selector    | optional `string`  | Selector expression to filter flag configurations. Supports `source=<name>` and `flagSetId=<id>` syntax. See [selector syntax](selector-syntax.md) for details.                     |
-| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                |
-| maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize) |
+| Field      | Type               | Note                                                                                                                                                                                    |
+| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uri        | required `string`  | Flag configuration source of the sync                                                                                                                                                   |
+| provider   | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                         |
+| authHeader | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).          |
+| interval   | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                     |
+| tls        | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                        |
+| providerID | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                       |
+| selector   | optional `string`  | Selector expression to filter flag configurations. Supports `source=<name>` and `flagSetId=<id>` syntax. See [selector syntax](selector-syntax.md) for details.                         |
+| certPath   | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                |
+| maxMsgSize | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize) |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
