@@ -14,6 +14,7 @@ selector: "config/my-flags.json"
 ```
 
 This created tight coupling between providers and sources:
+
 - Providers had to know which source contained their flags
 - Moving flags between sources required provider reconfiguration
 - One source could only serve one logical set of flags
@@ -28,6 +29,7 @@ selector: "flagSetId=my-application"
 ```
 
 This provides flexibility:
+
 - Providers are decoupled from sources
 - Sources can contain multiple flag sets
 - Flag sets can span multiple sources
@@ -40,6 +42,7 @@ This provides flexibility:
 Add `flagSetId` to your flag configurations at the set level:
 
 **Before:**
+
 ```json
 {
   "flags": {
@@ -53,6 +56,7 @@ Add `flagSetId` to your flag configurations at the set level:
 ```
 
 **After:**
+
 ```json
 {
   "metadata": {
@@ -94,18 +98,21 @@ curl -H "Flagd-Selector: flagSetId=my-application" \
 ## Flag Set Organization Patterns
 
 **By Application/Service:**
+
 ```yaml
 flagSetId: "user-service"    # All user-related flags
 flagSetId: "payment-service" # All payment-related flags
 ```
 
 **By Environment:**
+
 ```yaml
 flagSetId: "development"     # Dev-specific flags
 flagSetId: "production"      # Production flags
 ```
 
 **By Team:**
+
 ```yaml
 flagSetId: "frontend-team"   # Frontend features
 flagSetId: "backend-team"    # Backend features
@@ -116,6 +123,7 @@ Choose the pattern that best matches your deployment and organizational structur
 ## Testing and Rollback
 
 **Test Migration:**
+
 ```bash
 # Verify new selector works
 curl -H "Flagd-Selector: flagSetId=my-app" \
@@ -127,6 +135,7 @@ curl -H "Flagd-Selector: config/legacy-flags.json" \
 ```
 
 **Rollback if Needed:**
+
 - Revert provider configurations to source-based selectors
 - Keep `flagSetId` metadata in flag configurations for future attempts
 - Use metadata reflection to debug issues

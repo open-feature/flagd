@@ -106,6 +106,7 @@ For advanced use cases, individual flags can override the set-level `flagSetId`:
 ```
 
 In this example:
+
 - `standard-feature` inherits `flagSetId: "payment-service"` from set level
 - `experimental-feature` overrides to `flagSetId: "experiments"`
 - Both flags inherit `team: "payments"` (unless overridden at flag level)
@@ -117,11 +118,13 @@ When you make a request with a selector, flagd "reflects" the selector informati
 ### Example
 
 **Request with selector:**
+
 ```
 Selector: "flagSetId=project-42"
 ```
 
 **Response includes reflected metadata:**
+
 ```json
 {
   "flags": { /* ... */ },
@@ -132,6 +135,7 @@ Selector: "flagSetId=project-42"
 ```
 
 This helps you:
+
 - Verify that your selector was parsed correctly
 - Debug complex selector queries
 - Understand exactly what flags were returned
@@ -181,7 +185,7 @@ selector: "source=legacy-config.json"
 1. **Use Flag Sets for Logical Grouping**: Prefer `flagSetId` over `source` for new deployments
 2. **Plan Your Flag Set Strategy**: Design flag sets around logical boundaries (teams, features, environments)
 3. **Leverage Metadata**: Use metadata for debugging and auditing
-5. **Document Your Schema**: Clearly document your flag set naming conventions for your team
+4. **Document Your Schema**: Clearly document your flag set naming conventions for your team
 
 ## Migration Considerations
 

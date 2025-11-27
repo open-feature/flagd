@@ -321,6 +321,7 @@ When selectors are provided in multiple locations, the following precedence appl
 #### Usage Examples
 
 **Flag Set-Based Selection (Recommended):**
+
 ```javascript
 const provider = new FlagdProvider({
   host: 'localhost',
@@ -330,6 +331,7 @@ const provider = new FlagdProvider({
 ```
 
 **Source-Based Selection (Legacy):**
+
 ```javascript
 const provider = new FlagdProvider({
   host: 'localhost', 
@@ -339,6 +341,7 @@ const provider = new FlagdProvider({
 ```
 
 **Header-Based Selection:**
+
 ```bash
 # gRPC request with selector header
 grpcurl -H "Flagd-Selector: flagSetId=payment-service" \
@@ -362,6 +365,7 @@ This is particularly important for debugging purposes and error metrics.
 Flagd "reflects" selector information back in response metadata, providing transparency about query execution. This helps with debugging selector expressions and understanding which flags were actually queried.
 
 **Example - gRPC Response:**
+
 ```protobuf
 // Request with selector header: "Flagd-Selector: flagSetId=payment-service"
 message ResolveBooleanResponse {
@@ -373,6 +377,7 @@ message ResolveBooleanResponse {
 ```
 
 **Example - OFREP Response:**
+
 ```json
 {
   "value": true,
@@ -389,6 +394,7 @@ message ResolveBooleanResponse {
 #### Debugging with Metadata Reflection
 
 Use reflected metadata to:
+
 - **Verify Selector Parsing**: Confirm your selector was interpreted correctly
 - **Debug Empty Results**: Check if selectors are filtering flags as expected
 - **Audit Access Patterns**: Log selector metadata for compliance and monitoring

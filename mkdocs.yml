@@ -78,7 +78,10 @@ nav:
   - 'Concepts':
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
+    - 'Selectors': 'concepts/selectors.md'
   - 'Architecture': 'architecture.md'
+  - 'Guides':
+    - 'Migrating to Flag Sets': 'guides/migrating-to-flag-sets.md'
   - 'OpenFeature Providers':
     - 'providers/index.md'
     - 'Go': 'providers/go.md'
@@ -95,6 +98,7 @@ nav:
       - 'Start': 'reference/flagd-cli/flagd_start.md'
       - 'Version': 'reference/flagd-cli/flagd_version.md'
     - 'Sync Configuration': 'reference/sync-configuration.md'
+    - 'Selector Syntax': 'reference/selector-syntax.md'
     - 'gRPC sync service': 'reference/grpc-sync-service.md'
     - 'OFREP service': 'reference/flagd-ofrep.md'
     - 'Flag Definitions':
