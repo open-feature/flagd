@@ -63,11 +63,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				return fmt.Errorf("error constructing metadata response")
 			}
 
-			flagConfig := map[string]interface{}{
-				"flags": s.convertMap(payload.Flags),
-			}
-
-			flags, err := json.Marshal(flagConfig)
+			flags, err := s.generateResponse(payload.Flags)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				return status.Error(codes.DataLoss, "error marshalling flags")
@@ -87,6 +83,15 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 			return nil
 		}
 	}
+}
+
+func (s syncHandler) generateResponse(payload []model.Flag) ([]byte, error) {
+	flagConfig := map[string]interface{}{
+		"flags": s.convertMap(payload),
+	}
+
+	flags, err := json.Marshal(flagConfig)
+	return flags, err
 }
 
 // getSelectorExpression extracts the selector expression from the request.
@@ -141,11 +146,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
-	flagConfig := map[string]interface{}{
-		"flags": s.convertMap(flags),
-	}
-
-	flagsString, err := json.Marshal(flagConfig)
+	flagsString, err := s.generateResponse(flags)
 
 	if err != nil {
 		return nil, err
