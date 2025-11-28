@@ -143,9 +143,6 @@ A: No, source-based selectors continue to work. Migration is optional but recomm
 **Q: Can flag sets span multiple sources?**  
 A: Yes, multiple sources can contribute flags to the same flag set.
 
-**Q: Can I mix selector types?**  
-A: Yes, different providers can use different selector patterns.
-
 ## Additional Resources
 
 - [Selector Concepts](../concepts/selectors.md) - Understanding selectors and flag sets
