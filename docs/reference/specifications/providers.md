@@ -381,7 +381,7 @@ message ResolveBooleanResponse {
 ```json
 {
   "value": true,
-  "reason": "TARGETING_MATCH", 
+  "reason": "TARGETING_MATCH",
   "variant": "on",
   "metadata": {
     "flagSetId": "payment-service",
