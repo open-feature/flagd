@@ -1,6 +1,7 @@
 # Metadata
 
-Metadata in flagd provides contextual information about flags and flag sets. It enables rich observability, debugging capabilities, and transparent query execution through inheritance and reflection mechanisms.
+Metadata in flagd provides contextual information about flags and flag sets.
+It enables rich observability, logical separation, and debugging capabilities.
 
 ## Overview
 
