@@ -347,7 +347,7 @@ const provider = new FlagdProvider({
 grpcurl -H "Flagd-Selector: flagSetId=payment-service" \
   localhost:8013 flagd.evaluation.v1.Service/ResolveBoolean
 
-# OFREP request with selector header  
+# OFREP request with selector header
 curl -H "Flagd-Selector: flagSetId=frontend-features" \
   http://localhost:8014/ofrep/v1/evaluate/flags/my-flag
 ```
