@@ -307,7 +307,7 @@ Providers support selector configuration to filter which flags are synchronized 
 Providers accept selector expressions using the following syntax:
 
 - **Flag Set Selection**: `flagSetId=<identifier>` - Target flags belonging to a specific flag set
-- **Source Selection**: `source=<identifier>` - Target flags from a specific source (legacy)  
+- **Source Selection**: `source=<identifier>` - Target flags from a specific source (legacy)
 - **Backward Compatibility**: `<identifier>` - Treated as source selection
 
 #### Selector Precedence
