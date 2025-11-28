@@ -226,7 +226,7 @@ const provider = new FlagdProvider({
 The selector syntax is designed to be extensible. Future versions may support:
 
 - **Multiple Criteria**: `flagSetId=app1,source=prod`
-- **Complex Queries**: `flagSetId=app1 OR flagSetId=app2`  
+- **Complex Queries**: `flagSetId=app1 OR flagSetId=app2`
 - **Filter Expressions**: `metadata.environment=production`
 - **Kubernetes-Style Selectors**: `app=frontend,tier=web`
 
