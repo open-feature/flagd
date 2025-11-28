@@ -205,7 +205,7 @@ sources:
   - uri: grpc://flag-server:8080
     provider: grpc
     selector: "flagSetId=payment-service"
-  - uri: grpc://flag-server:8080  
+  - uri: grpc://flag-server:8080
     provider: grpc
     selector: "flagSetId=user-service"
 ```
