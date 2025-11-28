@@ -86,78 +86,9 @@ grpcurl -H "Flagd-Selector: flagSetId=production" \
 # Result: Uses "flagSetId=production" from header
 ```
 
-## Metadata "Reflection"
+## Metadata Reflection
 
-Flagd reflects selector information back in response metadata, providing transparency about query execution.
-
-### Reflection Behavior
-
-**Input Selector:**
-
-```text
-flagSetId=project-42
-```
-
-**Reflected in Response Metadata:**
-
-```json
-{
-  "metadata": {
-    "flagSetId": "project-42"
-  }
-}
-```
-
-### Multiple Metadata Sources
-
-Reflected metadata includes:
-
-- **Selector Information**: The parsed selector key-value pairs
-- **Set-Level Metadata**: Metadata from the flag configuration itself
-- **Source Context**: Additional context from sync operations
-
-### Metadata Inheritance
-
-Flagd uses a hierarchical metadata system where flags inherit metadata from their flag set:
-
-**Set-Level Metadata (Inherited):**
-
-```json
-{
-  "metadata": {
-    "flagSetId": "payment-service",
-    "team": "payments",
-    "version": "1.2.0"
-  },
-  "flags": {
-    "checkout-flow": {
-      "state": "ENABLED"
-      // Inherits all set-level metadata
-    }
-  }
-}
-```
-
-**Flag-Level Metadata (Override):**
-
-```json
-{
-  "metadata": {
-    "flagSetId": "payment-service",
-    "team": "payments"
-  },
-  "flags": {
-    "experimental-feature": {
-      "metadata": {
-        "flagSetId": "experiments",  // Overrides set-level
-        "owner": "research-team"      // Adds flag-specific metadata
-        // Still inherits "team": "payments"
-      },
-      "state": "DISABLED"
-    }
-  }
-}
-```
+Flagd reflects selector information back in response metadata, providing transparency about query execution. For complete details on metadata selector reflection, inheritance patterns, and configuration examples, see the [Metadata concepts](../concepts/metadata.md) section.
 
 ## Examples
 

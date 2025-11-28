@@ -79,6 +79,7 @@ nav:
     - 'Feature Flagging': 'concepts/feature-flagging.md'
     - 'Syncs': 'concepts/syncs.md'
     - 'Selectors': 'concepts/selectors.md'
+    - 'Metadata': 'concepts/metadata.md'
   - 'Architecture': 'architecture.md'
   - 'Guides':
     - 'Migrating to Flag Sets': 'guides/migrating-to-flag-sets.md'
