@@ -390,7 +390,7 @@ message ResolveBooleanResponse {
 }
 ```
 
-#### Debugging with Metadata Reflection
+#### Debugging with Metadata
 
 Use reflected metadata to:
 
