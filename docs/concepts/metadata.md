@@ -91,12 +91,14 @@ Metadata reflection provides transparency by echoing selector and configuration 
 When making requests with selectors, flagd "reflects" the parsed selector information in the "top-level" `metadata` field:
 
 **Request:**
+
 ```bash
 curl -H "Flagd-Selector: flagSetId=payment-service" \
   http://localhost:8014/ofrep/v1/evaluate/flags
 ```
 
 **Response includes reflected metadata:**
+
 ```json
 {
   "flags": {
@@ -139,7 +141,7 @@ Flag evaluation responses include the complete merged metadata for each flag:
 
 ### Standard Fields
 
-Some metadata fields are defined in the flag-definition schema for common use-cases: 
+Some metadata fields are defined in the flag-definition schema for common use-cases:
 
 - **`flagSetId`**: Logical grouping identifier for selectors
 - **`version`**: Configuration or flag version
