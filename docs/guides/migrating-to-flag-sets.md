@@ -120,26 +120,6 @@ flagSetId: "backend-team"    # Backend features
 
 Choose the pattern that best matches your deployment and organizational structure.
 
-## Testing and Rollback
-
-**Test Migration:**
-
-```bash
-# Verify new selector works
-curl -H "Flagd-Selector: flagSetId=my-app" \
-  http://localhost:8014/ofrep/v1/evaluate/flags
-
-# Check backward compatibility  
-curl -H "Flagd-Selector: config/legacy-flags.json" \
-  http://localhost:8014/ofrep/v1/evaluate/flags
-```
-
-**Rollback if Needed:**
-
-- Revert provider configurations to source-based selectors
-- Keep `flagSetId` metadata in flag configurations for future attempts
-- Use metadata reflection to debug issues
-
 ## Common Issues
 
 **No flags returned**: Check that `flagSetId` in selector matches flag configuration exactly
