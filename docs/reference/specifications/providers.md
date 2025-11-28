@@ -359,7 +359,7 @@ When a flag is resolved, the returned [metadata](./flag-definitions.md#metadata)
 Flag metadata is returned on a "best effort" basis when flags are resolved: disabled, missing or erroneous flags return the metadata of the associated flag set whenever possible.
 This is particularly important for debugging purposes and error metrics.
 
-#### Selector Metadata Reflection
+#### Selector Metadata "Reflection"
 
 Flagd "reflects" selector information back in response metadata, providing transparency about query execution. This helps with debugging selector expressions and understanding which flags were actually queried.
 
