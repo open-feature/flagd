@@ -81,7 +81,7 @@ Change provider selectors from source-based to flag set-based:
 new FlagdProvider(FlagdOptions.builder()
     .selector("config/app-flags.json").build());
 
-// After  
+// After
 new FlagdProvider(FlagdOptions.builder()
     .selector("flagSetId=my-application").build());
 ```
