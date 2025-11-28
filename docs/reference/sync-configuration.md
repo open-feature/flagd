@@ -184,67 +184,22 @@ To support rotating the secrets without restarting flagd, the additional paramet
 
 ## Selector Configuration
 
-Selectors allow you to filter flag configurations from sync sources, enabling more granular control over which flags are synchronized. This is particularly useful in multi-tenant or multi-environment deployments.
-
-### Selector Syntax
-
-Selectors support two main patterns:
-
-- **Flag Set Selection**: `flagSetId=<identifier>` - Select flags belonging to a specific flag set
-- **Source Selection**: `source=<identifier>` - Select flags from a specific source (legacy)
-- **Backward Compatibility**: `<identifier>` - Treated as source selection for compatibility
-
-### Usage Patterns
-
-#### Flag Set-Based Selection (Recommended)
-
-Target logical groupings of flags independent of their source:
+Selectors allow you to filter flag configurations from sync sources. Add the `selector` field to source configurations:
 
 ```yaml
 sources:
   - uri: grpc://flag-server:8080
     provider: grpc
-    selector: "flagSetId=payment-service"
+    selector: "flagSetId=payment-service"  # Flag set selection
   - uri: grpc://flag-server:8080
     provider: grpc
-    selector: "flagSetId=user-service"
-```
-
-#### Source-Based Selection (Legacy)
-
-Target specific sources directly:
-
-```yaml
-sources:
-  - uri: grpc://flag-server:8080
-    provider: grpc
-    selector: "source=production-flags"
-```
-
-#### Empty Flag Set Selection
-
-Select flags that don't belong to any named flag set:
-
-```yaml
-sources:
-  - uri: grpc://flag-server:8080
-    provider: grpc
-    selector: "flagSetId="
+    selector: "source=legacy-flags"        # Source selection (legacy)
 ```
 
 ### Selector Precedence
 
-When selectors are provided in multiple locations, the following precedence applies:
-
-1. **gRPC Header**: `Flagd-Selector` header (highest priority)
+1. **Request Headers**: `Flagd-Selector` header (highest priority)
 2. **Request Body**: `selector` field in request
 3. **Configuration**: `selector` field in source configuration (lowest priority)
 
-### Best Practices
-
-- **Use Flag Sets**: Prefer `flagSetId` over `source` for new deployments
-- **Logical Grouping**: Group flags by application, environment, or team
-- **Consistent Naming**: Use clear, consistent flag set naming conventions
-- **Document Schema**: Maintain documentation of your flag set structure
-
-For detailed selector syntax and examples, see the [Selector Syntax Reference](selector-syntax.md).
+For complete selector syntax, patterns, and examples, see the [Selectors concepts](../concepts/selectors.md) and [Selector Syntax Reference](selector-syntax.md).

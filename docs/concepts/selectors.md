@@ -67,79 +67,13 @@ The most common pattern is to set the `flagSetId` at the configuration level, wh
 
 In this example, both `new-checkout-flow` and `stripe-integration` flags belong to the `payment-service` flag set.
 
-### Metadata Inheritance and Override
+### Metadata Integration
 
-Flagd uses a hierarchical metadata system:
+Selectors work closely with flagd's metadata system. For advanced patterns like flag-level overrides of `flagSetId` or complex metadata inheritance, see the [Metadata concepts](metadata.md) section.
 
-1. **Set-Level Metadata**: Defined in the top-level `metadata` section, inherited by all flags
-2. **Flag-Level Metadata**: Defined in individual flag `metadata`, overrides set-level values for that flag
-3. **Merged Result**: Flag evaluations return merged metadata with flag-level taking precedence
+## Metadata Reflection
 
-### Flag-Level Overrides (Advanced)
-
-For advanced use cases, individual flags can override the set-level `flagSetId`:
-
-```json
-{
-  "metadata": {
-    "flagSetId": "payment-service",
-    "team": "payments"
-  },
-  "flags": {
-    "standard-feature": {
-      "state": "ENABLED",
-      "variants": { "on": true, "off": false },
-      "defaultVariant": "on"
-      // Inherits flagSetId: "payment-service"
-    },
-    "experimental-feature": {
-      "metadata": {
-        "flagSetId": "experiments",  // Override: belongs to different set
-        "owner": "research-team"
-      },
-      "state": "DISABLED",
-      "variants": { "on": true, "off": false },
-      "defaultVariant": "off"
-    }
-  }
-}
-```
-
-In this example:
-
-- `standard-feature` inherits `flagSetId: "payment-service"` from set level
-- `experimental-feature` overrides to `flagSetId: "experiments"`
-- Both flags inherit `team: "payments"` (unless overridden at flag level)
-
-## Flag Set Metadata "Reflection"
-
-When you make a request with a selector, flagd "reflects" the selector information back in the response metadata. This provides transparency about what was actually queried and helps with debugging.
-
-### Example
-
-**Request with selector:**
-
-```text
-Selector: "flagSetId=project-42"
-```
-
-**Response includes reflected metadata:**
-
-```json
-{
-  "flags": { /* ... */ },
-  "metadata": {
-    "flagSetId": "project-42"
-  }
-}
-```
-
-This helps you:
-
-- Verify that your selector was parsed correctly
-- Debug complex selector queries
-- Understand exactly what flags were returned
-- Audit flag access patterns
+When you make a request with a selector, flagd "reflects" the selector information back in the response metadata for transparency and debugging. For complete details on metadata selector reflection, inheritance, and configuration patterns, see the [Metadata concepts](metadata.md) section.
 
 ## Use Cases
 
