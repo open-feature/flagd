@@ -316,7 +316,6 @@ When selectors are provided in multiple locations, the following precedence appl
 
 1. **Request Header**: `Flagd-Selector` header (RPC and OFREP requests)
 2. **Provider Configuration**: `selector` option in provider constructor
-3. **Environment Variable**: `FLAGD_SOURCE_SELECTOR` environment variable
 
 #### Usage Examples
 
