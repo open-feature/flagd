@@ -125,7 +125,6 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	tests := map[string]struct {
 		setup          func(t *testing.T, client *syncmock.MockClient)
 		uri            string
-		bearerToken    string
 		authHeader     string
 		eTagHeader     string
 		lastBodySHA    string
@@ -167,37 +166,6 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}, nil)
 			},
 			uri:         "http://localhost",
-			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
-				if err != nil {
-					t.Fatalf("fetch: %v", err)
-				}
-
-				expectedLastBodySHA := "UjeJHtCU_wb7OHK-tbPoHycw0TqlHzkWJmH4y6cqg50="
-				if httpSync.lastBodySHA != expectedLastBodySHA {
-					t.Errorf(
-						"expected last body sha to be: '%s', got: '%s'", expectedLastBodySHA, httpSync.lastBodySHA,
-					)
-				}
-			},
-		},
-		"authorization with bearerToken": {
-			setup: func(t *testing.T, client *syncmock.MockClient) {
-				expectedToken := "bearer-1234"
-				client.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
-					actualAuthHeader := req.Header.Get("Authorization")
-					if actualAuthHeader != "Bearer "+expectedToken {
-						t.Fatalf("expected Authorization header to be 'Bearer %s', got %s", expectedToken, actualAuthHeader)
-					}
-					return &http.Response{
-						Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}}),
-						Body:       io.NopCloser(strings.NewReader("test response")),
-						StatusCode: http.StatusOK,
-					}, nil
-				})
-			},
-			uri:         "http://localhost",
-			bearerToken: "bearer-1234",
 			lastBodySHA: "",
 			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
 				if err != nil {
@@ -348,7 +316,6 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			httpSync := Sync{
 				uri:         tt.uri,
 				client:      mockClient,
-				bearerToken: tt.bearerToken,
 				authHeader:  tt.authHeader,
 				lastBodySHA: tt.lastBodySHA,
 				logger:      logger.NewLogger(nil, false),
@@ -361,30 +328,6 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	}
 }
 
-func TestSync_Init(t *testing.T) {
-	tests := []struct {
-		name        string
-		bearerToken string
-	}{
-		{"with bearerToken", "bearer-1234"},
-		{"without bearerToken", ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			httpSync := Sync{
-				bearerToken: tt.bearerToken,
-				logger:      logger.NewLogger(nil, false),
-			}
-
-			if err := httpSync.Init(context.Background()); err != nil {
-				t.Errorf("Init() error = %v", err)
-			}
-		})
-	}
-
-}
-
 func TestHTTPSync_Resync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	source := "http://localhost"
@@ -393,7 +336,6 @@ func TestHTTPSync_Resync(t *testing.T) {
 	tests := map[string]struct {
 		setup             func(t *testing.T, client *syncmock.MockClient)
 		uri               string
-		bearerToken       string
 		lastBodySHA       string
 		handleResponse    func(*testing.T, Sync, string, error)
 		wantErr           bool
@@ -448,7 +390,6 @@ func TestHTTPSync_Resync(t *testing.T) {
 			httpSync := Sync{
 				uri:         tt.uri,
 				client:      mockClient,
-				bearerToken: tt.bearerToken,
 				lastBodySHA: tt.lastBodySHA,
 				logger:      logger.NewLogger(nil, false),
 			}
@@ -617,7 +558,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			l := logger.NewLogger(nil, false)
 			s := NewHTTP(sync.SourceConfig{
 				URI:         ts.URL,
-				BearerToken: "it_should_be_replaced_by_oauth",
+				AuthHeader: "Bearer it_should_be_replaced_by_oauth",
 				OAuth: &sync.OAuthCredentialHandler{
 					ClientID:     clientID,
 					ClientSecret: clientSecret,
@@ -710,7 +651,7 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 	l := logger.NewLogger(nil, false)
 	s := NewHTTP(sync.SourceConfig{
 		URI:         ts.URL + flagsPath,
-		BearerToken: "it_should_be_replaced_by_oauth",
+		AuthHeader: "Bearer it_should_be_replaced_by_oauth",
 		OAuth: &sync.OAuthCredentialHandler{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,

@@ -26,7 +26,7 @@ func TestParseSource(t *testing.T) {
 		"multiple-syncs": {
 			in: `[
 					{"uri":"config/samples/example_flags.json","provider":"file"},
-					{"uri":"http://test.com","provider":"http","bearerToken":":)"},
+					{"uri":"http://test.com","provider":"http","authHeader":"Bearer :)"},
 					{"uri":"host:port","provider":"grpc"},
 					{"uri":"default/my-crd","provider":"kubernetes"},
 					{"uri":"gs://bucket-name/path/to/file","provider":"gcs"},
@@ -42,7 +42,7 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:         "http://test.com",
 					Provider:    syncProviderHTTP,
-					BearerToken: ":)",
+					AuthHeader: "Bearer :)",
 				},
 				{
 					URI:      "host:port",
@@ -69,8 +69,6 @@ func TestParseSource(t *testing.T) {
 		"multiple-syncs-with-options": {
 			in: `[
 				{"uri":"config/samples/example_flags.json","provider":"file"},
-				{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
-				{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
 				{"uri":"http://site.com","provider":"http","interval":77 },
@@ -83,16 +81,6 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: syncProviderFile,
-				},
-				{
-					URI:         "http://my-flag-source.json",
-					Provider:    syncProviderHTTP,
-					BearerToken: "bearer-dji34ld2l",
-				},
-				{
-					URI:         "https://secure-remote",
-					Provider:    syncProviderHTTP,
-					BearerToken: "bearer-dji34ld2l",
 				},
 				{
 					URI:        "https://secure-remote",
@@ -124,22 +112,6 @@ func TestParseSource(t *testing.T) {
 					CertPath:   "/certs/ca.cert",
 					ProviderID: "flagd-weatherapp-sidecar",
 					Selector:   "source=database,app=weatherapp",
-				},
-			},
-		},
-		"multiple-auth-options": {
-			in: `[
-				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l","bearerToken":"bearer-dji34ld2l"}
-			]`,
-			expectErr: true,
-			out: []sync.SourceConfig{
-				{
-					URI:         "https://secure-remote",
-					Provider:    syncProviderHTTP,
-					AuthHeader:  "Bearer bearer-dji34ld2l",
-					BearerToken: "bearer-dji34ld2l",
-					TLS:         false,
-					Interval:    0,
 				},
 			},
 		},

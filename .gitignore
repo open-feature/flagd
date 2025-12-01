@@ -3,6 +3,7 @@ __debug_bin
 .vscode
 dist/
 .idea
+.cursor
 *.pem
 # ignore generated code
 pkg/eval/flagd-definitions.json
