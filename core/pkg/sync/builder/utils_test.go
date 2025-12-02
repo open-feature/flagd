@@ -26,7 +26,7 @@ func TestParseSource(t *testing.T) {
 		"multiple-syncs": {
 			in: `[
 					{"uri":"config/samples/example_flags.json","provider":"file"},
-					{"uri":"http://test.com","provider":"http","bearerToken":":)"},
+					{"uri":"http://test.com","provider":"http","authHeader":"Bearer :)"},
 					{"uri":"host:port","provider":"grpc"},
 					{"uri":"default/my-crd","provider":"kubernetes"},
 					{"uri":"gs://bucket-name/path/to/file","provider":"gcs"},
@@ -42,7 +42,7 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:         "http://test.com",
 					Provider:    syncProviderHTTP,
-					BearerToken: ":)",
+					AuthHeader: "Bearer :)",
 				},
 				{
 					URI:      "host:port",
@@ -69,8 +69,6 @@ func TestParseSource(t *testing.T) {
 		"multiple-syncs-with-options": {
 			in: `[
 				{"uri":"config/samples/example_flags.json","provider":"file"},
-				{"uri":"http://my-flag-source.json","provider":"http","bearerToken":"bearer-dji34ld2l"},
-				{"uri":"https://secure-remote","provider":"http","bearerToken":"bearer-dji34ld2l"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
 				{"uri":"http://site.com","provider":"http","interval":77 },
@@ -83,16 +81,6 @@ func TestParseSource(t *testing.T) {
 				{
 					URI:      "config/samples/example_flags.json",
 					Provider: syncProviderFile,
-				},
-				{
-					URI:         "http://my-flag-source.json",
-					Provider:    syncProviderHTTP,
-					BearerToken: "bearer-dji34ld2l",
-				},
-				{
-					URI:         "https://secure-remote",
-					Provider:    syncProviderHTTP,
-					BearerToken: "bearer-dji34ld2l",
 				},
 				{
 					URI:        "https://secure-remote",
@@ -124,22 +112,6 @@ func TestParseSource(t *testing.T) {
 					CertPath:   "/certs/ca.cert",
 					ProviderID: "flagd-weatherapp-sidecar",
 					Selector:   "source=database,app=weatherapp",
-				},
-			},
-		},
-		"multiple-auth-options": {
-			in: `[
-				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l","bearerToken":"bearer-dji34ld2l"}
-			]`,
-			expectErr: true,
-			out: []sync.SourceConfig{
-				{
-					URI:         "https://secure-remote",
-					Provider:    syncProviderHTTP,
-					AuthHeader:  "Bearer bearer-dji34ld2l",
-					BearerToken: "bearer-dji34ld2l",
-					TLS:         false,
-					Interval:    0,
 				},
 			},
 		},
@@ -254,6 +226,64 @@ func TestParseSyncProviderURIs(t *testing.T) {
 	for name, tt := range test {
 		t.Run(name, func(t *testing.T) {
 			out, err := ParseSyncProviderURIs(tt.in)
+			if tt.expectErr {
+				if err == nil {
+					t.Error("expected error, got none")
+				}
+			} else if err != nil {
+				t.Errorf("did not expect error: %s", err.Error())
+			}
+			if !reflect.DeepEqual(out, tt.out) {
+				t.Errorf("unexpected output, expected %v, got %v", tt.out, out)
+			}
+		})
+	}
+}
+
+func TestParseOAuth(t *testing.T) {
+	test := map[string]struct {
+		in        string
+		expectErr bool
+		out       []sync.SourceConfig
+	}{
+		"noOauth": {
+			in:        "[{\"uri\":\"https://secure-remote\",\"provider\":\"http\",\"authHeader\":\"Bearer bearer-dji34ld2l\"}]",
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:        "https://secure-remote",
+					Provider:   "http",
+					AuthHeader: "Bearer bearer-dji34ld2l",
+				},
+			},
+		},
+		"oauth": {
+			in: `[{
+	"uri": "https://secure-remote",
+	"provider":"http", 
+	"oauth": { 
+		"clientID": "myID",
+		"clientSecret": "mySecret",
+		"tokenURL": "myTokenUrl" 
+	}}]`,
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:      "https://secure-remote",
+					Provider: "http",
+					OAuth: &sync.OAuthCredentialHandler{
+						ClientID:     "myID",
+						ClientSecret: "mySecret",
+						TokenURL:     "myTokenUrl",
+					},
+				},
+			},
+		},
+	}
+
+	for name, tt := range test {
+		t.Run(name, func(t *testing.T) {
+			out, err := ParseSources(tt.in)
 			if tt.expectErr {
 				if err == nil {
 					t.Error("expected error, got none")

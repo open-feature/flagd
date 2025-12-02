@@ -47,6 +47,5 @@ func flagsEqual(a, b model.Flag) bool {
 		reflect.DeepEqual(a.Variants, b.Variants) &&
 		reflect.DeepEqual(a.Targeting, b.Targeting) &&
 		a.Source == b.Source &&
-		a.Selector == b.Selector &&
 		reflect.DeepEqual(a.Metadata, b.Metadata)
 }

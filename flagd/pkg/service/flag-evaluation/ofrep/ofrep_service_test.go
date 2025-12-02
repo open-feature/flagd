@@ -12,6 +12,7 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/errgroup"
 )
@@ -26,6 +27,8 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	cfg := SvcConfiguration{
 		Logger: logger.NewLogger(nil, false),
 		Port:   uint16(port),
+		ServiceName:     "test-service",
+		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
 	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)

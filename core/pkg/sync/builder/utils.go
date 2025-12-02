@@ -22,11 +22,6 @@ func ParseSources(sourcesFlag string) ([]sync.SourceConfig, error) {
 		if sp.Provider == "" {
 			return syncProvidersParsed, errors.New("sync provider argument parse: provider is a required field")
 		}
-		if sp.AuthHeader != "" && sp.BearerToken != "" {
-			return syncProvidersParsed, errors.New(
-				"sync provider argument parse: both authHeader and bearerToken are defined, only one is allowed at a time",
-			)
-		}
 	}
 	return syncProvidersParsed, nil
 }

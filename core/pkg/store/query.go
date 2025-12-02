@@ -27,14 +27,15 @@ const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + 
 // any flag without a "flagSetId" is assigned this one; it's never exposed externally
 var nilFlagSetId = uuid.New().String()
 
-// A selector represents a set of constraints used to query the store.
+// A Selector represents a set of constraints used to query the store.
 type Selector struct {
 	indexMap map[string]string
 }
 
 // NewSelector creates a new Selector from a selector expression string.
-// For example, to select flags from source "./mySource" and flagSetId "1234", use the expression:
-// "source=./mySource,flagSetId=1234"
+// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
+// For example, to select flags from source "./mySource" or flagSetId "1234", use the expressions:
+// "source=./mySource" or "flagSetId=1234"
 func NewSelector(selectorExpression string) Selector {
 	return Selector{
 		indexMap: expressionToMap(selectorExpression),
@@ -47,27 +48,28 @@ func expressionToMap(sExp string) map[string]string {
 		return selectorMap
 	}
 
-	if strings.Index(sExp, "=") == -1 {
-		// if no '=' is found, treat the whole string as as source (backwards compatibility)
-		// we may may support interpreting this as a flagSetId in the future as an option
+	delimiterIdx := strings.Index(sExp, "=")
+	if delimiterIdx == -1 {
+		// if no '=' is found, treat the whole string as source (backwards compatibility)
+		// we may support interpreting this as a flagSetId in the future as an option
 		selectorMap[sourceIndex] = sExp
 		return selectorMap
 	}
 
-	// Split the selector by commas
-	pairs := strings.Split(sExp, ",")
-	for _, pair := range pairs {
-		// Split each pair by the first equal sign
-		parts := strings.Split(pair, "=")
-		if len(parts) == 2 {
-			key := parts[0]
-			value := parts[1]
-			selectorMap[key] = value
-		}
+	// split the selector by the first equal sign
+	key := sExp[:delimiterIdx]
+	value := sExp[delimiterIdx+1:]
+
+	// handle empty flagSetId as nilFlagSetId to query all flags without flagSetId
+	if key == "flagSetId" && value == "" {
+		value = nilFlagSetId
 	}
+	selectorMap[key] = value
+
 	return selectorMap
 }
 
+// WithIndex creates a new Selector from the current Selector and adds the given key-value-pair
 func (s Selector) WithIndex(key string, value string) Selector {
 	m := maps.Clone(s.indexMap)
 	m[key] = value
@@ -80,7 +82,7 @@ func (s *Selector) IsEmpty() bool {
 	return s == nil || len(s.indexMap) == 0
 }
 
-// SelectorMapToQuery converts the selector map to an indexId and constraints for querying the store.
+// ToQuery converts the Selector map to an indexId and constraints for querying the Store.
 // For a given index, a specific order and number of constraints are required.
 // Both the indexId and constraints are generated based on the keys present in the selector's internal map.
 func (s Selector) ToQuery() (indexId string, constraints []interface{}) {
@@ -114,7 +116,7 @@ func (s Selector) ToQuery() (indexId string, constraints []interface{}) {
 	return indexId, constraints
 }
 
-// SelectorToMetadata converts the selector's internal map to metadata for logging or tracing purposes.
+// ToMetadata converts the selector's internal map to metadata for logging or tracing purposes.
 // Only includes known indices to avoid leaking sensitive information, and is usually returned as the "top level" metadata
 func (s *Selector) ToMetadata() model.Metadata {
 	meta := model.Metadata{}

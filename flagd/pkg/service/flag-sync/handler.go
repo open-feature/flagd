@@ -8,20 +8,24 @@ import (
 	"maps"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/model"
+
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // syncHandler implements the sync contract
 type syncHandler struct {
 	//mux                 *Multiplexer
-	store               *store.Store
+	store               store.IStore
 	log                 *logger.Logger
 	contextValues       map[string]any
 	deadline            time.Duration
@@ -30,7 +34,7 @@ type syncHandler struct {
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	watcher := make(chan store.FlagQueryResult, 1)
-	selectorExpression := req.GetSelector()
+	selectorExpression := s.getSelectorExpression(server.Context(), req)
 	selector := store.NewSelector(selectorExpression)
 	ctx := server.Context()
 
@@ -58,7 +62,10 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
 				return fmt.Errorf("error constructing metadata response")
 			}
-			flags, err := json.Marshal(payload.Flags)
+
+			flagMap := s.convertMap(payload.Flags)
+
+			flags, err := json.Marshal(flagMap)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				return status.Error(codes.DataLoss, "error marshalling flags")
@@ -80,10 +87,51 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
+// getSelectorExpression extracts the selector expression from the request.
+// It first checks the Flagd-Selector header (metadata), then falls back to the request body selector.
+//
+// The req parameter accepts *syncv1.SyncFlagsRequest or *syncv1.FetchAllFlagsRequest.
+// Using interface{} here is intentional as both protobuf-generated types implement GetSelector()
+// but do not share a common interface.
+func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{}) string {
+	// Try to get selector from metadata (header)
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if values := md.Get(flagdService.FLAGD_SELECTOR_HEADER); len(values) > 0 {
+			headerSelector := values[0]
+			s.log.Debug(fmt.Sprintf("using selector from request header: %s", headerSelector))
+			return headerSelector
+		}
+	}
+
+	// Fall back to request body selector for backward compatibility
+	// Eventually we will want to log a deprecation warning here and then remote it entirely
+	var bodySelector string
+	type selectorGetter interface {
+		GetSelector() string
+	}
+
+	if r, ok := req.(selectorGetter); ok {
+		bodySelector = r.GetSelector()
+	}
+
+	if bodySelector != "" {
+		s.log.Debug(fmt.Sprintf("using selector from request body: %s", bodySelector))
+	}
+	return bodySelector
+}
+
+func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {
+	flagMap := make(map[string]model.Flag, len(flags))
+	for _, flag := range flags {
+		flagMap[flag.Key] = flag
+	}
+	return flagMap
+}
+
 func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlagsRequest) (
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
-	selectorExpression := req.GetSelector()
+	selectorExpression := s.getSelectorExpression(ctx, req)
 	selector := store.NewSelector(selectorExpression)
 	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
@@ -91,7 +139,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
-	flagsString, err := json.Marshal(flags)
+	flagsString, err := json.Marshal(s.convertMap(flags))
 
 	if err != nil {
 		return nil, err

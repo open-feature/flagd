@@ -1,7 +1,7 @@
 PHONY: .docker-build .build .run .mockgen
 PREFIX=/usr/local
 PUBLIC_JSON_SCHEMA_DIR=docs/schema/v0/
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
+ALL_GO_MOD_DIRS := $(shell find . -path ./test/integration -prune -o -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 FLAGD_DEV_NAMESPACE ?= flagd-dev
 ZD_TEST_NAMESPACE_FLAGD_PROXY ?= flagd-proxy-zd-test
@@ -119,10 +119,10 @@ MDL_CMD := docker run -v $(ROOT_DIR):/workdir --rm
 
 .PHONY: markdownlint markdownlint-fix
 markdownlint:
-	$(MDL_CMD) davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md" 
+	$(MDL_CMD) davidanson/markdownlint-cli2:$(MDL_DOCKER_VERSION) "**/*.md" 
 
 markdownlint-fix:
-	$(MDL_CMD) --entrypoint="markdownlint-cli2-fix" davidanson/markdownlint-cli2-rules:$(MDL_DOCKER_VERSION) "**/*.md"
+	$(MDL_CMD) davidanson/markdownlint-cli2:$(MDL_DOCKER_VERSION) --fix "**/*.md" 
 
 .PHONY: pull-schemas-submodule
 pull-schemas-submodule:

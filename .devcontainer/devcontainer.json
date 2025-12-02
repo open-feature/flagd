@@ -1,0 +1,39 @@
+{
+    "name": "flagd dev container",
+    // Image details: https://github.com/devcontainers/images/tree/main/src/go
+    "image": "mcr.microsoft.com/devcontainers/go:1.24",
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            // The 'moby' option is not supported on Debian 'trixie' because 'moby-cli' and related system packages have been removed from that distribution.
+            "moby": false
+        }
+    },
+    // Configure tool-specific properties.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "EditorConfig.EditorConfig",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "GitHub.vscode-github-actions",
+                "GitHub.vscode-pull-request-github",
+                "golang.go",
+                "esbenp.prettier-vscode",
+                "redhat.vscode-yaml",
+                "cucumberopen.cucumber-official",
+                "ms-vscode.makefile-tools"
+            ]
+        }
+    },
+    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+    "remoteUser": "vscode",
+    "hostRequirements": {
+        "memory": "8gb"
+    },
+    // Use 'postCreateCommand' to run commands after the container is created.
+    "postCreateCommand": "git submodule update --init --recursive && make workspace-init"
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [],
+}

@@ -84,7 +84,7 @@ func TestConnectService_UnixConnection(t *testing.T) {
 			exp := metric.NewManualReader()
 			rs := resource.NewWithAttributes("testSchema")
 			metricRecorder := telemetry.NewOTelRecorder(exp, rs, tt.name)
-			svc := NewConnectService(logger.NewLogger(nil, false), eval, &store.Store{}, metricRecorder)
+			svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
 			serveConf := iservice.Configuration{
 				ReadinessProbe: func() bool {
 					return true
@@ -139,7 +139,7 @@ func TestAddMiddleware(t *testing.T) {
 	rs := resource.NewWithAttributes("testSchema")
 	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "my-exporter")
 
-	svc := NewConnectService(logger.NewLogger(nil, false), nil, &store.Store{}, metricRecorder)
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, nil, metricRecorder)
 
 	serveConf := iservice.Configuration{
 		ReadinessProbe: func() bool {
@@ -238,8 +238,8 @@ func TestConnectServiceWatcher(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// make a change
-	s.Update(sources[0], map[string]model.Flag{
-		"flag1": {
+	s.Update(sources[0], []model.Flag{
+		{
 			Key:            "flag1",
 			DefaultVariant: "off",
 		},

@@ -2,15 +2,13 @@ package store
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
-	"sync"
+	"sort"
 
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/notifications"
 )
 
 var noValidatedSources = []string{}
@@ -18,29 +16,24 @@ var noValidatedSources = []string{}
 type SelectorContextKey struct{}
 
 type FlagQueryResult struct {
-	Flags map[string]model.Flag
+	Flags []model.Flag
 }
 
 type IStore interface {
 	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
-	GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error)
+	GetAll(ctx context.Context, selector *Selector) ([]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
+	Update(source string, flags []model.Flag, metadata model.Metadata)
 }
 
 var _ IStore = (*Store)(nil)
 
 type Store struct {
-	mx      sync.RWMutex
 	db      *memdb.MemDB
 	logger  *logger.Logger
 	sources []string
 	// deprecated: has no effect and will be removed soon.
 	FlagSources []string
-}
-
-type SourceDetails struct {
-	Source   string
-	Selector string
 }
 
 // NewStore creates a new in-memory store with the given sources.
@@ -170,8 +163,8 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 			return model.Flag{}, queryMeta, fmt.Errorf("flag %s is not a valid flag", key)
 		}
 		return flag, queryMeta, nil
-
 	}
+
 	// otherwise, get all flags with the given key, and keep the last one with the highest priority
 	s.logger.Debug(fmt.Sprintf("getting highest priority flag with key: %s", key))
 	it, err := txn.Get(flagsTable, keyIndex, key)
@@ -199,27 +192,9 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 	return flag, queryMeta, nil
 }
 
-func (f *Store) String() (string, error) {
-	f.logger.Debug("dumping flags to string")
-	f.mx.RLock()
-	defer f.mx.RUnlock()
-
-	state, _, err := f.GetAll(context.Background(), nil)
-	if err != nil {
-		return "", fmt.Errorf("unable to get all flags: %w", err)
-	}
-
-	bytes, err := json.Marshal(state)
-	if err != nil {
-		return "", fmt.Errorf("unable to marshal flags: %w", err)
-	}
-
-	return string(bytes), nil
-}
-
 // GetAll returns a copy of the store's state (copy in order to be concurrency safe)
-func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]model.Flag, model.Metadata, error) {
-	flags := make(map[string]model.Flag)
+func (s *Store) GetAll(ctx context.Context, selector *Selector) ([]model.Flag, model.Metadata, error) {
+	var flags []model.Flag
 	queryMeta := selector.ToMetadata()
 	it, err := s.selectOrAll(selector)
 
@@ -231,14 +206,17 @@ func (s *Store) GetAll(ctx context.Context, selector *Selector) (map[string]mode
 	return flags, queryMeta, nil
 }
 
+type flagIdentifier struct {
+	flagSetId string
+	key       string
+}
+
 // Update the flag state with the provided flags.
 func (s *Store) Update(
 	source string,
-	flags map[string]model.Flag,
+	flags []model.Flag,
 	metadata model.Metadata,
-) (map[string]interface{}, bool) {
-	resyncRequired := false
-
+) {
 	if source == "" {
 		panic("source cannot be empty")
 	}
@@ -252,34 +230,10 @@ func (s *Store) Update(
 		// same as above - remove when we remove "NewFlags" constructor
 		priority = 0
 	}
-
-	txn := s.db.Txn(true)
-	defer txn.Abort()
-
-	// get all flags for the source we are updating
-	selector := NewSelector(sourceIndex + "=" + source)
-	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
-
-	s.mx.Lock()
-	for key := range oldFlags {
-		if _, ok := flags[key]; !ok {
-			// flag has been deleted
-			s.logger.Debug(fmt.Sprintf("flag %s has been deleted from source %s", key, source))
-
-			count, err := txn.DeleteAll(flagsTable, keySourceCompoundIndex, key, source)
-			s.logger.Debug(fmt.Sprintf("deleted %d flags with key %s from source %s", count, key, source))
-
-			if err != nil {
-				s.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", key, err))
-			}
-			continue
-		}
-	}
-	s.mx.Unlock()
-	for key, newFlag := range flags {
+	newFlags := make(map[flagIdentifier]model.Flag)
+	for _, newFlag := range flags {
 		s.logger.Debug(fmt.Sprintf("got metadata %v", metadata))
 
-		newFlag.Key = key
 		newFlag.Source = source
 		newFlag.Priority = priority
 		newFlag.Metadata = patchMetadata(metadata, newFlag.Metadata)
@@ -292,36 +246,64 @@ func (s *Store) Update(
 			flagSetId = setFlagSetId
 		}
 		newFlag.FlagSetId = flagSetId
+		newFlags[flagIdentifier{flagSetId: newFlag.FlagSetId, key: newFlag.Key}] = newFlag
+	}
 
-		raw, err := txn.First(flagsTable, keySourceCompoundIndex, key, source)
+	txn := s.db.Txn(true)
+	defer txn.Abort()
+
+	// get all flags for the source we are updating
+	selector := NewSelector(sourceIndex + "=" + source)
+	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
+
+	for _, oldFlag := range oldFlags {
+		if _, ok := newFlags[flagIdentifier{flagSetId: oldFlag.FlagSetId, key: oldFlag.Key}]; !ok {
+			// flag has been deleted
+			s.logger.Debug(fmt.Sprintf("flag '%s' and flagSetId '%s' has been deleted from source '%s'", oldFlag.Key, oldFlag.FlagSetId, source))
+
+			count, err := txn.DeleteAll(flagsTable, flagSetIdKeySourceCompoundIndex, oldFlag.FlagSetId, oldFlag.Key, source)
+			s.logger.Debug(fmt.Sprintf(
+				"deleted %d flags with key '%s' and flagSetId '%s' from source '%s'",
+				count,
+				oldFlag.Key,
+				oldFlag.FlagSetId,
+				source,
+			))
+
+			if err != nil {
+				s.logger.Error(fmt.Sprintf("error deleting flag: %s, %v", oldFlag.Key, err))
+			}
+			continue
+		}
+	}
+
+	for _, newFlag := range newFlags {
+		raw, err := txn.First(flagsTable, idIndex, newFlag.FlagSetId, newFlag.Key)
 		if err != nil {
-			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", key, source, err))
+			s.logger.Error(fmt.Sprintf("unable to get flag %s from source %s: %v", newFlag.Key, newFlag.FlagSetId, err))
 			continue
 		}
 		oldFlag, ok := raw.(model.Flag)
 		// If we already have a flag with the same key and source, we need to check if it has the same flagSetId
 		if ok {
-			if oldFlag.FlagSetId != newFlag.FlagSetId {
-				// If the flagSetId is different, we need to delete the entry, since flagSetId+key represents the primary index, and it's now been changed.
-				// This is important especially for clients listening to flagSetId changes, as they expect the flag to be removed from the set in this case.
-				_, err = txn.DeleteAll(flagsTable, idIndex, oldFlag.FlagSetId, key)
-				if err != nil {
-					s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", key, oldFlag.FlagSetId, err))
-					continue
-				}
+			if oldFlag.Priority > newFlag.Priority {
+				// if the old flag has a higher prio, we should not try to write it
+				s.logger.Error(fmt.Sprintf("unable to delete flags with key %s and flagSetId %s: %v", oldFlag.Key, oldFlag.FlagSetId, err))
+				continue
 			}
 		}
+
 		// Store the new version of the flag
 		s.logger.Debug(fmt.Sprintf("storing flag: %v", newFlag))
+
 		err = txn.Insert(flagsTable, newFlag)
 		if err != nil {
-			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", key, err))
+			s.logger.Error(fmt.Sprintf("unable to insert flag %s: %v", newFlag.Key, err))
 			continue
 		}
 	}
 
 	txn.Commit()
-	return notifications.NewFromFlags(oldFlags, flags), resyncRequired
 }
 
 // Watch the result-set of a selector for changes, sending updates to the watcher channel.
@@ -338,6 +320,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			ws.Add(it.WatchCh())
 
 			flags := s.collect(it)
+
 			watcher <- FlagQueryResult{
 				Flags: flags,
 			}
@@ -365,20 +348,35 @@ func (s *Store) selectOrAll(selector *Selector) (it memdb.ResultIterator, err er
 }
 
 // collects flags from an iterator, ensuring that only the highest priority flag is kept when there are duplicates
-func (s *Store) collect(it memdb.ResultIterator) map[string]model.Flag {
-	flags := make(map[string]model.Flag)
+func (s *Store) collect(it memdb.ResultIterator) []model.Flag {
+	flags := make(map[flagIdentifier]model.Flag)
 	for raw := it.Next(); raw != nil; raw = it.Next() {
 		flag := raw.(model.Flag)
-		if existing, ok := flags[flag.Key]; ok {
+
+		// checking for multiple flags with the same key, as they can be defined multiple times in different sources
+		if existing, ok := flags[flagIdentifier{flagSetId: flag.FlagSetId, key: flag.Key}]; ok {
 			if flag.Priority < existing.Priority {
-				s.logger.Debug(fmt.Sprintf("discarding duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[flag.Priority], s.sources[existing.Priority]))
+				s.logger.Debug(fmt.Sprintf("discarding duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[flag.Priority], s.sources[existing.Priority]))
 				continue // we already have a higher priority flag
 			}
-			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag %s from lower priority source %s in favor of flag from source %s", flag.Key, s.sources[existing.Priority], s.sources[flag.Priority]))
+			s.logger.Debug(fmt.Sprintf("overwriting duplicate flag with key '%s' and flagSetId '%s' from lower priority source '%s' in favor of flag from source '%s'", flag.Key, flag.FlagSetId, s.sources[existing.Priority], s.sources[flag.Priority]))
 		}
-		flags[flag.Key] = flag
+
+		flags[flagIdentifier{flagSetId: flag.FlagSetId, key: flag.Key}] = flag
 	}
-	return flags
+
+	flattenedFlags := make([]model.Flag, 0, len(flags))
+	for _, value := range flags {
+		flattenedFlags = append(flattenedFlags, value)
+	}
+	// we should order to keep the same order all the time in our response
+	sort.Slice(flattenedFlags, func(i, j int) bool {
+		if flattenedFlags[i].FlagSetId != flattenedFlags[j].FlagSetId {
+			return flattenedFlags[i].FlagSetId < flattenedFlags[j].FlagSetId
+		}
+		return flattenedFlags[i].Key < flattenedFlags[j].Key
+	})
+	return flattenedFlags
 }
 
 func patchMetadata(original, patch model.Metadata) model.Metadata {

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/xeipuuv/gojsonschema"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -39,6 +38,17 @@ var regBrace *regexp.Regexp
 
 func init() {
 	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
+}
+
+func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
+	unmarshalJSON, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaData))
+	if err != nil {
+		return err
+	}
+	if err := compiler.AddResource(url, unmarshalJSON); err != nil {
+		return err
+	}
+	return nil
 }
 
 type constraints interface {
@@ -64,23 +74,42 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 
 // JSON evaluator
 type JSON struct {
-	store          *store.Store
+	store          store.IStore
 	Logger         *logger.Logger
 	jsonEvalTracer trace.Tracer
+	jsonSchema     *jsonschema.Schema
 	Resolver
 }
 
-func NewJSON(logger *logger.Logger, s *store.Store, opts ...JSONEvaluatorOption) *JSON {
+func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption) *JSON {
 	logger = logger.WithFields(
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
 	)
 	tracer := otel.Tracer("jsonEvaluator")
 
+	// Create a new JSON Schema compiler
+	compiler := jsonschema.NewCompiler()
+
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flagd.json", schema.FlagdSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/flags.json", schema.FlagSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
+	if err := addSchemaResource(compiler, "https://flagd.dev/schema/v0/targeting.json", schema.TargetingSchema); err != nil {
+		logger.Warn("Failed to add schema resource", zap.Error(err))
+	}
+
+	jsonSchema, err := compiler.Compile("https://flagd.dev/schema/v0/flagd.json")
+	if err != nil {
+		logger.Fatal("Failed to compile schema", zap.Error(err))
+	}
 	ev := JSON{
 		store:          s,
 		Logger:         logger,
 		jsonEvalTracer: tracer,
+		jsonSchema:     jsonSchema,
 		Resolver:       NewResolver(s, logger, tracer),
 	}
 
@@ -91,15 +120,7 @@ func NewJSON(logger *logger.Logger, s *store.Store, opts ...JSONEvaluatorOption)
 	return &ev
 }
 
-func (je *JSON) GetState() (string, error) {
-	s, err := je.store.String()
-	if err != nil {
-		return "", fmt.Errorf("unable to fetch evaluator state: %w", err)
-	}
-	return s, nil
-}
-
-func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, error) {
+func (je *JSON) SetState(payload sync.DataSync) error {
 	_, span := je.jsonEvalTracer.Start(
 		context.Background(),
 		"flagSync",
@@ -108,22 +129,16 @@ func (je *JSON) SetState(payload sync.DataSync) (map[string]interface{}, bool, e
 
 	var definition Definition
 
-	err := configToFlagDefinition(je.Logger, payload.FlagData, &definition)
+	err := je.configToFlagDefinition(payload.FlagData, &definition)
 	if err != nil {
 		span.SetStatus(codes.Error, "flagSync error")
 		span.RecordError(err)
-		return nil, false, err
+		return err
 	}
 
-	var events map[string]interface{}
-	var reSync bool
+	je.store.Update(payload.Source, definition.Flags, definition.Metadata)
 
-	events, reSync = je.store.Update(payload.Source, definition.Flags, definition.Metadata)
-
-	// Number of events correlates to the number of flags changed through this sync, record it
-	span.SetAttributes(attribute.Int("feature_flag.change_count", len(events)))
-
-	return events, reSync, nil
+	return nil
 }
 
 // Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
@@ -165,7 +180,7 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var reason string
 	var metadata map[string]interface{}
 
-	for flagKey, flag := range allFlags {
+	for _, flag := range allFlags {
 		if flag.State == Disabled {
 			// ignore evaluation of disabled flag
 			continue
@@ -174,18 +189,18 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
-			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[bool](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case string:
-			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[string](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case float64:
-			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case map[string]any:
-			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flagKey, context, je.evaluateVariant)
+			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		}
 		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flagKey, err.Error()))
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flag.Key, err.Error()))
 		}
-		values = append(values, NewAnyValue(value, variant, reason, flagKey, metadata, err))
+		values = append(values, NewAnyValue(value, variant, reason, flag.Key, metadata, err))
 	}
 
 	return values, flagSetMetadata, nil
@@ -429,56 +444,67 @@ func getFlagdProperties(context map[string]any) (flagdProperties, bool) {
 	return p, true
 }
 
-func loadAndCompileSchema(log *logger.Logger) *gojsonschema.Schema {
-	schemaLoader := gojsonschema.NewSchemaLoader()
-
-	// compile dependency schema
-	targetingSchemaLoader := gojsonschema.NewStringLoader(schema.TargetingSchema)
-	if err := schemaLoader.AddSchemas(targetingSchemaLoader); err != nil {
-		log.Warn(fmt.Sprintf("error adding Targeting schema: %s", err))
-	}
-
-	// compile root schema
-	flagdDefinitionsLoader := gojsonschema.NewStringLoader(schema.FlagSchema)
-	compiledSchema, err := schemaLoader.Compile(flagdDefinitionsLoader)
-	if err != nil {
-		log.Warn(fmt.Sprintf("error compiling FlagdDefinitions schema: %s", err))
-	}
-
-	return compiledSchema
-}
-
 // configToFlagDefinition convert string configurations to flags and store them to pointer newFlags
-func configToFlagDefinition(log *logger.Logger, config string, definition *Definition) error {
-	compiledSchema := loadAndCompileSchema(log)
-
-	flagStringLoader := gojsonschema.NewStringLoader(config)
-
-	result, err := compiledSchema.Validate(flagStringLoader)
+func (je *JSON) configToFlagDefinition(config string, definition *Definition) error {
+	// json schema validation
+	inst, err := jsonschema.UnmarshalJSON(strings.NewReader(config))
 	if err != nil {
-		log.Logger.Warn(fmt.Sprintf("failed to execute JSON schema validation: %s", err))
-	} else if !result.Valid() {
-		log.Logger.Warn(fmt.Sprintf(
-			"flag definition does not conform to the schema; validation errors: %s", buildErrorString(result.Errors()),
-		))
+		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
+	}
+	if err := je.jsonSchema.Validate(inst); err != nil {
+		je.Logger.Warn(fmt.Sprintf(
+			"flag definition does not conform to the schema; validation errors: %s", err),
+		)
 	}
 
+	type JsonRawDef struct {
+		Flags    json.RawMessage        `json:"flags"`
+		Metadata map[string]interface{} `json:"metadata"`
+	}
+
+	// Transpose evaluators and unmarshal directly into JsonDef
 	transposedConfig, err := transposeEvaluators(config)
 	if err != nil {
 		return fmt.Errorf("transposing evaluators: %w", err)
 	}
 
-	err = json.Unmarshal([]byte(transposedConfig), &definition)
+	var rawDef JsonRawDef
+	err = json.Unmarshal([]byte(transposedConfig), &rawDef)
 	if err != nil {
 		return fmt.Errorf("unmarshalling provided configurations: %w", err)
 	}
+	definition.Metadata = rawDef.Metadata
+	definition.Flags = []model.Flag{}
 
+	// Check if flags is an array or object
+	trimmed := strings.TrimSpace(string(rawDef.Flags))
+	if strings.HasPrefix(trimmed, "[") {
+		// It's an array
+		var flags []model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flags); err != nil {
+			return fmt.Errorf("unmarshalling flags array: %w", err)
+		}
+		definition.Flags = flags
+	} else {
+		// It's an object
+		var flagsMap map[string]model.Flag
+		if err := json.Unmarshal(rawDef.Flags, &flagsMap); err != nil {
+			return fmt.Errorf("unmarshalling flags map: %w", err)
+		}
+		// convert map to slice
+		var flags []model.Flag
+		for k, v := range flagsMap {
+			v.Key = k
+			flags = append(flags, v)
+		}
+		definition.Flags = flags
+	}
 	return validateDefaultVariants(definition)
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid
 func validateDefaultVariants(flags *Definition) error {
-	for name, flag := range flags.Flags {
+	for _, flag := range flags.Flags {
 		// Default Variant is not provided in the config
 		if flag.DefaultVariant == "" {
 			continue
@@ -486,7 +512,7 @@ func validateDefaultVariants(flags *Definition) error {
 
 		if _, ok := flag.Variants[flag.DefaultVariant]; !ok {
 			return fmt.Errorf(
-				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, name,
+				"default variant: '%s' isn't a valid variant of flag: '%s'", flag.DefaultVariant, flag.Key,
 			)
 		}
 	}
@@ -521,19 +547,4 @@ func transposeEvaluators(state string) (string, error) {
 	}
 
 	return state, nil
-}
-
-// buildErrorString efficiently converts json schema errors to a formatted string, usable for logging
-func buildErrorString(errors []gojsonschema.ResultError) string {
-	var builder strings.Builder
-
-	for i, err := range errors {
-		builder.WriteByte(' ')
-		builder.WriteString(strconv.Itoa(i + 1))
-		builder.WriteByte(':')
-		builder.WriteString(err.String())
-		builder.WriteByte(' ')
-	}
-
-	return builder.String()
 }

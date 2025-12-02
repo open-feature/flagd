@@ -23,7 +23,6 @@ import (
 type MockIEvaluator struct {
 	ctrl     *gomock.Controller
 	recorder *MockIEvaluatorMockRecorder
-	isgomock struct{}
 }
 
 // MockIEvaluatorMockRecorder is the mock recorder for MockIEvaluator.
@@ -41,21 +40,6 @@ func NewMockIEvaluator(ctrl *gomock.Controller) *MockIEvaluator {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIEvaluator) EXPECT() *MockIEvaluatorMockRecorder {
 	return m.recorder
-}
-
-// GetState mocks base method.
-func (m *MockIEvaluator) GetState() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetState")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetState indicates an expected call of GetState.
-func (mr *MockIEvaluatorMockRecorder) GetState() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockIEvaluator)(nil).GetState))
 }
 
 // ResolveAllValues mocks base method.
@@ -179,13 +163,11 @@ func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, co
 }
 
 // SetState mocks base method.
-func (m *MockIEvaluator) SetState(payload sync.DataSync) (model.Metadata, bool, error) {
+func (m *MockIEvaluator) SetState(payload sync.DataSync) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetState", payload)
-	ret0, _ := ret[0].(model.Metadata)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetState indicates an expected call of SetState.
@@ -198,7 +180,6 @@ func (mr *MockIEvaluatorMockRecorder) SetState(payload any) *gomock.Call {
 type MockIResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockIResolverMockRecorder
-	isgomock struct{}
 }
 
 // MockIResolverMockRecorder is the mock recorder for MockIResolver.
