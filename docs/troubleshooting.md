@@ -71,3 +71,45 @@ You may need to explicitly allow HTTP2 or gRPC in your platform if you're using 
 !!! note
 
     HTTP2 _is not_ strictly for the flag [evaluation gRPC service](./reference/specifications/protos.md#schemav1schemaproto), which is exposed both as a gRPC service and a RESTful HTTP/1.1 service, thanks to the [connect protocol](https://connectrpc.com/docs/protocol/).
+
+---
+
+## Selector Issues
+
+### No Flags Returned with Selector
+
+**Problem**: Provider returns no flags when using a selector.
+
+**Debugging Steps:**
+
+- Verify `flagSetId` in selector matches flag configuration exactly
+- Check selector syntax: `flagSetId=my-app` (not `flagSetId:my-app`)
+- Test without selector to confirm flags exist
+
+### Wrong Flags Returned
+
+**Problem**: Selector returns unexpected flags.
+
+**Debugging Steps:**
+
+- Check for flag-level `flagSetId` overrides in individual flags
+- Verify header precedence: `Flagd-Selector` header overrides request body
+- Use metadata reflection to see what selector was actually applied
+
+### Selector Ignored
+
+**Problem**: Selector appears to be ignored, all flags returned.
+
+**Debugging Steps:**
+
+- Verify selector syntax is correct (`key=value` format)
+- Check if provider configuration has a selector that overrides requests
+- Ensure selector value is not empty (`flagSetId=` returns all flags without flagSetId)
+
+**Debug with metadata reflection:**
+
+```bash
+curl -H "Flagd-Selector: flagSetId=my-app" \
+  http://localhost:8014/ofrep/v1/evaluate/flags
+# Check response metadata to see parsed selector
+```
