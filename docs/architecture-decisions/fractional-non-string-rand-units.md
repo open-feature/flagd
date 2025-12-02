@@ -88,8 +88,8 @@ When inspecting the first element of the `fractional` array:
 
 1. If the first element in `fractional` evaluates to a non-array type then deterministically encode it to a well defined byte array and hash the bytes.
 2. Otherwise, if `targetingKey` is a string, build a 2-elements array of `flagKey` and `targetingKey`, deterministically encode that and hash (**NOTE:** This is different than string concatenation used today).
-3. Otherwise, if `targetingKey` is non-string, report an error and return a default value (as this breaks the [OpenFeature spec](https://openfeature.dev/specification/glossary/#targeting-key)).
-4. Otherwise, if `targetingKey` is missing, report an error and return a default value.
+3. Otherwise, if `targetingKey` is non-string, report an error and return nil (as this breaks the [OpenFeature spec](https://openfeature.dev/specification/glossary/#targeting-key)).
+4. Otherwise, if `targetingKey` is missing, report an error and return nil
 
 ```json
 // Will use the new logic
@@ -161,6 +161,8 @@ Prior to flagd 1.0 launch.
 ## More Information
 
 Today, flagd recommends salting the variable with flagKey directly in the `fractional` logic, using the `"cat"` operator. This will not be possible for non-string types. Advanced features like that will be considered in a separate ADR.
+
+Salting of the string types will continue to be possible using the `"cat"` operator as it is built directly into JSON Logic.
 
 ### Testing considerations
 
