@@ -1,9 +1,9 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: draft
+status: accepted
 author: Maks Osowski (@cupofcat)
 created: 2025-08-21
-updated: 2025-09-02
+updated: 2025-12-03
 ---
 
 # Harden Hashing Consistency And Add Support For Non-string Attributes in Fractional Evaluation
