@@ -104,7 +104,7 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 }
 
 // BuildConnectOptions is a helper to build connect options based on telemetry configurations
-func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
+func BuildConnectOptions(_ Config) ([]connect.HandlerOption, error) {
 	options := []connect.HandlerOption{}
 
 	// Always add interceptor - autoexport will handle whether traces are enabled
@@ -138,7 +138,7 @@ func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
 }
 
 // buildDefaultMetricReader provides the default metric reader
-func buildDefaultMetricReader(ctx context.Context) (metric.Reader, error) {
+func buildDefaultMetricReader(_ context.Context) (metric.Reader, error) {
 	p, err := prometheus.New()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create default metric reader: %w", err)
