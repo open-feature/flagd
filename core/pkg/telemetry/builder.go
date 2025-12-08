@@ -2,20 +2,15 @@ package telemetry
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"os"
 	"time"
 
 	"connectrpc.com/connect"
 	"connectrpc.com/otelconnect"
-	"github.com/open-feature/flagd/core/pkg/certreloader"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"go.opentelemetry.io/contrib/exporters/autoexport"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -23,9 +18,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -72,24 +64,33 @@ func BuildMetricsRecorder(
 }
 
 // BuildTraceProvider build and register the trace provider and propagator for the caller runtime. This method
-// attempt to register a global TracerProvider backed by batch SpanProcessor.Config. CollectorTarget can be used to
-// provide the grpc collector target. Providing empty target results in skipping provider & propagator registration.
-// This results in tracers having NoopTracerProvider and propagator having No-Op TextMapPropagator performing no action
+// uses autoexport to automatically handle OTEL environment variables for trace exporters.
+// Providing empty collector target results in using environment variables or falling back to noop.
 func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, svcVersion string, cfg Config) error {
-	if cfg.CollectorConfig.Target == "" {
-		logger.Debug("skipping trace provider setup as collector target is not set." +
+	// For backwards compatibility: set environment variables from flagd configuration
+	// before calling autoexport if they are provided via flags
+	if cfg.CollectorConfig.Target != "" {
+		setEnvIfNotSet("OTEL_TRACES_EXPORTER", "otlp")
+		setEnvIfNotSet("OTEL_EXPORTER_OTLP_ENDPOINT", cfg.CollectorConfig.Target)
+		setEnvIfNotSet("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
+	}
+
+	// Use autoexport to handle OTEL environment variables
+	exporter, err := autoexport.NewSpanExporter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create span exporter: %w", err)
+	}
+
+	// Skip if noop exporter (when no configuration is provided)
+	if autoexport.IsNoneSpanExporter(exporter) {
+		logger.Debug("skipping trace provider setup as no exporter is configured." +
 			" Traces will use NoopTracerProvider provider and propagator will use no-Op TextMapPropagator")
 		return nil
 	}
 
-	exporter, err := buildOtlpExporter(ctx, cfg.CollectorConfig)
-	if err != nil {
-		return err
-	}
-
 	res, err := buildResourceFor(ctx, svc, svcVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build resource: %w", err)
 	}
 
 	provider := trace.NewTracerProvider(
@@ -103,124 +104,41 @@ func BuildTraceProvider(ctx context.Context, logger *logger.Logger, svc string, 
 }
 
 // BuildConnectOptions is a helper to build connect options based on telemetry configurations
-func BuildConnectOptions(cfg Config) ([]connect.HandlerOption, error) {
+func BuildConnectOptions(_ Config) ([]connect.HandlerOption, error) {
 	options := []connect.HandlerOption{}
 
-	// add interceptor if configuration is available for collector
-	if cfg.CollectorConfig.Target != "" {
-		interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
-		if err != nil {
-			return nil, fmt.Errorf("error creating interceptor, %w", err)
-		}
-
-		options = append(options, connect.WithInterceptors(interceptor))
+	// Always add interceptor - autoexport will handle whether traces are enabled
+	interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
+	if err != nil {
+		return nil, fmt.Errorf("error creating interceptor, %w", err)
 	}
+
+	options = append(options, connect.WithInterceptors(interceptor))
 
 	return options, nil
 }
 
-func buildTransportCredentials(_ context.Context, cfg CollectorConfig) (credentials.TransportCredentials, error) {
-	creds := insecure.NewCredentials()
-	if cfg.KeyPath != "" || cfg.CertPath != "" || cfg.CAPath != "" {
-		capool := x509.NewCertPool()
-		if cfg.CAPath != "" {
-			ca, err := os.ReadFile(cfg.CAPath)
-			if err != nil {
-				return nil, fmt.Errorf("can't read ca file from %s", cfg.CAPath)
-			}
-			if !capool.AppendCertsFromPEM(ca) {
-				return nil, fmt.Errorf("can't add CA '%s' to pool", cfg.CAPath)
-			}
-		}
-
-		reloader, err := certreloader.NewCertReloader(certreloader.Config{
-			KeyPath:        cfg.KeyPath,
-			CertPath:       cfg.CertPath,
-			ReloadInterval: cfg.ReloadInterval,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create certreloader: %w", err)
-		}
-
-		tlsConfig := &tls.Config{
-			RootCAs:    capool,
-			MinVersion: tls.VersionTLS12,
-			GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				certs, err := reloader.GetCertificate()
-				if err != nil {
-					return nil, fmt.Errorf("failed to reload certs: %w", err)
-				}
-				return certs, nil
-			},
-		}
-
-		creds = credentials.NewTLS(tlsConfig)
-	}
-
-	return creds, nil
-}
-
 // buildMetricReader builds a metric reader based on provided configurations
+// Uses autoexport to automatically handle OTEL environment variables
 func buildMetricReader(ctx context.Context, cfg Config) (metric.Reader, error) {
-	if cfg.MetricsExporter == "" {
-		return buildDefaultMetricReader()
+	// For backwards compatibility: set environment variables from flagd configuration
+	// before calling autoexport if they are provided via flags
+	if cfg.MetricsExporter == metricsExporterOtel && cfg.CollectorConfig.Target != "" {
+		// Set OTEL environment variables from configuration if not already set
+		setEnvIfNotSet("OTEL_METRICS_EXPORTER", "otlp")
+		setEnvIfNotSet("OTEL_EXPORTER_OTLP_ENDPOINT", cfg.CollectorConfig.Target)
+		setEnvIfNotSet("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
 	}
 
-	// Handle metric reader override
-	if cfg.MetricsExporter != metricsExporterOtel {
-		return nil, fmt.Errorf("provided metrics operator %s is not supported. currently only support %s",
-			cfg.MetricsExporter, metricsExporterOtel)
-	}
-
-	// Otel override require target configuration
-	if cfg.CollectorConfig.Target == "" {
-		return nil, fmt.Errorf("metric exporter is set(%s) without providing otel collector target."+
-			" collector target is required for this option", cfg.MetricsExporter)
-	}
-
-	transportCredentials, err := buildTransportCredentials(ctx, cfg.CollectorConfig)
-	if err != nil {
-		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
-	}
-
-	// Non-blocking, insecure grpc connection
-	conn, err := grpc.NewClient(cfg.CollectorConfig.Target, grpc.WithTransportCredentials(transportCredentials))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
-	}
-
-	// Otel metric exporter
-	otelExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
-	if err != nil {
-		return nil, fmt.Errorf("error creating otel metric exporter: %w", err)
-	}
-
-	return metric.NewPeriodicReader(otelExporter), nil
-}
-
-// buildOtlpExporter is a helper to build grpc backed otlp trace exporter
-func buildOtlpExporter(ctx context.Context, cfg CollectorConfig) (*otlptrace.Exporter, error) {
-	transportCredentials, err := buildTransportCredentials(ctx, cfg)
-	if err != nil {
-		return nil, fmt.Errorf("metric export would not build transport credentials: %w", err)
-	}
-
-	// Non-blocking, grpc connection
-	conn, err := grpc.NewClient(cfg.Target, grpc.WithTransportCredentials(transportCredentials))
-	if err != nil {
-		return nil, fmt.Errorf("error creating client connection: %w", err)
-	}
-
-	traceClient := otlptracegrpc.NewClient(otlptracegrpc.WithGRPCConn(conn))
-	exporter, err := otlptrace.New(ctx, traceClient)
-	if err != nil {
-		return nil, fmt.Errorf("error starting otel exporter: %w", err)
-	}
-	return exporter, nil
+	// Use autoexport with Prometheus as fallback for backwards compatibility
+	return autoexport.NewMetricReader(
+		ctx,
+		autoexport.WithFallbackMetricReader(buildDefaultMetricReader),
+	)
 }
 
 // buildDefaultMetricReader provides the default metric reader
-func buildDefaultMetricReader() (metric.Reader, error) {
+func buildDefaultMetricReader(_ context.Context) (metric.Reader, error) {
 	p, err := prometheus.New()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create default metric reader: %w", err)
@@ -244,6 +162,13 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 		return nil, fmt.Errorf("unable to create resource identifier: %w", err)
 	}
 	return r, nil
+}
+
+// setEnvIfNotSet sets an environment variable only if it's not already set
+func setEnvIfNotSet(key, value string) {
+	if os.Getenv(key) == "" {
+		os.Setenv(key, value)
+	}
 }
 
 // OTelErrorsHandler is a custom error interceptor for OpenTelemetry

@@ -44,24 +44,7 @@ func TestBuildMetricReader(t *testing.T) {
 			error: false,
 		},
 		{
-			name: "Metric exporter overriding require valid overriding parameter",
-			cfg: Config{
-				MetricsExporter: "unsupported",
-			},
-			error: true,
-		},
-		{
-			name: "Metric exporter overriding require valid configuration combination",
-			cfg: Config{
-				MetricsExporter: metricsExporterOtel,
-				CollectorConfig: CollectorConfig{
-					Target: "", // collector target is unset
-				},
-			},
-			error: true,
-		},
-		{
-			name: "Metric exporter overriding with valid configurations",
+			name: "Autoexport handles all configurations",
 			cfg: Config{
 				MetricsExporter: metricsExporterOtel,
 				CollectorConfig: CollectorConfig{
@@ -128,9 +111,9 @@ func TestBuildConnectOptions(t *testing.T) {
 		optionCount int
 	}{
 		{
-			name:        "No options for empty/default configurations",
+			name:        "Interceptor always added with autoexport",
 			cfg:         Config{},
-			optionCount: 0,
+			optionCount: 1,
 		},
 		{
 			name: "Connect option is set when telemetry target is set",
