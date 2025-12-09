@@ -26,6 +26,8 @@ If you're interested in a full-featured solution for using flagd in Kubernetes, 
 
 For more information, see [OpenFeature Operator](./reference/openfeature-operator/overview.md).
 
+You can also choose to run a Kubernetes service in front of a deploymnent with multiple Flagd pods connecting to the same datasource. However, if doing so, be aware that synchronization is not instant. The service may return different values after a change until all pods have synchronized with the data source. To be fair, this is typically a small amount of time.
+
 ---
 
 ## Binary
