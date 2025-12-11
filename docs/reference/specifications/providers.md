@@ -106,7 +106,7 @@ We always rely on the [integrated functionality of GRPC for reconnection](https:
 We are configuring the underlying reconnection mechanism whenever we can, based on our configuration. (not all GRPC implementations support this)
 
 | language/property | min connect timeout               | max backoff              | initial backoff          | jitter | multiplier |
-|-------------------|-----------------------------------|--------------------------|--------------------------|--------|------------|
+| ----------------- | --------------------------------- | ------------------------ | ------------------------ | ------ | ---------- |
 | GRPC property     | grpc.initial_reconnect_backoff_ms | max_reconnect_backoff_ms | min_reconnect_backoff_ms | 0.2    | 1.6        |
 | Flagd property    | deadlineMs                        | retryBackoffMaxMs        | retryBackoffMs           | 0.2    | 1.6        |
 | ---               | ---                               | ---                      | ---                      | ---    | ---        |
