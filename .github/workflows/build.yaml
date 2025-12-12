@@ -124,5 +124,5 @@ jobs:
         with:
           go-version-file: 'flagd/go.mod'
 
-      - name: Run evaluation test suite
+      - name: Run test suite
         run: make workspace-clean && cd test/integration && go clean -testcache && go test -cover
