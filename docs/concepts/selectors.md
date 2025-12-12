@@ -13,6 +13,11 @@ In flagd, **selectors** provide a way to query flags based on different criteria
 - **Selector**: A query expression that filters flags by source, flag set, or other criteria
 - **Flag Set Metadata**: The selector information is "reflected" back in response metadata for transparency
 
+!!! tip
+
+    The `flagSetId`/`flag key` combination together represent a unique identifier for a flag.
+    Be sure not to create duplicates, or unexpected behavior may result.
+
 ## Source vs Flag Set Decoupling
 
 ### Before: Tight Coupling
@@ -120,6 +125,7 @@ selector: "source=legacy-config.json"
 2. **Plan Your Flag Set Strategy**: Design flag sets around logical boundaries (teams, features, environments)
 3. **Leverage Metadata**: Use metadata for debugging and auditing
 4. **Document Your Schema**: Clearly document your flag set naming conventions for your team
+5. **Do Not Duplicate Flags Across Sources**: Make sure that flags with the same key and flagSetId do not exist in multiple sources (relative priority of flags in such configurations is not defined).
 
 ## Migration Considerations
 
