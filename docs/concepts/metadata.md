@@ -62,15 +62,15 @@ Individual flags can override inherited metadata or add flag-specific metadata:
       // Inherits: flagSetId="payment-service", team="payments", version="v1.2.0"
     },
     "experimental-feature": {
-      "metadata": {
-        "flagSetId": "experiments",     // Override: different flag set
-        "owner": "research-team",       // Addition: flag-specific metadata
-        "experimental": true            // Addition: flag-specific metadata
-        // Still inherits: team="payments", version="v1.2.0"
-      },
       "state": "DISABLED",
       "variants": {"on": true, "off": false},
-      "defaultVariant": "off"
+      "defaultVariant": "off",
+      "metadata": {
+      "team": "marketing",          // Override: different flag set
+        "owner": "Tom",             // Addition: flag-specific metadata
+        "experimental": true        // Addition: flag-specific metadata
+        // Still inherits: flagSetId="payment-service", version="v1.2.0"
+      }
     }
   }
 }
@@ -162,6 +162,44 @@ You can define any custom metadata fields relevant to your use case:
     "approver": "team-lead"
   }
 }
+```
+
+## Retrieving Metadata in the OpenFeature SDK
+
+Flag metadata is available in evaluation details returned by flag evaluations.
+
+### Go
+
+```go
+details, err := client.BooleanValueDetails(ctx, "new-checkout-flow", false, evalCtx)
+
+// Access metadata from evaluation details
+metadata := details.FlagMetadata
+flagSetId := metadata["flagSetId"]
+team := metadata["team"]
+```
+
+### Java
+
+```java
+FlagEvaluationDetails<Boolean> details = client.getBooleanDetails(
+    "new-checkout-flow", false, new ImmutableContext());
+
+// Access metadata from evaluation details
+ImmutableMetadata metadata = details.getFlagMetadata();
+String flagSetId = metadata.getString("flagSetId");
+String team = metadata.getString("team");
+```
+
+### JavaScript
+
+```javascript
+const details = await client.getBooleanDetails('new-checkout-flow', false, {});
+
+// Access metadata from evaluation details
+const metadata = details.flagMetadata;
+const flagSetId = metadata.flagSetId;
+const team = metadata.team;
 ```
 
 ## Use Cases

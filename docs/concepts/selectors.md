@@ -61,7 +61,7 @@ The most common pattern is to set the `flagSetId` at the configuration level, wh
       },
       "defaultVariant": "on"
     },
-    "stripe-integration": {
+    "bill-buddy-integration": {
       "state": "DISABLED",
       "variants": { "on": true, "off": false },
       "defaultVariant": "off"
@@ -70,7 +70,44 @@ The most common pattern is to set the `flagSetId` at the configuration level, wh
 }
 ```
 
-In this example, both `new-checkout-flow` and `stripe-integration` flags belong to the `payment-service` flag set.
+In this example, both `new-checkout-flow` and `bill-buddy-integration` flags belong to the `payment-service` flag set.
+
+### Flag-Level Configuration
+
+Alternatively, the `flagSetId` can be defined on flag level:
+
+```json
+{
+  "metadata": {
+    "version": "v1.2.0"
+  },
+  "flags": {
+    "new-checkout-flow": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on",
+      "metadata": {
+        "flagSetId": "webshop",
+        "version": "v1.2.0"
+      }
+    },
+    "bill-buddy-integration": {
+      "state": "DISABLED",
+      "variants": { "on": true, "off": false },
+      "defaultVariant": "off",
+      "metadata": {
+        "flagSetId": "payment-service",
+        "version": "v1.2.0"
+      },
+    }
+  }
+}
+```
+
+In this example the two flags `new-checkout-flow` and `bill-buddy-integration` flags belong to different flag sets.
 
 ### Metadata Integration
 
@@ -92,6 +129,15 @@ selector: "flagSetId=tenant-a"
 selector: "flagSetId=tenant-b"
 ```
 
+### Component Separation
+
+```yaml
+# Web service
+selector: "flagSetId=payment-service"
+# Web application
+selector: "flagSetId=webshop"
+```
+
 ### Environment Separation
 
 ```yaml
@@ -100,16 +146,6 @@ selector: "flagSetId=dev-features"
 
 # Production environment
 selector: "flagSetId=prod-features"
-```
-
-### Feature Team Isolation
-
-```yaml
-# Payment team's flags
-selector: "flagSetId=payments"
-
-# User interface team's flags
-selector: "flagSetId=ui-components"
 ```
 
 ### Legacy Source-Based Selection
