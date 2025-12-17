@@ -108,7 +108,7 @@ curl -H "Flagd-Selector: source=config/prod-flags.json" \
   http://localhost:8014/ofrep/v1/evaluate/flags
 ```
 
-### Empty Flag Set Selection
+### No Flag Set Selection
 
 ```bash
 # Select flags that don't belong to any named flag set
