@@ -70,7 +70,7 @@ source=./local-flags.yaml
 
 When selectors are provided in multiple locations, flagd uses the following precedence order (highest to lowest):
 
-1. **gRPC Header**: `Flagd-Selector` header in gRPC metadata
+1. **gRPC Metadata**: `Flagd-Selector` header in gRPC metadata
 2. **HTTP Header**: `Flagd-Selector` header in HTTP requests
 3. **Request Body**: `selector` field in protobuf/JSON request body
 
