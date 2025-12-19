@@ -146,13 +146,7 @@ that requires OAuth-based authentication.
 
 #### CLI-based OAuth Configuration
 
-To enable OAuth, you need to update your Flagd configuration setting the `oauth` object which contains parameters to configure
-
-....
-
-#### File-based OAuth Configuration
-
-the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
+To enable OAuth, you need to update your Flagd configuration by setting the `oauth` object. This object contains parameters to configure the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
 
 ```sh
 ./bin/flagd start
@@ -168,10 +162,11 @@ the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
   }}]'
 ```
 
-Secrets can also be managed from the file system. This can be handy when, for example, deploying Flagd in Kubernetes. In this case, the client id and secret
-will be read from the files `client-id` and `client-secret`, respectively. If the `folder` attribute is set, client id and secret on top level will be ignored.
-To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force
-the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
+#### File-based OAuth Configuration
+
+Secrets can also be managed from the file system. This can be handy when, for example, deploying Flagd in Kubernetes. If the `folder` attribute is set, any `clientID` and `clientSecret` values provided directly within the `oauth` object are ignored.
+In this case, the client id and secret will be read from the files `client-id` and `client-secret`, respectively.
+To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
 
 ```sh
 ./bin/flagd start
