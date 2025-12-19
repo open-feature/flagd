@@ -3,7 +3,7 @@ import { useMedia } from "react-use";
 import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
-import { getString, isValidJson } from "./utils";
+import { getString, isValidYaml, yamlToCompactJson } from "./utils";
 import { BeforeMount, Editor } from "@monaco-editor/react";
 import { Observable } from "react-use/lib/useObservable";
 
@@ -42,11 +42,6 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
     enableSchemaRequest: true,
     allowComments: false, // we don't support JSON comments in flagd
   });
-};
-
-function shortenJson(formattedString: string) {
-  const object = JSON.parse(formattedString);
-  return JSON.stringify(object);
 };
 
 function formatJson(shortenedString: string) {
@@ -109,9 +104,10 @@ function App() {
   );
 
   useEffect(() => {
-    if (isValidJson(featureDefinition)) {
+    if (isValidYaml(featureDefinition)) {
       try {
-        flagdCore.setConfigurations(featureDefinition);
+        const jsonConfig = yamlToCompactJson(featureDefinition);
+        flagdCore.setConfigurations(jsonConfig);
         setAutocompleteFlagKeys(Array.from(flagdCore.getFlags().keys()));
         setValidFeatureDefinition(true);
       } catch (err) {
@@ -241,8 +237,8 @@ function App() {
   const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
     const newUrl = new URL(baseUrl)
-    const encodedFeatureDefinition = shortenJson(featureDefinition);
-    const encodedEvaluationContext = shortenJson(evaluationContext);
+    const encodedFeatureDefinition = yamlToCompactJson(featureDefinition);
+    const encodedEvaluationContext = yamlToCompactJson(evaluationContext);
 
     if (Object.keys(scenarios).includes(selectedTemplate) &&
       scenarios[selectedTemplate].flagDefinition === featureDefinition) {
@@ -351,7 +347,7 @@ function App() {
                 theme={editorTheme}
                 width="100%"
                 height="500px"
-                language="json"
+                language="yaml"
                 value={featureDefinition}
                 options={{
                   minimap: { enabled: false },
@@ -416,7 +412,7 @@ function App() {
                   theme={editorTheme}
                   width="100%"
                   height="80px"
-                  language="json"
+                  language="yaml"
                   options={{
                     minimap: { enabled: false },
                     lineNumbers: "off",

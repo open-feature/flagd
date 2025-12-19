@@ -1,5 +1,6 @@
 import { FeatureDefinition } from "./types";
 import type { EvaluationContext } from "@openfeature/core";
+import yaml from "js-yaml";
 
 const schemaMixin = {
   $schema: "https://flagd.dev/schema/v0/flags.json",
@@ -29,9 +30,18 @@ export function getString(input: string | (() => string)): string {
   return input;
 }
 
-export function isValidJson(input: string) {
+export function parseYaml(input: string): unknown {
+  return yaml.load(input);
+}
+
+export function yamlToCompactJson(input: string): string {
+  const parsed = parseYaml(input);
+  return JSON.stringify(parsed);
+}
+
+export function isValidYaml(input: string): boolean {
   try {
-    JSON.parse(input);
+    parseYaml(input);
     return true;
   } catch {
     return false;
