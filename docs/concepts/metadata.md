@@ -66,10 +66,10 @@ Individual flags can override inherited metadata or add flag-specific metadata:
       "variants": {"on": true, "off": false},
       "defaultVariant": "off",
       "metadata": {
-      "team": "marketing",          // Override: different flag set
+        // Still inherits: flagSetId="payment-service", version="v1.2.0"
+        "team": "marketing",        // Override: different flag set
         "owner": "Tom",             // Addition: flag-specific metadata
         "experimental": true        // Addition: flag-specific metadata
-        // Still inherits: flagSetId="payment-service", version="v1.2.0"
       }
     }
   }
