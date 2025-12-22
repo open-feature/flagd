@@ -15,8 +15,9 @@ In flagd, **selectors** provide a way to query flags based on different criteria
 
 !!! tip
 
-    The `flagSetId`/`flag key` combination together represent a unique identifier for a flag.
+    The `flagSetId` + `key` combination represents the unique identifier for a flag.
     Be sure not to create duplicates, or unexpected behavior may result.
+    See [Array-Based Flag Definitions](#array-based-flag-definitions) for how this enables flags with the same key to coexist in different flag sets.
 
 ## Source vs Flag Set Decoupling
 
@@ -37,6 +38,33 @@ Now, sources and flag sets are decoupled. A single source can contain multiple f
 # New approach - targeting a logical flag set
 selector: "flagSetId=project-42"
 ```
+
+### Array-Based Flag Definitions
+
+Flags can be defined as an array instead of an object, with each flag specifying its `key` explicitly:
+
+```json
+{
+  "flags": [
+    {
+      "key": "checkout-flow",
+      "state": "ENABLED",
+      "variants": {"on": true, "off": false},
+      "defaultVariant": "on",
+      "metadata": { "flagSetId": "payment-service" }
+    },
+    {
+      "key": "checkout-flow",
+      "state": "DISABLED",
+      "variants": {"on": true, "off": false},
+      "defaultVariant": "off",
+      "metadata": { "flagSetId": "user-service" }
+    }
+  ]
+}
+```
+
+This format is useful for systems that generate large flag configurations programmatically. It also allows flags with the same key to coexist when they belong to different flag sets, since the `flagSetId` + `key` combination represents the unique identifier for a flag.
 
 ## Flag Set Configuration
 
