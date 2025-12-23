@@ -1,0 +1,102 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "simple-boolean": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "on"
+    },
+    "simple-string": {
+      "state": "ENABLED",
+      "variants": {
+        "greeting": "Hello, World!",
+        "farewell": "Goodbye, World!"
+      },
+      "defaultVariant": "greeting"
+    },
+    "simple-number": {
+      "state": "ENABLED",
+      "variants": {
+        "low": 10,
+        "medium": 50,
+        "high": 100
+      },
+      "defaultVariant": "medium"
+    },
+    "simple-object": {
+      "state": "ENABLED",
+      "variants": {
+        "config-a": {
+          "theme": "light",
+          "maxItems": 10
+        },
+        "config-b": {
+          "theme": "dark",
+          "maxItems": 25
+        }
+      },
+      "defaultVariant": "config-a"
+    },
+    "user-tier-flag": {
+      "state": "ENABLED",
+      "variants": {
+        "basic": "basic-features",
+        "premium": "premium-features",
+        "enterprise": "enterprise-features"
+      },
+      "defaultVariant": "basic",
+      "targeting": {
+        "if": [
+          { "===": [{ "var": "tier" }, "enterprise"] },
+          "enterprise",
+          { "if": [
+            { "===": [{ "var": "tier" }, "premium"] },
+            "premium",
+            null
+          ]}
+        ]
+      }
+    },
+    "email-based-feature": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off",
+      "targeting": {
+        "if": [
+          { "ends_with": [{ "var": "email" }, "@example.com"] },
+          "on",
+          null
+        ]
+      }
+    },
+    "region-config": {
+      "state": "ENABLED",
+      "variants": {
+        "us": { "currency": "USD", "dateFormat": "MM/DD/YYYY" },
+        "eu": { "currency": "EUR", "dateFormat": "DD/MM/YYYY" },
+        "default": { "currency": "USD", "dateFormat": "YYYY-MM-DD" }
+      },
+      "defaultVariant": "default",
+      "targeting": {
+        "if": [
+          { "in": [{ "var": "region" }, ["us", "usa", "united-states"]] },
+          "us",
+          { "if": [
+            { "in": [{ "var": "region" }, ["eu", "europe", "uk", "de", "fr"]] },
+            "eu",
+            null
+          ]}
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "flagSetId": "app-flags"
+  }
+}
