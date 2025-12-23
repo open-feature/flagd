@@ -276,8 +276,8 @@ Use [grpcurl](https://github.com/fullstorydev/grpcurl) to interact with it.
 
 ```shell
 # Clone the repo for proto files
-git clone --depth 1 https://github.com/open-feature/flagd.git
-PROTO_DIR="flagd/schemas/protobuf"
+git clone git@github.com:open-feature/flagd-schemas.git
+PROTO_DIR="flagd-schemas/protobuf/"
 ```
 
 ### Evaluate Flags by Type
