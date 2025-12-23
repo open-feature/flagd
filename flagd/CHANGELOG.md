@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.13.0](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.13.0) (2025-12-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793))
+
+### 🐛 Bug Fixes
+
+* fixing sync return format missing flag layer, adding full e2e suite ([#1827](https://github.com/open-feature/flagd/issues/1827)) ([570693d](https://github.com/open-feature/flagd/commit/570693d9e7b3200c0865e7ebb3b467ccfc38bb88))
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+* **security:** update module golang.org/x/crypto to v0.45.0 [security] ([#1826](https://github.com/open-feature/flagd/issues/1826)) ([7e0762b](https://github.com/open-feature/flagd/commit/7e0762b921ea70bed7915bcaab50e450e0a51158))
+
+
+### ✨ New Features
+
+* add support for http-based ofrep metrics ([#1803](https://github.com/open-feature/flagd/issues/1803)) ([fcd19b3](https://github.com/open-feature/flagd/commit/fcd19b310b319c9837b41c19d6f082ac750cb81d))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793)) ([aa504f7](https://github.com/open-feature/flagd/commit/aa504f7077093746f886248a4766d9ae5587bf3d))
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797)) ([97c6ffa](https://github.com/open-feature/flagd/commit/97c6ffaf2b51765ccd6aaec38c2902ed2ac8f5f3))
+* multi-project support via selectors and flagSetId namespacing ([#1702](https://github.com/open-feature/flagd/issues/1702)) ([f9ce46f](https://github.com/open-feature/flagd/commit/f9ce46f1032e7cb423e0e5c75a7c02f91ab5a88f))
+* normalize selector in sync (use header as in OFREP and RPC)  ([#1815](https://github.com/open-feature/flagd/issues/1815)) ([c1f06cb](https://github.com/open-feature/flagd/commit/c1f06cb00fc5425d6ee73d6cfca314e9711913df))
+
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+
+
+### 🔄 Refactoring
+
+* store cleanup ([#1705](https://github.com/open-feature/flagd/issues/1705)) ([bcff8d7](https://github.com/open-feature/flagd/commit/bcff8d757b6d0ca69bccee26ba41880bdf2b5040))
+
 ## [0.12.9](https://github.com/open-feature/flagd/compare/flagd/v0.12.8...flagd/v0.12.9) (2025-07-28)
 
 
