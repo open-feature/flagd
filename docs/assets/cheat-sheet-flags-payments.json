@@ -1,0 +1,48 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "payment-provider": {
+      "state": "ENABLED",
+      "variants": {
+        "slash": "slash",
+        "billbuddy": "billbuddy",
+        "cube": "cube"
+      },
+      "defaultVariant": "slash"
+    },
+    "max-transaction-amount": {
+      "state": "ENABLED",
+      "variants": {
+        "standard": 1000,
+        "elevated": 5000,
+        "unlimited": 999999
+      },
+      "defaultVariant": "standard",
+      "targeting": {
+        "if": [
+          { "===": [{ "var": "account-verified" }, true] },
+          "elevated",
+          "standard"
+        ]
+      }
+    },
+    "enable-crypto-payments": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off",
+      "targeting": {
+        "if": [
+          { "in": [{ "var": "country" }, ["us", "ca", "uk", "de"]] },
+          "on",
+          "off"
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "flagSetId": "payment-flags"
+  }
+}
