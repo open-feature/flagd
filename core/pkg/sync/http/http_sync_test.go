@@ -557,7 +557,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 			defer ts.Close()
 			l := logger.NewLogger(nil, false)
 			s := NewHTTP(sync.SourceConfig{
-				URI:         ts.URL,
+				URI:        ts.URL,
 				AuthHeader: "Bearer it_should_be_replaced_by_oauth",
 				OAuth: &sync.OAuthCredentialHandler{
 					ClientID:     clientID,
@@ -620,11 +620,14 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 			return
 		} else if strings.HasSuffix(r.URL.Path, flagsPath) {
 			// mock flags response
-			io.ReadAll(r.Body)
+			_, err := io.ReadAll(r.Body)
+			if err != nil {
+				t.Fatalf("cannot read request: %v", err)
+			}
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			_, err := w.Write([]byte(fmt.Sprintf(`{"flagKey": {"default": true}}`)))
+			_, err = w.Write([]byte(fmt.Sprintf(`{"flagKey": {"default": true}}`)))
 			if err != nil {
 				t.Fatalf("cannot write response: %v", err)
 			}
@@ -650,7 +653,7 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 
 	l := logger.NewLogger(nil, false)
 	s := NewHTTP(sync.SourceConfig{
-		URI:         ts.URL + flagsPath,
+		URI:        ts.URL + flagsPath,
 		AuthHeader: "Bearer it_should_be_replaced_by_oauth",
 		OAuth: &sync.OAuthCredentialHandler{
 			ClientID:     clientID,
