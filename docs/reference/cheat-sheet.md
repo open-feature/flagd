@@ -192,7 +192,7 @@ docker run --rm -it \
 ```
 
 ```shell
-# region=eu is automatically applied without needing to send context
+# region=eu and environment=production is automatically applied without needing to send context
 curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags/region-config'
 ```
 
