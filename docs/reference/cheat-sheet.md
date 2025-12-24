@@ -265,7 +265,7 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags/payment-provider' \
 
 ---
 
-## gRPC Evaluation API
+## gRPC Evaluation API (evaluation.proto)
 
 The gRPC evaluation service is available on port `8013` by default.
 Use [grpcurl](https://github.com/fullstorydev/grpcurl) to interact with it.
