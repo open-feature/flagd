@@ -159,7 +159,6 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 
 // Deprecated - GetMetadata is deprecated and will be removed in a future release.
 // Use the sync_context field in syncv1.SyncFlagsResponse, providing same info.
-//
 //nolint:staticcheck // SA1019 temporarily suppress deprecation warning
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
