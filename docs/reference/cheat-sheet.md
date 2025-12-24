@@ -50,21 +50,6 @@ The `payment-flags` set includes:
 
 ## Running flagd
 
-=== "Binary"
-
-    ```shell
-    # Single flag source (local file)
-    flagd start --uri file:./cheat-sheet-flags.json
-
-    # Multiple flag sources
-    flagd start \
-      --uri file:./cheat-sheet-flags.json \
-      --uri file:./cheat-sheet-flags-payments.json
-
-    # HTTP source
-    flagd start --uri https://flagd.dev/assets/cheat-sheet-flags.json
-    ```
-
 === "Docker"
 
     ```shell
@@ -76,6 +61,25 @@ The `payment-flags` set includes:
       ghcr.io/open-feature/flagd:latest start \
       --uri file:./flags/cheat-sheet-flags.json \
       --uri file:./flags/cheat-sheet-flags-payments.json
+    ```
+
+=== "Binary"
+
+    ```shell
+    # Single flag source (local file)
+    flagd start --uri file:./cheat-sheet-flags.json
+    ```
+
+    ```shell
+    # Multiple flag sources
+    flagd start \
+      --uri file:./cheat-sheet-flags.json \
+      --uri file:./cheat-sheet-flags-payments.json
+    ```
+
+    ```shell
+    # HTTP source
+    flagd start --uri https://flagd.dev/assets/cheat-sheet-flags.json
     ```
 
 !!! note
