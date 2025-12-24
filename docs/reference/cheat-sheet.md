@@ -322,6 +322,12 @@ grpcurl -plaintext \
 The gRPC sync service is available on port `8015` by default.
 This is used by in-process providers to fetch and sync flag configurations.
 
+Use [grpcurl](https://github.com/fullstorydev/grpcurl) to interact with it.
+
+!!! note "Proto files required"
+    flagd does not support gRPC reflection. You must provide the proto files to grpcurl so it knows how to serialize/deserialize requests and responses.
+    Clone the flagd repo or download the protos from [buf.build/open-feature/flagd](https://buf.build/open-feature/flagd).
+
 ### FetchAllFlags
 
 Get all flag configurations as a single response:
