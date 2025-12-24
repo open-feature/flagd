@@ -85,7 +85,7 @@ The `payment-flags` set includes:
 
 ## OFREP API (HTTP)
 
-The OFREP (OpenFeature Remote Evaluation Protocol) API is available on port `8016` by default.
+The [OFREP (OpenFeature Remote Evaluation Protocol)](https://openfeature.dev/docs/reference/other-technologies/ofrep/) API is available on port `8016` by default.
 
 ### Evaluate a Single Flag
 
