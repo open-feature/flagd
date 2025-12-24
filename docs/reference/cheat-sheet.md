@@ -17,7 +17,7 @@ Recommended tools:
 
     These commands assume a unix-like shell.
 
-    Output is generally JSON, and can be pretty-printed by piping into `jq` (ie: `curl .... | jq`)
+    Output is generally JSON, and can be pretty-printed by piping into `jq` (ie: `curl ... | jq`)
 
 ## Sample Flag Definitions
 
