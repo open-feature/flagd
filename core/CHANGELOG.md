@@ -3,6 +3,12 @@
 ## [0.13.0](https://github.com/open-feature/flagd/compare/core/v0.12.1...core/v0.13.0) (2025-12-23)
 
 
+### ⚠ BREAKING CHANGES
+
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793))
+* removes the `fractionalEvaluation` operator since it has been replaced with `fractional`. ([#1704](https://github.com/open-feature/flagd/issues/1704))
+
 ### 🐛 Bug Fixes
 
 * **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
