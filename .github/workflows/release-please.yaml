@@ -8,7 +8,7 @@ env:
   PUBLISHABLE_ITEMS: '["flagd","flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
-  DEFAULT_GO_VERSION: '~1.21'
+  DEFAULT_GO_VERSION: '~1.25'
   PUBLIC_KEY_FILE: publicKey.pub
   GOPRIVATE: buf.build/gen/go
 
