@@ -3,11 +3,6 @@
 ## [0.13.0](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.13.0) (2025-12-23)
 
 
-### ⚠ BREAKING CHANGES
-
-* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797))
-* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793))
-
 ### 🐛 Bug Fixes
 
 * fixing sync return format missing flag layer, adding full e2e suite ([#1827](https://github.com/open-feature/flagd/issues/1827)) ([570693d](https://github.com/open-feature/flagd/commit/570693d9e7b3200c0865e7ebb3b467ccfc38bb88))
