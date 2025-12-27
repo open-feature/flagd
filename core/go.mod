@@ -1,8 +1,8 @@
 module github.com/open-feature/flagd/core
 
-go 1.24.0
+go 1.25.5
 
-toolchain go1.24.4
+toolchain go1.25.5
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250529171031-ebdc14163473.2

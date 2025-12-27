@@ -1,8 +1,6 @@
 module integration_test
 
-go 1.24.9
-
-toolchain go1.24.10
+go 1.25.5
 
 require (
 	github.com/go-git/go-git/v5 v5.16.2
