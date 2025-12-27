@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/open-feature/flagd/compare/flagd/v0.13.0...flagd/v0.13.1) (2025-12-27)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update go for various stdlib CVEs ([#1840](https://github.com/open-feature/flagd/issues/1840)) ([6dcb36d](https://github.com/open-feature/flagd/commit/6dcb36d2d6b55b7fe0b6107ac9a25baf302c5cdc))
+
 ## [0.13.0](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.13.0) (2025-12-23)
 
 
