@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.1...flagd-proxy/v0.8.2) (2025-12-27)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update go for various stdlib CVEs ([#1840](https://github.com/open-feature/flagd/issues/1840)) ([6dcb36d](https://github.com/open-feature/flagd/commit/6dcb36d2d6b55b7fe0b6107ac9a25baf302c5cdc))
+
 ## [0.8.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.0...flagd-proxy/v0.8.1) (2025-12-23)
 
 
