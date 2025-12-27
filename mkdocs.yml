@@ -94,6 +94,7 @@ nav:
     - 'Rust': 'providers/rust.md'
     - 'Web': 'providers/web.md'
   - 'Reference':
+    - 'Cheat sheet': 'reference/cheat-sheet.md'
     - 'CLI':
       - 'Overview': 'reference/flagd-cli/flagd.md'
       - 'Start': 'reference/flagd-cli/flagd_start.md'

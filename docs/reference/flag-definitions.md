@@ -177,7 +177,22 @@ See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
 #### Evaluation Context
 
-Evaluation context is included as part of the evaluation request.
+Evaluation context provides the attributes used by targeting rules to determine flag values.
+Context can come from multiple sources, which are merged together before evaluation.
+
+##### Context Sources
+
+flagd supports three sources of evaluation context:
+
+| Source                | Flag                           | Description                                                   |
+| --------------------- | ------------------------------ | ------------------------------------------------------------- |
+| Request body          | -                              | Context sent with each evaluation request                     |
+| Static context        | `-X` / `--context-value`       | Key-value pairs added at startup, included in all evaluations |
+| Header-mapped context | `-H` / `--context-from-header` | Maps HTTP/gRPC request headers to context keys                |
+
+##### Request Body Context
+
+Context included as part of the evaluation request.
 For example, when accessing flagd via HTTP, the POST body may look like this:
 
 ```json
@@ -189,10 +204,77 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 }
 ```
 
-The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
+This is the most common approach when the calling application has user or session information available.
 
-The evaluation context can be appended by arbitrary key value pairs
-via the `-X` command line flag.
+##### Static Context (`-X` flag)
+
+Static context values are specified at startup and automatically included in every evaluation.
+This is useful for server-wide or environment-specific values that don't change per-request.
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -X environment=production \
+  -X region=us-east-1 \
+  -X service=payment-api
+```
+
+**Use cases:**
+
+- **Environment identification**: Different flag behavior for production vs staging (`-X environment=production`)
+- **Regional configuration**: Apply region-specific rules (`-X region=eu-west-1`)
+- **Service identification**: When multiple services share flag definitions (`-X service=checkout`)
+- **Infrastructure metadata**: Cloud provider, datacenter, or cluster information
+
+##### Header-Mapped Context (`-H` flag)
+
+Header-mapped context extracts values from HTTP or gRPC request headers and adds them to the evaluation context.
+This enables context-sensitive evaluation without modifying request bodies.
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -H "X-User-Id=userId" \
+  -H "X-User-Tier=tier"
+```
+
+With this configuration:
+
+- A request with headers `X-User-Id: abc123` and `X-User-Tier: premium` will have `userId=abc123` and `tier=premium` in its evaluation context.
+
+**Use cases:**
+
+- **Gateway integration**: Extract user information from headers set by an API gateway or auth proxy
+- **Multi-tenancy**: Use tenant ID headers for tenant-specific flag behavior
+
+##### Context Merge Priority
+
+When the same key appears in multiple context sources, values are merged with this priority (highest wins):
+
+1. **Header-mapped context** (`-H` flag) - highest priority
+2. **Static context** (`-X` flag)
+3. **Request body context** - lowest priority
+
+For example, with this configuration:
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -X tier=basic \
+  -H "X-User-Tier=tier"
+```
+
+| Request Body                    | Header                    | Resulting `tier` value           |
+| ------------------------------- | ------------------------- | -------------------------------- |
+| `{"context": {"tier": "free"}}` | (none)                    | `basic` (static overrides body)  |
+| `{"context": {"tier": "free"}}` | `X-User-Tier: premium`    | `premium` (header overrides all) |
+| (none)                          | `X-User-Tier: enterprise` | `enterprise`                     |
+
+This priority order allows operators to enforce certain context values at the infrastructure level while still accepting client-provided context for other attributes.
+
+##### Accessing Context in Targeting Rules
+
+The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
 
 | Description                                                    | Example                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------- |
@@ -201,6 +283,8 @@ via the `-X` command line flag.
 | Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
 
 > For more information, see the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var).
+
+See the [cheat sheet](./cheat-sheet.md#context-aware-evaluation) for practical examples of context-sensitive evaluation.
 
 #### Conditions
 
