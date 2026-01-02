@@ -40,3 +40,5 @@ final FlagdProvider flagdProvider =
                 .selector("myFlags.json")
                 .build());
 ```
+
+See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` examples using `FetchAllFlags` and `SyncFlags`.
