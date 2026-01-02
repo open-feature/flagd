@@ -13,6 +13,8 @@ In flagd, **selectors** provide a way to query flags based on different criteria
 - **Selector**: A query expression that filters flags by source, flag set, or other criteria
 - **Flag Set Metadata**: The selector information is "reflected" back in response metadata for transparency
 
+See the [cheat sheet](../reference/cheat-sheet.md#using-the-selector-header) for practical examples of using selectors.
+
 !!! tip
 
     The `flagSetId` + `key` combination represents the unique identifier for a flag.
