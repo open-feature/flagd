@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/open-feature/flagd/compare/core/v0.13.1...core/v0.13.2) (2026-01-09)
+
+
+### 🔙 Reverts
+
+* use go 1.24 in go.mod for core package ([#1844](https://github.com/open-feature/flagd/issues/1844)) ([c92a159](https://github.com/open-feature/flagd/commit/c92a159251e08ed39aa7c1dae42995e00c3186ac))
+
 ## [0.13.1](https://github.com/open-feature/flagd/compare/core/v0.13.0...core/v0.13.1) (2025-12-27)
 
 
