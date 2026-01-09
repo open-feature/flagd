@@ -1,6 +1,7 @@
 # Selectors
 
-Selectors are query expressions that allow you to filter flag configurations from flagd's sync service. They enable providers to request only specific subsets of flags instead of receiving all flags, making flagd more efficient and flexible for complex deployments.
+Selectors are query expressions that allow you to filter flag configurations from flagd.
+They enable providers to sync or evaluate only specific subsets of flags instead of all flags, making flagd more efficient and flexible for complex deployments, and supporting basic multi-tenancy.
 
 ## Overview
 
