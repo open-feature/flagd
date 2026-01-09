@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/open-feature/flagd/compare/flagd/v0.13.1...flagd/v0.13.2) (2026-01-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/open-feature/flagd/core to v0.13.1 [security] ([#1846](https://github.com/open-feature/flagd/issues/1846)) ([a8a57ad](https://github.com/open-feature/flagd/commit/a8a57adb1d49640bfc14bf02cf77961652f7516a))
+
 ## [0.13.1](https://github.com/open-feature/flagd/compare/flagd/v0.13.0...flagd/v0.13.1) (2025-12-27)
 
 
