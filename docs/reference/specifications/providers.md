@@ -146,7 +146,7 @@ The flagd gRPC retry policy is specified below:
 
 ## Fatal Status Codes
 
-Providers accept an option for defining fatal gRPC status codes which, when received in the RPC or sync streams, transition the provider to the PROVIDER_FATAL state.
+Providers accept an option for defining fatal gRPC status codes which, when received in the RPC or sync streams during initialization, transition the provider to the PROVIDER_FATAL state.
 This configuration is useful for situations wherein these codes indicate to a client that their configuration is invalid and must be changed (i.e., the error is non-transient).
 Examples for this include status codes such as `UNAUTHENTICATED` or `PERMISSION_DENIED`.
 
