@@ -158,7 +158,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 **Evaluator Responsibilities** (Unified Component):
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │        Unified Evaluator (Core Logic)       │
 ├─────────────────────────────────────────────┤
@@ -183,7 +183,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 **SDK Responsibilities** (Language-Specific Adapter):
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │           SDK (Language-Specific)           │
 ├─────────────────────────────────────────────┤
@@ -344,7 +344,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 ### Architecture Overview
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                     Application Layer                          │
 │                  (User's Application Code)                     │
@@ -365,7 +365,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 │  └────────────────────────────┬─────────────────────────────┘  │
 └─────────────────────────────────┼────────────────────────────────┘
                                   │
-        ════════��═════════════════╧══════════════════════════
+        ══════════════════════════╧══════════════════════════
           Language Boundary (WASM or Native FFI, In-Process)
         ══════════════════════════╤══════════════════════════
                                   │
