@@ -11,14 +11,14 @@ Adopt a unified evaluation engine to replace fragmented, language-specific evalu
 
 ## Background
 
-The OpenFeature ecosystem currently consists of multiple SDK implementations across different programming languages (Java, Python, Go, . NET, Rust, PHP, etc.). Each SDK that integrates with flagd-compatible systems must implement: 
+The OpenFeature ecosystem currently consists of multiple SDK implementations across different programming languages (Java, Python, Go, . NET, Rust, PHP, etc.). Each SDK that integrates with flagd-compatible systems must implement:
 
 1. **Evaluation logic**:  JsonLogic parsing, targeting rules, fractional evaluation
 2. **Storage/caching**: In-process flag storage and state management
 3. **Validation**:  JSON schema validation for flag configurations
 4. **Sync protocols**: Communication with flagd daemon or other sync sources
 
-This distributed approach has led to: 
+This distributed approach has led to:
 
 - **Fragmented implementations**: Each language maintains its own evaluator with potential behavioral differences
 - **Maintenance overhead**: Bug fixes, feature additions, and specification changes must be replicated across 10+ codebases
@@ -31,7 +31,7 @@ The fundamental question:  **What if we had a single, canonical implementation t
 
 ## Problem Statement
 
-We need to decide: 
+We need to decide:
 
 1. **What responsibilities should be centralized?** (Evaluation?  Storage? Validation? All of the above?)
 2. **How do we achieve cross-language compatibility?** (WASM? Native bindings? Code generation?)
@@ -67,28 +67,32 @@ We need to decide:
 
 ## Scope:  What Should the Unified Evaluator Be Responsible For?
 
-This is a critical architectural decision.  We need to determine the boundaries of the unified evaluator. 
+This is a critical architectural decision.  We need to determine the boundaries of the unified evaluator.
 
 ### Option A: Evaluation Logic Only (Minimal Scope)
 
 **Responsibilities**:
+
 - JsonLogic evaluation
 - Targeting rule processing
 - Fractional evaluation algorithms
 - Default variant resolution
 
 **Not Included**:
+
 - Flag storage/caching (SDK-specific)
 - Schema validation (SDK-specific)
 - Sync protocols (SDK-specific)
 - Error handling translation (SDK-specific)
 
 **Pros**:
+
 - Smallest surface area
 - Easier to integrate
 - SDKs retain control over storage and caching strategies
 
 **Cons**:
+
 - Storage implementations still diverge
 - Validation logic still duplicated
 - Partial solution to the fragmentation problem
@@ -96,22 +100,26 @@ This is a critical architectural decision.  We need to determine the boundaries 
 ### Option B:  Evaluation + Storage (Medium Scope)
 
 **Responsibilities**:
+
 - All from Option A
 - In-memory flag storage
 - Flag state management
 - Query/lookup interface
 
-**Not Included**: 
+**Not Included**:
+
 - Schema validation (happens before storage)
 - Sync protocols (SDK-specific)
 - Network communication
 
 **Pros**:
+
 - Consistent storage behavior across SDKs
 - Unified caching strategies
 - Better performance (no serialization for stored flags)
 
 **Cons**:
+
 - More complex integration
 - Larger memory footprint
 - Less SDK flexibility for storage optimization
@@ -119,23 +127,27 @@ This is a critical architectural decision.  We need to determine the boundaries 
 ### Option C: Evaluation + Storage + Validation (Maximal Scope)
 
 **Responsibilities**:
+
 - All from Option B
 - JSON schema validation
 - Configuration validation
 - Flag conflict detection
 
-**Not Included**: 
+**Not Included**:
+
 - Sync protocols (SDK-specific)
 - Network communication
 - SDK-specific error translation
 
 **Pros**:
+
 - Complete consistency across SDKs
 - Single source of truth for all core logic
 - Validation errors consistent everywhere
 - Maximum maintenance burden reduction
 
 **Cons**:
+
 - Largest integration complexity
 - Most data crossing language boundaries
 - Least SDK flexibility
@@ -145,6 +157,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 **Rationale**:  The current PoC implementation already includes storage and validation, demonstrating feasibility. The maintenance benefits of centralizing all core logic outweigh the integration complexity.  SDKs become thin adapters, focusing on OpenFeature API compliance and language-specific concerns.
 
 **Evaluator Responsibilities** (Unified Component):
+
 ```
 ┌─────────────────────────────────────────────┐
 │        Unified Evaluator (Core Logic)       │
@@ -169,6 +182,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 ```
 
 **SDK Responsibilities** (Language-Specific Adapter):
+
 ```
 ┌─────────────────────────────────────────────┐
 │           SDK (Language-Specific)           │
@@ -199,11 +213,13 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 ### Option 1: Unified Rust-Based Evaluator with Multiple Compilation Targets (Proposed)
 
-**Approach**: Implement evaluator in Rust, compile to multiple targets based on SDK needs: 
+**Approach**: Implement evaluator in Rust, compile to multiple targets based on SDK needs:
+
 - **WASM** for maximum portability and security
 - **Native bindings** (Python, JavaScript/Node.js) for enhanced performance where available
 
-**Why Rust? **
+**Why Rust?**
+
 - Memory safety without garbage collection
 - Excellent cross-compilation support (WASM, native bindings)
 - Strong type system for correctness
@@ -214,6 +230,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 - Can compile to JavaScript/Node.js native modules (neon, napi-rs)
 
 **Pros**:
+
 - Single source of truth for all core logic
 - Guaranteed behavioral consistency
 - **Flexible compilation targets**:  Choose WASM for portability or native for performance
@@ -226,6 +243,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 - Best of both worlds: portability (WASM) + performance (native where available)
 
 **Cons**:
+
 - WASM has performance overhead (WASM boundary crossing, serialization)
 - Native bindings require platform-specific builds (but only for specific SDKs)
 - Additional dependency on WASM runtime or native module
@@ -233,7 +251,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 - Learning curve for maintainers unfamiliar with WASM/Rust
 - Memory must be copied across boundaries
 
-**Compilation Target Strategy**: 
+**Compilation Target Strategy**:
 
 | SDK Language | Primary Target | Fallback | Rationale |
 |--------------|---------------|----------|-----------|
@@ -246,6 +264,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 | Rust | Direct library | - | No FFI needed, use Rust library directly |
 
 **Technical Considerations**:
+
 - WASM runtimes available for all major languages
 - Mature tooling (wasmtime, wasmer)
 - PyO3 provides seamless Rust-Python integration
@@ -255,9 +274,10 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 ### Option 2: Shared Native Library (C/C++ or Rust via FFI)
 
-**Approach**: Implement evaluator as native library, use FFI bindings in each SDK. 
+**Approach**: Implement evaluator as native library, use FFI bindings in each SDK.
 
 **Pros**:
+
 - Near-native performance
 - No serialization overhead
 - Mature FFI tooling in most languages
@@ -265,6 +285,7 @@ This is a critical architectural decision.  We need to determine the boundaries 
 - **In-process execution**
 
 **Cons**:
+
 - Platform-specific binaries (Windows/Linux/macOS, x86/ARM)
 - Complex build and distribution (must compile for each platform)
 - Memory safety concerns (especially with C/C++)
@@ -280,13 +301,15 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 **Approach**: Define evaluation logic in DSL/specification, generate code for each language.
 
-**Pros**: 
+**Pros**:
+
 - Native performance
 - No runtime dependencies
 - Traditional debugging
 - **In-process execution**
 
 **Cons**:
+
 - Generated code may not be idiomatic
 - Still requires testing in each language
 - Code generation tooling adds complexity
@@ -294,26 +317,28 @@ This is a critical architectural decision.  We need to determine the boundaries 
 - Does not solve storage/validation duplication
 - Generator becomes a complex, critical dependency
 
-**Verdict**: Doesn't fully solve the fragmentation problem; complexity shifted to generator. 
+**Verdict**: Doesn't fully solve the fragmentation problem; complexity shifted to generator.
 
 ### Option 4: Reference Implementation with Conformance Tests
 
 **Approach**:  Maintain language-specific implementations with comprehensive cross-SDK tests.
 
-**Pros**: 
+**Pros**:
+
 - No architectural changes
 - Maximum flexibility per SDK
 - Native performance
 - **In-process execution**
 
 **Cons**:
+
 - Maintenance burden continues to grow
 - Behavioral drift still possible
 - Does not address the root problem
 - Testing alone cannot prevent implementation divergence
 - Still requires implementing in 10+ languages
 
-**Verdict**: Status quo - the problem we're trying to solve. 
+**Verdict**: Status quo - the problem we're trying to solve.
 
 ## Proposal
 
@@ -379,12 +404,14 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 ### Core Principle:  Separation of Concerns
 
-**Unified Evaluator (Rust)** - Core business logic: 
+**Unified Evaluator (Rust)** - Core business logic:
+
 - Flag storage, validation, and evaluation
 - Specification compliance
 - Behavioral correctness
 
 **SDK Layer (Language-Specific)** - Integration and adaptation:
+
 - OpenFeature API compliance
 - Language idioms and patterns
 - Sync protocol implementation
@@ -421,6 +448,7 @@ fn destroy_evaluator(handle: EvaluatorHandle);
 ```
 
 **Design Principles**:
+
 - Simple, stable API surface
 - JSON for complex data in WASM (maximizes compatibility)
 - Native objects for Python/JavaScript (maximizes performance)
@@ -439,7 +467,7 @@ fn destroy_evaluator(handle: EvaluatorHandle);
 5. **Correctness**: Strong type system catches errors at compile time
 6. **Ecosystem**: Rich library ecosystem (serde, json-logic-rs, etc.)
 
-**Compilation Targets**: 
+**Compilation Targets**:
 
 1. **WASM (WebAssembly)**:
    - Portability: Runs on any platform with a WASM runtime (no recompilation)
@@ -463,7 +491,7 @@ fn destroy_evaluator(handle: EvaluatorHandle);
 
 ### Distribution Strategy
 
-**Multi-Target Distribution**: 
+**Multi-Target Distribution**:
 
 1. **WASM Binary** (universal fallback):
    - Publish versioned `.wasm` binary to GitHub Releases
@@ -481,6 +509,7 @@ fn destroy_evaluator(handle: EvaluatorHandle);
    - Falls back to WASM if platform not supported
 
 **Versioning**:
+
 - Semantic versioning (MAJOR.MINOR.PATCH)
 - SDKs declare compatible evaluator version range
 - Breaking changes require SDK updates
@@ -508,7 +537,8 @@ Based on initial benchmarks:
 
 ### Native Bindings Performance
 
-Python (PyO3) and JavaScript (napi-rs) benchmarks show: 
+Python (PyO3) and JavaScript (napi-rs) benchmarks show:
+
 - Minimal overhead (~1.1-1.3x vs pure native)
 - No serialization overhead for simple types
 - Direct object access eliminates copies
@@ -538,6 +568,7 @@ The unified evaluator will be introduced as an **experimental, opt-in feature** 
 **Goal**: Gather real-world feedback with minimal risk
 
 **SDK Integration Pattern**:
+
 ```java
 // Java example - opt-in via configuration
 FlagdOptions options = FlagdOptions.builder()
@@ -564,6 +595,7 @@ const provider = new FlagdProvider({
 ```
 
 **Characteristics**:
+
 - **Opt-in only**: Users must explicitly enable (defaults to existing implementation)
 - **Auto-detection**: Python/JS SDKs automatically choose native or WASM based on availability
 - **Feature flag**: Easy to disable if issues arise
@@ -689,7 +721,8 @@ At any phase, if critical issues arise:
 
 ### Authorship and Attribution
 
-The evaluator logic is derived from the existing Rust SDK flagd provider implementation. This work: 
+The evaluator logic is derived from the existing Rust SDK flagd provider implementation. This work:
+
 - Acknowledges original authors and contributors
 - Preserves design decisions and architectural choices
 - Builds upon battle-tested, validated logic
@@ -706,25 +739,25 @@ The evaluator logic is derived from the existing Rust SDK flagd provider impleme
 
 ### Related Work
 
-- **flagd-evaluator repository**: https://github.com/open-feature-forking/flagd-evaluator
-- **flagd-evaluator v0.1.1 release**: https://github.com/open-feature-forking/flagd-evaluator/releases/tag/v0.1.1
-- **Python SDK PoC**: https://github.com/open-feature/python-sdk-contrib/pull/328
-- **Java SDK PoC**: https://github.com/open-feature/java-sdk-contrib/pull/1672
-- **Rust SDK PoC**: https://github.com/open-feature/rust-sdk-contrib/pull/94
-- **Original Issue**: https://github.com/open-feature/flagd/issues/1842
+- **flagd-evaluator repository**: <https://github.com/open-feature-forking/flagd-evaluator>
+- **flagd-evaluator v0.1.1 release**: <https://github.com/open-feature-forking/flagd-evaluator/releases/tag/v0.1.1>
+- **Python SDK PoC**: <https://github.com/open-feature/python-sdk-contrib/pull/328>
+- **Java SDK PoC**: <https://github.com/open-feature/java-sdk-contrib/pull/1672>
+- **Rust SDK PoC**: <https://github.com/open-feature/rust-sdk-contrib/pull/94>
+- **Original Issue**: <https://github.com/open-feature/flagd/issues/1842>
 
 ### Specifications
 
-- **OpenFeature Specification**: https://openfeature.dev/specification
-- **flagd Flag Configuration**: https://flagd.dev/reference/flag-definitions/
-- **WASM Specification**: https://webassembly.org/specs/
+- **OpenFeature Specification**: <https://openfeature.dev/specification>
+- **flagd Flag Configuration**: <https://flagd.dev/reference/flag-definitions/>
+- **WASM Specification**: <https://webassembly.org/specs/>
 
 ### Technologies
 
-- **PyO3**: https://pyo3.rs/ - Rust bindings for Python
-- **napi-rs**: https://napi.rs/ - Rust bindings for Node.js
-- **wasmtime**: https://wasmtime.dev/ - Fast and secure WASM runtime
-- **wasmer**: https://wasmer.io/ - Universal WASM runtime
+- **PyO3**: <https://pyo3.rs/> - Rust bindings for Python
+- **napi-rs**: <https://napi.rs/> - Rust bindings for Node.js
+- **wasmtime**: <https://wasmtime.dev/> - Fast and secure WASM runtime
+- **wasmer**: <https://wasmer.io/> - Universal WASM runtime
 
 ### Prior Art
 
