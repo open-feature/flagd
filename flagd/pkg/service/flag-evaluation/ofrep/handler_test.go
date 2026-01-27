@@ -281,11 +281,175 @@ func TestWriteJSONResponse(t *testing.T) {
 			var rsp evaluator.AnyValue
 			err = json.Unmarshal(b, &rsp)
 			if err != nil {
-				t.Errorf("error unmarshelling body: %v", err)
+				t.Errorf("error unmarshaling body: %v", err)
 			}
 
 			if !reflect.DeepEqual(test.payload, rsp) {
 				t.Errorf("incorrect payload in wire")
+			}
+		})
+	}
+}
+
+func TestWriteBulkEvaluationResponse_ETag(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	h := handler{Logger: log}
+
+	// test response
+	response := ofrep.BulkEvaluationResponse{
+		Flags: []interface{}{
+			ofrep.EvaluationSuccess{
+				Key:     "test-flag",
+				Value:   true,
+				Reason:  model.StaticReason,
+				Variant: "on",
+			},
+		},
+		Metadata: model.Metadata{},
+	}
+
+	tests := []struct {
+		name            string
+		eTagGenerator   func() (string, error) // Optional function to generate the ETag
+		expectedStatus  int
+		expectedHasETag bool
+		expectedHasBody bool
+	}{
+		{
+			name:            "no If-None-Match header returns 200 with body and ETag",
+			eTagGenerator:   nil, // Will use no ETag in request
+			expectedStatus:  http.StatusOK,
+			expectedHasETag: true,
+			expectedHasBody: true,
+		},
+		{
+			name: "matching If-None-Match header returns 304 Not Modified",
+			eTagGenerator: func() (string, error) {
+				return calculateETag(response)
+			},
+			expectedStatus:  http.StatusNotModified,
+			expectedHasETag: true,
+			expectedHasBody: false,
+		},
+		{
+			name: "non-matching If-None-Match header returns 200 with body and ETag",
+			eTagGenerator: func() (string, error) {
+				return "\"some-invalid-etag-lmao\"", nil
+			},
+			expectedStatus:  http.StatusOK,
+			expectedHasETag: true,
+			expectedHasBody: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Calculate the ETag for this specific test case
+			var ifNoneMatchHeader string
+			if test.eTagGenerator != nil {
+				eTag, err := test.eTagGenerator()
+				if err != nil {
+					t.Fatalf("error generating ETag: %v", err)
+				}
+				ifNoneMatchHeader = eTag
+			}
+
+			request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", bytes.NewReader([]byte{}))
+			if ifNoneMatchHeader != "" {
+				request.Header.Set("If-None-Match", ifNoneMatchHeader)
+			}
+
+			recorder := httptest.NewRecorder()
+			h.writeBulkEvaluationResponse(recorder, request, response)
+
+			if test.expectedStatus != recorder.Code {
+				t.Errorf("expected status code %d, but got %d", test.expectedStatus, recorder.Code)
+			}
+
+			eTagHeader := recorder.Header().Get("ETag")
+			if test.expectedHasETag && eTagHeader == "" {
+				t.Error("expected ETag header to be present, but it was missing")
+			}
+			if !test.expectedHasETag && eTagHeader != "" {
+				t.Error("expected ETag header to be absent, but it was present")
+			}
+
+			body := recorder.Body.String()
+			if test.expectedHasBody && body == "" {
+				t.Error("expected response body, but got empty body")
+			}
+			if !test.expectedHasBody && body != "" {
+				t.Errorf("expected no response body, but got: %s", body)
+			}
+
+			// Verify ETag behavior: if matching ETag in request, should get 304
+			if ifNoneMatchHeader != "" && eTagHeader != "" && ifNoneMatchHeader == eTagHeader {
+				if test.expectedStatus != http.StatusNotModified {
+					t.Errorf("expected 304 status when ETag matches, but got %d", test.expectedStatus)
+				}
+			}
+
+			// For 200 responses, verify Content-Type header is present
+			if test.expectedStatus == http.StatusOK && recorder.Header().Get("Content-Type") != "application/json" {
+				t.Error("expected Content-Type header to be application/json, but it was missing")
+			}
+		})
+	}
+}
+
+func TestCalculateETag(t *testing.T) {
+	tests := []struct {
+		name           string
+		response       ofrep.BulkEvaluationResponse
+		expectedErrNil bool
+	}{
+		{
+			name: "valid response produces ETag",
+			response: ofrep.BulkEvaluationResponse{
+				Flags: []interface{}{
+					ofrep.EvaluationSuccess{
+						Key:     "test-flag",
+						Value:   true,
+						Reason:  model.StaticReason,
+						Variant: "on",
+					},
+				},
+				Metadata: model.Metadata{},
+			},
+			expectedErrNil: true,
+		},
+		{
+			name: "empty response produces ETag",
+			response: ofrep.BulkEvaluationResponse{
+				Flags:    []interface{}{},
+				Metadata: model.Metadata{},
+			},
+			expectedErrNil: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			eTag, err := calculateETag(test.response)
+
+			if test.expectedErrNil && err != nil {
+				t.Errorf("expected no error, but got: %v", err)
+			}
+			if !test.expectedErrNil && err == nil {
+				t.Error("expected error, but got none")
+			}
+
+			if test.expectedErrNil {
+				// Verify ETag format: quoted hex string
+				if len(eTag) < 2 || eTag[0] != '"' || eTag[len(eTag)-1] != '"' {
+					t.Errorf("expected ETag to be quoted, but got: %s", eTag)
+				}
+
+				// Calculate again to ensure deterministic output
+				eTag2, _ := calculateETag(test.response)
+				if eTag != eTag2 {
+					t.Errorf("expected deterministic ETag, but got different values: %s vs %s", eTag, eTag2)
+				}
 			}
 		})
 	}
