@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 const (
@@ -141,10 +142,10 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 // writes the bulk evaluation response with ETag support
 func (h *handler) writeBulkEvaluationResponse(w http.ResponseWriter, r *http.Request, response ofrep.BulkEvaluationResponse) {
-	// calculate ETag based on response body
-	eTag, err := calculateETag(response)
+	// calculate ETag and marshal response in one operation
+	eTag, body, err := calculateETag(response)
 	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error calculating ETag: %v", err))
+		h.Logger.Warn("error calculating ETag", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -159,19 +160,12 @@ func (h *handler) writeBulkEvaluationResponse(w http.ResponseWriter, r *http.Req
 	}
 
 	// ETag doesn't match or missing, return the response with the new ETag
-	marshal, err := json.Marshal(response)
-	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error marshalling the response: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Add(headerContentType, contentTypeJSON)
 	w.Header().Add(headerETag, eTag)
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(marshal)
+	_, err = w.Write(body)
 	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
 }
 
@@ -180,7 +174,7 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	marshal, err := json.Marshal(payload)
 	if err != nil {
 		// always a 500
-		h.Logger.Warn(fmt.Sprintf("error marshelling the response: %v", err))
+		h.Logger.Warn("error marshalling the response", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -189,21 +183,21 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	w.WriteHeader(status)
 	_, err = w.Write(marshal)
 	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
 }
 
 // calculateETag generates an ETag from the bulk evaluation response
-func calculateETag(response ofrep.BulkEvaluationResponse) (string, error) {
-	// Marshal the response to JSON
+func calculateETag(response ofrep.BulkEvaluationResponse) (string, []byte, error) {
+	// marshal the response to JSON
 	data, err := json.Marshal(response)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal response for ETag calculation: %w", err)
+		return "", nil, fmt.Errorf("failed to marshal response for ETag calculation: %w", err)
 	}
 
 	// Calculate SHA256 hash of the JSON response
 	hash := sha256.Sum256(data)
-	return fmt.Sprintf("\"%s\"", hex.EncodeToString(hash[:])), nil
+	return fmt.Sprintf("\"%s\"", hex.EncodeToString(hash[:])), data, nil
 }
 
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {

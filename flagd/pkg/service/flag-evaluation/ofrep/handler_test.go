@@ -325,7 +325,8 @@ func TestWriteBulkEvaluationResponse_ETag(t *testing.T) {
 		{
 			name: "matching If-None-Match header returns 304 Not Modified",
 			eTagGenerator: func() (string, error) {
-				return calculateETag(response)
+				eTag, _, err := calculateETag(response)
+				return eTag, err
 			},
 			expectedStatus:  http.StatusNotModified,
 			expectedHasETag: true,
@@ -430,7 +431,7 @@ func TestCalculateETag(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eTag, err := calculateETag(test.response)
+			eTag, body, err := calculateETag(test.response)
 
 			if test.expectedErrNil && err != nil {
 				t.Errorf("expected no error, but got: %v", err)
@@ -445,10 +446,18 @@ func TestCalculateETag(t *testing.T) {
 					t.Errorf("expected ETag to be quoted, but got: %s", eTag)
 				}
 
-				// Calculate again to ensure deterministic output
-				eTag2, _ := calculateETag(test.response)
+				// verify body is not empty
+				if len(body) == 0 {
+					t.Error("expected marshaled body, but got empty bytes")
+				}
+
+				// calculate again to ensure deterministic output
+				eTag2, body2, _ := calculateETag(test.response)
 				if eTag != eTag2 {
 					t.Errorf("expected deterministic ETag, but got different values: %s vs %s", eTag, eTag2)
+				}
+				if !bytes.Equal(body, body2) {
+					t.Errorf("expected deterministic body, but got different values")
 				}
 			}
 		})
