@@ -147,7 +147,7 @@ To evolve the ecosystem without immediate breaking changes, we employ a strict d
 
 ## Additionally, for flagd providers only
 
-* Changes to existing public interfaces (signatures, return types, or behavior for the same input/state) that break the existing client of those interfaces (note, that, for example, adding a configuration option within the existing interface is **not** breaking).  
+* Changes to existing public interfaces (signatures, return types, or behavior for the same input/state) that break the existing client of those interfaces (note that, for example, adding a new optional configuration option to an existing interface is **not** breaking).  
 * Changing the minimum supported language runtime or compiler version.  
 * Changing the supported OpenFeature spec version
 
