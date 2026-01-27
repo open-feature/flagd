@@ -181,9 +181,14 @@ If no targeting rules are defined, the response reason will always be `STATIC`, 
 The output of the targeting rule **must** match the name of one of the defined variants.
 One exception to the above is that rules may return `true` or `false` which will map to the variant indexed by the equivalent string (`"true"`, `"false"`).
 If a null value is returned by the targeting rule, the `defaultVariant` is used.
-If `defaultVariant` is not defined or is `null`, flagd providers will revert to the code default.
 This can be useful for conditionally "exiting" targeting rules and falling back to the default (in this case the returned reason will be `DEFAULT`).
 If an invalid variant is returned (not a string, `true`, or `false`, or a string that is not in the set of variants) the evaluation is considered erroneous.
+If `defaultVariant` is not defined or is `null`, and no variant is resolved from `targeting`, flagd providers will revert to the code default.
+
+!!! note
+
+    When `defaultVariant` is omitted, and no variant is resolved from a rule, providers default by behaving as if the flag does not exist (`reason=ERROR` and `error=FLAG_NOT_FOUND`).
+    This will be improved in upcoming versions, such that delegation to code default in this scenario will not be considered erroneous.  
 
 See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
