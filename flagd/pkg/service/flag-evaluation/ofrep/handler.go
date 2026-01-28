@@ -197,7 +197,7 @@ func calculateETag(response ofrep.BulkEvaluationResponse) (string, []byte, error
 
 	// Calculate SHA256 hash of the JSON response
 	hash := sha256.Sum256(data)
-	return fmt.Sprintf("\"%s\"", hex.EncodeToString(hash[:])), data, nil
+	return fmt.Sprintf("\"%x\"", hash), data, nil
 }
 
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
