@@ -29,6 +29,11 @@ This distributed approach has led to:
 
 The fundamental question:  **What if we had a single, canonical implementation that all SDKs could use?**
 
+> **Important Considerations**:
+>
+> - **Primary goal**: "Write once, run in as many places as possible." The focus is on reducing duplication and ensuring consistency, not on any specific technology.
+> - **Bring Your Own Evaluator**: A separate ADR will define a pluggable architecture allowing users to substitute alternative evaluator implementations if they have specific constraints (e.g., environments where WASM is undesirable, or native bindings are impractical).
+
 ## Problem Statement
 
 We need to decide:
@@ -253,15 +258,15 @@ This is a critical architectural decision.  We need to determine the boundaries 
 
 **Compilation Target Strategy**:
 
-| SDK Language | Primary Target | Fallback | Rationale |
-|--------------|---------------|----------|-----------|
-| Python | Native (PyO3) | WASM | PyO3 provides excellent performance, native Python objects |
-| JavaScript/Node.js | Native (napi-rs) | WASM | Native modules common in Node.js ecosystem |
-| Java | WASM | - | JNI complexity not worth performance gain |
-| . NET | WASM | - | P/Invoke complexity not worth performance gain |
-| Go | WASM | - | cgo complexity and cross-compilation challenges |
-| PHP | WASM | - | FFI less mature |
-| Rust | Direct library | - | No FFI needed, use Rust library directly |
+| SDK Language       | Primary Target                | Fallback | Notes                                                                                                                                                                                                                                                               |
+| ------------------ | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Python             | Native (PyO3)                 | WASM     | PyO3 provides excellent performance, native Python objects                                                                                                                                                                                                          |
+| JavaScript/Node.js | WASM                          | -        | WASM is native to JS, and JS is single-threaded, which sidesteps some issues associated with concurrent calls to WASM modules                                                                                                                                       |
+| Java               | ?                             | -        | JNI complexity may be significant, WASM provides a sandbox. We may not be able to handle concurrent calls to WASM module, which could be a deal-breaker. More research needed.                                                                                      |
+| .NET               | ?                             | -        | P/Invoke complexity not worth performance gain                                                                                                                                                                                                                      |
+| Go                 | Go (duplicate implementation) | ?        | CGO compilation requirements are transitive; it will require consumers to enable it as well; this seems like a non-starter. WASM is _probably_ too slow compared to Go code. We may have to stick with a pure Go duplicate implementation maintained alongside Rust |
+| PHP                | WASM                          | -        | FFI less mature                                                                                                                                                                                                                                                     |
+| Rust               | Direct library                | -        | No FFI needed, use Rust library directly                                                                                                                                                                                                                            |
 
 **Technical Considerations**:
 
@@ -519,21 +524,21 @@ fn destroy_evaluator(handle: EvaluatorHandle);
 
 ### Expected Performance by Target
 
-| Target | Overhead vs Pure Native | Use Case |
-|--------|------------------------|----------|
-| PyO3 (Python) | ~1.1-1.3x | Performance-critical Python applications |
-| napi-rs (Node.js) | ~1.1-1.3x | Performance-critical JavaScript applications |
-| WASM (all languages) | ~3-6x | Universal compatibility, security isolation |
+| Target               | Overhead vs Pure Native | Use Case                                     |
+| -------------------- | ----------------------- | -------------------------------------------- |
+| PyO3 (Python)        | ~1.1-1.3x               | Performance-critical Python applications     |
+| napi-rs (Node.js)    | ~1.1-1.3x               | Performance-critical JavaScript applications |
+| WASM (all languages) | ~3-6x                   | Universal compatibility, security isolation  |
 
 ### WASM Performance
 
 Based on initial benchmarks:
 
-| Scenario | Expected Overhead | Impact |
-|----------|------------------|---------|
-| Simple flags (no targeting) | ~3-4µs baseline | Negligible |
-| Moderate targeting | 3-5x slower | Acceptable for most use cases |
-| Complex targeting (large context) | 4-6x slower | Serialization dominates |
+| Scenario                          | Expected Overhead | Impact                        |
+| --------------------------------- | ----------------- | ----------------------------- |
+| Simple flags (no targeting)       | ~3-4µs baseline   | Negligible                    |
+| Moderate targeting                | 3-5x slower       | Acceptable for most use cases |
+| Complex targeting (large context) | 4-6x slower       | Serialization dominates       |
 
 ### Native Bindings Performance
 
