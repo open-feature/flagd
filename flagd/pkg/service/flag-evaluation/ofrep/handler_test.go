@@ -290,7 +290,7 @@ func TestWriteJSONResponse(t *testing.T) {
 		})
 	}
 }
-func TestFlagdContext_InvalidContextType(t *testing.T) {
+func TestFlagdContextInvalidContextType(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 
 	result := flagdContext(
@@ -307,7 +307,7 @@ func TestFlagdContext_InvalidContextType(t *testing.T) {
 	}
 }
 
-func TestFlagdContext_DelegatesContextMerging(t *testing.T) {
+func TestFlagdContextDelegatesContextMerging(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 
 	h := http.Header{}

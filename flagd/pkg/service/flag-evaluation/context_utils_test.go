@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+const (
+	headerXUserTier           = "X-User-Tier"
+	headerXUserTierLowercase  = "x-user-tier"
+	headerXUserEmailLowercase = "x-user-email"
+)
+
 func TestMergeContextsWithHeaders(t *testing.T) {
 	type args struct {
 		requestContext             map[string]any
@@ -56,10 +62,10 @@ func TestMergeContextsWithHeaders(t *testing.T) {
 				staticContext:  map[string]any{},
 				headers: func() http.Header {
 					h := http.Header{}
-					h.Set("X-User-Tier", "premium")
+					h.Set(headerXUserTier, "premium")
 					return h
 				}(),
-				headerToContextKeyMappings: map[string]string{"X-User-Tier": "userTier"},
+				headerToContextKeyMappings: map[string]string{headerXUserTier: "userTier"},
 			},
 			want: map[string]any{"userTier": "premium"},
 		},
@@ -70,10 +76,10 @@ func TestMergeContextsWithHeaders(t *testing.T) {
 				staticContext:  map[string]any{},
 				headers: func() http.Header {
 					h := http.Header{}
-					h.Set("X-User-Tier", "premium")
+					h.Set(headerXUserTier, "premium")
 					return h
 				}(),
-				headerToContextKeyMappings: map[string]string{"x-user-tier": "userTier"},
+				headerToContextKeyMappings: map[string]string{headerXUserTierLowercase: "userTier"},
 			},
 			want: map[string]any{"userTier": "premium"},
 		},
@@ -84,10 +90,10 @@ func TestMergeContextsWithHeaders(t *testing.T) {
 				staticContext:  map[string]any{},
 				headers: func() http.Header {
 					h := http.Header{}
-					h.Set("x-user-tier", "premium")
+					h.Set(headerXUserTierLowercase, "premium")
 					return h
 				}(),
-				headerToContextKeyMappings: map[string]string{"X-User-Tier": "userTier"},
+				headerToContextKeyMappings: map[string]string{headerXUserTier: "userTier"},
 			},
 			want: map[string]any{"userTier": "premium"},
 		},
@@ -98,15 +104,15 @@ func TestMergeContextsWithHeaders(t *testing.T) {
 				staticContext:  map[string]any{},
 				headers: func() http.Header {
 					h := http.Header{}
-					h.Set("X-User-Tier", "premium")
-					h.Set("x-user-email", "user@example.com")
+					h.Set(headerXUserTier, "premium")
+					h.Set(headerXUserEmailLowercase, "user@example.com")
 					h.Set("X-Request-ID", "req-123")
 					return h
 				}(),
 				headerToContextKeyMappings: map[string]string{
-					"x-user-tier":  "userTier",
-					"X-User-Email": "userEmail",
-					"x-request-id": "requestId",
+					headerXUserTierLowercase:  "userTier",
+					headerXUserEmailLowercase: "userEmail",
+					"x-request-id":            "requestId",
 				},
 			},
 			want: map[string]any{
