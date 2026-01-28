@@ -290,3 +290,47 @@ func TestWriteJSONResponse(t *testing.T) {
 		})
 	}
 }
+func TestFlagdContext_InvalidContextType(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	result := flagdContext(
+		log,
+		"test-request-id",
+		ofrep.Request{Context: "not a map"}, // invalid: string instead of map
+		map[string]any{"staticKey": "staticValue"},
+		http.Header{},
+		map[string]string{},
+	)
+
+	if val, exists := result["staticKey"]; !exists || val != "staticValue" {
+		t.Errorf("expected static context to be included even with invalid request context")
+	}
+}
+
+func TestFlagdContext_DelegatesContextMerging(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	h := http.Header{}
+	h.Set("X-User-Tier", "premium")
+
+	result := flagdContext(
+		log,
+		"test-request-id",
+		ofrep.Request{Context: map[string]any{"requestKey": "requestValue"}},
+		map[string]any{"staticKey": "staticValue"},
+		h,
+		map[string]string{"X-User-Tier": "userTier"},
+	)
+
+	expected := map[string]any{
+		"requestKey": "requestValue",
+		"staticKey":  "staticValue",
+		"userTier":   "premium",
+	}
+
+	for k, v := range expected {
+		if result[k] != v {
+			t.Errorf("expected key '%s' to have value '%s', but got '%v'", k, v, result[k])
+		}
+	}
+}

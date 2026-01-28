@@ -14,6 +14,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service"
+	evalservice "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -160,29 +161,15 @@ func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	return request, nil
 }
 
-// flagdContext returns combined context values from headers, static context (from cli) and request context.
-// highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func flagdContext(
 	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,
 ) map[string]any {
 	context := make(map[string]any)
 	if res, ok := request.Context.(map[string]any); ok {
-		for k, v := range res {
-			context[k] = v
-		}
+		context = res
 	} else {
 		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
 	}
 
-	for k, v := range staticContextValues {
-		context[k] = v
-	}
-
-	for header, contextKey := range headerToContextKeyMappings {
-		if values, ok := headers[header]; ok {
-			context[contextKey] = values[0]
-		}
-	}
-
-	return context
+	return evalservice.MergeContextsAndHeaders(context, staticContextValues, headers, headerToContextKeyMappings)
 }

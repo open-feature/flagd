@@ -341,22 +341,8 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	return res, err
 }
 
-// mergeContexts combines context values from headers, static context (from cli) and request context.
-// highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func mergeContexts(reqCtx, configFlagsCtx map[string]any, headers http.Header, headerToContextKeyMappings map[string]string) map[string]any {
-	merged := make(map[string]any)
-	for k, v := range reqCtx {
-		merged[k] = v
-	}
-	for k, v := range configFlagsCtx {
-		merged[k] = v
-	}
-	for header, contextKey := range headerToContextKeyMappings {
-		if values, ok := headers[header]; ok {
-			merged[contextKey] = values[0]
-		}
-	}
-	return merged
+	return MergeContextsAndHeaders(reqCtx, configFlagsCtx, headers, headerToContextKeyMappings)
 }
 
 // resolve is a generic flag resolver
