@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-	"strings"
 )
 
 // MergeContextsAndHeaders merges evaluation contexts with static context values and header-based context.
@@ -34,10 +33,4 @@ func MergeContextsAndHeaders(
 	}
 
 	return merged
-}
-
-// normalizeHeaderName converts a header name to canonical HTTP header format.
-// This is primarily useful for display/logging purposes.
-func normalizeHeaderName(name string) string {
-	return strings.ToLower(name)
 }
