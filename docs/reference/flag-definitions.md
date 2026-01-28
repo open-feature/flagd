@@ -122,9 +122,10 @@ Example of an invalid configuration:
 
 ### Default Variant
 
-`defaultVariant` is a **required** property.
-The value **must** match the name of one of the variants defined above.
-The default variant is always used unless a targeting rule explicitly overrides it.
+`defaultVariant` is an **optional** property.
+If `defaultVariant` is a string, its value **must** match the name of one of the variants defined above.
+The default variant is used unless a targeting rule explicitly overrides it.
+If `defaultVariant` is omitted or null, flagd providers will revert to the code default for the flag in question if targeting is not defined or falls through.
 
 Example:
 
@@ -145,6 +146,16 @@ Example:
   "blue": "0d507b"
 },
 "defaultVariant": "red"
+```
+
+Example of explicitly using the code default:
+
+```json
+"variants": {
+  "on": true,
+  "off": false
+},
+"defaultVariant": null
 ```
 
 Example of an invalid configuration:
@@ -172,6 +183,12 @@ One exception to the above is that rules may return `true` or `false` which will
 If a null value is returned by the targeting rule, the `defaultVariant` is used.
 This can be useful for conditionally "exiting" targeting rules and falling back to the default (in this case the returned reason will be `DEFAULT`).
 If an invalid variant is returned (not a string, `true`, or `false`, or a string that is not in the set of variants) the evaluation is considered erroneous.
+If `defaultVariant` is not defined or is `null`, and no variant is resolved from `targeting`, flagd providers will revert to the code default.
+
+!!! note
+
+    When `defaultVariant` is omitted, and no variant is resolved from a rule, providers default by behaving as if the flag does not exist (`reason=ERROR` and `error=FLAG_NOT_FOUND`).
+    This will be improved in upcoming versions, such that delegation to code default in this scenario will not be considered erroneous.  
 
 See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
