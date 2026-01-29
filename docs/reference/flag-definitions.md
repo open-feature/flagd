@@ -299,7 +299,7 @@ The evaluation context can be accessed in targeting rules using the `var` operat
 | Retrieve property from the evaluation context or use a default | `#!json { "var": ["email", "noreply@example.com"] }` |
 | Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
 
-See the [cheat sheet](./cheat-sheet.md#context-aware-evaluation) for practical examples of context-sensitive evaluations, and the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var) for details on extracting values from context.
+See the [cheat sheet](./cheat-sheet.md#context-aware-evaluation) for practical examples of context-sensitive evaluations. For details on extracting values from context, see the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var).
 
 !!! tip
 
