@@ -2,7 +2,7 @@ package ofrep
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -194,7 +194,7 @@ func calculateETag(response ofrep.BulkEvaluationResponse) (string, []byte, error
 		return "", nil, fmt.Errorf("failed to marshal response for ETag calculation: %w", err)
 	}
 
-	hash := sha1.Sum(data)
+	hash := md5.Sum(data)
 	return fmt.Sprintf("\"%x\"", hash), data, nil
 }
 

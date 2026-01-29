@@ -25,7 +25,7 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 
 ## HTTP Caching
 
-The bulk evaluation endpoint supports HTTP caching via ETags (SHA1-based). Clients can use the `If-None-Match` header with a previously received `ETag` to validate cached responses. When the response hasn't changed, the server returns `304 Not Modified` without a body, reducing bandwidth.
+The bulk evaluation endpoint supports HTTP caching via ETags (MD5-based). Clients can use the `If-None-Match` header with a previously received `ETag` to validate cached responses. When the response hasn't changed, the server returns `304 Not Modified` without a body, reducing bandwidth.
 
 ```shell
 curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags' \
