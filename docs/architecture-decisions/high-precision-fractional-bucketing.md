@@ -3,7 +3,7 @@
 status: draft
 author: Michael Beemer
 created: 2025-09-10
-updated: 2025-09-10
+updated: 2026-01-29
 ---
 
 # High-Precision Fractional Bucketing for Sub-Percent Traffic Allocation
@@ -47,10 +47,50 @@ This limits granularity to 1% increments, making it impossible to achieve the pr
 - **Option 1: 10,000 buckets (0.01% precision)** - 1 in every 10,000 users, better but still not sufficient for many high-throughput use cases
 - **Option 2: 100,000 buckets (0.001% precision)** - 1 in every 100,000 users, meets most high-precision needs
 - **Option 3: 1,000,000 buckets (0.0001% precision)** - 1 in every 1,000,000 users, likely overkill and could impact performance
+- **Option 4 (Favored): Max 32-bit signed integer buckets** - Use `math.MaxInt32` (2,147,483,647) as the bucket count, equal to the maximum allowed weight sum. This naturally sidesteps minimum allocation guarantees and excess bucket handling
 
-## Proposal
+## Proposal: Max Int32 Bucket Count (Favored)
 
-Implement a 100,000-bucket system that provides 0.001% precision while maintaining the existing integer weight-based API.
+> **Amendment (2026-01-29):** This alternative is now favored over the original 100,000-bucket proposal.
+
+### Rationale
+
+After experimentation comparing static vs dynamic bucket sizes, and considering implementation complexity, a simpler approach emerged: use the maximum 32-bit signed integer value (`math.MaxInt32` = 2,147,483,647) as the bucket count.
+
+This value is already established as the maximum allowed weight sum for cross-language compatibility. By making the bucket count equal to this maximum, we gain significant simplifications.
+
+### Advantages
+
+Since the total weight sum cannot exceed `math.MaxInt32`, and the bucket count equals `math.MaxInt32`, any variant with a weight of at least 1 is guaranteed at least 1 bucket. This **naturally sidesteps** the need for:
+
+- **Minimum Allocation Guarantee** (as described above): A weight of 1 out of any valid total will always yield at least 1 bucket—no special handling required
+- **Excess Bucket Management**: Without minimum allocation adjustments, bucket totals don't exceed the bucket count
+
+### Simplified Implementation
+
+```go
+const bucketCount = math.MaxInt32 // 2,147,483,647
+
+func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
+    if feDistribution.totalWeight == 0 {
+        return ""
+    }
+
+    hashValue := int32(murmur3.StringSum32(value))
+    hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
+    bucket := int64(hashRatio * float64(feDistribution.totalWeight))
+
+    var rangeEnd int64 = 0
+    for _, variant := range feDistribution.weightedVariants {
+        rangeEnd += int64(variant.weight)
+        if bucket < rangeEnd {
+            return variant.variant
+        }
+    }
+
+    return ""
+}
+```
 
 ### API changes
 
@@ -65,215 +105,22 @@ No API changes are required. The existing fractional operation syntax remains un
 ]
 ```
 
-### Implementation Changes
+### Benefits Over Original Proposal
 
-1. **Bucket Count**: Change from 100 to 100,000 buckets by modifying bucket calculation from `hashRatio * 100` to `hashRatio * 100000`
-2. **Minimum Allocation Guarantee**: Any variant with weight > 0 receives at least 1 bucket (0.001%)
-3. **Excess Bucket Handling**: Remove excess buckets from the largest variant to maintain exactly 100,000 total buckets
-4. **Weight Sum Validation**: Reject configurations where total weight exceeds maximum safe integer value
-5. **Maximum Weight Sum**: Use language-specific maximum 32-bit signed integer constants for cross-platform compatibility
-
-### Minimum Allocation Guarantee
-
-To prevent silent configuration failures, any variant with a positive weight will receive at least 0.001% allocation (1 bucket), even if the calculated percentage would round to zero. This ensures predictable behavior where positive weights always result in some traffic allocation.
-
-**Example**: Configuration `["variant-a", 1], ["variant-b", 1000000]`
-
-- Without guarantee: variant-a gets 0% (never selected)
-- With guarantee: variant-a gets 0.001%, variant-b gets 99.999%
-
-### Excess Bucket Management
-
-When minimum allocations cause the total to exceed 100,000 buckets, excess buckets are removed from the variant with the largest allocation.
-This approach:
-
-- Maintains the minimum guarantee for small variants
-- Has minimal impact on large variants (small relative reduction)
-- Preserves deterministic behavior
-- Prevents bucket count overflow
-
-### Weight Sum Validation
-
-When the total weight sum exceeds the maximum safe integer value, the fractional evaluation will return a validation error with a clear message.
-This prevents integer overflow issues and provides immediate feedback to users about invalid configurations.
-
-```go
-import "math"
-
-func validateWeightSum(variants []fractionalEvaluationVariant) error {
-    var totalWeight int64 = 0
-    for _, variant := range variants {
-        totalWeight += int64(variant.weight)
-        if totalWeight > math.MaxInt32 {
-            return fmt.Errorf("total weight sum %d exceeds maximum allowed value %d", 
-                totalWeight, math.MaxInt32)
-        }
-    }
-    return nil
-}
-```
-
-Implementations should prefer built-in language constants (e.g., `math.MaxInt32` in Go, `Integer.MAX_VALUE` in Java, `int.MaxValue` in C#) rather than hardcoded values to ensure maintainability and clarity.
-
-### Edge Case Handling
-
-The implementation addresses several edge cases:
-
-1. **All weights are 0**: Returns empty string (maintains current behavior)
-2. **Negative weights**: Treated as 0 (maintains current validation behavior)
-3. **Single variant**: Receives all 100,000 buckets regardless of weight value
-4. **Empty variants**: Returns error (maintains current validation behavior)
-5. **Weight sum overflow**: Returns validation error with clear message
-6. **Multiple variants with minimum allocation**: Excess distributed fairly among largest variants
-
-### Maximum Weight Considerations
-
-To ensure cross-language compatibility, we establish a maximum total weight sum equal to the maximum 32-bit signed integer value (2,147,483,647). This limit:
-
-- Works reliably across all target languages (Go, Java, .NET, JavaScript, Python)
-- Provides more than sufficient range for any practical use case
-- Prevents integer overflow issues in 32-bit signed integer systems
-- Allows for extremely fine-grained control (individual weights can be 1 out of 2+ billion)
-- Uses language-native constants for better maintainability
-
-### Code Changes
-
-The following shows how the core logic in `fractional.go` would be modified.
-
-```go
-const bucketCount = 100000
-
-// bucketAllocation represents the number of buckets allocated to a variant
-type bucketAllocation struct {
-    variant string
-    buckets int
-}
-
-func (fe *Fractional) Evaluate(values, data any) any {
-    valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
-    if err != nil {
-        fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
-        return nil
-    }
-
-    if err := validateWeightSum(feDistributions.weightedVariants); err != nil {
-        fe.Logger.Warn(fmt.Sprintf("weight validation failed: %v", err))
-        return nil
-    }
-
-    return distributeValue(valueToDistribute, feDistributions)
-}
-
-func validateWeightSum(variants []fractionalEvaluationVariant) error {
-    var totalWeight int64 = 0
-    for _, variant := range variants {
-        totalWeight += int64(variant.weight)
-        if totalWeight > math.MaxInt32 {
-            return fmt.Errorf("total weight sum %d exceeds maximum allowed value %d", 
-                totalWeight, math.MaxInt32)
-        }
-    }
-    return nil
-}
-
-func calculateBucketAllocations(variants []fractionalEvaluationVariant, totalWeight int) []bucketAllocation {
-    allocations := make([]bucketAllocation, len(variants))
-    totalAllocated := 0
-    
-    // Calculate initial allocations
-    for i, variant := range variants {
-        if variant.weight == 0 {
-            allocations[i] = bucketAllocation{variant: variant.variant, buckets: 0}
-        } else {
-            // Calculate proportional allocation
-            proportional := int((int64(variant.weight) * bucketCount) / int64(totalWeight))
-            // Ensure minimum allocation of 1 bucket for any positive weight
-            buckets := max(1, proportional)
-            allocations[i] = bucketAllocation{variant: variant.variant, buckets: buckets}
-        }
-        totalAllocated += allocations[i].buckets
-    }
-    
-    // Handle excess buckets by removing from largest allocation
-    excess := totalAllocated - bucketCount
-    if excess > 0 {
-        // Sort indices by bucket count (descending) to find largest allocation
-        indices := make([]int, len(allocations))
-        for i := range indices {
-            indices[i] = i
-        }
-        sort.Slice(indices, func(i, j int) bool {
-            if allocations[indices[i]].buckets == allocations[indices[j]].buckets {
-                return allocations[indices[i]].variant < allocations[indices[j]].variant // Tie-break by variant name
-            }
-            return allocations[indices[i]].buckets > allocations[indices[j]].buckets
-        })
-        
-        // Remove excess from largest allocation, respecting minimum guarantee
-        for _, idx := range indices {
-            if excess <= 0 {
-                break
-            }
-            
-            // Don't reduce below 1 bucket if original weight > 0
-            minAllowed := 0
-            if variants[idx].weight > 0 {
-                minAllowed = 1
-            }
-            
-            canRemove := allocations[idx].buckets - minAllowed
-            toRemove := min(excess, canRemove)
-            allocations[idx].buckets -= toRemove
-            excess -= toRemove
-        }
-    }
-    
-    return allocations
-}
-```
-
-**5. Replace the distribution logic:**
-
-```go
-func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
-    if feDistribution.totalWeight == 0 {
-        return ""
-    }
-    
-    allocations := calculateBucketAllocations(feDistribution.weightedVariants, feDistribution.totalWeight)
-    
-    hashValue := int32(murmur3.StringSum32(value))
-    hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
-    bucket := int(hashRatio * bucketCount) // in range [0, bucketCount)
-
-    currentBucket := 0
-    for _, allocation := range allocations {
-        currentBucket += allocation.buckets
-        if bucket < currentBucket {
-            return allocation.variant
-        }
-    }
-
-    return ""
-}
-```
+- **Simpler**: No minimum allocation guarantee logic needed
+- **No minimum allocation guarantee needed**: With smaller fixed bucket counts, a configuration like `["variant-a", 1], ["variant-b", 1000000]` could round variant-a to 0 buckets (0% traffic). Special handling was needed to guarantee at least 1 bucket. With MaxInt32 buckets equal to the max weight sum, any weight ≥1 naturally gets at least 1 bucket.
+- **No excess bucket handling**: With fixed bucket counts (100, 10,000, 100,000), minimum allocation adjustments could cause the total allocated buckets to exceed the bucket count, requiring complex logic to redistribute the excess. With MaxInt32 buckets, allocations naturally sum to the total weight.
+- **Same validation**: Weight sum validation against `math.MaxInt32` remains unchanged  
+- **Backwards compatible**: Existing configurations continue to work
+- **Effectively infinite precision**: Precision limited only by the total weight sum (up to ~0.00000005%)
+- **~25-35% less user reassignment**: Experimental testing showed reduced "thrashing" compared to purely dynamic bucket sizes when configurations change
 
 ### Consequences
 
-- Good, because it enables precise traffic control for high-throughput environments
-- Good, because it matches industry-standard precision offered by leading vendors
-- Good, because it maintains API backwards compatibility
-- Good, because integer weights remain simple to understand and configure
-- Good, because it prevents silent configuration failures through minimum allocation guarantee
-- Good, because excess handling is predictable and fair
-- Good, because weight validation provides clear error messages for invalid configurations
-- Bad, because it represents a behavioral breaking change for existing configurations
-- Bad, because it slightly increases memory usage for bucket calculations
-- Bad, because actual percentages may differ slightly from configured weights due to minimum allocations
-
-### Implementation Plan
-
-1. Update flagd-testbed with comprehensive test cases for high-precision fractional bucketing across all evaluation modes
-2. Implement core logic in flagd to support 100,000-bucket system with minimum allocation guarantee and excess handling
-3. Update flagd providers to ensure consistent behavior and testing across language implementations
-4. Documentation updates, migration guides, and example configurations to demonstrate the new precision capabilities
+- Good, because implementation is significantly simpler
+- Good, because it eliminates surprising edge-case behaviors (minimum allocation, excess handling)
+- Good, because validation logic remains the same
+- Good, because it provides effectively unlimited precision for practical use cases
+- Good, because experimental testing showed less user reassignment than dynamic alternatives
+- Bad, because it represents a behavioral breaking change for existing configurations (just the bucket assignment, same as original proposal)
+- Neutral, performance is comparable—division by large 32-bit values is not meaningfully slower
