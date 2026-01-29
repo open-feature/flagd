@@ -7,6 +7,8 @@ updated: 2026-01-20
 
 # Unified Evaluator:  Centralizing Flag Evaluation Logic Across the OpenFeature Ecosystem
 
+> **Status**: This ADR is in `proposed` state and represents a transparent statement of goals and community discussion, not a final design decision. Implementation approaches and specific technologies (such as WASM) have not been conclusively determined. The community is actively researching alternatives including FFI bindings and other approaches. We will seek to find solutions (such as "Bring Your Own Evaluator") if consensus cannot be reached on specific targets and runtimes.
+
 Adopt a unified evaluation engine to replace fragmented, language-specific evaluation implementations across OpenFeature SDKs, reducing maintenance burden and ensuring behavioral consistency.
 
 ## Background
