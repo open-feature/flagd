@@ -13,18 +13,9 @@ It explains the purpose and basic use cases for both options and defines the mer
 
 ## Background
 
-flagd is an open-source feature flagging engine that allows targeted flag evaluations based on optional context data.
-A simple example for such context data would be the current user's email: if it ends with `@example.com`, the evaluation returns true, otherwise false.
-Initially, context could only be provided by including it in the evaluation request's body like this:
+Initially, evaluation context could only be provided in the request body. This required clients to include server-wide attributes (region, environment) with every request, even when these values never change during a flagd instance's lifetime.
 
-```json
-{
-  "flagKey": "booleanFlagKey",
-  "context": {
-    "email": "noreply@example.com"
-  }
-}
-```
+Additionally, useful context often exists in HTTP headers (set by API gateways or auth proxies) but couldn't be used for targeting without client-side extraction and forwarding.
 
 ## Requirements
 
@@ -32,33 +23,34 @@ Initially, context could only be provided by including it in the evaluation requ
 * support HTTP header mapping in evaluation service v2 via connect
 * clearly defined priority list for merging context values from multiple sources
 
-## Considered Options
-
-* **Static context enrichment**: `--context-value` or `-X`
-  On startup, static context data can be provided in the form of concrete key-value pairs, which is then used as context in every evaluation.
-  This is aimed at attributes that do not change during a flagd instance’s lifetime (such as the server region or cloud provider), reducing effort on the client-side.
-  For example, `flagd start -X region=europe ...` adds a `region` attribute with value `europe` as a context to every evaluation.
-
-* **Dynamic context enrichment**: `--context-from-header` or `-H`
-  On startup, specific request headers can be configured so that, for each incoming request, their values are automatically extracted and included as context attributes for the evaluation.
-  This is targeted at dynamic values that likely vary per request (like the email of the user making the request).
-  For example, `flagd start -H X-User-Email:userEmail ...` tells flagd to extract the value of the `X-User-Email` header from each incoming request and include it as the `userEmail` attribute in the evaluation context, if provided.
-
-* **Merge priority definition**:
-  In case the same context key can be found in more than one context source, this priority list defines which value takes precedence (from highest to lowest):
-    1. Dynamic context from request headers (`-H`)
-    2. Static context from startup options (`-X`)
-    3. Context provided in the evaluation request body
-
 ## Proposal
 
-All options in the section above were accepted and implemented as described.
+### Allow definition of static context values at startup: `--context-value` or `-X`
+
+On startup, static context data can be provided in the form of concrete key-value pairs, which is then used as context in every evaluation.
+This is aimed at attributes that do not change during a flagd instance’s lifetime (such as the server region or cloud provider), reducing effort on the client-side.
+For example, `flagd start -X region=europe ...` adds a `region` attribute with value `europe` as a context to every evaluation.
+
+### Allow definition of header to context attribute mapping at startup: `--context-from-header` or `-H`
+
+On startup, specific request headers can be configured so that, for each incoming request, their values are automatically extracted and included as context attributes for the evaluation.
+This is targeted at dynamic values that likely vary per request (like the email of the user making the request).
+For example, `flagd start -H X-User-Email:userEmail ...` tells flagd to extract the value of the `X-User-Email` header from each incoming request and include it as the `userEmail` attribute in the evaluation context, if provided.
+
+### Merging
+
+In case the same context key can be found in more than one context source, this priority list defines which value takes precedence (from highest to lowest):
+
+  1. Dynamic context from request headers (`-H`)
+  1. Static context from startup options (`-X`)
+  1. Context provided in the evaluation request body
+
+This priority allows operators to enforce infrastructure-level context while still accepting client-provided values for other attributes.
 
 ### Consequences
 
 * Good, because static context values reduce effort on the client-side for attributes that do not change often.
 * Good, because this allows a more targeted way of providing context depending on whether the attribute is static or dynamic.
-* Bad, because the merging of context values from multiple sources introduces new complexity that needs to be learned and understood by users.
 
 ### Timeline
 
