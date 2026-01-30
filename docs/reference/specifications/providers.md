@@ -105,7 +105,7 @@ stateDiagram-v2
 ### Stream Reconnection
 
 When either stream (sync or event) fails or completes, whether due to the associated deadline being exceeded, network error or any other cause, the provider attempts to re-establish the stream.
-Both the RPC and sync streams will forever attempt to be re-established unless the stream response indicates a [fatal status code](#fatal-status-codes).
+Both the event and sync streams will forever attempt to be re-established in cases of reconnection (no status codes are considered fatal after the initial connection, see: [fatal status codes](#fatal-status-codes)).
 This is distinct from the [gRPC retry-policy](#grpc-retry-policy), which automatically retries *all RPCs* (streams or otherwise) a limited number of times to make the provider resilient to transient errors.
 It's also distinct from the [gRPC layer 4 reconnection mechanism](https://grpc.github.io/grpc/core/md_doc_connection-backoff.html) which only reconnects the TCP connection, but not any streams.
 When the stream is reconnecting, providers transition to the [STALE](https://openfeature.dev/docs/reference/concepts/events/#provider_stale) state, and after `retryGracePeriod`, transition to the ERROR state, emitting the respective events during these transitions.
