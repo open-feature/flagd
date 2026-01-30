@@ -23,4 +23,10 @@ To evaluate all flags currently configured at flagd, use OFREP bulk evaluation r
 curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 ```
 
+## Evaluation Caching
+
+The bulk evaluation endpoint caches responses per selector to avoid redundant evaluations. Clients can use the `If-None-Match` header with a previously received `ETag` to check if the cache is still valid. When the ETag matches, flagd returns the cached response without re-evaluating.
+
+**Important**: The ETag only corresponds the flag configuration version, not the evaluation context. Clients must not send a cached ETag when their evaluation context has changed, otherwise they may receive stale results.
+
 See the [cheat sheet](./cheat-sheet.md#ofrep-api-http) for more OFREP examples including context-sensitive evaluation and selectors.

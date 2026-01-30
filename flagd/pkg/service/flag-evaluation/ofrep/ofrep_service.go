@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
@@ -22,19 +23,30 @@ type IOfrepService interface {
 type SvcConfiguration struct {
 	Logger          *logger.Logger
 	Port            uint16
+	CacheCapacity   int
 	ServiceName     string
 	MetricsRecorder telemetry.IMetricsRecorder
 }
 
 type Service struct {
-	logger *logger.Logger
-	port   uint16
-	server *http.Server
+	logger         *logger.Logger
+	port           uint16
+	server         *http.Server
+	versionTracker *SelectorVersionTracker
 }
 
 func NewOfrepService(
-	evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any, headerToContextKeyMappings map[string]string,
+	evaluator evaluator.IEvaluator,
+	flagStore *store.Store,
+	origins []string,
+	cfg SvcConfiguration,
+	contextValues map[string]any,
+	headerToContextKeyMappings map[string]string,
 ) (*Service, error) {
+	// create the version tracker with watch-based invalidation
+	// the store implements WatchProvider interface for targeted invalidation
+	versionTracker := NewSelectorVersionTracker(cfg.Logger, flagStore, cfg.CacheCapacity)
+
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins: origins,
 		AllowedMethods: []string{http.MethodPost},
@@ -47,6 +59,7 @@ func NewOfrepService(
 		headerToContextKeyMappings,
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
+		versionTracker,
 	))
 
 	server := http.Server{
@@ -56,9 +69,10 @@ func NewOfrepService(
 	}
 
 	return &Service{
-		logger: cfg.Logger,
-		port:   cfg.Port,
-		server: &server,
+		logger:         cfg.Logger,
+		port:           cfg.Port,
+		server:         &server,
+		versionTracker: versionTracker,
 	}, nil
 }
 
@@ -78,6 +92,12 @@ func (s Service) Start(ctx context.Context) error {
 	group.Go(func() error {
 		<-gCtx.Done()
 		s.logger.Info("shutting down ofrep service")
+
+		// close the version tracker to stop watch goroutines
+		if s.versionTracker != nil {
+			s.versionTracker.Close()
+		}
+
 		err := s.server.Close()
 		if err != nil {
 			return fmt.Errorf("error from ofrep server shutdown: %w", err)

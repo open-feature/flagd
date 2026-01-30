@@ -19,12 +19,26 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
+// ISelectorVersionTracker defines the interface for selector version tracking.
+// it enables ETag-based cache validation for bulk evaluations.
+type ISelectorVersionTracker interface {
+	// ETag returns the current ETag for a selector, or empty if not tracked
+	ETag(selectorExpression string) string
+	// Track starts tracking a selector and returns its initial ETag
+	Track(selectorExpression string) string
+}
+
 const (
-	key              = "key"
-	singleEvaluation = "/ofrep/v1/evaluate/flags/{key}"
-	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
+	key               = "key"
+	singleEvaluation  = "/ofrep/v1/evaluate/flags/{key}"
+	bulkEvaluation    = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
+	headerETag        = "ETag"
+	headerIfNoneMatch = "If-None-Match"
+	headerContentType = "Content-Type"
+	contentTypeJSON   = "application/json"
 )
 
 type handler struct {
@@ -33,6 +47,7 @@ type handler struct {
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	tracer                     trace.Tracer
+	versionTracker             ISelectorVersionTracker
 }
 
 func NewOfrepHandler(
@@ -42,6 +57,7 @@ func NewOfrepHandler(
 	headerToContextKeyMappings map[string]string,
 	metricsRecorder telemetry.IMetricsRecorder,
 	serviceName string,
+	versionTracker ISelectorVersionTracker,
 ) http.Handler {
 	h := handler{
 		Logger:                     logger,
@@ -49,6 +65,7 @@ func NewOfrepHandler(
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
 		tracer:                     otel.Tracer("flagd.ofrep.v1"),
+		versionTracker:             versionTracker,
 	}
 
 	router := mux.NewRouter()
@@ -117,6 +134,19 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
+
+	// check if client's ETag matches current version - return 304 if unchanged
+	ifNoneMatch := r.Header.Get(headerIfNoneMatch)
+	if h.versionTracker != nil && ifNoneMatch != "" {
+		currentETag := h.versionTracker.ETag(selectorExpression)
+		if currentETag != "" && ifNoneMatch == currentETag {
+			h.Logger.Debug(fmt.Sprintf("ETag match for selector '%s', returning 304", selectorExpression))
+			w.Header().Add(headerETag, currentETag)
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+	}
+
 	selector := store.NewSelector(selectorExpression)
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
@@ -128,7 +158,36 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
 	} else {
-		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
+		response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
+		h.writeBulkEvaluationResponse(w, r, selectorExpression, response)
+	}
+}
+
+// writes the bulk evaluation response with ETag support
+func (h *handler) writeBulkEvaluationResponse(w http.ResponseWriter, _ *http.Request, selectorExpression string, response ofrep.BulkEvaluationResponse) {
+	// marshal the response
+	body, err := json.Marshal(response)
+	if err != nil {
+		h.Logger.Warn("error marshalling response", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// track this selector and get ETag for response
+	var eTag string
+	if h.versionTracker != nil {
+		eTag = h.versionTracker.Track(selectorExpression)
+	}
+
+	// write response with ETag
+	w.Header().Add(headerContentType, contentTypeJSON)
+	if eTag != "" {
+		w.Header().Add(headerETag, eTag)
+	}
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(body)
+	if err != nil {
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
 }
 
@@ -137,16 +196,16 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	marshal, err := json.Marshal(payload)
 	if err != nil {
 		// always a 500
-		h.Logger.Warn(fmt.Sprintf("error marshelling the response: %v", err))
+		h.Logger.Warn("error marshalling the response", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add(headerContentType, contentTypeJSON)
 	w.WriteHeader(status)
 	_, err = w.Write(marshal)
 	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
 }
 
