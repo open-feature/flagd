@@ -140,7 +140,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	if h.versionTracker != nil && ifNoneMatch != "" {
 		currentETag := h.versionTracker.ETag(selectorExpression)
 		if currentETag != "" && ifNoneMatch == currentETag {
-			h.Logger.Debug(fmt.Sprintf("ETag match for selector '%s', returning 304", selectorExpression))
+h.Logger.Debug("ETag match, returning 304", zap.String("selector", selectorExpression))
 			w.Header().Add(headerETag, currentETag)
 			w.WriteHeader(http.StatusNotModified)
 			return
