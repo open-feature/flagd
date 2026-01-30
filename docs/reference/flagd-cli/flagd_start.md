@@ -19,6 +19,7 @@ flagd start [flags]
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)
   -t, --metrics-exporter string              Set the metrics exporter. Default(if unset) is Prometheus. Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to be present
+      --ofrep-cache-capacity int32           Max number of selectors to cache for OFREP bulk evaluation ETags (0 = unlimited) (default 100)
   -r, --ofrep-port int32                     ofrep service port (default 8016)
   -A, --otel-ca-path string                  tls certificate authority path to use with OpenTelemetry collector
   -D, --otel-cert-path string                tls certificate path to use with OpenTelemetry collector

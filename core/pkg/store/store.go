@@ -206,6 +206,18 @@ func (s *Store) GetAll(ctx context.Context, selector *Selector) ([]model.Flag, m
 	return flags, queryMeta, nil
 }
 
+// watchSelector returns a channel that will be closed when the flags matching the given selector are modified.
+func (s *Store) WatchSelector(selector *Selector) <-chan struct{} {
+	it, err := s.selectOrAll(selector)
+	if err != nil {
+		// return a closed channel on error
+		ch := make(chan struct{})
+		close(ch)
+		return ch
+	}
+	return it.WatchCh()
+}
+
 type flagIdentifier struct {
 	flagSetId string
 	key       string

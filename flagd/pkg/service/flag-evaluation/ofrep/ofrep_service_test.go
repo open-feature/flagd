@@ -12,6 +12,7 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/errgroup"
@@ -24,14 +25,20 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
 
+	log := logger.NewLogger(nil, false)
+	flagStore, err := store.NewStore(log, []string{})
+	if err != nil {
+		t.Fatalf("error creating store: %v", err)
+	}
+
 	cfg := SvcConfiguration{
-		Logger: logger.NewLogger(nil, false),
-		Port:   uint16(port),
+		Logger:          log,
+		Port:            uint16(port),
 		ServiceName:     "test-service",
 		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
-	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
+	service, err := NewOfrepService(eval, flagStore, []string{"*"}, cfg, nil, nil)
 	if err != nil {
 		t.Fatalf("error creating the ofrep service: %v", err)
 	}

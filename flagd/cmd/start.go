@@ -23,6 +23,7 @@ const (
 	managementPortFlagName     = "management-port"
 	metricsExporter            = "metrics-exporter"
 	ofrepPortFlagName          = "ofrep-port"
+	ofrepCacheCapacityFlagName = "ofrep-cache-capacity"
 	otelCollectorURI           = "otel-collector-uri"
 	otelCertPathFlagName       = "otel-cert-path"
 	otelKeyPathFlagName        = "otel-key-path"
@@ -52,6 +53,8 @@ func init() {
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
+	flags.Int32(ofrepCacheCapacityFlagName, 100,
+		"Max number of selectors to cache for OFREP bulk evaluation ETags (0 = unlimited)")
 
 	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+
 		"With grpc the evaluations service will become available on this address. "+
@@ -113,6 +116,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
+	_ = viper.BindPFlag(ofrepCacheCapacityFlagName, flags.Lookup(ofrepCacheCapacityFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
@@ -177,6 +181,7 @@ var startCmd = &cobra.Command{
 			MetricExporter:             viper.GetString(metricsExporter),
 			ManagementPort:             viper.GetUint16(managementPortFlagName),
 			OfrepServicePort:           viper.GetUint16(ofrepPortFlagName),
+			OfrepCacheCapacity:         viper.GetInt(ofrepCacheCapacityFlagName),
 			OtelCollectorURI:           viper.GetString(otelCollectorURI),
 			OtelCertPath:               viper.GetString(otelCertPathFlagName),
 			OtelKeyPath:                viper.GetString(otelKeyPathFlagName),
