@@ -18,14 +18,19 @@ type FlagStore interface {
 	WatchSelector(selector *store.Selector) <-chan struct{}
 }
 
+// trackedSelector holds the state for a single tracked selector
+type trackedSelector struct {
+	etag   string
+	cancel context.CancelFunc
+}
+
 // SelectorVersionTracker tracks content hashes for selectors to enable ETag-based caching.
 type SelectorVersionTracker struct {
 	logger      *logger.Logger
 	flagStore   FlagStore
 	mu          sync.RWMutex
-	etags       map[string]string             // selector -> current content-based ETag
-	cancelFuncs map[string]context.CancelFunc // selector -> cancel function for watch goroutine
-	insertOrder []string                      // FIFO order for eviction
+	selectors   map[string]*trackedSelector // single map for all per-selector state
+	insertOrder []string                    // FIFO order for eviction
 	maxCapacity int
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -38,8 +43,7 @@ func NewSelectorVersionTracker(logger *logger.Logger, flagStore FlagStore, maxCa
 	return &SelectorVersionTracker{
 		logger:      logger,
 		flagStore:   flagStore,
-		etags:       make(map[string]string),
-		cancelFuncs: make(map[string]context.CancelFunc),
+		selectors:   make(map[string]*trackedSelector),
 		insertOrder: make([]string, 0),
 		maxCapacity: maxCapacity,
 		ctx:         ctx,
@@ -57,7 +61,10 @@ func (t *SelectorVersionTracker) Close() {
 func (t *SelectorVersionTracker) ETag(selectorExpression string) string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return t.etags[selectorExpression]
+	if s, ok := t.selectors[selectorExpression]; ok {
+		return s.etag
+	}
+	return ""
 }
 
 // Track starts tracking a selector and returns its current content-based ETag.
@@ -67,28 +74,30 @@ func (t *SelectorVersionTracker) Track(selectorExpression string) string {
 	defer t.mu.Unlock()
 
 	// if already tracking, return cached ETag
-	if etag, exists := t.etags[selectorExpression]; exists {
-		return etag
+	if s, exists := t.selectors[selectorExpression]; exists {
+		return s.etag
 	}
 
 	// evict oldest if at capacity
-	if t.maxCapacity > 0 && len(t.etags) >= t.maxCapacity {
+	if t.maxCapacity > 0 && len(t.selectors) >= t.maxCapacity {
 		t.evictOldest()
 	}
 
 	// compute content-based ETag
 	etag := t.computeETag(selectorExpression)
-	t.etags[selectorExpression] = etag
-	t.insertOrder = append(t.insertOrder, selectorExpression)
 
 	// start watching for changes
+	var watchCancel context.CancelFunc
 	if t.flagStore != nil {
 		selector := store.NewSelector(selectorExpression)
 		watchCh := t.flagStore.WatchSelector(&selector)
-		watchCtx, watchCancel := context.WithCancel(t.ctx)
-		t.cancelFuncs[selectorExpression] = watchCancel
+		var watchCtx context.Context
+		watchCtx, watchCancel = context.WithCancel(t.ctx)
 		go t.watchAndRecompute(watchCtx, selectorExpression, watchCh)
 	}
+
+	t.selectors[selectorExpression] = &trackedSelector{etag: etag, cancel: watchCancel}
+	t.insertOrder = append(t.insertOrder, selectorExpression)
 
 	t.logger.Debug(fmt.Sprintf("tracking selector '%s' with ETag %s", selectorExpression, etag))
 	return etag
@@ -152,12 +161,13 @@ func (t *SelectorVersionTracker) evictOldest() {
 	}
 	oldest := t.insertOrder[0]
 	t.insertOrder = t.insertOrder[1:]
-	delete(t.etags, oldest)
-	if cancel, ok := t.cancelFuncs[oldest]; ok {
-		cancel()
-		delete(t.cancelFuncs, oldest)
+	if s, ok := t.selectors[oldest]; ok {
+		if s.cancel != nil {
+			s.cancel()
+		}
+		delete(t.selectors, oldest)
 	}
-	t.logger.Warn(fmt.Sprintf("evicted selector '%s' from version tracker", oldest))
+	t.logger.Warn(fmt.Sprintf("evicted selector '%s' from version tracker, consider increasing ofrep-cache-capacity", oldest))
 }
 
 // watchAndRecompute monitors a watch channel and recomputes the ETag when flags change
@@ -185,8 +195,13 @@ func (t *SelectorVersionTracker) recomputeETag(selectorExpression string) {
 	etag := t.computeETag(selectorExpression)
 
 	t.mu.Lock()
-	t.etags[selectorExpression] = etag
-	t.mu.Unlock()
+	defer t.mu.Unlock()
+
+	s, ok := t.selectors[selectorExpression]
+	if !ok {
+		return
+	}
+	s.etag = etag
 
 	t.logger.Debug(fmt.Sprintf("recomputed ETag for selector '%s': %s", selectorExpression, etag))
 }
