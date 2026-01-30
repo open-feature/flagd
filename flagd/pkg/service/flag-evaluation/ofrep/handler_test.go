@@ -340,9 +340,6 @@ func TestWriteBulkEvaluationResponse_ETag(t *testing.T) {
 
 	selectorExpression := "flagSetId=test-set"
 
-	// track the selector to get an ETag
-	initialETag := tracker.Track(selectorExpression)
-
 	tests := []struct {
 		name            string
 		ifNoneMatch     string
@@ -413,12 +410,7 @@ func TestWriteBulkEvaluationResponse_ETag(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		h.writeBulkEvaluationResponse(recorder, request, selectorExpression, response)
-
-		// writeBulkEvaluationResponse always returns 200 with body
-		// the 304 check happens earlier in HandleBulkEvaluation
 	})
-
-	_ = initialETag // used to verify ETag is returned
 }
 
 func TestHandleBulkEvaluation_304NotModified(t *testing.T) {
