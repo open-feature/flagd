@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -238,4 +240,86 @@ func TestNoopMetricsRecorder_RecordEvaluation(_ *testing.T) {
 func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.Impressions(context.TODO(), "", "", "")
+}
+
+func TestHTTPRequestDurationBuckets(t *testing.T) {
+	const testSvcName = "testService"
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, testSvcName)
+
+	// Record a sample duration
+	attrs := []attribute.KeyValue{
+		semconv.ServiceNameKey.String(testSvcName),
+	}
+	rec.HTTPRequestDuration(context.TODO(), 100*time.Duration(time.Millisecond), attrs)
+
+	// Collect metrics
+	var data metricdata.ResourceMetrics
+	err := exp.Collect(context.TODO(), &data)
+	require.NoError(t, err)
+
+	// Find the HTTP request duration histogram
+	require.Len(t, data.ScopeMetrics, 1)
+	scopeMetrics := data.ScopeMetrics[0]
+	require.Equal(t, testSvcName, scopeMetrics.Scope.Name)
+
+	var foundHistogram bool
+	for _, m := range scopeMetrics.Metrics {
+		if m.Name == httpRequestDurationMetric {
+			// Check that it's a histogram
+			histogram, ok := m.Data.(metricdata.Histogram[float64])
+			require.True(t, ok, "Expected metric to be a Histogram")
+
+			// Check bucket boundaries match prometheus.DefBuckets
+			// All data points should have the same bounds
+			require.NotEmpty(t, histogram.DataPoints, "Expected at least one data point")
+			require.Equal(t, prometheus.DefBuckets, histogram.DataPoints[0].Bounds,
+				"Expected histogram buckets to match prometheus.DefBuckets")
+			foundHistogram = true
+			break
+		}
+	}
+	require.True(t, foundHistogram, "Expected to find HTTP request duration histogram")
+}
+
+func TestHTTPResponseSizeBuckets(t *testing.T) {
+	const testSvcName = "testService"
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, testSvcName)
+
+	// Record a sample response size
+	attrs := []attribute.KeyValue{
+		semconv.ServiceNameKey.String(testSvcName),
+	}
+	rec.HTTPResponseSize(context.TODO(), 500, attrs)
+
+	// Collect metrics
+	var data metricdata.ResourceMetrics
+	err := exp.Collect(context.TODO(), &data)
+	require.NoError(t, err)
+
+	// Find the HTTP response size histogram
+	require.Len(t, data.ScopeMetrics, 1)
+	scopeMetrics := data.ScopeMetrics[0]
+	require.Equal(t, testSvcName, scopeMetrics.Scope.Name)
+
+	expectedBounds := prometheus.ExponentialBuckets(100, 10, 8)
+	var foundHistogram bool
+	for _, m := range scopeMetrics.Metrics {
+		if m.Name == httpResponseSizeMetric {
+			// Check that it's a histogram
+			histogram, ok := m.Data.(metricdata.Histogram[float64])
+			require.True(t, ok, "Expected metric to be a Histogram")
+
+			// Check bucket boundaries match exponential buckets
+			require.NotEmpty(t, histogram.DataPoints, "Expected at least one data point")
+			require.Equal(t, expectedBounds, histogram.DataPoints[0].Bounds,
+				"Expected histogram buckets to match exponential buckets (100, 10, 8)")
+			foundHistogram = true
+			break
+		}
+	}
+	require.True(t, foundHistogram, "Expected to find HTTP response size histogram")
 }
