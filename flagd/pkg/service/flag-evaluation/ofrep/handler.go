@@ -2,6 +2,7 @@ package ofrep
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,12 +20,17 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 const (
-	key              = "key"
-	singleEvaluation = "/ofrep/v1/evaluate/flags/{key}"
-	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
+	key               = "key"
+	singleEvaluation  = "/ofrep/v1/evaluate/flags/{key}"
+	bulkEvaluation    = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
+	headerETag        = "ETag"
+	headerIfNoneMatch = "If-None-Match"
+	headerContentType = "Content-Type"
+	contentTypeJSON   = "application/json"
 )
 
 type handler struct {
@@ -128,7 +134,37 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
 	} else {
-		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
+		response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
+		h.writeBulkEvaluationResponse(w, r, response)
+	}
+}
+
+// writes the bulk evaluation response with ETag support
+func (h *handler) writeBulkEvaluationResponse(w http.ResponseWriter, r *http.Request, response ofrep.BulkEvaluationResponse) {
+	// calculate ETag and marshal response in one operation
+	eTag, body, err := calculateETag(response)
+	if err != nil {
+		h.Logger.Warn("error calculating ETag", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// check If-None-Match header for cache validation
+	ifNoneMatch := r.Header.Get(headerIfNoneMatch)
+	if ifNoneMatch == eTag {
+		// ETag matches, return 304 Not Modified
+		w.Header().Add(headerETag, eTag)
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	// ETag doesn't match or missing, return the response with the new ETag
+	w.Header().Add(headerContentType, contentTypeJSON)
+	w.Header().Add(headerETag, eTag)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(body)
+	if err != nil {
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
 }
 
@@ -137,17 +173,29 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	marshal, err := json.Marshal(payload)
 	if err != nil {
 		// always a 500
-		h.Logger.Warn(fmt.Sprintf("error marshelling the response: %v", err))
+		h.Logger.Warn("error marshalling the response", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add(headerContentType, contentTypeJSON)
 	w.WriteHeader(status)
 	_, err = w.Write(marshal)
 	if err != nil {
-		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
+		h.Logger.Warn("error while writing response", zap.Error(err))
 	}
+}
+
+// calculateETag generates an ETag from the bulk evaluation response
+func calculateETag(response ofrep.BulkEvaluationResponse) (string, []byte, error) {
+	// marshal the response to JSON
+	data, err := json.Marshal(response)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to marshal response for ETag calculation: %w", err)
+	}
+
+	hash := md5.Sum(data)
+	return fmt.Sprintf("\"%x\"", hash), data, nil
 }
 
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
