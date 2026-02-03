@@ -1027,7 +1027,7 @@ func Test_mergeContexts(t *testing.T) {
 			args: args{
 				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
 				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
-				headers:                    http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
+				headers:                    http.Header{"X-Key": []string{"value"}, "X-Token": []string{"token"}},
 				headerToContextKeyMappings: map[string]string{},
 			},
 			// static context should "win"
@@ -1039,7 +1039,7 @@ func Test_mergeContexts(t *testing.T) {
 				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
 				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
 				headers:                    http.Header{},
-				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
+				headerToContextKeyMappings: map[string]string{"X-Key": "k2"},
 			},
 			// static context should "win"
 			want: map[string]any{"k1": "v1", "k2": "v22", "k3": "v3"},
@@ -1049,8 +1049,8 @@ func Test_mergeContexts(t *testing.T) {
 			args: args{
 				clientContext:              map[string]any{"k1": "v1", "k2": "v2"},
 				configContext:              map[string]any{"k2": "v22", "k3": "v3"},
-				headers:                    http.Header{"X-key": []string{"value"}, "X-token": []string{"token"}},
-				headerToContextKeyMappings: map[string]string{"X-key": "k2"},
+				headers:                    http.Header{"X-Key": []string{"value"}, "X-Token": []string{"token"}},
+				headerToContextKeyMappings: map[string]string{"X-Key": "k2"},
 			},
 			// header context should "win"
 			want: map[string]any{"k1": "v1", "k2": "value", "k3": "v3"},
