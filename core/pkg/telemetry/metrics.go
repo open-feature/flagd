@@ -24,6 +24,11 @@ const (
 	httpActiveRequestsMetric  = "http.server.active_requests"
 	impressionMetric          = "feature_flag." + ProviderName + ".impression"
 	reasonMetric              = "feature_flag." + ProviderName + ".result.reason"
+
+	grpcSyncActiveStreamsMetric  = "grpc.sync.active_streams"
+	grpcSyncStreamDurationMetric = "grpc.sync.stream.duration"
+	grpcSyncEventsSentMetric     = "grpc.sync.events.sent"
+	grpcFetchAllFlagsMetric      = "grpc.sync.fetchall.requests"
 )
 
 type IMetricsRecorder interface {
@@ -34,6 +39,12 @@ type IMetricsRecorder interface {
 	InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue)
 	RecordEvaluation(ctx context.Context, err error, reason, variant, key string)
 	Impressions(ctx context.Context, reason, variant, key string)
+	// gRPC Sync metrics
+	SyncStreamStart(ctx context.Context, attrs []attribute.KeyValue)
+	SyncStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
+	SyncStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
+	SyncEventSent(ctx context.Context, attrs []attribute.KeyValue)
+	FetchAllFlagsRequest(ctx context.Context, attrs []attribute.KeyValue)
 }
 
 type NoopMetricsRecorder struct{}
@@ -60,12 +71,32 @@ func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ 
 func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
 }
 
+func (NoopMetricsRecorder) SyncStreamStart(_ context.Context, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) SyncStreamEnd(_ context.Context, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) SyncStreamDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) SyncEventSent(_ context.Context, _ []attribute.KeyValue) {
+}
+
+func (NoopMetricsRecorder) FetchAllFlagsRequest(_ context.Context, _ []attribute.KeyValue) {
+}
+
 type MetricsRecorder struct {
 	httpRequestDurHistogram   metric.Float64Histogram
 	httpResponseSizeHistogram metric.Float64Histogram
 	httpRequestsInflight      metric.Int64UpDownCounter
 	impressions               metric.Int64Counter
 	reasons                   metric.Int64Counter
+	// gRPC Sync metrics
+	syncActiveStreams     metric.Int64UpDownCounter
+	syncStreamDuration    metric.Float64Histogram
+	syncEventsSent        metric.Int64Counter
+	fetchAllFlagsRequests metric.Int64Counter
 }
 
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
@@ -122,6 +153,26 @@ func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string,
 	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
+func (r MetricsRecorder) SyncStreamStart(ctx context.Context, attrs []attribute.KeyValue) {
+	r.syncActiveStreams.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+func (r MetricsRecorder) SyncStreamEnd(ctx context.Context, attrs []attribute.KeyValue) {
+	r.syncActiveStreams.Add(ctx, -1, metric.WithAttributes(attrs...))
+}
+
+func (r MetricsRecorder) SyncStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue) {
+	r.syncStreamDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+}
+
+func (r MetricsRecorder) SyncEventSent(ctx context.Context, attrs []attribute.KeyValue) {
+	r.syncEventsSent.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+func (r MetricsRecorder) FetchAllFlagsRequest(ctx context.Context, attrs []attribute.KeyValue) {
+	r.fetchAllFlagsRequests.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
 func getDurationView(svcName, viewName string, bucket []float64) msdk.View {
 	return msdk.NewView(
 		msdk.Instrument{
@@ -156,6 +207,8 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		msdk.WithView(getDurationView(serviceName, httpRequestDurationMetric, prometheus.DefBuckets)),
 		// for response size we want 8 exponential bucket starting from 100 Bytes
 		msdk.WithView(getDurationView(serviceName, httpResponseSizeMetric, prometheus.ExponentialBuckets(100, 10, 8))),
+		// for gRPC sync stream duration we use the default bucket size which are tailored for response time in seconds
+		msdk.WithView(getDurationView(serviceName, grpcSyncStreamDurationMetric, prometheus.DefBuckets)),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
 	)
@@ -188,11 +241,38 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		metric.WithDescription("Measures the number of evaluations for a given reason."),
 		metric.WithUnit("{reason}"),
 	)
+
+	// gRPC Sync metrics
+	syncActiveStreams, _ := meter.Int64UpDownCounter(
+		grpcSyncActiveStreamsMetric,
+		metric.WithDescription("Measures the number of currently active gRPC sync streaming connections."),
+		metric.WithUnit("{stream}"),
+	)
+	syncStreamDuration, _ := meter.Float64Histogram(
+		grpcSyncStreamDurationMetric,
+		metric.WithDescription("Measures the duration of gRPC sync streaming connections."),
+		metric.WithUnit("s"),
+	)
+	syncEventsSent, _ := meter.Int64Counter(
+		grpcSyncEventsSentMetric,
+		metric.WithDescription("Measures the number of flag configuration updates sent to sync clients."),
+		metric.WithUnit("{event}"),
+	)
+	fetchAllFlagsRequests, _ := meter.Int64Counter(
+		grpcFetchAllFlagsMetric,
+		metric.WithDescription("Measures the number of unary FetchAllFlags requests."),
+		metric.WithUnit("{request}"),
+	)
+
 	return &MetricsRecorder{
 		httpRequestDurHistogram:   hduration,
 		httpResponseSizeHistogram: hsize,
 		httpRequestsInflight:      reqCounter,
 		impressions:               impressions,
 		reasons:                   reasons,
+		syncActiveStreams:         syncActiveStreams,
+		syncStreamDuration:        syncStreamDuration,
+		syncEventsSent:            syncEventsSent,
+		fetchAllFlagsRequests:     fetchAllFlagsRequests,
 	}
 }
