@@ -242,84 +242,60 @@ func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
 	no.Impressions(context.TODO(), "", "", "")
 }
 
-func TestHTTPRequestDurationBuckets(t *testing.T) {
+// testHistogramBuckets is a helper function that tests histogram bucket configuration
+func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []float64, recordMetric func(rec *MetricsRecorder, attrs []attribute.KeyValue), assertMsg string) {
+	t.Helper()
 	const testSvcName = "testService"
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
 	rec := NewOTelRecorder(exp, rs, testSvcName)
 
-	// Record a sample duration
 	attrs := []attribute.KeyValue{
 		semconv.ServiceNameKey.String(testSvcName),
 	}
-	rec.HTTPRequestDuration(context.TODO(), 100*time.Duration(time.Millisecond), attrs)
+	recordMetric(rec, attrs)
 
-	// Collect metrics
 	var data metricdata.ResourceMetrics
 	err := exp.Collect(context.TODO(), &data)
 	require.NoError(t, err)
 
-	// Find the HTTP request duration histogram
 	require.Len(t, data.ScopeMetrics, 1)
 	scopeMetrics := data.ScopeMetrics[0]
 	require.Equal(t, testSvcName, scopeMetrics.Scope.Name)
 
 	var foundHistogram bool
 	for _, m := range scopeMetrics.Metrics {
-		if m.Name == httpRequestDurationMetric {
-			// Check that it's a histogram
+		if m.Name == metricName {
 			histogram, ok := m.Data.(metricdata.Histogram[float64])
 			require.True(t, ok, "Expected metric to be a Histogram")
 
-			// Check bucket boundaries match prometheus.DefBuckets
-			// All data points should have the same bounds
 			require.NotEmpty(t, histogram.DataPoints, "Expected at least one data point")
-			require.Equal(t, prometheus.DefBuckets, histogram.DataPoints[0].Bounds,
-				"Expected histogram buckets to match prometheus.DefBuckets")
+			require.Equal(t, expectedBounds, histogram.DataPoints[0].Bounds, assertMsg)
 			foundHistogram = true
 			break
 		}
 	}
-	require.True(t, foundHistogram, "Expected to find HTTP request duration histogram")
+	require.Truef(t, foundHistogram, "Expected to find %s histogram", metricName)
+}
+
+func TestHTTPRequestDurationBuckets(t *testing.T) {
+	testHistogramBuckets(t,
+		httpRequestDurationMetric,
+		prometheus.DefBuckets,
+		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPRequestDuration(context.TODO(), 100*time.Millisecond, attrs)
+		},
+		"Expected histogram buckets to match prometheus.DefBuckets",
+	)
 }
 
 func TestHTTPResponseSizeBuckets(t *testing.T) {
-	const testSvcName = "testService"
-	exp := metric.NewManualReader()
-	rs := resource.NewWithAttributes("testSchema")
-	rec := NewOTelRecorder(exp, rs, testSvcName)
-
-	// Record a sample response size
-	attrs := []attribute.KeyValue{
-		semconv.ServiceNameKey.String(testSvcName),
-	}
-	rec.HTTPResponseSize(context.TODO(), 500, attrs)
-
-	// Collect metrics
-	var data metricdata.ResourceMetrics
-	err := exp.Collect(context.TODO(), &data)
-	require.NoError(t, err)
-
-	// Find the HTTP response size histogram
-	require.Len(t, data.ScopeMetrics, 1)
-	scopeMetrics := data.ScopeMetrics[0]
-	require.Equal(t, testSvcName, scopeMetrics.Scope.Name)
-
-	expectedBounds := prometheus.ExponentialBuckets(100, 10, 8)
-	var foundHistogram bool
-	for _, m := range scopeMetrics.Metrics {
-		if m.Name == httpResponseSizeMetric {
-			// Check that it's a histogram
-			histogram, ok := m.Data.(metricdata.Histogram[float64])
-			require.True(t, ok, "Expected metric to be a Histogram")
-
-			// Check bucket boundaries match exponential buckets
-			require.NotEmpty(t, histogram.DataPoints, "Expected at least one data point")
-			require.Equal(t, expectedBounds, histogram.DataPoints[0].Bounds,
-				"Expected histogram buckets to match exponential buckets (100, 10, 8)")
-			foundHistogram = true
-			break
-		}
-	}
-	require.True(t, foundHistogram, "Expected to find HTTP response size histogram")
+	testHistogramBuckets(t,
+		httpResponseSizeMetric,
+		prometheus.ExponentialBuckets(100, 10, 8),
+		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPResponseSize(context.TODO(), 500, attrs)
+		},
+		"Expected histogram buckets to match exponential buckets (100, 10, 8)",
+	)
 }
