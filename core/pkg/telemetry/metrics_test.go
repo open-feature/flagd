@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -238,4 +240,62 @@ func TestNoopMetricsRecorder_RecordEvaluation(_ *testing.T) {
 func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.Impressions(context.TODO(), "", "", "")
+}
+
+// testHistogramBuckets is a helper function that tests histogram bucket configuration
+func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []float64, recordMetric func(rec *MetricsRecorder, attrs []attribute.KeyValue), assertMsg string) {
+	t.Helper()
+	const testSvcName = "testService"
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	rec := NewOTelRecorder(exp, rs, testSvcName)
+
+	attrs := []attribute.KeyValue{
+		semconv.ServiceNameKey.String(testSvcName),
+	}
+	recordMetric(rec, attrs)
+
+	var data metricdata.ResourceMetrics
+	err := exp.Collect(context.TODO(), &data)
+	require.NoError(t, err)
+
+	require.Len(t, data.ScopeMetrics, 1)
+	scopeMetrics := data.ScopeMetrics[0]
+	require.Equal(t, testSvcName, scopeMetrics.Scope.Name)
+
+	var foundHistogram bool
+	for _, m := range scopeMetrics.Metrics {
+		if m.Name == metricName {
+			histogram, ok := m.Data.(metricdata.Histogram[float64])
+			require.True(t, ok, "Expected metric to be a Histogram")
+
+			require.NotEmpty(t, histogram.DataPoints, "Expected at least one data point")
+			require.Equal(t, expectedBounds, histogram.DataPoints[0].Bounds, assertMsg)
+			foundHistogram = true
+			break
+		}
+	}
+	require.Truef(t, foundHistogram, "Expected to find %s histogram", metricName)
+}
+
+func TestHTTPRequestDurationBuckets(t *testing.T) {
+	testHistogramBuckets(t,
+		httpRequestDurationMetric,
+		prometheus.DefBuckets,
+		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPRequestDuration(context.TODO(), 100*time.Millisecond, attrs)
+		},
+		"Expected histogram buckets to match prometheus.DefBuckets",
+	)
+}
+
+func TestHTTPResponseSizeBuckets(t *testing.T) {
+	testHistogramBuckets(t,
+		httpResponseSizeMetric,
+		prometheus.ExponentialBuckets(100, 10, 8),
+		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPResponseSize(context.TODO(), 500, attrs)
+		},
+		"Expected histogram buckets to match exponential buckets (100, 10, 8)",
+	)
 }

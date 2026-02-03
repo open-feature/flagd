@@ -153,9 +153,9 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 	provider := msdk.NewMeterProvider(
 		msdk.WithReader(exporter),
 		// for the request duration metric we use the default bucket size which are tailored for response time in seconds
-		msdk.WithView(getDurationView(httpRequestDurationMetric, serviceName, prometheus.DefBuckets)),
+		msdk.WithView(getDurationView(serviceName, httpRequestDurationMetric, prometheus.DefBuckets)),
 		// for response size we want 8 exponential bucket starting from 100 Bytes
-		msdk.WithView(getDurationView(httpResponseSizeMetric, serviceName, prometheus.ExponentialBuckets(100, 10, 8))),
+		msdk.WithView(getDurationView(serviceName, httpResponseSizeMetric, prometheus.ExponentialBuckets(100, 10, 8))),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
 	)
