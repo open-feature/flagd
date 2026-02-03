@@ -11,6 +11,7 @@ import (
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,6 +36,7 @@ type SvcConfigurations struct {
 	SocketPath          string
 	StreamDeadline      time.Duration
 	DisableSyncMetadata bool
+	MetricsRecorder     telemetry.IMetricsRecorder
 }
 
 type Service struct {
@@ -80,12 +82,18 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		server = grpc.NewServer()
 	}
 
+	metricsRecorder := cfg.MetricsRecorder
+	if metricsRecorder == nil {
+		metricsRecorder = &telemetry.NoopMetricsRecorder{}
+	}
+
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
 		store:               cfg.Store,
 		log:                 l,
 		contextValues:       cfg.ContextValues,
 		deadline:            cfg.StreamDeadline,
 		disableSyncMetadata: cfg.DisableSyncMetadata,
+		metricsRecorder:     metricsRecorder,
 	})
 
 	var lis net.Listener
