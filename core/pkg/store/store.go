@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sort"
@@ -326,7 +327,11 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
-				s.logger.Error(fmt.Sprintf("context error watching flags for selector %s: %v", selector.ToLogString(), err))
+				if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+					s.logger.Debug(fmt.Sprintf("while watching flags for selector %s: %v", selector.ToLogString(), err))
+				} else {
+					s.logger.Error(fmt.Sprintf("context error watching flags for selector %s: %v", selector.ToLogString(), err))
+				}
 				close(watcher)
 				return
 			}
