@@ -11,7 +11,7 @@ created: 2026-01-22
 
 This document outlines the versioning policy for the flagd ecosystem, including the flagd binary, and language-specific providers. The goal is to establish a predictable, stable, and transparent contract between the components and their consumers and ensure that users can confidently adopt updates while allowing the ecosystem to evolve.
 
-The flagd ecosystem consists of distinct components that maintain their own versioning tracks but adhere to a unified policy. The scope for this policy is flagd binaries, and providers. Various API surfaces (e.g. Evaluation API, Sync API, OFREP) or schemas (e.g. Flag Definition schema) are out of scope.
+The flagd ecosystem consists of distinct components that maintain their own versioning tracks but adhere to a unified policy. The scope for this policy is flagd binaries, and providers. Various API surfaces (e.g. Evaluation API, Sync API, OFREP) are out of scope. The compatibility between components and the [Flag Definition schema](https://flagd.dev/reference/schema/?h=schema) is in scope, as the schema acts as a fundamental feature-contract bundled with these components.
 
 ## Legend and definitions
 
@@ -96,7 +96,17 @@ We have a “best-effort SLO” of:
 
 Providers communicate with the Sync and Evaluation API endpoints. Over time the API messages might evolve within the same major version to support new functionalities in backward compatible manners. To ensure system stability, we define the following policy.
 
-**API Compatibility**: Providers expect the API endpoints they are configured with to support the version of the provider. There are no guarantees of forward or backward compatibility in providers. It’s the responsibility of the API owners to not break the clients that use their APIs.
+**API Compatibility**: Providers expect the API endpoints they are configured with to support the version of the provider. Providers themselves are not expected to support multiple versions of the API. Providers to not give any guarantees of forward or backward compatibility. It’s entirely the responsibility of the API owners to not break the clients that use their APIs.
+
+### flagd Components and the Flag Definition Schema
+
+The [Flag Definition Schema](https://flagd.dev/reference/schema/?h=schema) represents a **feature-contract** for the ecosystem. Each released version of the flagd binary and every provider bundles a schema at a particular version. This helps ensure deterministic support for all the features and targeting operators utilized in a definition file.
+
+**Version Alignment and Validation**:
+
+*   **New Features**: When new features (e.g., a "regex" operator in targeting) are added to the schema, support for them is rolled out via **minor** version releases of the flagd binary and providers.
+*   **Validation**: If a user attempts to load a flag definition that uses features not present in the provider's or flagd binary's bundled schema version, the schema will fail to validate. The component will output specific error messages indicating the incompatibility, ensuring users know which version upgrade is required to support their configuration.
+*   A **patch** version upgrade of a flagd binary or provider will **NOT** change the bundled schema version to ensure stability.
 
 ### flagd Providers and OpenFeature SDKs
 
@@ -113,7 +123,7 @@ Each flagd provider implementation is bound to the OpenFeature SDK of its respec
 
 While released independently, providers strive for feature parity.
 
-**Minor Version Alignment**: We aim to align minor versions across providers to represent a consistent feature set and behavior (e.g., Python provider 1.1.x and Java provider 1.1.x should offer similar configuration options).
+**Minor Version Alignment**: We aim to align minor versions across providers to represent a consistent feature set and behavior (e.g., Python provider 1.1.x and Java provider 1.1.x should support the same Flag Definition schema version and offer similar configuration options).
 
 **Patch Divergence**: Patch versions are released independently as needed for language-specific fixes and do not require alignment.
 
@@ -123,7 +133,7 @@ To evolve the ecosystem without immediate breaking changes, we employ a strict d
 
 **Announcement**: Features/Behavior must be marked and announced as deprecated in a **minor** release.
 
-**Duration**: Deprecated features must be supported for at least **3 minor releases** or **12 months**, whichever is longer.
+**Duration**: Deprecated features must be supported for at least **3 minor releases** or **12 months**, whichever is longer (e.g. a feature deprecated in 1.0 is expected to be supported in 1.0, 1.1, and 1.2, and may be removed in 1.3 if 12 months have passed since the 1.0 release. If 12 months have not passed since the 1.0 release, the feature will continue to be supported in 1.3+ until the release that is released 12 months after the 1.0 release.)
 
 **Visibility**: Runtime warnings should be emitted when deprecated features are used.
 
@@ -144,6 +154,7 @@ To evolve the ecosystem without immediate breaking changes, we employ a strict d
 * **Runtime Behavior**:  
     * Changes to startup behavior (e.g., fail-open vs. fail-close).  
     * Changes to retry-ability, idempotency, or backoff behavior.
+    * **Flag Definition Schema Validation**: Upgrading the bundled schema or validation logic in a way that drops support for previously valid operators, properties, or structures (i.e., backwards-incompatible schema changes that cause existing flag definition files to fail validation).
 
 * **Licensing**: Changes to the license texts of the artifacts.
 
