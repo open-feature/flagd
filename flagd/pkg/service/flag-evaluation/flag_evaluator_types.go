@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	evalV1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/flagd/evaluation/v1"
+	schemaV1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
 )

@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
-	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
+	"buf.build/gen/go/open-feature-forking/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/flagd/sync/v1"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"google.golang.org/protobuf/types/known/structpb"

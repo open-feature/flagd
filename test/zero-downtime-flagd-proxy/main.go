@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	pb "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	pb "buf.build/gen/go/open-feature-forking/flagd/grpc/go/sync/v1/syncv1grpc"
 	"google.golang.org/grpc"
 )
 

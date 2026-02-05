@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	schemaV1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"

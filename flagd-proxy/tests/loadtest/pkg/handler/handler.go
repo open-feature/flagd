@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	"buf.build/gen/go/open-feature-forking/flagd/grpc/go/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/flagd-proxy/tests/loadtest/pkg/client"
 	trigger "github.com/open-feature/flagd/flagd-proxy/tests/loadtest/pkg/trigger"
 	"github.com/open-feature/flagd/flagd-proxy/tests/loadtest/pkg/watcher"

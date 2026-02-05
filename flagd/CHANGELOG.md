@@ -85,7 +85,7 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.5-20250127221518-be6d1143b690.1 ([#1549](https://github.com/open-feature/flagd/issues/1549)) ([d3eb44e](https://github.com/open-feature/flagd/commit/d3eb44ed45a54bd9152b7477cce17be90016683c))
 * **deps:** update module github.com/open-feature/flagd/core to v0.11.1 ([#1545](https://github.com/open-feature/flagd/issues/1545)) ([ca663b5](https://github.com/open-feature/flagd/commit/ca663b5832c94834f73cd5449a2f28af631d9556))
 * **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#1568](https://github.com/open-feature/flagd/issues/1568)) ([a3d4162](https://github.com/open-feature/flagd/commit/a3d41625a2b79452c0732af29d0b4f320e74fe8b))
 * **deps:** update module github.com/spf13/cobra to v1.9.0 ([#1564](https://github.com/open-feature/flagd/issues/1564)) ([345d2a9](https://github.com/open-feature/flagd/commit/345d2a920759e3e7046d7679a9c8a7cdb6cd3b40))
@@ -115,10 +115,10 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.18.1-20250127221518-be6d1143b690.1 ([#1535](https://github.com/open-feature/flagd/issues/1535)) ([d5ec921](https://github.com/open-feature/flagd/commit/d5ec921f02263615cd87625e211ba82b0811d041))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20250127221518-be6d1143b690.2 ([#1536](https://github.com/open-feature/flagd/issues/1536)) ([e23060f](https://github.com/open-feature/flagd/commit/e23060f24b2a714ae748e6b37d0d06b7caa1c95c))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20241220192239-696330adaff0.1 ([#1529](https://github.com/open-feature/flagd/issues/1529)) ([8881a80](https://github.com/open-feature/flagd/commit/8881a804b4055da0127a16b8fc57022d24906e1b))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.4-20250127221518-be6d1143b690.1 ([#1537](https://github.com/open-feature/flagd/issues/1537)) ([f74207b](https://github.com/open-feature/flagd/commit/f74207bc13b75bae4275bc486df51e2da569dd41))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.18.1-20250127221518-be6d1143b690.1 ([#1535](https://github.com/open-feature/flagd/issues/1535)) ([d5ec921](https://github.com/open-feature/flagd/commit/d5ec921f02263615cd87625e211ba82b0811d041))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.5.1-20250127221518-be6d1143b690.2 ([#1536](https://github.com/open-feature/flagd/issues/1536)) ([e23060f](https://github.com/open-feature/flagd/commit/e23060f24b2a714ae748e6b37d0d06b7caa1c95c))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.4-20241220192239-696330adaff0.1 ([#1529](https://github.com/open-feature/flagd/issues/1529)) ([8881a80](https://github.com/open-feature/flagd/commit/8881a804b4055da0127a16b8fc57022d24906e1b))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.4-20250127221518-be6d1143b690.1 ([#1537](https://github.com/open-feature/flagd/issues/1537)) ([f74207b](https://github.com/open-feature/flagd/commit/f74207bc13b75bae4275bc486df51e2da569dd41))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.8 ([#1526](https://github.com/open-feature/flagd/issues/1526)) ([fbf2ed5](https://github.com/open-feature/flagd/commit/fbf2ed527fcf3b300808c7b835a8d891df7b88a8))
 * **deps:** update module google.golang.org/grpc to v1.70.0 ([#1528](https://github.com/open-feature/flagd/issues/1528)) ([79b2b0a](https://github.com/open-feature/flagd/commit/79b2b0a6bbd48676dcbdd2393feb8247529bf29c))
 
@@ -141,7 +141,7 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.3-20241220192239-696330adaff0.1 ([#1513](https://github.com/open-feature/flagd/issues/1513)) ([64c5787](https://github.com/open-feature/flagd/commit/64c57875b032edcef2e2d230e7735990e01b72b8))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.3-20241220192239-696330adaff0.1 ([#1513](https://github.com/open-feature/flagd/issues/1513)) ([64c5787](https://github.com/open-feature/flagd/commit/64c57875b032edcef2e2d230e7735990e01b72b8))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.6 ([#1515](https://github.com/open-feature/flagd/issues/1515)) ([586cb62](https://github.com/open-feature/flagd/commit/586cb62e63d66c8f8371236844d506c7bcc8f123))
 * **sync:** fixing missing handover of ssl configuration ([#1517](https://github.com/open-feature/flagd/issues/1517)) ([998a216](https://github.com/open-feature/flagd/commit/998a21637e512aec8d1944f842c51529e7bf6d44))
 
@@ -150,11 +150,11 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.17.0-20241220192239-696330adaff0.1 ([#1488](https://github.com/open-feature/flagd/issues/1488)) ([8e09457](https://github.com/open-feature/flagd/commit/8e09457d739fc7d9e679e27a3449e4a13cd6c718))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.18.1-20241220192239-696330adaff0.1 ([#1506](https://github.com/open-feature/flagd/issues/1506)) ([b868194](https://github.com/open-feature/flagd/commit/b8681947bf5dcc24d5b0e48f5e59a61c1278c280))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.1 ([#1489](https://github.com/open-feature/flagd/issues/1489)) ([53add83](https://github.com/open-feature/flagd/commit/53add83a491c6e00e0d9b1b64a9461e5973edca7))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.2 ([#1492](https://github.com/open-feature/flagd/issues/1492)) ([9f1d94a](https://github.com/open-feature/flagd/commit/9f1d94a42ac00ecf5fc58c07a76c350e2e4ec2f6))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.0-20241220192239-696330adaff0.1 ([#1490](https://github.com/open-feature/flagd/issues/1490)) ([6edce72](https://github.com/open-feature/flagd/commit/6edce72e8cff01ea13cbd15d604b35ccc8337f50))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.17.0-20241220192239-696330adaff0.1 ([#1488](https://github.com/open-feature/flagd/issues/1488)) ([8e09457](https://github.com/open-feature/flagd/commit/8e09457d739fc7d9e679e27a3449e4a13cd6c718))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.18.1-20241220192239-696330adaff0.1 ([#1506](https://github.com/open-feature/flagd/issues/1506)) ([b868194](https://github.com/open-feature/flagd/commit/b8681947bf5dcc24d5b0e48f5e59a61c1278c280))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.1 ([#1489](https://github.com/open-feature/flagd/issues/1489)) ([53add83](https://github.com/open-feature/flagd/commit/53add83a491c6e00e0d9b1b64a9461e5973edca7))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.5.1-20241220192239-696330adaff0.2 ([#1492](https://github.com/open-feature/flagd/issues/1492)) ([9f1d94a](https://github.com/open-feature/flagd/commit/9f1d94a42ac00ecf5fc58c07a76c350e2e4ec2f6))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.0-20241220192239-696330adaff0.1 ([#1490](https://github.com/open-feature/flagd/issues/1490)) ([6edce72](https://github.com/open-feature/flagd/commit/6edce72e8cff01ea13cbd15d604b35ccc8337f50))
 * **deps:** update module github.com/mattn/go-colorable to v0.1.14 ([#1508](https://github.com/open-feature/flagd/issues/1508)) ([87727f7](https://github.com/open-feature/flagd/commit/87727f7f8f18e4f532d152190ada5dbe3fc915b0))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.5 ([#1482](https://github.com/open-feature/flagd/issues/1482)) ([ce48cb7](https://github.com/open-feature/flagd/commit/ce48cb757659eef8807531f8522ca1b7bc80422c))
 * **deps:** update module golang.org/x/net to v0.33.0 [security] ([#1486](https://github.com/open-feature/flagd/issues/1486)) ([4764077](https://github.com/open-feature/flagd/commit/476407769f47675f649c328e27e0f87860f0f79d))
@@ -174,8 +174,8 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.2-20240906125204-0a6a901b42e8.1 ([#1451](https://github.com/open-feature/flagd/issues/1451)) ([8c6d91d](https://github.com/open-feature/flagd/commit/8c6d91d538d226b10cb954c23409902e9d245cda))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.36.0-20240906125204-0a6a901b42e8.1 ([#1475](https://github.com/open-feature/flagd/issues/1475)) ([0b11c6c](https://github.com/open-feature/flagd/commit/0b11c6cf612b244bda6bab119814647f3ce8de2e))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.35.2-20240906125204-0a6a901b42e8.1 ([#1451](https://github.com/open-feature/flagd/issues/1451)) ([8c6d91d](https://github.com/open-feature/flagd/commit/8c6d91d538d226b10cb954c23409902e9d245cda))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.36.0-20240906125204-0a6a901b42e8.1 ([#1475](https://github.com/open-feature/flagd/issues/1475)) ([0b11c6c](https://github.com/open-feature/flagd/commit/0b11c6cf612b244bda6bab119814647f3ce8de2e))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.4 ([#1433](https://github.com/open-feature/flagd/issues/1433)) ([d33c7a5](https://github.com/open-feature/flagd/commit/d33c7a5522d0909448c6d9d80b0a33d8511f0738))
 * **deps:** update module github.com/stretchr/testify to v1.10.0 ([#1455](https://github.com/open-feature/flagd/issues/1455)) ([8c843df](https://github.com/open-feature/flagd/commit/8c843df7714b1f2d120c5cac8e40c7220cc0c05b))
 * **deps:** update module golang.org/x/net to v0.31.0 ([#1446](https://github.com/open-feature/flagd/issues/1446)) ([9e35111](https://github.com/open-feature/flagd/commit/9e351117b4b2ebbb4a016d6b189077ae65a83124))
@@ -198,8 +198,8 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.17.0-20240906125204-0a6a901b42e8.1 ([#1409](https://github.com/open-feature/flagd/issues/1409)) ([f07d348](https://github.com/open-feature/flagd/commit/f07d348b42bfa43c3b263ed7ba69c1630a14ec10))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.35.1-20240906125204-0a6a901b42e8.1 ([#1420](https://github.com/open-feature/flagd/issues/1420)) ([1f06d5a](https://github.com/open-feature/flagd/commit/1f06d5a1837ea2b753974e96c2a1154d6cb3e582))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.17.0-20240906125204-0a6a901b42e8.1 ([#1409](https://github.com/open-feature/flagd/issues/1409)) ([f07d348](https://github.com/open-feature/flagd/commit/f07d348b42bfa43c3b263ed7ba69c1630a14ec10))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.35.1-20240906125204-0a6a901b42e8.1 ([#1420](https://github.com/open-feature/flagd/issues/1420)) ([1f06d5a](https://github.com/open-feature/flagd/commit/1f06d5a1837ea2b753974e96c2a1154d6cb3e582))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.3 ([#1411](https://github.com/open-feature/flagd/issues/1411)) ([a312196](https://github.com/open-feature/flagd/commit/a312196c118705d7a8eb0056fdb98480b887f7c5))
 * **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#1425](https://github.com/open-feature/flagd/issues/1425)) ([583ba89](https://github.com/open-feature/flagd/commit/583ba894f2de794b36b6a1cc3bfceb9c46dc9d96))
 * **deps:** update module go.uber.org/mock to v0.5.0 ([#1427](https://github.com/open-feature/flagd/issues/1427)) ([0c6fd7f](https://github.com/open-feature/flagd/commit/0c6fd7fa688db992d4e58a202889cbfea07eebf6))
@@ -218,8 +218,8 @@
 ### 🐛 Bug Fixes
 
 * **deps:** update kubernetes package and controller runtime, fix proto lint ([#1290](https://github.com/open-feature/flagd/issues/1290)) ([94860d6](https://github.com/open-feature/flagd/commit/94860d6ceabe9eb7c1e5dd8ea139a796710d6d8b))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.16.2-20240906125204-0a6a901b42e8.1 ([#1399](https://github.com/open-feature/flagd/issues/1399)) ([18dd4e2](https://github.com/open-feature/flagd/commit/18dd4e279f1278938749bd21d106ecfbaf2f5fff))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240906125204-0a6a901b42e8.1 ([#1400](https://github.com/open-feature/flagd/issues/1400)) ([954d972](https://github.com/open-feature/flagd/commit/954d97238210f90b650493ae76277d4a8d80788a))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.16.2-20240906125204-0a6a901b42e8.1 ([#1399](https://github.com/open-feature/flagd/issues/1399)) ([18dd4e2](https://github.com/open-feature/flagd/commit/18dd4e279f1278938749bd21d106ecfbaf2f5fff))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.5.1-20240906125204-0a6a901b42e8.1 ([#1400](https://github.com/open-feature/flagd/issues/1400)) ([954d972](https://github.com/open-feature/flagd/commit/954d97238210f90b650493ae76277d4a8d80788a))
 * **deps:** update module connectrpc.com/connect to v1.17.0 ([#1408](https://github.com/open-feature/flagd/issues/1408)) ([e7eb691](https://github.com/open-feature/flagd/commit/e7eb691094dfbf02e37d79c41f60f556415e7640))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.2 ([#1385](https://github.com/open-feature/flagd/issues/1385)) ([3b5a818](https://github.com/open-feature/flagd/commit/3b5a818b69ffca61347a3feaa85dd1a8f8001e24))
 * **deps:** update module github.com/prometheus/client_golang to v1.20.3 ([#1384](https://github.com/open-feature/flagd/issues/1384)) ([8fd16b2](https://github.com/open-feature/flagd/commit/8fd16b23b1fa8517128af36b3068ca18ebbad6c3))
@@ -245,7 +245,7 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.5.1-20240215170432-1e611e2999cc.1 ([#1372](https://github.com/open-feature/flagd/issues/1372)) ([ae24595](https://github.com/open-feature/flagd/commit/ae2459504f7eccafebccec83fa1f72b08f41a978))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.5.1-20240215170432-1e611e2999cc.1 ([#1372](https://github.com/open-feature/flagd/issues/1372)) ([ae24595](https://github.com/open-feature/flagd/commit/ae2459504f7eccafebccec83fa1f72b08f41a978))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.1 ([#1355](https://github.com/open-feature/flagd/issues/1355)) ([8fcfb14](https://github.com/open-feature/flagd/commit/8fcfb146b0c55712c1758201ee4bc59e83b0898c))
 * **deps:** update module golang.org/x/net to v0.28.0 ([#1380](https://github.com/open-feature/flagd/issues/1380)) ([239a432](https://github.com/open-feature/flagd/commit/239a432c18bf6780117b5d563443124887b38120))
 * **deps:** update module golang.org/x/sync to v0.8.0 ([#1378](https://github.com/open-feature/flagd/issues/1378)) ([4804c17](https://github.com/open-feature/flagd/commit/4804c17a67ea9761079ecade34ccb3446643050b))
@@ -262,7 +262,7 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.2 ([#1342](https://github.com/open-feature/flagd/issues/1342)) ([efdd921](https://github.com/open-feature/flagd/commit/efdd92139903b89ac986a62ff2cf4f5cfef91cde))
 * **deps:** update module github.com/open-feature/flagd/core to v0.10.0 ([#1340](https://github.com/open-feature/flagd/issues/1340)) ([1e487b4](https://github.com/open-feature/flagd/commit/1e487b4bafad9814f190d0bf3a1d833def9ef5af))
 * **deps:** update module golang.org/x/net to v0.27.0 ([#1353](https://github.com/open-feature/flagd/issues/1353)) ([df9834b](https://github.com/open-feature/flagd/commit/df9834bea2a7ae20c5926c98dc423ab6363ef332))
 * **deps:** update module google.golang.org/grpc to v1.65.0 ([#1346](https://github.com/open-feature/flagd/issues/1346)) ([72a6b87](https://github.com/open-feature/flagd/commit/72a6b876e880ff0b43440d9b63710c7a87536988))
@@ -278,9 +278,9 @@
 
 ### 🐛 Bug Fixes
 
-* **deps:** update module buf.build/gen/go/open-feature/flagd/connectrpc/go to v1.16.2-20240215170432-1e611e2999cc.1 ([#1293](https://github.com/open-feature/flagd/issues/1293)) ([2694e7f](https://github.com/open-feature/flagd/commit/2694e7f99fc356c23b6b34265418b0b0160deb62))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.1 ([#1333](https://github.com/open-feature/flagd/issues/1333)) ([494062f](https://github.com/open-feature/flagd/commit/494062fed891fab0fb659352142dbbc97c8f1492))
-* **deps:** update module buf.build/gen/go/open-feature/flagd/protocolbuffers/go to v1.34.2-20240215170432-1e611e2999cc.2 ([#1330](https://github.com/open-feature/flagd/issues/1330)) ([32291ad](https://github.com/open-feature/flagd/commit/32291ad93d25d79299a7a02381df70e2719c4fbc))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/connectrpc/go to v1.16.2-20240215170432-1e611e2999cc.1 ([#1293](https://github.com/open-feature/flagd/issues/1293)) ([2694e7f](https://github.com/open-feature/flagd/commit/2694e7f99fc356c23b6b34265418b0b0160deb62))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/grpc/go to v1.4.0-20240215170432-1e611e2999cc.1 ([#1333](https://github.com/open-feature/flagd/issues/1333)) ([494062f](https://github.com/open-feature/flagd/commit/494062fed891fab0fb659352142dbbc97c8f1492))
+* **deps:** update module buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go to v1.34.2-20240215170432-1e611e2999cc.2 ([#1330](https://github.com/open-feature/flagd/issues/1330)) ([32291ad](https://github.com/open-feature/flagd/commit/32291ad93d25d79299a7a02381df70e2719c4fbc))
 * **deps:** update module github.com/open-feature/flagd/core to v0.9.3 ([#1296](https://github.com/open-feature/flagd/issues/1296)) ([1f7b8bd](https://github.com/open-feature/flagd/commit/1f7b8bd938f799da98462e45e52c0e1ac6cb83e6))
 * **deps:** update module github.com/rs/cors to v1.11.0 ([#1299](https://github.com/open-feature/flagd/issues/1299)) ([5f77541](https://github.com/open-feature/flagd/commit/5f775413fb33b4afed1ef98484463f07a67ed1cb))
 * **deps:** update module github.com/spf13/cobra to v1.8.1 ([#1332](https://github.com/open-feature/flagd/issues/1332)) ([c62bcb0](https://github.com/open-feature/flagd/commit/c62bcb0ec68fbcac40d16df001379f117c4df37e))

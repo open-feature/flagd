@@ -13,8 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
-	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
+	syncv1grpc "buf.build/gen/go/open-feature-forking/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/flagd/sync/v1"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"

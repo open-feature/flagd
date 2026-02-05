@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
-	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
+	schemaGrpcV1 "buf.build/gen/go/open-feature-forking/flagd/grpc/go/schema/v1/schemav1grpc"
+	schemaV1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/schema/v1"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"

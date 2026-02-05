@@ -6,8 +6,8 @@ import (
 	"io"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
-	syncv1Types "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/sync/v1"
+	"buf.build/gen/go/open-feature-forking/flagd/grpc/go/sync/v1/syncv1grpc"
+	syncv1Types "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/sync/v1"
 )
 
 const (

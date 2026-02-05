@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
+	evalV1 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/flagd/evaluation/v1"
 	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"

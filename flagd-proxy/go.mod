@@ -5,8 +5,8 @@ go 1.24.0
 toolchain go1.24.4
 
 require (
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250529171031-ebdc14163473.2
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.6-20250529171031-ebdc14163473.1
+	buf.build/gen/go/open-feature-forking/flagd/grpc/go v1.6.0-20260204145352-a75813013224.1
+	buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go v1.36.10-20260204145352-a75813013224.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/open-feature/flagd/core v0.11.8
@@ -23,6 +23,8 @@ require (
 )
 
 require (
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250529171031-ebdc14163473.2 // indirect
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.6-20250529171031-ebdc14163473.1 // indirect
 	cel.dev/expr v0.23.0 // indirect
 	cloud.google.com/go v0.121.1 // indirect
 	cloud.google.com/go/auth v0.16.1 // indirect
@@ -146,7 +148,7 @@ require (
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

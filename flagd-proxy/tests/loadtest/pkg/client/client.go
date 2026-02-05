@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	syncv1 "buf.build/gen/go/open-feature/flagd/grpc/go/sync/v1/syncv1grpc"
+	syncv1 "buf.build/gen/go/open-feature-forking/flagd/grpc/go/sync/v1/syncv1grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

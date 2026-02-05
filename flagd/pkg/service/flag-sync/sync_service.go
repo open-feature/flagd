@@ -8,7 +8,7 @@ import (
 	"slices"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	"buf.build/gen/go/open-feature-forking/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"golang.org/x/sync/errgroup"

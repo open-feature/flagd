@@ -12,9 +12,9 @@ require (
 )
 
 require (
-	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.18.1-20250529171031-ebdc14163473.1 // indirect
-	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20250529171031-ebdc14163473.2 // indirect
-	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.6-20250529171031-ebdc14163473.1 // indirect
+	buf.build/gen/go/open-feature-forking/flagd/connectrpc/go  v1.19.1-20260204145352-a75813013224.1 // indirect
+	buf.build/gen/go/open-feature-forking/flagd/grpc/go  v1.6.0-20260204145352-a75813013224.1
+	buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go v1.36.10-20260204145352-a75813013224.1
 	connectrpc.com/connect v1.18.1 // indirect
 	connectrpc.com/otelconnect v0.7.2 // indirect
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
