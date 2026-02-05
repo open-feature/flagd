@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"maps"
 	"sort"
 	"strings"
@@ -132,4 +133,13 @@ func (s *Selector) ToMetadata() model.Metadata {
 		meta[sourceIndex] = s.indexMap[sourceIndex]
 	}
 	return meta
+}
+
+func (s *Selector) ToLogString() string {
+	if s != nil && len(s.indexMap) == 1 {
+		for k, v := range s.indexMap {
+			return fmt.Sprintf("'%s=%s'", k, v)
+		}
+	}
+	return "<none>"
 }
