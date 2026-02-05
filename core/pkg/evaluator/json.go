@@ -307,6 +307,11 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
+	if reason == model.FallbackReason {
+		var zero T
+		return zero, variant, model.FallbackReason, metadata, nil
+	}
+
 	var ok bool
 	value, ok = variants[variant].(T)
 	if !ok {
@@ -380,7 +385,11 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 
 		if trimmed == "null" {
 			if flag.DefaultVariant == "" {
-				return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+				if ctx.Value("protoVersion") != nil {
+					return flag.DefaultVariant, flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+				}
+
+				return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
 			}
 
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
@@ -399,7 +408,10 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	}
 
 	if flag.DefaultVariant == "" {
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		if ctx.Value("protoVersion") != nil {
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		}
+		return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
