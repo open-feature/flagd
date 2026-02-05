@@ -311,9 +311,15 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 	go func() {
 		for {
 			ws := memdb.NewWatchSet()
+			selectorString := "<none>"
+			if selector != nil && len(selector.indexMap) == 1 {
+				for k, v := range selector.indexMap {
+					selectorString = fmt.Sprintf("'%s=%s'", k, v)
+				}
+			}
 			it, err := s.selectOrAll(selector)
 			if err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				s.logger.Error(fmt.Sprintf("error getting flags for selector %s: %v", selectorString, err))
 				close(watcher)
 				return
 			}
@@ -326,7 +332,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				s.logger.Error(fmt.Sprintf("context error watching flags for selector %s: %v", selectorString, err))
 				close(watcher)
 				return
 			}
