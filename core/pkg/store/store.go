@@ -328,7 +328,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 
 			if err = ws.WatchCtx(ctx); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-					s.logger.Debug(fmt.Sprintf("while watching flags for selector %s: %v", selector.ToLogString(), err))
+					s.logger.Debug(fmt.Sprintf("context cancellation while watching flags for selector %s: %v", selector.ToLogString(), err))
 				} else {
 					s.logger.Error(fmt.Sprintf("context error watching flags for selector %s: %v", selector.ToLogString(), err))
 				}
