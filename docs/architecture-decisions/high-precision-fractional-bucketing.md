@@ -57,7 +57,10 @@ This limits granularity to 1% increments, making it impossible to achieve the pr
 
 After experimentation comparing static vs dynamic bucket sizes, and considering implementation complexity, a simpler approach emerged: use the maximum 32-bit signed integer value (`math.MaxInt32` = 2,147,483,647) as the maximum allowed weight sum.
 
-This value ensures cross-language compatibility. The bucket calculation requires multiplying a 32-bit hash by the total weight, producing a 64-bit intermediate product. The max product (`MaxUint32 × MaxInt32` = 9.22 × 10¹⁸) fits within Java's signed `long` with ~6 billion headroom. Java is the limiting factor — using `MaxUint32` for the weight sum would overflow `long`. JavaScript's `Number` type cannot safely represent the max product, so `BigInt` is required. See [Cross-Language Implementation Notes](#cross-language-implementation-notes) for details.
+This value ensures cross-language compatibility.
+The bucket calculation requires multiplying a 32-bit hash by the total weight, producing a 64-bit intermediate product.
+The max product (`MaxUint32 × MaxInt32` = 9.22 × 10¹⁸) fits within Java's signed `long` with ~6 billion headroom. Java is the limiting factor — using `MaxUint32` for the weight sum would overflow `long`.
+JavaScript's `Number` type cannot safely represent the max product, so `BigInt` is required. See [Cross-Language Implementation Notes](#cross-language-implementation-notes) for details.
 
 ### Constraints
 
@@ -111,7 +114,10 @@ func distributeValue(hashValue uint32, feDistribution *fractionalEvaluationDistr
 }
 ```
 
-> **Note:** This implementation uses pure integer arithmetic to avoid floating-point precision issues entirely. The expression `(uint64(hashValue) * uint64(totalWeight)) >> 32` is mathematically equivalent to `(hashValue / 2^32) * totalWeight`, but performed in integer space. The Go code uses `uint64`, but each language uses its own 64-bit type (e.g., Java uses `long`). The `MaxInt32` weight constraint ensures the intermediate product fits within Java's more limited signed `long` range, while Go's `uint64` handles it with additional headroom. The right-shift by 32 bits provides exact division by 2^32. This approach is portable across all major languages since it relies only on fundamental binary operations.
+> **Note:** This implementation uses pure integer arithmetic to avoid floating-point precision issues entirely.
+> The expression `(uint64(hashValue) * uint64(totalWeight)) >> 32` is mathematically equivalent to `(hashValue / 2^32) * totalWeight`, but performed in integer space. The Go code uses `uint64`, but each language uses its own 64-bit type (e.g., Java uses `long`).
+> The `MaxInt32` weight constraint ensures the intermediate product fits within Java's more limited signed `long` range, while Go's `uint64` handles it with additional headroom.
+> The right-shift by 32 bits provides exact division by 2^32. This approach is portable across all major languages since it relies only on fundamental binary operations.
 
 ### Cross-Language Implementation Notes
 
@@ -121,14 +127,14 @@ MurmurHash3-32 always produces a 32-bit value, but languages differ in how they 
 2. Performing the multiplication in a 64-bit integer type
 3. The `MaxInt32` weight constraint ensures the product fits in Java's signed `long` (the most restrictive common 64-bit type)
 
-| Language | Hash Type | Conversion to Unsigned | 64-bit Multiply | Right-Shift |
-|----------|-----------|------------------------|-----------------|-------------|
-| **Go** | `uint32` | None needed | `uint64(hash)` | `>> 32` |
-| **Java** | `int` (signed) | `hash & 0xFFFFFFFFL` | Use `long` | `>>> 32` (unsigned) |
-| **JavaScript** | `Number` | `BigInt(hash)` | Use `BigInt` | `>> 32n` |
-| **Python** | `int` | None needed (arbitrary precision) | Native | `>> 32` |
-| **C/C++** | `uint32_t` | None needed | `(uint64_t)` | `>> 32` |
-| **C#/.NET** | `uint` | None needed | `(ulong)` | `>> 32` |
+| Language       | Hash Type      | Conversion to Unsigned            | 64-bit Multiply | Right-Shift         |
+| -------------- | -------------- | --------------------------------- | --------------- | ------------------- |
+| **Go**         | `uint32`       | None needed                       | `uint64(hash)`  | `>> 32`             |
+| **Java**       | `int` (signed) | `hash & 0xFFFFFFFFL`              | Use `long`      | `>>> 32` (unsigned) |
+| **JavaScript** | `Number`       | `BigInt(hash)`                    | Use `BigInt`    | `>> 32n`            |
+| **Python**     | `int`          | None needed (arbitrary precision) | Native          | `>> 32`             |
+| **C/C++**      | `uint32_t`     | None needed                       | `(uint64_t)`    | `>> 32`             |
+| **C#/.NET**    | `uint`         | None needed                       | `(ulong)`       | `>> 32`             |
 
 **Java example:**
 
