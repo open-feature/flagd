@@ -116,6 +116,25 @@ func (s Selector) ToQuery() (indexId string, constraints []interface{}) {
 	return indexId, constraints
 }
 
+// String returns a human-readable representation of the Selector for logging purposes.
+func (s *Selector) String() string {
+	if s == nil || len(s.indexMap) == 0 {
+		return "<empty selector>"
+	}
+
+	keys := make([]string, 0, len(s.indexMap))
+	for key := range s.indexMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(s.indexMap))
+	for _, key := range keys {
+		parts = append(parts, key+"="+s.indexMap[key])
+	}
+	return strings.Join(parts, ", ")
+}
+
 // ToMetadata converts the selector's internal map to metadata for logging or tracing purposes.
 // Only includes known indices to avoid leaking sensitive information, and is usually returned as the "top level" metadata
 func (s *Selector) ToMetadata() model.Metadata {

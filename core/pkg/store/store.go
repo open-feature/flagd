@@ -313,7 +313,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			ws := memdb.NewWatchSet()
 			it, err := s.selectOrAll(selector)
 			if err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				s.logger.Error(fmt.Sprintf("error watching flags: failed to select flags with selector [%s]: %v", selector.String(), err))
 				close(watcher)
 				return
 			}
@@ -326,7 +326,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				s.logger.Error(fmt.Sprintf("error watching flags: context error with selector [%s]: %v", selector.String(), err))
 				close(watcher)
 				return
 			}

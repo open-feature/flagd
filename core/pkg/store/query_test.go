@@ -171,6 +171,44 @@ func TestSelector_ToMetadata(t *testing.T) {
 	}
 }
 
+func TestSelector_String(t *testing.T) {
+	tests := []struct {
+		name     string
+		selector *Selector
+		want     string
+	}{
+		{
+			name:     "nil selector",
+			selector: nil,
+			want:     "<empty selector>",
+		},
+		{
+			name:     "empty indexMap",
+			selector: &Selector{indexMap: map[string]string{}},
+			want:     "<empty selector>",
+		},
+		{
+			name:     "single key",
+			selector: &Selector{indexMap: map[string]string{"source": "abc"}},
+			want:     "source=abc",
+		},
+		{
+			name:     "multiple keys sorted alphabetically",
+			selector: &Selector{indexMap: map[string]string{"source": "abc", "flagSetId": "1234"}},
+			want:     "flagSetId=1234, source=abc",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.selector.String()
+			if got != tt.want {
+				t.Errorf("String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNewSelector(t *testing.T) {
 	tests := []struct {
 		name    string
