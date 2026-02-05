@@ -47,56 +47,111 @@ This limits granularity to 1% increments, making it impossible to achieve the pr
 - **Option 1: 10,000 buckets (0.01% precision)** - 1 in every 10,000 users, better but still not sufficient for many high-throughput use cases
 - **Option 2: 100,000 buckets (0.001% precision)** - 1 in every 100,000 users, meets most high-precision needs
 - **Option 3: 1,000,000 buckets (0.0001% precision)** - 1 in every 1,000,000 users, likely overkill and could impact performance
-- **Option 4 (Favored): Max 32-bit signed integer buckets** - Use `math.MaxInt32` (2,147,483,647) as the bucket count, equal to the maximum allowed weight sum. This naturally sidesteps minimum allocation guarantees and excess bucket handling
+- **Option 4 (Favored): Max 32-bit signed integer buckets** - Use `math.MaxInt32` (2,147,483,647) as the maximum allowed weight sum. This naturally sidesteps minimum allocation guarantees and excess bucket handling
 
-## Proposal: Max Int32 Bucket Count (Favored)
+## Proposal: Max Int32 Weight Sum (Favored)
 
 > **Amendment (2026-01-29):** This alternative is now favored over the original 100,000-bucket proposal.
 
 ### Rationale
 
-After experimentation comparing static vs dynamic bucket sizes, and considering implementation complexity, a simpler approach emerged: use the maximum 32-bit signed integer value (`math.MaxInt32` = 2,147,483,647) as the bucket count.
+After experimentation comparing static vs dynamic bucket sizes, and considering implementation complexity, a simpler approach emerged: use the maximum 32-bit signed integer value (`math.MaxInt32` = 2,147,483,647) as the maximum allowed weight sum.
 
-This value is already established as the maximum allowed weight sum for cross-language compatibility. By making the bucket count equal to this maximum, we gain significant simplifications.
+This value ensures cross-language compatibility. The bucket calculation requires multiplying a 32-bit hash by the total weight, producing a 64-bit intermediate product. The max product (`MaxUint32 × MaxInt32` = 9.22 × 10¹⁸) fits within Java's signed `long` with ~6 billion headroom. Java is the limiting factor — using `MaxUint32` for the weight sum would overflow `long`. JavaScript's `Number` type cannot safely represent the max product, so `BigInt` is required. See [Cross-Language Implementation Notes](#cross-language-implementation-notes) for details.
+
+### Constraints
+
+- The sum of all variant weights must not exceed `math.MaxInt32` (2,147,483,647)
+- Weights must be defined as integers
 
 ### Advantages
 
-Since the total weight sum cannot exceed `math.MaxInt32`, and the bucket count equals `math.MaxInt32`, any variant with a weight of at least 1 is guaranteed at least 1 bucket. This **naturally sidesteps** the need for:
+Since the total weight sum cannot exceed `math.MaxInt32`, any variant with a weight of at least 1 is guaranteed at least 1 bucket. This **naturally sidesteps** the need for:
 
 - **Minimum Allocation Guarantee** (as described above): A weight of 1 out of any valid total will always yield at least 1 bucket—no special handling required
 - **Excess Bucket Management**: Without minimum allocation adjustments, bucket totals don't exceed the bucket count
 
 ### Simplified Implementation
 
-```go
-const bucketCount = math.MaxInt32 // 2,147,483,647
+This implementation is designed to be compatible with the "Harden Hashing" ADR, accepting a pre-computed hash value rather than performing string hashing internally. This decouples fractional bucketing from the hashing strategy.
 
-func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
+```go
+const maxWeightSum = math.MaxInt32 // 2,147,483,647
+
+// distributeValue accepts the hash calculated by the "Harden Hashing" ADR logic.
+// It relies purely on integer math, avoiding floating-point precision issues.
+// Note: hashValue is uint32 (full 32-bit hash range), while weights are int32
+// (max sum of MaxInt32 for cross-language compatibility).
+func distributeValue(hashValue uint32, feDistribution *fractionalEvaluationDistribution) string {
+    // 0. Validation: Handle empty distribution
     if feDistribution.totalWeight == 0 {
         return ""
     }
 
-    hashValue := int32(murmur3.StringSum32(value))
-    hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
-    bucket := int64(hashRatio * float64(feDistribution.totalWeight))
+    // 1. Use the hash provided 32-bit hash
 
-    var rangeEnd int64 = 0
+    // 2. Projection: Map 32-bit hash to [0, totalWeight)
+    //    We cast to uint64 to ensure the multiplication does not overflow.
+    //    Shifting right by 32 bits is mathematically equivalent to dividing by 2^32.
+    //    This logic is safe across major languages because it relies on fundamental
+    //    binary operations.
+    bucket := (uint64(hashValue) * uint64(feDistribution.totalWeight)) >> 32
+
+    // 3. Selection: Find which variant range the bucket falls into
+    var rangeEnd uint64 = 0
     for _, variant := range feDistribution.weightedVariants {
-        rangeEnd += int64(variant.weight)
+        rangeEnd += uint64(variant.weight) // this would be a Java long, or JS BigInt - needs to handle max product: 9.223372030 × 10^18 (9,223,372,030,412,324,865) 
         if bucket < rangeEnd {
             return variant.variant
         }
     }
 
+    // Unreachable given strict validation of weights (integers, sum <= MaxInt32)
     return ""
 }
+```
+
+> **Note:** This implementation uses pure integer arithmetic to avoid floating-point precision issues entirely. The expression `(uint64(hashValue) * uint64(totalWeight)) >> 32` is mathematically equivalent to `(hashValue / 2^32) * totalWeight`, but performed in integer space. The Go code uses `uint64`, but each language uses its own 64-bit type (e.g., Java uses `long`). The `MaxInt32` weight constraint ensures the intermediate product fits within Java's more limited signed `long` range, while Go's `uint64` handles it with additional headroom. The right-shift by 32 bits provides exact division by 2^32. This approach is portable across all major languages since it relies only on fundamental binary operations.
+
+### Cross-Language Implementation Notes
+
+MurmurHash3-32 always produces a 32-bit value, but languages differ in how they represent it. The algorithm requires:
+
+1. Treating the hash as an **unsigned** 32-bit integer
+2. Performing the multiplication in a 64-bit integer type
+3. The `MaxInt32` weight constraint ensures the product fits in Java's signed `long` (the most restrictive common 64-bit type)
+
+| Language | Hash Type | Conversion to Unsigned | 64-bit Multiply | Right-Shift |
+|----------|-----------|------------------------|-----------------|-------------|
+| **Go** | `uint32` | None needed | `uint64(hash)` | `>> 32` |
+| **Java** | `int` (signed) | `hash & 0xFFFFFFFFL` | Use `long` | `>>> 32` (unsigned) |
+| **JavaScript** | `Number` | `BigInt(hash)` | Use `BigInt` | `>> 32n` |
+| **Python** | `int` | None needed (arbitrary precision) | Native | `>> 32` |
+| **C/C++** | `uint32_t` | None needed | `(uint64_t)` | `>> 32` |
+| **C#/.NET** | `uint` | None needed | `(ulong)` | `>> 32` |
+
+**Java example:**
+
+```java
+int hash = murmur3_32(value);  // signed int
+long hashUnsigned = hash & 0xFFFFFFFFL;  // treat as unsigned
+long bucket = (hashUnsigned * totalWeight) >>> 32;  // unsigned right-shift
+```
+
+**JavaScript example:**
+
+```javascript
+const hash = murmur3_32(value);  // Number
+const bucket = (BigInt(hash) * BigInt(totalWeight)) >> 32n;
 ```
 
 ### API changes
 
 No API changes are required. The existing fractional operation syntax remains unchanged:
 
-```json
+```yaml
+# Constraint: The sum of all variant weights must not exceed math.MaxInt32 (2,147,483,647).
+# Constraint: Weights must be defined as Integers (can be enforced by JSON schema).
 "fractional": [
   { "cat": [{ "var": "$flagd.flagKey" }, { "var": "email" }] },
   ["red", 50],
@@ -108,8 +163,8 @@ No API changes are required. The existing fractional operation syntax remains un
 ### Benefits Over Original Proposal
 
 - **Simpler**: No minimum allocation guarantee logic needed
-- **No minimum allocation guarantee needed**: With smaller fixed bucket counts, a configuration like `["variant-a", 1], ["variant-b", 1000000]` could round variant-a to 0 buckets (0% traffic). Special handling was needed to guarantee at least 1 bucket. With MaxInt32 buckets equal to the max weight sum, any weight ≥1 naturally gets at least 1 bucket.
-- **No excess bucket handling**: With fixed bucket counts (100, 10,000, 100,000), minimum allocation adjustments could cause the total allocated buckets to exceed the bucket count, requiring complex logic to redistribute the excess. With MaxInt32 buckets, allocations naturally sum to the total weight.
+- **No minimum allocation guarantee needed**: With smaller fixed bucket counts, a configuration like `["variant-a", 1], ["variant-b", 1000000]` could round variant-a to 0 buckets (0% traffic). Special handling was needed to guarantee at least 1 bucket. With the integer math approach, any weight ≥1 naturally gets proportional traffic.
+- **No excess bucket handling**: With fixed bucket counts (100, 10,000, 100,000), minimum allocation adjustments could cause the total allocated buckets to exceed the bucket count, requiring complex logic to redistribute the excess. With integer math, allocations naturally sum to the total weight.
 - **Same validation**: Weight sum validation against `math.MaxInt32` remains unchanged  
 - **Backwards compatible**: Existing configurations continue to work
 - **Effectively infinite precision**: Precision limited only by the total weight sum (up to ~0.00000005%)
