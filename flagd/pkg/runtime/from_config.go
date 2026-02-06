@@ -129,6 +129,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		SocketPath:          config.SyncServiceSocketPath,
 		StreamDeadline:      config.StreamDeadline,
 		DisableSyncMetadata: config.DisableSyncMetadata,
+		MetricsRecorder:     recorder,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)

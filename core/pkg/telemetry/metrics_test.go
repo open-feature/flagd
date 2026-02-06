@@ -186,6 +186,52 @@ func TestMetrics(t *testing.T) {
 			},
 			metricsLen: 2,
 		},
+		{
+			name: "SyncActiveStreams",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				ctx := context.TODO()
+				for i := 0; i < n; i++ {
+					rec.SyncStreamStart(ctx, attrs)
+					rec.SyncStreamEnd(ctx, attrs)
+				}
+			},
+			metricsLen: 1,
+		},
+		{
+			name: "SyncStreamDuration",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				for i := 0; i < n; i++ {
+					rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
+				}
+			},
+			metricsLen: 1,
+		},
+		{
+			name: "SyncEventSent",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				for i := 0; i < n; i++ {
+					rec.SyncEventSent(context.TODO(), attrs)
+				}
+			},
+			metricsLen: 1,
+		},
+		{
+			name: "FetchAllFlagsRequest",
+			metricFunc: func(exp metric.Reader) {
+				rs := resource.NewWithAttributes("testSchema")
+				rec := NewOTelRecorder(exp, rs, svcName)
+				for i := 0; i < n; i++ {
+					rec.FetchAllFlagsRequest(context.TODO(), attrs)
+				}
+			},
+			metricsLen: 1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -240,6 +286,31 @@ func TestNoopMetricsRecorder_RecordEvaluation(_ *testing.T) {
 func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.Impressions(context.TODO(), "", "", "")
+}
+
+func TestNoopMetricsRecorder_SyncStreamStart(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.SyncStreamStart(context.TODO(), nil)
+}
+
+func TestNoopMetricsRecorder_SyncStreamEnd(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.SyncStreamEnd(context.TODO(), nil)
+}
+
+func TestNoopMetricsRecorder_SyncStreamDuration(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.SyncStreamDuration(context.TODO(), 0, nil)
+}
+
+func TestNoopMetricsRecorder_SyncEventSent(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.SyncEventSent(context.TODO(), nil)
+}
+
+func TestNoopMetricsRecorder_FetchAllFlagsRequest(_ *testing.T) {
+	no := NoopMetricsRecorder{}
+	no.FetchAllFlagsRequest(context.TODO(), nil)
 }
 
 // testHistogramBuckets is a helper function that tests histogram bucket configuration
@@ -297,5 +368,16 @@ func TestHTTPResponseSizeBuckets(t *testing.T) {
 			rec.HTTPResponseSize(context.TODO(), 500, attrs)
 		},
 		"Expected histogram buckets to match exponential buckets (100, 10, 8)",
+	)
+}
+
+func TestGRPCSyncStreamDurationBuckets(t *testing.T) {
+	testHistogramBuckets(t,
+		grpcSyncStreamDurationMetric,
+		prometheus.DefBuckets,
+		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
+		},
+		"Expected histogram buckets to match prometheus.DefBuckets",
 	)
 }
