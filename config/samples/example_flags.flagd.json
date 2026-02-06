@@ -157,6 +157,12 @@
       }
     }
   },
+  "demo": {
+    "state": "ENABLED",
+    "variants": { "old": "OLD", "new": "NEW" },
+    "defaultVariant": "old",
+    "targeting": { "rollout": [1770406165, 1770406195, "new"] }
+  },
   "$evaluators": {
     "emailWithFaas": {
       "in": ["@faas.com", {
