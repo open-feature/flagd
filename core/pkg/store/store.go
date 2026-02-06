@@ -315,7 +315,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			ws := memdb.NewWatchSet()
 			it, err := s.selectOrAll(selector)
 			if err != nil {
-				s.logger.WithFields(zap.Field{Key: "selector", String: selector.ToLogString()}, zap.Field{Key: "error", Interface: err}).Error("error getting flags")
+				s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Error("error getting flags")
 				close(watcher)
 				return
 			}
@@ -329,9 +329,9 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 
 			if err = ws.WatchCtx(ctx); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-					s.logger.WithFields(zap.Field{Key: "selector", String: selector.ToLogString()}, zap.Field{Key: "error", Interface: err}).Debug("context cancellation while watching flags")
+					s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Debug("context cancellation while watching flags")
 				} else {
-					s.logger.WithFields(zap.Field{Key: "selector", String: selector.ToLogString()}, zap.Field{Key: "error", Interface: err}).Error("context error watching flags")
+					s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Error("context error watching flags")
 				}
 				close(watcher)
 				return
