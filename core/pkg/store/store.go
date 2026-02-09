@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sort"
@@ -9,6 +10,7 @@ import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	"go.uber.org/zap"
 )
 
 var noValidatedSources = []string{}
@@ -313,7 +315,7 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			ws := memdb.NewWatchSet()
 			it, err := s.selectOrAll(selector)
 			if err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Error("error getting flags")
 				close(watcher)
 				return
 			}
@@ -326,7 +328,11 @@ func (s *Store) Watch(ctx context.Context, selector *Selector, watcher chan<- Fl
 			}
 
 			if err = ws.WatchCtx(ctx); err != nil {
-				s.logger.Error(fmt.Sprintf("error watching flags: %v", err))
+				if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+					s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Debug("context cancellation while watching flags")
+				} else {
+					s.logger.WithFields(zap.String("selector", selector.ToLogString()), zap.Error(err)).Error("context error watching flags")
+				}
 				close(watcher)
 				return
 			}
