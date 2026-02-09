@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.3](https://github.com/open-feature/flagd/compare/flagd/v0.13.2...flagd/v0.13.3) (2026-02-09)
+
+
+### 🐛 Bug Fixes
+
+* case sensitivity in header context mapping ([#1855](https://github.com/open-feature/flagd/issues/1855)) ([be5c94f](https://github.com/open-feature/flagd/commit/be5c94fc06f7cced8d6ee3701f59374a1f315fc3))
+
 ## [0.13.2](https://github.com/open-feature/flagd/compare/flagd/v0.13.1...flagd/v0.13.2) (2026-01-09)
 
 

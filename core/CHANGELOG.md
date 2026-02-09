@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.3](https://github.com/open-feature/flagd/compare/core/v0.13.2...core/v0.13.3) (2026-02-09)
+
+
+### 🐛 Bug Fixes
+
+* correct parameter order in histogram bucket configuration :warning:  ([#1859](https://github.com/open-feature/flagd/issues/1859)) ([335af32](https://github.com/open-feature/flagd/commit/335af32b6f1087d624b77ffb7b50dea612ef234f))
+* Enhance error logs in store's Watch func ([#1865](https://github.com/open-feature/flagd/issues/1865)) ([a58a707](https://github.com/open-feature/flagd/commit/a58a7076ac4aef66a10dee7a40aa2ee4b53c7169))
+
 ## [0.13.2](https://github.com/open-feature/flagd/compare/core/v0.13.1...core/v0.13.2) (2026-01-09)
 
 
