@@ -207,8 +207,8 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		msdk.WithView(getDurationView(serviceName, httpRequestDurationMetric, prometheus.DefBuckets)),
 		// for response size we want 8 exponential bucket starting from 100 Bytes
 		msdk.WithView(getDurationView(serviceName, httpResponseSizeMetric, prometheus.ExponentialBuckets(100, 10, 8))),
-		// for gRPC sync stream duration we use the default bucket size which are tailored for response time in seconds
-		msdk.WithView(getDurationView(serviceName, grpcSyncStreamDurationMetric, prometheus.DefBuckets)),
+		// for gRPC sync stream duration: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h
+		msdk.WithView(getDurationView(serviceName, grpcSyncStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
 	)
