@@ -185,25 +185,25 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		attrs = append(attrs, attribute.String("provider_id", req.GetProviderId()))
 	}
 
+	metricStatus := "ok"
+	defer func() {
+		attrs = append(attrs, attribute.String("status", metricStatus))
+		s.metricsRecorder.FetchAllFlagsRequest(ctx, attrs)
+	}()
+
 	selector := store.NewSelector(selectorExpression)
 	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
-		attrs = append(attrs, attribute.String("status", "error"))
-		s.metricsRecorder.FetchAllFlagsRequest(ctx, attrs)
+		metricStatus = "error"
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
 	flagsString, err := s.generateResponse(flags)
-
 	if err != nil {
-		attrs = append(attrs, attribute.String("status", "error"))
-		s.metricsRecorder.FetchAllFlagsRequest(ctx, attrs)
+		metricStatus = "error"
 		return nil, err
 	}
-
-	attrs = append(attrs, attribute.String("status", "ok"))
-	s.metricsRecorder.FetchAllFlagsRequest(ctx, attrs)
 
 	return &syncv1.FetchAllFlagsResponse{
 		FlagConfiguration: string(flagsString),
