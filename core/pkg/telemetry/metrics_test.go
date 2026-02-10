@@ -374,10 +374,10 @@ func TestHTTPResponseSizeBuckets(t *testing.T) {
 func TestGRPCSyncStreamDurationBuckets(t *testing.T) {
 	testHistogramBuckets(t,
 		grpcSyncStreamDurationMetric,
-		prometheus.DefBuckets,
+		[]float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800},
 		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
 			rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
 		},
-		"Expected histogram buckets to match prometheus.DefBuckets",
+		"Expected histogram buckets for long-lived sync streams (30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h)",
 	)
 }
