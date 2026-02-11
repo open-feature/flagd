@@ -342,6 +342,28 @@ grpcurl -plaintext \
   flagd.evaluation.v1.Service/ResolveAll
 ```
 
+### Using Selector Header
+
+Filter which flags are evaluated using the `Flagd-Selector` header:
+
+```shell
+# Evaluate only flags from the app flag set
+grpcurl -plaintext \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -H 'Flagd-Selector: flagSetId=app-flags' \
+  -d '{"flagKey": "simple-boolean", "context": {}}' \
+  localhost:8013 \
+  flagd.evaluation.v1.Service/ResolveBoolean
+
+# ResolveAll with selector
+grpcurl -plaintext \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -H 'Flagd-Selector: flagSetId=payment-flags' \
+  -d '{"context": {}}' \
+  localhost:8013 \
+  flagd.evaluation.v1.Service/ResolveAll
+```
+
 ---
 
 ## gRPC Sync API (sync.proto)
