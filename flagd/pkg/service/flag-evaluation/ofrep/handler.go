@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	key              = "key"
-	singleEvaluation = "/ofrep/v1/evaluate/flags/{key}"
-	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
+	key                = "key"
+	singleEvaluation   = "/ofrep/v1/evaluate/flags/{key}"
+	singleEvaluationV2 = "/ofrep/v2/evaluate/flags/{key}"
+	bulkEvaluation     = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
 )
 
 type handler struct {
@@ -61,6 +62,15 @@ func NewOfrepHandler(
 		}).Handler(http.HandlerFunc(h.HandleFlagEvaluation)),
 	).Methods("POST")
 
+	router.Handle(singleEvaluationV2,
+		metricsmw.NewHTTPMetric(metricsmw.Config{
+			Service:        serviceName,
+			MetricRecorder: metricsRecorder,
+			Logger:         logger,
+			HandlerID:      singleEvaluationV2,
+		}).Handler(http.HandlerFunc(h.HandleFlagEvaluationV2)),
+	).Methods("POST")
+
 	router.Handle(bulkEvaluation,
 		metricsmw.NewHTTPMetric(metricsmw.Config{
 			Service:        serviceName,
@@ -72,7 +82,42 @@ func NewOfrepHandler(
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
 }
+
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
+	requestID := xid.New().String()
+	defer h.Logger.ClearFields(requestID)
+
+	// obtain flag key
+	vars := mux.Vars(r)
+	if vars == nil {
+		h.writeJSONToResponse(
+			http.StatusInternalServerError,
+			ofrep.InternalError{ErrorDetails: "failed to obtain the flag key from the request"}, w)
+		return
+	}
+
+	flagKey := vars[key]
+	request, err := extractOfrepRequest(r)
+	if err != nil {
+		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
+		return
+	}
+	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
+	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
+	selector := store.NewSelector(selectorExpression)
+	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
+	ctx = context.WithValue(ctx, "protoVersion", "v1")
+
+	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
+	if evaluation.Error != nil {
+		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
+		h.writeJSONToResponse(status, evaluationError, w)
+	} else {
+		h.writeJSONToResponse(http.StatusOK, ofrep.SuccessResponseFrom(evaluation), w)
+	}
+}
+
+func (h *handler) HandleFlagEvaluationV2(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)
 
@@ -119,6 +164,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
+	ctx = context.WithValue(ctx, "protoVersion", "v1")
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if err != nil {

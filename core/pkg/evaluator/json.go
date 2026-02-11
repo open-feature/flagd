@@ -379,7 +379,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		trimmed := strings.TrimSpace(result.String())
 
 		if trimmed == "null" {
-			if flag.DefaultVariant == "" {
+			if ctx.Value("protoVersion") != nil && flag.DefaultVariant == "" {
 				return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 			}
 
@@ -399,7 +399,11 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	}
 
 	if flag.DefaultVariant == "" {
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		if ctx.Value("protoVersion") != nil {
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		} else {
+			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
+		}
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
