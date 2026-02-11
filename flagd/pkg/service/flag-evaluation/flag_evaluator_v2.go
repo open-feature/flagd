@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	evalV2 "buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go/flagd/evaluation/v2"
@@ -309,8 +310,7 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	// For V2, when we have FLAG_NOT_FOUND or PARSE_ERROR, only set reason (no value/variant)
-	if evalErr != nil && (evalErr.Error() == model.FlagNotFoundErrorCode || evalErr.Error() == model.ParseErrorCode) {
+	if ctx.Value("protoVersion") == nil && variant == "" && reason == model.DefaultReason && isZeroValue[T](result) {
 		if respV2, ok := resp.(responseV2[T]); ok {
 			if err := respV2.SetReasonOnly(reason, metadata); err != nil {
 				logger.ErrorWithID(reqID, err.Error())
@@ -328,6 +328,11 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	}
 
 	return evalErrFormatted
+}
+
+func isZeroValue[T constraints](result T) bool {
+	v := reflect.ValueOf(result)
+	return v.IsZero()
 }
 
 // errFormatV2 formats errors for V2 API, excluding FLAG_NOT_FOUND and PARSE_ERROR which are not errors in V2

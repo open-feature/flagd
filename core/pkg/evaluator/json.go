@@ -307,6 +307,11 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
+	if ctx.Value("protoVersion") == nil && variant == "" && reason == model.DefaultReason {
+		var zero T
+		return zero, variant, model.DefaultReason, metadata, nil
+	}
+
 	var ok bool
 	value, ok = variants[variant].(T)
 	if !ok {
@@ -401,9 +406,8 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	if flag.DefaultVariant == "" {
 		if ctx.Value("protoVersion") != nil {
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
-		} else {
-			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
 		}
+		return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
