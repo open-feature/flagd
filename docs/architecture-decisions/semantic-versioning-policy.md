@@ -1,6 +1,6 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: proposed
+status: accepted
 author: Maks Osowski (@cupofcat)
 created: 2026-01-22
 ---
@@ -104,9 +104,9 @@ The [Flag Definition Schema](https://flagd.dev/reference/schema/?h=schema) repre
 
 **Version Alignment and Validation**:
 
-*   **New Features**: When new features (e.g., a "regex" operator in targeting) are added to the schema, support for them is rolled out via **minor** version releases of the flagd binary and providers.
-*   **Validation**: If a user attempts to load a flag definition that uses features not present in the provider's or flagd binary's bundled schema version, the schema will fail to validate. The component will output specific error messages indicating the incompatibility, ensuring users know which version upgrade is required to support their configuration.
-*   A **patch** version upgrade of a flagd binary or provider will **NOT** change the bundled schema version to ensure stability.
+* **New Features**: When new features (e.g., a "regex" operator in targeting) are added to the schema, support for them is rolled out via **minor** version releases of the flagd binary and providers.
+* **Validation**: If a user attempts to load a flag definition that uses features not present in the provider's or flagd binary's bundled schema version, the schema will fail to validate. The component will output specific error messages indicating the incompatibility, ensuring users know which version upgrade is required to support their configuration.
+* A **patch** version upgrade of a flagd binary or provider will **NOT** change the bundled schema version to ensure stability.
 
 ### flagd Providers and OpenFeature SDKs
 
