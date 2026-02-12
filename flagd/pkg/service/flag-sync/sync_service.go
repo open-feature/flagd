@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -77,9 +78,14 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
 		}
-		server = grpc.NewServer(grpc.Creds(tlsCredentials))
+		server = grpc.NewServer(
+			grpc.Creds(tlsCredentials),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
 	} else {
-		server = grpc.NewServer()
+		server = grpc.NewServer(
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
 	}
 
 	metricsRecorder := cfg.MetricsRecorder

@@ -105,9 +105,6 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 				exitReason = "client_disconnect"
 				return fmt.Errorf("error sending stream response: %w", err)
 			}
-
-			// Record successful event sent
-			s.metricsRecorder.SyncEventSent(server.Context(), attrs)
 		case <-ctx.Done():
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
@@ -175,33 +172,16 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
 	selectorExpression := s.getSelectorExpression(ctx, req)
-
-	// Build metric attributes
-	attrs := []attribute.KeyValue{}
-	if selectorExpression != "" {
-		attrs = append(attrs, attribute.String("selector", selectorExpression))
-	}
-	if req.GetProviderId() != "" {
-		attrs = append(attrs, attribute.String("provider_id", req.GetProviderId()))
-	}
-
-	metricStatus := "ok"
-	defer func() {
-		attrs = append(attrs, attribute.String("status", metricStatus))
-		s.metricsRecorder.FetchAllFlagsRequest(ctx, attrs)
-	}()
-
 	selector := store.NewSelector(selectorExpression)
 	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
-		metricStatus = "error"
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
 	flagsString, err := s.generateResponse(flags)
+
 	if err != nil {
-		metricStatus = "error"
 		return nil, err
 	}
 
