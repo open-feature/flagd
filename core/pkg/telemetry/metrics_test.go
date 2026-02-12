@@ -234,33 +234,33 @@ func TestMetrics(t *testing.T) {
 }
 
 // some really simple tests just to make sure all methods are actually implemented and nothing panics
-func TestNoopMetricsRecorder_HTTPAttributes(t *testing.T) {
+func TestNoopMetricsRecorderHTTPAttributes(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	got := no.HTTPAttributes("", "", "", "", "")
 	require.Empty(t, got)
 }
 
-func TestNoopMetricsRecorder_HTTPRequestDuration(t *testing.T) {
+func TestNoopMetricsRecorderHTTPRequestDuration(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.HTTPRequestDuration(t.Context(), 0, nil)
 }
 
-func TestNoopMetricsRecorder_InFlightRequestStart(t *testing.T) {
+func TestNoopMetricsRecorderInFlightRequestStart(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.InFlightRequestStart(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_InFlightRequestEnd(t *testing.T) {
+func TestNoopMetricsRecorderInFlightRequestEnd(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.InFlightRequestEnd(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_RecordEvaluation(t *testing.T) {
+func TestNoopMetricsRecorderRecordEvaluation(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.RecordEvaluation(t.Context(), nil, "", "", "")
 }
 
-func TestNoopMetricsRecorder_Impressions(t *testing.T) {
+func TestNoopMetricsRecorderImpressions(t *testing.T) {
 	no := NoopMetricsRecorder{}
 	no.Impressions(t.Context(), "", "", "")
 }
