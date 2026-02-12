@@ -68,9 +68,6 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	var err error
 	l := cfg.Logger
-	if err != nil {
-		return nil, fmt.Errorf("error initializing multiplexer: %w", err)
-	}
 
 	var server *grpc.Server
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
