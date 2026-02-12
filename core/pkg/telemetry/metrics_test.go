@@ -210,28 +210,6 @@ func TestMetrics(t *testing.T) {
 			},
 			metricsLen: 1,
 		},
-		{
-			name: "SyncEventSent",
-			metricFunc: func(exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
-				for i := 0; i < n; i++ {
-					rec.SyncEventSent(context.TODO(), attrs)
-				}
-			},
-			metricsLen: 1,
-		},
-		{
-			name: "FetchAllFlagsRequest",
-			metricFunc: func(exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
-				for i := 0; i < n; i++ {
-					rec.FetchAllFlagsRequest(context.TODO(), attrs)
-				}
-			},
-			metricsLen: 1,
-		},
 	}
 
 	for _, tt := range tests {
@@ -303,16 +281,6 @@ func TestNoopMetricsRecorder_SyncStreamDuration(_ *testing.T) {
 	no.SyncStreamDuration(context.TODO(), 0, nil)
 }
 
-func TestNoopMetricsRecorder_SyncEventSent(_ *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.SyncEventSent(context.TODO(), nil)
-}
-
-func TestNoopMetricsRecorder_FetchAllFlagsRequest(_ *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.FetchAllFlagsRequest(context.TODO(), nil)
-}
-
 // testHistogramBuckets is a helper function that tests histogram bucket configuration
 func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []float64, recordMetric func(rec *MetricsRecorder, attrs []attribute.KeyValue), assertMsg string) {
 	t.Helper()
@@ -373,7 +341,7 @@ func TestHTTPResponseSizeBuckets(t *testing.T) {
 
 func TestGRPCSyncStreamDurationBuckets(t *testing.T) {
 	testHistogramBuckets(t,
-		grpcSyncStreamDurationMetric,
+		syncStreamDurationMetric,
 		[]float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800},
 		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
 			rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
