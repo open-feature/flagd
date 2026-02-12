@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
@@ -25,10 +26,8 @@ const (
 	impressionMetric          = "feature_flag." + ProviderName + ".impression"
 	reasonMetric              = "feature_flag." + ProviderName + ".result.reason"
 
-	grpcSyncActiveStreamsMetric  = "grpc.sync.active_streams"
-	grpcSyncStreamDurationMetric = "grpc.sync.stream.duration"
-	grpcSyncEventsSentMetric     = "grpc.sync.events.sent"
-	grpcFetchAllFlagsMetric      = "grpc.sync.fetchall.requests"
+	syncActiveStreamsMetric  = "feature_flag." + ProviderName + ".sync.active_streams"
+	syncStreamDurationMetric = "feature_flag." + ProviderName + ".sync.stream.duration"
 )
 
 type IMetricsRecorder interface {
@@ -43,8 +42,6 @@ type IMetricsRecorder interface {
 	SyncStreamStart(ctx context.Context, attrs []attribute.KeyValue)
 	SyncStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
 	SyncStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
-	SyncEventSent(ctx context.Context, attrs []attribute.KeyValue)
-	FetchAllFlagsRequest(ctx context.Context, attrs []attribute.KeyValue)
 }
 
 type NoopMetricsRecorder struct{}
@@ -80,12 +77,6 @@ func (NoopMetricsRecorder) SyncStreamEnd(_ context.Context, _ []attribute.KeyVal
 func (NoopMetricsRecorder) SyncStreamDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
 }
 
-func (NoopMetricsRecorder) SyncEventSent(_ context.Context, _ []attribute.KeyValue) {
-}
-
-func (NoopMetricsRecorder) FetchAllFlagsRequest(_ context.Context, _ []attribute.KeyValue) {
-}
-
 type MetricsRecorder struct {
 	httpRequestDurHistogram   metric.Float64Histogram
 	httpResponseSizeHistogram metric.Float64Histogram
@@ -93,10 +84,8 @@ type MetricsRecorder struct {
 	impressions               metric.Int64Counter
 	reasons                   metric.Int64Counter
 	// gRPC Sync metrics
-	syncActiveStreams     metric.Int64UpDownCounter
-	syncStreamDuration    metric.Float64Histogram
-	syncEventsSent        metric.Int64Counter
-	fetchAllFlagsRequests metric.Int64Counter
+	syncActiveStreams  metric.Int64UpDownCounter
+	syncStreamDuration metric.Float64Histogram
 }
 
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
@@ -165,14 +154,6 @@ func (r MetricsRecorder) SyncStreamDuration(ctx context.Context, duration time.D
 	r.syncStreamDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) SyncEventSent(ctx context.Context, attrs []attribute.KeyValue) {
-	r.syncEventsSent.Add(ctx, 1, metric.WithAttributes(attrs...))
-}
-
-func (r MetricsRecorder) FetchAllFlagsRequest(ctx context.Context, attrs []attribute.KeyValue) {
-	r.fetchAllFlagsRequests.Add(ctx, 1, metric.WithAttributes(attrs...))
-}
-
 func getDurationView(svcName, viewName string, bucket []float64) msdk.View {
 	return msdk.NewView(
 		msdk.Instrument{
@@ -208,10 +189,13 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		// for response size we want 8 exponential bucket starting from 100 Bytes
 		msdk.WithView(getDurationView(serviceName, httpResponseSizeMetric, prometheus.ExponentialBuckets(100, 10, 8))),
 		// for gRPC sync stream duration: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h
-		msdk.WithView(getDurationView(serviceName, grpcSyncStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
+		msdk.WithView(getDurationView(serviceName, syncStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
 	)
+
+	// Set as global MeterProvider so otelgrpc and other instrumentation can use it
+	otel.SetMeterProvider(provider)
 
 	meter := provider.Meter(serviceName)
 
@@ -244,24 +228,14 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 
 	// gRPC Sync metrics
 	syncActiveStreams, _ := meter.Int64UpDownCounter(
-		grpcSyncActiveStreamsMetric,
+		syncActiveStreamsMetric,
 		metric.WithDescription("Measures the number of currently active gRPC sync streaming connections."),
 		metric.WithUnit("{stream}"),
 	)
 	syncStreamDuration, _ := meter.Float64Histogram(
-		grpcSyncStreamDurationMetric,
+		syncStreamDurationMetric,
 		metric.WithDescription("Measures the duration of gRPC sync streaming connections."),
 		metric.WithUnit("s"),
-	)
-	syncEventsSent, _ := meter.Int64Counter(
-		grpcSyncEventsSentMetric,
-		metric.WithDescription("Measures the number of flag configuration updates sent to sync clients."),
-		metric.WithUnit("{event}"),
-	)
-	fetchAllFlagsRequests, _ := meter.Int64Counter(
-		grpcFetchAllFlagsMetric,
-		metric.WithDescription("Measures the number of unary FetchAllFlags requests."),
-		metric.WithUnit("{request}"),
 	)
 
 	return &MetricsRecorder{
@@ -272,7 +246,5 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		reasons:                   reasons,
 		syncActiveStreams:         syncActiveStreams,
 		syncStreamDuration:        syncStreamDuration,
-		syncEventsSent:            syncEventsSent,
-		fetchAllFlagsRequests:     fetchAllFlagsRequests,
 	}
 }
