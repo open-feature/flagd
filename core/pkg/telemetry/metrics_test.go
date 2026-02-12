@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -103,7 +102,7 @@ func TestMetrics(t *testing.T) {
 		semconv.ServiceNameKey.String(svcName),
 	}
 	const n = 5
-	type MetricF func(exp metric.Reader)
+	type MetricF func(t *testing.T, exp metric.Reader)
 	tests := []struct {
 		name       string
 		metricFunc MetricF
@@ -111,32 +110,32 @@ func TestMetrics(t *testing.T) {
 	}{
 		{
 			name: "HTTPRequestDuration",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.HTTPRequestDuration(context.TODO(), 10, attrs)
+					rec.HTTPRequestDuration(t.Context(), 10, attrs)
 				}
 			},
 			metricsLen: 1,
 		},
 		{
 			name: "HTTPResponseSize",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.HTTPResponseSize(context.TODO(), 100, attrs)
+					rec.HTTPResponseSize(t.Context(), 100, attrs)
 				}
 			},
 			metricsLen: 1,
 		},
 		{
 			name: "InFlightRequestStart",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
-				ctx := context.TODO()
+				ctx := t.Context()
 				for i := 0; i < n; i++ {
 					rec.InFlightRequestStart(ctx, attrs)
 					rec.InFlightRequestEnd(ctx, attrs)
@@ -146,52 +145,52 @@ func TestMetrics(t *testing.T) {
 		},
 		{
 			name: "Impressions",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Impressions(context.TODO(), "reason", "variant", "key")
+					rec.Impressions(t.Context(), "reason", "variant", "key")
 				}
 			},
 			metricsLen: 1,
 		},
 		{
 			name: "Reasons",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Reasons(context.TODO(), "keyA", "reason", nil)
+					rec.Reasons(t.Context(), "keyA", "reason", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.Reasons(context.TODO(), "keyB", "error", fmt.Errorf("err not found"))
+					rec.Reasons(t.Context(), "keyB", "error", fmt.Errorf("err not found"))
 				}
 			},
 			metricsLen: 1,
 		},
 		{
 			name: "RecordEvaluations",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(context.TODO(), nil, "reason", "variant", "key")
+					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key")
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(context.TODO(), fmt.Errorf("general"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key")
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(context.TODO(), fmt.Errorf("not found"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key")
 				}
 			},
 			metricsLen: 2,
 		},
 		{
 			name: "SyncActiveStreams",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
-				ctx := context.TODO()
+				ctx := t.Context()
 				for i := 0; i < n; i++ {
 					rec.SyncStreamStart(ctx, attrs)
 					rec.SyncStreamEnd(ctx, attrs)
@@ -201,11 +200,11 @@ func TestMetrics(t *testing.T) {
 		},
 		{
 			name: "SyncStreamDuration",
-			metricFunc: func(exp metric.Reader) {
+			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
+					rec.SyncStreamDuration(t.Context(), 100*time.Millisecond, attrs)
 				}
 			},
 			metricsLen: 1,
@@ -215,9 +214,9 @@ func TestMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			exp := metric.NewManualReader()
-			tt.metricFunc(exp)
+			tt.metricFunc(t, exp)
 			var data metricdata.ResourceMetrics
-			err := exp.Collect(context.TODO(), &data)
+			err := exp.Collect(t.Context(), &data)
 			if err != nil {
 				t.Errorf("Got %v", err)
 			}
@@ -241,48 +240,48 @@ func TestNoopMetricsRecorder_HTTPAttributes(t *testing.T) {
 	require.Empty(t, got)
 }
 
-func TestNoopMetricsRecorder_HTTPRequestDuration(_ *testing.T) {
+func TestNoopMetricsRecorder_HTTPRequestDuration(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.HTTPRequestDuration(context.TODO(), 0, nil)
+	no.HTTPRequestDuration(t.Context(), 0, nil)
 }
 
-func TestNoopMetricsRecorder_InFlightRequestStart(_ *testing.T) {
+func TestNoopMetricsRecorder_InFlightRequestStart(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.InFlightRequestStart(context.TODO(), nil)
+	no.InFlightRequestStart(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_InFlightRequestEnd(_ *testing.T) {
+func TestNoopMetricsRecorder_InFlightRequestEnd(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.InFlightRequestEnd(context.TODO(), nil)
+	no.InFlightRequestEnd(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_RecordEvaluation(_ *testing.T) {
+func TestNoopMetricsRecorder_RecordEvaluation(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.RecordEvaluation(context.TODO(), nil, "", "", "")
+	no.RecordEvaluation(t.Context(), nil, "", "", "")
 }
 
-func TestNoopMetricsRecorder_Impressions(_ *testing.T) {
+func TestNoopMetricsRecorder_Impressions(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.Impressions(context.TODO(), "", "", "")
+	no.Impressions(t.Context(), "", "", "")
 }
 
-func TestNoopMetricsRecorder_SyncStreamStart(_ *testing.T) {
+func TestNoopMetricsRecorderSyncStreamStart(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamStart(context.TODO(), nil)
+	no.SyncStreamStart(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_SyncStreamEnd(_ *testing.T) {
+func TestNoopMetricsRecorderSyncStreamEnd(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamEnd(context.TODO(), nil)
+	no.SyncStreamEnd(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorder_SyncStreamDuration(_ *testing.T) {
+func TestNoopMetricsRecorderSyncStreamDuration(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamDuration(context.TODO(), 0, nil)
+	no.SyncStreamDuration(t.Context(), 0, nil)
 }
 
 // testHistogramBuckets is a helper function that tests histogram bucket configuration
-func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []float64, recordMetric func(rec *MetricsRecorder, attrs []attribute.KeyValue), assertMsg string) {
+func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []float64, recordMetric func(t *testing.T, rec *MetricsRecorder, attrs []attribute.KeyValue), assertMsg string) {
 	t.Helper()
 	const testSvcName = "testService"
 	exp := metric.NewManualReader()
@@ -292,10 +291,10 @@ func testHistogramBuckets(t *testing.T, metricName string, expectedBounds []floa
 	attrs := []attribute.KeyValue{
 		semconv.ServiceNameKey.String(testSvcName),
 	}
-	recordMetric(rec, attrs)
+	recordMetric(t, rec, attrs)
 
 	var data metricdata.ResourceMetrics
-	err := exp.Collect(context.TODO(), &data)
+	err := exp.Collect(t.Context(), &data)
 	require.NoError(t, err)
 
 	require.Len(t, data.ScopeMetrics, 1)
@@ -321,8 +320,8 @@ func TestHTTPRequestDurationBuckets(t *testing.T) {
 	testHistogramBuckets(t,
 		httpRequestDurationMetric,
 		prometheus.DefBuckets,
-		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
-			rec.HTTPRequestDuration(context.TODO(), 100*time.Millisecond, attrs)
+		func(t *testing.T, rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPRequestDuration(t.Context(), 100*time.Millisecond, attrs)
 		},
 		"Expected histogram buckets to match prometheus.DefBuckets",
 	)
@@ -332,8 +331,8 @@ func TestHTTPResponseSizeBuckets(t *testing.T) {
 	testHistogramBuckets(t,
 		httpResponseSizeMetric,
 		prometheus.ExponentialBuckets(100, 10, 8),
-		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
-			rec.HTTPResponseSize(context.TODO(), 500, attrs)
+		func(t *testing.T, rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.HTTPResponseSize(t.Context(), 500, attrs)
 		},
 		"Expected histogram buckets to match exponential buckets (100, 10, 8)",
 	)
@@ -343,8 +342,8 @@ func TestGRPCSyncStreamDurationBuckets(t *testing.T) {
 	testHistogramBuckets(t,
 		syncStreamDurationMetric,
 		[]float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800},
-		func(rec *MetricsRecorder, attrs []attribute.KeyValue) {
-			rec.SyncStreamDuration(context.TODO(), 100*time.Millisecond, attrs)
+		func(t *testing.T, rec *MetricsRecorder, attrs []attribute.KeyValue) {
+			rec.SyncStreamDuration(t.Context(), 100*time.Millisecond, attrs)
 		},
 		"Expected histogram buckets for long-lived sync streams (30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h)",
 	)

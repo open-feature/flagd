@@ -86,12 +86,6 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	for {
 		select {
 		case payload := <-watcher:
-			if err != nil {
-				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
-				exitReason = "error"
-				return fmt.Errorf("error constructing metadata response")
-			}
-
 			flags, err := s.generateResponse(payload.Flags)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))

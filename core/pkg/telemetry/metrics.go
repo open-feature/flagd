@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	ProviderName = "flagd"
+	ProviderName        = "flagd"
+	featureFlagPrefix   = "feature_flag."
 
 	FeatureFlagReasonKey = attribute.Key("feature_flag.reason")
 	ExceptionTypeKey     = attribute.Key("ExceptionTypeKeyName")
@@ -23,11 +24,11 @@ const (
 	httpRequestDurationMetric = "http.server.request.duration"
 	httpResponseSizeMetric    = "http.server.response.body.size"
 	httpActiveRequestsMetric  = "http.server.active_requests"
-	impressionMetric          = "feature_flag." + ProviderName + ".impression"
-	reasonMetric              = "feature_flag." + ProviderName + ".result.reason"
+	impressionMetric          = featureFlagPrefix + ProviderName + ".impression"
+	reasonMetric              = featureFlagPrefix + ProviderName + ".result.reason"
 
-	syncActiveStreamsMetric  = "feature_flag." + ProviderName + ".sync.active_streams"
-	syncStreamDurationMetric = "feature_flag." + ProviderName + ".sync.stream.duration"
+	syncActiveStreamsMetric  = featureFlagPrefix + ProviderName + ".sync.active_streams"
+	syncStreamDurationMetric = featureFlagPrefix + ProviderName + ".sync.stream.duration"
 )
 
 type IMetricsRecorder interface {
@@ -69,12 +70,15 @@ func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
 }
 
 func (NoopMetricsRecorder) SyncStreamStart(_ context.Context, _ []attribute.KeyValue) {
+	// No-op implementation: intentionally does nothing
 }
 
 func (NoopMetricsRecorder) SyncStreamEnd(_ context.Context, _ []attribute.KeyValue) {
+	// No-op implementation: intentionally does nothing
 }
 
 func (NoopMetricsRecorder) SyncStreamDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
+	// No-op implementation: intentionally does nothing
 }
 
 type MetricsRecorder struct {
