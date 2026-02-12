@@ -11,6 +11,8 @@ import (
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,6 +37,7 @@ type SvcConfigurations struct {
 	SocketPath          string
 	StreamDeadline      time.Duration
 	DisableSyncMetadata bool
+	MetricsRecorder     telemetry.IMetricsRecorder
 }
 
 type Service struct {
@@ -65,9 +68,6 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	var err error
 	l := cfg.Logger
-	if err != nil {
-		return nil, fmt.Errorf("error initializing multiplexer: %w", err)
-	}
 
 	var server *grpc.Server
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
@@ -75,9 +75,19 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
 		}
-		server = grpc.NewServer(grpc.Creds(tlsCredentials))
+		server = grpc.NewServer(
+			grpc.Creds(tlsCredentials),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
 	} else {
-		server = grpc.NewServer()
+		server = grpc.NewServer(
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
+	}
+
+	metricsRecorder := cfg.MetricsRecorder
+	if metricsRecorder == nil {
+		metricsRecorder = &telemetry.NoopMetricsRecorder{}
 	}
 
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
@@ -86,6 +96,7 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		contextValues:       cfg.ContextValues,
 		deadline:            cfg.StreamDeadline,
 		disableSyncMetadata: cfg.DisableSyncMetadata,
+		metricsRecorder:     metricsRecorder,
 	})
 
 	var lis net.Listener
