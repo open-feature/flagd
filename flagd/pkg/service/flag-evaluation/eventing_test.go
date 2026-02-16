@@ -9,6 +9,7 @@ import (
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestSubscribe(t *testing.T) {
@@ -70,4 +71,18 @@ func TestUnsubscribe(t *testing.T) {
 	require.Empty(t, eventing.subs[idA],
 		"expected subscription cleared, but value present: %v", eventing.subs[idA])
 	require.Equal(t, chanB, eventing.subs[idB], "incorrect subscription association")
+}
+
+func TestNotificationDataStructpbConversion(t *testing.T) {
+	notification := iservice.Notification{
+		Type: iservice.ConfigurationChange,
+		Data: map[string]interface{}{
+			"flags": map[string]interface{}{
+				"flag1": map[string]interface{}{"state": "ENABLED"},
+			},
+		},
+	}
+
+	_, err := structpb.NewStruct(notification.Data)
+	require.Nil(t, err)
 }
