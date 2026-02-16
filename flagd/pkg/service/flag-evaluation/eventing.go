@@ -51,7 +51,7 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 				notifier <- iservice.Notification{
 					Type: iservice.ConfigurationChange,
 					Data: map[string]interface{}{
-						"flags": notifications,
+						"flags": map[string]interface{}(notifications),
 					},
 				}
 			}

@@ -182,11 +182,16 @@ func (s *FlagEvaluationService) EventStream(
 				s.logger.Error(err.Error())
 			}
 		case notification := <-requestNotificationChan:
-			d, err := structpb.NewStruct(notification.Data)
-			if err != nil {
-				s.logger.Error(err.Error())
+			var d *structpb.Struct
+			if notification.Data != nil {
+				var err error
+				d, err = structpb.NewStruct(notification.Data)
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
 			}
-			err = stream.Send(&evalV1.EventStreamResponse{
+			err := stream.Send(&evalV1.EventStreamResponse{
 				Type: string(notification.Type),
 				Data: d,
 			})
