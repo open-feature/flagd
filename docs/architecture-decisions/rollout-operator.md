@@ -118,4 +118,5 @@ Variants can be JSONLogic expressions, enabling composition:
 - Good, because nested JSONLogic enables complex rollout scenarios
 - Good, because timestamp usage, array parameter style, and shorthand are consistent with other operators
 - Bad, because it's more definition surface area to understand
+- Bad, because additional timed mechanisms may represent changes in behavior ("time-bombs") that can be difficult to trace
 - Bad, because consistently testing a time-sensitive operator might be somewhat challenging
