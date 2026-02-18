@@ -1,7 +1,6 @@
 [submodule "test-harness"]
 	path = test-harness
 	url = https://github.com/open-feature/test-harness.git
-	tag = v2.15.9
 [submodule "spec"]
 	path = spec
 	url = https://github.com/open-feature/spec.git
