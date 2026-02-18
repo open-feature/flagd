@@ -60,6 +60,15 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 }
 
 func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
+	if result.Reason == model.DefaultReason {
+		return EvaluationSuccess{
+			Value:    nil,
+			Key:      result.FlagKey,
+			Reason:   result.Reason,
+			Variant:  "",
+			Metadata: result.Metadata,
+		}
+	}
 	return EvaluationSuccess{
 		Value:    result.Value,
 		Key:      result.FlagKey,
