@@ -12,10 +12,10 @@ require (
 )
 
 require (
-	buf.build/gen/go/open-feature-forking/flagd/connectrpc/go  v1.19.1-20260204145352-a75813013224.1 // indirect
-	buf.build/gen/go/open-feature-forking/flagd/grpc/go  v1.6.0-20260204145352-a75813013224.1
-	buf.build/gen/go/open-feature-forking/flagd/protocolbuffers/go v1.36.10-20260204145352-a75813013224.1
-	connectrpc.com/connect v1.18.1 // indirect
+	buf.build/gen/go/open-feature/flagd/connectrpc/go v1.17.0-20240906125204-0a6a901b42e8.1 // indirect
+	buf.build/gen/go/open-feature/flagd/grpc/go v1.5.1-20240906125204-0a6a901b42e8.1 // indirect
+	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.35.1-20240906125204-0a6a901b42e8.1 // indirect
+	connectrpc.com/connect v1.19.1 // indirect
 	connectrpc.com/otelconnect v0.7.2 // indirect
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
 	github.com/cucumber/gherkin/go/v26 v26.2.0 // indirect
@@ -63,7 +63,7 @@ require (
 	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.33.2 // indirect
