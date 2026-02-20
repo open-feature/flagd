@@ -309,15 +309,12 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	if ctx.Value("protoVersion") == nil && reason == model.DefaultReason {
+	if reason == model.FallbackReason {
 		if respV2, ok := resp.(responseV2[T]); ok {
-			if err := respV2.SetReasonOnly(reason, metadata); err != nil {
+			if err := respV2.SetReasonOnly(model.DefaultReason, metadata); err != nil {
 				logger.ErrorWithID(reqID, err.Error())
 				return fmt.Errorf("error setting response result: %w", err)
 			}
-		} else if err := resp.SetResult(result, variant, reason, metadata); err != nil {
-			logger.ErrorWithID(reqID, err.Error())
-			return fmt.Errorf("error setting response result: %w", err)
 		}
 	} else {
 		if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {

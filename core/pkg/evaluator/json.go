@@ -307,9 +307,9 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
-	if ctx.Value("protoVersion") == nil && reason == model.DefaultReason {
+	if reason == model.FallbackReason {
 		var zero T
-		return zero, variant, model.DefaultReason, metadata, nil
+		return zero, variant, model.FallbackReason, metadata, nil
 	}
 
 	var ok bool
@@ -383,9 +383,13 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		// check if string is "null" before we strip quotes, so we can differentiate between JSON null and "null"
 		trimmed := strings.TrimSpace(result.String())
 
-		if trimmed == "null" && flag.DefaultVariant == "" {
-			if ctx.Value("protoVersion") != nil {
-				return flag.DefaultVariant, flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+		if trimmed == "null" {
+			if flag.DefaultVariant == "" {
+				if ctx.Value("protoVersion") != nil {
+					return flag.DefaultVariant, flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+				}
+
+				return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
 			}
 
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
@@ -407,7 +411,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		if ctx.Value("protoVersion") != nil {
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 		}
-		return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
+		return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil

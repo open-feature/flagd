@@ -10,4 +10,5 @@ const (
 	UnknownReason        = "UNKNOWN"
 	ErrorReason          = "ERROR"
 	StaticReason         = "STATIC"
+	FallbackReason       = "FALLBACK"
 )
