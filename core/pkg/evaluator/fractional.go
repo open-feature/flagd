@@ -9,6 +9,8 @@ import (
 	"github.com/twmb/murmur3"
 )
 
+const maxWeightSum = math.MaxInt32 // 2,147,483,647
+
 const FractionEvaluationName = "fractional"
 
 type Fractional struct {
@@ -16,16 +18,18 @@ type Fractional struct {
 }
 
 type fractionalEvaluationDistribution struct {
-	totalWeight      int
+	totalWeight      int32
 	weightedVariants []fractionalEvaluationVariant
+	data             any
+	logger           *logger.Logger
 }
 
 type fractionalEvaluationVariant struct {
-	variant string
-	weight  int
+	variant any // string, bool, number, JSONLogic node (map[string]any from nested sub-array operators), or nil
+	weight  int32
 }
 
-func (v fractionalEvaluationVariant) getPercentage(totalWeight int) float64 {
+func (v fractionalEvaluationVariant) getPercentage(totalWeight int32) float64 {
 	if totalWeight == 0 {
 		return 0
 	}
@@ -38,16 +42,17 @@ func NewFractional(logger *logger.Logger) *Fractional {
 }
 
 func (fe *Fractional) Evaluate(values, data any) any {
-	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
+	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data, fe.Logger)
 	if err != nil {
 		fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
 	}
 
-	return distributeValue(valueToDistribute, feDistributions)
+	hashValue := uint32(murmur3.StringSum32(valueToDistribute))
+	return distributeValue(hashValue, feDistributions)
 }
 
-func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (string, *fractionalEvaluationDistribution, error) {
 	valuesArray, ok := values.([]any)
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
@@ -61,8 +66,6 @@ func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluat
 		return "", nil, errors.New("data isn't of type map[string]any")
 	}
 
-	// Ignore the error as we can't really do anything if the properties are
-	// somehow missing.
 	properties, _ := getFlagdProperties(dataMap)
 
 	bucketBy, ok := valuesArray[0].(string)
@@ -82,7 +85,7 @@ func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluat
 		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
 	}
 
-	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
+	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger)
 	if err != nil {
 		return "", nil, err
 	}
@@ -90,11 +93,17 @@ func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluat
 	return bucketBy, feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationDistributions(values []any, data any, logger *logger.Logger) (*fractionalEvaluationDistribution, error) {
 	feDistributions := &fractionalEvaluationDistribution{
 		totalWeight:      0,
 		weightedVariants: make([]fractionalEvaluationVariant, len(values)),
+		data:             data,
+		logger:           logger,
 	}
+
+	// parse all weights first to validate the sum
+	var totalWeightInt64 int64 = 0
+
 	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
 		if !ok {
@@ -106,43 +115,80 @@ func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluation
 			return nil, errors.New("distribution element needs at least one element")
 		}
 
-		variant, ok := distributionArray[0].(string)
-		if !ok {
-			return nil, errors.New("first element of distribution element isn't string")
+		// JSONLogic pre-evaluates all arguments before they reach fractional.
+		// Pre-evaluated operators become primitive values (strings, numbers, etc.), never map[string]any nodes.
+		var variant any
+		switch v := distributionArray[0].(type) {
+		case string:
+			variant = v
+		case bool:
+			variant = v
+		case float64:
+			variant = v
+		case nil:
+			variant = nil
+		default:
+			return nil, errors.New("first element of distribution element must be a string, bool, number, or nil")
 		}
 
-		weight := 1.0
+		weight := int64(1)
 		if len(distributionArray) >= 2 {
+			// parse as float64 first since that's what JSON gives us
 			distributionWeight, ok := distributionArray[1].(float64)
+			if !ok && distributionArray[1] != nil {
+				return nil, errors.New("weight must be a number")
+			}
 			if ok {
-				// default the weight to 1 if not specified explicitly
-				weight = distributionWeight
+				weight = int64(distributionWeight)
 			}
 		}
 
-		feDistributions.totalWeight += int(weight)
+		// validate weight is a whole number
+		if len(distributionArray) >= 2 {
+			distributionWeight, ok := distributionArray[1].(float64)
+			if ok && distributionWeight != float64(int64(distributionWeight)) {
+				return nil, errors.New("weights must be integers")
+			}
+		}
+
+		// validate individual weight doesn't exceed int32
+		if weight > math.MaxInt32 || weight < 0 {
+			return nil, fmt.Errorf("weight %d exceeds maximum allowed value %d", weight, math.MaxInt32)
+		}
+
+		totalWeightInt64 += weight
 		feDistributions.weightedVariants[i] = fractionalEvaluationVariant{
 			variant: variant,
-			weight:  int(weight),
+			weight:  int32(weight),
 		}
 	}
 
+	// validate total weight doesn't exceed MaxInt32
+	if totalWeightInt64 > int64(maxWeightSum) {
+		return nil, fmt.Errorf("sum of all weights (%d) exceeds maximum allowed value (%d)", totalWeightInt64, maxWeightSum)
+	}
+
+	feDistributions.totalWeight = int32(totalWeightInt64)
 	return feDistributions, nil
 }
 
-// distributeValue calculate hash for given hash key and find the bucket distributions belongs to
-func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
-	hashValue := int32(murmur3.StringSum32(value))
-	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
-	bucket := hashRatio * 100 // in range [0, 100]
+// distributeValue accepts a pre-computed 32-bit hash value and distributes it to a variant using high-precision integer arithmetic.
+// It maps a 32-bit hash to the range [0, totalWeight) and finds the variant bucket that contains that value.
+func distributeValue(hashValue uint32, feDistribution *fractionalEvaluationDistribution) any {
+	if feDistribution.totalWeight == 0 {
+		return ""
+	}
 
-	rangeEnd := float64(0)
-	for _, weightedVariant := range feDistribution.weightedVariants {
-		rangeEnd += weightedVariant.getPercentage(feDistribution.totalWeight)
+	bucket := (uint64(hashValue) * uint64(feDistribution.totalWeight)) >> 32
+
+	var rangeEnd uint64 = 0
+	for _, variant := range feDistribution.weightedVariants {
+		rangeEnd += uint64(variant.weight)
 		if bucket < rangeEnd {
-			return weightedVariant.variant
+			return variant.variant
 		}
 	}
 
+	// unreachable given validation
 	return ""
 }
