@@ -38,11 +38,24 @@ const (
 	blueHex   = "#0000FF"
 	greenHex  = "#00FF00"
 	yellowHex = "#FFFF00"
+
+	testSource   = "testSource"
+	defaultReqID = "default"
 )
 
+// setupTestEvaluator creates a new JSON evaluator with the given flags
+func setupTestEvaluator(t *testing.T, flags []model.Flag) *JSON {
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, []string{testSource})
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+	je := NewJSON(log, s)
+	je.store.Update(testSource, flags, model.Metadata{})
+	return je
+}
+
 func TestFractionalEvaluation(t *testing.T) {
-	const source = "testSource"
-	var sources = []string{source}
 	ctx := context.Background()
 
 	commonFlags := []model.Flag{
@@ -429,19 +442,10 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}
-	const reqID = "default"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			je := setupTestEvaluator(t, tt.flags)
+			value, variant, reason, _, err := resolve[string](ctx, defaultReqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
 				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
@@ -466,8 +470,6 @@ func TestFractionalEvaluation(t *testing.T) {
 }
 
 func TestFractionalEvaluationWithNestedJSONLogic(t *testing.T) {
-	const source = "testSource"
-	var sources = []string{source}
 	ctx := context.Background()
 
 	commonFlags := []model.Flag{
@@ -564,19 +566,10 @@ func TestFractionalEvaluationWithNestedJSONLogic(t *testing.T) {
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}
-	const reqID = "default"
+	je := setupTestEvaluator(t, commonFlags)
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("Error creating store: %v", err)
-			}
-
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			value, variant, reason, _, err := resolve[string](ctx, defaultReqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if tt.expectedVariant != "" && variant != tt.expectedVariant {
 				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
@@ -598,8 +591,6 @@ func TestFractionalEvaluationWithNestedJSONLogic(t *testing.T) {
 }
 
 func TestFractionalVariantBoolNumericAndOperators(t *testing.T) {
-	const source = "testSource"
-	var sources = []string{source}
 	ctx := context.Background()
 
 	commonFlags := []model.Flag{
@@ -679,19 +670,10 @@ func TestFractionalVariantBoolNumericAndOperators(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
+	je := setupTestEvaluator(t, commonFlags)
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
-
-			_, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
+			_, variant, reason, _, err := resolve[string](ctx, defaultReqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if variant != tt.expectedVariant {
 				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
@@ -709,8 +691,6 @@ func TestFractionalVariantBoolNumericAndOperators(t *testing.T) {
 }
 
 func BenchmarkFractionalEvaluation(b *testing.B) {
-	const source = "testSource"
-	var sources = []string{source}
 	ctx := context.Background()
 
 	flags := []model.Flag{{
@@ -805,12 +785,12 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 	for name, tt := range tests {
 		b.Run(name, func(b *testing.B) {
 			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
+			s, err := store.NewStore(log, []string{testSource})
 			if err != nil {
 				b.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
+			je.store.Update(testSource, tt.flags, model.Metadata{})
 
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](
