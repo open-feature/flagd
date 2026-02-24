@@ -18,10 +18,12 @@ type Fractional struct {
 type fractionalEvaluationDistribution struct {
 	totalWeight      int
 	weightedVariants []fractionalEvaluationVariant
+	data             any
+	logger           *logger.Logger
 }
 
 type fractionalEvaluationVariant struct {
-	variant string
+	variant any // string, bool, number, JSONLogic node (map[string]any from nested sub-array operators), or nil
 	weight  int
 }
 
@@ -38,7 +40,7 @@ func NewFractional(logger *logger.Logger) *Fractional {
 }
 
 func (fe *Fractional) Evaluate(values, data any) any {
-	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data)
+	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data, fe.Logger)
 	if err != nil {
 		fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
@@ -47,7 +49,7 @@ func (fe *Fractional) Evaluate(values, data any) any {
 	return distributeValue(valueToDistribute, feDistributions)
 }
 
-func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (string, *fractionalEvaluationDistribution, error) {
 	valuesArray, ok := values.([]any)
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
@@ -82,7 +84,7 @@ func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluat
 		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
 	}
 
-	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray)
+	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger)
 	if err != nil {
 		return "", nil, err
 	}
@@ -90,10 +92,12 @@ func parseFractionalEvaluationData(values, data any) (string, *fractionalEvaluat
 	return bucketBy, feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationDistributions(values []any, data any, logger *logger.Logger) (*fractionalEvaluationDistribution, error) {
 	feDistributions := &fractionalEvaluationDistribution{
 		totalWeight:      0,
 		weightedVariants: make([]fractionalEvaluationVariant, len(values)),
+		data:             data,
+		logger:           logger,
 	}
 	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
@@ -106,9 +110,20 @@ func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluation
 			return nil, errors.New("distribution element needs at least one element")
 		}
 
-		variant, ok := distributionArray[0].(string)
-		if !ok {
-			return nil, errors.New("first element of distribution element isn't string")
+		// variants can be any JSONLogic node.
+		// github.com/diegoholiveira/jsonlogic/v3@v3.8.5+ pre-evaluates JSONLogic nodes, so we don't need to directly evaluate them ourselves.
+		var variant any
+		switch v := distributionArray[0].(type) {
+		case string:
+			variant = v
+		case bool:
+			variant = v
+		case float64:
+			variant = v
+		case nil:
+			variant = nil
+		default:
+			return nil, errors.New("first element of distribution element must be a string, bool, number, or nil")
 		}
 
 		weight := 1.0
@@ -131,7 +146,7 @@ func parseFractionalEvaluationDistributions(values []any) (*fractionalEvaluation
 }
 
 // distributeValue calculate hash for given hash key and find the bucket distributions belongs to
-func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) string {
+func distributeValue(value string, feDistribution *fractionalEvaluationDistribution) any {
 	hashValue := int32(murmur3.StringSum32(value))
 	hashRatio := math.Abs(float64(hashValue)) / math.MaxInt32
 	bucket := hashRatio * 100 // in range [0, 100]
