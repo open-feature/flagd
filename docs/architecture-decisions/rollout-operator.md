@@ -109,6 +109,41 @@ Variants can be JSONLogic expressions, enabling composition:
 }
 ```
 
+### Rollback Operator
+
+The `rollback` operator enables graceful reversal of a rollout, transitioning users back in **reverse order**: first adopters are last to revert, and users who've never been assigned new functionality never see it.
+
+```jsonc
+// Rollback: same parameters as rollout
+{"rollback": [1704067200, 1706745600, "old", "new"]}
+```
+
+**Implementation**: `rollback` is identical to `rollout` except it applies bitwise NOT (`~`) to the hash before bucketing.
+This inverts user ordering:
+
+- Hash `0x00000000` (first in rollout) → `0xFFFFFFFF` (last in rollback)
+- Hash `0xFFFFFFFF` (last in rollout) → `0x00000000` (first in rollback)
+
+**Example**: Given a rollout to a fractional split:
+
+```jsonc
+{"rollout": [1704067200, 1706745600, "old", {"fractional": [["a", 50], ["b", 50]]}]}
+```
+
+- **Alice** (hash `0x66666666`, 40% position): transitions to "a" at t=40%
+- **Fred** (hash `0xFFFFFFFF`, 100% position): never reaches the fractional
+
+If switched to rollback mid-way:
+
+```jsonc
+{"rollback": [1704067200, 1706745600, "old", {"fractional": [["a", 50], ["b", 50]]}]}
+```
+
+- **Alice** (inverted: `0x99999999`, 60% position): reverts to "old" at t=60%
+- **Fred**: already "reverted" immediately (was never transitioned)
+
+Users revert in the exact reverse order they adopted. Nested operators (like `fractional`) are **not affected** by the hash inversion — only the rollback timing decision uses the inverted hash, preserving stable bucket assignments within the `to` expression.
+
 ### Consequences
 
 - Good, because this enables functionality present in many other systems
@@ -117,6 +152,7 @@ Variants can be JSONLogic expressions, enabling composition:
 - Good, because integer-only math ensures cross-language portability
 - Good, because nested JSONLogic enables complex rollout scenarios
 - Good, because timestamp usage, array parameter style, and shorthand are consistent with other operators
+- Good, because `rollback` enables graceful reversal without subjecting users to unnecessary thrashing.
 - Bad, because it's more definition surface area to understand
 - Bad, because additional timed mechanisms may represent changes in behavior ("time-bombs") that can be difficult to trace
 - Bad, because consistently testing a time-sensitive operator might be somewhat challenging
