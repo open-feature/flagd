@@ -79,7 +79,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	selector := store.NewSelector(selectorExpression)
 	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(ctx, reqID, evaluationContext)
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	res := connect.NewResponse(&evalV1.ResolveBooleanResponse{})
 	err := resolve(
@@ -247,7 +247,7 @@ func (s *FlagEvaluationService) ResolveString(
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	res := connect.NewResponse(&evalV1.ResolveStringResponse{})
 	err := resolve(
@@ -280,7 +280,7 @@ func (s *FlagEvaluationService) ResolveInt(
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	res := connect.NewResponse(&evalV1.ResolveIntResponse{})
 	err := resolve(
@@ -313,7 +313,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	res := connect.NewResponse(&evalV1.ResolveFloatResponse{})
 	err := resolve(
@@ -346,7 +346,7 @@ func (s *FlagEvaluationService) ResolveObject(
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
 	selector := store.NewSelector(selectorExpression)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, "protoVersion", "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
 	res := connect.NewResponse(&evalV1.ResolveObjectResponse{})
 	err := resolve(
