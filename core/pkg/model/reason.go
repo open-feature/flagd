@@ -10,4 +10,7 @@ const (
 	UnknownReason        = "UNKNOWN"
 	ErrorReason          = "ERROR"
 	StaticReason         = "STATIC"
+	// only used internally if no default value could be determined
+	// will be translated to DefaultReason in the API response
+	FallbackReason = "FALLBACK"
 )

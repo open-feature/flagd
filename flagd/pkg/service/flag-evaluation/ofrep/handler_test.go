@@ -109,6 +109,22 @@ func Test_handler_HandleFlagEvaluation(t *testing.T) {
 			expectedStatus:       http.StatusBadRequest,
 			expectedResponseType: ofrep.EvaluationError{},
 		},
+		{
+			name:   "code default - flag without defaultVariant",
+			method: http.MethodPost,
+			path:   "/ofrep/v1/evaluate/flags/featureNoDefault",
+			input:  bytes.NewReader([]byte{}),
+			mockAnyResponse: &evaluator.AnyValue{
+				Value:    false, // code default (no defaultVariant)
+				Variant:  "",
+				Reason:   model.FallbackReason,
+				FlagKey:  "featureNoDefault",
+				Metadata: nil,
+				Error:    nil,
+			},
+			expectedStatus:       http.StatusOK,
+			expectedResponseType: ofrep.EvaluationSuccess{},
+		},
 	}
 
 	for _, test := range tests {
@@ -201,6 +217,30 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 			method:         http.MethodPost,
 			input:          bytes.NewReader([]byte("{some invalid context}")),
 			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "bulk evaluation with code defaults",
+			method: http.MethodPost,
+			input:  bytes.NewReader([]byte{}),
+			mockAnyResponse: []evaluator.AnyValue{
+				{
+					Value:    true,
+					Variant:  "on",
+					Reason:   model.StaticReason,
+					FlagKey:  "featureWithDefault",
+					Metadata: nil,
+					Error:    nil,
+				},
+				{
+					Value:    false, // code default (no defaultVariant)
+					Variant:  "",
+					Reason:   model.FallbackReason,
+					FlagKey:  "featureNoDefault",
+					Metadata: map[string]interface{}{},
+					Error:    nil,
+				},
+			},
+			expectedStatus: http.StatusOK,
 		},
 	}
 

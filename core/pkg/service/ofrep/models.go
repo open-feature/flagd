@@ -12,10 +12,10 @@ type Request struct {
 }
 
 type EvaluationSuccess struct {
-	Value    interface{}    `json:"value"`
+	Value    interface{}    `json:"value,omitempty"`
 	Key      string         `json:"key"`
 	Reason   string         `json:"reason"`
-	Variant  string         `json:"variant"`
+	Variant  string         `json:"variant,omitempty"`
 	Metadata model.Metadata `json:"metadata"`
 }
 
@@ -60,6 +60,16 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 }
 
 func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
+	// if reason is fallback, we want to omit the value and variant from the response, and set reason to default
+	if result.Reason == model.FallbackReason {
+		return EvaluationSuccess{
+			Value:    nil, // not marshalled due to omitempty
+			Key:      result.FlagKey,
+			Reason:   model.DefaultReason,
+			Variant:  "", // not marshalled due to omitempty
+			Metadata: result.Metadata,
+		}
+	}
 	return EvaluationSuccess{
 		Value:    result.Value,
 		Key:      result.FlagKey,
