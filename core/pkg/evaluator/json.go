@@ -32,6 +32,7 @@ const (
 	// evaluation if the user did not supply the optional bucketing property.
 	targetingKeyKey = "targetingKey"
 	Disabled        = "DISABLED"
+	ProtoVersionKey = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
 )
 
 var regBrace *regexp.Regexp
@@ -196,6 +197,13 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 			value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flag.Key, context, je.evaluateVariant)
 		case map[string]any:
 			value, variant, reason, metadata, err = resolve[map[string]any](ctx, reqID, flag.Key, context, je.evaluateVariant)
+		default:
+			if ctx.Value(ProtoVersionKey) == nil {
+				value, variant, reason, metadata, err = resolve[interface{}](ctx, reqID, flag.Key, context, je.evaluateVariant)
+			} else {
+				// old proto version behavior
+				continue
+			}
 		}
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("bulk evaluation: key: %s returned error: %s", flag.Key, err.Error()))
@@ -385,7 +393,8 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 
 		if trimmed == "null" {
 			if flag.DefaultVariant == "" {
-				if ctx.Value("protoVersion") != nil {
+				if ctx.Value(ProtoVersionKey) != nil {
+					// old proto version behavior
 					return flag.DefaultVariant, flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 				}
 
@@ -408,7 +417,8 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	}
 
 	if flag.DefaultVariant == "" {
-		if ctx.Value("protoVersion") != nil {
+		if ctx.Value(ProtoVersionKey) != nil {
+			// old proto version behavior
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 		}
 		return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
