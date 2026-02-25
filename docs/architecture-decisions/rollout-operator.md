@@ -54,13 +54,14 @@ Parameters:
 
 ### Hashing Consistency
 
-The rollout operator uses the same hashing strategy as `fractional`:
+The rollout operator uses the same hashing strategy as `fractional` with one exception:
 
 - MurmurHash3 (32-bit)
 - Same default bucketing value: `flagKey + targetingKey`
 - Same `bucketBy` expression support
-
-This ensures users land in consistent buckets across both operators.
+- After the bucketing value is retrieved, before hashing, the UTF-8 byte representation of `rollout` is appended to the bucketing value
+    - This injects entropy to ensure users in fractional rules nested within a `rollout` don't bucket identically (we want to ensure users early in a rollout don't always end up in the first fractional bucket).
+    - The `rollback` operator also appends `rollout` (not `rollback`) to preserve correlation with rollout timing; this ensures the "first-in-last-out" property is maintained.
 
 ### Integer-Only Arithmetic
 
@@ -143,6 +144,21 @@ If switched to rollback mid-way:
 - **Fred**: already "reverted" immediately (was never transitioned)
 
 Users revert in the exact reverse order they adopted. Nested operators (like `fractional`) are **not affected** by the hash inversion — only the rollback timing decision uses the inverted hash, preserving stable bucket assignments within the `to` expression.
+
+### Future-proofing
+
+Later, we may want to support additional non-linear rollouts.
+This can be done with an additional, optional, configuration parameter before the times params (similar to custom bucketing).
+
+```jsonc
+{"rollout": [{"var": "email"}, "linear|exponential", 1704067200, 1706745600, "old", "new"]}
+```
+
+```jsonc
+{"rollout": [{"var": "email"}, { some-json-logic-lambda }, 1704067200, 1706745600, "old", "new"]}
+```
+
+**Implementation of non-linear rollouts is out of the scope of this proposal.**
 
 ### Consequences
 
