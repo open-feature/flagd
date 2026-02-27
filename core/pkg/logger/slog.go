@@ -22,11 +22,13 @@ func (l *slogger) DebugWithID(reqID string, msg string, args ...any) {
 		return
 	}
 	attrs := append(makeAttrs(args...), l.getAttrs(reqID)...)
+	attrs = append(attrs, l.attrs...)
+	attrs = append(attrs, slog.String(RequestIDFieldName, reqID))
 	l.Logger.LogAttrs(context.TODO(), slog.LevelDebug, msg, attrs...)
 }
 
 func (l *slogger) Debug(msg string, args ...any) {
-	l.Logger.LogAttrs(context.TODO(), slog.LevelDebug, msg, makeAttrs(args...)...)
+	l.Logger.LogAttrs(context.TODO(), slog.LevelDebug, msg, append(l.attrs, makeAttrs(args...)...)...)
 }
 
 func (l *slogger) InfoWithID(reqID string, msg string, args ...any) {
@@ -34,11 +36,13 @@ func (l *slogger) InfoWithID(reqID string, msg string, args ...any) {
 		return
 	}
 	attrs := append(makeAttrs(args...), l.getAttrs(reqID)...)
+	attrs = append(attrs, l.attrs...)
+	attrs = append(attrs, slog.String(RequestIDFieldName, reqID))
 	l.Logger.LogAttrs(context.TODO(), slog.LevelInfo, msg, attrs...)
 }
 
 func (l *slogger) Info(msg string, args ...any) {
-	l.Logger.LogAttrs(context.TODO(), slog.LevelInfo, msg, makeAttrs(args...)...)
+	l.Logger.LogAttrs(context.TODO(), slog.LevelInfo, msg, append(l.attrs, makeAttrs(args...)...)...)
 }
 
 func (l *slogger) WarnWithID(reqID string, msg string, args ...any) {
@@ -46,11 +50,13 @@ func (l *slogger) WarnWithID(reqID string, msg string, args ...any) {
 		return
 	}
 	attrs := append(makeAttrs(args...), l.getAttrs(reqID)...)
+	attrs = append(attrs, l.attrs...)
+	attrs = append(attrs, slog.String(RequestIDFieldName, reqID))
 	l.Logger.LogAttrs(context.TODO(), slog.LevelWarn, msg, attrs...)
 }
 
 func (l *slogger) Warn(msg string, args ...any) {
-	l.Logger.LogAttrs(context.TODO(), slog.LevelWarn, msg, makeAttrs(args...)...)
+	l.Logger.LogAttrs(context.TODO(), slog.LevelWarn, msg, append(l.attrs, makeAttrs(args...)...)...)
 }
 
 func (l *slogger) ErrorWithID(reqID string, msg string, args ...any) {
@@ -58,11 +64,13 @@ func (l *slogger) ErrorWithID(reqID string, msg string, args ...any) {
 		return
 	}
 	attrs := append(makeAttrs(args...), l.getAttrs(reqID)...)
+	attrs = append(attrs, l.attrs...)
+	attrs = append(attrs, slog.String(RequestIDFieldName, reqID))
 	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, attrs...)
 }
 
 func (l *slogger) Error(msg string, args ...any) {
-	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, makeAttrs(args...)...)
+	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, append(l.attrs, makeAttrs(args...)...)...)
 }
 
 func (l *slogger) FatalWithID(reqID string, msg string, args ...any) {
@@ -70,12 +78,14 @@ func (l *slogger) FatalWithID(reqID string, msg string, args ...any) {
 		return
 	}
 	attrs := append(makeAttrs(args...), l.getAttrs(reqID)...)
+	attrs = append(attrs, l.attrs...)
+	attrs = append(attrs, slog.String(RequestIDFieldName, reqID))
 	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, attrs...)
 	os.Exit(1)
 }
 
 func (l *slogger) Fatal(msg string, args ...any) {
-	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, makeAttrs(args...)...)
+	l.Logger.LogAttrs(context.TODO(), slog.LevelError, msg, append(l.attrs, makeAttrs(args...)...)...)
 	os.Exit(1)
 }
 
@@ -114,22 +124,15 @@ func (l *slogger) WriteFields(reqID string, fields ...any) {
 
 func (l *slogger) getAttrs(reqID string) []slog.Attr {
 	res := []slog.Attr{}
-	f, ok := l.requestAttrs.Load(reqID)
+	fields, ok := l.requestAttrs.Load(reqID)
 	if ok {
-		r, ok := f.([]slog.Attr)
+		r, ok := fields.([]slog.Attr)
 		if ok {
 			res = r
 		}
 	}
 	return res
 }
-
-//func (l *slogger) getAttrsForLog(reqID string) []slog.Attr {
-//	fields := l.getAttrs(reqID)
-//	fields = append(fields, slog.Any("requestID", reqID))
-//	fields = append(fields, l.attrs...)
-//	return fields
-//}
 
 // ClearFields clears all stored fields for a given requestID, important for maintaining performance
 func (l *slogger) ClearFields(reqID string) {
@@ -162,10 +165,13 @@ func NewSlogLogger(level slog.Level, logFormat string, writeFile io.Writer) *slo
 
 // Flagd uses WithFields, we'll need to implement.
 func (l *slogger) With(attrs ...any) Logger {
+	newAttrs := make([]slog.Attr, len(l.attrs))
+	copy(newAttrs, l.attrs)
+	newAttrs = append(newAttrs, makeAttrs(attrs...)...)
 	return &slogger{
 		Logger:       l.Logger,
 		requestAttrs: l.requestAttrs,
-		attrs:        makeAttrs(attrs),
+		attrs:        newAttrs,
 		reqIDLogging: l.reqIDLogging,
 	}
 }
