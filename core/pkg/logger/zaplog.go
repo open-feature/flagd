@@ -47,18 +47,21 @@ type zapLogger struct {
 var _ Logger = &zapLogger{}
 
 func makeFields(args ...any) []zap.Field {
+	if len(args) == 0 {
+		return nil
+	}
 	// if there are an odd number of
 	if len(args)%2 != 0 {
 		lastArg := args[len(args)-1]
-		args[len(args)-1] = "BADKEY!"
+		args[len(args)-1] = "!BADKEY"
 		args = append(args, lastArg)
 	}
-	out := make([]zap.Field, len(args))
+	out := make([]zap.Field, 0, len(args)/2)
 	for i := 0; i < len(args); i += 2 {
 		var k string
-		switch args[i].(type) {
+		switch v := args[i].(type) {
 		case string:
-			k = k
+			k = v
 		default:
 			k = "!BADKEY"
 		}
