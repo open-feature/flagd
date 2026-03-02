@@ -4,12 +4,37 @@ import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
 import { getString, isValidYaml, yamlToCompactJson } from "./utils";
-import { BeforeMount, Editor } from "@monaco-editor/react";
+import { BeforeMount, Editor, loader } from "@monaco-editor/react";
 import { Observable } from "react-use/lib/useObservable";
+import * as monaco from "monaco-editor";
+import { configureMonacoYaml } from "monaco-yaml";
+import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import YamlWorker from "./yaml.worker?worker";
 
 declare global {
   var component$: Observable<{ ref: HTMLElement }>;
 }
+
+// Use local monaco-editor from node_modules instead of CDN
+window.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === "yaml") {
+      return new YamlWorker();
+    }
+    return new EditorWorker();
+  },
+};
+loader.config({ monaco });
+
+configureMonacoYaml(monaco, {
+  enableSchemaRequest: true,
+  schemas: [
+    {
+      uri: "https://flagd.dev/schema/v0/flags.json",
+      fileMatch: ["*"],
+    },
+  ],
+});
 
 // see: https://github.com/squidfunk/mkdocs-material/discussions/3429
 const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
@@ -38,10 +63,7 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
       "editor.background": "#00000000",
     },
   });
-  monaco?.languages.json.jsonDefaults.setDiagnosticsOptions({
-    enableSchemaRequest: true,
-    allowComments: false, // we don't support JSON comments in flagd
-  });
+  // YAML schema validation is configured globally via configureMonacoYaml above
 };
 
 function formatJson(shortenedString: string) {
