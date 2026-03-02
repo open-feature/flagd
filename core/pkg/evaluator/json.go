@@ -395,10 +395,10 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			if flag.DefaultVariant == "" {
 				if ctx.Value(ProtoVersionKey) != nil {
 					// old proto version behavior
-					return flag.DefaultVariant, flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+					return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 				}
 
-				return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
+				return "", flag.Variants, model.FallbackReason, metadata, nil
 			}
 
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
@@ -421,7 +421,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			// old proto version behavior
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 		}
-		return flag.DefaultVariant, flag.Variants, model.FallbackReason, metadata, nil
+		return "", flag.Variants, model.FallbackReason, metadata, nil
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
