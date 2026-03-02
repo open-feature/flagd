@@ -72,6 +72,13 @@ markdown_extensions:
 
 nav:
   - 'Introduction': 'index.md'
+  - 'flagd Hands-On':
+    - 'hands-on/index.md'
+    - 'Why JsonLogic?': 'hands-on/why-jsonlogic.md'
+    - 'The Shape of Operations': 'hands-on/shape-of-operations.md'
+    - 'Basic Operators': 'hands-on/basic-operators.md'
+    - 'Variables': 'hands-on/variables.md'
+    - 'Custom Operations': 'hands-on/custom-operations.md'
   - 'Quick start': 'quick-start.md'
   - 'Installation': 'installation.md'
   - 'Playground': 'playground/index.md'
