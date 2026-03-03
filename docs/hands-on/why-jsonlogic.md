@@ -11,10 +11,10 @@ We chose [JsonLogic](https://jsonlogic.com/) for several reasons:
 
 JsonLogic rules are plain JSON. This means:
 
-- **Simplicity** — rules can be stored in files, databases, HTTP responses, or Kubernetes custom resources without any special encoding/decoding
-- **Validation is straightforward** — standard JSON Schema tooling works out of the box
-- **Parsing is universal** — every language and platform has a JSON parser built in, databases have traversal mechanisms, etc
-- **Kubernetes-native** — JSON fits perfectly inside CRD specs (YAML or JSON), no escaping or string-embedding required; can be easily diff'd
+- **Simplicity**: rules can be stored in files, databases, HTTP responses, or Kubernetes custom resources without any special encoding/decoding
+- **Validation is straightforward**: standard JSON Schema tooling works out of the box
+- **Parsing is universal**: every language and platform has a JSON parser built in, databases have traversal mechanisms, etc
+- **Kubernetes-native**: JSON fits perfectly inside CRD specs (YAML or JSON), no escaping or string-embedding required; can be easily diff'd
 
 ## Implemented in many languages
 
@@ -25,9 +25,9 @@ This means the same targeting rules can be evaluated consistently across differe
 
 JsonLogic expressions are **pure data**. They:
 
-- **Cannot execute arbitrary code** — there are no function definitions, loops, or system calls
-- **Have no side effects** — evaluating a rule never modifies state
-- **Cannot access the filesystem or network** — rules can only operate on the data you explicitly pass in
+- **Cannot execute arbitrary code**: there are no function definitions, loops, or system calls
+- **Have no side effects**: evaluating a rule never modifies state
+- **Cannot access the filesystem or network**: rules can only operate on the data you explicitly pass in
 
 This makes JsonLogic safe to accept from untrusted sources, safe to evaluate in any environment, and easy to reason about.
 
