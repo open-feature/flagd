@@ -298,14 +298,13 @@ function App() {
   return (
     <div
       style={{
-        maxWidth: "825px",
+        maxWidth: "100%",
       }}
     >
       <div>
+        <a href="../" className="playground-back">Back to docs</a>
         <p
           style={{
-            // Moves content closer to the page header for more screen real estate
-            margin: "-32px 0 0 0",
             lineHeight: "1.4",
             fontSize: "medium",
           }}
