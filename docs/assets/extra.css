@@ -31,3 +31,21 @@ button:disabled {
 .output.visible {
   opacity: 1;
 }
+
+/* custom css arrow */
+.playground-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.playground-back::before {
+  content: '';
+  display: inline-block;
+  width: 0.45em;
+  height: 0.45em;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
