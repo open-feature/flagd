@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/open-feature/flagd/compare/flagd/v0.14.0...flagd/v0.14.1) (2026-03-04)
+
+
+### 🐛 Bug Fixes
+
+* RPC event serialization error, dont send empty messages ([#1871](https://github.com/open-feature/flagd/issues/1871)) ([95d38fd](https://github.com/open-feature/flagd/commit/95d38fd8e7ec2cb17b3ed7a80a46f073e38d9e0e))
+
 ## [0.14.0](https://github.com/open-feature/flagd/compare/flagd/v0.13.3...flagd/v0.14.0) (2026-03-04)
 
 
