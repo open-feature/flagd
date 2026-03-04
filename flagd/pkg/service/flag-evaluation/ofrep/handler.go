@@ -73,6 +73,7 @@ func NewOfrepHandler(
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
 }
+
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)

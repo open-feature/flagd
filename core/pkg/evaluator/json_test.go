@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	flagdEvaluator "github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -927,10 +928,10 @@ func TestResolve_DefaultVariant(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{NullDefault, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{UndefinedDefault, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{NullDefaultWithTargetting, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{UndefinedDefaultWithTargetting, ValidFlag, nil, model.ErrorReason, model.FlagNotFoundErrorCode},
+		{NullDefault, ValidFlag, nil, model.FallbackReason, ""},
+		{UndefinedDefault, ValidFlag, nil, model.FallbackReason, ""},
+		{NullDefaultWithTargetting, ValidFlag, nil, model.FallbackReason, ""},
+		{UndefinedDefaultWithTargetting, ValidFlag, nil, model.FallbackReason, ""},
 	}
 
 	for _, test := range tests {
@@ -944,8 +945,9 @@ func TestResolve_DefaultVariant(t *testing.T) {
 
 			anyResult := evaluator.ResolveAsAnyValue(context.TODO(), "", test.flagKey, test.context)
 
-			assert.Equal(t, model.ErrorReason, anyResult.Reason)
-			assert.EqualError(t, anyResult.Error, test.errorCode)
+			assert.Equal(t, model.FallbackReason, anyResult.Reason)
+			// for code defaults, there should be no error
+			assert.NoError(t, anyResult.Error)
 		})
 	}
 }
