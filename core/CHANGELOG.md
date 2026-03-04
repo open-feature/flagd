@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-feature/flagd/compare/core/v0.13.3...core/v0.14.0) (2026-03-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* no `defaultVariant` -> code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862))
+
+### ✨ New Features
+
+* no `defaultVariant` -&gt; code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862)) ([89117d8](https://github.com/open-feature/flagd/commit/89117d8eaba0e9d205b3b47544528c42d5698176))
+
 ## [0.13.3](https://github.com/open-feature/flagd/compare/core/v0.13.2...core/v0.13.3) (2026-02-09)
 
 
