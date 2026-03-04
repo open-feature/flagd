@@ -205,10 +205,16 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		v2:  v2Handler,
 	}
 
+	var svcHandler http.Handler = bs
+	if svcConf.MaxRequestBodyBytes > 0 {
+		svcHandler = http.MaxBytesHandler(svcHandler, svcConf.MaxRequestBodyBytes)
+	}
+
 	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
-		Handler:           bs,
+		Handler:           svcHandler,
+		MaxHeaderBytes:    int(svcConf.MaxRequestHeaderBytes),
 	}
 	s.serverMtx.Unlock()
 
