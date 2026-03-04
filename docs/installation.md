@@ -45,12 +45,6 @@ You can also choose to run a Kubernetes service in front of a deployment with mu
 
 A systemd wrapper is available [here](https://github.com/open-feature/flagd/blob/main/systemd/flagd.service).
 
-### Homebrew
-
-```shell
-brew install flagd
-```
-
 ## Summary
 
 Once flagd is installed, you can start using it within your application.

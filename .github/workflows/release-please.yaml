@@ -211,23 +211,3 @@ jobs:
             ./sbom.xml
             ./*.tar.gz
             ./*.zip
-  homebrew:
-    name: Bump homebrew-core formula
-    needs: release-please
-    runs-on: ubuntu-latest
-    # Only run on non-forked flagd releases
-    if: ${{ github.repository_owner == 'open-feature' && needs.release-please.outputs.flagd_tag_name }}
-    steps:
-      - uses: mislav/bump-homebrew-formula-action@v2
-        with:
-          formula-name: flagd
-          # https://github.com/mislav/bump-homebrew-formula-action/issues/58
-          formula-path: Formula/f/flagd.rb
-          tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
-          download-url: https://github.com/${{ github.repository }}.git
-          commit-message: |
-            {{formulaName}} ${{ needs.release-please.outputs.flagd_version }}
-
-            Created by https://github.com/mislav/bump-homebrew-formula-action
-        env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
