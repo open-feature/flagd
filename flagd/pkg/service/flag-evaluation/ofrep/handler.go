@@ -3,6 +3,7 @@ package ofrep
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -90,6 +91,11 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	flagKey := vars[key]
 	request, err := extractOfrepRequest(r)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			return
+		}
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
 		return
 	}
@@ -113,6 +119,11 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	request, err := extractOfrepRequest(r)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			return
+		}
 		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextError(), w)
 		return
 	}
@@ -155,8 +166,15 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	request := ofrep.Request{}
 	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil && err.Error() != "EOF" {
-		return request, fmt.Errorf("decode error: %w", err)
+	if err != nil {
+		// Propagate MaxBytesError so callers can return 413.
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			return request, err
+		}
+		if err.Error() != "EOF" {
+			return request, fmt.Errorf("decode error: %w", err)
+		}
 	}
 
 	return request, nil

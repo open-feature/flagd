@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -306,4 +308,90 @@ func TestConnectServiceShutdown(t *testing.T) {
 	case <-timeout.Done():
 		t.Error("timeout while waiting for notifications")
 	}
+}
+
+func TestConnectService_RequestBodySizeLimit(t *testing.T) {
+	const port = 18291
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "body-limit-test")
+
+	svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
+
+	serveConf := iservice.Configuration{
+		ReadinessProbe:      func() bool { return true },
+		Port:                port,
+		MaxRequestBodyBytes: 10, // allow only 10 bytes
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		_ = svc.Serve(ctx, serveConf)
+	}()
+
+	// wait for the server to be ready
+	require.Eventually(t, func() bool {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+		return err == nil && resp != nil
+	}, 3*time.Second, 100*time.Millisecond)
+
+	// Valid JSON that exceeds the 10-byte body limit, so MaxBytesReader fires mid-parse.
+	largeBody := []byte(`{"flagKey":"` + strings.Repeat("a", 100) + `"}`)
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveBoolean", port),
+		bytes.NewReader(largeBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	// connect-go maps MaxBytesError (resource exhausted) to HTTP 429.
+	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
+}
+
+func TestConnectService_RequestHeaderSizeLimit(t *testing.T) {
+	const port = 18292
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "header-limit-test")
+
+	svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
+
+	serveConf := iservice.Configuration{
+		ReadinessProbe:        func() bool { return true },
+		Port:                  port,
+		MaxRequestHeaderBytes: 100, // 10000-byte test header value easily exceeds 100 + slop
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		_ = svc.Serve(ctx, serveConf)
+	}()
+
+	// wait for the server to be ready
+	require.Eventually(t, func() bool {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+		return err == nil && resp != nil
+	}, 3*time.Second, 100*time.Millisecond)
+
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveBoolean", port),
+		bytes.NewReader([]byte("{}")))
+	require.NoError(t, err)
+	// Use valid ASCII to avoid client-side rejection; value exceeds MaxHeaderBytes + slop.
+	req.Header.Set("X-Large-Header", strings.Repeat("a", 10000))
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusRequestHeaderFieldsTooLarge, resp.StatusCode)
 }
