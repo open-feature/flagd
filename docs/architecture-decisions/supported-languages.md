@@ -38,21 +38,21 @@ Language providers are categorized into three tiers. The classification determin
 **Criteria:**
 
 * **Conformance**  
-  * Must pass 100% of the OpenFeature spec conformance test suite.  
-  * Must pass 100% of the Gherkin provider e2e scenarios suite.  
+    * Must pass 100% of the OpenFeature spec conformance test suite.  
+    * Must pass 100% of the Gherkin provider e2e scenarios suite.  
 * **Ownership:** Minimum of **2 dedicated provider (language) maintainers**.  
 * **Documentation:** Complete API references and usage examples in the repo.  
 * **Service Level Objectives (SLOs):** Follow the “best-effort SLO” defined in the Semantic Versioning Policy  
 * **Releases:**  
-  * All the tier 1 languages follow a **release train** – the Core Maintainers of flagd set a new release date and the list of features that are targeted for that release. The Maintainers of each language are responsible for ensuring that all the targeted features are implemented and tested before the release.  
-  * If some language(s) will not make it the Core Maintainers can make one of the two choices:  
-    * cut the feature from all the languages for that release  
-    * postpone the release date for all the languages  
-    * include the feature in some subset of languages as experimental, undocumented feature  
-  * The main goal is to ensure feature parity per release for all tier 1 languages  
+    * All the tier 1 languages follow a **release train** – the Core Maintainers of flagd set a new release date and the list of features that are targeted for that release. The Maintainers of each language are responsible for ensuring that all the targeted features are implemented and tested before the release.  
+    * If some language(s) will not make it the Core Maintainers can make one of the two choices:  
+        * cut the feature from all the languages for that release  
+        * postpone the release date for all the languages  
+        * include the feature in some subset of languages as experimental, undocumented feature  
+    * The main goal is to ensure feature parity per release for all tier 1 languages  
 * **Language and library support:**  
-  * The latest versions of the providers support the current LTS version of the language, if one exists  
-  * The latest version of the providers do not rely on deprecated language features or libraries
+    * The latest versions of the providers support the current LTS version of the language, if one exists  
+    * The latest version of the providers do not rely on deprecated language features or libraries
 
 ### Tier 2: Community Supported
 
@@ -61,14 +61,14 @@ Language providers are categorized into three tiers. The classification determin
 **Criteria:**
 
 * **Conformance**  
-  * Must pass 100% of the OpenFeature spec conformance test suite.  
-  * Must pass 100% of the Gherkin provider e2e scenarios suite.  
+    * Must pass 100% of the OpenFeature spec conformance test suite.  
+    * Must pass 100% of the Gherkin provider e2e scenarios suite.  
 * **Ownership:** Minimum of **1 dedicated provider (language) maintainer**.  
 * **Documentation:** Might have some gaps  
 * **Service Level Objectives (SLOs):** None  
-* **Releases:**   
-  * The numbering of the releases should match the numbering of the tier 1 releases (meaning, that the feature set is the same as in tier 1\)  
-  * However, the tier 2 languages do NOT need to “catch” the release train, they can lag behind the tier 1  
+* **Releases:**  
+    * The numbering of the releases should match the numbering of the tier 1 releases (meaning, that the feature set is the same as in tier 1\)  
+    * However, the tier 2 languages do NOT need to “catch” the release train, they can lag behind the tier 1  
 * **Language and library support:** Best effort
 
 ### Tier 3: Experimental / Incubation
@@ -116,13 +116,13 @@ A provider may be promoted (e.g., Tier 2 → Tier 1\) upon request.
 A provider may be demoted (e.g., Tier 1 → Tier 2\) or deprecated.
 
 * **Demotion Triggers:**  
-  * Loss of maintainers (dropping below the required count).  
-  * Release lagging behind the latest  
+    * Loss of maintainers (dropping below the required count).  
+    * Release lagging behind the latest  
 * **Deprecation (Sunset):**  
-  * If a Tier 2 or 3 provider has no activity or owner for **6 months**, it will be marked as **Deprecated**.  
-  * Deprecated repos will be archived (read-only) after an additional **3 month** grace period if no new owner steps forward.
+    * If a Tier 2 or 3 provider has no activity or owner for **6 months**, it will be marked as **Deprecated**.  
+    * Deprecated repos will be archived (read-only) after an additional **3 month** grace period if no new owner steps forward.
 
-# Provider Development Best Practices
+## Provider Development Best Practices
 
 To ensure a cohesive ecosystem, all providers should adhere to these development guidelines:
 
@@ -130,6 +130,6 @@ To ensure a cohesive ecosystem, all providers should adhere to these development
 * **Minimal Dependencies:** Avoid heavy dependencies. The provider should be lightweight.  
 * **Generated Code:** Use `buf` or `protoc` for generating gRPC stubs from the official flagd schemas. Do not manually write protocol buffers code.  
 * **CI/CD:** All providers must have a GitHub Actions pipeline that runs:  
-  * Linters/Formatters.  
-  * Unit Tests.  
-  * The standard flagd integration/conformance tests.
+    * Linters/Formatters.  
+    * Unit Tests.  
+    * The standard flagd integration/conformance tests.
