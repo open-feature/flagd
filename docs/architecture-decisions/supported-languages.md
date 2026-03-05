@@ -1,6 +1,6 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: proposed
+status: accepted
 author: Maks Osowski (@cupofcat)
 created: 2026-01-27
 ---
@@ -50,7 +50,6 @@ Language providers are categorized into three tiers. The classification determin
     * postpone the release date for all the languages  
     * include the feature in some subset of languages as experimental, undocumented feature  
   * The main goal is to ensure feature parity per release for all tier 1 languages  
-* **Benchmarking:** All new releases have performance benchmark reports attached  
 * **Language and library support:**  
   * The latest versions of the providers support the current LTS version of the language, if one exists  
   * The latest version of the providers do not rely on deprecated language features or libraries
