@@ -11,6 +11,10 @@ declare global {
   var component$: Observable<{ ref: HTMLElement }>;
 }
 
+const LANG_JSON = "json" as const;
+const LANG_YAML = "yaml" as const;
+type DefinitionLanguage = typeof LANG_JSON | typeof LANG_YAML;
+
 // see: https://github.com/squidfunk/mkdocs-material/discussions/3429
 const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
 const PALETTE_SWITCH_SELECTOR = "[data-md-component=palette]";
@@ -77,14 +81,31 @@ function App() {
   const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
     getPalette()
   );
-  const [featureDefinitionLanguage, setFeatureDefinitionLanguage] = useState<"json" | "yaml">("json");
+  const [featureDefinitionLanguage, setFeatureDefinitionLanguage] = useState<DefinitionLanguage>(LANG_JSON);
+
+  const handleLanguageSwitch = useCallback(() => {
+    try {
+      const newLang = featureDefinitionLanguage === LANG_JSON ? LANG_YAML : LANG_JSON;
+      if (newLang === LANG_YAML) {
+        setFeatureDefinition(jsonToYaml(featureDefinition));
+      } else {
+        setFeatureDefinition(yamlToPrettyJson(featureDefinition));
+      }
+      setFeatureDefinitionLanguage(newLang);
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', newLang);
+      window.history.replaceState({}, '', url.href);
+    } catch (e) {
+      console.error("Failed to convert", e);
+    }
+  }, [featureDefinition, featureDefinitionLanguage]);
 
   const resetInputs = useCallback(() => {
     setOutput("");
     setShowOutput(false);
     const template = scenarios[selectedTemplate];
     setFeatureDefinition(template.flagDefinition);
-    setFeatureDefinitionLanguage("json");
+    setFeatureDefinitionLanguage(LANG_JSON);
     setFlagKey(template.flagKey);
     setReturnType(template.returnType);
     setEvaluationContext(getString(template.context));
@@ -155,12 +176,10 @@ function App() {
     if (flagsParam) {
       try {
         let formattedFeatureDefinition = formatJson(flagsParam);
-        let lang: "json" | "yaml" = "json";
-        if (langParam === 'yaml') {
+        let lang: DefinitionLanguage = LANG_JSON;
+        if (langParam === LANG_YAML) {
           formattedFeatureDefinition = jsonToYaml(formattedFeatureDefinition);
-          lang = 'yaml';
-        } else if (langParam === 'json') {
-          lang = 'json';
+          lang = LANG_YAML;
         }
         setFeatureDefinition(formattedFeatureDefinition);
         setFeatureDefinitionLanguage(lang);
@@ -360,24 +379,9 @@ function App() {
                 className="md-button"
                 style={{ padding: "2px 8px", fontSize: "small" }}
                 disabled={!validFeatureDefinition}
-                onClick={() => {
-                  try {
-                    const newLang = featureDefinitionLanguage === "json" ? "yaml" : "json";
-                    if (newLang === "yaml") {
-                      setFeatureDefinition(jsonToYaml(featureDefinition));
-                    } else {
-                      setFeatureDefinition(yamlToPrettyJson(featureDefinition));
-                    }
-                    setFeatureDefinitionLanguage(newLang);
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('lang', newLang);
-                    window.history.replaceState({}, '', url.href);
-                  } catch (e) {
-                    console.error("Failed to convert", e);
-                  }
-                }}
+                onClick={handleLanguageSwitch}
               >
-                Switch to {featureDefinitionLanguage === "json" ? "YAML" : "JSON"}
+                Switch to {featureDefinitionLanguage === LANG_JSON ? "YAML" : "JSON"}
               </button>
             </div>
             <div style={{ backgroundColor: codeStyle.backgroundColor }}>
@@ -450,6 +454,7 @@ function App() {
                   theme={editorTheme}
                   width="100%"
                   height="80px"
+                  // evaluation context is always JSON, even if the flag definition is in YAML
                   language="json"
                   options={{
                     minimap: { enabled: false },
