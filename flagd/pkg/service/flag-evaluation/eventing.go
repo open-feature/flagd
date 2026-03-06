@@ -41,17 +41,23 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 		for result := range watcher {
 			newFlags := make(map[string]model.Flag)
 			for _, flag := range result.Flags {
-                // we should be either selecting on a flag set here, or using the source-priority - duplicates are already handled, so we don't have to worry about overwrites
+				// we should be either selecting on a flag set here, or using the source-priority - duplicates are already handled, so we don't have to worry about overwrites
 				newFlags[flag.Key] = flag
 			}
 
 			// ignore the first notification (nil old flags), the watcher emits on initialization, but for RPC we don't care until there's a change
 			if oldFlags != nil {
 				notifications := notifications.NewFromFlags(oldFlags, newFlags)
+				// if there are no changes, don't emit a notification
+				if len(notifications) == 0 {
+					oldFlags = newFlags
+					continue
+				}
 				notifier <- iservice.Notification{
 					Type: iservice.ConfigurationChange,
 					Data: map[string]interface{}{
-						"flags": notifications,
+						// don't use our custom type or it cannot be serialized, convert to map
+						"flags": map[string]interface{}(notifications),
 					},
 				}
 			}
