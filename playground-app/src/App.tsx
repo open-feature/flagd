@@ -3,13 +3,17 @@ import { useMedia } from "react-use";
 import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
-import { getString, isValidYaml, yamlToCompactJson } from "./utils";
+import { getString, isValidYaml, yamlToCompactJson, yamlToPrettyJson, jsonToYaml } from "./utils";
 import { BeforeMount, Editor } from "@monaco-editor/react";
 import { Observable } from "react-use/lib/useObservable";
 
 declare global {
   var component$: Observable<{ ref: HTMLElement }>;
 }
+
+const LANG_JSON = "json" as const;
+const LANG_YAML = "yaml" as const;
+type DefinitionLanguage = typeof LANG_JSON | typeof LANG_YAML;
 
 // see: https://github.com/squidfunk/mkdocs-material/discussions/3429
 const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
@@ -77,12 +81,31 @@ function App() {
   const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
     getPalette()
   );
+  const [featureDefinitionLanguage, setFeatureDefinitionLanguage] = useState<DefinitionLanguage>(LANG_JSON);
+
+  const handleLanguageSwitch = useCallback(() => {
+    try {
+      const newLang = featureDefinitionLanguage === LANG_JSON ? LANG_YAML : LANG_JSON;
+      if (newLang === LANG_YAML) {
+        setFeatureDefinition(jsonToYaml(featureDefinition));
+      } else {
+        setFeatureDefinition(yamlToPrettyJson(featureDefinition));
+      }
+      setFeatureDefinitionLanguage(newLang);
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', newLang);
+      window.history.replaceState({}, '', url.href);
+    } catch (e) {
+      console.error("Failed to convert", e);
+    }
+  }, [featureDefinition, featureDefinitionLanguage]);
 
   const resetInputs = useCallback(() => {
     setOutput("");
     setShowOutput(false);
     const template = scenarios[selectedTemplate];
     setFeatureDefinition(template.flagDefinition);
+    setFeatureDefinitionLanguage(LANG_JSON);
     setFlagKey(template.flagKey);
     setReturnType(template.returnType);
     setEvaluationContext(getString(template.context));
@@ -148,16 +171,24 @@ function App() {
     const flagKeyParam = urlParams.get('flag-key');
     const returnTypeParam = urlParams.get('return-type');
     const evalContextParam = urlParams.get('eval-context');
+    const langParam = urlParams.get('lang');
     const scenarioParam = urlParams.get('scenario-name');
     if (flagsParam) {
       try {
-        const formattedFeatureDefinition = formatJson(flagsParam);
+        let formattedFeatureDefinition = formatJson(flagsParam);
+        let lang: DefinitionLanguage = LANG_JSON;
+        if (langParam === LANG_YAML) {
+          formattedFeatureDefinition = jsonToYaml(formattedFeatureDefinition);
+          lang = LANG_YAML;
+        }
         setFeatureDefinition(formattedFeatureDefinition);
+        setFeatureDefinitionLanguage(lang);
         if (flagKeyParam) setFlagKey(flagKeyParam);
         if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
         if (evalContextParam) {
           const formattedEvaluationContext = formatJson(evalContextParam);
           setEvaluationContext(formattedEvaluationContext);
+          // evaluation context is always JSON
         }
       } catch (error) {
         console.error("Error decoding URL parameters: ", error);
@@ -249,6 +280,7 @@ function App() {
       newUrl.searchParams.set('flag-key', flagKey);
       newUrl.searchParams.set('return-type', returnType);
       newUrl.searchParams.set('eval-context', encodedEvaluationContext);
+      newUrl.searchParams.set('lang', featureDefinitionLanguage);
     }
     window.history.pushState({}, '', newUrl.href);
 
@@ -266,14 +298,13 @@ function App() {
   return (
     <div
       style={{
-        maxWidth: "825px",
+        maxWidth: "100%",
       }}
     >
       <div>
+        <a href="../" className="playground-back">Back to docs</a>
         <p
           style={{
-            // Moves content closer to the page header for more screen real estate
-            margin: "-32px 0 0 0",
             lineHeight: "1.4",
             fontSize: "medium",
           }}
@@ -341,13 +372,23 @@ function App() {
               flex: "3",
             }}
           >
-            <h4>Feature definition</h4>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <h4 style={{ margin: 0 }}>Feature definition</h4>
+              <button
+                className="md-button"
+                style={{ padding: "2px 8px", fontSize: "small" }}
+                disabled={!validFeatureDefinition}
+                onClick={handleLanguageSwitch}
+              >
+                Switch to {featureDefinitionLanguage === LANG_JSON ? "YAML" : "JSON"}
+              </button>
+            </div>
             <div style={{ backgroundColor: codeStyle.backgroundColor }}>
               <Editor
                 theme={editorTheme}
                 width="100%"
                 height="500px"
-                language="yaml"
+                language={featureDefinitionLanguage}
                 value={featureDefinition}
                 options={{
                   minimap: { enabled: false },
@@ -412,7 +453,8 @@ function App() {
                   theme={editorTheme}
                   width="100%"
                   height="80px"
-                  language="yaml"
+                  // evaluation context is always JSON, even if the flag definition is in YAML
+                  language="json"
                   options={{
                     minimap: { enabled: false },
                     lineNumbers: "off",

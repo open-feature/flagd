@@ -47,3 +47,15 @@ export function isValidYaml(input: string): boolean {
     return false;
   }
 }
+
+export function yamlToPrettyJson(input: string): string {
+  const parsed = parseYaml(input) as Record<string, unknown>;
+  return JSON.stringify({ ...schemaMixin, ...parsed }, null, 2);
+}
+
+// Convert JSON content to YAML, removing $schema.
+export function jsonToYaml(input: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { $schema, ...rest } = JSON.parse(input);
+  return yaml.dump(rest, { lineWidth: -1 });
+}
