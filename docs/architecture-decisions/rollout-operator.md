@@ -172,6 +172,29 @@ This can be done with an additional, optional, configuration parameter before th
 
 **Implementation of non-linear rollouts is out of the scope of this proposal.**
 
+### Considered Alternative: Enhanced `fractional` with Dynamic Weights
+
+An alternative to a dedicated operator was proposed: use `fractional` with JSONLogic expressions as weights, combined with `$flagd.timestamp`, to achieve time-based progression without any new operator:
+
+```jsonc
+{
+  "fractional": [
+    { "var": "targetingKey" },
+    ["on",  { "-": [{ "var": "$flagd.timestamp" }, 1740000000] }],
+    ["off", { "-": [1800000000, { "var": "$flagd.timestamp" }] }]
+  ]
+}
+```
+
+As time advances, the weight of `"on"` grows and `"off"` shrinks, producing a progressive rollout using only existing primitives.
+This requires allowing the `fractional` weight argument to be a JSONLogic expression (currently it must be a hard-coded integer), in addition to support for non-string/nested variants ([#1877](https://github.com/open-feature/flagd/pull/1877)) and high-precision bucketing.
+
+This approach is elegant and avoids a new operator, but was not adopted for two reasons:
+
+1. **No FILO rollback.** With `fractional`, swapping the weight expressions to reverse a rollout produces FIFO ordering: early adopters revert first, not last. Worse, if weights are swapped mid-rollout, the formula starts at 100% "new" and ramps down, meaning users who _never saw the new variant_ are suddenly exposed to it before being reverted. This is exactly the wrong behavior during an incident. The `rollback` operator avoids this via hash inversion (`~hash`), which is not expressible in JSONLogic.
+
+2. **No automatic hash decorrelation.** The `rollout` operator appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`. With the pure-fractional approach, the outer and inner `fractional` share the same hash, so early-rollout users systematically land in the first inner bucket. Users can work around this by manually adding a salt via `cat`, but this is error-prone and non-obvious.
+
 ### Consequences
 
 - Good, because this enables functionality present in many other systems
