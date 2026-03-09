@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.0...flagd-proxy/v0.9.1) (2026-03-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update otel deps, minimum core Go version ([#1897](https://github.com/open-feature/flagd/issues/1897)) ([6b79bf8](https://github.com/open-feature/flagd/commit/6b79bf8419da1e269ecb1d1db03760379fc201cb))
+
 ## [0.9.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.3...flagd-proxy/v0.9.0) (2026-03-04)
 
 
