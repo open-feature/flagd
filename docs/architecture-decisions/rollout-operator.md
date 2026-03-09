@@ -193,7 +193,8 @@ This approach is elegant and avoids a new operator, but was not adopted for two 
 
 1. **No FILO rollback.** With `fractional`, swapping the weight expressions to reverse a rollout produces FIFO ordering: early adopters revert first, not last. Worse, if weights are swapped mid-rollout, the formula starts at 100% "new" and ramps down, meaning users who _never saw the new variant_ are suddenly exposed to it before being reverted. This is exactly the wrong behavior during an incident. The `rollback` operator avoids this via hash inversion (`~hash`), which is not expressible in JSONLogic.
 
-2. **No automatic hash decorrelation.** The `rollout` operator appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`. With the pure-fractional approach, the outer and inner `fractional` share the same hash, so early-rollout users systematically land in the first inner bucket. Users can work around this by manually adding a salt via `cat`, but this is error-prone and non-obvious.
+2. **No automatic hash decorrelation.** The `rollout` operator appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`.
+With the pure-fractional approach, the outer and inner `fractional` share the same hash, so early-rollout users systematically land in the first inner bucket. Users can work around this by manually adding a salt via `cat`, but this is error-prone and non-obvious.
 
 ### Consequences
 
