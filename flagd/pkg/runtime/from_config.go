@@ -46,6 +46,8 @@ type Config struct {
 
 	ContextValues              map[string]any
 	HeaderToContextKeyMappings map[string]string
+	MaxRequestBodyBytes        int64
+	MaxRequestHeaderBytes      int64
 }
 
 // FromConfig builds a runtime from startup configurations
@@ -105,10 +107,12 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// ofrep service
 	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
-		Logger: logger.WithFields(zap.String("component", "OFREPService")),
-		Port:   config.OfrepServicePort,
-		ServiceName: svcName,
-		MetricsRecorder: recorder,
+		Logger:                logger.WithFields(zap.String("component", "OFREPService")),
+		Port:                  config.OfrepServicePort,
+		ServiceName:           svcName,
+		MetricsRecorder:       recorder,
+		MaxRequestBodyBytes:   config.MaxRequestBodyBytes,
+		MaxRequestHeaderBytes: config.MaxRequestHeaderBytes,
 	},
 		config.ContextValues,
 		config.HeaderToContextKeyMappings,
@@ -165,6 +169,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			ContextValues:              config.ContextValues,
 			HeaderToContextKeyMappings: config.HeaderToContextKeyMappings,
 			StreamDeadline:             config.StreamDeadline,
+			MaxRequestBodyBytes:        config.MaxRequestBodyBytes,
+			MaxRequestHeaderBytes:      config.MaxRequestHeaderBytes,
 		},
 		Syncs: iSyncs,
 	}, nil
