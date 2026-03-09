@@ -30,7 +30,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func TestConnectService_UnixConnection(t *testing.T) {
+const resolveAllURLFmt = "http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll"
+
+func TestConnectServiceUnixConnection(t *testing.T) {
 	type evalFields struct {
 		result   bool
 		variant  string
@@ -158,7 +160,10 @@ func TestAddMiddleware(t *testing.T) {
 	}()
 
 	require.Eventually(t, func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+		resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
+		if err == nil && resp != nil {
+			resp.Body.Close()
+		}
 		// with the default http handler we should get a method not allowed (405) when attempting a GET request
 		return err == nil && resp.StatusCode == http.StatusMethodNotAllowed
 	}, 3*time.Second, 100*time.Millisecond)
@@ -166,9 +171,10 @@ func TestAddMiddleware(t *testing.T) {
 	svc.AddMiddleware(mwMock)
 
 	// with the injected middleware, the GET method should work
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+	resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
 
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	// verify that the status we return in the mocked middleware
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -310,35 +316,46 @@ func TestConnectServiceShutdown(t *testing.T) {
 	}
 }
 
-func TestConnectService_RequestBodySizeLimit(t *testing.T) {
-	const port = 18291
+// startConnectService creates a ConnectService with a mock evaluator and metric recorder,
+// starts it in a background goroutine with the given configuration, and waits until it is ready.
+// It returns the port the service is listening on.
+func startConnectService(t *testing.T, port uint16, conf iservice.Configuration) {
+	t.Helper()
+
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
 
 	exp := metric.NewManualReader()
 	rs := resource.NewWithAttributes("testSchema")
-	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "body-limit-test")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "limit-test")
 
 	svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
 
-	serveConf := iservice.Configuration{
-		ReadinessProbe:      func() bool { return true },
-		Port:                port,
-		MaxRequestBodyBytes: 10, // allow only 10 bytes
-	}
+	conf.ReadinessProbe = func() bool { return true }
+	conf.Port = port
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	t.Cleanup(cancel)
 
 	go func() {
-		_ = svc.Serve(ctx, serveConf)
+		_ = svc.Serve(ctx, conf)
 	}()
 
-	// wait for the server to be ready
 	require.Eventually(t, func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+		resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
+		if err == nil && resp != nil {
+			resp.Body.Close()
+		}
 		return err == nil && resp != nil
 	}, 3*time.Second, 100*time.Millisecond)
+}
+
+func TestConnectServiceRequestBodySizeLimit(t *testing.T) {
+	const port = 18291
+
+	startConnectService(t, port, iservice.Configuration{
+		MaxRequestBodyBytes: 10, // allow only 10 bytes
+	})
 
 	// Valid JSON that exceeds the 10-byte body limit, so MaxBytesReader fires mid-parse.
 	largeBody := []byte(`{"flagKey":"` + strings.Repeat("a", 100) + `"}`)
@@ -350,39 +367,17 @@ func TestConnectService_RequestBodySizeLimit(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	defer resp.Body.Close()
 	// connect-go maps MaxBytesError (resource exhausted) to HTTP 429.
 	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
 }
 
-func TestConnectService_RequestHeaderSizeLimit(t *testing.T) {
+func TestConnectServiceRequestHeaderSizeLimit(t *testing.T) {
 	const port = 18292
-	ctrl := gomock.NewController(t)
-	eval := mock.NewMockIEvaluator(ctrl)
 
-	exp := metric.NewManualReader()
-	rs := resource.NewWithAttributes("testSchema")
-	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "header-limit-test")
-
-	svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
-
-	serveConf := iservice.Configuration{
-		ReadinessProbe:        func() bool { return true },
-		Port:                  port,
+	startConnectService(t, port, iservice.Configuration{
 		MaxRequestHeaderBytes: 100, // 10000-byte test header value easily exceeds 100 + slop
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go func() {
-		_ = svc.Serve(ctx, serveConf)
-	}()
-
-	// wait for the server to be ready
-	require.Eventually(t, func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
-		return err == nil && resp != nil
-	}, 3*time.Second, 100*time.Millisecond)
+	})
 
 	req, err := http.NewRequest(http.MethodPost,
 		fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveBoolean", port),
@@ -393,5 +388,6 @@ func TestConnectService_RequestHeaderSizeLimit(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	defer resp.Body.Close()
 	require.Equal(t, http.StatusRequestHeaderFieldsTooLarge, resp.StatusCode)
 }

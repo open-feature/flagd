@@ -18,7 +18,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_OfrepServiceStartStop(t *testing.T) {
+const (
+	testServiceName       = "test-service"
+	errCreateOfrepService = "error creating the ofrep service: %v"
+)
+
+func TestOfrepServiceStartStop(t *testing.T) {
 	port := 18282
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 
@@ -28,13 +33,13 @@ func Test_OfrepServiceStartStop(t *testing.T) {
 	cfg := SvcConfiguration{
 		Logger:          logger.NewLogger(nil, false),
 		Port:            uint16(port),
-		ServiceName:     "test-service",
+		ServiceName:     testServiceName,
 		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
 	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
 	if err != nil {
-		t.Fatalf("error creating the ofrep service: %v", err)
+		t.Fatalf(errCreateOfrepService, err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -94,37 +99,15 @@ func tryResponseWithHeaders(method string, uri string, payload []byte, headers m
 	return rsp.StatusCode, nil
 }
 
-func Test_OfrepService_RequestBodySizeLimit(t *testing.T) {
-	port := 18283
-	eval := mock.NewMockIEvaluator(gomock.NewController(t))
-
-	cfg := SvcConfiguration{
+func TestOfrepServiceRequestBodySizeLimit(t *testing.T) {
+	svc, port := startOfrepService(t, SvcConfiguration{
 		Logger:              logger.NewLogger(nil, false),
-		Port:                uint16(port),
-		ServiceName:         "test-service",
+		Port:                18283,
+		ServiceName:         testServiceName,
 		MetricsRecorder:     &telemetry.NoopMetricsRecorder{},
 		MaxRequestBodyBytes: 10, // allow only 10 bytes
-	}
-
-	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
-	if err != nil {
-		t.Fatalf("error creating the ofrep service: %v", err)
-	}
-
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-
-	group, gCtx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return service.Start(gCtx)
 	})
-	defer func() {
-		cancelFunc()
-		_ = group.Wait()
-	}()
-
-	// wait for server startup
-	<-time.After(2 * time.Second)
+	_ = svc // kept alive by deferred cleanup
 
 	path := fmt.Sprintf("http://localhost:%d/ofrep/v1/evaluate/flags/myFlag", port)
 	// Valid JSON whose size exceeds the 10-byte limit, so MaxBytesReader triggers mid-parse.
@@ -140,37 +123,15 @@ func Test_OfrepService_RequestBodySizeLimit(t *testing.T) {
 	}
 }
 
-func Test_OfrepService_RequestHeaderSizeLimit(t *testing.T) {
-	port := 18284
-	eval := mock.NewMockIEvaluator(gomock.NewController(t))
-
-	cfg := SvcConfiguration{
+func TestOfrepServiceRequestHeaderSizeLimit(t *testing.T) {
+	svc, port := startOfrepService(t, SvcConfiguration{
 		Logger:                logger.NewLogger(nil, false),
-		Port:                  uint16(port),
-		ServiceName:           "test-service",
+		Port:                  18284,
+		ServiceName:           testServiceName,
 		MetricsRecorder:       &telemetry.NoopMetricsRecorder{},
 		MaxRequestHeaderBytes: 100, // 10000-byte test header value easily exceeds 100 + slop
-	}
-
-	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
-	if err != nil {
-		t.Fatalf("error creating the ofrep service: %v", err)
-	}
-
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-
-	group, gCtx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return service.Start(gCtx)
 	})
-	defer func() {
-		cancelFunc()
-		_ = group.Wait()
-	}()
-
-	// wait for server startup
-	<-time.After(2 * time.Second)
+	_ = svc // kept alive by deferred cleanup
 
 	path := fmt.Sprintf("http://localhost:%d/ofrep/v1/evaluate/flags/myFlag", port)
 	// The header value must exceed MaxHeaderBytes + Go's ~4096-byte read buffer slop.
@@ -186,4 +147,31 @@ func Test_OfrepService_RequestHeaderSizeLimit(t *testing.T) {
 	if status != http.StatusRequestHeaderFieldsTooLarge {
 		t.Errorf("expected HTTP 431, got %d", status)
 	}
+}
+
+// startOfrepService creates, starts and returns an OFREP service with the given config.
+// It registers cleanup to stop the service when the test finishes.
+func startOfrepService(t *testing.T, cfg SvcConfiguration) (*Service, uint16) {
+	t.Helper()
+
+	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
+	if err != nil {
+		t.Fatalf(errCreateOfrepService, err)
+	}
+
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	group, gCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return service.Start(gCtx)
+	})
+	t.Cleanup(func() {
+		cancelFunc()
+		_ = group.Wait()
+	})
+
+	// wait for server startup
+	<-time.After(2 * time.Second)
+
+	return service, cfg.Port
 }

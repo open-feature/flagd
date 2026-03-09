@@ -91,13 +91,9 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	flagKey := vars[key]
 	request, err := extractOfrepRequest(r)
 	if err != nil {
-		var maxBytesErr *http.MaxBytesError
-		if errors.As(err, &maxBytesErr) {
-			w.WriteHeader(http.StatusRequestEntityTooLarge)
+		if h.handleExtractionError(w, err, ofrep.ContextErrorResponseFrom(flagKey)) {
 			return
 		}
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
-		return
 	}
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
@@ -119,13 +115,9 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	request, err := extractOfrepRequest(r)
 	if err != nil {
-		var maxBytesErr *http.MaxBytesError
-		if errors.As(err, &maxBytesErr) {
-			w.WriteHeader(http.StatusRequestEntityTooLarge)
+		if h.handleExtractionError(w, err, ofrep.BulkEvaluationContextError()) {
 			return
 		}
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextError(), w)
-		return
 	}
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
@@ -161,6 +153,22 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	if err != nil {
 		h.Logger.Warn(fmt.Sprintf("error while writing response: %v", err))
 	}
+}
+
+// handleExtractionError checks for errors from extractOfrepRequest and writes an appropriate response.
+// It returns true if an error was handled.
+func (h *handler) handleExtractionError(w http.ResponseWriter, err error, errorPayload any) bool {
+	if err == nil {
+		return false
+	}
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		h.writeJSONToResponse(http.StatusRequestEntityTooLarge,
+			ofrep.InternalError{ErrorDetails: "request body too large"}, w)
+		return true
+	}
+	h.writeJSONToResponse(http.StatusBadRequest, errorPayload, w)
+	return true
 }
 
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
