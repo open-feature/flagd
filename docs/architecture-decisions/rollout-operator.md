@@ -47,10 +47,12 @@ Three forms are supported, following JSONLogic array conventions:
 Parameters:
 
 - `bucketBy` (optional): JSONLogic expression for bucketing value; defaults to `flagKey + targetingKey`, consistent with existing `fractional`
-- `startTime`: Unix timestamp (seconds) when rollout begins (0% on `to`)
-- `endTime`: Unix timestamp (seconds) when rollout completes (100% on `to`)
+- `startTime`: Unix timestamp (seconds) when rollout begins (0% on `to`). Must be less than `endTime`.
+- `endTime`: Unix timestamp (seconds) when rollout completes (100% on `to`). Must be greater than `startTime`.
 - `from`: Starting variant or expression (omit for shorthand to use `defaultVariant`)
 - `to`: Target variant or expression
+
+**Timestamp validation**: To prevent accidental use of millisecond timestamps (which would schedule rollouts thousands of years in the future), the JSON Schema should enforce reasonable bounds on `startTime` and `endTime` (e.g., `minimum: 0`, `maximum: 3000000000`, approximately year 2065).
 
 ### Hashing Consistency
 
