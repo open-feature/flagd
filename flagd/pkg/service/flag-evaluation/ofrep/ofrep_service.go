@@ -20,10 +20,12 @@ type IOfrepService interface {
 }
 
 type SvcConfiguration struct {
-	Logger          *logger.Logger
-	Port            uint16
-	ServiceName     string
-	MetricsRecorder telemetry.IMetricsRecorder
+	Logger                *logger.Logger
+	Port                  uint16
+	ServiceName           string
+	MetricsRecorder       telemetry.IMetricsRecorder
+	MaxRequestBodyBytes   int64
+	MaxRequestHeaderBytes int64
 }
 
 type Service struct {
@@ -40,19 +42,24 @@ func NewOfrepService(
 		AllowedMethods: []string{http.MethodPost},
 	})
 
-	h := corsMW.Handler(NewOfrepHandler(
+	var h http.Handler = NewOfrepHandler(
 		cfg.Logger,
 		evaluator,
 		contextValues,
 		headerToContextKeyMappings,
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
-	))
+	)
+	if cfg.MaxRequestBodyBytes > 0 {
+		h = http.MaxBytesHandler(h, cfg.MaxRequestBodyBytes)
+	}
+	h = corsMW.Handler(h)
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
 		Handler:           h,
 		ReadHeaderTimeout: 3 * time.Second,
+		MaxHeaderBytes:    int(cfg.MaxRequestHeaderBytes),
 	}
 
 	return &Service{

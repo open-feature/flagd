@@ -18,6 +18,8 @@ flagd start [flags]
   -h, --help                                 help for start
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)
+  -B, --max-request-body int                 Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests. (default 1000000)
+  -R, --max-request-header int               Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers. (default 1000000)
   -t, --metrics-exporter string              Set the metrics exporter. Default(if unset) is Prometheus. Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to be present
   -r, --ofrep-port int32                     ofrep service port (default 8016)
   -A, --otel-ca-path string                  tls certificate authority path to use with OpenTelemetry collector
