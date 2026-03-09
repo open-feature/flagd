@@ -119,7 +119,17 @@ The `rollback` operator enables graceful reversal of a rollout, transitioning us
 {"rollback": [1704067200, 1706745600, "old", "new"]}
 ```
 
-**Implementation**: `rollback` is identical to `rollout` except it applies bitwise NOT (`~`) to the hash before bucketing.
+**Implementation**: `rollback` inverts the hash using bitwise NOT (`~`) before bucketing and swaps the return values:
+
+```go
+bucket := (uint64(^hashValue) * uint64(duration)) >> 32
+
+if bucket < uint64(elapsed) {
+    return from
+}
+return to
+```
+
 This inverts user ordering:
 
 - Hash `0x00000000` (first in rollout) → `0xFFFFFFFF` (last in rollback)
