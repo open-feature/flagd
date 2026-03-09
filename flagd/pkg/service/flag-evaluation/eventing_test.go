@@ -14,20 +14,23 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func TestSubscribe(t *testing.T) {
-	// given
-	sources := []string{"source1", "source2"}
+// newTestEventingConfig creates an eventingConfiguration backed by a test store.
+func newTestEventingConfig(t *testing.T, sources []string) (*eventingConfiguration, store.IStore) {
+	t.Helper()
 	log := logger.NewLogger(nil, false)
 	s, err := store.NewStore(log, sources)
-	if err != nil {
-		t.Fatalf("NewStore failed: %v", err)
-	}
+	require.NoError(t, err)
+	return &eventingConfiguration{
+		subs:   make(map[interface{}]chan iservice.Notification),
+		mu:     &sync.RWMutex{},
+		store:  s,
+		logger: log,
+	}, s
+}
 
-	eventing := &eventingConfiguration{
-		subs:  make(map[interface{}]chan iservice.Notification),
-		mu:    &sync.RWMutex{},
-		store: s,
-	}
+func TestSubscribe(t *testing.T) {
+	// given
+	eventing, _ := newTestEventingConfig(t, []string{"source1", "source2"})
 
 	idA := "a"
 	chanA := make(chan iservice.Notification, 1)
@@ -46,17 +49,7 @@ func TestSubscribe(t *testing.T) {
 
 func TestUnsubscribe(t *testing.T) {
 	// given
-	sources := []string{"source1", "source2"}
-	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
-	if err != nil {
-		t.Fatalf("NewStore failed: %v", err)
-	}
-	eventing := &eventingConfiguration{
-		subs:  make(map[interface{}]chan iservice.Notification),
-		mu:    &sync.RWMutex{},
-		store: s,
-	}
+	eventing, _ := newTestEventingConfig(t, []string{"source1", "source2"})
 
 	idA := "a"
 	chanA := make(chan iservice.Notification, 1)
@@ -81,16 +74,7 @@ func TestUnsubscribe(t *testing.T) {
 // https://github.com/open-feature/flagd/discussions/1869
 func TestNotificationCompatibleWithStructpb(t *testing.T) {
 	sources := []string{"source1"}
-	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
-	require.NoError(t, err)
-
-	eventing := &eventingConfiguration{
-		subs:   make(map[interface{}]chan iservice.Notification),
-		mu:     &sync.RWMutex{},
-		store:  s,
-		logger: log,
-	}
+	eventing, s := newTestEventingConfig(t, sources)
 
 	notifyChan := make(chan iservice.Notification, 1)
 	eventing.Subscribe(context.Background(), "test", nil, notifyChan)
@@ -122,16 +106,7 @@ func TestNotificationCompatibleWithStructpb(t *testing.T) {
 // notification is sent when a store update contains the same flags as before.
 func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 	sources := []string{"source1"}
-	log := logger.NewLogger(nil, false)
-	s, err := store.NewStore(log, sources)
-	require.NoError(t, err)
-
-	eventing := &eventingConfiguration{
-		subs:   make(map[interface{}]chan iservice.Notification),
-		mu:     &sync.RWMutex{},
-		store:  s,
-		logger: log,
-	}
+	eventing, s := newTestEventingConfig(t, sources)
 
 	notifyChan := make(chan iservice.Notification, 1)
 	eventing.Subscribe(context.Background(), "test", nil, notifyChan)
