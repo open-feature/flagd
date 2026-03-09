@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.14.2](https://github.com/open-feature/flagd/compare/flagd/v0.14.1...flagd/v0.14.2) (2026-03-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update otel deps, minimum core Go version ([#1897](https://github.com/open-feature/flagd/issues/1897)) ([6b79bf8](https://github.com/open-feature/flagd/commit/6b79bf8419da1e269ecb1d1db03760379fc201cb))
+
+
+### ✨ New Features
+
+* make max header and body size configurable, add default ([#1892](https://github.com/open-feature/flagd/issues/1892)) ([25c5fd7](https://github.com/open-feature/flagd/commit/25c5fd7e80c26eb2c00b20317b2456fe6f927ea3))
+
+
+### 🧹 Chore
+
+* reduce duplication in some tests ([#1895](https://github.com/open-feature/flagd/issues/1895)) ([4a82812](https://github.com/open-feature/flagd/commit/4a828120def8dcfd5d58f5893db1170cc34890eb))
+
 ## [0.14.1](https://github.com/open-feature/flagd/compare/flagd/v0.14.0...flagd/v0.14.1) (2026-03-04)
 
 
