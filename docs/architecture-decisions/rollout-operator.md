@@ -68,9 +68,21 @@ The rollout operator uses the same hashing strategy as `fractional` with one exc
 ### Integer-Only Arithmetic
 
 Per the [High-Precision Fractional Bucketing ADR](high-precision-fractional-bucketing.md), we avoid floating-point operations entirely.
-The bucket calculation uses bit-shift division:
+
+Implementations must validate that `endTime > startTime` (strict inequality) at parse time, rejecting the configuration otherwise. This also rejects `startTime == endTime` (duration = 0), which would be a degenerate case — an "instant rollout" is better expressed as a direct variant assignment. Additionally, `elapsed` must be clamped to `[0, duration]` to prevent overflow from negative values or times beyond the window:
 
 ```go
+duration := endTime - startTime // validated > 0 at parse time
+elapsed  := currentTime - startTime
+
+// before startTime: everyone gets "from"; after endTime → everyone gets "to"
+if elapsed <= 0 {
+    return from
+}
+if elapsed >= duration {
+    return to
+}
+
 // Maps hash to [0, duration) range using integer math only
 bucket := (uint64(hashValue) * uint64(duration)) >> 32
 
