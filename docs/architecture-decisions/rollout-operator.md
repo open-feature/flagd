@@ -63,7 +63,7 @@ The rollout operator uses the same hashing strategy as `fractional` with one exc
 - Same `bucketBy` expression support
 - After the bucketing value is retrieved, before hashing, the UTF-8 byte representation of `rollout` is appended to the bucketing value
     - This injects entropy to ensure users in fractional rules nested within a `rollout` don't bucket identically (we want to ensure users early in a rollout don't always end up in the first fractional bucket).
-    - The `rollback` operator also appends `rollout` (not `rollback`) to preserve correlation with rollout timing; this ensures the "first-in-last-out" property is maintained.
+    - The `rollback` operator also appends `rollout` (not `rollback`) so that bucket assignments match the original rollout; this is essential for the pivot-time gate to correctly identify which users were transitioned.
 
 ### Integer-Only Arithmetic
 
@@ -128,48 +128,62 @@ Variants can be JSONLogic expressions, enabling composition:
 
 ### Rollback Operator
 
-The `rollback` operator enables graceful reversal of a rollout, transitioning users back in **reverse order**: first adopters are last to revert, and users who've never been assigned new functionality never see it.
+The `rollback` operator enables graceful reversal of a rollout, transitioning users back in **FILO order**: first adopters are last to revert, and users who never transitioned never see the new variant.
+
+This requires a **pivot time** (the moment the rollback was initiated) which encodes how far the original rollout had progressed. The pivot time gives the operator enough "memory" to gate out never-transitioned users and reverse the rest in order, without storing any state. The rollback uses the same time window as the original rollout; the rollback completes at `endTime`.
 
 ```jsonc
-// Rollback: same parameters as rollout
-{"rollback": [1704067200, 1706745600, "old", "new"]}
+// Rollback: same start/end as rollout, plus pivotTime
+{"rollback": [1704067200, 1704068200, 1704067700, "new", "old"]}
 ```
 
-**Implementation**: `rollback` inverts the hash using bitwise NOT (`~`) before bucketing and swaps the return values:
+Parameters:
+
+- `bucketBy` (optional): Same as `rollout`.
+- `startTime`: `startTime` from the original rollout.
+- `endTime`: Controls when the rollback completes. Using the original rollout's `endTime` compresses the rollback into the remaining window; setting `endTime` to `pivotTime + (pivotTime - startTime)` rolls back at the same rate as the rollout progressed, etc.
+- `pivotTime`: Unix timestamp when the rollback was initiated. Must be between `startTime` and `endTime`.
+- `from`: The variant users are currently on (the rollout's `to`).
+- `to`: The variant users revert to (the rollout's `from`).
+
+**Implementation**:
 
 ```go
-bucket := (uint64(^hashValue) * uint64(duration)) >> 32
+duration         := endTime - startTime
+elapsedAtPivot   := pivotTime - startTime
+rollbackDuration := endTime - pivotTime
+bucket := (uint64(hashValue) * uint64(duration)) >> 32
 
-if bucket < uint64(elapsed) {
-    return from
+// Gate: user never transitioned during rollout → always gets "to"
+if bucket >= uint64(elapsedAtPivot) {
+    return to
 }
-return to
+
+// Rollback progress
+rollbackElapsed := currentTime - pivotTime
+if rollbackElapsed <= 0 { return from }
+if rollbackElapsed >= rollbackDuration { return to }
+
+// Shrinking threshold: highest-bucket users (last adopted) revert first
+remaining := rollbackDuration - rollbackElapsed
+if bucket * uint64(rollbackDuration) < uint64(elapsedAtPivot) * uint64(remaining) {
+    return from // still on rolled-out variant
+}
+return to // reverted
 ```
 
-This inverts user ordering:
+All operations are integer-only, consistent with the `rollout` operator.
 
-- Hash `0x00000000` (first in rollout) → `0xFFFFFFFF` (last in rollback)
-- Hash `0xFFFFFFFF` (last in rollout) → `0x00000000` (first in rollback)
+**Example**: Rollout `[0, 1000, "old", "new"]` pivoted at t=500 (rollback completes at t=1000):
 
-**Example**: Given a rollout to a fractional split:
+- **Alice** (adoption time t=200): adopted "new" at t=200. Reverts to "old" at t=800. First in, last out.
+- **Bob** (adoption time t=400): adopted "new" at t=400. Reverts to "old" at t=600.
+- **Carol** (adoption time t=600): would have adopted at t=600, but pivot was t=500. **Never sees "new".**
+- **Fred** (adoption time t=700): would have adopted at t=700, but pivot was t=500. **Never sees "new".**
 
-```jsonc
-{"rollout": [1704067200, 1706745600, "old", {"fractional": [["a", 50], ["b", 50]]}]}
-```
+Without the pivot-time gate, Carol and Fred would temporarily be _exposed_ to "new" during rollback before being reverted, exactly the wrong behavior during an incident. The gate prevents this: any user whose bucket exceeds the elapsed time at pivot is immediately returned to "old" without ever seeing "new".
 
-- **Alice** (hash `0x66666666`, 40% position): transitions to "a" at t=40%
-- **Fred** (hash `0xFFFFFFFF`, 100% position): never reaches the fractional
-
-If switched to rollback mid-way:
-
-```jsonc
-{"rollback": [1704067200, 1706745600, "old", {"fractional": [["a", 50], ["b", 50]]}]}
-```
-
-- **Alice** (inverted: `0x99999999`, 60% position): reverts to "old" at t=60%
-- **Fred**: already "reverted" immediately (was never transitioned)
-
-Users revert in the exact reverse order they adopted. Nested operators (like `fractional`) are **not affected** by the hash inversion — only the rollback timing decision uses the inverted hash, preserving stable bucket assignments within the `to` expression.
+Nested operators (like `fractional`) are **not affected** — the rollback uses the same hash, so fractional bucket assignments remain stable.
 
 ### Future-proofing
 
@@ -201,14 +215,29 @@ An alternative to a dedicated operator was proposed: use `fractional` with JSONL
 ```
 
 As time advances, the weight of `"on"` grows and `"off"` shrinks, producing a progressive rollout using only existing primitives.
-This requires allowing the `fractional` weight argument to be a JSONLogic expression (currently it must be a hard-coded integer), in addition to support for non-string/nested variants ([#1877](https://github.com/open-feature/flagd/pull/1877)) and high-precision bucketing.
+This requires allowing the `fractional` weight argument to be a JSONLogic expression (currently it must be a hard-coded integer), as well as clamping negative weights to 0, in addition to support for non-string/nested variants ([#1877](https://github.com/open-feature/flagd/pull/1877)) and high-precision bucketing.
 
-This approach is elegant and avoids a new operator, but was not adopted for two reasons:
+This approach is elegant and avoids a new operator. It achieves both forward rollout and FILO rollback using only existing JSONLogic primitives. The two approaches differ in the following ways:
 
-1. **No FILO rollback.** With `fractional`, swapping the weight expressions to reverse a rollout produces FIFO ordering: early adopters revert first, not last. Worse, if weights are swapped mid-rollout, the formula starts at 100% "new" and ramps down, meaning users who _never saw the new variant_ are suddenly exposed to it before being reverted. This is exactly the wrong behavior during an incident. The `rollback` operator avoids this via hash inversion (`~hash`), which is not expressible in JSONLogic.
+1. **FILO rollback.** With `fractional`, naively swapping the weight expressions to reverse a rollout produces FIFO ordering: early adopters revert first, not last. FILO rollback _is_ achievable by reflecting time around the pivot point. Given a rollout over `[Ts, Te]` pivoted at `Tp`, define `R = 2Tp - Ts` and use:
 
-2. **No automatic hash decorrelation.** The `rollout` operator appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`.
-With the pure-fractional approach, the outer and inner `fractional` share the same hash, so early-rollout users systematically land in the first inner bucket. Users can work around this by manually adding a salt via `cat`, but this is error-prone and non-obvious.
+    ```jsonc
+    {
+      "fractional": [
+        { "var": "targetingKey" },
+        ["new", { "-": [R, { "var": "$flagd.timestamp" }] }],
+        ["old", { "-": [{ "+": [{ "var": "$flagd.timestamp" }, Te] }, R] }]
+      ]
+    }
+    ```
+
+    Where `R` and `Te` are precomputed constants. The `"new"` weight shrinks from `Tp - Ts` to 0, naturally gating out never-transitioned users and reverting the rest in FILO order.
+    The rollback completes at `t = R = 2Tp - Ts`, not at the original `Te`; it mirrors the rollout at the same rate, so the rollback takes as long to complete as the rollout had progressed. For example, if the rollout ran for 300s before pivoting, the rollback also takes 300s.
+
+2. **Hash decorrelation.** The `rollout` operator automatically appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`.
+With the pure-fractional approach, the outer and inner `fractional` share the same hash, so early-rollout users systematically land in the first inner bucket. Users can work around this by manually adding a salt via `cat`, but that is non-obvious.
+
+3. **Operator surface area.** The `fractional` approach requires no new operators; only that `fractional` accept JSONLogic expressions as weight arguments (currently hard-coded integers). The dedicated operators are more readable but add new definition surface area that must be implemented across all language SDKs.
 
 ### Consequences
 
