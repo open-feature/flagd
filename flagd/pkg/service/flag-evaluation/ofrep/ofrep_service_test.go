@@ -99,6 +99,44 @@ func tryResponseWithHeaders(method string, uri string, payload []byte, headers m
 	return rsp.StatusCode, nil
 }
 
+func TestOfrepServiceCORSPreflightAllowsFlagdSelector(t *testing.T) {
+	svc, port := startOfrepService(t, SvcConfiguration{
+		Logger:          logger.NewLogger(nil, false),
+		Port:            18285,
+		ServiceName:     testServiceName,
+		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
+	})
+	_ = svc
+
+	path := fmt.Sprintf("http://localhost:%d/ofrep/v1/evaluate/flags/myFlag", port)
+
+	// Simulate a CORS preflight request from a browser that wants to send the Flagd-Selector header
+	client := http.Client{Timeout: 3 * time.Second}
+	req, err := http.NewRequest(http.MethodOptions, path, nil)
+	if err != nil {
+		t.Fatalf("error creating request: %v", err)
+	}
+	req.Header.Set("Origin", "http://example.com")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "Flagd-Selector")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("preflight request failed: %v", err)
+	}
+
+	// rs/cors should echo back the allowed headers when the preflight is accepted
+	allowedHeaders := resp.Header.Get("Access-Control-Allow-Headers")
+	if allowedHeaders == "" {
+		t.Fatal("expected Access-Control-Allow-Headers to be set, got empty string — preflight was likely rejected")
+	}
+
+	allowedOrigin := resp.Header.Get("Access-Control-Allow-Origin")
+	if allowedOrigin == "" {
+		t.Fatal("expected Access-Control-Allow-Origin to be set, got empty string")
+	}
+}
+
 func TestOfrepServiceRequestBodySizeLimit(t *testing.T) {
 	svc, port := startOfrepService(t, SvcConfiguration{
 		Logger:              logger.NewLogger(nil, false),
