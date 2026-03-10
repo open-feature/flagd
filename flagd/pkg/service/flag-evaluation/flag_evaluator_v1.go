@@ -75,13 +75,11 @@ func (s *FlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*evalV1.AnyFlag),
 	}
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selectorExpression := flagdService.SelectorExpressionFromHTTPHeaders(req.Header())
 	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
-	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
 
-	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(ctx, reqID, evaluationContext)
+	resolutions, flagSetMetadata, err := ResolveAllWithSelectorMerge(ctx, reqID, s.eval, evaluationContext, selectorExpression)
 	if err != nil {
 		s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
 		return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)

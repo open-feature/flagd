@@ -94,7 +94,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
-	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
+	selectorExpression := service.SelectorExpressionFromHTTPHeaders(r.Header)
 	selector := store.NewSelector(selectorExpression)
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
@@ -118,11 +118,10 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
-	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
-	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
+	selectorExpression := service.SelectorExpressionFromHTTPHeaders(r.Header)
+	ctx := r.Context()
 
-	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
+	evaluations, metadata, err := evalservice.ResolveAllWithSelectorMerge(ctx, requestID, h.evaluator, evaluationContext, selectorExpression)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
 
