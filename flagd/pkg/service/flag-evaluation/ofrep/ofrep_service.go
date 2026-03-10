@@ -10,7 +10,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"github.com/rs/cors"
+	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -37,10 +37,7 @@ type Service struct {
 func NewOfrepService(
 	evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any, headerToContextKeyMappings map[string]string,
 ) (*Service, error) {
-	corsMW := cors.New(cors.Options{
-		AllowedOrigins: origins,
-		AllowedMethods: []string{http.MethodPost},
-	})
+	corsMiddleware := corsmw.New(origins)
 
 	var h http.Handler = NewOfrepHandler(
 		cfg.Logger,
@@ -53,7 +50,7 @@ func NewOfrepService(
 	if cfg.MaxRequestBodyBytes > 0 {
 		h = http.MaxBytesHandler(h, cfg.MaxRequestBodyBytes)
 	}
-	h = corsMW.Handler(h)
+	h = corsMiddleware.Handler(h)
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
