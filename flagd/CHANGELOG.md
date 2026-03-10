@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.3](https://github.com/open-feature/flagd/compare/flagd/v0.14.2...flagd/v0.14.3) (2026-03-10)
+
+
+### 🐛 Bug Fixes
+
+* OFREP service CORS missing AllowedHeaders - blocks Flagd-Selector header ([#1900](https://github.com/open-feature/flagd/issues/1900)) ([08f0429](https://github.com/open-feature/flagd/commit/08f0429fc54f9562f351201d64fc71834588c3e5))
+
 ## [0.14.2](https://github.com/open-feature/flagd/compare/flagd/v0.14.1...flagd/v0.14.2) (2026-03-09)
 
 
