@@ -285,14 +285,14 @@ Note: in the general case the rollback weights use the formula from above (`R = 
 
 **Summary:**
 
-|                          | `rollout` / `rollback`                                                     | `fractional` with dynamic weights                                                             |
-| ------------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Rollout definition**   | 1 line                                                                     | 6 lines                                                                                       |
-| **Rollback definition**  | 1 line                                                                     | 6 lines, requires precomputing `R = 2Tp − Ts`                                                 |
-| **Readability**          | Intent is explicit, time window, pivot, and direction are named parameters | User must reconstruct rollout semantics from arithmetic weight expressions                  |
-| **Hash decorrelation**   | Automatic (appends `"rollout"` salt before hashing)                        | Manual, requires adding a salt via `cat` to avoid correlated bucketing in nested `fractional` |
-| **New operator surface** | Yes, `rollout` and `rollback` must be implemented in all SDKs              | No, only requires `fractional` to accept JSONLogic weight expressions                         |
-| **FILO correctness**     | Built-in via `pivotTime` parameter                                         | Achievable but non-obvious; naive weight-swap produces FIFO                                   |
+|                          | `rollout` / `rollback`                                                   | `fractional` with dynamic weights                                                             |
+| ------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **Rollout definition**   | Single operator with explicit, non-nested parameters                     | Nested arithmetic expressions over `$flagd.timestamp`                                         |
+| **Rollback definition**  | Single operator, same as `rollout`, but adds `pivotTime`                 | New set of weight expressions, requires precomputing `R = 2Tp − Ts`                           |
+| **Readability**          | Intent is self-describing: time window, pivot, and direction are visible | User must reconstruct rollout semantics from arithmetic weight expressions                    |
+| **Hash decorrelation**   | Automatic (appends `"rollout"` salt before hashing)                      | Manual, requires adding a salt via `cat` to avoid correlated bucketing in nested `fractional` |
+| **New operator surface** | Yes, `rollout` and `rollback` must be implemented in all SDKs            | No, only requires `fractional` to accept JSONLogic weight expressions                         |
+| **FILO correctness**     | Built-in via `pivotTime` parameter                                       | Achievable but non-obvious; naive weight-swap produces FIFO                                   |
 
 ### Consequences of Adding Rollout
 
