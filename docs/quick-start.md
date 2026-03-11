@@ -83,13 +83,13 @@ These are commonly used for A/B/(n) testing and experimentation.
 Test it out by running the following cURL command in a separate terminal:
 
 ```shell
-curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v2.Service/ResolveBoolean" \
   -d '{"flagKey":"show-welcome-banner","context":{}}' -H "Content-Type: application/json"
 ```
 
 You should see the following result:
 
-```json
+```jsonc
 {
   "value": false,
   "reason": "STATIC",
@@ -105,13 +105,13 @@ Open the `demo.flagd.json` file in a text editor and change the `defaultVariant`
 Save and rerun the following cURL command:
 
 ```shell
-curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveBoolean" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v2.Service/ResolveBoolean" \
   -d '{"flagKey":"show-welcome-banner","context":{}}' -H "Content-Type: application/json"
 ```
 
 You should see the updated results:
 
-```json
+```jsonc
 {
   "value": true,
   "reason": "STATIC",
@@ -133,13 +133,13 @@ In this section, we'll talk about a multi-variant feature flag can be used to co
 Save and rerun the following cURL command:
 
 ```shell
-curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v2.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{}}' -H "Content-Type: application/json"
 ```
 
 You should see the updated results:
 
-```json
+```jsonc
 {
   "value": "#FF0000",
   "reason": "STATIC",
@@ -156,7 +156,7 @@ This can be accomplished in flagd using targeting rules.
 
 Open the `demo.flagd.json` file in a text editor and extend the `background-color` to include a targeting rule.
 
-``` json hl_lines="19-32"
+```jsonc hl_lines="19-32"
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -204,13 +204,13 @@ If there isn't a match, the `defaultVariant` is returned.
 Let's confirm that customers are still seeing the `red` variant by running the following command:
 
 ```shell
-curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v2.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{"company": "stark industries"}}' -H "Content-Type: application/json"
 ```
 
 You should see the updated results:
 
-```json
+```jsonc
 {
   "value": "#FF0000",
   "reason": "DEFAULT",
@@ -226,13 +226,13 @@ Let's confirm that employees of Initech are seeing the updated variant.
 Run the following cURL command in the terminal:
 
 ```shell
-curl -X POST "http://localhost:8013/flagd.evaluation.v1.Service/ResolveString" \
+curl -X POST "http://localhost:8013/flagd.evaluation.v2.Service/ResolveString" \
   -d '{"flagKey":"background-color","context":{"company": "initech"}}' -H "Content-Type: application/json"
 ```
 
 You should see the updated results:
 
-```json
+```jsonc
 {
   "value": "#00FF00",
   "reason": "TARGETING_MATCH",

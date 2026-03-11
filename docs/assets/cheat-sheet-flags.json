@@ -40,6 +40,14 @@
       },
       "defaultVariant": "config-a"
     },
+    "code-default-flag": {
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": null
+    },
     "user-tier-flag": {
       "state": "ENABLED",
       "variants": {
