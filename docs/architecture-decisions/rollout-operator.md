@@ -200,7 +200,7 @@ This can be done with an additional, optional, configuration parameter before th
 
 **Implementation of non-linear rollouts is out of the scope of this proposal.**
 
-### Considered Alternative: Enhanced `fractional` with Dynamic Weights
+### Recommended Alternative: Enhanced `fractional` with Dynamic Weights
 
 An alternative to a dedicated operator was proposed: use `fractional` with JSONLogic expressions as weights, combined with `$flagd.timestamp`, to achieve time-based progression without any new operator:
 
@@ -239,7 +239,62 @@ With the pure-fractional approach, the outer and inner `fractional` share the sa
 
 3. **Operator surface area.** The `fractional` approach requires no new operators; only that `fractional` accept JSONLogic expressions as weight arguments (currently hard-coded integers). The dedicated operators are more readable but add new definition surface area that must be implemented across all language SDKs.
 
-### Consequences
+#### Direct Comparison: Rollout with 50% Rollback
+
+To make the tradeoffs clear, here is both approaches implementing the same scenario: a linear rollout from `"off"` to `"on"` over `[1740000000, 1800000000]`, followed by a "first in, last out" rollback initiated at the 50% mark (`pivotTime = 1770000000`).
+
+**Using `rollout` / `rollback` operators:**
+
+Rollout:
+
+```jsonc
+{"rollout": [1740000000, 1800000000, "off", "on"]}
+```
+
+Rollback (initiated at 50%):
+
+```jsonc
+{"rollback": [1740000000, 1800000000, 1770000000, "on", "off"]}
+```
+
+**Using `fractional` with dynamic weights:**
+
+Rollout:
+
+```jsonc
+{
+  "fractional": [
+    ["on",  { "-": [{ "var": "$flagd.timestamp" }, 1740000000] }],
+    ["off", { "-": [1800000000, { "var": "$flagd.timestamp" }] }]
+  ]
+}
+```
+
+Rollback (FILO, initiated at 50%; `R = 2 × 1770000000 − 1740000000 = 1800000000`):
+
+```jsonc
+{
+  "fractional": [
+    ["on",  { "-": [1800000000, { "var": "$flagd.timestamp" }] }],
+    ["off", { "var": "$flagd.timestamp" }]
+  ]
+}
+```
+
+Note: in the general case the rollback weights use the formula from above (`R = 2Tp − Ts`), but at the 50% pivot `R` equals `Te`, so the `"off"` weight simplifies to just the current timestamp.
+
+**Summary:**
+
+|                          | `rollout` / `rollback`                                                     | `fractional` with dynamic weights                                                             |
+| ------------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Rollout definition**   | 1 line                                                                     | 6 lines                                                                                       |
+| **Rollback definition**  | 1 line                                                                     | 6 lines, requires precomputing `R = 2Tp − Ts`                                                 |
+| **Readability**          | Intent is explicit, time window, pivot, and direction are named parameters | User must reconstruct rollout semantics from arithmetic weight expressions                  |
+| **Hash decorrelation**   | Automatic (appends `"rollout"` salt before hashing)                        | Manual, requires adding a salt via `cat` to avoid correlated bucketing in nested `fractional` |
+| **New operator surface** | Yes, `rollout` and `rollback` must be implemented in all SDKs              | No, only requires `fractional` to accept JSONLogic weight expressions                         |
+| **FILO correctness**     | Built-in via `pivotTime` parameter                                         | Achievable but non-obvious; naive weight-swap produces FIFO                                   |
+
+### Consequences of Adding Rollout
 
 - Good, because this enables functionality present in many other systems
 - Good, because time-based rollouts are declarative and require no external automation
