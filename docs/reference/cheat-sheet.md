@@ -354,6 +354,14 @@ grpcurl -plaintext \
   -d '{"flagKey": "simple-boolean", "context": {}}' \
   localhost:8013 \
   flagd.evaluation.v2.Service/ResolveBoolean
+
+# ResolveAll with selector
+grpcurl -plaintext \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -H 'Flagd-Selector: flagSetId=payment-flags' \
+  -d '{"context": {}}' \
+  localhost:8013 \
+  flagd.evaluation.v1.Service/ResolveAll
 ```
 
 ---
