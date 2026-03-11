@@ -238,6 +238,12 @@ function App() {
           );
           break;
       }
+
+      // remove the default we provided above if we don't have a variant to demonstrate the graceful code default case
+      if (!result.variant) {
+        (result.value as any) = undefined;
+      }
+
       setStatus("success");
       setOutput(JSON.stringify(result, null, 2));
     } catch (error) {

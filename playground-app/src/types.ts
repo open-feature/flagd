@@ -24,7 +24,7 @@ export type FeatureDefinition = {
   flags: {
     [key: string]: {
       state: "ENABLED" | "DISABLED";
-      defaultVariant: string;
+      defaultVariant?: string | null | undefined;
       variants:
         | StringVariants
         | NumberVariants
