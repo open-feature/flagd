@@ -24,4 +24,5 @@ export const codeDefault: Scenario = {
   flagKey: "code-default-flag",
   returnType: "boolean",
   context: contextToPrettyJson({}),
+  codeDefault: "true",
 };

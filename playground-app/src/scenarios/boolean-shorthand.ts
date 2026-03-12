@@ -28,4 +28,5 @@ export const booleanShorthand: Scenario = {
   context: contextToPrettyJson({
     age: 20,
   }),
+  codeDefault: "false",
 };

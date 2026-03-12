@@ -63,6 +63,8 @@ function App() {
   const [returnType, setReturnType] = useState(
     scenarios[selectedTemplate].returnType
   );
+  const [codeDefault, setCodeDefault] = useState(scenarios[selectedTemplate].codeDefault);
+  const [outputCodeDefault, setOutputCodeDefault] = useState<string | null>(null);
   const [evaluationContext, setEvaluationContext] = useState(
     getString(scenarios[selectedTemplate].context)
   );
@@ -108,6 +110,7 @@ function App() {
     setFeatureDefinitionLanguage(LANG_JSON);
     setFlagKey(template.flagKey);
     setReturnType(template.returnType);
+    setCodeDefault(template.codeDefault);
     setEvaluationContext(getString(template.context));
     setDescription(template.description);
     setValidFeatureDefinition(true);
@@ -170,6 +173,7 @@ function App() {
     const flagsParam = urlParams.get('flags');
     const flagKeyParam = urlParams.get('flag-key');
     const returnTypeParam = urlParams.get('return-type');
+    const codeDefaultParam = urlParams.get('code-default');
     const evalContextParam = urlParams.get('eval-context');
     const langParam = urlParams.get('lang');
     const scenarioParam = urlParams.get('scenario-name');
@@ -185,6 +189,7 @@ function App() {
         setFeatureDefinitionLanguage(lang);
         if (flagKeyParam) setFlagKey(flagKeyParam);
         if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
+        if (codeDefaultParam) setCodeDefault(codeDefaultParam);
         if (evalContextParam) {
           const formattedEvaluationContext = formatJson(evalContextParam);
           setEvaluationContext(formattedEvaluationContext);
@@ -199,16 +204,37 @@ function App() {
     }
   }, []);
 
+// Helper function to parse codeDefault string to the appropriate type based on returnType
+function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
+  switch (returnType) {
+    case "boolean":
+      return codeDefault === "true" || codeDefault === "True" || codeDefault === "TRUE";
+    case "number":
+      const num = parseFloat(codeDefault);
+      return isNaN(num) ? 0 : num;
+    case "object":
+      try {
+        return JSON.parse(codeDefault);
+      } catch {
+        return {};
+      }
+    case "string":
+    default:
+      return codeDefault;
+  }
+}
+
   const evaluate = () => {
     setShowOutput(true);
     try {
       let result;
       const context = JSON.parse(evaluationContext);
+      const parsedCodeDefault = parseCodeDefault(codeDefault, returnType);
       switch (returnType) {
         case "boolean":
           result = flagdCore.resolveBooleanEvaluation(
             flagKey,
-            false,
+            parsedCodeDefault,
             context,
             console
           );
@@ -216,7 +242,7 @@ function App() {
         case "string":
           result = flagdCore.resolveStringEvaluation(
             flagKey,
-            "",
+            parsedCodeDefault,
             context,
             console
           );
@@ -224,7 +250,7 @@ function App() {
         case "number":
           result = flagdCore.resolveNumberEvaluation(
             flagKey,
-            0,
+            parsedCodeDefault,
             context,
             console
           );
@@ -232,19 +258,20 @@ function App() {
         case "object":
           result = flagdCore.resolveObjectEvaluation(
             flagKey,
-            {},
+            parsedCodeDefault,
             context,
             console
           );
           break;
       }
 
-      // remove the default we provided above if we don't have a variant to demonstrate the graceful code default case
+      // If there's no variant, set value to undefined and use codeDefault
       if (!result.variant) {
-        (result.value as any) = undefined;
+        result.value = undefined;
       }
 
       setStatus("success");
+      setOutputCodeDefault(codeDefault);
       setOutput(JSON.stringify(result, null, 2));
     } catch (error) {
       console.error("Invalid JSON input", error);
@@ -285,6 +312,7 @@ function App() {
       newUrl.searchParams.set('flags', encodedFeatureDefinition);
       newUrl.searchParams.set('flag-key', flagKey);
       newUrl.searchParams.set('return-type', returnType);
+      newUrl.searchParams.set('code-default', codeDefault);
       newUrl.searchParams.set('eval-context', encodedEvaluationContext);
       newUrl.searchParams.set('lang', featureDefinitionLanguage);
     }
@@ -453,6 +481,24 @@ function App() {
               </select>
             </div>
             <div>
+              <h4>Code default</h4>
+              <input
+                style={{
+                  width: "100%",
+                  maxWidth: "800px",
+                  padding: "8px",
+                  boxSizing: "border-box",
+                  ...codeStyle,
+                }}
+                name="code-default"
+                value={codeDefault}
+                onChange={(e) => setCodeDefault(e.target.value)}
+              />
+              <p style={{ fontSize: "small", color: "var(--md-code-fg-color)", marginTop: "4px" }}>
+                The default value to use when defaultVariant is null/omitted, or when errors occur during evaluation.
+              </p>
+            </div>
+            <div>
               <h4>Evaluation context</h4>
               <div style={{ backgroundColor: codeStyle.backgroundColor }}>
                 <Editor
@@ -509,6 +555,11 @@ function App() {
                       <strong>{key}:</strong> {JSON.stringify(value)}
                     </div>
                   ))}
+                  {outputCodeDefault && parsedOutput.value === undefined && (
+                    <div>
+                      <strong>value:</strong> {outputCodeDefault}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p>{parsedOutput}</p>

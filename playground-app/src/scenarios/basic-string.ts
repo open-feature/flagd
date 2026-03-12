@@ -22,4 +22,5 @@ export const basicString: Scenario = {
   flagKey: "basic-string",
   returnType: "string",
   context: contextToPrettyJson({}),
+  codeDefault: "\"\"",
 };

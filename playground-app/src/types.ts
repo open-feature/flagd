@@ -52,11 +52,16 @@ export type Scenario = {
    */
   flagKey: string;
   /**
-   * The expected return type of the flag.
-   */
+  /**
+    * The expected return type of the flag.
+    */
   returnType: FlagValueType;
   /**
-   * A string or function that returns a string that represents evaluation context.
-   */
+    * A string or function that returns a string that represents evaluation context.
+    */
   context: string | (() => string);
+  /**
+    * The code default value to use when defaultVariant is null/omitted.
+    */
+  codeDefault: string;
 };
