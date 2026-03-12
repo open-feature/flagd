@@ -226,12 +226,12 @@ This approach is elegant and avoids a new operator. It achieves both forward rol
       "fractional": [
         { "var": "targetingKey" },
         ["new", { "-": [R, { "var": "$flagd.timestamp" }] }],
-        ["old", { "-": [{ "+": [{ "var": "$flagd.timestamp" }, Te] }, R] }]
+        ["old", { "-": [{ "+": [{ "var": "$flagd.timestamp" }, Te] }, 2Tp] }]
       ]
     }
     ```
 
-    Where `R` and `Te` are precomputed constants. The `"new"` weight shrinks from `Tp - Ts` to 0, naturally gating out never-transitioned users and reverting the rest in FILO order.
+    Where `R`, `Te`, `Ts`, and `Tp` are precomputed constants. Note that `R + Ts = (2Tp - Ts) + Ts = 2Tp`, so the `"old"` weight simplifies to `(t + Te) - 2Tp`. The `"new"` weight shrinks from `Tp - Ts` to 0, and the total weight is always `Te - Ts` (the rollout duration), naturally gating out never-transitioned users and reverting the rest in FILO order.
     The rollback completes at `t = R = 2Tp - Ts`, not at the original `Te`; it mirrors the rollout at the same rate, so the rollback takes as long to complete as the rollout had progressed. For example, if the rollout ran for 300s before pivoting, the rollback also takes 300s.
 
 2. **Hash decorrelation.** The `rollout` operator automatically appends `"rollout"` (or some other salt) to the bucketing value before hashing, ensuring that a user's position in the rollout timeline does not correlate with their bucket in a nested `fractional`.
@@ -270,18 +270,18 @@ Rollout:
 }
 ```
 
-Rollback (FILO, initiated at 50%; `R = 2 × 1770000000 − 1740000000 = 1800000000`):
+Rollback (FILO, initiated at 50%; `R = 2 × 1770000000 − 1740000000 = 1800000000`, `2Tp = 2 × 1770000000 = 3540000000`):
 
 ```jsonc
 {
   "fractional": [
     ["on",  { "-": [1800000000, { "var": "$flagd.timestamp" }] }],
-    ["off", { "var": "$flagd.timestamp" }]
+    ["off", { "-": [{ "+": [{ "var": "$flagd.timestamp" }, 1800000000] }, 3540000000] }]
   ]
 }
 ```
 
-Note: in the general case the rollback weights use the formula from above (`R = 2Tp − Ts`), but at the 50% pivot `R` equals `Te`, so the `"off"` weight simplifies to just the current timestamp.
+Note: the `"off"` weight simplifies to `t − 1740000000` (i.e., `t − Ts`), which mirrors the original rollout's `"on"` weight. The total weight is always `1800000000 − 1740000000 = 60000000` (the rollout duration), ensuring bucket assignments are preserved at the pivot instant.
 
 **Summary:**
 
