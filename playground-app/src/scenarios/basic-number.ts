@@ -22,4 +22,5 @@ export const basicNumber: Scenario = {
   flagKey: "basic-number",
   returnType: "number",
   context: contextToPrettyJson({}),
+  codeDefault: "0",
 };

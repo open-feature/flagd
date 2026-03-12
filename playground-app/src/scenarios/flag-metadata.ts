@@ -28,4 +28,5 @@ export const flagMetadata: Scenario = {
   flagKey: "flag-with-metadata",
   returnType: "boolean",
   context: contextToPrettyJson({}),
+  codeDefault: "false",
 };

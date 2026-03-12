@@ -14,6 +14,7 @@ import { progressRollout } from "./progressive-rollout";
 import { sharedEvaluators } from "./share-evaluators";
 import { targetingKey } from "./targeting-key";
 import { flagMetadata } from "./flag-metadata";
+import { codeDefault } from "./code-default";
 
 export const scenarios = {
   "Basic boolean flag": basicBoolean,
@@ -31,6 +32,7 @@ export const scenarios = {
   "Boolean variant shorthand": booleanShorthand,
   "Targeting key": targetingKey,
   "Flag metadata": flagMetadata,
+  "Code default": codeDefault,
 } satisfies { [name: string]: Scenario };
 
 export type ScenarioName = keyof typeof scenarios;
