@@ -65,4 +65,5 @@ export const progressRollout: Scenario = {
     contextToPrettyJson({
       targetingKey: "sessionId-12345",
     }),
+  codeDefault: "false",
 };

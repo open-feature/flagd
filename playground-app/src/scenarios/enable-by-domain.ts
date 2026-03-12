@@ -3,7 +3,7 @@ import { contextToPrettyJson, featureDefinitionToPrettyJson } from "../utils";
 
 export const enableByDomain: Scenario = {
   description: [
-    'In this scenario, we have a feature flag with the key "enable-mainframe-access" that is enabled and has two variants: true and false.',
+    'In this scenario, we have a feature flag with the key "enable-mainframe-access" that is enabled and has two variants: on and off.',
     'This flag has a targeting rule defined that enables the flag for users with an email address that ends with "@ingen.com".',
     'Experiment with changing the email address in the context or in the targeting rule.',
   ].join(" "),
@@ -11,13 +11,13 @@ export const enableByDomain: Scenario = {
     flags: {
       "enable-mainframe-access": {
         state: "ENABLED",
-        defaultVariant: "false",
+        defaultVariant: "off",
         variants: {
-          true: true,
-          false: false,
+          on: true,
+          off: false,
         },
         targeting: {
-          if: [{ ends_with: [{ var: "email" }, "@ingen.com"] }, "true"],
+          if: [{ ends_with: [{ var: "email" }, "@ingen.com"] }, "on"],
         },
       },
     },
@@ -27,4 +27,5 @@ export const enableByDomain: Scenario = {
   context: contextToPrettyJson({
     email: "john.arnold@ingen.com",
   }),
+  codeDefault: "false",
 };

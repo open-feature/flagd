@@ -22,4 +22,5 @@ export const basicBoolean: Scenario = {
   flagKey: "basic-boolean",
   returnType: "boolean",
   context: contextToPrettyJson({}),
+  codeDefault: "false",
 };

@@ -9,7 +9,7 @@ description: flagd flag definition
 `flags` is a **required** property.
 The flags property is a top-level property that contains a collection of individual flags and their corresponding flag configurations.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -24,7 +24,7 @@ The flags property is a top-level property that contains a collection of individ
 The flag key **must** uniquely identify a flag so it can be used during flag evaluation.
 The flag key **should** convey the intent of the flag.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -39,7 +39,7 @@ The flag key **should** convey the intent of the flag.
 
 A fully configured flag may look like this.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -79,7 +79,7 @@ When the state is set to "DISABLED", flagd will behave like the flag doesn't exi
 
 Example:
 
-```json
+```jsonc
 "state": "ENABLED"
 ```
 
@@ -94,7 +94,7 @@ If another path, such as `/flagd.evaluation.v1.Service/ResolveString` is called,
 
 Example:
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
@@ -104,7 +104,7 @@ Example:
 
 Example:
 
-```json
+```jsonc
 "variants": {
   "on": true,
   "off": false
@@ -113,7 +113,7 @@ Example:
 
 Example of an invalid configuration:
 
-```json
+```jsonc
 "variants": {
   "on": true,
   "off": "false"
@@ -125,11 +125,21 @@ Example of an invalid configuration:
 `defaultVariant` is an **optional** property.
 If `defaultVariant` is a string, its value **must** match the name of one of the variants defined above.
 The default variant is used unless a targeting rule explicitly overrides it.
-If `defaultVariant` is omitted or null, flagd providers will revert to the code default for the flag in question if targeting is not defined or falls through.
 
-Example:
+!!! note
 
-```json
+    In previous versions of flagd, when `defaultVariant` was omitted, flagd would behave as if the flag does not exist, returning `reason=ERROR` and `error=FLAG_NOT_FOUND`. flagd now gracefully falls back to the code-defined default value when `defaultVariant` is omitted or set to `null`. This change allows users to define their own default values in code, providing more flexibility for feature flag implementations.
+
+If `defaultVariant` is omitted or set to `null`, flagd will gracefully fall back to the code-defined default value.
+In this case, the evaluation response will:
+
+- Use reason code "DEFAULT"
+- Omit the `value` and `variant` fields
+- Allow the client to use its code-defined default value
+
+Example with explicit default:
+
+```jsonc
 "variants": {
   "on": true,
   "off": false
@@ -137,9 +147,9 @@ Example:
 "defaultVariant": "off"
 ```
 
-Example:
+Example with explicit default (string variants):
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
@@ -148,9 +158,9 @@ Example:
 "defaultVariant": "red"
 ```
 
-Example of explicitly using the code default:
+Example using code default (explicit null):
 
-```json
+```jsonc
 "variants": {
   "on": true,
   "off": false
@@ -158,15 +168,48 @@ Example of explicitly using the code default:
 "defaultVariant": null
 ```
 
+Example using code default (absent defaultVariant):
+
+```jsonc
+"variants": {
+  "on": true,
+  "off": false
+}
+// defaultVariant omitted - also uses code default
+```
+
 Example of an invalid configuration:
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
   "blue": "0d507b"
 },
 "defaultVariant": "purple"
+```
+
+#### Resolution Format
+
+When a configured default variant is used:
+
+```jsonc
+{
+  "value": false,
+  "reason": "DEFAULT",
+  "variant": "off",
+  "metadata": {}
+}
+```
+
+When code default is used (`defaultVariant: null` or omitted):
+
+```jsonc
+{
+  "reason": "DEFAULT",
+  "metadata": {}
+  // Note: value and variant fields are omitted
+}
 ```
 
 ### Targeting Rules
@@ -184,11 +227,6 @@ If a null value is returned by the targeting rule, the `defaultVariant` is used.
 This can be useful for conditionally "exiting" targeting rules and falling back to the default (in this case the returned reason will be `DEFAULT`).
 If an invalid variant is returned (not a string, `true`, or `false`, or a string that is not in the set of variants) the evaluation is considered erroneous.
 If `defaultVariant` is not defined or is `null`, and no variant is resolved from `targeting`, flagd providers will revert to the code default.
-
-!!! note
-
-    When `defaultVariant` is omitted, and no variant is resolved from a rule, providers default by behaving as if the flag does not exist (`reason=ERROR` and `error=FLAG_NOT_FOUND`).
-    This will be improved in upcoming versions, such that delegation to code default in this scenario will not be considered erroneous.  
 
 See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
@@ -212,7 +250,7 @@ flagd supports three sources of evaluation context:
 Context included as part of the evaluation request.
 For example, when accessing flagd via HTTP, the POST body may look like this:
 
-```json
+```jsonc
 {
   "flagKey": "booleanFlagKey",
   "context": {
@@ -360,7 +398,7 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 flagd and flagd providers map the [targeting key](https://openfeature.dev/specification/glossary#targeting-key) into the `"targetingKey"` property of the context used in rules.
 For example, if the targeting key for a particular evaluation was set to `"5c3d8535-f81a-4478-a6d3-afaa4d51199e"`, the following expression would evaluate to `true`:
 
-```json
+```jsonc
 "==": [
     {
         "var": "targetingKey"
@@ -385,7 +423,7 @@ It's a collection of shared targeting configurations used to reduce the number o
 
 Example:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -462,7 +500,7 @@ Since rules that return `true` or `false` map to the variant indexed by the equi
 
 For example, this:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -487,7 +525,7 @@ For example, this:
 
 can be shortened to this:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {

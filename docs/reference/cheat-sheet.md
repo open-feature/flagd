@@ -122,7 +122,7 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags/simple-boolean'
 
 Response:
 
-```json
+```jsonc
 {
   "key": "simple-boolean",
   "reason": "STATIC",
@@ -153,7 +153,7 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 
 Response:
 
-```json
+```jsonc
 {
   "flags": [
     {"key": "simple-boolean", "reason": "STATIC", "variant": "on", "value": true, "metadata": {}},
@@ -180,7 +180,7 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags/email-based-feature'
 
 Response (email matches `@example.com`):
 
-```json
+```jsonc
 {
   "key": "email-based-feature",
   "reason": "TARGETING_MATCH",
@@ -312,24 +312,24 @@ PROTO_DIR="flagd-schemas/protobuf/"
 ```shell
 # Boolean flag
 grpcurl -plaintext \
-  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v2/evaluation.proto \
   -d '{"flagKey": "simple-boolean", "context": {}}' \
   localhost:8013 \
-  flagd.evaluation.v1.Service/ResolveBoolean
+  flagd.evaluation.v2.Service/ResolveBoolean
 
 # String flag
 grpcurl -plaintext \
-  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v2/evaluation.proto \
   -d '{"flagKey": "simple-string", "context": {}}' \
   localhost:8013 \
-  flagd.evaluation.v1.Service/ResolveString
+  flagd.evaluation.v2.Service/ResolveString
 
 # With context
 grpcurl -plaintext \
-  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v2/evaluation.proto \
   -d '{"flagKey": "user-tier-flag", "context": {"tier": "enterprise"}}' \
   localhost:8013 \
-  flagd.evaluation.v1.Service/ResolveString
+  flagd.evaluation.v2.Service/ResolveString
 ```
 
 ### Evaluate All Flags
@@ -349,11 +349,11 @@ Filter which flags are evaluated using the `Flagd-Selector` header:
 ```shell
 # Evaluate only flags from the app flag set
 grpcurl -plaintext \
-  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v2/evaluation.proto \
   -H 'Flagd-Selector: flagSetId=app-flags' \
   -d '{"flagKey": "simple-boolean", "context": {}}' \
   localhost:8013 \
-  flagd.evaluation.v1.Service/ResolveBoolean
+  flagd.evaluation.v2.Service/ResolveBoolean
 
 # ResolveAll with selector
 grpcurl -plaintext \
@@ -391,7 +391,7 @@ grpcurl -plaintext \
 
 Response contains the complete flag configuration JSON:
 
-```json
+```jsonc
 {
   "flagConfiguration": "{\"flags\":{\"simple-boolean\":{...}}}"
 }

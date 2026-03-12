@@ -35,4 +35,5 @@ export const pseudoRandomSplit: Scenario = {
   context: contextToPrettyJson({
     targetingKey: "sessionId-123",
   }),
+  codeDefault: "\"grey\"",
 };

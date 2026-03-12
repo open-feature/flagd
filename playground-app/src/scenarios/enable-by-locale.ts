@@ -3,7 +3,7 @@ import { contextToPrettyJson, featureDefinitionToPrettyJson } from "../utils";
 
 export const enableByLocale: Scenario = {
   description: [
-    'In this scenario, we have a feature flag with the key "supports-one-hour-delivery" that is enabled and has two variants: true and false.',
+    'In this scenario, we have a feature flag with the key "supports-one-hour-delivery" that is enabled and has two variants: on and off.',
     'This flag has a targeting rule defined that enables the flag for users with a locale of "us" or "ca".',
     'Experiment with changing the locale in the context or in the locale list in the targeting rule.',
   ].join(" "),
@@ -11,13 +11,13 @@ export const enableByLocale: Scenario = {
     flags: {
       "supports-one-hour-delivery": {
         state: "ENABLED",
-        defaultVariant: "false",
+        defaultVariant: "off",
         variants: {
-          true: true,
-          false: false,
+          on: true,
+          off: false,
         },
         targeting: {
-          if: [{ in: [{ var: "locale" }, ["us", "ca"]] }, "true"],
+          if: [{ in: [{ var: "locale" }, ["us", "ca"]] }, "on"],
         },
       },
     },
@@ -27,4 +27,5 @@ export const enableByLocale: Scenario = {
   }),
   flagKey: "supports-one-hour-delivery",
   returnType: "boolean",
+  codeDefault: "false",
 };
