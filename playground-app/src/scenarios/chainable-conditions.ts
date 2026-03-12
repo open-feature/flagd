@@ -36,4 +36,5 @@ export const chainableConditions: Scenario = {
     targetingKey: "sessionId-123",
     customerId: "customer-A",
   }),
+  codeDefault: "\"\"",
 };

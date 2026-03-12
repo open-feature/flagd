@@ -26,4 +26,5 @@ export const basicObject: Scenario = {
   flagKey: "basic-object",
   returnType: "object",
   context: contextToPrettyJson({}),
+  codeDefault: "{}",
 };

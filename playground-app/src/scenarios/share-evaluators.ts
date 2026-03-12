@@ -43,4 +43,5 @@ export const sharedEvaluators: Scenario = {
   context: contextToPrettyJson({
     email: "example@faas.com",
   }),
+  codeDefault: "false",
 };

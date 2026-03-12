@@ -24,7 +24,7 @@ Why is my `int` response a `string`?
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v2.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -40,7 +40,7 @@ If a number value is required, and none of the provided SDK's can be used, then 
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v2.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -113,3 +113,40 @@ curl -H "Flagd-Selector: flagSetId=my-app" \
   http://localhost:8014/ofrep/v1/evaluate/flags
 # Check response metadata to see parsed selector
 ```
+
+---
+
+## Variant/value not included in response
+
+When you see that `value` and `variant` fields are missing from flag evaluation responses, it indicates that flagd is delegating to the code-defined default value. This is the expected behavior when `defaultVariant` is set to `null` or omitted.
+
+### Configured Default
+
+When a flag has an explicit `defaultVariant` configured:
+
+```json
+{
+  "value": false,
+  "reason": "DEFAULT",
+  "variant": "off",
+  "metadata": {}
+}
+```
+
+This means the configured default variant was used because no targeting rule matched.
+
+### Code Default
+
+When a flag has `defaultVariant: null` or no `defaultVariant` is defined:
+
+```json
+{
+  "reason": "DEFAULT",
+  "metadata": {}
+  // Note: value and variant fields are omitted
+}
+```
+
+This indicates that flagd is delegating to the code-defined default value. The absence of `value` and `variant` fields signals to the client SDK to use its code default.
+
+For more information about code defaults, see [Code Defaults](./concepts/feature-flagging.md#code-defaults).
