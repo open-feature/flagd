@@ -1,13 +1,16 @@
 ---
-status: draft
+status: rejected
 author: @toddbaert
 created: 2026-02-06
-updated: 2026-02-06
+updated: 2026-03-13
 ---
 
 # Rollout Operator
 
-The rollout operator enables time-based progressive feature rollouts.
+**Status: Rejected**: After discussion, this proposal was rejected in favor of enhancing the existing `fractional` operator to accept JSONLogic expressions as weight arguments (see the [Alternative Proposal](#alternative-proposal-enhanced-fractional-with-dynamic-weights) section below and the [Fractional Operator ADR](fractional.md)).
+The rollout/rollback operators are largely syntactic sugar over `fractional` with dynamic weights, and the additional operator surface area across all language SDKs is not justified at this time.
+The enhanced `fractional` approach has been proven to support both progressive rollouts and FILO rollbacks using only existing primitives.
+A dedicated operator may be reconsidered in the future if strong user need emerges, perhaps "compiled" to the fractional alternative described.
 
 ## Background
 
