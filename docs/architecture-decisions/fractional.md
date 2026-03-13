@@ -2,7 +2,7 @@
 status: draft
 author: @toddbaert
 created: 2025-06-06
-updated: 2025-06-06
+updated: 2026-03-13
 ---
 
 # Fractional Operator
@@ -111,6 +111,21 @@ Note that in this example, we've also specified a custom bucketing value.
 }
 ```
 
+**Dynamic weights** are also supported: the weight argument in each variant array can be a JSONLogic expression that evaluates to a numeric value, not only a hard-coded integer.
+This enables use cases such as time-based progressive rollouts, where the weight changes dynamically based on the evaluation context (e.g., `$flagd.timestamp`).
+Negative weight values (which can result from dynamic expressions) must be clamped to 0.
+
+```jsonc
+// Time-based progressive rollout using dynamic weights:
+// the "on" weight grows as time advances, "off" weight shrinks.
+{
+  "fractional": [
+    ["on",  { "-": [{ "var": "$flagd.timestamp" }, 1740000000] }],
+    ["off", { "-": [1800000000, { "var": "$flagd.timestamp" }] }]
+  ]
+}
+```
+
 ### Consequences
 
 - Good, because Murmur3 is fast, has good avalanche properties, and we don't need "cryptographic" randomness
@@ -118,4 +133,3 @@ Note that in this example, we've also specified a custom bucketing value.
 - Good, because our bucketing algorithm is relatively stable when new variants are added
 - Bad, because we only support string bucketing values
 - Bad, because we don't have bucket resolution finer than 1:99
-- Bad, because we don't support JSONLogic expressions within bucket definitions
