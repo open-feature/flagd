@@ -52,6 +52,7 @@ The system provides two tiers of operators:
 
 - `fractional`: Deterministic percentage-based distribution using murmur3 hashing
 - `starts_with`/`ends_with`: String prefix/suffix matching for common patterns
+- `regex_match`: String regular expression matching
 - `sem_ver`: Semantic version comparisons with standard (npm-style) operators
 - `$ref`: Reference to shared evaluators for DRY principle
 
