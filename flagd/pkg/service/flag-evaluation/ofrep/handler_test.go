@@ -2,6 +2,7 @@ package ofrep
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,6 +17,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
+	"github.com/open-feature/flagd/core/pkg/store"
+	service "github.com/open-feature/flagd/flagd/pkg/service"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -268,6 +272,44 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_handler_HandleBulkEvaluation_UsesFlagSelectorHeader(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+	expectedOrder := []string{"'source=A'", "'source=C'", "'source=B'"}
+	callCount := 0
+
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
+		func(ctx context.Context, _ string, _ map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
+			selector, ok := ctx.Value(store.SelectorContextKey{}).(store.Selector)
+			if !ok {
+				t.Fatalf("selector not found in context")
+			}
+
+			if callCount >= len(expectedOrder) {
+				t.Fatalf("unexpected extra selector call")
+			}
+			if selector.ToLogString() != expectedOrder[callCount] {
+				t.Fatalf("unexpected selector at call %d: %s", callCount, selector.ToLogString())
+			}
+			callCount++
+
+			return []evaluator.AnyValue{successValue}, model.Metadata{}, nil
+		},
+	)
+
+	h := handler{Logger: log, evaluator: eval}
+	request, err := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", bytes.NewReader([]byte("{}")))
+	require.NoError(t, err)
+	request.Header.Set(service.FLAG_SELECTOR_HEADER, "A,C,B")
+
+	recorder := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc(bulkEvaluation, h.HandleBulkEvaluation)
+	router.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
 }
 
 func TestWriteJSONResponse(t *testing.T) {
