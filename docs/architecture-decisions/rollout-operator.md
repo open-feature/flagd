@@ -200,7 +200,7 @@ This can be done with an additional, optional, configuration parameter before th
 
 **Implementation of non-linear rollouts is out of the scope of this proposal.**
 
-### Recommended Alternative: Enhanced `fractional` with Dynamic Weights
+### Alternative Proposal: Enhanced `fractional` with Dynamic Weights
 
 An alternative to a dedicated operator was proposed: use `fractional` with JSONLogic expressions as weights, combined with `$flagd.timestamp`, to achieve time-based progression without any new operator:
 
