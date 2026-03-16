@@ -677,9 +677,10 @@ func TestSync_ReSync(t *testing.T) {
 					}
 				}()
 
-				if err := tt.k.ReSync(context.Background(), dataChannel); err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				}
+                                if err := tt.k.ReSync(ctx, dataChannel); err != nil {
+                                        t.Errorf("Unexpected error: %v", err)
+                                }
+
 
 				for i := tt.countMsg; i > 0; i-- {
 					select {
