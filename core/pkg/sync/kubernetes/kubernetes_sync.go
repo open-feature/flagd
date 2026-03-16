@@ -27,6 +27,8 @@ var (
 	featureFlagResource = v1beta1.GroupVersion.WithResource("featureflags")
 )
 
+const invalidAPIVersionMsg = "invalid api version %s, expected %s"
+
 type SyncOption func(s *Sync)
 
 type Sync struct {
@@ -241,7 +243,7 @@ func commonHandler(obj interface{}, object types.NamespacedName, emitEvent Defau
 	}
 
 	if u.GetAPIVersion() != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", u.GetAPIVersion(), apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, u.GetAPIVersion(), apiVersion)
 	}
 
 	if u.GetName() == object.Name {
@@ -263,7 +265,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	}
 
 	if ffOldObj.GetAPIVersion() != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", ffOldObj.GetAPIVersion(), apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, ffOldObj.GetAPIVersion(), apiVersion)
 	}
 
 	ffNewObj, err := asUnstructured(newObj)
@@ -272,7 +274,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	}
 
 	if ffNewObj.GetAPIVersion() != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", ffNewObj.GetAPIVersion(), apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, ffNewObj.GetAPIVersion(), apiVersion)
 	}
 
 	if object.Name == ffNewObj.GetName() && ffOldObj.GetResourceVersion() != ffNewObj.GetResourceVersion() {

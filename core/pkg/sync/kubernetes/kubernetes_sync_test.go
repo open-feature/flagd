@@ -74,7 +74,7 @@ func Test_parseURI(t *testing.T) {
 	}
 }
 
-func Test_asUnstructured(t *testing.T) {
+func TestAsUnstructured(t *testing.T) {
 	validFFCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 	}
