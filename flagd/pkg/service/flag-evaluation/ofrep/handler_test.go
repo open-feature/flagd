@@ -274,7 +274,7 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 	}
 }
 
-func Test_handler_HandleBulkEvaluation_UsesFlagSelectorHeader(t *testing.T) {
+func TestHandlerHandleBulkEvaluationUsesFlagSelectorHeader(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	expectedOrder := []string{"'source=A'", "'source=C'", "'source=B'"}

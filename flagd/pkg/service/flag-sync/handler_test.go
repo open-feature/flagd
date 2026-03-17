@@ -40,8 +40,11 @@ func (m *mockMergeStore) GetAll(_ context.Context, selector *store.Selector) ([]
 }
 
 func (m *mockMergeStore) Watch(_ context.Context, _ *store.Selector, _ chan<- store.FlagQueryResult) {
+	// no-op: the mock does not track watches for the current tests.
 }
-func (m *mockMergeStore) Update(_ string, _ []model.Flag, _ model.Metadata) {}
+func (m *mockMergeStore) Update(_ string, _ []model.Flag, _ model.Metadata) {
+	// intentionally empty because test coverage does not exercise store updates.
+}
 
 func TestSyncHandler_SyncFlags(t *testing.T) {
 	tests := []struct {
@@ -281,7 +284,7 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 	}
 }
 
-func TestSyncHandler_FetchAllFlags_MultiSelectorOverrideOrder(t *testing.T) {
+func TestSyncHandlerFetchAllFlagsMultiSelectorOverrideOrder(t *testing.T) {
 	handler := syncHandler{
 		store: &mockMergeStore{
 			flagsBySource: map[string][]model.Flag{
@@ -311,7 +314,7 @@ func TestSyncHandler_FetchAllFlags_MultiSelectorOverrideOrder(t *testing.T) {
 	assert.Contains(t, resp.FlagConfiguration, "\"defaultVariant\":\"b\"")
 }
 
-func TestSyncHandler_fetchMergedFlags_OrderOverride(t *testing.T) {
+func TestSyncHandlerFetchMergedFlagsOrderOverride(t *testing.T) {
 	handler := syncHandler{
 		store: &mockMergeStore{
 			flagsBySource: map[string][]model.Flag{
