@@ -23,42 +23,71 @@ func ResolveAllWithSelectorMerge(
 	case 0:
 		return eval.ResolveAllValues(ctx, reqID, evaluationContext)
 	case 1:
-		selector := store.NewSelector(selectors[0])
-		selectorCtx := context.WithValue(ctx, store.SelectorContextKey{}, selector)
-		return eval.ResolveAllValues(selectorCtx, reqID, evaluationContext)
+		return resolveWithSingleSelector(ctx, reqID, eval, evaluationContext, selectors[0])
 	default:
-		mergedValues := map[string]evaluator.AnyValue{}
-		mergedMetadata := model.Metadata{}
-
-		for _, selectorExpression := range selectors {
-			selector := store.NewSelector(selectorExpression)
-			selectorCtx := context.WithValue(ctx, store.SelectorContextKey{}, selector)
-			values, metadata, err := eval.ResolveAllValues(selectorCtx, reqID, evaluationContext)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			for key, value := range metadata {
-				mergedMetadata[key] = value
-			}
-			for _, value := range values {
-				mergedValues[value.FlagKey] = value
-			}
-		}
-
-		keys := make([]string, 0, len(mergedValues))
-		for key := range mergedValues {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-
-		resolutions := make([]evaluator.AnyValue, 0, len(keys))
-		for _, key := range keys {
-			resolutions = append(resolutions, mergedValues[key])
-		}
-
-		return resolutions, mergedMetadata, nil
+		return resolveWithMultipleSelectors(ctx, reqID, eval, evaluationContext, selectors)
 	}
+}
+
+func resolveWithSingleSelector(
+	ctx context.Context,
+	reqID string,
+	eval evaluator.IEvaluator,
+	evaluationContext map[string]any,
+	selectorExpression string,
+) ([]evaluator.AnyValue, model.Metadata, error) {
+	selector := store.NewSelector(selectorExpression)
+	selectorCtx := context.WithValue(ctx, store.SelectorContextKey{}, selector)
+	return eval.ResolveAllValues(selectorCtx, reqID, evaluationContext)
+}
+
+func resolveWithMultipleSelectors(
+	ctx context.Context,
+	reqID string,
+	eval evaluator.IEvaluator,
+	evaluationContext map[string]any,
+	selectors []string,
+) ([]evaluator.AnyValue, model.Metadata, error) {
+	mergedValues := map[string]evaluator.AnyValue{}
+	mergedMetadata := model.Metadata{}
+
+	for _, selectorExpression := range selectors {
+		selector := store.NewSelector(selectorExpression)
+		selectorCtx := context.WithValue(ctx, store.SelectorContextKey{}, selector)
+		values, metadata, err := eval.ResolveAllValues(selectorCtx, reqID, evaluationContext)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		mergeMetadata(mergedMetadata, metadata)
+		for _, value := range values {
+			mergedValues[value.FlagKey] = value
+		}
+	}
+
+	resolutions := flattenMergedValues(mergedValues)
+	return resolutions, mergedMetadata, nil
+}
+
+func mergeMetadata(dest, src model.Metadata) {
+	for key, value := range src {
+		dest[key] = value
+	}
+}
+
+func flattenMergedValues(merged map[string]evaluator.AnyValue) []evaluator.AnyValue {
+	keys := make([]string, 0, len(merged))
+	for key := range merged {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	resolutions := make([]evaluator.AnyValue, 0, len(keys))
+	for _, key := range keys {
+		resolutions = append(resolutions, merged[key])
+	}
+
+	return resolutions
 }
 
 func splitSelectorExpression(selectorExpression string) []string {

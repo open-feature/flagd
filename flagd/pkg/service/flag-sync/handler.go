@@ -39,22 +39,37 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	selectorExpression := s.getSelectorExpression(server.Context(), req)
 	selectors := parseSelectorList(selectorExpression)
 	ctx := server.Context()
-
-	syncContextMap := make(map[string]any)
-	maps.Copy(syncContextMap, s.contextValues)
-	syncContext, err := structpb.NewStruct(syncContextMap)
+	syncContext, err := s.buildSyncContext()
 	if err != nil {
 		return status.Error(codes.DataLoss, "error constructing sync context")
 	}
 
-	// attach server-side stream deadline to context
-	if s.deadline != 0 {
-		streamDeadline := time.Now().Add(s.deadline)
-		deadlineCtx, cancel := context.WithDeadline(ctx, streamDeadline)
-		ctx = deadlineCtx
+	var cancel context.CancelFunc
+	ctx, cancel = s.withDeadline(ctx)
+	if cancel != nil {
 		defer cancel()
 	}
 
+	s.watchSelectors(ctx, selectors, watcher)
+	return s.streamFlagUpdates(ctx, selectors, watcher, syncContext, server)
+}
+
+func (s syncHandler) buildSyncContext() (*structpb.Struct, error) {
+	syncContextMap := make(map[string]any)
+	maps.Copy(syncContextMap, s.contextValues)
+	return structpb.NewStruct(syncContextMap)
+}
+
+func (s syncHandler) withDeadline(ctx context.Context) (context.Context, context.CancelFunc) {
+	if s.deadline == 0 {
+		return ctx, nil
+	}
+
+	streamDeadline := time.Now().Add(s.deadline)
+	return context.WithDeadline(ctx, streamDeadline)
+}
+
+func (s syncHandler) watchSelectors(ctx context.Context, selectors []store.Selector, watcher chan store.FlagQueryResult) {
 	switch len(selectors) {
 	case 0:
 		s.store.Watch(ctx, nil, watcher)
@@ -64,22 +79,22 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 		// For multi-selector requests, watch all updates and recompute merged view in order.
 		s.store.Watch(ctx, nil, watcher)
 	}
+}
 
+func (s syncHandler) streamFlagUpdates(
+	ctx context.Context,
+	selectors []store.Selector,
+	watcher chan store.FlagQueryResult,
+	syncContext *structpb.Struct,
+	server syncv1grpc.FlagSyncService_SyncFlagsServer,
+) error {
 	for {
 		select {
 		case payload := <-watcher:
+			flagsToSend, err := s.resolveFlagsForSelectors(ctx, selectors, payload.Flags)
 			if err != nil {
-				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
-				return fmt.Errorf("error constructing metadata response")
-			}
-
-			flagsToSend := payload.Flags
-			if len(selectors) != 1 {
-				flagsToSend, err = s.fetchMergedFlags(ctx, selectors)
-				if err != nil {
-					s.log.Error(fmt.Sprintf("error retrieving merged flags from store: %v", err))
-					return status.Error(codes.Internal, "error retrieving flags from store")
-				}
+				s.log.Error(fmt.Sprintf("error retrieving merged flags from store: %v", err))
+				return status.Error(codes.Internal, "error retrieving flags from store")
 			}
 
 			flags, err := s.generateResponse(flagsToSend)
@@ -102,6 +117,13 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 			return nil
 		}
 	}
+}
+
+func (s syncHandler) resolveFlagsForSelectors(ctx context.Context, selectors []store.Selector, payloadFlags []model.Flag) ([]model.Flag, error) {
+	if len(selectors) == 1 {
+		return payloadFlags, nil
+	}
+	return s.fetchMergedFlags(ctx, selectors)
 }
 
 func (s syncHandler) generateResponse(payload []model.Flag) ([]byte, error) {
