@@ -67,6 +67,7 @@ func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (str
 	}
 
 	properties, _ := getFlagdProperties(dataMap)
+	flagKey := properties.FlagKey
 
 	bucketBy, ok := valuesArray[0].(string)
 	if ok {
@@ -79,13 +80,13 @@ func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (str
 
 		targetingKey, ok := dataMap[targetingKeyKey].(string)
 		if !ok {
-			return "", nil, errors.New("bucketing value not supplied and no targetingKey in context")
+			return "", nil, fmt.Errorf("flag %q: bucketing value not supplied and no targetingKey in context", flagKey)
 		}
 
 		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
 	}
 
-	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger)
+	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger, flagKey)
 	if err != nil {
 		return "", nil, err
 	}
@@ -93,7 +94,7 @@ func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (str
 	return bucketBy, feDistributions, nil
 }
 
-func parseFractionalEvaluationDistributions(values []any, data any, logger *logger.Logger) (*fractionalEvaluationDistribution, error) {
+func parseFractionalEvaluationDistributions(values []any, data any, logger *logger.Logger, flagKey string) (*fractionalEvaluationDistribution, error) {
 	feDistributions := &fractionalEvaluationDistribution{
 		totalWeight:      0,
 		weightedVariants: make([]fractionalEvaluationVariant, len(values)),
@@ -107,12 +108,12 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 	for i := 0; i < len(values); i++ {
 		distributionArray, ok := values[i].([]any)
 		if !ok {
-			return nil, errors.New("distribution elements aren't of type []any. " +
-				"please check your rule in flag definition")
+			return nil, fmt.Errorf("flag %q: distribution elements aren't of type []any. "+
+				"please check your rule in flag definition", flagKey)
 		}
 
 		if len(distributionArray) == 0 {
-			return nil, errors.New("distribution element needs at least one element")
+			return nil, fmt.Errorf("flag %q: distribution element needs at least one element", flagKey)
 		}
 
 		// JSONLogic pre-evaluates all arguments before they reach fractional.
@@ -128,7 +129,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 		case nil:
 			variant = nil
 		default:
-			return nil, errors.New("first element of distribution element must be a string, bool, number, or nil")
+			return nil, fmt.Errorf("flag %q: first element of distribution element must be a string, bool, number, or nil", flagKey)
 		}
 
 		weight := int64(1)
@@ -136,7 +137,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 			// parse as float64 first since that's what JSON gives us
 			distributionWeight, ok := distributionArray[1].(float64)
 			if !ok && distributionArray[1] != nil {
-				return nil, errors.New("weight must be a number")
+				return nil, fmt.Errorf("flag %q: weight must be a number", flagKey)
 			}
 			if ok {
 				weight = int64(distributionWeight)
@@ -147,13 +148,13 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 		if len(distributionArray) >= 2 {
 			distributionWeight, ok := distributionArray[1].(float64)
 			if ok && distributionWeight != float64(int64(distributionWeight)) {
-				return nil, errors.New("weights must be integers")
+				return nil, fmt.Errorf("flag %q: weights must be integers", flagKey)
 			}
 		}
 
 		// validate individual weight doesn't exceed int32
 		if weight > math.MaxInt32 || weight < 0 {
-			return nil, fmt.Errorf("weight %d exceeds maximum allowed value %d", weight, math.MaxInt32)
+			return nil, fmt.Errorf("flag %q: weight %d exceeds maximum allowed value %d", flagKey, weight, math.MaxInt32)
 		}
 
 		totalWeightInt64 += weight
@@ -165,7 +166,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 
 	// validate total weight doesn't exceed MaxInt32
 	if totalWeightInt64 > int64(maxWeightSum) {
-		return nil, fmt.Errorf("sum of all weights (%d) exceeds maximum allowed value (%d)", totalWeightInt64, maxWeightSum)
+		return nil, fmt.Errorf("flag %q: sum of all weights (%d) exceeds maximum allowed value (%d)", flagKey, totalWeightInt64, maxWeightSum)
 	}
 
 	feDistributions.totalWeight = int32(totalWeightInt64)
