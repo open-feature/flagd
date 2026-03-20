@@ -25,7 +25,7 @@ type fractionalEvaluationDistribution struct {
 }
 
 type fractionalEvaluationVariant struct {
-	variant any // string, bool, number, JSONLogic node (map[string]any from nested sub-array operators), or nil
+	variant any // string, bool, number or nil
 	weight  int32
 }
 
