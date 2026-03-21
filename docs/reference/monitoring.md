@@ -81,6 +81,27 @@ flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For examp
 
 `flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
 
+### Custom resource attributes
+
+To attach custom resource attributes (e.g., environment name, deployment region) to flagd's exported telemetry, set the `OTEL_RESOURCE_ATTRIBUTES` environment variable before starting flagd:
+
+```sh
+export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=staging,service.version=1.2.3"
+flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317
+```
+
+These attributes follow the [OpenTelemetry resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/) and are attached to all exported metrics and traces.
+
+To expose resource attributes as metric labels in Prometheus, enable `resource_to_telemetry_conversion` in your OpenTelemetry Collector exporter config:
+
+```yaml
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    resource_to_telemetry_conversion:
+      enabled: true
+```
+
 ### Configure local collector setup
 
 To configure a local collector setup along with Jaeger and Prometheus, you can use following sample docker-compose
