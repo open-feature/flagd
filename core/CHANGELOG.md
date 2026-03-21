@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.2](https://github.com/open-feature/flagd/compare/core/v0.14.1...core/v0.14.2) (2026-03-21)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.79.3 [security] ([#1907](https://github.com/open-feature/flagd/issues/1907)) ([ad51d4e](https://github.com/open-feature/flagd/commit/ad51d4e8fe0570474c824273983f54b3ca38b083))
+
 ## [0.14.1](https://github.com/open-feature/flagd/compare/core/v0.14.0...core/v0.14.1) (2026-03-09)
 
 
