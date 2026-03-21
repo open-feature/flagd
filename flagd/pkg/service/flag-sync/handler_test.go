@@ -18,6 +18,34 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+type mockMergeStore struct {
+	flagsBySource map[string][]model.Flag
+}
+
+func (m *mockMergeStore) Get(_ context.Context, _ string, _ *store.Selector) (model.Flag, model.Metadata, error) {
+	return model.Flag{}, model.Metadata{}, nil
+}
+
+func (m *mockMergeStore) GetAll(_ context.Context, selector *store.Selector) ([]model.Flag, model.Metadata, error) {
+	if selector == nil || selector.IsEmpty() {
+		out := []model.Flag{}
+		for _, flags := range m.flagsBySource {
+			out = append(out, flags...)
+		}
+		return out, model.Metadata{}, nil
+	}
+
+	source, _ := selector.ToMetadata()["source"].(string)
+	return append([]model.Flag(nil), m.flagsBySource[source]...), model.Metadata{}, nil
+}
+
+func (m *mockMergeStore) Watch(_ context.Context, _ *store.Selector, _ chan<- store.FlagQueryResult) {
+	// no-op: the mock does not track watches for the current tests.
+}
+func (m *mockMergeStore) Update(_ string, _ []model.Flag, _ model.Metadata) {
+	// intentionally empty because test coverage does not exercise store updates.
+}
+
 func TestSyncHandler_SyncFlags(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -254,4 +282,58 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSyncHandlerFetchAllFlagsMultiSelectorOverrideOrder(t *testing.T) {
+	handler := syncHandler{
+		store: &mockMergeStore{
+			flagsBySource: map[string][]model.Flag{
+				"A": {
+					{Key: "shared", FlagSetId: "set", Source: "A", DefaultVariant: "a", State: "ENABLED", Variants: testVariants},
+				},
+				"B": {
+					{Key: "shared", FlagSetId: "set", Source: "B", DefaultVariant: "b", State: "ENABLED", Variants: testVariants},
+				},
+				"C": {
+					{Key: "shared", FlagSetId: "set", Source: "C", DefaultVariant: "c", State: "ENABLED", Variants: testVariants},
+				},
+			},
+		},
+		log:           logger.NewLogger(nil, false),
+		contextValues: map[string]any{},
+	}
+
+	md := metadata.New(map[string]string{
+		flagdService.FLAG_SELECTOR_HEADER: "A,C,B",
+	})
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+
+	resp, err := handler.FetchAllFlags(ctx, &syncv1.FetchAllFlagsRequest{})
+	require.NoError(t, err)
+	assert.Contains(t, resp.FlagConfiguration, "\"source\":\"B\"")
+	assert.Contains(t, resp.FlagConfiguration, "\"defaultVariant\":\"b\"")
+}
+
+func TestSyncHandlerFetchMergedFlagsOrderOverride(t *testing.T) {
+	handler := syncHandler{
+		store: &mockMergeStore{
+			flagsBySource: map[string][]model.Flag{
+				"A": {
+					{Key: "shared", FlagSetId: "set", Source: "A", DefaultVariant: "a"},
+				},
+				"B": {
+					{Key: "shared", FlagSetId: "set", Source: "B", DefaultVariant: "b"},
+				},
+				"C": {
+					{Key: "shared", FlagSetId: "set", Source: "C", DefaultVariant: "c"},
+				},
+			},
+		},
+	}
+
+	flags, err := handler.fetchMergedFlags(context.Background(), parseSelectorList("A,C,B"))
+	require.NoError(t, err)
+	require.Len(t, flags, 1)
+	assert.Equal(t, "B", flags[0].Source)
+	assert.Equal(t, "b", flags[0].DefaultVariant)
 }

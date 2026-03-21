@@ -335,8 +335,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 ) {
 
 	var selector store.Selector
-	s := ctx.Value(store.SelectorContextKey{})
-	if s != nil {
+	if s := ctx.Value(store.SelectorContextKey{}); s != nil {
 		selector = s.(store.Selector)
 	}
 	flag, metadata, err := je.store.Get(ctx, flagKey, &selector)
@@ -358,73 +357,89 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
 	}
 
-	// get the targeting logic, if any
-	targeting := flag.Targeting
-
-	if targeting != nil && string(targeting) != "{}" {
-		targetingBytes, err := targeting.MarshalJSON()
-		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag: %s, %s", flagKey, err))
-			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
-		}
-
-		evalCtx = setFlagdProperties(je.Logger, evalCtx, flagdProperties{
-			FlagKey:   flagKey,
-			Timestamp: time.Now().Unix(),
-		})
-
-		b, err := json.Marshal(evalCtx)
-		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, evalCtx))
-
-			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
-		}
-
-		var result bytes.Buffer
-		// evaluate JsonLogic rules to determine the variant
-		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
-		if err != nil {
-			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying targeting rules: %s", err))
-			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
-		}
-
-		// check if string is "null" before we strip quotes, so we can differentiate between JSON null and "null"
-		trimmed := strings.TrimSpace(result.String())
-
-		if trimmed == "null" {
-			if flag.DefaultVariant == "" {
-				if ctx.Value(ProtoVersionKey) != nil {
-					// old proto version behavior
-					return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
-				}
-
-				return "", flag.Variants, model.FallbackReason, metadata, nil
-			}
-
-			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
-		}
-
-		// strip whitespace and quotes from the variant
-		variant = strings.ReplaceAll(trimmed, "\"", "")
-
-		// if this is a valid variant, return it
-		if _, ok := flag.Variants[variant]; ok {
-			return variant, flag.Variants, model.TargetingMatchReason, metadata, nil
-		}
-		je.Logger.ErrorWithID(reqID,
-			fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
+	if flag.Targeting != nil && string(flag.Targeting) != "{}" {
+		variant, reason, err := je.evaluateTargeting(ctx, reqID, flagKey, flag, evalCtx)
+		return variant, flag.Variants, reason, metadata, err
 	}
 
+	variant, reason, err = je.resolveDefaultVariant(ctx, flag)
+	return variant, flag.Variants, reason, metadata, err
+}
+
+func (je *Resolver) evaluateTargeting(
+	ctx context.Context,
+	reqID string,
+	flagKey string,
+	flag model.Flag,
+	evalCtx map[string]any,
+) (variant string, reason string, err error) {
+	targetingBytes, err := flag.Targeting.MarshalJSON()
+	if err != nil {
+		je.Logger.ErrorWithID(reqID, fmt.Sprintf("Error parsing rules for flag: %s, %s", flagKey, err))
+		return "", model.ErrorReason, errors.New(model.ParseErrorCode)
+	}
+
+	evalCtx = setFlagdProperties(je.Logger, evalCtx, flagdProperties{
+		FlagKey:   flagKey,
+		Timestamp: time.Now().Unix(),
+	})
+
+	b, err := json.Marshal(evalCtx)
+	if err != nil {
+		je.Logger.ErrorWithID(reqID, fmt.Sprintf("error parsing context for flag: %s, %s, %v", flagKey, err, evalCtx))
+		return "", model.ErrorReason, errors.New(model.ErrorReason)
+	}
+
+	var result bytes.Buffer
+	// evaluate JsonLogic rules to determine the variant
+	if err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result); err != nil {
+		je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying targeting rules: %s", err))
+		return "", model.ErrorReason, errors.New(model.ParseErrorCode)
+	}
+
+	// check if string is "null" before we strip quotes, so we can differentiate between JSON null and "null"
+	trimmed := strings.TrimSpace(result.String())
+
+	if trimmed == "null" {
+		return je.handleNullTargetingResult(ctx, flag)
+	}
+
+	// strip whitespace and quotes from the variant
+	variant = strings.ReplaceAll(trimmed, "\"", "")
+
+	// if this is a valid variant, return it
+	if _, ok := flag.Variants[variant]; ok {
+		return variant, model.TargetingMatchReason, nil
+	}
+
+	je.Logger.ErrorWithID(reqID,
+		fmt.Sprintf("invalid or missing variant: %s for flagKey: %s, variant is not valid", variant, flagKey))
+	return "", model.ErrorReason, errors.New(model.GeneralErrorCode)
+}
+
+func (je *Resolver) handleNullTargetingResult(ctx context.Context, flag model.Flag) (string, string, error) {
 	if flag.DefaultVariant == "" {
 		if ctx.Value(ProtoVersionKey) != nil {
 			// old proto version behavior
-			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
+			return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
 		}
-		return "", flag.Variants, model.FallbackReason, metadata, nil
+
+		return "", model.FallbackReason, nil
 	}
 
-	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
+	return flag.DefaultVariant, model.DefaultReason, nil
+}
+
+func (je *Resolver) resolveDefaultVariant(ctx context.Context, flag model.Flag) (string, string, error) {
+	if flag.DefaultVariant == "" {
+		if ctx.Value(ProtoVersionKey) != nil {
+			// old proto version behavior
+			return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
+		}
+		return "", model.FallbackReason, nil
+	}
+
+	return flag.DefaultVariant, model.StaticReason, nil
 }
 
 func setFlagdProperties(
