@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/model"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -30,11 +32,36 @@ type syncHandler struct {
 	contextValues       map[string]any
 	deadline            time.Duration
 	disableSyncMetadata bool
+	metricsRecorder     telemetry.IMetricsRecorder
 }
 
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
-	watcher := make(chan store.FlagQueryResult, 1)
+	startTime := time.Now()
 	selectorExpression := s.getSelectorExpression(server.Context(), req)
+
+	// Build metric attributes
+	attrs := []attribute.KeyValue{}
+	if selectorExpression != "" {
+		attrs = append(attrs, attribute.String("selector", selectorExpression))
+	}
+	if req.GetProviderId() != "" {
+		attrs = append(attrs, attribute.String("provider_id", req.GetProviderId()))
+	}
+
+	// Record stream start
+	s.metricsRecorder.SyncStreamStart(server.Context(), attrs)
+
+	// Track exit reason for duration metric
+	var exitReason string
+	defer func() {
+		duration := time.Since(startTime)
+		reasonAttrs := append([]attribute.KeyValue{}, attrs...)
+		reasonAttrs = append(reasonAttrs, attribute.String("reason", exitReason))
+		s.metricsRecorder.SyncStreamEnd(server.Context(), attrs)
+		s.metricsRecorder.SyncStreamDuration(server.Context(), duration, reasonAttrs)
+	}()
+
+	watcher := make(chan store.FlagQueryResult, 1)
 	selector := store.NewSelector(selectorExpression)
 	ctx := server.Context()
 
@@ -42,6 +69,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	maps.Copy(syncContextMap, s.contextValues)
 	syncContext, err := structpb.NewStruct(syncContextMap)
 	if err != nil {
+		exitReason = "error"
 		return status.Error(codes.DataLoss, "error constructing sync context")
 	}
 
@@ -58,28 +86,27 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	for {
 		select {
 		case payload := <-watcher:
-			if err != nil {
-				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
-				return fmt.Errorf("error constructing metadata response")
-			}
-
 			flags, err := s.generateResponse(payload.Flags)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
+				exitReason = "error"
 				return status.Error(codes.DataLoss, "error marshalling flags")
 			}
 
 			err = server.Send(&syncv1.SyncFlagsResponse{FlagConfiguration: string(flags), SyncContext: syncContext})
 			if err != nil {
 				s.log.Debug(fmt.Sprintf("error sending stream response: %v", err))
+				exitReason = "client_disconnect"
 				return fmt.Errorf("error sending stream response: %w", err)
 			}
 		case <-ctx.Done():
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
+				exitReason = "deadline_exceeded"
 				return status.Error(codes.DeadlineExceeded, "stream closed due to server-side timeout")
 			}
 			s.log.Debug("context complete and exiting stream request")
+			exitReason = "normal_close"
 			return nil
 		}
 	}
