@@ -87,7 +87,8 @@ To attach custom resource attributes (e.g., environment name, deployment region)
 
 ```sh
 export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=staging,service.version=1.2.3"
-flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317
+export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+flagd start --uri file:/flags.json --metrics-exporter otel
 ```
 
 These attributes follow the [OpenTelemetry resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/) and are attached to all exported metrics and traces.
