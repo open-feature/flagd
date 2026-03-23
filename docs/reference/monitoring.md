@@ -92,6 +92,8 @@ flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri 
 
 These attributes follow the [OpenTelemetry resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/) and are attached to all exported metrics and traces.
 
+> **Tip:** If you're setting resource attributes for environment identification, you may also want to configure [static context values (`-X`)](../reference/flag-definitions.md#static-context--x-flag) so these same dimensions are available for flag targeting.
+
 To expose resource attributes as metric labels in Prometheus, enable `resource_to_telemetry_conversion` in your OpenTelemetry Collector exporter config:
 
 ```yaml
