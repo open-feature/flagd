@@ -401,22 +401,30 @@ func TestHTTPSync_Resync(t *testing.T) {
 			if !tt.wantErr && err != nil {
 				t.Errorf("got error for %s %s", name, err.Error())
 			}
-			for _, dataSync := range tt.wantNotifications {
-				select {
-				case x := <-d:
-					if x.FlagData != dataSync.FlagData || x.Source != dataSync.Source {
-						t.Errorf("unexpected datasync received %v vs %v", x, dataSync)
-					}
-				case <-time.After(2 * time.Second):
-					t.Error("expected datasync not received", dataSync)
-				}
-			}
-			select {
-			case x := <-d:
-				t.Error("unexpected datasync received", x)
-			case <-time.After(2 * time.Second):
-			}
+			assertDataSyncsDelivered(t, d, tt.wantNotifications)
+			assertNoUnexpectedDataSync(t, d)
 		})
+	}
+}
+
+func assertDataSyncsDelivered(t *testing.T, queue chan sync.DataSync, expected []sync.DataSync) {
+	for _, dataSync := range expected {
+		select {
+		case x := <-queue:
+			if x.FlagData != dataSync.FlagData || x.Source != dataSync.Source {
+				t.Errorf("unexpected datasync received %v vs %v", x, dataSync)
+			}
+		case <-time.After(2 * time.Second):
+			t.Error("expected datasync not received", dataSync)
+		}
+	}
+}
+
+func assertNoUnexpectedDataSync(t *testing.T, queue chan sync.DataSync) {
+	select {
+	case x := <-queue:
+		t.Error("unexpected datasync received", x)
+	case <-time.After(2 * time.Second):
 	}
 }
 

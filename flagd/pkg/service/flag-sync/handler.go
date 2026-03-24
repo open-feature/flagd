@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/model"
@@ -35,35 +37,67 @@ type syncHandler struct {
 func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	watcher := make(chan store.FlagQueryResult, 1)
 	selectorExpression := s.getSelectorExpression(server.Context(), req)
-	selector := store.NewSelector(selectorExpression)
+	selectors := parseSelectorList(selectorExpression)
 	ctx := server.Context()
-
-	syncContextMap := make(map[string]any)
-	maps.Copy(syncContextMap, s.contextValues)
-	syncContext, err := structpb.NewStruct(syncContextMap)
+	syncContext, err := s.buildSyncContext()
 	if err != nil {
 		return status.Error(codes.DataLoss, "error constructing sync context")
 	}
 
-	// attach server-side stream deadline to context
-	if s.deadline != 0 {
-		streamDeadline := time.Now().Add(s.deadline)
-		deadlineCtx, cancel := context.WithDeadline(ctx, streamDeadline)
-		ctx = deadlineCtx
+	var cancel context.CancelFunc
+	ctx, cancel = s.withDeadline(ctx)
+	if cancel != nil {
 		defer cancel()
 	}
 
-	s.store.Watch(ctx, &selector, watcher)
+	s.watchSelectors(ctx, selectors, watcher)
+	return s.streamFlagUpdates(ctx, selectors, watcher, syncContext, server)
+}
 
+func (s syncHandler) buildSyncContext() (*structpb.Struct, error) {
+	syncContextMap := make(map[string]any)
+	maps.Copy(syncContextMap, s.contextValues)
+	return structpb.NewStruct(syncContextMap)
+}
+
+func (s syncHandler) withDeadline(ctx context.Context) (context.Context, context.CancelFunc) {
+	if s.deadline == 0 {
+		return ctx, nil
+	}
+
+	streamDeadline := time.Now().Add(s.deadline)
+	return context.WithDeadline(ctx, streamDeadline)
+}
+
+func (s syncHandler) watchSelectors(ctx context.Context, selectors []store.Selector, watcher chan store.FlagQueryResult) {
+	switch len(selectors) {
+	case 0:
+		s.store.Watch(ctx, nil, watcher)
+	case 1:
+		s.store.Watch(ctx, &selectors[0], watcher)
+	default:
+		// For multi-selector requests, watch all updates and recompute merged view in order.
+		s.store.Watch(ctx, nil, watcher)
+	}
+}
+
+func (s syncHandler) streamFlagUpdates(
+	ctx context.Context,
+	selectors []store.Selector,
+	watcher chan store.FlagQueryResult,
+	syncContext *structpb.Struct,
+	server syncv1grpc.FlagSyncService_SyncFlagsServer,
+) error {
 	for {
 		select {
 		case payload := <-watcher:
+			flagsToSend, err := s.resolveFlagsForSelectors(ctx, selectors, payload.Flags)
 			if err != nil {
-				s.log.Error(fmt.Sprintf("error from struct creation: %v", err))
-				return fmt.Errorf("error constructing metadata response")
+				s.log.Error(fmt.Sprintf("error retrieving merged flags from store: %v", err))
+				return status.Error(codes.Internal, "error retrieving flags from store")
 			}
 
-			flags, err := s.generateResponse(payload.Flags)
+			flags, err := s.generateResponse(flagsToSend)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				return status.Error(codes.DataLoss, "error marshalling flags")
@@ -85,6 +119,13 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
+func (s syncHandler) resolveFlagsForSelectors(ctx context.Context, selectors []store.Selector, payloadFlags []model.Flag) ([]model.Flag, error) {
+	if len(selectors) == 1 {
+		return payloadFlags, nil
+	}
+	return s.fetchMergedFlags(ctx, selectors)
+}
+
 func (s syncHandler) generateResponse(payload []model.Flag) ([]byte, error) {
 	flagConfig := map[string]interface{}{
 		"flags": s.convertMap(payload),
@@ -103,8 +144,7 @@ func (s syncHandler) generateResponse(payload []model.Flag) ([]byte, error) {
 func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{}) string {
 	// Try to get selector from metadata (header)
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if values := md.Get(flagdService.FLAGD_SELECTOR_HEADER); len(values) > 0 {
-			headerSelector := values[0]
+		if headerSelector := flagdService.SelectorExpressionFromGRPCMetadata(md); headerSelector != "" {
 			s.log.Debug(fmt.Sprintf("using selector from request header: %s", headerSelector))
 			return headerSelector
 		}
@@ -139,8 +179,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
 	selectorExpression := s.getSelectorExpression(ctx, req)
-	selector := store.NewSelector(selectorExpression)
-	flags, _, err := s.store.GetAll(ctx, &selector)
+	flags, err := s.fetchMergedFlags(ctx, parseSelectorList(selectorExpression))
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
@@ -157,8 +196,66 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	}, nil
 }
 
+func parseSelectorList(selectorExpression string) []store.Selector {
+	if strings.TrimSpace(selectorExpression) == "" {
+		return nil
+	}
+
+	parts := strings.Split(selectorExpression, ",")
+	selectors := make([]store.Selector, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		selector := store.NewSelector(trimmed)
+		selectors = append(selectors, selector)
+	}
+	return selectors
+}
+
+func (s syncHandler) fetchMergedFlags(ctx context.Context, selectors []store.Selector) ([]model.Flag, error) {
+	switch len(selectors) {
+	case 0:
+		flags, _, err := s.store.GetAll(ctx, nil)
+		return flags, err
+	case 1:
+		flags, _, err := s.store.GetAll(ctx, &selectors[0])
+		return flags, err
+	default:
+		type flagIdentifier struct {
+			flagSetID string
+			key       string
+		}
+
+		merged := map[flagIdentifier]model.Flag{}
+		for _, selector := range selectors {
+			flags, _, err := s.store.GetAll(ctx, &selector)
+			if err != nil {
+				return nil, err
+			}
+			for _, flag := range flags {
+				merged[flagIdentifier{flagSetID: flag.FlagSetId, key: flag.Key}] = flag
+			}
+		}
+
+		out := make([]model.Flag, 0, len(merged))
+		for _, flag := range merged {
+			out = append(out, flag)
+		}
+		sort.Slice(out, func(i, j int) bool {
+			if out[i].FlagSetId != out[j].FlagSetId {
+				return out[i].FlagSetId < out[j].FlagSetId
+			}
+			return out[i].Key < out[j].Key
+		})
+		return out, nil
+	}
+}
+
 // Deprecated - GetMetadata is deprecated and will be removed in a future release.
 // Use the sync_context field in syncv1.SyncFlagsResponse, providing same info.
+//
 //nolint:staticcheck // SA1019 temporarily suppress deprecation warning
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,

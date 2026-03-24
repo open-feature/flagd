@@ -52,9 +52,13 @@ func (r *envoyResolver) start() {
 	}
 }
 
-func (*envoyResolver) ResolveNow(resolver.ResolveNowOptions) {}
+func (*envoyResolver) ResolveNow(resolver.ResolveNowOptions) {
+	// no-op: the resolver relies on static configuration provided during construction.
+}
 
-func (*envoyResolver) Close() {}
+func (*envoyResolver) Close() {
+	// no-op: there are no resources to release for the static resolver.
+}
 
 // Validate user specified target
 //
