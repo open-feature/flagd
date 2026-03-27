@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.5](https://github.com/open-feature/flagd/compare/flagd/v0.14.4...flagd/v0.14.5) (2026-03-27)
+
+
+### ✨ New Features
+
+* gRPC sync endpoint metrics ([#1861](https://github.com/open-feature/flagd/issues/1861)) ([b04dc50](https://github.com/open-feature/flagd/commit/b04dc5074a5be239914c4328653623aad36203ac))
+
 ## [0.14.4](https://github.com/open-feature/flagd/compare/flagd/v0.14.3...flagd/v0.14.4) (2026-03-21)
 
 
