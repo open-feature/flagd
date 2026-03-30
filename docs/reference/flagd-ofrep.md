@@ -24,3 +24,8 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 ```
 
 See the [cheat sheet](./cheat-sheet.md#ofrep-api-http) for more OFREP examples including context-sensitive evaluation and selectors.
+
+## Monitoring
+
+The OFREP endpoint is instrumented with OpenTelemetry HTTP and flag evaluation metrics.
+See the [Monitoring reference](./monitoring.md#http-metrics) for the full list of exposed metrics and their attributes.
