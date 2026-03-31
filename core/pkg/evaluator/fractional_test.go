@@ -648,6 +648,47 @@ func Test_fractionalEvaluationVariant_getPercentage(t *testing.T) {
 	}
 }
 
+func TestFractionalEvaluationNegativeClamping(t *testing.T) {
+	ctx := context.Background()
+	flagKey := "clampedWeightFlag"
+
+	evalContext := map[string]any{
+		targetingKeyField: "some-targeting-key",
+	}
+
+	commonFlags := []model.Flag{
+		{
+			Key:            flagKey,
+			State:          "ENABLED",
+			DefaultVariant: blueVariant,
+			Variants:       colorVariants,
+			Targeting: []byte(`{
+				"fractional": [
+					[
+						"red",
+						-1000
+					],
+					[
+						"green",
+						1
+					]
+				]
+			}`),
+		},
+	}
+
+	je, err := setupEvaluator("testSource", commonFlags)
+	if err != nil {
+		t.Fatalf("setupEvaluator failed: %v", err)
+	}
+
+	value, variant, reason, _, err := resolve[string](ctx, "default", flagKey, evalContext, je.evaluateVariant)
+	assert.Equal(t, greenVariant, variant)
+	assert.Equal(t, greenHex, value)
+	assert.Equal(t, model.TargetingMatchReason, reason)
+	assert.NoError(t, err)
+}
+
 func TestFractionalEvaluationWithNestedJSONLogic(t *testing.T) {
 	const source = "testSource"
 	ctx := context.Background()

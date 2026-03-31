@@ -153,8 +153,15 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 		}
 
 		// validate individual weight doesn't exceed int32
-		if weight > math.MaxInt32 || weight < 0 {
+		if weight > math.MaxInt32 {
 			return nil, fmt.Errorf("flag %q: weight %d exceeds maximum allowed value %d", flagKey, weight, math.MaxInt32)
+		}
+
+		// clamp negative weights to 0
+		if weight < 0 {
+			// negative weights can be the result of rollout calculations, so we log and clamp to 0 rather than returning an error
+			logger.Debug(fmt.Sprintf("flag %q: negative weight %d clamped to 0", flagKey, weight))
+			weight = 0
 		}
 
 		totalWeightInt64 += weight
