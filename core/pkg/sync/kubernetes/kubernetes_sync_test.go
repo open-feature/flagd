@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	stdsync "sync"
 	"testing"
 	"time"
 
@@ -73,7 +74,7 @@ func Test_parseURI(t *testing.T) {
 	}
 }
 
-func Test_toFFCfg(t *testing.T) {
+func TestAsUnstructured(t *testing.T) {
 	validFFCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 	}
@@ -81,13 +82,21 @@ func Test_toFFCfg(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   interface{}
-		want    *v1beta1.FeatureFlag
+		want    *unstructured.Unstructured
 		wantErr bool
 	}{
 		{
 			name:    "Simple success",
 			input:   toUnstructured(t, validFFCfg),
-			want:    &validFFCfg,
+			want:    toUnstructured(t, validFFCfg),
+			wantErr: false,
+		},
+		{
+			name: "Tombstone unwraps",
+			input: cache.DeletedFinalStateUnknown{
+				Obj: toUnstructured(t, validFFCfg),
+			},
+			want:    toUnstructured(t, validFFCfg),
 			wantErr: false,
 		},
 		{
@@ -102,15 +111,15 @@ func Test_toFFCfg(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := toFFCfg(tt.input)
+			got, err := asUnstructured(tt.input)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("toFFCfg() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("asUnstructured() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("toFFCfg() got = %v, want %v", got, tt.want)
+				t.Errorf("asUnstructured() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -657,23 +666,35 @@ func TestSync_ReSync(t *testing.T) {
 				t.Errorf("The Sync should not be ready")
 			}
 			dataChannel := make(chan sync.DataSync, tt.countMsg)
+			ctx, cancel := context.WithCancel(context.Background())
 			if tt.async {
+				var wg stdsync.WaitGroup
+				wg.Add(1)
 				go func() {
-					if err := tt.k.Sync(context.TODO(), dataChannel); err != nil {
-						t.Errorf("Unexpected error: %v", e)
-					}
-					if err := tt.k.ReSync(context.TODO(), dataChannel); err != nil {
-						t.Errorf("Unexpected error: %v", e)
+					defer wg.Done()
+					if err := tt.k.Sync(ctx, dataChannel); err != nil {
+						t.Errorf("Unexpected error: %v", err)
 					}
 				}()
-				i := tt.countMsg
-				for i > 0 {
-					d := <-dataChannel
-					if d.FlagData != payload {
-						t.Errorf("Expected %v, got %v", payload, d.FlagData)
+
+                                if err := tt.k.ReSync(ctx, dataChannel); err != nil {
+                                        t.Errorf("Unexpected error: %v", err)
+                                }
+
+
+				for i := tt.countMsg; i > 0; i-- {
+					select {
+					case d := <-dataChannel:
+						if d.FlagData != payload {
+							t.Errorf("Expected %v, got %v", payload, d.FlagData)
+						}
+					case <-time.After(time.Second):
+						t.Fatalf("timeout waiting for data")
 					}
-					i--
 				}
+
+				cancel()
+				wg.Wait()
 			} else {
 				if err := tt.k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
 					t.Errorf("Unexpected error: %v", err)
@@ -817,12 +838,16 @@ func getCFG(name, namespace string) map[string]interface{} {
 			"name":      name,
 			"namespace": namespace,
 		},
-		"spec": map[string]interface{}{},
+		"spec": map[string]interface{}{
+			"flagSpec": map[string]interface{}{
+				"flags": nil,
+			},
+		},
 	}
 }
 
 // toUnstructured helper to convert an interface to unstructured.Unstructured
-func toUnstructured(t *testing.T, obj interface{}) interface{} {
+func toUnstructured(t *testing.T, obj interface{}) *unstructured.Unstructured {
 	bytes, err := json.Marshal(obj)
 	if err != nil {
 		t.Errorf("test setup faulure: %s", err.Error())
@@ -852,7 +877,7 @@ func (m *MockInformer) GetStore() cache.Store {
 }
 
 func TestMeasure(t *testing.T) {
-	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
+	res, err := marshalFlagSpec(toUnstructured(t, v1beta1.FeatureFlag{
 		Spec: v1beta1.FeatureFlagSpec{
 			FlagSpec: v1beta1.FlagSpec{
 				Flags: v1beta1.Flags{
@@ -864,8 +889,8 @@ func TestMeasure(t *testing.T) {
 				},
 			},
 		},
-	})
+	}))
 
-	require.Nil(t, err)
-	require.Equal(t, "{\"flags\":{\"flag\":{\"state\":\"\",\"variants\":null,\"defaultVariant\":\"kubernetes\"}}}", res)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"flags":{"flag":{"state":"","variants":null,"defaultVariant":"kubernetes"}}}`, res)
 }
