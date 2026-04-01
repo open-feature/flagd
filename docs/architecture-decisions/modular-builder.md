@@ -332,9 +332,52 @@ This keeps the runtime simple — it publishes to the bus, and services self-sel
 * **Default service set**: Can a build have zero service endpoints (library/embedded mode), or should at least one always be required?
 * **Configuration compatibility**: How does the builder interact with the existing `-f`/`--sources` CLI flags?
 The runtime needs to know which URI schemes are available from the selected sync factories.
+See the [CLI compatibility analysis](#cli-compatibility) below for the recommended approach.
 * **Telemetry granularity**: Should tracing and metrics be independently selectable (e.g., OTel tracing + Prometheus metrics without autoexport), or is a single `telemetry.Provider` sufficient?
 
 ## More Information
+
+### CLI compatibility
+
+A key question is how the existing `-f`/`--sources` CLI flags interact with a modular build where only certain sync providers are compiled in.
+If a user builds flagd with only file+http sync but passes `-f s3://my-bucket/flags.json`, the binary must handle this gracefully.
+
+Four options were considered:
+
+**Option A: Keep `-f` as-is, fail fast at runtime.**
+The generated code registers each `SyncFactory` with its `Schemes()`.
+At startup, URI matching checks against registered schemes only.
+An unknown scheme produces a clear error: *"sync provider for scheme 's3://' not available in this build. Available: file:, http://, https://"*.
+No CLI changes needed.
+
+* Good, because it is fully backward compatible and introduces zero new concepts
+* Bad, because errors are only caught at startup, not at build time
+
+**Option B: Builder validates a runtime config file at build time.**
+Add an optional `--validate-config=flagd.yaml` flag to `flagd-builder`.
+The builder cross-checks the runtime config's URIs against selected sync factories before compiling.
+
+* Good, because errors are caught before deployment
+* Bad, because it only works when the config is known at build time (not always the case with environment variables or dynamic sources)
+
+**Option C: Generated CLI with constrained flags.**
+The builder generates CLI code that restricts `--uri` to known schemes, and `--help` self-documents what is available.
+
+* Good, because the binary is self-documenting
+* Bad, because it adds complex code generation and breaks the generic `-f` interface
+
+**Option D: Hybrid — runtime registry + introspection command.**
+Keep `-f` unchanged (Option A behavior), but also generate a `flagd components` subcommand that lists compiled-in syncs, services, evaluators, and telemetry.
+Users can inspect any binary to see what it supports.
+Fail-fast errors reference this command.
+
+* Good, because it combines backward compatibility with discoverability
+* Bad, because it requires slightly more implementation (though trivial — just iterate registered factories)
+
+**Recommendation: Option A + D combined.**
+The `-f` flag stays exactly as-is (no breaking change), the runtime fails fast with a clear error listing available schemes, and `flagd components` gives introspection.
+Option B can be layered on later as a nice-to-have.
+This mirrors the OpenTelemetry Collector's approach — unknown component types produce a clear error at startup, and `otelcol components` lists what is compiled in.
 
 * [OpenTelemetry Collector Builder (ocb)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder) — the reference implementation this proposal is based on
 * [ADR: Multiple Sync Sources](./multiple-sync-sources.md) — the prior ADR establishing flagd's multi-sync architecture and the `ISync` interface
