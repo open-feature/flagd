@@ -7,7 +7,8 @@ updated: 2026-04-01
 
 # ADR: Modular flagd Builder
 
-This document proposes a modular build system for flagd inspired by the [OpenTelemetry Collector Builder (ocb)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder). The goal is to allow users to compose custom flagd binaries containing only the sync providers, service endpoints, evaluators, and middleware they need — and to enable users to contribute their own implementations without forking flagd.
+This document proposes a modular build system for flagd inspired by the [OpenTelemetry Collector Builder (ocb)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder).
+The goal is to allow users to compose custom flagd binaries containing only the sync providers, service endpoints, evaluators, telemetry, and middleware they need — and to enable users to contribute their own implementations without forking flagd.
 
 ## Background
 
@@ -19,7 +20,14 @@ The `SyncBuilder` in `core/pkg/sync/builder/syncbuilder.go` unconditionally impo
 Additionally, `blob_sync.go` registers all cloud drivers via blank imports (`_ "gocloud.dev/blob/s3blob"`, etc.).
 There are no build tags or conditional compilation — everything is always compiled in.
 
-Similarly, flagd's three service endpoints — the ConnectRPC/gRPC flag evaluation service, the OFREP REST service, and the gRPC flag sync service — are hardcoded in `flagd/pkg/runtime/from_config.go`. All three are always instantiated and started. Users cannot selectively disable endpoints, nor can they add custom endpoints (e.g., a WebSocket adapter, an admin API, or a custom protocol) without forking flagd.
+Similarly, flagd's three service endpoints — the ConnectRPC/gRPC flag evaluation service, the OFREP REST service, and the gRPC flag sync service — are hardcoded in `flagd/pkg/runtime/from_config.go`.
+All three are always instantiated and started.
+Users cannot selectively disable endpoints, nor can they add custom endpoints (e.g., a WebSocket adapter, an admin API, or a custom protocol) without forking flagd.
+
+Observability adds another dimension to this problem.
+The `core/pkg/telemetry` package pulls in `go.opentelemetry.io/contrib/exporters/autoexport`, which transitively brings in all OTLP exporters (gRPC, HTTP), cloud resource detectors, and the Prometheus translator.
+While flagd has an `IMetricsRecorder` abstraction with a `NoopMetricsRecorder` fallback, other telemetry usage is hardcoded: the evaluator calls `otel.Tracer()` directly against the global OTel state, and service endpoints use `otelgrpc.NewServerHandler()`, `otelhttp.NewHandler()`, and `otelconnect.NewInterceptor()` without injection.
+This means even a minimal flagd build carries the full OTel SDK and exporter stack.
 
 The OpenTelemetry Collector project faced a nearly identical problem and solved it with the [OpenTelemetry Collector Builder](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder).
 It is a CLI tool that reads a YAML manifest specifying which components to include, generates Go source code from templates, and compiles a custom binary with only the selected dependencies.
@@ -30,11 +38,11 @@ This approach is proven at scale across hundreds of OTel Collector distributions
 
 ## Requirements
 
-* **Selective compilation**: Users must be able to choose which sync providers, service endpoints, evaluators, and middleware are compiled into their flagd binary, eliminating unused dependencies entirely (not just disabling them at runtime).
-* **User extensibility**: Users must be able to implement custom sync providers, service endpoints, evaluators, or middleware in their own Go modules and include them in a flagd build without forking the project.
+* **Selective compilation**: Users must be able to choose which sync providers, service endpoints, evaluators, telemetry providers, and middleware are compiled into their flagd binary, eliminating unused dependencies entirely (not just disabling them at runtime).
+* **User extensibility**: Users must be able to implement custom sync providers, service endpoints, evaluators, telemetry providers, or middleware in their own Go modules and include them in a flagd build without forking the project.
 * **Backward compatibility**: The current monolithic flagd binary must remain available as a "full" distribution. Existing users should not be forced to adopt the builder.
 * **Standard distributions**: The project must ship pre-configured distributions for common use cases (minimal, cloud, Kubernetes, full) so that most users never need to run the builder themselves.
-* **Clean interfaces**: Each component type (sync, evaluator, service, middleware) must have a well-defined factory interface that all implementations — official and user-provided — implement.
+* **Clean interfaces**: Each component type (sync, evaluator, service, telemetry, middleware) must have a well-defined factory interface that all implementations — official and user-provided — implement.
 * **Standard Go tooling**: The build process must use standard Go modules and `go build`. No custom package managers, no dynamic linking, no Go plugins.
 
 ## Considered Options
@@ -45,7 +53,7 @@ This approach is proven at scale across hundreds of OTel Collector distributions
 
 ## Proposal
 
-We propose adopting the **OTel-style builder with code generation** approach, extended to cover not just sync providers but also service endpoints, evaluators, and middleware as first-class selectable components.
+We propose adopting the **OTel-style builder with code generation** approach, extended to cover not just sync providers but also service endpoints, evaluators, telemetry, and middleware as first-class selectable components.
 
 ### Why not build tags?
 
@@ -57,13 +65,14 @@ Go's `plugin` package has severe limitations: it only works on Linux (and limite
 
 ### Component taxonomy
 
-The builder operates on four component types:
+The builder operates on five component types:
 
 | Component Type | Factory Interface | Current Implementations | Example User Extension |
 |---------------|------------------|------------------------|----------------------|
 | **Sync Provider** | `SyncFactory` | file, kubernetes, http, grpc, gcs, azblob, s3 | Consul, etcd, Vault |
 | **Service Endpoint** | `ServiceFactory` | flag-evaluation (ConnectRPC), ofrep (REST), flag-sync (gRPC) | WebSocket adapter, admin API, custom protocol |
 | **Evaluator** | `EvaluatorFactory` | jsonlogic, wasm | Custom evaluation engine |
+| **Telemetry** | `TelemetryFactory` | otel (tracing + metrics), prometheus, noop | Datadog, custom metrics backend |
 | **Middleware** | `MiddlewareFactory` | cors, h2c, metrics | Rate limiting, auth, logging |
 
 ### Factory interfaces
@@ -93,15 +102,36 @@ type ServiceDependencies struct {
     Evaluator evaluator.IEvaluator
     Store     store.IStore
     Logger    *logger.Logger
+    Telemetry telemetry.Provider
     Config    Configuration
 }
 
 // core/pkg/evaluator/factory.go
 type EvaluatorFactory interface {
     Type() string
-    Create(store store.IStore, logger *logger.Logger) (IEvaluator, error)
+    Create(store store.IStore, logger *logger.Logger, tp telemetry.Provider) (IEvaluator, error)
+}
+
+// core/pkg/telemetry/factory.go
+type Provider interface {
+    Tracer(name string) ITracer
+    MetricsRecorder() IMetricsRecorder
+    GRPCServerOption() grpc.ServerOption      // e.g. otelgrpc stats handler
+    HTTPMiddleware(name string) func(http.Handler) http.Handler  // e.g. otelhttp
+    ConnectInterceptor() connect.Interceptor  // e.g. otelconnect
+    Shutdown(ctx context.Context) error
+}
+
+type TelemetryFactory interface {
+    Type() string
+    Create(cfg TelemetryConfig, logger *logger.Logger) (Provider, error)
 }
 ```
+
+The `telemetry.Provider` interface is the key abstraction that decouples all components from specific observability implementations.
+Today, the evaluator calls `otel.Tracer()` directly and service endpoints use `otelgrpc`/`otelhttp`/`otelconnect` — all hardcoded.
+With this interface, components receive telemetry capabilities via injection.
+A `noop` implementation returns no-op tracers, no-op metrics recorders, and passthrough middleware — enabling truly zero-overhead builds when observability is not needed.
 
 Each component module exposes a `NewFactory()` function:
 
@@ -134,6 +164,8 @@ evaluator/wasm/                # depends on core + wazero
 service/flag-evaluation/       # depends on core + ConnectRPC
 service/ofrep/                 # depends on core + net/http
 service/flag-sync/             # depends on core + grpc
+telemetry/otel/                # depends on core + OTel SDK + autoexport
+telemetry/noop/                # depends on core only (zero dependencies)
 ```
 
 Blob providers are split individually (not sharing a gocloud.dev base module) so users can include a single cloud provider without pulling all three SDKs.
@@ -161,6 +193,11 @@ services:
   - gomod: "github.com/open-feature/flagd/service/ofrep v0.12.0"
   - gomod: "github.com/mycompany/flagd-admin-api v1.0.0"     # user extension
 
+telemetry:
+  - gomod: "github.com/open-feature/flagd/telemetry/otel v0.12.0"
+  # Or for a minimal build with no observability overhead:
+  # - gomod: "github.com/open-feature/flagd/telemetry/noop v0.12.0"
+
 middleware:
   - gomod: "github.com/open-feature/flagd/middleware/cors v0.12.0"
   - gomod: "github.com/open-feature/flagd/middleware/metrics v0.12.0"
@@ -180,12 +217,12 @@ The builder executes three steps (any of which can be skipped):
 
 The project ships pre-configured manifests for common use cases:
 
-| Distribution | Syncs | Evaluators | Services | Target Use Case |
-|-------------|-------|------------|----------|----------------|
-| `flagd-minimal` | file, http | jsonlogic | ofrep | Smallest binary, CI/testing, REST-only |
-| `flagd-cloud` | file, http, gcs, s3, azblob | jsonlogic | flag-evaluation, ofrep | Cloud storage backends |
-| `flagd-kubernetes` | file, http, kubernetes, grpc | jsonlogic | flag-evaluation, ofrep, flag-sync | K8s with OFO |
-| `flagd-full` | ALL | ALL | ALL | Current behavior (backward compat) |
+| Distribution | Syncs | Evaluators | Services | Telemetry | Target Use Case |
+|-------------|-------|------------|----------|-----------|----------------|
+| `flagd-minimal` | file, http | jsonlogic | ofrep | noop | Smallest binary, CI/testing, REST-only |
+| `flagd-cloud` | file, http, gcs, s3, azblob | jsonlogic | flag-evaluation, ofrep | otel | Cloud storage backends |
+| `flagd-kubernetes` | file, http, kubernetes, grpc | jsonlogic | flag-evaluation, ofrep, flag-sync | otel | K8s with OFO |
+| `flagd-full` | ALL | ALL | ALL | otel | Current behavior (backward compat) |
 
 ### Runtime changes
 
@@ -211,7 +248,7 @@ type Runtime struct {
 
 ### Consequences
 
-* Good, because flagd binaries can be dramatically smaller (a file+http+ofrep build eliminates all cloud SDKs, Kubernetes client, gRPC, ConnectRPC, and wazero)
+* Good, because flagd binaries can be dramatically smaller (a file+http+ofrep+noop-telemetry build eliminates all cloud SDKs, Kubernetes client, gRPC, ConnectRPC, wazero, and the entire OTel SDK)
 * Good, because users can extend flagd with custom sync providers, service endpoints, evaluators, and middleware without forking
 * Good, because the builder pattern is proven at scale by the OpenTelemetry Collector community
 * Good, because it uses standard Go modules and tooling — no custom package managers or dynamic linking
@@ -224,9 +261,9 @@ type Runtime struct {
 ### Timeline
 
 1. ADR review and acceptance
-2. Factory interface design and implementation in core
-3. Module split (sync providers, evaluators, service endpoints, middleware)
-4. Runtime refactoring (dynamic service registry)
+2. Factory interface design and implementation in core (including `telemetry.Provider`)
+3. Module split (sync providers, evaluators, service endpoints, telemetry, middleware)
+4. Runtime refactoring (dynamic service registry, injected telemetry)
 5. Builder CLI tool implementation
 6. Standard distribution manifests
 7. CI/CD pipeline updates, Dockerfile changes, documentation
@@ -238,7 +275,9 @@ type Runtime struct {
 * **Release versioning**: Should component modules version independently (like OTel contrib) or stay in lockstep with flagd releases?
 * **Community component registry**: Should there be a curated list or repository of community-contributed components (analogous to `opentelemetry-collector-contrib`)?
 * **Default service set**: Can a build have zero service endpoints (library/embedded mode), or should at least one always be required?
-* **Configuration compatibility**: How does the builder interact with the existing `-f`/`--sources` CLI flags? The runtime needs to know which URI schemes are available from the selected sync factories.
+* **Configuration compatibility**: How does the builder interact with the existing `-f`/`--sources` CLI flags?
+The runtime needs to know which URI schemes are available from the selected sync factories.
+* **Telemetry granularity**: Should tracing and metrics be independently selectable (e.g., OTel tracing + Prometheus metrics without autoexport), or is a single `telemetry.Provider` sufficient?
 
 ## More Information
 
