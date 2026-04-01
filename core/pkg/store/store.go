@@ -254,9 +254,41 @@ func (s *Store) Update(
 	txn := s.db.Txn(true)
 	defer txn.Abort()
 
-	// get all flags for the source we are updating
-	selector := NewSelector(sourceIndex + "=" + source)
-	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
+	// When metadata carries a flagSetId, scope deletion to only the flagSetIds touched by
+	// this update (the metadata-level one plus any flag-level overrides). This allows
+	// per-flagSetId updates (e.g., from per-project stream messages) to accumulate in
+	// the store without deleting flags from unrelated flagSetIds.
+	// When metadata has no flagSetId, fall back to source-scoped deletion (original behavior).
+	// Note: we keep the fsi != "" guard because empty-string flagSetIds are not normalized
+	// to nilFlagSetId at storage time, but NewSelector DOES normalize them, creating a
+	// mismatch that would cause queries to miss the actual flags. Source-scoped fallback
+	// is the correct behavior for empty-string flagSetIds.
+	var oldFlags []model.Flag
+	if fsi, ok := metadata["flagSetId"].(string); ok && fsi != "" {
+		seenFlagSetIds := map[string]struct{}{fsi: {}}
+		for id := range newFlags {
+			seenFlagSetIds[id.flagSetId] = struct{}{}
+		}
+		for fsi := range seenFlagSetIds {
+			sel := NewSelector(flagSetIdIndex + "=" + fsi).WithIndex(sourceIndex, source)
+			indexId, constraints := sel.ToQuery()
+			it, err := txn.Get(flagsTable, indexId, constraints...)
+			if err != nil {
+				s.logger.Error(fmt.Sprintf("unable to query flags for flagSetId %s: %v", fsi, err))
+				continue
+			}
+			oldFlags = append(oldFlags, s.collect(it)...)
+		}
+	} else {
+		sel := NewSelector(sourceIndex + "=" + source)
+		indexId, constraints := sel.ToQuery()
+		it, err := txn.Get(flagsTable, indexId, constraints...)
+		if err != nil {
+			s.logger.Error(fmt.Sprintf("unable to query flags for source %s: %v", source, err))
+		} else {
+			oldFlags = s.collect(it)
+		}
+	}
 
 	for _, oldFlag := range oldFlags {
 		if _, ok := newFlags[flagIdentifier{flagSetId: oldFlag.FlagSetId, key: oldFlag.Key}]; !ok {

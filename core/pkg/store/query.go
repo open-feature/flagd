@@ -136,10 +136,17 @@ func (s *Selector) ToMetadata() model.Metadata {
 }
 
 func (s *Selector) ToLogString() string {
-	if s != nil && len(s.indexMap) == 1 {
-		for k, v := range s.indexMap {
-			return fmt.Sprintf("'%s=%s'", k, v)
-		}
+	if s == nil || len(s.indexMap) == 0 {
+		return "<none>"
 	}
-	return "<none>"
+	keys := make([]string, 0, len(s.indexMap))
+	for k := range s.indexMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%s", k, s.indexMap[k]))
+	}
+	return "'" + strings.Join(parts, ",") + "'"
 }
