@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-feature/flagd/compare/core/v0.14.3...core/v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909)) ([7190878](https://github.com/open-feature/flagd/commit/7190878fd0ea7a6f16fd8fbcdac68b55d9b9a2a5))
+
 ## [0.14.3](https://github.com/open-feature/flagd/compare/core/v0.14.2...core/v0.14.3) (2026-03-27)
 
 
