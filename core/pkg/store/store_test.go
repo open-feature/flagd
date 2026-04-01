@@ -618,6 +618,141 @@ func TestWatch(t *testing.T) {
 	}
 }
 
+func TestUpdateFlagSetIdScoping(t *testing.T) {
+	t.Parallel()
+
+	const src = "src1"
+	sources := []string{src}
+
+	type updateStep struct {
+		flags    []model.Flag
+		metadata model.Metadata
+	}
+
+	tests := []struct {
+		name        string
+		updates     []updateStep
+		wantPresent []string // "flagSetId/key" entries expected in the store
+		wantAbsent  []string // "flagSetId/key" entries expected to be gone
+	}{
+		{
+			name: "per-flagSetId update preserves flags from other flagSetIds",
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "flagA1"}, {Key: "flagA2"}}, metadata: model.Metadata{"flagSetId": "A"}},
+				{flags: []model.Flag{{Key: "flagB1"}}, metadata: model.Metadata{"flagSetId": "B"}},
+				{flags: []model.Flag{{Key: "flagA1"}}, metadata: model.Metadata{"flagSetId": "A"}},
+			},
+			wantPresent: []string{"A/flagA1", "B/flagB1"},
+			wantAbsent:  []string{"A/flagA2"},
+		},
+		{
+			name: "out-of-scope flag-level override persists when not in batch",
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "kept"}, {Key: "override", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
+				{flags: []model.Flag{{Key: "kept"}}, metadata: model.Metadata{"flagSetId": "X"}},
+			},
+			wantPresent: []string{"X/kept", "Y/override"},
+		},
+		{
+			name: "stale flag deleted when its flagSetId is in scope",
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "inX"}, {Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
+				{flags: []model.Flag{{Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
+			},
+			wantPresent: []string{"Y/inY"},
+			wantAbsent:  []string{"X/inX"},
+		},
+		{
+			name: "no flagSetId in metadata falls back to source-scoped deletion",
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
+				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
+				{flags: []model.Flag{}, metadata: nil},
+			},
+			wantAbsent: []string{"A/flagA", "B/flagB"},
+		},
+		{
+			name: "empty update with flagSetId clears only that set",
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
+				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
+				{flags: []model.Flag{}, metadata: model.Metadata{"flagSetId": "A"}},
+			},
+			wantPresent: []string{"B/flagB"},
+			wantAbsent:  []string{"A/flagA"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			s, err := NewStore(logger.NewLogger(nil, false), sources)
+			require.NoError(t, err)
+
+			for _, step := range tt.updates {
+				s.Update(src, step.flags, step.metadata)
+			}
+
+			allFlags, _, _ := s.GetAll(context.Background(), nil)
+			flagKeys := make(map[string]struct{}, len(allFlags))
+			for _, f := range allFlags {
+				flagKeys[f.FlagSetId+"/"+f.Key] = struct{}{}
+			}
+
+			for _, key := range tt.wantPresent {
+				assert.Contains(t, flagKeys, key)
+			}
+			for _, key := range tt.wantAbsent {
+				assert.NotContains(t, flagKeys, key)
+			}
+		})
+	}
+}
+
+func TestToLogStringCompound(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		selector *Selector
+		want     string
+	}{
+		{
+			name:     "nil selector",
+			selector: nil,
+			want:     "<none>",
+		},
+		{
+			name:     "empty selector",
+			selector: &Selector{indexMap: map[string]string{}},
+			want:     "<none>",
+		},
+		{
+			name:     "single key",
+			selector: &Selector{indexMap: map[string]string{"source": "mySource"}},
+			want:     "'source=mySource'",
+		},
+		{
+			name:     "compound selector",
+			selector: &Selector{indexMap: map[string]string{"flagSetId": "abc", "source": "mySource"}},
+			want:     "'flagSetId=abc,source=mySource'",
+		},
+		{
+			name:     "three keys sorted",
+			selector: &Selector{indexMap: map[string]string{"source": "s", "key": "k", "flagSetId": "f"}},
+			want:     "'flagSetId=f,key=k,source=s'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.selector.ToLogString()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestQueryMetadata(t *testing.T) {
 
 	sourceA := "sourceA"
