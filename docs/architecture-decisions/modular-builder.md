@@ -81,10 +81,15 @@ Each component type gets a factory interface in the `core` module. The `core` mo
 
 ```go
 // core/pkg/sync/factory.go
+type SyncDependencies struct {
+    Config SourceConfig
+    Logger *logger.Logger
+}
+
 type SyncFactory interface {
     Type() string
     Schemes() []string
-    Create(cfg SourceConfig, logger *logger.Logger) (ISync, error)
+    Create(deps SyncDependencies) (ISync, error)
 }
 
 // core/pkg/service/factory.go
@@ -104,12 +109,19 @@ type ServiceDependencies struct {
     Logger    *logger.Logger
     Telemetry telemetry.Provider
     Config    Configuration
+    EventBus  EventBus
 }
 
 // core/pkg/evaluator/factory.go
+type EvaluatorDependencies struct {
+    Store     store.IStore
+    Logger    *logger.Logger
+    Telemetry telemetry.Provider
+}
+
 type EvaluatorFactory interface {
     Type() string
-    Create(store store.IStore, logger *logger.Logger, tp telemetry.Provider) (IEvaluator, error)
+    Create(deps EvaluatorDependencies) (IEvaluator, error)
 }
 
 // core/pkg/telemetry/factory.go
@@ -126,7 +138,26 @@ type TelemetryFactory interface {
     Type() string
     Create(cfg TelemetryConfig, logger *logger.Logger) (Provider, error)
 }
+
+// core/pkg/service/middleware.go
+type MiddlewareFactory interface {
+    Type() string
+    Create(deps MiddlewareDependencies) (Middleware, error)
+}
+
+type MiddlewareDependencies struct {
+    Logger    *logger.Logger
+    Telemetry telemetry.Provider
+    Config    Configuration
+}
+
+type Middleware interface {
+    Handler(handler http.Handler) http.Handler
+}
 ```
+
+All factory `Create` methods use a dependencies struct rather than positional arguments.
+This ensures interfaces remain backward compatible as new dependencies are introduced — adding a field to a struct is non-breaking, while adding a function parameter is.
 
 The `telemetry.Provider` interface is the key abstraction that decouples all components from specific observability implementations.
 Today, the evaluator calls `otel.Tracer()` directly and service endpoints use `otelgrpc`/`otelhttp`/`otelconnect` — all hardcoded.
@@ -237,14 +268,38 @@ type Runtime struct {
     ...
 }
 
-// Proposed (dynamic):
+// Proposed (dynamic with event bus):
 type Runtime struct {
     Services  []service.Service
     Syncs     []sync.ISync
     Evaluator evaluator.IEvaluator
+    EventBus  service.EventBus
     ...
 }
 ```
+
+A key concern with a dynamic `[]service.Service` slice is that the current `Runtime` calls typed methods like `r.SyncService.Emit(source)` to notify the sync service of state changes.
+With a generic service slice, this typed coordination is lost.
+
+The solution is an **event bus** — a lightweight pub/sub mechanism injected into both the `Runtime` and any service that needs cross-component coordination.
+Services that care about sync events (like the flag-sync service) subscribe to the event bus during creation via `ServiceDependencies.EventBus`.
+The runtime publishes events to the bus after updating the evaluator state, and subscribed services receive them without the runtime needing to know their concrete types:
+
+```go
+// core/pkg/service/event_bus.go
+type EventBus interface {
+    Publish(event Event)
+    Subscribe(eventType string) <-chan Event
+}
+
+type Event struct {
+    Type   string         // e.g. "sync_complete", "configuration_change"
+    Source string         // which sync provider emitted this
+    Data   map[string]any
+}
+```
+
+This keeps the runtime simple — it publishes to the bus, and services self-select which events they consume — while avoiding type assertions or service-specific method calls.
 
 ### Consequences
 
