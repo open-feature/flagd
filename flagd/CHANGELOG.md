@@ -6,6 +6,7 @@
 ### ⚠ BREAKING CHANGES
 
 * fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+  * no breaking API changes - but fractional pseudorandom assignments will change; update all providers to ensure consistency
 
 ### ✨ New Features
 
