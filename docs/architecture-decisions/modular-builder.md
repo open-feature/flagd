@@ -301,6 +301,47 @@ type Event struct {
 
 This keeps the runtime simple — it publishes to the bus, and services self-select which events they consume — while avoiding type assertions or service-specific method calls.
 
+### High availability: snapshot-based resilience
+
+A recurring concern with flagd is what happens when the process restarts and the upstream sync source (gRPC server, S3 bucket, HTTP endpoint) is unavailable.
+Today, flagd starts with an empty in-memory store (memdb) and waits for sync providers to deliver data.
+If the upstream is down at restart time, flagd has zero flags and every evaluation fails.
+
+The modular architecture — specifically the `EventBus` and the multi-sync precedence model — enables a clean solution: **snapshot sync**.
+
+Two components work together:
+
+**1. Snapshot writer** — an `EventBus` subscriber that persists flag state to a local file on every configuration change.
+It listens for `configuration_change` events and writes the current flag state to a configurable path (e.g., `/var/lib/flagd/snapshot.json`).
+This component has no external dependencies beyond the filesystem.
+
+**2. Snapshot sync provider** — a read-only `ISync` implementation that loads the snapshot file on startup.
+It emits the cached state to the `DataSync` channel during `Init()`, then becomes idle.
+Because flagd's multi-sync model uses index-based precedence (lowest index = lowest precedence), the snapshot sync is configured first so that live data from the primary source always takes priority:
+
+```yaml
+syncs:
+    # Lowest precedence — bootstrap from local cache if upstream is unavailable
+    - gomod: "github.com/open-feature/flagd/sync/snapshot v0.12.0"
+    # Highest precedence — primary source, overwrites snapshot when available
+    - gomod: "github.com/open-feature/flagd/sync/grpc v0.12.0"
+```
+
+**Startup behavior:**
+
+1. Snapshot sync loads cached state immediately (milliseconds, local disk)
+2. flagd begins serving evaluations with cached flags
+3. Primary sync provider connects to upstream (may take seconds or fail entirely)
+4. If upstream connects: live data overwrites cached state, snapshot writer updates the cache
+5. If upstream is down: flagd continues serving from the snapshot until upstream recovers
+
+This approach has several advantages:
+
+* Users who need HA add two lines to their manifest; users who do not, pay nothing
+* It composes with any upstream sync provider (HTTP, gRPC, S3, Kubernetes) without modification
+* The snapshot file can be pre-seeded in container images or configuration management for deterministic cold starts
+* No changes to the store, evaluator, or runtime — it uses existing `ISync` and `EventBus` interfaces
+
 ### Consequences
 
 * Good, because flagd binaries can be dramatically smaller (a file+http+ofrep+noop-telemetry build eliminates all cloud SDKs, Kubernetes client, gRPC, ConnectRPC, wazero, and the entire OTel SDK)
@@ -308,6 +349,7 @@ This keeps the runtime simple — it publishes to the bus, and services self-sel
 * Good, because the builder pattern is proven at scale by the OpenTelemetry Collector community
 * Good, because it uses standard Go modules and tooling — no custom package managers or dynamic linking
 * Good, because backward compatibility is maintained via the `flagd-full` distribution
+* Good, because the modular architecture enables high-availability patterns (snapshot sync) that were previously difficult to implement without coupling to the core
 * Bad, because it is a breaking change for anyone importing `core/pkg/sync/builder` or other internal packages directly
 * Bad, because it adds build complexity — users who want custom builds need to learn the builder tool
 * Bad, because component modules require coordinated releases (or independent versioning, which adds its own complexity)
