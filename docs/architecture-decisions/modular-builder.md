@@ -333,7 +333,8 @@ This keeps the runtime simple — it publishes to the bus, and services self-sel
 * **Configuration compatibility**: How does the builder interact with the existing `-f`/`--sources` CLI flags?
 The runtime needs to know which URI schemes are available from the selected sync factories.
 See the [CLI compatibility analysis](#cli-compatibility) below for the recommended approach.
-* **Telemetry granularity**: Should tracing and metrics be independently selectable (e.g., OTel tracing + Prometheus metrics without autoexport), or is a single `telemetry.Provider` sufficient?
+* **Telemetry granularity**: A single `telemetry.Provider` is sufficient for the initial implementation.
+Splitting tracing and metrics into independently selectable components can be revisited later if there is demand.
 
 ## More Information
 
