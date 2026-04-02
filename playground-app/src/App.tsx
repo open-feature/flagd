@@ -563,7 +563,10 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
               >
                 Evaluate
               </button>
-              <button className="md-button" onClick={handleButtonClick}>
+              <button className="md-button" onClick={(e) => {
+                  handleButtonClick(e);
+                  resetInputs();
+                }}>
                 Reset
               </button>
               <button
