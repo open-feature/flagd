@@ -10,11 +10,12 @@ import { enableByLocale } from "./enable-by-locale";
 import { enableByTime } from "./enable-by-time";
 import { enableByVersion } from "./enable-by-version";
 import { pseudoRandomSplit } from "./fraction-string";
-import { progressRollout } from "./progressive-rollout";
+import { steppedRollout } from "./stepped-rollout";
 import { sharedEvaluators } from "./share-evaluators";
 import { targetingKey } from "./targeting-key";
 import { flagMetadata } from "./flag-metadata";
 import { codeDefault } from "./code-default";
+import { gradualRollout } from "./gradual-rollout";
 
 export const scenarios = {
   "Basic boolean flag": basicBoolean,
@@ -27,7 +28,8 @@ export const scenarios = {
   "Enable based on the current time": enableByTime,
   "Chainable if/else/then": chainableConditions,
   "Multi-variant experiment": pseudoRandomSplit,
-  "Progressive rollout": progressRollout,
+  "Stepped rollout": steppedRollout,
+  "Gradual rollout": gradualRollout,
   "Shared evaluators": sharedEvaluators,
   "Boolean variant shorthand": booleanShorthand,
   "Targeting key": targetingKey,
