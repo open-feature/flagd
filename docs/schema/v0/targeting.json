@@ -35,7 +35,7 @@
           "type": "string"
         },
         {
-          "description": "When returned from rules, strings are used to as keys to retrieve the associated value from the \"variants\" object. Be sure that the returned string is present as a key in the variants!.",
+          "description": "When returned from rules, the behavior of arrays is not defined.",
           "type": "array"
         }
       ]
@@ -461,18 +461,26 @@
       "maxItems": 2,
       "items": [
         {
-          "description": "If this bucket is randomly selected, this string is used to as a key to retrieve the associated value from the \"variants\" object.",
-          "type": "string"
+          "description": "If this bucket is randomly selected, this JSONLogic will be evaluated, and the result will be used as the variant key to return from the variants map.",
+          "$ref": "#/definitions/args"
         },
         {
-          "description": "Weighted distribution for this variant key.",
-          "type": "number"
+          "description": "Weighted distribution for this variant key. Must be a non-negative integer. Can be a JSONLogic expression that evaluates to a number (e.g. for time-based progressive rollouts); computed negative weights are clamped to 0 at evaluation time. The total weight sum across all variants must not exceed 2,147,483,647.",
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "$ref": "#/definitions/anyRule"
+            }
+          ]
         }
       ]
     },
     "fractionalOp": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 1,
       "$comment": "there seems to be a bug here, where ajv gives a warning (not an error) because maxItems doesn't equal the number of entries in items, though this is valid in this case",
       "items": [
         {
@@ -492,7 +500,7 @@
     },
     "fractionalShorthandOp": {
       "type": "array",
-      "minItems": 2,
+      "minItems": 1,
       "items": {
         "$ref": "#/definitions/fractionalWeightArg"
       }
