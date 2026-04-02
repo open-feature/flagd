@@ -102,10 +102,10 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 	s.readinessEnabled = true
 
 	g.Go(func() error {
-		return s.startServer(svcConf)
+		return s.startServer(gCtx, svcConf)
 	})
 	g.Go(func() error {
-		return s.startMetricsServer(svcConf)
+		return s.startMetricsServer(gCtx, svcConf)
 	})
 	g.Go(func() error {
 		<-gCtx.Done()
@@ -251,7 +251,7 @@ func (s *ConnectService) Shutdown() {
 	})
 }
 
-func (s *ConnectService) startServer(svcConf service.Configuration) error {
+func (s *ConnectService) startServer(ctx context.Context, svcConf service.Configuration) error {
 	lis, err := s.setupServer(svcConf)
 	if err != nil {
 		return err
@@ -275,7 +275,7 @@ func (s *ConnectService) startServer(svcConf service.Configuration) error {
 	return nil
 }
 
-func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
+func (s *ConnectService) startMetricsServer(ctx context.Context, svcConf service.Configuration) error {
 	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.ManagementPort))
 
 	srv := grpc.NewServer()
@@ -312,8 +312,21 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 	}
 	s.metricsServerMtx.Unlock()
 
-	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("error returned from metrics server: %w", err)
+	errChan := make(chan error, 1)
+	go func() { errChan <- s.metricsServer.ListenAndServe() }()
+
+	select {
+	case err := <-errChan:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("error returned from metrics server: %w", err)
+		}
+		return nil
+	case <-ctx.Done():
+		if err := s.metricsServer.Shutdown(ctx); err != nil {
+			return fmt.Errorf("error shutting down metrics server: %w", err)
+		}
+		// wait for server to fully stop
+		<-errChan
+		return nil
 	}
-	return nil
 }
