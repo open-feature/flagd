@@ -84,6 +84,7 @@ function App() {
     getPalette()
   );
   const [featureDefinitionLanguage, setFeatureDefinitionLanguage] = useState<DefinitionLanguage>(LANG_JSON);
+  const [isCustomScenario, setIsCustomScenario] = useState(false);
 
   const handleLanguageSwitch = useCallback(() => {
     try {
@@ -94,6 +95,7 @@ function App() {
         setFeatureDefinition(yamlToPrettyJson(featureDefinition));
       }
       setFeatureDefinitionLanguage(newLang);
+      setIsCustomScenario(true);
       const url = new URL(window.location.href);
       url.searchParams.set('lang', newLang);
       window.history.replaceState({}, '', url.href);
@@ -115,8 +117,9 @@ function App() {
     setDescription(template.description);
     setValidFeatureDefinition(true);
     setValidEvaluationContext(true);
-    setShowCopyNotification(false)
+    setShowCopyNotification(false);
     setStatus("success");
+    setIsCustomScenario(false);
   }, [selectedTemplate]);
 
   useEffect(() => {
@@ -187,6 +190,7 @@ function App() {
         }
         setFeatureDefinition(formattedFeatureDefinition);
         setFeatureDefinitionLanguage(lang);
+        setIsCustomScenario(true);
         if (flagKeyParam) setFlagKey(flagKeyParam);
         if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
         if (codeDefaultParam) setCodeDefault(codeDefaultParam);
@@ -198,9 +202,9 @@ function App() {
       } catch (error) {
         console.error("Error decoding URL parameters: ", error);
       }
-    } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
-      setSelectedTemplate(scenarioParam as keyof typeof scenarios);
-      setFeatureDefinition(scenarios[scenarioParam as keyof typeof scenarios].flagDefinition);
+    } else if (scenarioParam && scenarios[decodeURIComponent(scenarioParam) as keyof typeof scenarios]) {
+      setSelectedTemplate(decodeURIComponent(scenarioParam) as keyof typeof scenarios);
+      setFeatureDefinition(scenarios[decodeURIComponent(scenarioParam) as keyof typeof scenarios].flagDefinition);
     }
   }, []);
 
@@ -304,8 +308,7 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
     const encodedFeatureDefinition = yamlToCompactJson(featureDefinition);
     const encodedEvaluationContext = yamlToCompactJson(evaluationContext);
 
-    if (Object.keys(scenarios).includes(selectedTemplate) &&
-      scenarios[selectedTemplate].flagDefinition === featureDefinition) {
+    if (Object.keys(scenarios).includes(selectedTemplate) && !isCustomScenario) {
       newUrl.searchParams.set('scenario-name', selectedTemplate);
     } else {
       newUrl.searchParams.delete('scenario-name');
@@ -327,6 +330,19 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
     }).catch(err => {
       console.error('Failed to copy URL: ', err);
     });
+  };
+
+  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+
+    // resize and darken the button briefly to give click feedback
+    const button = e.currentTarget;
+    const originalBg = button.style.backgroundColor;
+    button.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+    button.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      button.style.backgroundColor = originalBg;
+      button.style.transform = '';
+    }, 150);
   };
 
   return (
@@ -412,7 +428,10 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                 className="md-button"
                 style={{ padding: "2px 8px", fontSize: "small" }}
                 disabled={!validFeatureDefinition}
-                onClick={handleLanguageSwitch}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  handleLanguageSwitch();
+                }}
               >
                 Switch to {featureDefinitionLanguage === LANG_JSON ? "YAML" : "JSON"}
               </button>
@@ -432,6 +451,7 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                 onChange={(value) => {
                   if (value) {
                     setFeatureDefinition(value);
+                    setIsCustomScenario(true);
                   }
                 }}
               />
@@ -455,7 +475,10 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                 name="flag-key"
                 list="flag-keys"
                 value={flagKey}
-                onChange={(e) => setFlagKey(e.target.value)}
+                onChange={(e) => {
+                  setFlagKey(e.target.value);
+                  setIsCustomScenario(true);
+                }}
               />
               <datalist id="flag-keys">
                 {autocompleteFlagKeys.map((key, index) => (
@@ -472,7 +495,10 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                   ...codeStyle,
                 }}
                 value={returnType}
-                onChange={(e) => setReturnType(e.target.value as FlagValueType)}
+                onChange={(e) => {
+                  setReturnType(e.target.value as FlagValueType);
+                  setIsCustomScenario(true);
+                }}
               >
                 <option value="boolean">boolean</option>
                 <option value="string">string</option>
@@ -492,7 +518,10 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                 }}
                 name="code-default"
                 value={codeDefault}
-                onChange={(e) => setCodeDefault(e.target.value)}
+                onChange={(e) => {
+                  setCodeDefault(e.target.value);
+                  setIsCustomScenario(true);
+                }}
               />
               <p style={{ fontSize: "small", color: "var(--md-code-fg-color)", marginTop: "4px" }}>
                 The default value to use when defaultVariant is null/omitted, or when errors occur during evaluation.
@@ -517,6 +546,7 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
                   onChange={(value) => {
                     if (value) {
                       setEvaluationContext(value);
+                      setIsCustomScenario(true);
                     }
                   }}
                 />
@@ -525,17 +555,23 @@ function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
             <div style={{ display: "flex", gap: "8px", paddingTop: "8px" }}>
               <button
                 className="md-button md-button--primary"
-                onClick={evaluate}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  evaluate();
+                }}
                 disabled={!validFeatureDefinition || !validEvaluationContext}
               >
                 Evaluate
               </button>
-              <button className="md-button" onClick={resetInputs}>
+              <button className="md-button" onClick={handleButtonClick}>
                 Reset
               </button>
               <button
                 className="md-button"
-                onClick={copyUrl}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  copyUrl();
+                }}
                 disabled={!validFeatureDefinition || !validEvaluationContext}
               >
                 Share
