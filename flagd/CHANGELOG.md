@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-feature/flagd/compare/flagd/v0.14.5...flagd/v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+  * no breaking API changes - but fractional pseudorandom assignments will change; update all providers to ensure consistency
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909)) ([7190878](https://github.com/open-feature/flagd/commit/7190878fd0ea7a6f16fd8fbcdac68b55d9b9a2a5))
+
+## [0.14.5](https://github.com/open-feature/flagd/compare/flagd/v0.14.4...flagd/v0.14.5) (2026-03-27)
+
+
+### ✨ New Features
+
+* gRPC sync endpoint metrics ([#1861](https://github.com/open-feature/flagd/issues/1861)) ([b04dc50](https://github.com/open-feature/flagd/commit/b04dc5074a5be239914c4328653623aad36203ac))
+
+## [0.14.4](https://github.com/open-feature/flagd/compare/flagd/v0.14.3...flagd/v0.14.4) (2026-03-21)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.79.3 [security] ([#1907](https://github.com/open-feature/flagd/issues/1907)) ([ad51d4e](https://github.com/open-feature/flagd/commit/ad51d4e8fe0570474c824273983f54b3ca38b083))
+
 ## [0.14.3](https://github.com/open-feature/flagd/compare/flagd/v0.14.2...flagd/v0.14.3) (2026-03-10)
 
 
