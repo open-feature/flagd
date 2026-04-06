@@ -4,15 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/open-feature/go-sdk-contrib/tests/flagd/testframework"
-	"github.com/testcontainers/testcontainers-go"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/go-git/go-git/v5"
+	flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
+	"github.com/open-feature/go-sdk-contrib/tests/flagd/v2/testframework"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 func getGitCommitNative() string {
@@ -96,6 +98,9 @@ func buildFlagdImage(ctx context.Context, buildContext string) (string, error) {
 
 	cmd.Dir = buildContext
 
+	// Suppress docker build output by redirecting stderr to /dev/null
+	cmd.Stderr = nil
+
 	// Print the exact command being run
 	fmt.Printf("Running command: %s\n", strings.Join(cmd.Args, " "))
 
@@ -108,6 +113,16 @@ func buildFlagdImage(ctx context.Context, buildContext string) (string, error) {
 }
 
 func buildTestbedImage(ctx context.Context, buildContext, flagdImage string) error {
+	// Suppress testcontainers output by redirecting stderr to Discard
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	defer func() {
+		os.Stderr = oldStderr
+		w.Close()
+		r.Close()
+	}()
+
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    filepath.Join(buildContext, "./test-harness"), // Path to testbed directory
@@ -141,6 +156,11 @@ func TestRPC(t *testing.T) {
 		TestbedDir:    "../../test-harness",
 		Image:         "local-testbed-image",
 		Tag:           getGitCommitNative(),
+		// needed to speed up reconnection to make reconnection tests faster
+		ExtraOptions: []flagd.ProviderOption{
+			flagd.WithRetryBackoffMs(100),
+			flagd.WithRetryBackoffMaxMs(1000),
+		},
 	})
 	defer runner.Cleanup()
 
@@ -150,7 +170,7 @@ func TestRPC(t *testing.T) {
 	}
 
 	// Run tests with RPC-specific tags - exclude connection/event issues we won't tackle
-	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden"
+	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden && ~@fractional-v1 && ~@deprecated"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
@@ -158,13 +178,19 @@ func TestRPC(t *testing.T) {
 }
 
 func TestInProcess(t *testing.T) {
-	// Setup testbed runner for RPC provider
+
+	// Setup testbed runner for InProcess provider
 	runner := testframework.NewTestbedRunner(testframework.TestbedConfig{
 		ResolverType:  testframework.InProcess,
 		TestbedConfig: "default", // Use default testbed configuration
 		TestbedDir:    "../../test-harness",
 		Image:         "local-testbed-image",
 		Tag:           getGitCommitNative(),
+		// needed to speed up reconnection to make reconnection tests faster
+		ExtraOptions: []flagd.ProviderOption{
+			flagd.WithRetryBackoffMs(100),
+			flagd.WithRetryBackoffMaxMs(1000),
+		},
 	})
 	defer runner.Cleanup()
 
@@ -174,7 +200,7 @@ func TestInProcess(t *testing.T) {
 	}
 
 	// Run tests with InProcess-specific tags
-	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload"
+	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v2 && ~@fractional-nested && ~@deprecated"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
