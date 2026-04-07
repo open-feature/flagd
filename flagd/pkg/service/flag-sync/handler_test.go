@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,6 +93,7 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 					contextValues:       tt.contextValues,
 					log:                 logger.NewLogger(nil, false),
 					disableSyncMetadata: disableSyncMetadata,
+					metricsRecorder:     &telemetry.NoopMetricsRecorder{},
 				}
 
 				// Test getting metadata from `GetMetadata` (deprecated)
@@ -234,9 +236,10 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 			require.NoError(t, err)
 
 			handler := syncHandler{
-				store:         flagStore,
-				log:           logger.NewLogger(nil, false),
-				contextValues: map[string]any{},
+				store:           flagStore,
+				log:             logger.NewLogger(nil, false),
+				contextValues:   map[string]any{},
+				metricsRecorder: &telemetry.NoopMetricsRecorder{},
 			}
 
 			// Create context with or without header metadata
