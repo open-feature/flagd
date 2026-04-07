@@ -108,7 +108,10 @@ func BuildConnectOptions(_ Config) ([]connect.HandlerOption, error) {
 	options := []connect.HandlerOption{}
 
 	// Always add interceptor - autoexport will handle whether traces are enabled
-	interceptor, err := otelconnect.NewInterceptor(otelconnect.WithTrustRemote())
+	interceptor, err := otelconnect.NewInterceptor(
+		otelconnect.WithTrustRemote(),
+		otelconnect.WithoutServerPeerAttributes(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating interceptor, %w", err)
 	}
