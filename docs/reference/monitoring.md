@@ -52,21 +52,15 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 These metrics apply to both the [flag evaluation](./specifications/protos.md) and [OFREP](./flagd-ofrep.md) endpoints. flagd uses the [OpenTelemetry Semantic Conventions for HTTP](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/):
 
-- `http.server.request.duration` - Measures the duration of inbound HTTP requests (seconds). Histogram buckets: 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s.
-- `http.server.response.body.size` - Measures the size of HTTP response messages (bytes). Histogram buckets: 100B, 1KB, 10KB, 100KB, 1MB, 10MB, 100MB, 1GB.
-- `http.server.active_requests` - Measures the number of concurrent HTTP requests that are currently in-flight
+- `http.server.request.duration` - Measures the duration of inbound HTTP requests (seconds). Histogram buckets: 5ms, 10ms, 25ms, 50ms, 75ms, 100ms, 250ms, 500ms, 750ms, 1s, 2.5s, 5s, 7.5s, 10s.
+- `http.server.request.body.size` - Measures the size of HTTP request messages (bytes)
+- `http.server.response.body.size` - Measures the size of HTTP response messages (bytes)
 
-**Attributes:**
-
-- `service.name` - The name of the service
-- `http.route` - The matched route (path template)
-- `http.request.method` - The HTTP request method (GET, POST, etc.)
-- `http.response.status_code` - The HTTP response status code
-- `url.scheme` - The URI scheme (http or https)
+For the full list of attributes on these metrics, see the [OpenTelemetry HTTP Server Metrics](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-server) semantic conventions.
 
 ### Flag Evaluation Metrics
 
-These metrics are recorded on every [flag evaluation](./specifications/protos.md), regardless of transport (HTTP, gRPC, connect). flagd uses the [OpenTelemetry Semantic Conventions for Feature Flags](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/):
+These metrics are recorded on every [flag evaluation](./specifications/protos.md), regardless of transport (HTTP, gRPC, connect). Attribute names are inspired by the [OpenTelemetry Semantic Conventions for Feature Flags](https://opentelemetry.io/docs/specs/semconv/feature-flags/feature-flags-events/):
 
 - `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
 - `feature_flag.flagd.result.reason` - Measures the number of evaluations for a given reason
@@ -75,7 +69,7 @@ These metrics are recorded on every [flag evaluation](./specifications/protos.md
 
 - `feature_flag.key` - The flag key being evaluated
 - `feature_flag.result.variant` - The variant returned by the evaluation
-- `feature_flag.provider_name` - The feature flag provider name (always `flagd`)
+- `feature_flag.provider.name` - The feature flag provider name (always `flagd`)
 - `feature_flag.reason` - The evaluation reason (e.g. `STATIC`, `TARGETING_MATCH`, `ERROR`)
 
 ### gRPC Sync Metrics
