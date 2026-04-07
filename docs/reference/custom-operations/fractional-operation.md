@@ -4,12 +4,14 @@ description: flagd fractional custom operation
 
 # Fractional Operation
 
-OpenFeature allows clients to pass contextual information which can then be used during a flag evaluation. For example, a client could pass the email address of the user.
+The `fractional` operation is a powerful custom JsonLogic operation which deterministically resolves a variant based on the defined distribution of each variant (as a relative weight).
+The value is an array; the first element is an optional JsonLogic expression to retrieve the "bucketing value" (used as the seed to the random assignment) and the remaining elements are arrays pairing a variant with a weight.
+The fractional operation is useful for A/B testing, general experimentation, and gradual releases.
 
 ```js
 // Factional evaluation property name used in a targeting rule
 "fractional": [
-  // Evaluation context property used to determine the split
+  // Optional evaluation context property used to determine the split
   // Note using `cat` and `$flagd.flagKey` is the suggested default to seed your hash value and prevent bucketing collisions
   {
     "cat": [
@@ -58,7 +60,7 @@ If not specified, the default weight for a variant is set to `1`, so an alternat
 ]
 ```
 
-See the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) flag.
+See the [headerColor](https://github.com/open-feature/flagd/blob/main/samples/example_flags.flagd.json#L88-#L133) example flag.
 The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-definitions.md#targeting-rules), meaning a fractional evaluation occurs for flag evaluation with a `context` object containing `email` and where that `email` value contains `@faas.com`.
 
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
