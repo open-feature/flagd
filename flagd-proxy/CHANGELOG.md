@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.2...flagd-proxy/v0.9.3) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+
 ## [0.9.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.1...flagd-proxy/v0.9.2) (2026-03-21)
 
 
