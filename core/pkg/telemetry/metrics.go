@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	ProviderName        = "flagd"
-	featureFlagPrefix   = "feature_flag."
+	ProviderName      = "flagd"
+	featureFlagPrefix = "feature_flag."
 
 	FeatureFlagReasonKey = attribute.Key("feature_flag.reason")
 	ExceptionTypeKey     = attribute.Key("ExceptionTypeKeyName")
@@ -181,9 +181,8 @@ func ExceptionType(val string) attribute.KeyValue {
 	return ExceptionTypeKey.String(val)
 }
 
-// NewOTelRecorder creates a MetricsRecorder based on the provided metric.Reader. Note that, metric.NewMeterProvider is
-// created here but not registered globally as this is the only place we derive a metric.Meter. Consider global provider
-// registration if we need more meters
+// NewOTelRecorder creates a MetricsRecorder based on the provided metric.Reader. The MeterProvider created here is
+// registered globally so that otelgrpc, otelhttp, and otelconnect instrumentation libraries can use it.
 func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceName string) *MetricsRecorder {
 	// create a metric provider with custom bucket size for histograms
 	provider := msdk.NewMeterProvider(
@@ -196,6 +195,11 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		msdk.WithView(getDurationView(serviceName, syncStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
+		// limit metric attribute cardinality to prevent unbounded memory growth from
+		// high-cardinality attributes (OTel spec recommends 2000, Go SDK defaults to unlimited)
+		// 2000 is recommended by OTel spec and is a reasonable default for our use case,
+		// but can be overridden with the OTEL_GO_X_CARDINALITY_LIMIT environment variable
+		msdk.WithCardinalityLimit(2000),
 	)
 
 	// Set as global MeterProvider so otelgrpc and other instrumentation can use it
