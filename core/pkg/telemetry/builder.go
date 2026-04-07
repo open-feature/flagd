@@ -110,6 +110,7 @@ func BuildConnectOptions(_ Config) ([]connect.HandlerOption, error) {
 	// Always add interceptor - autoexport will handle whether traces are enabled
 	interceptor, err := otelconnect.NewInterceptor(
 		otelconnect.WithTrustRemote(),
+        // this option prevents a cardinality explosion in OTel due to remote peer and ephemeral port attributes
 		otelconnect.WithoutServerPeerAttributes(),
 	)
 	if err != nil {
