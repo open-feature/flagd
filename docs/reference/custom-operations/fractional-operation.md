@@ -72,9 +72,9 @@ The bucketing value expression can be omitted, in which case a concatenation of 
 The `fractional` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a relative weight).
 This works by hashing ([murmur3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp))
-the given data point, converting it into an int in the range [0, 99].
-Whichever range this int falls in decides which variant
-is selected.
+the given data point and using an algorithm leveraging pure integer arithmetic, with `math.MaxInt32` (2,147,483,647) as the maximum weight sum.
+This provides consistent, efficient, sub-percent granularity (down to ~0.00000005%) for high-throughput environments.
+Whichever bucket this falls in decides which variant is selected.
 As hashing is deterministic we can be sure to get the same result every time for the same data point.
 
 The `fractional` operation can be added as part of a targeting definition.
@@ -86,7 +86,7 @@ The other elements in the array are nested arrays with the first element represe
 There is no limit to the number of elements.
 
 > [!NOTE]
-> Older versions of the `fractional` operation were percentage based, and required all variants weights to sum to 100.
+> Previous versions of the `fractional` operation used percentage-based weights that had to sum to 100 and were limited to 1% precision.
 
 ## Example
 
@@ -159,6 +159,117 @@ Result:
 
 Notice that rerunning either curl command will always return the same variant and value.
 The only way to get a different value is to change the email or update the `fractional` configuration.
+
+## Nested Fractional Evaluation
+
+The `fractional` operation supports nested JSONLogic expressions within its arguments, enabling advanced use cases.
+
+### Nested Conditional Variants
+
+Conditional logic within each bucket:
+
+```json
+"fractional": [
+  [
+    {
+      "if": [
+        { "in": [{ "var": "locale" }, ["us", "ca"]] },
+        "red",
+        "grey"
+      ]
+    },
+    25
+  ],
+  [
+    "blue",
+    25
+  ],
+  [
+    "green",
+    25
+  ],
+  [
+    "grey",
+    25
+  ]
+]
+```
+
+### Computed Weights with JSONLogic
+
+Weight values can be JSONLogic expressions, enabling progressive rollouts and dynamic traffic splitting without a dedicated operator.
+This allows you to use arbitrary JSONLogic expressions to compute weights at runtime.
+This is especially useful for time-based weight calculations.
+
+#### Time-Based Rollout Example
+
+Use flagd's built-in `$flagd.timestamp` variable to create time-based progressive rollouts.
+The timestamp is in Unix epoch seconds.
+
+```jsonc
+{
+  "fractional": [
+    ["on",  { "-": [{ "var": "$flagd.timestamp" }, 1743360000] }],
+    ["off", { "-": [1743964800, { "var": "$flagd.timestamp" }] }]
+  ]
+}
+```
+
+As time advances, the weight of `"on"` grows and `"off"` shrinks, producing a deterministic progressive rollout.
+This example:
+
+- Starts on Mar 30, 2025 (timestamp `1743360000`)
+- Completes on Apr 6, 2025 (timestamp `1743964800`, 7 days later)
+
+#### Environment-Based Rollout Example
+
+Roll out differently based on environment:
+
+```json
+"fractional": [
+  { "var": "email" },
+  ["new-feature", {
+    "if": [
+      { "==": [{ "var": "environment" }, "production"] },
+      10,
+      {
+        "if": [
+          { "==": [{ "var": "environment" }, "staging"] },
+          50,
+          100
+        ]
+      }
+    ]
+  }],
+  ["control", {
+    "if": [
+      { "==": [{ "var": "environment" }, "production"] },
+      90,
+      {
+        "if": [
+          { "==": [{ "var": "environment" }, "staging"] },
+          50,
+          0
+        ]
+      }
+    ]
+  }]
+]
+```
+
+#### High Precision Example
+
+Use large weight values for sub-percent granularity in high-traffic environments:
+
+```json
+"fractional": [
+  { "var": "user_id" },
+  ["canary", 1],
+  ["control", 1000000]
+]
+```
+
+This splits approximately 1/1,000,000 of traffic to `canary` and the remaining to `control`.
 
 ### Migrating from legacy "fractionalEvaluation"
 

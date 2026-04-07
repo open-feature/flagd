@@ -321,7 +321,9 @@ FetchAllFlagsRequest is the request to fetch all flags. Clients send this reques
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | provider_id | [string](#string) |  | Optional: A unique identifier for clients initiating the request. The server implementations may utilize this identifier to uniquely identify, validate(ex:- enforce authentication/authorization) and filter flag configurations that it can expose to this request. This field is intended to be optional. However server implementations may enforce it. ex:- provider_id: flagd-weatherapp-sidecar |
-| selector | [string](#string) |  | Optional: A selector for the flag configuration request. The server implementation may utilize this to select flag configurations from a collection, select the source of the flag or combine this to any desired underlying filtering mechanism. ex:- selector: &#39;source=database,app=weatherapp&#39; |
+| selector | [string](#string) |  | **Deprecated.** Optional: A selector for the flag configuration request. The server implementation may utilize this to select flag configurations from a collection, select the source of the flag or combine this to any desired underlying filtering mechanism. ex:- selector: &#39;source=database,app=weatherapp&#39;
+
+Deprecated: Use the &#39;Flagd-Selector&#39; header instead. Remember to reserve field number 2 if this is removed; |
 
 
 
@@ -379,7 +381,9 @@ Implementations of Flagd providers and Flagd itself send this request, acting as
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | provider_id | [string](#string) |  | Optional: A unique identifier for flagd(grpc client) initiating the request. The server implementations may utilize this identifier to uniquely identify, validate(ex:- enforce authentication/authorization) and filter flag configurations that it can expose to this request. This field is intended to be optional. However server implementations may enforce it. ex:- provider_id: flagd-weatherapp-sidecar |
-| selector | [string](#string) |  | Optional: A selector for the flag configuration request. The server implementation may utilize this to select flag configurations from a collection, select the source of the flag or combine this to any desired underlying filtering mechanism. ex:- selector: &#39;source=database,app=weatherapp&#39; |
+| selector | [string](#string) |  | **Deprecated.** Optional: A selector for the flag configuration request. The server implementation may utilize this to select flag configurations from a collection, select the source of the flag or combine this to any desired underlying filtering mechanism. ex:- selector: &#39;source=database,app=weatherapp&#39;
+
+Deprecated: Use the &#39;Flagd-Selector&#39; header instead. Remember to reserve field number 2 if this is removed; |
 
 
 
