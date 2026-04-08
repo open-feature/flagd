@@ -191,12 +191,13 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		CredentialBuilder: &credentials.CredentialBuilder{},
-		CertPath:          config.CertPath,
-		ProviderID:        config.ProviderID,
-		Secure:            config.TLS,
-		Selector:          config.Selector,
-		MaxMsgSize:        config.MaxMsgSize,
+		CredentialBuilder:  &credentials.CredentialBuilder{},
+		CertPath:           config.CertPath,
+		ProviderID:         config.ProviderID,
+		Secure:             config.TLS,
+		Selector:           config.Selector,
+		MaxMsgSize:         config.MaxMsgSize,
+		IncrementalUpdates: config.IncrementalUpdates,
 	}
 }
 

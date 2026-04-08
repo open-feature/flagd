@@ -25,7 +25,7 @@ type IStore interface {
 	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
 	GetAll(ctx context.Context, selector *Selector) ([]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
-	Update(source string, flags []model.Flag, metadata model.Metadata)
+	Update(source string, flags []model.Flag, metadata model.Metadata, incrementalUpdate bool)
 }
 
 var _ IStore = (*Store)(nil)
@@ -214,10 +214,15 @@ type flagIdentifier struct {
 }
 
 // Update the flag state with the provided flags.
+// When incrementalUpdate is true, deletion is scoped to only the flagSetIds present in
+// this payload (from metadata and flag-level overrides), allowing flags from other
+// flagSetIds to accumulate across updates. When false, all flags for the source are
+// replaced (the default full-snapshot behavior).
 func (s *Store) Update(
 	source string,
 	flags []model.Flag,
 	metadata model.Metadata,
+	incrementalUpdate bool,
 ) {
 	if source == "" {
 		panic("source cannot be empty")
@@ -254,18 +259,16 @@ func (s *Store) Update(
 	txn := s.db.Txn(true)
 	defer txn.Abort()
 
-	// When metadata carries a flagSetId, scope deletion to only the flagSetIds touched by
-	// this update (the metadata-level one plus any flag-level overrides). This allows
-	// per-flagSetId updates (e.g., from per-project stream messages) to accumulate in
-	// the store without deleting flags from unrelated flagSetIds.
-	// When metadata has no flagSetId, fall back to source-scoped deletion (original behavior).
-	// Note: we keep the fsi != "" guard because empty-string flagSetIds are not normalized
-	// to nilFlagSetId at storage time, but NewSelector DOES normalize them, creating a
-	// mismatch that would cause queries to miss the actual flags. Source-scoped fallback
-	// is the correct behavior for empty-string flagSetIds.
+	// When incrementalUpdate is enabled, scope deletion to only the flagSetIds touched
+	// by this payload (metadata-level + flag-level overrides). This allows per-flagSetId
+	// updates (e.g., from per-project stream messages) to accumulate without deleting
+	// flags from unrelated flagSetIds. Otherwise, replace all flags for the source.
 	var oldFlags []model.Flag
-	if fsi, ok := metadata["flagSetId"].(string); ok && fsi != "" {
-		seenFlagSetIds := map[string]struct{}{fsi: {}}
+	if incrementalUpdate {
+		seenFlagSetIds := make(map[string]struct{})
+		if fsi, ok := metadata["flagSetId"].(string); ok && fsi != "" {
+			seenFlagSetIds[fsi] = struct{}{}
+		}
 		for id := range newFlags {
 			seenFlagSetIds[id.flagSetId] = struct{}{}
 		}

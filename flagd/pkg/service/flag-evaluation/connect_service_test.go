@@ -250,7 +250,7 @@ func TestConnectServiceWatcher(t *testing.T) {
 			Key:            "flag1",
 			DefaultVariant: "off",
 		},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	// notification type
 	ofType := iservice.ConfigurationChange

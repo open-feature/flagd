@@ -409,7 +409,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			}
 
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{}, false)
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -537,7 +537,7 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 				b.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{}, false)
 
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](

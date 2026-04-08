@@ -80,7 +80,7 @@ func TestUpdateFlags(t *testing.T) {
 				}
 				s.Update(source1, []model.Flag{
 					{Key: "waka", DefaultVariant: "off"},
-				}, nil)
+				}, nil, false)
 				return s
 			},
 			newFlags: []model.Flag{
@@ -100,7 +100,7 @@ func TestUpdateFlags(t *testing.T) {
 				}
 				s.Update(source1, []model.Flag{
 					{Key: "waka", DefaultVariant: "off"},
-				}, nil)
+				}, nil, false)
 				return s
 			},
 			newFlags: []model.Flag{
@@ -119,7 +119,7 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, []model.Flag{}, model.Metadata{})
+				s.Update(source1, []model.Flag{}, model.Metadata{}, false)
 				return s
 			},
 			setMetadata: model.Metadata{
@@ -142,7 +142,7 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, []model.Flag{}, model.Metadata{})
+				s.Update(source1, []model.Flag{}, model.Metadata{}, false)
 				return s
 
 			},
@@ -168,7 +168,7 @@ func TestUpdateFlags(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewStore failed: %v", err)
 				}
-				s.Update(source1, []model.Flag{}, model.Metadata{})
+				s.Update(source1, []model.Flag{}, model.Metadata{}, false)
 				return s
 			},
 			setMetadata: model.Metadata{
@@ -195,7 +195,7 @@ func TestUpdateFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			store := tt.setup(t)
-			store.Update(tt.source, tt.newFlags, tt.setMetadata)
+			store.Update(tt.source, tt.newFlags, tt.setMetadata, false)
 			gotFlags, _, _ := store.GetAll(context.Background(), nil)
 			sort.Slice(tt.wantFlags, func(i, j int) bool {
 				return tt.wantFlags[i].FlagSetId+"|"+tt.wantFlags[i].Key > tt.wantFlags[j].FlagSetId+"|"+tt.wantFlags[j].Key
@@ -330,7 +330,7 @@ func TestGet(t *testing.T) {
 				}
 
 				for _, source := range s.order {
-					store.Update(source.Name, source.flags, nil)
+					store.Update(source.Name, source.flags, nil, false)
 				}
 				gotFlag, _, err := store.Get(context.Background(), tt.key, tt.selector)
 
@@ -473,7 +473,7 @@ func TestGetAllNoWatcher(t *testing.T) {
 				}
 
 				for _, source := range s.order {
-					store.Update(source.Name, source.flags, nil)
+					store.Update(source.Name, source.flags, nil, false)
 				}
 				gotFlags, _, _ := store.GetAll(context.Background(), tt.selector)
 
@@ -556,9 +556,9 @@ func TestWatch(t *testing.T) {
 			}
 
 			// setup initial flags
-			store.Update(sourceA, sourceAFlags, model.Metadata{})
-			store.Update(sourceB, sourceBFlags, model.Metadata{})
-			store.Update(sourceC, sourceCFlags, model.Metadata{})
+			store.Update(sourceA, sourceAFlags, model.Metadata{}, false)
+			store.Update(sourceB, sourceBFlags, model.Metadata{}, false)
+			store.Update(sourceC, sourceCFlags, model.Metadata{}, false)
 			watcher := make(chan FlagQueryResult, 1)
 			time.Sleep(pauseTime)
 
@@ -573,14 +573,14 @@ func TestWatch(t *testing.T) {
 				// changing a flag default variant should trigger an update
 				store.Update(sourceA, []model.Flag{
 					{Key: "flagA", DefaultVariant: "on"},
-				}, model.Metadata{})
+				}, model.Metadata{}, false)
 
 				time.Sleep(pauseTime)
 
 				// changing a flag default variant should trigger an update
 				store.Update(sourceB, []model.Flag{
 					{Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
-				}, model.Metadata{})
+				}, model.Metadata{}, false)
 
 				time.Sleep(pauseTime)
 
@@ -588,14 +588,14 @@ func TestWatch(t *testing.T) {
 				// TODO: challenge this test and behaviour
 				store.Update(sourceB, []model.Flag{
 					{Key: "flagB", DefaultVariant: "on"},
-				}, model.Metadata{})
+				}, model.Metadata{}, false)
 
 				time.Sleep(pauseTime)
 
 				// adding a flag set id should trigger an update
 				store.Update(sourceB, []model.Flag{
 					{Key: "flagB", DefaultVariant: "on", Metadata: model.Metadata{"flagSetId": myFlagSetId}},
-				}, model.Metadata{})
+				}, model.Metadata{}, false)
 			}()
 
 			updates := 0
@@ -625,8 +625,9 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 	sources := []string{src}
 
 	type updateStep struct {
-		flags    []model.Flag
-		metadata model.Metadata
+		flags             []model.Flag
+		metadata          model.Metadata
+		incrementalUpdate *bool // nil: incremental merge; explicit false: full replace for the source
 	}
 
 	tests := []struct {
@@ -664,12 +665,28 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 		},
 		{
 			name: "no flagSetId in metadata falls back to source-scoped deletion",
-			updates: []updateStep{
-				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
-				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
-				{flags: []model.Flag{}, metadata: nil},
-			},
+			updates: func() []updateStep {
+				fullSnapshot := false
+				return []updateStep{
+					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
+					{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
+					{flags: []model.Flag{}, metadata: nil, incrementalUpdate: &fullSnapshot},
+				}
+			}(),
 			wantAbsent: []string{"A/flagA", "B/flagB"},
+		},
+		{
+			name: "incrementalUpdate=false with flagSetId still does full-source deletion",
+			updates: func() []updateStep {
+				fullSnapshot := false
+				return []updateStep{
+					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
+					{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
+					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: &fullSnapshot},
+				}
+			}(),
+			wantPresent: []string{"A/flagA"},
+			wantAbsent:  []string{"B/flagB"},
 		},
 		{
 			name: "empty update with flagSetId clears only that set",
@@ -691,7 +708,11 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, step := range tt.updates {
-				s.Update(src, step.flags, step.metadata)
+				inc := true
+				if step.incrementalUpdate != nil {
+					inc = *step.incrementalUpdate
+				}
+				s.Update(src, step.flags, step.metadata, inc)
 			}
 
 			allFlags, _, _ := s.GetAll(context.Background(), nil)
@@ -770,7 +791,7 @@ func TestQueryMetadata(t *testing.T) {
 	}
 
 	// setup initial flags
-	store.Update(sourceA, sourceAFlags, model.Metadata{})
+	store.Update(sourceA, sourceAFlags, model.Metadata{}, false)
 
 	// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
 	// 		 these tests should then also cover more complex selectors

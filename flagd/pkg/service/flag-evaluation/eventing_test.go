@@ -84,12 +84,12 @@ func TestNotificationCompatibleWithStructpb(t *testing.T) {
 	// first update sets up oldFlags.
 	s.Update(sources[0], []model.Flag{
 		{Key: "flag1", DefaultVariant: "off"},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	// second update triggers a ConfigurationChange with a real diff.
 	s.Update(sources[0], []model.Flag{
 		{Key: "flag1", DefaultVariant: "on"},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	select {
 	case n := <-notifyChan:
@@ -115,7 +115,7 @@ func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 	// first update creates flag1 — this produces a notification (create).
 	s.Update(sources[0], []model.Flag{
 		{Key: "flag1", DefaultVariant: "off"},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	// drain the first notification (flag creation).
 	select {
@@ -127,7 +127,7 @@ func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 	// second update with the same flags — should not produce a notification.
 	s.Update(sources[0], []model.Flag{
 		{Key: "flag1", DefaultVariant: "off"},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	select {
 	case n := <-notifyChan:
