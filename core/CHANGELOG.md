@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.1](https://github.com/open-feature/flagd/compare/core/v0.15.0...core/v0.15.1) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* mem leak due to unbounded metrics cardinality ([#1931](https://github.com/open-feature/flagd/issues/1931)) ([176866e](https://github.com/open-feature/flagd/commit/176866e71625bee9ef7770700d8ce14e8abd8110))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+
 ## [0.15.0](https://github.com/open-feature/flagd/compare/core/v0.14.3...core/v0.15.0) (2026-04-01)
 
 

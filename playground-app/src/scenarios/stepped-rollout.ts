@@ -1,11 +1,11 @@
 import type { Scenario } from "../types";
 import { contextToPrettyJson, featureDefinitionToPrettyJson } from "../utils";
 
-export const progressRollout: Scenario = {
+export const steppedRollout: Scenario = {
   description: [
-    'In this scenario, we have a feature flag with the key "enable-new-llm-model" with multiple variant for illustrative purposes.',
+    'In this scenario, we have a feature flag with the key "stepped-rollout-feature" with multiple variants for illustrative purposes.',
     "This flag has a targeting rule defined that enables the flag for a percentage of users based on the release phase.",
-    'The "targetingKey" ensures that the user always sees the same results during a each phase of the rollout process.',
+    'The "targetingKey" ensures that the user always sees the same results during each phase of the rollout process.',
   ].join(" "),
   flagDefinition: () => {
     const phase1 = Math.floor(Date.now() / 1000) + 5;
@@ -14,7 +14,7 @@ export const progressRollout: Scenario = {
     const enabled = Math.floor(Date.now() / 1000) + 20;
     return featureDefinitionToPrettyJson({
       flags: {
-        "enable-new-llm-model": {
+        "stepped-rollout-feature": {
           state: "ENABLED",
           defaultVariant: "disabled",
           variants: {
@@ -59,7 +59,7 @@ export const progressRollout: Scenario = {
       },
     });
   },
-  flagKey: "enable-new-llm-model",
+  flagKey: "stepped-rollout-feature",
   returnType: "boolean",
   context: () =>
     contextToPrettyJson({

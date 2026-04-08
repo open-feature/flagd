@@ -163,13 +163,16 @@ func (s *Coordinator) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
+	s.mu.Lock()
 	sh, ok := s.multiplexers[target]
 	if !ok {
+		s.mu.Unlock()
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
 	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
 	sh.cancelFunc = cancel
+	s.mu.Unlock()
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()

@@ -4,10 +4,6 @@ description: flagd string custom operations
 
 # Starts-With / Ends-With Operation
 
-OpenFeature allows clients to pass contextual information which can then be used during a flag evaluation. For example, a client could pass the email address of the user.
-
-In some scenarios, it is desirable to use that contextual information to segment the user population further and thus return dynamic values.
-
 The `starts_with`/`ends_with` operation is a custom JsonLogic operation which selects a variant based on
 whether the specified property starts/ends with a certain value.
 The value is an array consisting of exactly two items, which both need to resolve to a string value.

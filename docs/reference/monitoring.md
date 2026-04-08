@@ -1,5 +1,5 @@
 ---
-description: monitoring and telemetry flagd and flagd providers
+description: monitoring and telemetry for flagd HTTP, gRPC sync, and flagd providers
 ---
 
 # Monitoring
@@ -45,26 +45,64 @@ Given below is the current implementation overview of flagd telemetry internals,
 
 ## Metrics
 
-flagd exposes the following metrics:
-
-- `http.server.request.duration` - Measures the duration of inbound HTTP requests
-- `http.server.response.body.size` - Measures the size of HTTP response messages
-- `http.server.active_requests` - Measures the number of concurrent HTTP requests that are currently in-flight
-- `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
-- `feature_flag.flagd.result.reason` - Measures the number of evaluations for a given reason
-
 > Please note that metric names may vary based on the consuming monitoring tool naming requirements.
 > For example, the transformation of OTLP metrics to Prometheus is described [here](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/compatibility/prometheus_and_openmetrics.md#otlp-metric-points-to-prometheus).
 
-### HTTP Metric Attributes
+### HTTP Metrics
 
-flagd uses the following OpenTelemetry Semantic Conventions for HTTP metrics:
+These metrics apply to both the [flag evaluation](./specifications/protos.md) and [OFREP](./flagd-ofrep.md) endpoints. flagd uses the [OpenTelemetry Semantic Conventions for HTTP](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/):
 
-- `service.name` - The name of the service
-- `http.route` - The matched route (path template)
-- `http.request.method` - The HTTP request method (GET, POST, etc.)
-- `http.response.status_code` - The HTTP response status code
-- `url.scheme` - The URI scheme (http or https)
+- `http.server.request.duration` - Measures the duration of inbound HTTP requests (seconds). Histogram buckets: 5ms, 10ms, 25ms, 50ms, 75ms, 100ms, 250ms, 500ms, 750ms, 1s, 2.5s, 5s, 7.5s, 10s.
+- `http.server.request.body.size` - Measures the size of HTTP request messages (bytes)
+- `http.server.response.body.size` - Measures the size of HTTP response messages (bytes)
+
+For the full list of attributes on these metrics, see the [OpenTelemetry HTTP Server Metrics](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-server) semantic conventions.
+
+### Flag Evaluation Metrics
+
+These metrics are recorded on every [flag evaluation](./specifications/protos.md), regardless of transport (HTTP, gRPC, connect). Attribute names are inspired by the [OpenTelemetry Semantic Conventions for Feature Flags](https://opentelemetry.io/docs/specs/semconv/feature-flags/feature-flags-events/):
+
+- `feature_flag.flagd.impression` - Measures the number of evaluations for a given flag
+- `feature_flag.flagd.result.reason` - Measures the number of evaluations for a given reason
+
+**Attributes:**
+
+- `feature_flag.key` - The flag key being evaluated
+- `feature_flag.result.variant` - The variant returned by the evaluation
+- `feature_flag.provider.name` - The feature flag provider name (always `flagd`)
+- `feature_flag.reason` - The evaluation reason (e.g. `STATIC`, `TARGETING_MATCH`, `ERROR`)
+
+### gRPC Sync Metrics
+
+flagd instruments the [gRPC sync service](./grpc-sync-service.md) with standard RPC metrics and custom sync-specific metrics.
+
+#### Standard RPC metrics
+
+flagd uses the [OpenTelemetry Semantic Conventions for RPC](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc):
+
+- `rpc.server.duration` - Measures the duration of inbound RPC calls (ms)
+- `rpc.server.request.size` - Measures the size of RPC request messages (bytes)
+- `rpc.server.response.size` - Measures the size of RPC response messages (bytes)
+- `rpc.server.requests_per_rpc` - Measures the number of requests received per RPC
+- `rpc.server.responses_per_rpc` - Measures the number of responses sent per RPC
+
+**Attributes:**
+
+- `rpc.system` - The RPC system (always `grpc`)
+- `rpc.service` - The fully-qualified RPC service name (e.g. `flagd.sync.v1.FlagSyncService`)
+- `rpc.method` - The RPC method name (e.g. `SyncFlags`, `FetchAllFlags`)
+- `rpc.grpc.status_code` - The gRPC status code (e.g. `OK`, `CANCELLED`, `DEADLINE_EXCEEDED`)
+
+#### Custom sync metrics
+
+- `feature_flag.flagd.sync.active_streams` - Measures the number of currently active gRPC sync streaming connections
+- `feature_flag.flagd.sync.stream.duration` - Measures the duration of gRPC sync streaming connections (seconds). Histogram buckets: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h.
+
+**Attributes:**
+
+- `selector` - The selector expression used by the sync stream, when specified in the request
+- `provider_id` - The provider ID of the connecting client, when specified in the request
+- `reason` - Stream exit reason: `normal_close`, `deadline_exceeded`, `client_disconnect`, or `error` (on `stream.duration` only)
 
 ## Traces
 

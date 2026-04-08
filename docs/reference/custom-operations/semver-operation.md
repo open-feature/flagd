@@ -4,10 +4,6 @@ description: flagd semver custom operation
 
 # Semantic Version Operation
 
-OpenFeature allows clients to pass contextual information which can then be used during a flag evaluation. For example, a client could pass the email address of the user.
-
-In some scenarios, it is desirable to use that contextual information to segment the user population further and thus return dynamic values.
-
 The `sem_ver` evaluation checks if the given property matches a semantic versioning condition.
 It returns 'true', if the value of the given property meets the condition, 'false' if not.
 Note that the 'sem_ver' evaluation rule must contain exactly three items:
