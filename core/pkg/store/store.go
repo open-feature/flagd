@@ -218,6 +218,7 @@ type flagIdentifier struct {
 // this payload (from metadata and flag-level overrides), allowing flags from other
 // flagSetIds to accumulate across updates. When false, all flags for the source are
 // replaced (the default full-snapshot behavior).
+// EXPERIMENTAL: incrementalUpdate support may change or be removed in a future release.
 func (s *Store) Update(
 	source string,
 	flags []model.Flag,
@@ -273,7 +274,7 @@ func (s *Store) Update(
 			seenFlagSetIds[id.flagSetId] = struct{}{}
 		}
 		for fsi := range seenFlagSetIds {
-			sel := NewSelector(flagSetIdIndex + "=" + fsi).WithIndex(sourceIndex, source)
+			sel := NewSelector(flagSetIdIndex+"="+fsi).WithIndex(sourceIndex, source)
 			indexId, constraints := sel.ToQuery()
 			it, err := txn.Get(flagsTable, indexId, constraints...)
 			if err != nil {

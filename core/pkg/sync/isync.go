@@ -34,8 +34,9 @@ type DataSync struct {
 	Selector    string
 
 	// When true, the store scopes deletion to only the flagSetIds present in
-	// this payload rather than wiping all flags for the source.  This must be
+	// this payload rather than wiping all flags for the source. This must be
 	// explicitly opted-in per source via SourceConfig.IncrementalUpdates.
+	// EXPERIMENTAL: this option may change or be removed in a future release.
 	IncrementalUpdates bool
 }
 
@@ -44,19 +45,23 @@ type SourceConfig struct {
 	URI      string `json:"uri"`
 	Provider string `json:"provider"`
 
-	AuthHeader  string `json:"authHeader,omitempty"`
-	CertPath    string `json:"certPath,omitempty"`
-	TLS         bool   `json:"tls,omitempty"`
-	ProviderID  string `json:"providerID,omitempty"`
-	Selector    string `json:"selector,omitempty"`
-	Interval    uint32 `json:"interval,omitempty"`
-	MaxMsgSize  int    `json:"maxMsgSize,omitempty"`
-	TimeoutS    int    `json:"timeoutS,omitempty"`
+	AuthHeader string `json:"authHeader,omitempty"`
+	CertPath   string `json:"certPath,omitempty"`
+	TLS        bool   `json:"tls,omitempty"`
+	ProviderID string `json:"providerID,omitempty"`
+	Selector   string `json:"selector,omitempty"`
+	Interval   uint32 `json:"interval,omitempty"`
+	MaxMsgSize int    `json:"maxMsgSize,omitempty"`
+	TimeoutS   int    `json:"timeoutS,omitempty"`
 
 	// IncrementalUpdates opts this source into per-flagSetId scoped deletion.
 	// When false (default), each update replaces all flags for the source.
 	// When true, only flags matching the flagSetIds in the payload are replaced,
 	// allowing flags from other flagSetIds to accumulate across updates.
+	// EXPERIMENTAL: this option may change or be removed in a future release.
+	// Note: flags from removed or renamed flagSetIds will not be automatically
+	// cleaned up; a restart or explicit empty update for the old flagSetId is
+	// required to purge them.
 	IncrementalUpdates bool `json:"incrementalUpdates,omitempty"`
 
 	OAuth *OAuthCredentialHandler `json:"oauth,omitempty"`

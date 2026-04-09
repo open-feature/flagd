@@ -627,7 +627,7 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 	type updateStep struct {
 		flags             []model.Flag
 		metadata          model.Metadata
-		incrementalUpdate *bool // nil: incremental merge; explicit false: full replace for the source
+		incrementalUpdate bool // false (default): full-snapshot; true: per-flagSetId scoped deletion
 	}
 
 	tests := []struct {
@@ -639,9 +639,9 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 		{
 			name: "per-flagSetId update preserves flags from other flagSetIds",
 			updates: []updateStep{
-				{flags: []model.Flag{{Key: "flagA1"}, {Key: "flagA2"}}, metadata: model.Metadata{"flagSetId": "A"}},
-				{flags: []model.Flag{{Key: "flagB1"}}, metadata: model.Metadata{"flagSetId": "B"}},
-				{flags: []model.Flag{{Key: "flagA1"}}, metadata: model.Metadata{"flagSetId": "A"}},
+				{flags: []model.Flag{{Key: "flagA1"}, {Key: "flagA2"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagB1"}}, metadata: model.Metadata{"flagSetId": "B"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagA1"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
 			},
 			wantPresent: []string{"A/flagA1", "B/flagB1"},
 			wantAbsent:  []string{"A/flagA2"},
@@ -649,51 +649,45 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 		{
 			name: "out-of-scope flag-level override persists when not in batch",
 			updates: []updateStep{
-				{flags: []model.Flag{{Key: "kept"}, {Key: "override", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
-				{flags: []model.Flag{{Key: "kept"}}, metadata: model.Metadata{"flagSetId": "X"}},
+				{flags: []model.Flag{{Key: "kept"}, {Key: "override", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "kept"}}, metadata: model.Metadata{"flagSetId": "X"}, incrementalUpdate: true},
 			},
 			wantPresent: []string{"X/kept", "Y/override"},
 		},
 		{
 			name: "stale flag deleted when its flagSetId is in scope",
 			updates: []updateStep{
-				{flags: []model.Flag{{Key: "inX"}, {Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
-				{flags: []model.Flag{{Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}},
+				{flags: []model.Flag{{Key: "inX"}, {Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "inY", Metadata: model.Metadata{"flagSetId": "Y"}}}, metadata: model.Metadata{"flagSetId": "X"}, incrementalUpdate: true},
 			},
 			wantPresent: []string{"Y/inY"},
 			wantAbsent:  []string{"X/inX"},
 		},
 		{
 			name: "no flagSetId in metadata falls back to source-scoped deletion",
-			updates: func() []updateStep {
-				fullSnapshot := false
-				return []updateStep{
-					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
-					{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
-					{flags: []model.Flag{}, metadata: nil, incrementalUpdate: &fullSnapshot},
-				}
-			}(),
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}, incrementalUpdate: true},
+				{flags: []model.Flag{}, metadata: nil},
+			},
 			wantAbsent: []string{"A/flagA", "B/flagB"},
 		},
 		{
 			name: "incrementalUpdate=false with flagSetId still does full-source deletion",
-			updates: func() []updateStep {
-				fullSnapshot := false
-				return []updateStep{
-					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
-					{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
-					{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: &fullSnapshot},
-				}
-			}(),
+			updates: []updateStep{
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
+			},
 			wantPresent: []string{"A/flagA"},
 			wantAbsent:  []string{"B/flagB"},
 		},
 		{
 			name: "empty update with flagSetId clears only that set",
 			updates: []updateStep{
-				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}},
-				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}},
-				{flags: []model.Flag{}, metadata: model.Metadata{"flagSetId": "A"}},
+				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
+				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}, incrementalUpdate: true},
+				{flags: []model.Flag{}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
 			},
 			wantPresent: []string{"B/flagB"},
 			wantAbsent:  []string{"A/flagA"},
@@ -708,11 +702,7 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, step := range tt.updates {
-				inc := true
-				if step.incrementalUpdate != nil {
-					inc = *step.incrementalUpdate
-				}
-				s.Update(src, step.flags, step.metadata, inc)
+				s.Update(src, step.flags, step.metadata, step.incrementalUpdate)
 			}
 
 			allFlags, _, _ := s.GetAll(context.Background(), nil)
