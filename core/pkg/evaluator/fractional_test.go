@@ -51,7 +51,7 @@ func setupEvaluator(source string, flags []model.Flag) (*JSON, error) {
 		return nil, err
 	}
 	je := NewJSON(log, s)
-	je.store.Update(source, flags, model.Metadata{})
+	je.store.Update(source, flags, model.Metadata{}, false)
 	return je, nil
 }
 
@@ -451,9 +451,6 @@ func TestFractionalEvaluation(t *testing.T) {
 				t.Fatalf("setupEvaluator failed: %v", err)
 			}
 
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
-
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
 			if value != tt.expectedValue {
@@ -577,8 +574,6 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			if err != nil {
 				b.Fatalf("setupEvaluator failed: %v", err)
 			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
 
 			for i := 0; i < b.N; i++ {
 				value, variant, reason, _, err := resolve[string](
