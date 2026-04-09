@@ -53,6 +53,7 @@ type Sync struct {
 	Selector                string
 	URI                     string
 	MaxMsgSize              int
+	IncrementalUpdates      bool
 
 	client FlagSyncServiceClient
 	ready  bool
@@ -104,8 +105,9 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 		return err
 	}
 	dataSync <- sync.DataSync{
-		FlagData: res.GetFlagConfiguration(),
-		Source:   g.URI,
+		FlagData:           res.GetFlagConfiguration(),
+		Source:             g.URI,
+		IncrementalUpdates: g.IncrementalUpdates,
 	}
 	return nil
 }
@@ -199,10 +201,11 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		}
 
 		dataSync <- sync.DataSync{
-			FlagData:    data.FlagConfiguration,
-			SyncContext: data.SyncContext,
-			Source:      g.URI,
-			Selector:    g.Selector,
+			FlagData:           data.FlagConfiguration,
+			SyncContext:        data.SyncContext,
+			Source:             g.URI,
+			Selector:           g.Selector,
+			IncrementalUpdates: g.IncrementalUpdates,
 		}
 
 		g.Logger.Debug("received full configuration payload")

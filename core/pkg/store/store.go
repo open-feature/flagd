@@ -25,7 +25,7 @@ type IStore interface {
 	Get(ctx context.Context, key string, selector *Selector) (model.Flag, model.Metadata, error)
 	GetAll(ctx context.Context, selector *Selector) ([]model.Flag, model.Metadata, error)
 	Watch(ctx context.Context, selector *Selector, watcher chan<- FlagQueryResult)
-	Update(source string, flags []model.Flag, metadata model.Metadata)
+	Update(source string, flags []model.Flag, metadata model.Metadata, incrementalUpdate bool)
 }
 
 var _ IStore = (*Store)(nil)
@@ -214,10 +214,16 @@ type flagIdentifier struct {
 }
 
 // Update the flag state with the provided flags.
+// When incrementalUpdate is true, deletion is scoped to only the flagSetIds present in
+// this payload (from metadata and flag-level overrides), allowing flags from other
+// flagSetIds to accumulate across updates. When false, all flags for the source are
+// replaced (the default full-snapshot behavior).
+// EXPERIMENTAL: incrementalUpdate support may change or be removed in a future release.
 func (s *Store) Update(
 	source string,
 	flags []model.Flag,
 	metadata model.Metadata,
+	incrementalUpdate bool,
 ) {
 	if source == "" {
 		panic("source cannot be empty")
@@ -254,9 +260,39 @@ func (s *Store) Update(
 	txn := s.db.Txn(true)
 	defer txn.Abort()
 
-	// get all flags for the source we are updating
-	selector := NewSelector(sourceIndex + "=" + source)
-	oldFlags, _, _ := s.GetAll(context.Background(), &selector)
+	// When incrementalUpdate is enabled, scope deletion to only the flagSetIds touched
+	// by this payload (metadata-level + flag-level overrides). This allows per-flagSetId
+	// updates (e.g., from per-project stream messages) to accumulate without deleting
+	// flags from unrelated flagSetIds. Otherwise, replace all flags for the source.
+	var oldFlags []model.Flag
+	if incrementalUpdate {
+		seenFlagSetIds := make(map[string]struct{})
+		if fsi, ok := metadata["flagSetId"].(string); ok && fsi != "" {
+			seenFlagSetIds[fsi] = struct{}{}
+		}
+		for id := range newFlags {
+			seenFlagSetIds[id.flagSetId] = struct{}{}
+		}
+		for fsi := range seenFlagSetIds {
+			sel := NewSelector(flagSetIdIndex+"="+fsi).WithIndex(sourceIndex, source)
+			indexId, constraints := sel.ToQuery()
+			it, err := txn.Get(flagsTable, indexId, constraints...)
+			if err != nil {
+				s.logger.Error(fmt.Sprintf("unable to query flags for flagSetId %s: %v", fsi, err))
+				return
+			}
+			oldFlags = append(oldFlags, s.collect(it)...)
+		}
+	} else {
+		sel := NewSelector(sourceIndex + "=" + source)
+		indexId, constraints := sel.ToQuery()
+		it, err := txn.Get(flagsTable, indexId, constraints...)
+		if err != nil {
+			s.logger.Error(fmt.Sprintf("unable to query flags for source %s: %v", source, err))
+			return
+		}
+		oldFlags = s.collect(it)
+	}
 
 	for _, oldFlag := range oldFlags {
 		if _, ok := newFlags[flagIdentifier{flagSetId: oldFlag.FlagSetId, key: oldFlag.Key}]; !ok {

@@ -137,7 +137,7 @@ func (je *JSON) SetState(payload sync.DataSync) error {
 		return err
 	}
 
-	je.store.Update(payload.Source, definition.Flags, definition.Metadata)
+	je.store.Update(payload.Source, definition.Flags, definition.Metadata, payload.IncrementalUpdates)
 
 	return nil
 }

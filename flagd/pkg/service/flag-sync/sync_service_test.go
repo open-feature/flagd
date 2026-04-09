@@ -111,7 +111,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 				flagStore.Update(testSource1, testSource1Flags, model.Metadata{
 					"keyDuped": "value",
 					"keyA":     "valueA",
-				})
+				}, false)
 
 				select {
 				case <-dataReceived:

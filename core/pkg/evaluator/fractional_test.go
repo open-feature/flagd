@@ -51,7 +51,7 @@ func setupEvaluator(source string, flags []model.Flag) (*JSON, error) {
 		return nil, err
 	}
 	je := NewJSON(log, s)
-	je.store.Update(source, flags, model.Metadata{})
+	je.store.Update(source, flags, model.Metadata{}, false)
 	return je, nil
 }
 
