@@ -279,7 +279,7 @@ func (s *Store) Update(
 			it, err := txn.Get(flagsTable, indexId, constraints...)
 			if err != nil {
 				s.logger.Error(fmt.Sprintf("unable to query flags for flagSetId %s: %v", fsi, err))
-				continue
+				return
 			}
 			oldFlags = append(oldFlags, s.collect(it)...)
 		}
@@ -289,9 +289,9 @@ func (s *Store) Update(
 		it, err := txn.Get(flagsTable, indexId, constraints...)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("unable to query flags for source %s: %v", source, err))
-		} else {
-			oldFlags = s.collect(it)
+			return
 		}
+		oldFlags = s.collect(it)
 	}
 
 	for _, oldFlag := range oldFlags {
