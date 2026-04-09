@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.3...flagd-proxy/v0.9.4) (2026-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#1933](https://github.com/open-feature/flagd/issues/1933)) ([04338dc](https://github.com/open-feature/flagd/commit/04338dc21358b80f96da7a5ac736107f08093d60))
+* **security:** update vulnerability-updates [security] ([#1934](https://github.com/open-feature/flagd/issues/1934)) ([40d444a](https://github.com/open-feature/flagd/commit/40d444abac6b0a40a1b5190c2205540eaaaa0b55))
+
+
+### 🧹 Chore
+
+* fix proxy test race ([17cd08f](https://github.com/open-feature/flagd/commit/17cd08f081e5ad2419fc4a3972b7ece2d2a54d33))
+
 ## [0.9.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.2...flagd-proxy/v0.9.3) (2026-04-07)
 
 
