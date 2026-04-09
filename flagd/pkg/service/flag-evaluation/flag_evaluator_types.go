@@ -180,6 +180,15 @@ type responseV2[T constraints] interface {
 	SetReasonOnly(reason string, metadata map[string]interface{}) error
 }
 
+// compile-time interface satisfaction checks
+var (
+	_ responseV2[bool]           = (*booleanResponseV2)(nil)
+	_ responseV2[string]         = (*stringResponseV2)(nil)
+	_ responseV2[float64]        = (*floatResponseV2)(nil)
+	_ responseV2[int64]          = (*intResponseV2)(nil)
+	_ responseV2[map[string]any] = (*objectResponseV2)(nil)
+)
+
 type booleanResponseV2 struct {
 	evalV2Resp *connect.Response[evalV2.ResolveBooleanResponse]
 }
@@ -348,6 +357,19 @@ func (r *objectResponseV2) SetResult(value map[string]any, variant, reason strin
 		if variant != "" {
 			r.evalV2Resp.Msg.Variant = &variant
 		}
+		r.evalV2Resp.Msg.Metadata = newStruct
+	}
+	return nil
+}
+
+func (r *objectResponseV2) SetReasonOnly(reason string, metadata map[string]interface{}) error {
+	newStruct, err := structpb.NewStruct(metadata)
+	if err != nil {
+		return fmt.Errorf("failure to wrap metadata %w", err)
+	}
+	if r.evalV2Resp != nil {
+		// Leave Value and Variant as nil (unset)
+		r.evalV2Resp.Msg.Reason = reason
 		r.evalV2Resp.Msg.Metadata = newStruct
 	}
 	return nil

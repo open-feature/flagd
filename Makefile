@@ -52,8 +52,9 @@ flagd-benchmark-test:
 flagd-integration-test-harness:
 # target used to start a locally built flagd with the e2e flags
 	cd flagd; go run main.go start -f file:../test-harness/flags/testing-flags.json -f file:../test-harness/flags/custom-ops.json -f file:../test-harness/flags/evaluator-refs.json -f file:../test-harness/flags/zero-flags.json -f file:../test-harness/flags/edge-case-flags.json
-flagd-integration-test: # dependent on flagd-e2e-test-harness if not running in github actions
-	go test -count=1 -cover ./test/integration $(ARGS)
+flagd-integration-test: workspace-clean
+# this is a intentionally an "orphaned" module so that it effectively does e2e testing independently of the rest of the code
+	cd test/integration && go test -count=1 -cover $(ARGS)
 run: # default to flagd
 	make run-flagd
 run-flagd:

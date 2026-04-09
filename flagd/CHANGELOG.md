@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.15.1](https://github.com/open-feature/flagd/compare/flagd/v0.15.0...flagd/v0.15.1) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* object flags without `defaultVaraint` dont default in RPC ([#1925](https://github.com/open-feature/flagd/issues/1925)) ([17f833e](https://github.com/open-feature/flagd/commit/17f833ea53341bce4e85250a089f237a0c002fb9))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+* zombie process on metrics server fail ([#1926](https://github.com/open-feature/flagd/issues/1926)) ([0271068](https://github.com/open-feature/flagd/commit/0271068ec71b02a2c9ab6afda44193cc2a66a815))
+* mem leak due to unbounded metrics cardinality ([#1931](https://github.com/open-feature/flagd/issues/1931)) ([176866e](https://github.com/open-feature/flagd/commit/176866e71625bee9ef7770700d8ce14e8abd8110))
+
+## [0.15.0](https://github.com/open-feature/flagd/compare/flagd/v0.14.5...flagd/v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+  * no breaking API changes - but fractional pseudorandom assignments will change; update all providers to ensure consistency
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909)) ([7190878](https://github.com/open-feature/flagd/commit/7190878fd0ea7a6f16fd8fbcdac68b55d9b9a2a5))
+
 ## [0.14.5](https://github.com/open-feature/flagd/compare/flagd/v0.14.4...flagd/v0.14.5) (2026-03-27)
 
 

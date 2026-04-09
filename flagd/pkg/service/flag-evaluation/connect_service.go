@@ -69,9 +69,6 @@ type ConnectService struct {
 	server        *http.Server
 	metricsServer *http.Server
 
-	serverMtx        sync.RWMutex
-	metricsServerMtx sync.RWMutex
-
 	readinessEnabled bool
 }
 
@@ -102,32 +99,10 @@ func (s *ConnectService) Serve(ctx context.Context, svcConf service.Configuratio
 	s.readinessEnabled = true
 
 	g.Go(func() error {
-		return s.startServer(svcConf)
+		return s.startServer(gCtx, svcConf)
 	})
 	g.Go(func() error {
-		return s.startMetricsServer(svcConf)
-	})
-	g.Go(func() error {
-		<-gCtx.Done()
-		s.serverMtx.RLock()
-		defer s.serverMtx.RUnlock()
-		if s.server != nil {
-			if err := s.server.Shutdown(gCtx); err != nil {
-				return fmt.Errorf("error returned from flag evaluation server shutdown: %w", err)
-			}
-		}
-		return nil
-	})
-	g.Go(func() error {
-		<-gCtx.Done()
-		s.metricsServerMtx.RLock()
-		defer s.metricsServerMtx.RUnlock()
-		if s.metricsServer != nil {
-			if err := s.metricsServer.Shutdown(gCtx); err != nil {
-				return fmt.Errorf("error returned from metrics server shutdown: %w", err)
-			}
-		}
-		return nil
+		return s.startMetricsServer(gCtx, svcConf)
 	})
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("errgroup closed with error: %w", err)
@@ -210,13 +185,11 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		svcHandler = http.MaxBytesHandler(svcHandler, svcConf.MaxRequestBodyBytes)
 	}
 
-	s.serverMtx.Lock()
 	s.server = &http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler:           svcHandler,
 		MaxHeaderBytes:    int(svcConf.MaxRequestHeaderBytes),
 	}
-	s.serverMtx.Unlock()
 
 	// Add middlewares
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
@@ -251,31 +224,47 @@ func (s *ConnectService) Shutdown() {
 	})
 }
 
-func (s *ConnectService) startServer(svcConf service.Configuration) error {
+func serveWithShutdown(ctx context.Context, server *http.Server, serveFn func() error) error {
+	errChan := make(chan error, 1)
+	go func() { errChan <- serveFn() }()
+
+	select {
+	case err := <-errChan:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	case <-ctx.Done():
+		// use a fresh context; ctx is already cancelled
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("error shutting down server: %w", err)
+		}
+		// wait for server to fully stop
+		<-errChan
+		return nil
+	}
+}
+
+func (s *ConnectService) startServer(ctx context.Context, svcConf service.Configuration) error {
 	lis, err := s.setupServer(svcConf)
 	if err != nil {
 		return err
 	}
 	s.logger.Info(fmt.Sprintf("Flag IResolver listening at %s", lis.Addr()))
+
 	if svcConf.CertPath != "" && svcConf.KeyPath != "" {
-		if err := s.server.ServeTLS(
-			lis,
-			svcConf.CertPath,
-			svcConf.KeyPath,
-		); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("error returned from flag evaluation server: %w", err)
-		}
-	} else {
-		if err := s.server.Serve(
-			lis,
-		); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("error returned from flag evaluation server: %w", err)
-		}
+		return serveWithShutdown(ctx, s.server, func() error {
+			return s.server.ServeTLS(lis, svcConf.CertPath, svcConf.KeyPath)
+		})
 	}
-	return nil
+	return serveWithShutdown(ctx, s.server, func() error {
+		return s.server.Serve(lis)
+	})
 }
 
-func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error {
+func (s *ConnectService) startMetricsServer(ctx context.Context, svcConf service.Configuration) error {
 	s.logger.Info(fmt.Sprintf("metrics and probes listening at %d", svcConf.ManagementPort))
 
 	srv := grpc.NewServer()
@@ -304,16 +293,11 @@ func (s *ConnectService) startMetricsServer(svcConf service.Configuration) error
 		}
 	})
 
-	s.metricsServerMtx.Lock()
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", svcConf.ManagementPort),
 		ReadHeaderTimeout: 3 * time.Second,
 		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
 	}
-	s.metricsServerMtx.Unlock()
 
-	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("error returned from metrics server: %w", err)
-	}
-	return nil
+	return serveWithShutdown(ctx, s.metricsServer, s.metricsServer.ListenAndServe)
 }
