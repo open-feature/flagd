@@ -442,6 +442,67 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"single-entry always returns the sole variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								["blue", 1]
+							]
+						}`),
+			}},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": "any-user",
+			},
+			expectedVariant: blueVariant,
+			expectedValue:   blueHex,
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"single-entry with explicit bucket-by always returns the sole variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								{"var": "email"},
+								["green", 100]
+							]
+						}`),
+			}},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"email": "any@user.com",
+			},
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
+			expectedReason:  model.TargetingMatchReason,
+		},
+		"single-entry shorthand without weight always returns the sole variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								["yellow"]
+							]
+						}`),
+			}},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": "any-user",
+			},
+			expectedVariant: yellowVariant,
+			expectedValue:   yellowHex,
+			expectedReason:  model.TargetingMatchReason,
+		},
 	}
 	const reqID = "default"
 	for name, tt := range tests {
