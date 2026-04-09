@@ -664,7 +664,7 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 			wantAbsent:  []string{"X/inX"},
 		},
 		{
-			name: "no flagSetId in metadata falls back to source-scoped deletion",
+			name: "empty update with incrementalUpdate=false clears all flags",
 			updates: []updateStep{
 				{flags: []model.Flag{{Key: "flagA"}}, metadata: model.Metadata{"flagSetId": "A"}, incrementalUpdate: true},
 				{flags: []model.Flag{{Key: "flagB"}}, metadata: model.Metadata{"flagSetId": "B"}, incrementalUpdate: true},
