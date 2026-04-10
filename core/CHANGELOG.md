@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.3](https://github.com/open-feature/flagd/compare/core/v0.15.2...core/v0.15.3) (2026-04-10)
+
+
+### 🐛 Bug Fixes
+
+* allow single entry in fractional operator ([#1935](https://github.com/open-feature/flagd/issues/1935)) ([5fa86c6](https://github.com/open-feature/flagd/commit/5fa86c6a4b7fcb8f8b7ffcc696f889d2ebf33b1f))
+
 ## [0.15.2](https://github.com/open-feature/flagd/compare/core/v0.15.1...core/v0.15.2) (2026-04-09)
 
 
