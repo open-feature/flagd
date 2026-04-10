@@ -22,7 +22,7 @@ The `starts_with` evaluation returns a boolean, indicating whether the condition
 ]
 ```
 
-## Example for 'starts_with' Operation
+## Example
 
 Flags defined as such:
 

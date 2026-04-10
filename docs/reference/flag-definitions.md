@@ -393,6 +393,11 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 | `ends_with`                        | Attribute ends with the specified value             | string                                       | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md). |
 | `sem_ver`                          | Attribute matches a semantic versioning condition   | string (valid [semver](https://semver.org/)) | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                              |
 
+!!! info "Error handling in custom operations"
+
+    flagd's custom operations return `null` on invalid or unexpected inputs, consistent with how built-in JsonLogic operations represent no-value returns, for example how `var` treats missing keys.
+    When used inside an `if`, `null` is falsy, so evaluation falls through to the else branch rather than producing a false positive match.
+
 #### Targeting key
 
 flagd and flagd providers map the [targeting key](https://openfeature.dev/specification/glossary#targeting-key) into the `"targetingKey"` property of the context used in rules.
@@ -486,6 +491,11 @@ Example:
   }
 }
 ```
+
+!!! warning
+
+    Shared evaluators do not support references to other shared evaluators (nested `$ref`s).
+    Each `$evaluator` definition must be self-contained.
 
 ## Metadata
 

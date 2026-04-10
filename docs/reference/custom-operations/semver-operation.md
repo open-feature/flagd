@@ -15,17 +15,25 @@ Note that the 'sem_ver' evaluation rule must contain exactly three items:
 The `sem_ver` evaluation returns a boolean, indicating whether the condition has been met.
 
 ```js
-{
-    "if": [
-        {
-            "sem_ver": [{"var": "version"}, ">=", "1.0.0"]
-        },
-        "red", null
-    ]
-}
+// sem_ver property name used in a targeting rule
+"sem_ver": [
+  // Evaluation context property to be evaluated
+  {"var": "version"},
+  // Operator to use for comparison
+  ">=",
+  // Target value to compare against
+  "1.0.0"
+]
 ```
 
-## Example for 'sem_ver' Evaluation
+!!! tip
+
+    Version strings may include a `v` or `V` prefix (e.g. `v1.0.0`), which is stripped before comparison.
+    Partial versions such as `1.0` or `1` are also accepted and padded with `.0` to form a complete version.
+    Numeric context values (e.g. integer `1`) are coerced to strings before parsing.
+    Build metadata (e.g. `1.0.0+build`) is ignored during comparison, per the SemVer specification.
+
+## Example
 
 Flags defined as such:
 

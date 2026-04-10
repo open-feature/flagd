@@ -239,6 +239,11 @@ In addition to the built-in evaluators provided by JsonLogic, the following cust
 - [Semantic version evaluation](../../reference/custom-operations/semver-operation.md)
 - [StartsWith/EndsWith evaluation](../../reference/custom-operations/string-comparison-operation.md)
 
+### Shared Evaluator Resolution
+
+Before evaluating a flag's targeting rules, providers resolve any `$ref` references by replacing them with the corresponding entry from the `$evaluators` object defined in the flag set.
+Nested references (`$ref` within a `$ref`) are not supported; each shared evaluator must be self-contained.
+
 ### Targeting Key
 
 Similar to the flagd daemon, in-process providers map the [targeting-key](https://openfeature.dev/specification/glossary#targeting-key) into a top level property of the context used in rules, with the key `"targetingKey"`.
