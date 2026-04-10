@@ -57,8 +57,8 @@ func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (str
 	if !ok {
 		return "", nil, errors.New("fractional evaluation data is not an array")
 	}
-	if len(valuesArray) < 1 {
-		return "", nil, errors.New("fractional evaluation data is empty")
+if len(valuesArray) < 1 {
+		return "", nil, errors.New("fractional evaluation data must contain at least one distribution")
 	}
 
 	dataMap, ok := data.(map[string]any)
