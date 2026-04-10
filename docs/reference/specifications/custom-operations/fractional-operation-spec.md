@@ -227,6 +227,6 @@ func FractionalEvaluation(values, data interface{}) interface{} {
         }
     }
 
-    return ""
+  return nil
 }
 ```
