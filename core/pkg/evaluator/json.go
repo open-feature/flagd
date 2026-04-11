@@ -66,6 +66,14 @@ type flagdProperties struct {
 type variantEvaluator func(context.Context, string, string, map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, error error)
 
+// WithStrictValidation enables strict schema validation. When enabled, flag configurations
+// that do not conform to the schema will be rejected with an error instead of accepted with a warning.
+func WithStrictValidation() JSONEvaluatorOption {
+	return func(je *JSON) {
+		je.strictValidation = true
+	}
+}
+
 // Deprecated - this will be remove in the next release
 func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interface{}) JSONEvaluatorOption {
 	return func(_ *JSON) {
@@ -75,10 +83,11 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 
 // JSON evaluator
 type JSON struct {
-	store          store.IStore
-	Logger         *logger.Logger
-	jsonEvalTracer trace.Tracer
-	jsonSchema     *jsonschema.Schema
+	store            store.IStore
+	Logger           *logger.Logger
+	jsonEvalTracer   trace.Tracer
+	jsonSchema       *jsonschema.Schema
+	strictValidation bool
 	Resolver
 }
 
@@ -474,6 +483,10 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		return fmt.Errorf("failed to unmarshal JSON string: %v", err)
 	}
 	if err := je.jsonSchema.Validate(inst); err != nil {
+		if je.strictValidation {
+			return fmt.Errorf(
+				"flag definition does not conform to the schema; validation errors: %s", err)
+		}
 		je.Logger.Warn(fmt.Sprintf(
 			"flag definition does not conform to the schema; validation errors: %s", err),
 		)
