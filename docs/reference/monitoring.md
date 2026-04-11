@@ -133,6 +133,8 @@ These attributes follow the [OpenTelemetry resource semantic conventions](https:
 
 > **Tip:** If you're setting resource attributes for environment identification, you may also want to configure [static context values (`-X`)](../reference/flag-definitions.md#static-context--x-flag) so these same dimensions are available for flag targeting.
 
+#### Exposing resource attributes as Prometheus labels
+
 To expose resource attributes as metric labels in Prometheus, enable `resource_to_telemetry_conversion` in your OpenTelemetry Collector exporter config:
 
 ```yaml
@@ -142,6 +144,35 @@ exporters:
     resource_to_telemetry_conversion:
       enabled: true
 ```
+
+> [!IMPORTANT]
+> The `resource_to_telemetry_conversion` feature and the `transform` processor (described below) require the
+> **OpenTelemetry Collector Contrib** distribution (e.g., the `otel/opentelemetry-collector-contrib` image).
+> They are not available in the core distribution.
+
+> [!NOTE]
+> Enabling `resource_to_telemetry_conversion` converts **all** resource attributes into metric labels.
+> This may not be suitable if there are a large number of resource attributes, as it can increase metric
+> cardinality.
+
+For more fine-grained control, you can selectively extract specific resource attributes as metric labels
+using the [transform processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor):
+
+```yaml
+processors:
+  transform:
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["environment"], resource.attributes["deployment.environment"])
+          - set(attributes["version"], resource.attributes["service.version"])
+```
+
+> [!NOTE]
+> For this to take effect, the `transform` processor must be included in the `processors` list of the `metrics`
+> pipeline in the `service` section of the collector configuration.
+
+For more details, see the [Prometheus exporter documentation on setting resource attributes as metric labels](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusexporter#setting-resource-attributes-as-metric-labels).
 
 ### Configure local collector setup
 
