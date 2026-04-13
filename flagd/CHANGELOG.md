@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.2](https://github.com/open-feature/flagd/compare/flagd/v0.15.1...flagd/v0.15.2) (2026-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#1933](https://github.com/open-feature/flagd/issues/1933)) ([04338dc](https://github.com/open-feature/flagd/commit/04338dc21358b80f96da7a5ac736107f08093d60))
+* **security:** update vulnerability-updates [security] ([#1934](https://github.com/open-feature/flagd/issues/1934)) ([40d444a](https://github.com/open-feature/flagd/commit/40d444abac6b0a40a1b5190c2205540eaaaa0b55))
+
+
+### ✨ New Features
+
+* gRPC sync experimental incremental updates ([#1922](https://github.com/open-feature/flagd/issues/1922)) ([d785557](https://github.com/open-feature/flagd/commit/d785557d2df6b89c9b86e886b6b923991dd44696))
+
 ## [0.15.1](https://github.com/open-feature/flagd/compare/flagd/v0.15.0...flagd/v0.15.1) (2026-04-07)
 
 

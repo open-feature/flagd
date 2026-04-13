@@ -277,6 +277,24 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 	}
 }
 
+func Test_GrpcIncrementalUpdates(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+	sb := NewSyncBuilder()
+
+	syncs, err := sb.SyncsFromConfig([]sync.SourceConfig{
+		{
+			URI:                "grpc://host:port",
+			Provider:           syncProviderGrpc,
+			IncrementalUpdates: true,
+		},
+	}, lg)
+	require.NoError(t, err)
+	require.Len(t, syncs, 1)
+	grpcSync, ok := syncs[0].(*grpc.Sync)
+	require.True(t, ok)
+	require.True(t, grpcSync.IncrementalUpdates, "IncrementalUpdates should be propagated from SourceConfig to grpc.Sync")
+}
+
 func Test_GcsConfig(t *testing.T) {
 	lg := logger.NewLogger(nil, false)
 	defaultInterval := uint32(5)
