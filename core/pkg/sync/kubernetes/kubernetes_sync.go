@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	msync "sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -35,7 +36,7 @@ type SyncOption func(s *Sync)
 type Sync struct {
 	URI string
 
-	ready         bool
+	ready         atomic.Bool
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
@@ -86,7 +87,7 @@ func (k *Sync) Init(_ context.Context) error {
 }
 
 func (k *Sync) IsReady() bool {
-	return k.ready
+	return k.ready.Load()
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -155,7 +156,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
 				k.logger.Debug("notifier ready")
-				k.ready = true
+				k.ready.Store(true)
 			}
 		}
 	}

@@ -633,13 +633,13 @@ func TestSync_ReSync(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		k        Sync
+		k        *Sync
 		countMsg int
 		async    bool
 	}{
 		{
 			name: "Happy Path",
-			k: Sync{
+			k: &Sync{
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
@@ -650,7 +650,7 @@ func TestSync_ReSync(t *testing.T) {
 		},
 		{
 			name: "CRD not found",
-			k: Sync{
+			k: &Sync{
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
