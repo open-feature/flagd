@@ -699,6 +699,7 @@ func TestSync_ReSync(t *testing.T) {
 				cancel()
 				wg.Wait()
 			} else {
+				defer cancel()
 				if err := tt.k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
 					t.Errorf("Unexpected error: %v", err)
 				}
