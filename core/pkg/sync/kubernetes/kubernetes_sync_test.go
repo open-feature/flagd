@@ -13,7 +13,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,7 +74,7 @@ func Test_parseURI(t *testing.T) {
 	}
 }
 
-func TestAsUnstructured(t *testing.T) {
+func Test_toFFCfg(t *testing.T) {
 	validFFCfg := v1beta1.FeatureFlag{
 		TypeMeta: Metadata,
 	}
@@ -82,13 +82,15 @@ func TestAsUnstructured(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   interface{}
-		want    *unstructured.Unstructured
+		want    *v1beta1.FeatureFlag
 		wantErr bool
 	}{
 		{
-			name:    "Simple success",
-			input:   toUnstructured(t, validFFCfg),
-			want:    toUnstructured(t, validFFCfg),
+			name:  "Simple success",
+			input: toUnstructured(t, validFFCfg),
+			want: &v1beta1.FeatureFlag{
+				TypeMeta: Metadata,
+			},
 			wantErr: false,
 		},
 		{
@@ -96,7 +98,9 @@ func TestAsUnstructured(t *testing.T) {
 			input: cache.DeletedFinalStateUnknown{
 				Obj: toUnstructured(t, validFFCfg),
 			},
-			want:    toUnstructured(t, validFFCfg),
+			want: &v1beta1.FeatureFlag{
+				TypeMeta: Metadata,
+			},
 			wantErr: false,
 		},
 		{
@@ -111,15 +115,15 @@ func TestAsUnstructured(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := asUnstructured(tt.input)
+			got, err := toFFCfg(tt.input)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("asUnstructured() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("toFFCfg() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("asUnstructured() got = %v, want %v", got, tt.want)
+				t.Errorf("toFFCfg() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -677,10 +681,9 @@ func TestSync_ReSync(t *testing.T) {
 					}
 				}()
 
-                                if err := tt.k.ReSync(ctx, dataChannel); err != nil {
-                                        t.Errorf("Unexpected error: %v", err)
-                                }
-
+				if err := tt.k.ReSync(ctx, dataChannel); err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
 
 				for i := tt.countMsg; i > 0; i-- {
 					select {
@@ -876,8 +879,8 @@ func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
 }
 
-func TestMeasure(t *testing.T) {
-	res, err := marshalFlagSpec(toUnstructured(t, v1beta1.FeatureFlag{
+func TestMarshallFeatureFlagSpec(t *testing.T) {
+	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
 		Spec: v1beta1.FeatureFlagSpec{
 			FlagSpec: v1beta1.FlagSpec{
 				Flags: v1beta1.Flags{
@@ -889,8 +892,41 @@ func TestMeasure(t *testing.T) {
 				},
 			},
 		},
-	}))
+	})
 
 	require.NoError(t, err)
 	require.JSONEq(t, `{"flags":{"flag":{"state":"","variants":null,"defaultVariant":"kubernetes"}}}`, res)
+}
+
+func TestMarshallFeatureFlagSpec_metadata(t *testing.T) {
+	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
+		Spec: v1beta1.FeatureFlagSpec{
+			FlagSpec: v1beta1.FlagSpec{
+				Metadata: json.RawMessage(`{"scope":"app-1"}`),
+				Flags: v1beta1.Flags{
+					FlagsMap: map[string]v1beta1.Flag{
+						"flag-with-meta": {
+							State:          "ENABLED",
+							DefaultVariant: "on",
+							Variants:       json.RawMessage(`{"on":true,"off":false}`),
+							Metadata:       json.RawMessage(`{"owner":"team-x"}`),
+						},
+					},
+				},
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"metadata": {"scope": "app-1"},
+		"flags": {
+			"flag-with-meta": {
+				"state": "ENABLED",
+				"variants": {"on": true, "off": false},
+				"defaultVariant": "on",
+				"metadata": {"owner": "team-x"}
+			}
+		}
+	}`, res)
 }

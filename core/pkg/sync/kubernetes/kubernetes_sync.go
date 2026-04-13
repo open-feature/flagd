@@ -12,13 +12,14 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 )
 
 var (
@@ -169,13 +170,13 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 	}
 
 	if exist {
-		configuration, err := asUnstructured(item)
+		configuration, err := toFFCfg(item)
 		if err != nil {
 			return "", err
 		}
 
 		k.logger.Debug(fmt.Sprintf("resource %s served from the informer cache", k.URI))
-		return marshalFlagSpec(configuration)
+		return marshallFeatureFlagSpec(configuration)
 	}
 
 	// fallback to API access - this is an informer cache miss. Could happen at the startup where cache is not filled
@@ -190,11 +191,11 @@ func (k *Sync) fetch(ctx context.Context) (string, error) {
 
 	k.logger.Debug(fmt.Sprintf("resource %s served from API server", k.URI))
 
-	ff, err := asUnstructured(ffObj)
+	ff, err := toFFCfg(ffObj)
 	if err != nil {
 		return "", fmt.Errorf("unable to convert object %s/%s to FeatureFlag: %w", k.namespace, k.crdName, err)
 	}
-	return marshalFlagSpec(ff)
+	return marshallFeatureFlagSpec(ff)
 }
 
 func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
@@ -237,16 +238,16 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 
 // commonHandler emits the desired event if and only if handler receive an object matching apiVersion and resource name
 func commonHandler(obj interface{}, object types.NamespacedName, emitEvent DefaultEventType, c chan<- INotify) error {
-	u, err := asUnstructured(obj)
+	ffObj, err := toFFCfg(obj)
 	if err != nil {
 		return err
 	}
 
-	if u.GetAPIVersion() != apiVersion {
-		return fmt.Errorf(invalidAPIVersionMsg, u.GetAPIVersion(), apiVersion)
+	if ffObj.APIVersion != apiVersion {
+		return fmt.Errorf(invalidAPIVersionMsg, ffObj.APIVersion, apiVersion)
 	}
 
-	if u.GetName() == object.Name {
+	if ffObj.Name == object.Name {
 		c <- &Notifier{
 			Event: Event[DefaultEventType]{
 				EventType: emitEvent,
@@ -259,25 +260,25 @@ func commonHandler(obj interface{}, object types.NamespacedName, emitEvent Defau
 
 // updateFuncHandler handles updates. Event is emitted if and only if resource name, apiVersion of old & new are equal
 func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.NamespacedName, c chan<- INotify) error {
-	ffOldObj, err := asUnstructured(oldObj)
+	ffOldObj, err := toFFCfg(oldObj)
 	if err != nil {
 		return err
 	}
 
-	if ffOldObj.GetAPIVersion() != apiVersion {
-		return fmt.Errorf(invalidAPIVersionMsg, ffOldObj.GetAPIVersion(), apiVersion)
+	if ffOldObj.APIVersion != apiVersion {
+		return fmt.Errorf(invalidAPIVersionMsg, ffOldObj.APIVersion, apiVersion)
 	}
 
-	ffNewObj, err := asUnstructured(newObj)
+	ffNewObj, err := toFFCfg(newObj)
 	if err != nil {
 		return err
 	}
 
-	if ffNewObj.GetAPIVersion() != apiVersion {
-		return fmt.Errorf(invalidAPIVersionMsg, ffNewObj.GetAPIVersion(), apiVersion)
+	if ffNewObj.APIVersion != apiVersion {
+		return fmt.Errorf(invalidAPIVersionMsg, ffNewObj.APIVersion, apiVersion)
 	}
 
-	if object.Name == ffNewObj.GetName() && ffOldObj.GetResourceVersion() != ffNewObj.GetResourceVersion() {
+	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
 		c <- &Notifier{
 			Event: Event[DefaultEventType]{
 				EventType: DefaultEventTypeModify,
@@ -287,18 +288,34 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	return nil
 }
 
-func asUnstructured(object interface{}) (*unstructured.Unstructured, error) {
-	if u, ok := object.(*unstructured.Unstructured); ok {
-		return u, nil
-	}
-
-	if tombstone, ok := object.(cache.DeletedFinalStateUnknown); ok {
-		if u, ok := tombstone.Obj.(*unstructured.Unstructured); ok {
-			return u, nil
+func toFFCfg(object interface{}) (*v1beta1.FeatureFlag, error) {
+	u, ok := object.(*unstructured.Unstructured)
+	if !ok {
+		if tombstone, tOk := object.(cache.DeletedFinalStateUnknown); tOk {
+			u, ok = tombstone.Obj.(*unstructured.Unstructured)
+			if !ok {
+				return nil, fmt.Errorf("tombstone object is not of type *unstructured.Unstructured")
+			}
+		} else {
+			return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
 		}
 	}
 
-	return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
+	ff := &v1beta1.FeatureFlag{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, ff); err != nil {
+		return nil, fmt.Errorf("unable to convert unstructured to FeatureFlag: %w", err)
+	}
+
+	return ff, nil
+}
+
+// marshallFeatureFlagSpec marshals the FlagSpec of a FeatureFlag to JSON
+func marshallFeatureFlagSpec(ff *v1beta1.FeatureFlag) (string, error) {
+	b, err := json.Marshal(ff.Spec.FlagSpec)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal FlagSpec: %w", err)
+	}
+	return string(b), nil
 }
 
 // parseURI parse provided uri in the format of <namespace>/<crdName> to namespace, crdName. Results in an error
@@ -309,20 +326,4 @@ func parseURI(uri string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid resource uri format, expected <namespace>/<crdName> but got: %s", uri)
 	}
 	return s[0], s[1], nil
-}
-
-func marshalFlagSpec(ff *unstructured.Unstructured) (string, error) {
-	flagSpec, found, err := unstructured.NestedMap(ff.Object, "spec", "flagSpec")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse spec.flagSpec: %w", err)
-	}
-	if !found {
-		return "", fmt.Errorf("missing spec.flagSpec")
-	}
-
-	b, err := json.Marshal(flagSpec)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal spec.flagSpec: %w", err)
-	}
-	return string(b), nil
 }
