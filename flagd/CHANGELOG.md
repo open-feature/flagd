@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.3](https://github.com/open-feature/flagd/compare/flagd/v0.15.2...flagd/v0.15.3) (2026-04-14)
+
+
+### 🐛 Bug Fixes
+
+* web and cli docs do not mention s3 ([#1941](https://github.com/open-feature/flagd/issues/1941)) ([49ff1cf](https://github.com/open-feature/flagd/commit/49ff1cfe2d5543feead69d363dc63ea18c718bc0))
+
 ## [0.15.2](https://github.com/open-feature/flagd/compare/flagd/v0.15.1...flagd/v0.15.2) (2026-04-09)
 
 
