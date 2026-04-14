@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.3](https://github.com/open-feature/flagd/compare/core/v0.15.2...core/v0.15.3) (2026-04-14)
+
+
+### 🐛 Bug Fixes
+
+* allow single entry in fractional operator ([#1935](https://github.com/open-feature/flagd/issues/1935)) ([5fa86c6](https://github.com/open-feature/flagd/commit/5fa86c6a4b7fcb8f8b7ffcc696f889d2ebf33b1f))
+* web and cli docs do not mention s3 ([#1941](https://github.com/open-feature/flagd/issues/1941)) ([49ff1cf](https://github.com/open-feature/flagd/commit/49ff1cfe2d5543feead69d363dc63ea18c718bc0))
+
+
+### ✨ New Features
+
+* metadata support in the kubernetes_sync ([#1905](https://github.com/open-feature/flagd/issues/1905)) ([f8173a4](https://github.com/open-feature/flagd/commit/f8173a4c974128df1b423ff3fff0fb9409f7dcda))
+
 ## [0.15.2](https://github.com/open-feature/flagd/compare/core/v0.15.1...core/v0.15.2) (2026-04-09)
 
 
