@@ -268,7 +268,7 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 
 func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
 	// Extract bucket uri and object name from the full URI:
-	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
+	// s3://bucket/path/to/object results in s3://bucket/ as bucketUri and
 	// path/to/object as an object name.
 	bucketURI := regS3.FindString(config.URI)
 	objectName := regS3.ReplaceAllString(config.URI, "")
