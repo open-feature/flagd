@@ -35,7 +35,7 @@ flagd start [flags]
       --stream-deadline duration             Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).
   -g, --sync-port int32                      gRPC Sync port (default 8015)
   -e, --sync-socket-path string              Flagd sync service socket path. With grpc the sync service will be available on this address.
-  -f, --uri .yaml/.yml/.json                 Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC), FeatureFlag custom resource, or GCS or Azure Blob. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
+  -f, --uri .yaml/.yml/.json                 Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC), FeatureFlag custom resource, or GCS, Azure Blob or S3. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
 
 ### Options inherited from parent commands

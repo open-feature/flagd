@@ -64,7 +64,7 @@ func init() {
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
-			" URL (HTTP and gRPC), FeatureFlag custom resource, or GCS or Azure Blob. "+
+			" URL (HTTP and gRPC), FeatureFlag custom resource, or GCS, Azure Blob or S3. "+
 			"When flag keys are duplicated across multiple providers the "+
 			"merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the "+
 			"lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. "+

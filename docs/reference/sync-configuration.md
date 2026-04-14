@@ -50,9 +50,9 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | Field              | Type               | Note                                                                                                                                                                                                                                                                                                      |
 | ------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | uri                | required `string`  | Flag configuration source of the sync                                                                                                                                                                                                                                                                     |
-| provider           | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                                                                                                                                           |
+| provider           | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs`, `azblob` or `s3`                                                                                                                                                                                                           |
 | authHeader         | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).                                                                                                                            |
-| interval           | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                                                                                                                                       |
+| interval           | optional `uint32`  | Used for http, gcs, azblob and s3 syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                                                                                                                                       |
 | tls                | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                                                                                                                                          |
 | providerID         | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                                                                                                                                         |
 | selector           | optional `string`  | Selector expression to filter flag configurations. Supports `source=<name>` and `flagSetId=<id>` syntax. See [selector syntax](selector-syntax.md) for details.                                                                                                                                           |
@@ -86,6 +86,7 @@ Sync providers:
 - `grpc`(envoy) - envoy://localhost:9211/test.service
 - `gcs` - gs://my-bucket/my-flags.json
 - `azblob` - azblob://my-container/my-flags.json
+- `s3` - s3://my-bucket/my-flags.json
 
 Startup command:
 
@@ -103,7 +104,8 @@ Startup command:
             {"uri":"envoy://localhost:9211/test.service", "provider":"grpc"},
             {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "tls": true, "providerID": "flagd-weatherapp-sidecar", "selector": "flagSetId=weatherapp"},
             {"uri":"gs://my-bucket/my-flag.json","provider":"gcs"},
-            {"uri":"azblob://my-container/my-flag.json","provider":"azblob"}]'
+            {"uri":"azblob://my-container/my-flag.json","provider":"azblob"},
+            {"uri":"s3://my-bucket/my-flag.json","provider":"s3"}]'
 ```
 
 Configuration file,
@@ -138,6 +140,8 @@ sources:
     provider: gcs
   - uri: azblob://my-container/my-flags.json
     provider: azblob
+  - uri: s3://my-bucket/my-flags.json
+    provider: s3
 ```
 
 ### HTTP Configuration
