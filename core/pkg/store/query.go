@@ -24,6 +24,10 @@ const flagSetIdSourceCompoundIndex = flagSetIdIndex + "+" + sourceIndex
 const keySourceCompoundIndex = keyIndex + "+" + sourceIndex
 const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + sourceIndex
 
+// membership table for incremental update deduplication
+const membershipTable = "membership"
+const membershipFlagSetIdKeyIndex = flagSetIdIndex + "+" + keyIndex
+
 // flagSetId defaults to a UUID generated at startup to make our queries consistent
 // any flag without a "flagSetId" is assigned this one; it's never exposed externally
 var nilFlagSetId = uuid.New().String()
@@ -81,6 +85,15 @@ func (s Selector) WithIndex(key string, value string) Selector {
 
 func (s *Selector) IsEmpty() bool {
 	return s == nil || len(s.indexMap) == 0
+}
+
+// HasFlagSetId returns the flagSetId value and true if the selector includes a flagSetId constraint.
+func (s *Selector) HasFlagSetId() (string, bool) {
+	if s == nil || s.indexMap == nil {
+		return "", false
+	}
+	v, ok := s.indexMap[flagSetIdIndex]
+	return v, ok && v != ""
 }
 
 // ToQuery converts the Selector map to an indexId and constraints for querying the Store.
