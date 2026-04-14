@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 	msync "sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +19,8 @@ import (
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 )
 
 var (
@@ -27,12 +29,14 @@ var (
 	featureFlagResource = v1beta1.GroupVersion.WithResource("featureflags")
 )
 
+const invalidAPIVersionMsg = "invalid api version %s, expected %s"
+
 type SyncOption func(s *Sync)
 
 type Sync struct {
 	URI string
 
-	ready         bool
+	ready         atomic.Bool
 	namespace     string
 	crdName       string
 	logger        *logger.Logger
@@ -83,7 +87,7 @@ func (k *Sync) Init(_ context.Context) error {
 }
 
 func (k *Sync) IsReady() bool {
-	return k.ready
+	return k.ready.Load()
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -99,22 +103,24 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
 
-	notifies := make(chan INotify)
+	// Buffer ensures notifier can publish the initial Ready event even if the watcher
+	// goroutine has not started reading yet.
+	notifies := make(chan INotify, 1)
 
 	var wg msync.WaitGroup
-
-	// Start K8s resource notifier
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		k.notify(ctx, notifies)
-	}()
 
 	// Start notifier watcher
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		k.watcher(ctx, notifies, dataSync)
+	}()
+
+	// Start K8s resource notifier
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		k.notify(ctx, notifies)
 	}()
 
 	wg.Wait()
@@ -150,7 +156,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
 				k.logger.Debug("notifier ready")
-				k.ready = true
+				k.ready.Store(true)
 			}
 		}
 	}
@@ -239,7 +245,7 @@ func commonHandler(obj interface{}, object types.NamespacedName, emitEvent Defau
 	}
 
 	if ffObj.APIVersion != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", ffObj.APIVersion, apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, ffObj.APIVersion, apiVersion)
 	}
 
 	if ffObj.Name == object.Name {
@@ -261,7 +267,7 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	}
 
 	if ffOldObj.APIVersion != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", ffOldObj.APIVersion, apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, ffOldObj.APIVersion, apiVersion)
 	}
 
 	ffNewObj, err := toFFCfg(newObj)
@@ -270,11 +276,10 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	}
 
 	if ffNewObj.APIVersion != apiVersion {
-		return fmt.Errorf("invalid api version %s, expected %s", ffNewObj.APIVersion, apiVersion)
+		return fmt.Errorf(invalidAPIVersionMsg, ffNewObj.APIVersion, apiVersion)
 	}
 
 	if object.Name == ffNewObj.Name && ffOldObj.ResourceVersion != ffNewObj.ResourceVersion {
-		// Only update if there is an actual featureFlagSpec change
 		c <- &Notifier{
 			Event: Event[DefaultEventType]{
 				EventType: DefaultEventTypeModify,
@@ -284,20 +289,34 @@ func updateFuncHandler(oldObj interface{}, newObj interface{}, object types.Name
 	return nil
 }
 
-// toFFCfg attempts to covert unstructured payload to configurations
 func toFFCfg(object interface{}) (*v1beta1.FeatureFlag, error) {
 	u, ok := object.(*unstructured.Unstructured)
 	if !ok {
-		return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
+		if tombstone, tOk := object.(cache.DeletedFinalStateUnknown); tOk {
+			u, ok = tombstone.Obj.(*unstructured.Unstructured)
+			if !ok {
+				return nil, fmt.Errorf("tombstone object is not of type *unstructured.Unstructured")
+			}
+		} else {
+			return nil, fmt.Errorf("provided value is not of type *unstructured.Unstructured")
+		}
 	}
 
-	var ffObj v1beta1.FeatureFlag
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ffObj)
+	ff := &v1beta1.FeatureFlag{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, ff); err != nil {
+		return nil, fmt.Errorf("unable to convert unstructured to FeatureFlag: %w", err)
+	}
+
+	return ff, nil
+}
+
+// marshallFeatureFlagSpec marshals the FlagSpec of a FeatureFlag to JSON
+func marshallFeatureFlagSpec(ff *v1beta1.FeatureFlag) (string, error) {
+	b, err := json.Marshal(ff.Spec.FlagSpec)
 	if err != nil {
-		return nil, fmt.Errorf("unable to convert unstructured to v1beta1.FeatureFlag: %w", err)
+		return "", fmt.Errorf("failed to marshal FlagSpec: %w", err)
 	}
-
-	return &ffObj, nil
+	return string(b), nil
 }
 
 // parseURI parse provided uri in the format of <namespace>/<crdName> to namespace, crdName. Results in an error
@@ -308,12 +327,4 @@ func parseURI(uri string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid resource uri format, expected <namespace>/<crdName> but got: %s", uri)
 	}
 	return s[0], s[1], nil
-}
-
-func marshallFeatureFlagSpec(ff *v1beta1.FeatureFlag) (string, error) {
-	b, err := json.Marshal(ff.Spec.FlagSpec)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshall FlagSpec: %s", err.Error())
-	}
-	return string(b), nil
 }

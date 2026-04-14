@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	stdsync "sync"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
-	"github.com/open-feature/open-feature-operator/apis/core/v1beta1"
+	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,9 +86,21 @@ func Test_toFFCfg(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Simple success",
-			input:   toUnstructured(t, validFFCfg),
-			want:    &validFFCfg,
+			name:  "Simple success",
+			input: toUnstructured(t, validFFCfg),
+			want: &v1beta1.FeatureFlag{
+				TypeMeta: Metadata,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Tombstone unwraps",
+			input: cache.DeletedFinalStateUnknown{
+				Obj: toUnstructured(t, validFFCfg),
+			},
+			want: &v1beta1.FeatureFlag{
+				TypeMeta: Metadata,
+			},
 			wantErr: false,
 		},
 		{
@@ -620,13 +633,13 @@ func TestSync_ReSync(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		k        Sync
+		k        *Sync
 		countMsg int
 		async    bool
 	}{
 		{
 			name: "Happy Path",
-			k: Sync{
+			k: &Sync{
 				URI:           fmt.Sprintf("%s/%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
@@ -637,7 +650,7 @@ func TestSync_ReSync(t *testing.T) {
 		},
 		{
 			name: "CRD not found",
-			k: Sync{
+			k: &Sync{
 				URI:           fmt.Sprintf("doesnt%s/exist%s", ns, name),
 				dynamicClient: fakeDynamicClient,
 				namespace:     ns,
@@ -657,24 +670,36 @@ func TestSync_ReSync(t *testing.T) {
 				t.Errorf("The Sync should not be ready")
 			}
 			dataChannel := make(chan sync.DataSync, tt.countMsg)
+			ctx, cancel := context.WithCancel(context.Background())
 			if tt.async {
+				var wg stdsync.WaitGroup
+				wg.Add(1)
 				go func() {
-					if err := tt.k.Sync(context.TODO(), dataChannel); err != nil {
-						t.Errorf("Unexpected error: %v", e)
-					}
-					if err := tt.k.ReSync(context.TODO(), dataChannel); err != nil {
-						t.Errorf("Unexpected error: %v", e)
+					defer wg.Done()
+					if err := tt.k.Sync(ctx, dataChannel); err != nil {
+						t.Errorf("Unexpected error: %v", err)
 					}
 				}()
-				i := tt.countMsg
-				for i > 0 {
-					d := <-dataChannel
-					if d.FlagData != payload {
-						t.Errorf("Expected %v, got %v", payload, d.FlagData)
-					}
-					i--
+
+				if err := tt.k.ReSync(ctx, dataChannel); err != nil {
+					t.Errorf("Unexpected error: %v", err)
 				}
+
+				for i := tt.countMsg; i > 0; i-- {
+					select {
+					case d := <-dataChannel:
+						if d.FlagData != payload {
+							t.Errorf("Expected %v, got %v", payload, d.FlagData)
+						}
+					case <-time.After(time.Second):
+						t.Fatalf("timeout waiting for data")
+					}
+				}
+
+				cancel()
+				wg.Wait()
 			} else {
+				defer cancel()
 				if err := tt.k.Sync(context.TODO(), dataChannel); !strings.Contains(err.Error(), "not found") {
 					t.Errorf("Unexpected error: %v", err)
 				}
@@ -817,12 +842,16 @@ func getCFG(name, namespace string) map[string]interface{} {
 			"name":      name,
 			"namespace": namespace,
 		},
-		"spec": map[string]interface{}{},
+		"spec": map[string]interface{}{
+			"flagSpec": map[string]interface{}{
+				"flags": nil,
+			},
+		},
 	}
 }
 
 // toUnstructured helper to convert an interface to unstructured.Unstructured
-func toUnstructured(t *testing.T, obj interface{}) interface{} {
+func toUnstructured(t *testing.T, obj interface{}) *unstructured.Unstructured {
 	bytes, err := json.Marshal(obj)
 	if err != nil {
 		t.Errorf("test setup faulure: %s", err.Error())
@@ -851,7 +880,7 @@ func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
 }
 
-func TestMeasure(t *testing.T) {
+func TestMarshallFeatureFlagSpec(t *testing.T) {
 	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
 		Spec: v1beta1.FeatureFlagSpec{
 			FlagSpec: v1beta1.FlagSpec{
@@ -866,6 +895,39 @@ func TestMeasure(t *testing.T) {
 		},
 	})
 
-	require.Nil(t, err)
-	require.Equal(t, "{\"flags\":{\"flag\":{\"state\":\"\",\"variants\":null,\"defaultVariant\":\"kubernetes\"}}}", res)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"flags":{"flag":{"state":"","variants":null,"defaultVariant":"kubernetes"}}}`, res)
+}
+
+func TestMarshallFeatureFlagSpec_metadata(t *testing.T) {
+	res, err := marshallFeatureFlagSpec(&v1beta1.FeatureFlag{
+		Spec: v1beta1.FeatureFlagSpec{
+			FlagSpec: v1beta1.FlagSpec{
+				Metadata: json.RawMessage(`{"scope":"app-1"}`),
+				Flags: v1beta1.Flags{
+					FlagsMap: map[string]v1beta1.Flag{
+						"flag-with-meta": {
+							State:          "ENABLED",
+							DefaultVariant: "on",
+							Variants:       json.RawMessage(`{"on":true,"off":false}`),
+							Metadata:       json.RawMessage(`{"owner":"team-x"}`),
+						},
+					},
+				},
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"metadata": {"scope": "app-1"},
+		"flags": {
+			"flag-with-meta": {
+				"state": "ENABLED",
+				"variants": {"on": true, "off": false},
+				"defaultVariant": "on",
+				"metadata": {"owner": "team-x"}
+			}
+		}
+	}`, res)
 }
