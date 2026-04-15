@@ -119,7 +119,7 @@ func TestPollOffset_DifferentSeeds(t *testing.T) {
 	a := pollOffset("pod-alpha", 60)
 	b := pollOffset("pod-beta", 60)
 	if a == b {
-		t.Logf("warning: different seeds produced the same offset %d (unlikely but possible)", a)
+		t.Fatalf("warning: different seeds produced the same offset %d", a)
 	}
 }
 
