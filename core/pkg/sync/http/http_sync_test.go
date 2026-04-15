@@ -35,11 +35,7 @@ func buildHeaders(m map[string][]string) http.Header {
 
 func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockCron := synctesting.NewMockCron(ctrl)
-	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, _ func()) error {
-		return nil
-	})
-	mockCron.EXPECT().Start().Times(1)
+	mockPoller := synctesting.NewMockPoller()
 
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
@@ -53,13 +49,13 @@ func TestSimpleSync(t *testing.T) {
 	httpSync := Sync{
 		uri:         "http://localhost/flags",
 		client:      mockClient,
-		cron:        mockCron,
+		poller:      mockPoller,
 		lastBodySHA: "",
 		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
-	dataSyncChan := make(chan sync.DataSync)
+	dataSyncChan := make(chan sync.DataSync, 1)
 
 	go func() {
 		err := httpSync.Sync(ctx, dataSyncChan)
@@ -78,11 +74,7 @@ func TestSimpleSync(t *testing.T) {
 
 func TestExtensionWithQSSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockCron := synctesting.NewMockCron(ctrl)
-	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, _ func()) error {
-		return nil
-	})
-	mockCron.EXPECT().Start().Times(1)
+	mockPoller := synctesting.NewMockPoller()
 
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
@@ -96,13 +88,13 @@ func TestExtensionWithQSSync(t *testing.T) {
 	httpSync := Sync{
 		uri:         "http://localhost/flags.json?env=dev",
 		client:      mockClient,
-		cron:        mockCron,
+		poller:      mockPoller,
 		lastBodySHA: "",
 		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
-	dataSyncChan := make(chan sync.DataSync)
+	dataSyncChan := make(chan sync.DataSync, 1)
 
 	go func() {
 		err := httpSync.Sync(ctx, dataSyncChan)
@@ -479,7 +471,7 @@ func TestHTTPSync_getClient(t *testing.T) {
 	l := logger.NewLogger(nil, false)
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			httpSync := NewHTTP(tt.config, l)
+			httpSync := NewHTTP(tt.config, l, synctesting.NewMockPoller(), 5)
 			if tt.client != nil {
 				// we have a cached HTTP client already
 				httpSync.client = tt.client
@@ -565,7 +557,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 					TokenURL:     ts.URL + oauthPath,
 					ReloadDelayS: 10000,
 				},
-			}, l)
+			}, l, synctesting.NewMockPoller(), 5)
 			d := make(chan sync.DataSync, 1)
 			// when we call resync multiple times
 			err := s.ReSync(context.Background(), d)
@@ -662,7 +654,7 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 			TokenURL:     ts.URL + oauthPath,
 			ReloadDelayS: 0, // we force loading the secret at each req
 		},
-	}, l)
+	}, l, synctesting.NewMockPoller(), 5)
 	d := make(chan sync.DataSync, 2)
 	// when we fire the HTTP call
 	err = s.ReSync(context.Background(), d)

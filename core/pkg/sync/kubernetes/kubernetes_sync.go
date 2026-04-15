@@ -91,9 +91,10 @@ func (k *Sync) IsReady() bool {
 }
 
 func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	k.logger.Info(fmt.Sprintf("starting kubernetes sync notifier for resource: %s", k.URI))
+	k.logger.Info(fmt.Sprintf("starting sync from %s", k.URI))
 
 	// Initial fetch
+	k.logger.Debug(fmt.Sprintf("initial fetch from %s", k.URI))
 	fetch, err := k.fetch(ctx)
 	if err != nil {
 		err = fmt.Errorf("error with the initial fetch: %w", err)
@@ -102,6 +103,8 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+
+	k.logger.Debug(fmt.Sprintf("watching %s for changes", k.URI))
 
 	// Buffer ensures notifier can publish the initial Ready event even if the watcher
 	// goroutine has not started reading yet.

@@ -12,8 +12,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
-	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"gocloud.dev/blob"
 	"k8s.io/client-go/dynamic"
@@ -110,19 +110,19 @@ func (sb *SyncBuilder) syncFromConfig(sourceConfig sync.SourceConfig, logger *lo
 		return sb.newK8s(sourceConfig.URI, logger)
 	case syncProviderHTTP:
 		logger.Debug(fmt.Sprintf("using remote sync-provider for: %s", sourceConfig.URI))
-		return httpSync.NewHTTP(sourceConfig, logger), nil
+		return sb.newHTTP(sourceConfig, logger)
 	case syncProviderGrpc:
 		logger.Debug(fmt.Sprintf("using grpc sync-provider for: %s", sourceConfig.URI))
 		return sb.newGRPC(sourceConfig, logger), nil
 	case syncProviderGcs:
 		logger.Debug(fmt.Sprintf("using blob sync-provider with gcs driver for: %s", sourceConfig.URI))
-		return sb.newGcs(sourceConfig, logger), nil
+		return sb.newGcs(sourceConfig, logger)
 	case syncProviderAzblob:
 		logger.Debug(fmt.Sprintf("using blob sync-provider with azblob driver for: %s", sourceConfig.URI))
 		return sb.newAzblob(sourceConfig, logger)
 	case syncProviderS3:
 		logger.Debug(fmt.Sprintf("using blob sync-provider with s3 driver for: %s", sourceConfig.URI))
-		return sb.newS3(sourceConfig, logger), nil
+		return sb.newS3(sourceConfig, logger)
 
 	default:
 		return nil, fmt.Errorf("invalid sync provider: %s, must be one of with "+
@@ -201,17 +201,38 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 	}
 }
 
-func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+// defaultInterval returns the configured interval or 5 seconds if unset,
+// along with a validated poller.
+func newPoller(config sync.SourceConfig) (uint32, *polling.CronPoller, error) {
+	var interval uint32 = 5
+	if config.Interval != 0 {
+		interval = config.Interval
+	}
+	poller, err := polling.NewCronPoller(interval, config.IntervalSeed)
+	if err != nil {
+		return 0, nil, err
+	}
+	return interval, poller, nil
+}
+
+func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) (*httpSync.Sync, error) {
+	interval, poller, err := newPoller(config)
+	if err != nil {
+		return nil, fmt.Errorf("invalid http sync configuration: %w", err)
+	}
+	return httpSync.NewHTTP(config, logger, poller, interval), nil
+}
+
+func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
 	// Extract bucket uri and object name from the full URI:
 	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
 	// path/to/object as an object name.
 	bucketURI := regGcs.FindString(config.URI)
 	objectName := regGcs.ReplaceAllString(config.URI, "")
 
-	// Defaults to 5 seconds if interval is not set.
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
+	interval, poller, err := newPoller(config)
+	if err != nil {
+		return nil, fmt.Errorf("invalid gcs sync configuration: %w", err)
 	}
 
 	return &blobSync.Sync{
@@ -225,8 +246,8 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 			zap.String("sync", "gcs"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
-	}
+		Poller:   poller,
+	}, nil
 }
 
 func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
@@ -245,10 +266,9 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 	bucketURI := regAzblob.FindString(config.URI)
 	objectName := regAzblob.ReplaceAllString(config.URI, "")
 
-	// Defaults to 5 seconds if interval is not set.
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
+	interval, poller, err := newPoller(config)
+	if err != nil {
+		return nil, fmt.Errorf("invalid azblob sync configuration: %w", err)
 	}
 
 	return &blobSync.Sync{
@@ -262,21 +282,20 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 			zap.String("sync", "azblob"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
+		Poller:   poller,
 	}, nil
 }
 
-func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *blobSync.Sync {
+func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
 	// Extract bucket uri and object name from the full URI:
 	// s3://bucket/path/to/object results in s3://bucket/ as bucketUri and
 	// path/to/object as an object name.
 	bucketURI := regS3.FindString(config.URI)
 	objectName := regS3.ReplaceAllString(config.URI, "")
 
-	// Defaults to 5 seconds if interval is not set.
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
+	interval, poller, err := newPoller(config)
+	if err != nil {
+		return nil, fmt.Errorf("invalid s3 sync configuration: %w", err)
 	}
 
 	return &blobSync.Sync{
@@ -290,8 +309,8 @@ func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *b
 			zap.String("sync", "s3"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
-	}
+		Poller:   poller,
+	}, nil
 }
 
 type IK8sClientBuilder interface {

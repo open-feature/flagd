@@ -9,7 +9,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	synctesting "github.com/open-feature/flagd/core/pkg/sync/testing"
-	"go.uber.org/mock/gomock"
 )
 
 func TestBlobSync(t *testing.T) {
@@ -38,17 +37,12 @@ func TestBlobSync(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			mockCron := synctesting.NewMockCron(ctrl)
-			mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(spec string, cmd func()) error {
-				return nil
-			})
-			mockCron.EXPECT().Start().Times(1)
+			mockPoller := synctesting.NewMockPoller()
 
 			blobSync := &Sync{
 				Bucket: tt.scheme + "://" + tt.bucket,
 				Object: tt.object,
-				Cron:   mockCron,
+				Poller: mockPoller,
 				Logger: logger.NewLogger(nil, false),
 			}
 			blobMock := NewMockBlob(tt.scheme, func() *Sync {
@@ -73,19 +67,19 @@ func TestBlobSync(t *testing.T) {
 			if data.FlagData != tt.convertedContent {
 				t.Errorf("expected content: %s, but received content: %s", tt.convertedContent, data.FlagData)
 			}
-			tickWithConfigChange(t, mockCron, dataSyncChan, blobMock, tt.object, tt.convertedContent)
-			tickWithoutConfigChange(t, mockCron, dataSyncChan)
-			tickWithConfigChange(t, mockCron, dataSyncChan, blobMock, tt.object, tt.convertedContent)
-			tickWithoutConfigChange(t, mockCron, dataSyncChan)
-			tickWithoutConfigChange(t, mockCron, dataSyncChan)
+			tickWithConfigChange(t, mockPoller, dataSyncChan, blobMock, tt.object, tt.convertedContent)
+			tickWithoutConfigChange(t, mockPoller, dataSyncChan)
+			tickWithConfigChange(t, mockPoller, dataSyncChan, blobMock, tt.object, tt.convertedContent)
+			tickWithoutConfigChange(t, mockPoller, dataSyncChan)
+			tickWithoutConfigChange(t, mockPoller, dataSyncChan)
 		})
 	}
 }
 
-func tickWithConfigChange(t *testing.T, mockCron *synctesting.MockCron, dataSyncChan chan sync.DataSync, blobMock *MockBlob, object string, newConfig string) {
+func tickWithConfigChange(t *testing.T, mockPoller *synctesting.MockPoller, dataSyncChan chan sync.DataSync, blobMock *MockBlob, object string, newConfig string) {
 	time.Sleep(1 * time.Millisecond) // sleep so the new file has different modification date
 	blobMock.AddObject(object, newConfig)
-	mockCron.Tick()
+	mockPoller.Tick()
 	select {
 	case data, ok := <-dataSyncChan:
 		if ok {
@@ -100,8 +94,8 @@ func tickWithConfigChange(t *testing.T, mockCron *synctesting.MockCron, dataSync
 	}
 }
 
-func tickWithoutConfigChange(t *testing.T, mockCron *synctesting.MockCron, dataSyncChan chan sync.DataSync) {
-	mockCron.Tick()
+func tickWithoutConfigChange(t *testing.T, mockPoller *synctesting.MockPoller, dataSyncChan chan sync.DataSync) {
+	mockPoller.Tick()
 	select {
 	case data, ok := <-dataSyncChan:
 		if ok {
@@ -119,13 +113,12 @@ func TestReSync(t *testing.T) {
 		bucket = "b"
 		object = "flags.json"
 	)
-	ctrl := gomock.NewController(t)
-	mockCron := synctesting.NewMockCron(ctrl)
+	mockPoller := synctesting.NewMockPoller()
 
 	blobSync := &Sync{
 		Bucket: scheme + "://" + bucket,
 		Object: object,
-		Cron:   mockCron,
+		Poller: mockPoller,
 		Logger: logger.NewLogger(nil, false),
 	}
 	blobMock := NewMockBlob(scheme, func() *Sync {

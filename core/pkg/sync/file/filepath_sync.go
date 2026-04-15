@@ -94,9 +94,11 @@ func (fs *Sync) setReady(val bool) {
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
+	fs.Logger.Info(fmt.Sprintf("starting sync from %s", fs.URI))
+	fs.Logger.Debug(fmt.Sprintf("initial fetch from %s", fs.URI))
 	fs.sendDataSync(ctx, dataSync)
 	fs.setReady(true)
-	fs.Logger.Info(fmt.Sprintf("watching filepath: %s", fs.URI))
+	fs.Logger.Debug(fmt.Sprintf("watching %s for changes", fs.URI))
 	for {
 		select {
 		case event, ok := <-fs.watcher.Events():

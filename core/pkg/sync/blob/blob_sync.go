@@ -10,6 +10,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/utils"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
@@ -21,18 +22,11 @@ type Sync struct {
 	Bucket      string
 	Object      string
 	BlobURLMux  *blob.URLMux
-	Cron        Cron
+	Poller      polling.Poller
 	Logger      *logger.Logger
 	Interval    uint32
 	ready       bool
 	lastUpdated time.Time
-}
-
-// Cron defines the behaviour required of a cron
-type Cron interface {
-	AddFunc(spec string, cmd func()) error
-	Start()
-	Stop()
 }
 
 func (hs *Sync) Init(_ context.Context) error {
@@ -50,24 +44,26 @@ func (hs *Sync) IsReady() bool {
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s with interval %ds", hs.Bucket, hs.Object, hs.Interval))
-	_ = hs.Cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.Interval), func() {
-		err := hs.sync(ctx, dataSync, false)
-		if err != nil {
-			hs.Logger.Warn(fmt.Sprintf("sync failed: %v", err))
-		}
-	})
+	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s (interval: %ds)", hs.Bucket, hs.Object, hs.Interval))
+
 	// Initial fetch
-	hs.Logger.Debug(fmt.Sprintf("initial sync of the %s/%s", hs.Bucket, hs.Object))
+	hs.Logger.Debug(fmt.Sprintf("initial fetch from %s/%s", hs.Bucket, hs.Object))
 	err := hs.sync(ctx, dataSync, false)
 	if err != nil {
 		return err
 	}
 
 	hs.ready = true
-	hs.Cron.Start()
-	<-ctx.Done()
-	hs.Cron.Stop()
+
+	hs.Logger.Debug(fmt.Sprintf("polling %s/%s every %ds (offset: %ds)",
+		hs.Bucket, hs.Object, hs.Interval, hs.Poller.Offset()))
+
+	hs.Poller.Start(ctx, func() {
+		err := hs.sync(ctx, dataSync, false)
+		if err != nil {
+			hs.Logger.Warn(fmt.Sprintf("sync failed: %v", err))
+		}
+	})
 
 	return nil
 }
