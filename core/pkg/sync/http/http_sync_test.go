@@ -35,11 +35,7 @@ func buildHeaders(m map[string][]string) http.Header {
 
 func TestSimpleSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockCron := synctesting.NewMockCron(ctrl)
-	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, _ func()) error {
-		return nil
-	})
-	mockCron.EXPECT().Start().Times(1)
+	mockPoller := synctesting.NewMockPoller()
 
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
@@ -53,13 +49,13 @@ func TestSimpleSync(t *testing.T) {
 	httpSync := Sync{
 		uri:         "http://localhost/flags",
 		client:      mockClient,
-		cron:        mockCron,
+		poller:      mockPoller,
 		lastBodySHA: "",
 		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
-	dataSyncChan := make(chan sync.DataSync)
+	dataSyncChan := make(chan sync.DataSync, 1)
 
 	go func() {
 		err := httpSync.Sync(ctx, dataSyncChan)
@@ -78,11 +74,7 @@ func TestSimpleSync(t *testing.T) {
 
 func TestExtensionWithQSSync(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	mockCron := synctesting.NewMockCron(ctrl)
-	mockCron.EXPECT().AddFunc(gomock.Any(), gomock.Any()).DoAndReturn(func(_ string, _ func()) error {
-		return nil
-	})
-	mockCron.EXPECT().Start().Times(1)
+	mockPoller := synctesting.NewMockPoller()
 
 	mockClient := syncmock.NewMockClient(ctrl)
 	responseBody := "test response"
@@ -96,13 +88,13 @@ func TestExtensionWithQSSync(t *testing.T) {
 	httpSync := Sync{
 		uri:         "http://localhost/flags.json?env=dev",
 		client:      mockClient,
-		cron:        mockCron,
+		poller:      mockPoller,
 		lastBodySHA: "",
 		logger:      logger.NewLogger(nil, false),
 	}
 
 	ctx := context.Background()
-	dataSyncChan := make(chan sync.DataSync)
+	dataSyncChan := make(chan sync.DataSync, 1)
 
 	go func() {
 		err := httpSync.Sync(ctx, dataSyncChan)

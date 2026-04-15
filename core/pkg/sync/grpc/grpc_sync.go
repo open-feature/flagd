@@ -117,11 +117,16 @@ func (g *Sync) IsReady() bool {
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	g.Logger.Info(fmt.Sprintf("starting sync from %s", g.URI))
+
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
+	g.Logger.Debug(fmt.Sprintf("initial stream connection to %s", g.URI))
 	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		return fmt.Errorf("unable to sync flags: %w", err)
 	}
+
+	g.Logger.Debug(fmt.Sprintf("watching %s for changes", g.URI))
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)

@@ -12,8 +12,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
-	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"gocloud.dev/blob"
 	"k8s.io/client-go/dynamic"
@@ -225,7 +225,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) *
 			zap.String("sync", "gcs"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
+		Poller:   polling.NewCronPoller(interval, config.IntervalSeed),
 	}
 }
 
@@ -262,7 +262,7 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 			zap.String("sync", "azblob"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
+		Poller:   polling.NewCronPoller(interval, config.IntervalSeed),
 	}, nil
 }
 
@@ -290,7 +290,7 @@ func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) *b
 			zap.String("sync", "s3"),
 		),
 		Interval: interval,
-		Cron:     cron.New(),
+		Poller:   polling.NewCronPoller(interval, config.IntervalSeed),
 	}
 }
 
