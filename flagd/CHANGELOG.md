@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.4](https://github.com/open-feature/flagd/compare/flagd/v0.15.3...flagd/v0.15.4) (2026-04-15)
+
+
+### ✨ New Features
+
+* add intervalSeed source option ([9926b95](https://github.com/open-feature/flagd/commit/9926b9584bae8478ee3fdca1110d1a6a865bd041))
+
 ## [0.15.3](https://github.com/open-feature/flagd/compare/flagd/v0.15.2...flagd/v0.15.3) (2026-04-14)
 
 
