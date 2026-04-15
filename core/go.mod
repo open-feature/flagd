@@ -15,7 +15,7 @@ require (
 	github.com/open-feature/flagd-schemas v0.2.13
 	github.com/open-feature/open-feature-operator/api v0.2.47
 	github.com/prometheus/client_golang v1.23.2
-	github.com/robfig/cron v1.2.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/murmur3 v1.1.8

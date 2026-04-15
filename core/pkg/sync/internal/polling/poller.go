@@ -5,7 +5,7 @@ import (
 	"hash/fnv"
 	"time"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 // OffsetSchedule is a cron.Schedule that fires every `interval` seconds,
@@ -99,5 +99,5 @@ func (p *CronPoller) Start(ctx context.Context, callback func()) {
 	p.cr.Start()
 
 	<-ctx.Done()
-	p.cr.Stop()
+	<-p.cr.Stop().Done()
 }
