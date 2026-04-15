@@ -107,7 +107,7 @@ func (hs *Sync) IsReady() bool {
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	hs.logger.Info(fmt.Sprintf("starting sync from %s", hs.uri))
+	hs.logger.Info(fmt.Sprintf("starting sync from %s (interval: %ds)", hs.uri, hs.interval))
 
 	// Initial fetch
 	hs.logger.Debug(fmt.Sprintf("initial fetch from %s", hs.uri))

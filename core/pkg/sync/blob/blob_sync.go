@@ -44,7 +44,7 @@ func (hs *Sync) IsReady() bool {
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s", hs.Bucket, hs.Object))
+	hs.Logger.Info(fmt.Sprintf("starting sync from %s/%s (interval: %ds)", hs.Bucket, hs.Object, hs.Interval))
 
 	// Initial fetch
 	hs.Logger.Debug(fmt.Sprintf("initial fetch from %s/%s", hs.Bucket, hs.Object))

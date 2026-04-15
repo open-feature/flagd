@@ -34,9 +34,9 @@ func (s OffsetSchedule) Next(t time.Time) time.Time {
 	interval := int64(s.Interval)
 	offset := int64(s.Offset)
 
-	// the most recent aligned time at or before now
-	sinceOffset := (now - offset%interval + interval) % interval
-	lastFire := now - sinceOffset
+	// seconds since the last fire
+	sinceLastFire := (now - offset%interval + interval) % interval
+	lastFire := now - sinceLastFire
 
 	// the next fire time
 	nextFire := lastFire + interval
