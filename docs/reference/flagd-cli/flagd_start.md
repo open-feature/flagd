@@ -31,7 +31,7 @@ flagd start [flags]
   -c, --server-cert-path string              Server side tls certificate path
   -k, --server-key-path string               Server side tls key path
   -d, --socket-path string                   Flagd unix socket path. With grpc the evaluations service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
-  -s, --sources string                       JSON representation of an array of SourceConfig objects. This object contains 2 required fields, uri (string) and provider (string). Documentation for this object: https://flagd.dev/reference/sync-configuration/#source-configuration
+  -s, --sources string                       JSON representation of an array of SourceConfig objects. Required fields: uri (string) and provider (string). Optional source-specific fields are also available, see https://flagd.dev/reference/sync-configuration/#source-configuration
       --stream-deadline duration             Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).
   -g, --sync-port int32                      gRPC Sync port (default 8015)
   -e, --sync-socket-path string              Flagd sync service socket path. With grpc the sync service will be available on this address.

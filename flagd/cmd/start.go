@@ -72,9 +72,10 @@ func init() {
 	)
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
-		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
-			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
-			"https://flagd.dev/reference/sync-configuration/#source-configuration",
+		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. "+
+			"Required fields: uri (string) and provider (string). "+
+			"Optional source-specific fields are also available, "+
+			"see https://flagd.dev/reference/sync-configuration/#source-configuration",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
