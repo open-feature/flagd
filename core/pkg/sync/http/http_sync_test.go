@@ -471,7 +471,7 @@ func TestHTTPSync_getClient(t *testing.T) {
 	l := logger.NewLogger(nil, false)
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			httpSync := NewHTTP(tt.config, l)
+			httpSync := NewHTTP(tt.config, l, synctesting.NewMockPoller(), 5)
 			if tt.client != nil {
 				// we have a cached HTTP client already
 				httpSync.client = tt.client
@@ -557,7 +557,7 @@ func TestHTTPSync_OAuth(t *testing.T) {
 					TokenURL:     ts.URL + oauthPath,
 					ReloadDelayS: 10000,
 				},
-			}, l)
+			}, l, synctesting.NewMockPoller(), 5)
 			d := make(chan sync.DataSync, 1)
 			// when we call resync multiple times
 			err := s.ReSync(context.Background(), d)
@@ -654,7 +654,7 @@ func TestHTTPSync_OAuthFolderSecrets(t *testing.T) {
 			TokenURL:     ts.URL + oauthPath,
 			ReloadDelayS: 0, // we force loading the secret at each req
 		},
-	}, l)
+	}, l, synctesting.NewMockPoller(), 5)
 	d := make(chan sync.DataSync, 2)
 	// when we fire the HTTP call
 	err = s.ReSync(context.Background(), d)

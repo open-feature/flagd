@@ -259,13 +259,7 @@ func (hs *Sync) getClient() Client {
 	return client
 }
 
-func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
-	// Default to 5 seconds
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
-	}
-
+func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Poller, interval uint32) *Sync {
 	var oauthCredential *oauthCredentialHandler
 	if config.OAuth != nil {
 		oauthCredential = &oauthCredentialHandler{
@@ -286,7 +280,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 		),
 		authHeader:      config.AuthHeader,
 		interval:        interval,
-		poller:          polling.NewCronPoller(interval, config.IntervalSeed),
+		poller:          poller,
 		oauthCredential: oauthCredential,
 		timeoutS:        time.Duration(config.TimeoutS),
 	}

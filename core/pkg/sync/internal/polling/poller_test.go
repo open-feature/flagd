@@ -137,7 +137,10 @@ func TestCronPoller_Offset(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := NewCronPoller(tt.interval, tt.seed)
+			p, err := NewCronPoller(tt.interval, tt.seed)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 			got := p.Offset()
 			if tt.wantZero && got != 0 {
 				t.Errorf("expected offset 0, got %d", got)
@@ -151,7 +154,10 @@ func TestCronPoller_Offset(t *testing.T) {
 
 func TestCronPoller_Offset_MatchesPollOffset(t *testing.T) {
 	// Offset() should return the same value as pollOffset() for the same inputs
-	p := NewCronPoller(60, "my-pod")
+	p, err := NewCronPoller(60, "my-pod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	expected := pollOffset("my-pod", 60)
 	if p.Offset() != expected {
 		t.Errorf("expected Offset() = %d, got %d", expected, p.Offset())
@@ -159,9 +165,32 @@ func TestCronPoller_Offset_MatchesPollOffset(t *testing.T) {
 }
 
 func TestCronPoller_Offset_Deterministic(t *testing.T) {
-	a := NewCronPoller(30, "my-pod").Offset()
-	b := NewCronPoller(30, "my-pod").Offset()
-	if a != b {
-		t.Errorf("expected deterministic offset, got %d and %d", a, b)
+	pa, err := NewCronPoller(30, "my-pod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	pb, err := NewCronPoller(30, "my-pod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if pa.Offset() != pb.Offset() {
+		t.Errorf("expected deterministic offset, got %d and %d", pa.Offset(), pb.Offset())
+	}
+}
+
+func TestNewCronPoller_ExceedsMaxInterval(t *testing.T) {
+	_, err := NewCronPoller(MaxInterval+1, "my-pod")
+	if err == nil {
+		t.Fatal("expected error for interval exceeding MaxInterval")
+	}
+}
+
+func TestNewCronPoller_AtMaxInterval(t *testing.T) {
+	p, err := NewCronPoller(MaxInterval, "my-pod")
+	if err != nil {
+		t.Fatalf("unexpected error at MaxInterval: %v", err)
+	}
+	if p.Offset() >= MaxInterval {
+		t.Errorf("offset %d should be less than MaxInterval %d", p.Offset(), MaxInterval)
 	}
 }

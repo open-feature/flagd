@@ -2,11 +2,17 @@ package polling
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"time"
 
 	"github.com/robfig/cron/v3"
 )
+
+// MaxInterval is the largest supported polling interval in seconds (1 day).
+// OffsetSchedule uses seconds-since-midnight math, so intervals beyond a day
+// would wrap around and produce incorrect fire times.
+const MaxInterval uint32 = 86400
 
 // OffsetSchedule is a cron.Schedule that fires every `interval` seconds,
 // aligned to wall-clock time but shifted by `offset` seconds.
@@ -76,12 +82,16 @@ type CronPoller struct {
 
 // NewCronPoller creates a CronPoller. If intervalSeed is empty, offset defaults to
 // 0 (equivalent to the legacy wall-clock-aligned behavior).
-func NewCronPoller(interval uint32, intervalSeed string) *CronPoller {
+// Returns an error if interval exceeds MaxInterval.
+func NewCronPoller(interval uint32, intervalSeed string) (*CronPoller, error) {
+	if interval > MaxInterval {
+		return nil, fmt.Errorf("polling interval %ds exceeds maximum %ds", interval, MaxInterval)
+	}
 	return &CronPoller{
 		cr:       cron.New(),
 		interval: interval,
 		offset:   pollOffset(intervalSeed, interval),
-	}
+	}, nil
 }
 
 // Offset returns the computed schedule offset in seconds.
