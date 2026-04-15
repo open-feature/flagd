@@ -24,27 +24,26 @@ type OffsetSchedule struct {
 
 // Next returns the next activation time after t.
 func (s OffsetSchedule) Next(t time.Time) time.Time {
+	if s.Interval == 0 {
+		return t.Add(time.Second)
+	}
+
 	// seconds since midnight in the local timezone
 	hour, min, sec := t.Clock()
-	now := uint32(hour*3600 + min*60 + sec)
+	now := int64(hour*3600 + min*60 + sec)
+	interval := int64(s.Interval)
+	offset := int64(s.Offset)
 
 	// the most recent aligned time at or before now
-	sinceOffset := (now - s.Offset + s.Interval) % s.Interval
+	sinceOffset := (now - offset%interval + interval) % interval
 	lastFire := now - sinceOffset
 
 	// the next fire time
-	nextFire := lastFire + s.Interval
-
-	// if nextFire == now, we need to go one more interval ahead,
-	// because Next must return a time strictly after t
-	if nextFire == now {
-		nextFire += s.Interval
-	}
+	nextFire := lastFire + interval
 
 	delta := nextFire - now
 	// truncate to the start of the current second, then add delta seconds
-	next := t.Truncate(time.Second).Add(time.Duration(delta) * time.Second)
-	return next
+	return t.Truncate(time.Second).Add(time.Duration(delta) * time.Second)
 }
 
 // pollOffset computes a deterministic offset from a seed string.

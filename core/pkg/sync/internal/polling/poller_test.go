@@ -55,6 +55,9 @@ func TestOffsetSchedule_Next(t *testing.T) {
 		// boundary crossings
 		{"hour boundary", 30, 0, at(14, 59, 45), at(15, 0, 0)},
 		{"day boundary", 30, 0, at(23, 59, 45), atDay(1, 0, 0, 0)},
+
+		// zero interval falls back to 1s
+		{"zero interval", 0, 0, at(14, 3, 17), at(14, 3, 18)},
 	}
 
 	for _, tt := range tests {
@@ -66,6 +69,16 @@ func TestOffsetSchedule_Next(t *testing.T) {
 			}
 		})
 	}
+
+	// large interval: verify int64 math prevents uint32 overflow
+	t.Run("max uint32 interval does not overflow", func(t *testing.T) {
+		now := at(0, 0, 1)
+		s := OffsetSchedule{Interval: 1<<32 - 1, Offset: 0}
+		got := s.Next(now)
+		if !got.After(now) {
+			t.Errorf("expected time after %v, got %v", now, got)
+		}
+	})
 }
 
 func TestPollOffset(t *testing.T) {
