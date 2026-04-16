@@ -482,7 +482,7 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   redHex,
 			expectedReason:  model.DefaultReason,
 		},
-		"empty targetingKey buckets by flagKey": {
+		"empty targetingKey returns default variant": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
 				State:          "ENABLED",
@@ -499,9 +499,9 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
-			expectedReason:  model.TargetingMatchReason,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
 		},
 		"single-entry always returns the sole variant": {
 			flags: []model.Flag{{
