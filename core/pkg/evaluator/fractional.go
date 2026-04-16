@@ -48,6 +48,10 @@ func (fe *Fractional) Evaluate(values, data any) any {
 		return nil
 	}
 
+	if feDistributions == nil {
+		return nil
+	}
+
 	hashValue := uint32(murmur3.StringSum32(valueToDistribute))
 	return distributeValue(hashValue, feDistributions)
 }
@@ -78,9 +82,16 @@ if len(valuesArray) < 1 {
 			valuesArray = valuesArray[1:]
 		}
 
+		if dataMap[targetingKeyKey] == nil {
+			return "", nil, nil
+		}
 		targetingKey, ok := dataMap[targetingKeyKey].(string)
 		if !ok {
 			return "", nil, fmt.Errorf("flag %q: bucketing value not supplied and no targetingKey in context", flagKey)
+		}
+
+		if targetingKey == "" {
+			return "", nil, nil
 		}
 
 		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
