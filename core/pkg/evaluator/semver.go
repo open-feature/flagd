@@ -135,7 +135,9 @@ func parseSemanticVersion(v interface{}) (string, error) {
 	version := ensureString(v)
 	// version strings are only valid in the semver package if they start with a 'v'
 	// if it's not present in the given value, we prepend it
+	// 'V' is normalized to 'v'
 	if !strings.HasPrefix(version, "v") {
+		version = strings.TrimPrefix(version, "V")
 		version = "v" + version
 	}
 
