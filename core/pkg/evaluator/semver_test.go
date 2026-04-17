@@ -84,6 +84,16 @@ func TestSemVerOperator_Compare(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "uppercase V prefix equals lowercase or no prefix",
+			svo:  Equals,
+			args: args{
+				v1: "V1.0.0",
+				v2: "1.0.0",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
 			name: "no prefixed v both",
 			svo:  Greater,
 			args: args{
