@@ -48,6 +48,7 @@ type Config struct {
 	HeaderToContextKeyMappings map[string]string
 	MaxRequestBodyBytes        int64
 	MaxRequestHeaderBytes      int64
+	StrictValidation           bool
 }
 
 // FromConfig builds a runtime from startup configurations
@@ -94,7 +95,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// derive evaluator
-	jsonEvaluator := evaluator.NewJSON(logger, store)
+	var evaluatorOpts []evaluator.JSONEvaluatorOption
+	if config.StrictValidation {
+		evaluatorOpts = append(evaluatorOpts, evaluator.WithStrictValidation())
+	}
+	jsonEvaluator := evaluator.NewJSON(logger, store, evaluatorOpts...)
 
 	// derive services
 
