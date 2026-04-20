@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.5](https://github.com/open-feature/flagd/compare/core/v0.15.4...core/v0.15.5) (2026-04-20)
+
+
+### 🐛 Bug Fixes
+
+* handle missing/null targeting keys in fractional evaluator ([#1949](https://github.com/open-feature/flagd/issues/1949)) ([651c7bb](https://github.com/open-feature/flagd/commit/651c7bb814eb70f72414ce164e1d2560e6055526))
+
 ## [0.15.4](https://github.com/open-feature/flagd/compare/core/v0.15.3...core/v0.15.4) (2026-04-15)
 
 
