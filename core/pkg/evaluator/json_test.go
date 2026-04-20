@@ -443,6 +443,57 @@ func TestSetState_Valid_NoError(t *testing.T) {
 	}
 }
 
+func TestSetState_StrictValidation_InvalidFlags_ReturnsError(t *testing.T) {
+	evaluator := flagdEvaluator.NewJSON(
+		logger.NewLogger(nil, false), store.NewFlags(), flagdEvaluator.WithStrictValidation(),
+	)
+
+	// set state with an invalid flag definition should return error in strict mode
+	err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "flag definition does not conform to the schema")
+}
+
+func TestSetState_StrictValidation_ValidFlags_NoError(t *testing.T) {
+	evaluator := flagdEvaluator.NewJSON(
+		logger.NewLogger(nil, false), store.NewFlags(), flagdEvaluator.WithStrictValidation(),
+	)
+
+	// set state with a valid flag definition should succeed in strict mode
+	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
+	require.NoError(t, err)
+}
+
+func TestSetState_StrictValidation_PreservesExistingState(t *testing.T) {
+	evaluator := flagdEvaluator.NewJSON(
+		logger.NewLogger(nil, false), store.NewFlags(), flagdEvaluator.WithStrictValidation(),
+	)
+
+	// first, load valid flags
+	err := evaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"})
+	require.NoError(t, err)
+
+	// verify the flag is accessible
+	val := evaluator.ResolveAsAnyValue(context.Background(), "", ValidFlag, nil)
+	require.NoError(t, val.Error)
+
+	// now try to load invalid flags - should fail
+	err = evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
+	require.Error(t, err)
+
+	// verify the original valid flag is still accessible (store was not modified)
+	val = evaluator.ResolveAsAnyValue(context.Background(), "", ValidFlag, nil)
+	require.NoError(t, val.Error)
+}
+
+func TestSetState_WithoutStrictValidation_InvalidFlags_NoError(t *testing.T) {
+	// without strict validation, invalid flags should still be accepted (backward compatible)
+	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+
+	err := evaluator.SetState(sync.DataSync{FlagData: InvalidFlags, Source: "testSource"})
+	require.NoError(t, err)
+}
+
 func TestResolveAllValues(t *testing.T) {
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
 	err := evaluator.SetState(sync.DataSync{FlagData: flagConfig, Source: "testSource"})
