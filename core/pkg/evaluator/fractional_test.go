@@ -442,6 +442,67 @@ func TestFractionalEvaluation(t *testing.T) {
 			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
+		"null targetingKey returns default variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								["blue", 50],
+								["green", 50]
+							]
+						}`),
+			}},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": nil,
+			},
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
+		},
+		"missing targetingKey returns default variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								["blue", 50],
+								["green", 50]
+							]
+						}`),
+			}},
+			flagKey:         "headerColor",
+			context:         map[string]any{},
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
+		},
+		"empty targetingKey returns default variant": {
+			flags: []model.Flag{{
+				Key:            "headerColor",
+				State:          "ENABLED",
+				DefaultVariant: redVariant,
+				Variants:       colorVariants,
+				Targeting: []byte(`{
+							"fractional": [
+								["blue", 50],
+								["green", 50]
+							]
+						}`),
+			}},
+			flagKey: "headerColor",
+			context: map[string]any{
+				"targetingKey": "",
+			},
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
+		},
 		"single-entry always returns the sole variant": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
