@@ -200,7 +200,8 @@ func TestInProcess(t *testing.T) {
 	}
 
 	// Run tests with InProcess-specific tags
-	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v2 && ~@fractional-nested && ~@deprecated"
+	// TODO: remove ~@operator-errors and ~@semver-v-prefix once the edge-case fixes are released
+	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v2 && ~@fractional-nested && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
