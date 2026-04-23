@@ -195,7 +195,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 // It maps a 32-bit hash to the range [0, totalWeight) and finds the variant bucket that contains that value.
 func distributeValue(hashValue uint32, feDistribution *fractionalEvaluationDistribution) any {
 	if feDistribution.totalWeight == 0 {
-		return ""
+		return nil
 	}
 
 	bucket := (uint64(hashValue) * uint64(feDistribution.totalWeight)) >> 32
@@ -209,5 +209,5 @@ func distributeValue(hashValue uint32, feDistribution *fractionalEvaluationDistr
 	}
 
 	// unreachable given validation
-	return ""
+	return nil
 }

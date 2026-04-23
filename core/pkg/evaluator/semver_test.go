@@ -830,3 +830,53 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 		})
 	}
 }
+
+func TestSemVerEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
+	const source = "testSource"
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		targeting string
+		context   map[string]any
+	}{
+		"invalid context version falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "=", "1.0.0"]}`,
+			context:   map[string]any{"version": "not-a-version"},
+		},
+		"invalid operator falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "===", "1.0.0"]}`,
+			context:   map[string]any{"version": "1.0.0"},
+		},
+		"wrong arg count falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "="]}`,
+			context:   map[string]any{"version": "1.0.0"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{source})
+			require.NoError(t, err)
+
+			je := NewJSON(log, s)
+			je.store.Update(source, []model.Flag{{
+				Key:            "semver-op-error-fallback",
+				State:          "ENABLED",
+				DefaultVariant: "fallback",
+				Variants: map[string]any{
+					"true":     "true",
+					"false":    "false",
+					"fallback": "fallback",
+				},
+				Targeting: []byte(tt.targeting),
+			}}, model.Metadata{}, false)
+
+			value, variant, reason, _, err := resolve[string](ctx, "default", "semver-op-error-fallback", tt.context, je.evaluateVariant)
+			require.NoError(t, err)
+			require.Equal(t, "fallback", value)
+			require.Equal(t, "fallback", variant)
+			require.Equal(t, model.DefaultReason, reason)
+		})
+	}
+}

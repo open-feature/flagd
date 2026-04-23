@@ -31,7 +31,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -55,7 +55,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -79,7 +79,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -103,7 +103,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -127,7 +127,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -199,7 +199,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -223,7 +223,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -247,7 +247,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -271,7 +271,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -295,7 +295,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -428,6 +428,54 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			}
 			assert.Equalf(t, tt.wantProperty, got, "parseStringComparisonEvaluationData(%v)", tt.args.values)
 			assert.Equalf(t, tt.wantTargetValue, got1, "parseStringComparisonEvaluationData(%v)", tt.args.values)
+		})
+	}
+}
+
+func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
+	const source = "testSource"
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		targeting string
+		context   map[string]any
+	}{
+		"starts_with invalid input falls back": {
+			targeting: `{"starts_with": [{"var": "num"}, "abc"]}`,
+			context:   map[string]any{"num": 123.0},
+		},
+		"ends_with invalid input falls back": {
+			targeting: `{"ends_with": [{"var": "num"}, "xyz"]}`,
+			context:   map[string]any{"num": 123.0},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{source})
+			if err != nil {
+				t.Fatalf("NewStore failed: %v", err)
+			}
+
+			je := NewJSON(log, s)
+			je.store.Update(source, []model.Flag{{
+				Key:            "string-op-error-fallback",
+				State:          "ENABLED",
+				DefaultVariant: "fallback",
+				Variants: map[string]any{
+					"true":     "true",
+					"false":    "false",
+					"fallback": "fallback",
+				},
+				Targeting: []byte(tt.targeting),
+			}}, model.Metadata{}, false)
+
+			value, variant, reason, _, err := resolve[string](ctx, "default", "string-op-error-fallback", tt.context, je.evaluateVariant)
+			assert.NoError(t, err)
+			assert.Equal(t, "fallback", value)
+			assert.Equal(t, "fallback", variant)
+			assert.Equal(t, model.DefaultReason, reason)
 		})
 	}
 }
