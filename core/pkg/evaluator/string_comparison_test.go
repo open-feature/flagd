@@ -2,13 +2,10 @@ package evaluator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,15 +14,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		flags           []model.Flag
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
-	}{
+	tests := map[string]stringFlagEvalTestCase{
 		"two strings provided - match": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
@@ -148,36 +137,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
-
-			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
-			}
-
-			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
-			}
-
-			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
-			}
-
-			if !errors.Is(err, tt.expectedError) {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
-			}
-		})
-	}
+	runStringFlagEvalTests(t, ctx, source, sources, tests)
 }
 
 func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
@@ -185,15 +145,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		flags           []model.Flag
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
-	}{
+	tests := map[string]stringFlagEvalTestCase{
 		"two strings provided - match": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
@@ -316,36 +268,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
-
-			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
-			}
-
-			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
-			}
-
-			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
-			}
-
-			if err != tt.expectedError {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
-			}
-		})
-	}
+	runStringFlagEvalTests(t, ctx, source, sources, tests)
 }
 
 func Test_parseStringComparisonEvaluationData(t *testing.T) {
@@ -436,10 +359,7 @@ func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) 
 	const source = "testSource"
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		targeting string
-		context   map[string]any
-	}{
+	tests := map[string]errorFallbackTestCase{
 		"starts_with invalid input falls back": {
 			targeting: `{"starts_with": [{"var": "num"}, "abc"]}`,
 			context:   map[string]any{"num": 123.0},
@@ -450,32 +370,5 @@ func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) 
 		},
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, []string{source})
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-
-			je := NewJSON(log, s)
-			je.store.Update(source, []model.Flag{{
-				Key:            "string-op-error-fallback",
-				State:          "ENABLED",
-				DefaultVariant: "fallback",
-				Variants: map[string]any{
-					"true":     "true",
-					"false":    "false",
-					"fallback": "fallback",
-				},
-				Targeting: []byte(tt.targeting),
-			}}, model.Metadata{}, false)
-
-			value, variant, reason, _, err := resolve[string](ctx, "default", "string-op-error-fallback", tt.context, je.evaluateVariant)
-			assert.NoError(t, err)
-			assert.Equal(t, "fallback", value)
-			assert.Equal(t, "fallback", variant)
-			assert.Equal(t, model.DefaultReason, reason)
-		})
-	}
+	runErrorFallbackTests(t, ctx, source, "string-op-error-fallback", tests)
 }
