@@ -1073,3 +1073,57 @@ func TestFractionalVariantBoolNumericAndOperators(t *testing.T) {
 		})
 	}
 }
+
+func TestFractionalEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
+	const source = "testSource"
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		targeting string
+		context   map[string]any
+	}{
+		"missing bucket key falls back": {
+			targeting: `{
+				"fractional": [
+					{"var": "missing_key"},
+					["one", 50],
+					["two", 50]
+				]
+			}`,
+			context: map[string]any{},
+		},
+		"all zero weights fall back": {
+			targeting: `{
+				"fractional": [
+					{"var": "targetingKey"},
+					["one", 0],
+					["two", 0]
+				]
+			}`,
+			context: map[string]any{"targetingKey": "any-user"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			je, err := setupEvaluator(source, []model.Flag{{
+				Key:            "fractional-op-error-fallback",
+				State:          "ENABLED",
+				DefaultVariant: "fallback",
+				Variants: map[string]any{
+					"one":      "one",
+					"two":      "two",
+					"fallback": "fallback",
+				},
+				Targeting: []byte(tt.targeting),
+			}})
+			assert.NoError(t, err)
+
+			value, variant, reason, _, err := resolve[string](ctx, "default", "fractional-op-error-fallback", tt.context, je.evaluateVariant)
+			assert.NoError(t, err)
+			assert.Equal(t, "fallback", value)
+			assert.Equal(t, "fallback", variant)
+			assert.Equal(t, model.DefaultReason, reason)
+		})
+	}
+}
