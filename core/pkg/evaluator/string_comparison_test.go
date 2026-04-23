@@ -2,13 +2,10 @@ package evaluator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,21 +14,13 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		flags           []model.Flag
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
-	}{
+	tests := map[string]stringFlagEvalTestCase{
 		"two strings provided - match": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -55,7 +44,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -79,7 +68,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -103,7 +92,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -127,7 +116,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -148,36 +137,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
-
-			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
-			}
-
-			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
-			}
-
-			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
-			}
-
-			if !errors.Is(err, tt.expectedError) {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
-			}
-		})
-	}
+	runStringFlagEvalTests(t, ctx, source, sources, tests)
 }
 
 func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
@@ -185,21 +145,13 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		flags           []model.Flag
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
-	}{
+	tests := map[string]stringFlagEvalTestCase{
 		"two strings provided - match": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -223,7 +175,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -247,7 +199,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -271,7 +223,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -295,7 +247,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				Key:            "headerColor",
 				State:          "ENABLED",
 				DefaultVariant: "red",
-				Variants: colorVariants,
+				Variants:       colorVariants,
 				Targeting: []byte(`{
 											"if": [
 											  {
@@ -316,36 +268,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
-
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
-
-			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
-			}
-
-			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
-			}
-
-			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
-			}
-
-			if err != tt.expectedError {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
-			}
-		})
-	}
+	runStringFlagEvalTests(t, ctx, source, sources, tests)
 }
 
 func Test_parseStringComparisonEvaluationData(t *testing.T) {
@@ -430,4 +353,22 @@ func Test_parseStringComparisonEvaluationData(t *testing.T) {
 			assert.Equalf(t, tt.wantTargetValue, got1, "parseStringComparisonEvaluationData(%v)", tt.args.values)
 		})
 	}
+}
+
+func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
+	const source = "testSource"
+	ctx := context.Background()
+
+	tests := map[string]errorFallbackTestCase{
+		"starts_with invalid input falls back": {
+			targeting: `{"starts_with": [{"var": "num"}, "abc"]}`,
+			context:   map[string]any{"num": 123.0},
+		},
+		"ends_with invalid input falls back": {
+			targeting: `{"ends_with": [{"var": "num"}, "xyz"]}`,
+			context:   map[string]any{"num": 123.0},
+		},
+	}
+
+	runErrorFallbackTests(t, ctx, source, "string-op-error-fallback", tests)
 }
