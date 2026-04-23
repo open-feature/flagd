@@ -199,9 +199,13 @@ func TestInProcess(t *testing.T) {
 		"./",
 	}
 
-	// Run tests with InProcess-specific tags
-	// TODO: remove ~@operator-errors and ~@semver-v-prefix once the edge-case fixes are released
-	tags := "@in-process && ~@unixsocket&& ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v2 && ~@fractional-nested && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
+	// Run tests with InProcess-specific tags.
+	// These tests use the published go-sdk-contrib in-process provider (see sibling go.mod),
+	// not the local flagd evaluator code. The goal is to verify the sync.proto interface,
+	// not to fully test the go in-process provider (that happens in go-sdk-contrib).
+	// Many tags are excluded because they require a more complex testbed than what's built here.
+	// TODO: remove ~@operator-errors and ~@semver-v-prefix once go-sdk-contrib picks up the fixes
+	tags := "@in-process && ~@unixsocket && ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v1 && ~@fractional-single-entry && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)

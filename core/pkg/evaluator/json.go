@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -34,12 +33,6 @@ const (
 	Disabled        = "DISABLED"
 	ProtoVersionKey = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
 )
-
-var regBrace *regexp.Regexp
-
-func init() {
-	regBrace = regexp.MustCompile("^[^{]*{|}[^}]*$")
-}
 
 func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
 	unmarshalJSON, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaData))
@@ -548,13 +541,18 @@ func transposeEvaluators(state string) (string, error) {
 		return "", fmt.Errorf("unmarshal: %w", err)
 	}
 
-	for evalName, evalRaw := range evaluators.Evaluators {
-		// replace any occurrences of "evaluator": "evalName"
-		regex, err := regexp.Compile(fmt.Sprintf(`"\$ref":(\s)*"%s"`, evalName))
-		if err != nil {
-			return "", fmt.Errorf("compile regex: %w", err)
-		}
+	// round-trip to normalize whitespace so we can use plain string matching
+	var raw interface{}
+	if err := json.Unmarshal([]byte(state), &raw); err != nil {
+		return "", fmt.Errorf("normalize: %w", err)
+	}
+	normalizedBytes, err := json.Marshal(raw)
+	if err != nil {
+		return "", fmt.Errorf("normalize marshal: %w", err)
+	}
+	result := string(normalizedBytes)
 
+	for evalName, evalRaw := range evaluators.Evaluators {
 		marshalledEval, err := evalRaw.MarshalJSON()
 		if err != nil {
 			return "", fmt.Errorf("marshal evaluator: %w", err)
@@ -564,9 +562,10 @@ func transposeEvaluators(state string) (string, error) {
 		if len(evalValue) < 3 {
 			return "", errors.New("evaluator object is empty")
 		}
-		evalValue = regBrace.ReplaceAllString(evalValue, "")
-		state = regex.ReplaceAllString(state, evalValue)
+
+		refPattern := `{"$ref":"` + evalName + `"}`
+		result = strings.ReplaceAll(result, refPattern, evalValue)
 	}
 
-	return state, nil
+	return result, nil
 }
