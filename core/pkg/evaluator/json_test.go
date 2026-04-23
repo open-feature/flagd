@@ -1145,37 +1145,56 @@ func TestState_Evaluator(t *testing.T) {
 				},
 			},
 		},
-		"invalid evaluator json": {
+		"string-valued evaluator": {
+			// string-valued evaluators are valid; the string is substituted as-is (with quotes)
 			inputState: `
 				{
   					"flags": {
-						"fibAlgo": {
-						  "variants": {
-							"recursive": "recursive",
-							"memo": "memo",
-							"loop": "loop",
-							"binet": "binet"
-						  },
-						  "defaultVariant": "recursive",
-						  "state": "ENABLED",
-						  "metadata": {
-						    "flagSetId": "flagSetId"
-						  },
-						  "targeting": {
-							"if": [
-							  {
-								"$ref": "emailWithFaas"
-							  }, "binet", null
-							]
-						  }
-    					}
+					"fibAlgo": {
+					  "variants": {
+						"recursive": "recursive",
+						"memo": "memo",
+						"loop": "loop",
+						"binet": "binet"
+					  },
+					  "defaultVariant": "recursive",
+					  "state": "ENABLED",
+					  "metadata": {
+					    "flagSetId": "flagSetId"
+					  },
+					  "targeting": {
+						"if": [
+						  {
+							"$ref": "emailWithFaas"
+						  }, "binet", null
+						]
+					  }
+    				}
+				},
+				"$evaluators": {
+					"emailWithFaas": "foo"
+  				}
+			}
+		`,
+			expectedOutputState: map[string]model.Flag{
+				"fibAlgo": {
+					Key: "fibAlgo",
+					Variants: map[string]any{
+						"recursive": "recursive",
+						"memo":      "memo",
+						"loop":      "loop",
+						"binet":     "binet",
 					},
-					"$evaluators": {
-						"emailWithFaas": "foo"
-  					}
-				}
-			`,
-			expectedError: true,
+					DefaultVariant: "recursive",
+					State:          "ENABLED",
+					Source:         "testSource",
+					Targeting:      json.RawMessage(`{"if":["foo","binet",null]}`),
+					Metadata: map[string]interface{}{
+						"flagSetId": "flagSetId",
+					},
+					FlagSetId: "flagSetId",
+				},
+			},
 		},
 		"invalid targeting": {
 			inputState: `
