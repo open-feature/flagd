@@ -263,13 +263,13 @@ The work breaks down into three groups that must land together for a coherent re
 
 **Ecosystem (rolled out alongside or shortly after the flagd core release):**
 
-7. Update each language SDK's in-process provider evaluator to return `reason=DISABLED` with code-default deferral instead of raising an error when encountering a disabled flag.
-8. Update OpenFeature providers (RPC and in-process) to recognize `DISABLED` as a non-error, non-cacheable reason.
+1. Update each language SDK's in-process provider evaluator to return `reason=DISABLED` with code-default deferral instead of raising an error when encountering a disabled flag.
+2. Update OpenFeature providers (RPC and in-process) to recognize `DISABLED` as a non-error, non-cacheable reason.
 
 **Validation and documentation:**
 
-9. Update flagd-testbed with test cases for disabled flag evaluation across all surfaces (gRPC v1, gRPC v2, OFREP single, OFREP bulk, in-process).
-10. Update provider documentation and call out the behavior change prominently in the flagd release notes.
+1. Update flagd-testbed with test cases for disabled flag evaluation across all surfaces (gRPC v1, gRPC v2, OFREP single, OFREP bulk, in-process).
+2. Update provider documentation and call out the behavior change prominently in the flagd release notes.
 
 ### Open questions
 
