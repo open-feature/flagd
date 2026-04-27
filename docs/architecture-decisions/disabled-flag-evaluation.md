@@ -55,8 +55,8 @@ When a flag exists in the store but has `state: DISABLED`, the evaluator should 
 
 The response has the following properties:
 
-- **value**: Omitted (signals code-default deferral). The SDK/provider uses the application's code-defined default value.
-- **variant**: Omitted (empty string).
+- **value**: Omitted from the response. The SDK/provider uses the application's code-defined default value. In Go this surfaces as the type's zero value; on the wire (protobuf/JSON) the field is left unset; SDKs in languages with optional types should expose it as absent (`None`/`null`/`undefined`).
+- **variant**: Omitted from the response, using the same omission semantics as `value` above.
 - **reason**: `DISABLED`
 - **error**: `nil` (no error)
 - **metadata**: The merged flag set + flag metadata (consistent with current behavior for successful evaluations)
@@ -89,7 +89,8 @@ if flag.State == Disabled {
     return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
 }
 
-// After
+// After — the empty string return is Go's zero value and is interpreted
+// downstream as "variant omitted"; it is not a literal empty-string variant.
 if flag.State == Disabled {
     return "", flag.Variants, model.DisabledReason, metadata, nil
 }
@@ -241,25 +242,38 @@ This is functionally the same change as the flagd core evaluator, replicated in 
 - Bad, because it requires coordinated updates across flagd core, all gRPC/OFREP surfaces, in-process providers in each language SDK, and the testbed
 - Neutral, because the `FlagDisabledErrorCode` constant and related error-handling code can be removed (code simplification)
 
-### Timeline
+### Versioning and migration
 
-1. Update `evaluateVariant` in `core/pkg/evaluator/json.go` to return `reason=DISABLED` with an empty variant (code-default deferral) instead of an error
-2. Update `resolve[T]` in `core/pkg/evaluator/json.go` to handle `DisabledReason` with empty variants (avoids `TYPE_MISMATCH`)
-3. Remove the disabled-flag skip in `ResolveAllValues` and update the `default` branch of the type switch to include disabled flags for gRPC v1 requests
-4. Update `SuccessResponseFrom` in `core/pkg/service/ofrep/models.go` to preserve `reason=DISABLED` (with field omission) for disabled flags deferring to code defaults
-5. Remove `FlagDisabledErrorCode` handling from `errFormat`, `errFormatV2`, and `EvaluationErrorResponseFrom`
-6. Update gRPC v1 service layer (`flag_evaluator_v1.go`) to handle nil values in `ResolveAll` responses for disabled flags deferring to code defaults
-7. Update each language SDK's in-process provider evaluator to return `reason=DISABLED` with code-default deferral instead of raising an error when encountering a disabled flag
-8. Update flagd-testbed with test cases for disabled flag evaluation across all surfaces
-9. Update OpenFeature providers to recognize `DISABLED` as a non-error, non-cacheable reason
-10. Update provider documentation and migration guides
+- This is a behavior-breaking change. Because flagd is pre-1.0, it is shipped as a minor-version bump and called out as breaking in the release notes — there is no dual-mode or deprecation period.
+- Operators relying on `FLAG_DISABLED` error signals (in dashboards, alerts, log filters, or HTTP 404 branches) must migrate to keying on successful evaluations with `reason=DISABLED`. Migration guidance is communicated through the release notes rather than a runtime compatibility flag.
+- The `FlagDisabledErrorCode` constant and its handling in `errFormat`, `errFormatV2`, and `EvaluationErrorResponseFrom` are removed outright in the same release. Retaining them serves no purpose once the evaluator no longer produces the error path, and there is no straightforward way to keep the old behavior reachable without re-introducing the spec-violating code path.
+
+### Implementation steps
+
+The work breaks down into three groups that must land together for a coherent release, but can be developed in parallel.
+
+**flagd core (single release, behavior-breaking minor bump):**
+
+1. Update `evaluateVariant` in `core/pkg/evaluator/json.go` to return `reason=DISABLED` with an omitted variant (code-default deferral) instead of an error.
+2. Update `resolve[T]` in `core/pkg/evaluator/json.go` to handle `DisabledReason` with omitted variants (avoids `TYPE_MISMATCH`).
+3. Remove the disabled-flag skip in `ResolveAllValues` and update the `default` branch of the type switch to include disabled flags for gRPC v1 requests.
+4. Update `SuccessResponseFrom` in `core/pkg/service/ofrep/models.go` to preserve `reason=DISABLED` (with field omission) for disabled flags deferring to code defaults.
+5. Update the gRPC v1 service layer (`flag_evaluator_v1.go`) to handle nil values in `ResolveAll` responses for disabled flags deferring to code defaults.
+6. Remove `FlagDisabledErrorCode` handling from `errFormat`, `errFormatV2`, and `EvaluationErrorResponseFrom`.
+
+**Ecosystem (rolled out alongside or shortly after the flagd core release):**
+
+7. Update each language SDK's in-process provider evaluator to return `reason=DISABLED` with code-default deferral instead of raising an error when encountering a disabled flag.
+8. Update OpenFeature providers (RPC and in-process) to recognize `DISABLED` as a non-error, non-cacheable reason.
+
+**Validation and documentation:**
+
+9. Update flagd-testbed with test cases for disabled flag evaluation across all surfaces (gRPC v1, gRPC v2, OFREP single, OFREP bulk, in-process).
+10. Update provider documentation and call out the behavior change prominently in the flagd release notes.
 
 ### Open questions
 
 - Should bulk evaluation include an option to exclude disabled flags for clients that prefer the current behavior (smaller payloads)?
-- How should existing dashboards and alerts that key on `FLAG_DISABLED` errors be migrated? Should we provide a deprecation period where both behaviors are available?
-- Does this change require a new flagd major version, or can it be introduced in a minor version with appropriate documentation given the spec alignment argument?
-- Should the `FlagDisabledErrorCode` constant be retained (but unused) for a deprecation period, or removed immediately?
 
 ## More Information
 
