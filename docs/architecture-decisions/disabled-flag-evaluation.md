@@ -17,7 +17,11 @@ The OpenFeature specification lists `DISABLED` as a resolution reason and descri
 
 `FLAG_DISABLED` is also not a valid error code anywhere it is used. It is missing from the OpenFeature error code list and from the OFREP `evaluationFailure` schema, which only allows `PARSE_ERROR`, `TARGETING_KEY_MISSING`, `INVALID_CONTEXT`, and `GENERAL`. The OFREP success schema, on the other hand, does allow `reason=DISABLED`. The current behavior violates both specs at once.
 
-The error path also conflates two different situations. A missing flag is usually a deployment or configuration mistake that an operator wants to know about. A disabled flag is an intentional operational state, often used during incident remediation, environment-scoped rollouts, or features that are not yet ready. Today both surface as `connect.CodeNotFound` on gRPC v1, and OFREP rewrites `FLAG_DISABLED` into `FLAG_NOT_FOUND` in its structured error response, leaving the disabled distinction visible only in a free-text field. Clients cannot reliably tell the two apart.
+The error path also conflates two different situations.
+A missing flag is usually a deployment or configuration mistake that an operator wants to know about.
+A disabled flag is an intentional operational state, often used during incident remediation, environment-scoped rollouts, or features that are not yet ready.
+Today both surface as `connect.CodeNotFound` on gRPC v1, and OFREP rewrites `FLAG_DISABLED` into `FLAG_NOT_FOUND` in its structured error response, leaving the disabled distinction visible only in a free-text field.
+Clients cannot reliably tell the two apart.
 
 These collapsed error paths hurt observability. Operators who disable a flag deliberately see false error signals in dashboards and alerts; if they suppress those alerts, they lose visibility into flag state altogether. The same problem appears in flag-set-based deployments, where a flag may legitimately be disabled in one set and active in another, and treating that as an exception forces normal operations through error-handling code.
 
@@ -25,7 +29,12 @@ Related reading: [OpenFeature resolution reasons](https://openfeature.dev/specif
 
 ## Requirements
 
-A disabled flag should evaluate successfully with `reason=DISABLED` on every surface: gRPC v1, gRPC v2, OFREP, and in-process. The resolved value should follow the same field-omission pattern as the code-default ADR, so the SDK uses the application's code default; only the `reason` differs. Unknown flag keys must continue to return `FLAG_NOT_FOUND`. The `DISABLED` reason must not feed into provider or SDK error paths, and bulk evaluation must include disabled flags in the response rather than skipping them. Telemetry should record these as successful evaluations. No change to existing flag configuration files is required.
+A disabled flag should evaluate successfully with `reason=DISABLED` on every surface: gRPC v1, gRPC v2, OFREP, and in-process.
+The resolved value should follow the same field-omission pattern as the code-default ADR, so the SDK uses the application's code default; only the `reason` differs.
+Unknown flag keys must continue to return `FLAG_NOT_FOUND`.
+The `DISABLED` reason must not feed into provider or SDK error paths, and bulk evaluation must include disabled flags in the response rather than skipping them.
+Telemetry should record these as successful evaluations.
+No change to existing flag configuration files is required.
 
 ## Considered options
 
@@ -38,9 +47,17 @@ We propose option 1. Option 2 still lets the management system pick a value, whi
 
 ## Proposal
 
-When a flag exists with `state: DISABLED`, the evaluator returns a successful result with no value and no variant, `reason=DISABLED`, and the usual flag and flag-set metadata. The omission of `value` and `variant` is the same mechanism used in the code-default ADR; the SDK treats omission as a signal to use the application default. Targeting rules are not evaluated, so reasons that describe targeting outcomes (`STATIC`, `DEFAULT`, `SPLIT`, `TARGETING_MATCH`) never apply to a disabled flag. `ERROR` continues to mean a real failure such as a parse error or type mismatch.
+When a flag exists with `state: DISABLED`, the evaluator returns a successful result with no value and no variant, `reason=DISABLED`, and the usual flag and flag-set metadata.
+The omission of `value` and `variant` is the same mechanism used in the code-default ADR; the SDK treats omission as a signal to use the application default.
+Targeting rules are not evaluated, so reasons that describe targeting outcomes (`STATIC`, `DEFAULT`, `SPLIT`, `TARGETING_MATCH`) never apply to a disabled flag.
+`ERROR` continues to mean a real failure such as a parse error or type mismatch.
 
-The behavior change is uniform across surfaces. The single-flag and bulk evaluation paths both include disabled flags with `reason=DISABLED` instead of erroring or skipping them. OFREP returns a success payload rather than an error response shaped like `FLAG_NOT_FOUND`. On the wire, gRPC and OFREP omit the value and variant fields. In-process providers already receive `"state": "DISABLED"` in the sync payload, so the change there is in the per-language evaluator: it must treat that state the same way as the core flagd evaluator. The provider and core changes need to ship together so that integrators see consistent behavior.
+The behavior change is uniform across surfaces.
+The single-flag and bulk evaluation paths both include disabled flags with `reason=DISABLED` instead of erroring or skipping them.
+OFREP returns a success payload rather than an error response shaped like `FLAG_NOT_FOUND`.
+On the wire, gRPC and OFREP omit the value and variant fields.
+In-process providers already receive `"state": "DISABLED"` in the sync payload, so the change there is in the per-language evaluator: it must treat that state the same way as the core flagd evaluator.
+The provider and core changes need to ship together so that integrators see consistent behavior.
 
 A typical OFREP single-flag response looks like this. The status moves from HTTP 404 (the current `FLAG_NOT_FOUND` rewrite) to HTTP 200, since the evaluation now succeeds.
 
