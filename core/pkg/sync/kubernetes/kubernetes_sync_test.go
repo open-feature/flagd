@@ -714,11 +714,16 @@ func TestSync_ReSync(t *testing.T) {
 func TestNotify(t *testing.T) {
 	const name = "myFF"
 	const ns = "myNS"
-	s := runtime.NewScheme()
-	ff := &unstructured.Unstructured{}
-	cfg := getCFG(name, ns)
-	ff.SetUnstructuredContent(cfg)
-	fc := fake.NewSimpleDynamicClient(s, ff)
+	// Use scheme.Scheme so the fake client knows the list kind for featureflags.
+	// Do NOT pre-populate the fake client: client-go v0.33+ uses RealFIFO which
+	// only delivers events via the watch stream, not via the initial List/Replace.
+	// Pre-populating causes the object to silently land in the store without
+	// triggering AddFunc, so later UpdateStatus calls are seen as updates on an
+	// object the informer has never "added" — leaving the test waiting forever.
+	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatalf("failed to add v1beta1 to scheme: %v", err)
+	}
+	fc := fake.NewSimpleDynamicClient(scheme.Scheme)
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -748,12 +753,11 @@ func TestNotify(t *testing.T) {
 	if msg.GetEvent().EventType != DefaultEventTypeReady {
 		t.Errorf("Expected message %v, got %v", DefaultEventTypeReady, msg)
 	}
-	// create
-	cfg["status"] = map[string]interface{}{
-		"empty": "",
-	}
+	// create: explicitly create the object via the watch stream so AddFunc fires
+	ff := &unstructured.Unstructured{}
+	cfg := getCFG(name, ns)
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -766,7 +770,7 @@ func TestNotify(t *testing.T) {
 	old["resourceVersion"] = "newVersion"
 	cfg["metadata"] = old
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).Update(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -797,7 +801,7 @@ func TestNotify(t *testing.T) {
 		"bump": "1",
 	}
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagResource).Namespace(ns).UpdateStatus(context.TODO(), ff, v1.UpdateOptions{})
+	_, err = fc.Resource(featureFlagResource).Namespace(ns).Update(context.TODO(), ff, v1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
