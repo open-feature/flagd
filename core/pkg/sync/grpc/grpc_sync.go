@@ -141,7 +141,6 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	g.Logger.Debug(fmt.Sprintf("watching %s for changes", g.URI))
 
-
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)
 	if err == nil {
