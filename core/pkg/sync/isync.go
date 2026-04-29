@@ -64,7 +64,7 @@ type SourceConfig struct {
 	// required to purge them.
 	IncrementalUpdates bool `json:"incrementalUpdates,omitempty"`
 
-  // Headers contains custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.
+    // Headers contains custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.
 	Headers map[string]string `json:"headers,omitempty"`
 	OAuth *OAuthCredentialHandler `json:"oauth,omitempty"`
 }
