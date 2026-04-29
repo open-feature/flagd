@@ -182,7 +182,6 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 	}
 
 	hs.applyHeaders(req)
-
 	client := hs.getClient()
 	resp, err := client.Do(req)
 	if err != nil {
