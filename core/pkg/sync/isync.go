@@ -47,6 +47,8 @@ type SourceConfig struct {
 	Interval    uint32 `json:"interval,omitempty"`
 	MaxMsgSize  int    `json:"maxMsgSize,omitempty"`
 	TimeoutS    int    `json:"timeoutS,omitempty"`
+	// Headers contains custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.
+	Headers map[string]string `json:"headers,omitempty"`
 
 	OAuth *OAuthCredentialHandler `json:"oauth,omitempty"`
 }

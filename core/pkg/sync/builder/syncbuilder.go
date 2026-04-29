@@ -197,6 +197,7 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 		Secure:            config.TLS,
 		Selector:          config.Selector,
 		MaxMsgSize:        config.MaxMsgSize,
+		Headers:           config.Headers,
 	}
 }
 

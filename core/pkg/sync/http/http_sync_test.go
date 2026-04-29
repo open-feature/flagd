@@ -328,6 +328,53 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	}
 }
 
+func TestHTTPSync_CustomHeaders(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockClient := syncmock.NewMockClient(ctrl)
+
+	customHeaders := map[string]string{
+		"X-Interop-Gateway-Host": "myhost",
+		"X-Tenant-ID":           "tenant1",
+	}
+
+	mockClient.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+		for key, expectedVal := range customHeaders {
+			actual := req.Header.Get(key)
+			if actual != expectedVal {
+				t.Errorf("expected header %s to be '%s', got '%s'", key, expectedVal, actual)
+			}
+		}
+		return &http.Response{
+			Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}}),
+			Body:       io.NopCloser(strings.NewReader("test response")),
+			StatusCode: http.StatusOK,
+		}, nil
+	})
+
+	httpSync := Sync{
+		uri:     "http://localhost",
+		client:  mockClient,
+		headers: customHeaders,
+		logger:  logger.NewLogger(nil, false),
+	}
+
+	fetched, err := httpSync.Fetch(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "test response", fetched)
+}
+
+func TestNewHTTP_PassesHeaders(t *testing.T) {
+	headers := map[string]string{"X-Custom": "value"}
+	config := sync.SourceConfig{
+		URI:      "http://localhost",
+		Provider: "http",
+		Headers:  headers,
+	}
+	mockPoller := synctesting.NewMockPoller()
+	httpSync := NewHTTP(config, logger.NewLogger(nil, false), mockPoller, 5)
+	require.Equal(t, headers, httpSync.headers)
+}
+
 func TestHTTPSync_Resync(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	source := "http://localhost"

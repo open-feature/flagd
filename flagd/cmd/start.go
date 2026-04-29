@@ -40,6 +40,7 @@ const (
 	contextValueFlagName       = "context-value"
 	headerToContextKeyFlagName = "context-from-header"
 	streamDeadlineFlagName     = "stream-deadline"
+	syncProviderHeadersFlagName = "sync-provider-headers"
 )
 
 func init() {
@@ -91,6 +92,9 @@ func init() {
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
+	flags.StringToStringP(syncProviderHeadersFlagName, "S", map[string]string{},
+		"Custom headers to inject into all sync provider requests (HTTP headers and gRPC metadata), "+
+			"formatted as key=value pairs")
 
 	bindFlags(flags)
 }
@@ -117,6 +121,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
+	_ = viper.BindPFlag(syncProviderHeadersFlagName, flags.Lookup(syncProviderHeadersFlagName))
 }
 
 // startCmd represents the start command
@@ -160,6 +165,18 @@ var startCmd = &cobra.Command{
 			}
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
+
+		globalHeaders := viper.GetStringMapString(syncProviderHeadersFlagName)
+		for i := range syncProviders {
+			if syncProviders[i].Headers == nil {
+				syncProviders[i].Headers = make(map[string]string)
+			}
+			for k, v := range globalHeaders {
+				if _, exists := syncProviders[i].Headers[k]; !exists {
+					syncProviders[i].Headers[k] = v
+				}
+			}
+		}
 
 		contextValuesToMap := make(map[string]any)
 		for k, v := range viper.GetStringMapString(contextValueFlagName) {

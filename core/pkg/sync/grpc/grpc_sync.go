@@ -15,6 +15,7 @@ import (
 	_ "github.com/open-feature/flagd/core/pkg/sync/grpc/nameresolvers" // initialize custom resolvers e.g. envoy.Init()
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -53,6 +54,7 @@ type Sync struct {
 	Selector                string
 	URI                     string
 	MaxMsgSize              int
+	Headers                 map[string]string
 
 	client FlagSyncServiceClient
 	ready  bool
@@ -96,8 +98,19 @@ func (g *Sync) Init(_ context.Context) error {
 	return nil
 }
 
+func (g *Sync) contextWithHeaders(ctx context.Context) context.Context {
+	if len(g.Headers) == 0 {
+		return ctx
+	}
+	pairs := make([]string, 0, len(g.Headers)*2)
+	for k, v := range g.Headers {
+		pairs = append(pairs, k, v)
+	}
+	return metadata.AppendToOutgoingContext(ctx, pairs...)
+}
+
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	res, err := g.client.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	res, err := g.client.FetchAllFlags(g.contextWithHeaders(ctx), &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		err = fmt.Errorf("error fetching all flags: %w", err)
 		g.Logger.Error(err.Error())
@@ -115,11 +128,16 @@ func (g *Sync) IsReady() bool {
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	g.Logger.Info(fmt.Sprintf("starting sync from %s", g.URI))
+
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
-	syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	g.Logger.Info(fmt.Sprintf("initial stream connection to %s", g.URI))
+	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		return fmt.Errorf("unable to sync flags: %w", err)
 	}
+
+	g.Logger.Info(fmt.Sprintf("watching %s for changes", g.URI))
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)
@@ -175,7 +193,7 @@ func (g *Sync) connectWithRetry(
 
 		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.URI))
 
-		syncClient, err := g.client.SyncFlags(ctx, &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+		syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 		if err != nil {
 			g.Logger.Debug(fmt.Sprintf("error opening service client: %s", err.Error()))
 			continue

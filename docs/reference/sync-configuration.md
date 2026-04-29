@@ -58,6 +58,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                 |
 | certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                |
 | maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize) |
+| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests. Can also be set globally via the `--sync-provider-headers` CLI flag or `FLAGD_SYNC_PROVIDER_HEADERS` environment variable. Per-source values take precedence over global values for conflicting keys.                                                                                                                                                                                          |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -140,6 +141,32 @@ sources:
 ```
 
 ### HTTP Configuration
+
+### Custom Headers
+
+Custom headers can be injected into all outbound sync requests (HTTP and gRPC) using the
+`--sync-provider-headers` flag or `FLAGD_SYNC_PROVIDER_HEADERS` environment variable:
+
+```sh
+# CLI flag
+flagd start --sync-provider-headers="X-Interop-Gateway-Host=myhost,X-Tenant-ID=tenant1" \
+  --sources='[{"uri":"http://my-flags.com/flags","provider":"http"}]'
+
+# Environment variable
+export FLAGD_SYNC_PROVIDER_HEADERS="X-Interop-Gateway-Host=myhost,X-Tenant-ID=tenant1"
+flagd start --sources='[{"uri":"http://my-flags.com/flags","provider":"http"}]'
+```
+
+Headers can also be set per-source in the JSON configuration:
+
+```json
+[{"uri":"http://my-flags.com/flags","provider":"http","headers":{"X-Custom":"value"}}]
+```
+
+When both global and per-source headers are specified, per-source values take
+precedence for conflicting keys.
+
+> **Note:** gRPC metadata keys are case-insensitive and are lowercased automatically.
 
 The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
 that requires OAuth-based authentication.
