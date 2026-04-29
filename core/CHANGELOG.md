@@ -1,5 +1,155 @@
 # Changelog
 
+## [0.15.4](https://github.com/open-feature/flagd/compare/core/v0.15.3...core/v0.15.4) (2026-04-15)
+
+
+### ✨ New Features
+
+* add intervalSeed source option ([#1945](https://github.com/open-feature/flagd/issues/1945)) ([7c501eb](https://github.com/open-feature/flagd/commit/7c501eb862c0eeb8eb27129cb0e6edd45125e699))
+
+## [0.15.3](https://github.com/open-feature/flagd/compare/core/v0.15.2...core/v0.15.3) (2026-04-14)
+
+
+### 🐛 Bug Fixes
+
+* allow single entry in fractional operator ([#1935](https://github.com/open-feature/flagd/issues/1935)) ([5fa86c6](https://github.com/open-feature/flagd/commit/5fa86c6a4b7fcb8f8b7ffcc696f889d2ebf33b1f))
+* web and cli docs do not mention s3 ([#1941](https://github.com/open-feature/flagd/issues/1941)) ([49ff1cf](https://github.com/open-feature/flagd/commit/49ff1cfe2d5543feead69d363dc63ea18c718bc0))
+
+
+### ✨ New Features
+
+* metadata support in the kubernetes_sync ([#1905](https://github.com/open-feature/flagd/issues/1905)) ([f8173a4](https://github.com/open-feature/flagd/commit/f8173a4c974128df1b423ff3fff0fb9409f7dcda))
+
+## [0.15.2](https://github.com/open-feature/flagd/compare/core/v0.15.1...core/v0.15.2) (2026-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#1933](https://github.com/open-feature/flagd/issues/1933)) ([04338dc](https://github.com/open-feature/flagd/commit/04338dc21358b80f96da7a5ac736107f08093d60))
+* **security:** update vulnerability-updates [security] ([#1934](https://github.com/open-feature/flagd/issues/1934)) ([40d444a](https://github.com/open-feature/flagd/commit/40d444abac6b0a40a1b5190c2205540eaaaa0b55))
+
+
+### ✨ New Features
+
+* gRPC sync experimental incremental updates ([#1922](https://github.com/open-feature/flagd/issues/1922)) ([d785557](https://github.com/open-feature/flagd/commit/d785557d2df6b89c9b86e886b6b923991dd44696))
+
+## [0.15.1](https://github.com/open-feature/flagd/compare/core/v0.15.0...core/v0.15.1) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* mem leak due to unbounded metrics cardinality ([#1931](https://github.com/open-feature/flagd/issues/1931)) ([176866e](https://github.com/open-feature/flagd/commit/176866e71625bee9ef7770700d8ce14e8abd8110))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+
+## [0.15.0](https://github.com/open-feature/flagd/compare/core/v0.14.3...core/v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909)) ([7190878](https://github.com/open-feature/flagd/commit/7190878fd0ea7a6f16fd8fbcdac68b55d9b9a2a5))
+
+## [0.14.3](https://github.com/open-feature/flagd/compare/core/v0.14.2...core/v0.14.3) (2026-03-27)
+
+
+### ✨ New Features
+
+* gRPC sync endpoint metrics ([#1861](https://github.com/open-feature/flagd/issues/1861)) ([b04dc50](https://github.com/open-feature/flagd/commit/b04dc5074a5be239914c4328653623aad36203ac))
+
+## [0.14.2](https://github.com/open-feature/flagd/compare/core/v0.14.1...core/v0.14.2) (2026-03-21)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.79.3 [security] ([#1907](https://github.com/open-feature/flagd/issues/1907)) ([ad51d4e](https://github.com/open-feature/flagd/commit/ad51d4e8fe0570474c824273983f54b3ca38b083))
+
+## [0.14.1](https://github.com/open-feature/flagd/compare/core/v0.14.0...core/v0.14.1) (2026-03-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update otel deps, minimum core Go version ([#1897](https://github.com/open-feature/flagd/issues/1897)) ([6b79bf8](https://github.com/open-feature/flagd/commit/6b79bf8419da1e269ecb1d1db03760379fc201cb))
+
+
+### ✨ New Features
+
+* make max header and body size configurable, add default ([#1892](https://github.com/open-feature/flagd/issues/1892)) ([25c5fd7](https://github.com/open-feature/flagd/commit/25c5fd7e80c26eb2c00b20317b2456fe6f927ea3))
+
+## [0.14.0](https://github.com/open-feature/flagd/compare/core/v0.13.3...core/v0.14.0) (2026-03-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* no `defaultVariant` -> code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862))
+
+### ✨ New Features
+
+* no `defaultVariant` -&gt; code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862)) ([89117d8](https://github.com/open-feature/flagd/commit/89117d8eaba0e9d205b3b47544528c42d5698176))
+
+## [0.13.3](https://github.com/open-feature/flagd/compare/core/v0.13.2...core/v0.13.3) (2026-02-09)
+
+
+### 🐛 Bug Fixes
+
+* correct parameter order in histogram bucket configuration :warning:  ([#1859](https://github.com/open-feature/flagd/issues/1859)) ([335af32](https://github.com/open-feature/flagd/commit/335af32b6f1087d624b77ffb7b50dea612ef234f))
+* Enhance error logs in store's Watch func ([#1865](https://github.com/open-feature/flagd/issues/1865)) ([a58a707](https://github.com/open-feature/flagd/commit/a58a7076ac4aef66a10dee7a40aa2ee4b53c7169))
+
+## [0.13.2](https://github.com/open-feature/flagd/compare/core/v0.13.1...core/v0.13.2) (2026-01-09)
+
+
+### 🔙 Reverts
+
+* use go 1.24 in go.mod for core package ([#1844](https://github.com/open-feature/flagd/issues/1844)) ([c92a159](https://github.com/open-feature/flagd/commit/c92a159251e08ed39aa7c1dae42995e00c3186ac))
+
+## [0.13.1](https://github.com/open-feature/flagd/compare/core/v0.13.0...core/v0.13.1) (2025-12-27)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update go for various stdlib CVEs ([#1840](https://github.com/open-feature/flagd/issues/1840)) ([6dcb36d](https://github.com/open-feature/flagd/commit/6dcb36d2d6b55b7fe0b6107ac9a25baf302c5cdc))
+
+## [0.13.0](https://github.com/open-feature/flagd/compare/core/v0.12.1...core/v0.13.0) (2025-12-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793))
+* removes the `fractionalEvaluation` operator since it has been replaced with `fractional`. ([#1704](https://github.com/open-feature/flagd/issues/1704))
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+* **security:** update module golang.org/x/crypto to v0.45.0 [security] ([#1825](https://github.com/open-feature/flagd/issues/1825)) ([44edcc9](https://github.com/open-feature/flagd/commit/44edcc97e9fc11af721527cc3d30ab491ddea44e))
+* **security:** update module golang.org/x/crypto to v0.45.0 [security] ([#1826](https://github.com/open-feature/flagd/issues/1826)) ([7e0762b](https://github.com/open-feature/flagd/commit/7e0762b921ea70bed7915bcaab50e450e0a51158))
+
+
+### ✨ New Features
+
+* Add OAuth support for HTTP Sync ([#1791](https://github.com/open-feature/flagd/issues/1791)) ([268fd75](https://github.com/open-feature/flagd/commit/268fd75039588f285913bf100d9972d26c2003a6))
+* Add OTEL default variables ([#1812](https://github.com/open-feature/flagd/issues/1812)) ([c2e3fc6](https://github.com/open-feature/flagd/commit/c2e3fc62e06faf870db74e1a26b141075e6fbaa4))
+* allow null flagSetId Selector, restrict Selector to single key-value-pairs ([#1708](https://github.com/open-feature/flagd/issues/1708)) ([#1811](https://github.com/open-feature/flagd/issues/1811)) ([c12a0ae](https://github.com/open-feature/flagd/commit/c12a0ae01e2991a8365192a5cebf8cc11ff8bcd1))
+* change jsonschema parser ([#1794](https://github.com/open-feature/flagd/issues/1794)) ([bf3f722](https://github.com/open-feature/flagd/commit/bf3f7220227428715422ea9f2311e6bd5f46ed97))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793)) ([aa504f7](https://github.com/open-feature/flagd/commit/aa504f7077093746f886248a4766d9ae5587bf3d))
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797)) ([97c6ffa](https://github.com/open-feature/flagd/commit/97c6ffaf2b51765ccd6aaec38c2902ed2ac8f5f3))
+* multi-project support via selectors and flagSetId namespacing ([#1702](https://github.com/open-feature/flagd/issues/1702)) ([f9ce46f](https://github.com/open-feature/flagd/commit/f9ce46f1032e7cb423e0e5c75a7c02f91ab5a88f))
+
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+* removes the `fractionalEvaluation` operator since it has been replaced with `fractional`. ([#1704](https://github.com/open-feature/flagd/issues/1704)) ([3228ad8](https://github.com/open-feature/flagd/commit/3228ad895117ed179325f80d3b0b318f575a4584))
+
+
+### 🔄 Refactoring
+
+* remove deprecated bearerToken option ([#1816](https://github.com/open-feature/flagd/issues/1816)) ([efda06a](https://github.com/open-feature/flagd/commit/efda06aa6d4cd7472a7f2f64fe69b7ce8d9fcbd1))
+* removed unused Selector from Flag and Store. ([#1747](https://github.com/open-feature/flagd/issues/1747)) ([1083005](https://github.com/open-feature/flagd/commit/108300529241de7221f4f143c60ecd62991b5c63))
+* store cleanup ([#1705](https://github.com/open-feature/flagd/issues/1705)) ([bcff8d7](https://github.com/open-feature/flagd/commit/bcff8d757b6d0ca69bccee26ba41880bdf2b5040))
+
 ## [0.12.1](https://github.com/open-feature/flagd/compare/core/v0.12.0...core/v0.12.1) (2025-07-28)
 
 

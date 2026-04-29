@@ -18,6 +18,8 @@ flagd start [flags]
   -h, --help                                 help for start
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)
+  -B, --max-request-body int                 Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests. (default 1000000)
+  -R, --max-request-header int               Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers. (default 1000000)
   -t, --metrics-exporter string              Set the metrics exporter. Default(if unset) is Prometheus. Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to be present
   -r, --ofrep-port int32                     ofrep service port (default 8016)
   -A, --otel-ca-path string                  tls certificate authority path to use with OpenTelemetry collector
@@ -29,11 +31,11 @@ flagd start [flags]
   -c, --server-cert-path string              Server side tls certificate path
   -k, --server-key-path string               Server side tls key path
   -d, --socket-path string                   Flagd unix socket path. With grpc the evaluations service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
-  -s, --sources string                       JSON representation of an array of SourceConfig objects. This object contains 2 required fields, uri (string) and provider (string). Documentation for this object: https://flagd.dev/reference/sync-configuration/#source-configuration
+  -s, --sources string                       JSON representation of an array of SourceConfig objects. Required fields: uri (string) and provider (string). Optional source-specific fields are also available, see https://flagd.dev/reference/sync-configuration/#source-configuration
       --stream-deadline duration             Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).
   -g, --sync-port int32                      gRPC Sync port (default 8015)
   -e, --sync-socket-path string              Flagd sync service socket path. With grpc the sync service will be available on this address.
-  -f, --uri .yaml/.yml/.json                 Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC), FeatureFlag custom resource, or GCS or Azure Blob. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
+  -f, --uri .yaml/.yml/.json                 Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC), FeatureFlag custom resource, or GCS, Azure Blob or S3. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
 
 ### Options inherited from parent commands

@@ -40,7 +40,9 @@ const (
 	contextValueFlagName       = "context-value"
 	headerToContextKeyFlagName = "context-from-header"
 	streamDeadlineFlagName     = "stream-deadline"
-	syncProviderHeadersFlagName = "sync-provider-headers"
+	maxRequestBodyFlagName     = "max-request-body"
+	maxRequestHeaderFlagName   = "max-request-header"
+  syncProviderHeadersFlagName = "sync-provider-headers"
 )
 
 func init() {
@@ -63,7 +65,7 @@ func init() {
 	flags.StringP(serverKeyPathFlagName, "k", "", "Server side tls key path")
 	flags.StringSliceP(
 		uriFlagName, "f", []string{}, "Set a sync provider uri to read data from, this can be a filepath,"+
-			" URL (HTTP and gRPC), FeatureFlag custom resource, or GCS or Azure Blob. "+
+			" URL (HTTP and gRPC), FeatureFlag custom resource, or GCS, Azure Blob or S3. "+
 			"When flag keys are duplicated across multiple providers the "+
 			"merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the "+
 			"lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. "+
@@ -71,9 +73,10 @@ func init() {
 	)
 	flags.StringSliceP(corsFlagName, "C", []string{}, "CORS allowed origins, * will allow all origins")
 	flags.StringP(
-		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. This object contains "+
-			"2 required fields, uri (string) and provider (string). Documentation for this object: "+
-			"https://flagd.dev/reference/sync-configuration/#source-configuration",
+		sourcesFlagName, "s", "", "JSON representation of an array of SourceConfig objects. "+
+			"Required fields: uri (string) and provider (string). "+
+			"Optional source-specific fields are also available, "+
+			"see https://flagd.dev/reference/sync-configuration/#source-configuration",
 	)
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 	flags.StringP(metricsExporter, "t", "", "Set the metrics exporter. Default(if unset) is Prometheus."+
@@ -92,6 +95,8 @@ func init() {
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
+	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
+	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
 	flags.StringToStringP(syncProviderHeadersFlagName, "S", map[string]string{},
 		"Custom headers to inject into all sync provider requests (HTTP headers and gRPC metadata), "+
 			"formatted as key=value pairs")
@@ -121,7 +126,9 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
-	_ = viper.BindPFlag(syncProviderHeadersFlagName, flags.Lookup(syncProviderHeadersFlagName))
+	_ = viper.BindPFlag(maxRequestBodyFlagName, flags.Lookup(maxRequestBodyFlagName))
+	_ = viper.BindPFlag(maxRequestHeaderFlagName, flags.Lookup(maxRequestHeaderFlagName))
+ 	_ = viper.BindPFlag(syncProviderHeadersFlagName, flags.Lookup(syncProviderHeadersFlagName))
 }
 
 // startCmd represents the start command
@@ -188,6 +195,16 @@ var startCmd = &cobra.Command{
 			headerToContextKeyMappings[k] = v
 		}
 
+		// Request size limits
+		maxRequestBodyBytes := viper.GetInt64(maxRequestBodyFlagName)
+		if maxRequestBodyBytes > 0 {
+			rtLogger.Info(fmt.Sprintf("request body limit set to %d bytes", maxRequestBodyBytes))
+		}
+		maxRequestHeaderBytes := viper.GetInt64(maxRequestHeaderFlagName)
+		if maxRequestHeaderBytes > 0 {
+			rtLogger.Info(fmt.Sprintf("request header limit set to %d bytes", maxRequestHeaderBytes))
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:                       viper.GetStringSlice(corsFlagName),
@@ -210,6 +227,8 @@ var startCmd = &cobra.Command{
 			SyncProviders:              syncProviders,
 			ContextValues:              contextValuesToMap,
 			HeaderToContextKeyMappings: headerToContextKeyMappings,
+			MaxRequestBodyBytes:        maxRequestBodyBytes,
+			MaxRequestHeaderBytes:      maxRequestHeaderBytes,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

@@ -30,6 +30,7 @@ flagd is sub-project of OpenFeature and aims to be fully [OpenFeature-compliant]
 
 You can run flagd as a standalone application, accessible over HTTP or gRPC, or you can embed it into your application.
 Please see [architecture](./architecture.md) and [installation](./installation.md) for more information.
+For quick command examples, see the [cheat sheet](./reference/cheat-sheet.md).
 
 ---
 

@@ -3,6 +3,7 @@ package ofrep
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service"
+	evalservice "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -72,6 +74,7 @@ func NewOfrepHandler(
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
 }
+
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	requestID := xid.New().String()
 	defer h.Logger.ClearFields(requestID)
@@ -88,8 +91,9 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	flagKey := vars[key]
 	request, err := extractOfrepRequest(r)
 	if err != nil {
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.ContextErrorResponseFrom(flagKey), w)
-		return
+		if h.handleExtractionError(w, err, ofrep.ContextErrorResponseFrom(flagKey)) {
+			return
+		}
 	}
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
@@ -111,8 +115,9 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	request, err := extractOfrepRequest(r)
 	if err != nil {
-		h.writeJSONToResponse(http.StatusBadRequest, ofrep.BulkEvaluationContextError(), w)
-		return
+		if h.handleExtractionError(w, err, ofrep.BulkEvaluationContextError()) {
+			return
+		}
 	}
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
@@ -150,39 +155,48 @@ func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.Re
 	}
 }
 
+// handleExtractionError checks for errors from extractOfrepRequest and writes an appropriate response.
+// It returns true if an error was handled.
+func (h *handler) handleExtractionError(w http.ResponseWriter, err error, errorPayload any) bool {
+	if err == nil {
+		return false
+	}
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		h.writeJSONToResponse(http.StatusRequestEntityTooLarge,
+			ofrep.InternalError{ErrorDetails: "request body too large"}, w)
+		return true
+	}
+	h.writeJSONToResponse(http.StatusBadRequest, errorPayload, w)
+	return true
+}
+
 func extractOfrepRequest(req *http.Request) (ofrep.Request, error) {
 	request := ofrep.Request{}
 	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil && err.Error() != "EOF" {
-		return request, fmt.Errorf("decode error: %w", err)
+	if err != nil {
+		// Propagate MaxBytesError so callers can return 413.
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			return request, err
+		}
+		if err.Error() != "EOF" {
+			return request, fmt.Errorf("decode error: %w", err)
+		}
 	}
 
 	return request, nil
 }
 
-// flagdContext returns combined context values from headers, static context (from cli) and request context.
-// highest priority > header-context-from-cli > static-context-from-cli > request-context > lowest priority
 func flagdContext(
 	log *logger.Logger, requestID string, request ofrep.Request, staticContextValues map[string]any, headers http.Header, headerToContextKeyMappings map[string]string,
 ) map[string]any {
 	context := make(map[string]any)
 	if res, ok := request.Context.(map[string]any); ok {
-		for k, v := range res {
-			context[k] = v
-		}
+		context = res
 	} else {
 		log.WarnWithID(requestID, "provided context does not comply with flagd, continuing ignoring the context")
 	}
 
-	for k, v := range staticContextValues {
-		context[k] = v
-	}
-
-	for header, contextKey := range headerToContextKeyMappings {
-		if values, ok := headers[header]; ok {
-			context[contextKey] = values[0]
-		}
-	}
-
-	return context
+	return evalservice.MergeContextsAndHeaders(context, staticContextValues, headers, headerToContextKeyMappings)
 }

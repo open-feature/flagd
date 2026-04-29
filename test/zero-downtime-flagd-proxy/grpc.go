@@ -19,7 +19,7 @@ func doRequests(grpcClient pb.FlagSyncServiceClient, waitSecondsBetweenRequests 
 		Selector:   "file:/etc/flagd/config.json",
 	})
 	if err != nil {
-		return fmt.Errorf("error SyncFlags(): " + err.Error())
+		return fmt.Errorf("%s", "error SyncFlags(): "+err.Error())
 	}
 
 	for {
@@ -33,7 +33,7 @@ func doRequests(grpcClient pb.FlagSyncServiceClient, waitSecondsBetweenRequests 
 				Selector:   "file:/etc/flagd/config.json",
 			})
 			if err != nil {
-				return fmt.Errorf("error SyncFlags(): " + err.Error())
+				return fmt.Errorf("%s", "error SyncFlags(): "+err.Error())
 			}
 		}
 		<-time.After(time.Duration(waitSecondsBetweenRequests) * time.Second)

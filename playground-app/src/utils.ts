@@ -1,5 +1,6 @@
 import { FeatureDefinition } from "./types";
 import type { EvaluationContext } from "@openfeature/core";
+import yaml from "js-yaml";
 
 const schemaMixin = {
   $schema: "https://flagd.dev/schema/v0/flags.json",
@@ -29,11 +30,32 @@ export function getString(input: string | (() => string)): string {
   return input;
 }
 
-export function isValidJson(input: string) {
+export function parseYaml(input: string): unknown {
+  return yaml.load(input);
+}
+
+export function yamlToCompactJson(input: string): string {
+  const parsed = parseYaml(input);
+  return JSON.stringify(parsed);
+}
+
+export function isValidYaml(input: string): boolean {
   try {
-    JSON.parse(input);
+    parseYaml(input);
     return true;
   } catch {
     return false;
   }
+}
+
+export function yamlToPrettyJson(input: string): string {
+  const parsed = parseYaml(input) as Record<string, unknown>;
+  return JSON.stringify({ ...schemaMixin, ...parsed }, null, 2);
+}
+
+// Convert JSON content to YAML, removing $schema.
+export function jsonToYaml(input: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { $schema, ...rest } = JSON.parse(input);
+  return yaml.dump(rest, { lineWidth: -1 });
 }

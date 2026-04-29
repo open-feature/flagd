@@ -157,7 +157,7 @@ func TestJSONEvaluator_startsWithEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{}, false)
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 
@@ -325,7 +325,7 @@ func TestJSONEvaluator_endsWithEvaluation(t *testing.T) {
 				t.Fatalf("NewStore failed: %v", err)
 			}
 			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{})
+			je.store.Update(source, tt.flags, model.Metadata{}, false)
 
 			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
 

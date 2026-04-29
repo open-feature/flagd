@@ -40,8 +40,8 @@ func TestParseSource(t *testing.T) {
 					Provider: syncProviderFile,
 				},
 				{
-					URI:         "http://test.com",
-					Provider:    syncProviderHTTP,
+					URI:        "http://test.com",
+					Provider:   syncProviderHTTP,
 					AuthHeader: "Bearer :)",
 				},
 				{
@@ -71,7 +71,7 @@ func TestParseSource(t *testing.T) {
 				{"uri":"config/samples/example_flags.json","provider":"file"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Bearer bearer-dji34ld2l"},
 				{"uri":"https://secure-remote","provider":"http","authHeader":"Basic dXNlcjpwYXNz"},
-				{"uri":"http://site.com","provider":"http","interval":77 },
+				{"uri":"http://site.com","provider":"http","interval":77,"intervalSeed":"my-pod-123"},
 				{"uri":"default/my-flag-config","provider":"kubernetes"},
 				{"uri":"grpc-source:8080","provider":"grpc"},
 				{"uri":"my-flag-source:8080","provider":"grpc", "tls":true, "certPath": "/certs/ca.cert", "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"}
@@ -93,9 +93,10 @@ func TestParseSource(t *testing.T) {
 					AuthHeader: "Basic dXNlcjpwYXNz",
 				},
 				{
-					URI:      "http://site.com",
-					Provider: syncProviderHTTP,
-					Interval: 77,
+					URI:          "http://site.com",
+					Provider:     syncProviderHTTP,
+					Interval:     77,
+					IntervalSeed: "my-pod-123",
 				},
 				{
 					URI:      "default/my-flag-config",

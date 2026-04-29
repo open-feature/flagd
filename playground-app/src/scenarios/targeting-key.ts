@@ -33,4 +33,5 @@ export const targetingKey: Scenario = {
   context: contextToPrettyJson({
     targetingKey: "5c3d8535-f81a-4478-a6d3-afaa4d51199e",
   }),
+  codeDefault: "\"miss\"",
 };

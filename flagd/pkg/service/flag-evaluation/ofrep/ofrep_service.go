@@ -10,7 +10,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"github.com/rs/cors"
+	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -20,10 +20,12 @@ type IOfrepService interface {
 }
 
 type SvcConfiguration struct {
-	Logger          *logger.Logger
-	Port            uint16
-	ServiceName     string
-	MetricsRecorder telemetry.IMetricsRecorder
+	Logger                *logger.Logger
+	Port                  uint16
+	ServiceName           string
+	MetricsRecorder       telemetry.IMetricsRecorder
+	MaxRequestBodyBytes   int64
+	MaxRequestHeaderBytes int64
 }
 
 type Service struct {
@@ -35,24 +37,26 @@ type Service struct {
 func NewOfrepService(
 	evaluator evaluator.IEvaluator, origins []string, cfg SvcConfiguration, contextValues map[string]any, headerToContextKeyMappings map[string]string,
 ) (*Service, error) {
-	corsMW := cors.New(cors.Options{
-		AllowedOrigins: origins,
-		AllowedMethods: []string{http.MethodPost},
-	})
+	corsMiddleware := corsmw.New(origins)
 
-	h := corsMW.Handler(NewOfrepHandler(
+	var h http.Handler = NewOfrepHandler(
 		cfg.Logger,
 		evaluator,
 		contextValues,
 		headerToContextKeyMappings,
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
-	))
+	)
+	if cfg.MaxRequestBodyBytes > 0 {
+		h = http.MaxBytesHandler(h, cfg.MaxRequestBodyBytes)
+	}
+	h = corsMiddleware.Handler(h)
 
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
 		Handler:           h,
 		ReadHeaderTimeout: 3 * time.Second,
+		MaxHeaderBytes:    int(cfg.MaxRequestHeaderBytes),
 	}
 
 	return &Service{

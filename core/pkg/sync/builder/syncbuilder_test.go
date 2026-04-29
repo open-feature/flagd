@@ -277,6 +277,24 @@ func Test_SyncsFromFromConfig(t *testing.T) {
 	}
 }
 
+func Test_GrpcIncrementalUpdates(t *testing.T) {
+	lg := logger.NewLogger(nil, false)
+	sb := NewSyncBuilder()
+
+	syncs, err := sb.SyncsFromConfig([]sync.SourceConfig{
+		{
+			URI:                "grpc://host:port",
+			Provider:           syncProviderGrpc,
+			IncrementalUpdates: true,
+		},
+	}, lg)
+	require.NoError(t, err)
+	require.Len(t, syncs, 1)
+	grpcSync, ok := syncs[0].(*grpc.Sync)
+	require.True(t, ok)
+	require.True(t, grpcSync.IncrementalUpdates, "IncrementalUpdates should be propagated from SourceConfig to grpc.Sync")
+}
+
 func Test_GcsConfig(t *testing.T) {
 	lg := logger.NewLogger(nil, false)
 	defaultInterval := uint32(5)
@@ -320,10 +338,11 @@ func Test_GcsConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gcsSync := NewSyncBuilder().newGcs(sync.SourceConfig{
+			gcsSync, err := NewSyncBuilder().newGcs(sync.SourceConfig{
 				URI:      tt.uri,
 				Interval: tt.interval,
 			}, lg)
+			require.NoError(t, err)
 			require.Equal(t, tt.expectedBucket, gcsSync.Bucket)
 			require.Equal(t, tt.expectedObject, gcsSync.Object)
 			require.Equal(t, int(tt.expectedInterval), int(gcsSync.Interval))
@@ -461,10 +480,11 @@ func Test_S3Config(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s3Sync := NewSyncBuilder().newS3(sync.SourceConfig{
+			s3Sync, err := NewSyncBuilder().newS3(sync.SourceConfig{
 				URI:      tt.uri,
 				Interval: tt.interval,
 			}, lg)
+			require.NoError(t, err)
 			require.Equal(t, tt.expectedBucket, s3Sync.Bucket)
 			require.Equal(t, tt.expectedObject, s3Sync.Object)
 			require.Equal(t, int(tt.expectedInterval), int(s3Sync.Interval))

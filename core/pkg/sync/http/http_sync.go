@@ -15,8 +15,8 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/utils"
-	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3" //nolint:gosec
 	"golang.org/x/oauth2"
@@ -26,7 +26,7 @@ import (
 type Sync struct {
 	uri         string
 	client      Client
-	cron        Cron
+	poller      polling.Poller
 	lastBodySHA string
 	logger      *logger.Logger
 	authHeader  string
@@ -90,13 +90,6 @@ type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// Cron defines the behaviour required of a cron
-type Cron interface {
-	AddFunc(spec string, cmd func()) error
-	Start()
-	Stop()
-}
-
 func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	msg, _, err := hs.fetchBody(ctx, true)
 	if err != nil {
@@ -115,7 +108,10 @@ func (hs *Sync) IsReady() bool {
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
+	hs.logger.Info(fmt.Sprintf("starting sync from %s (interval: %ds)", hs.uri, hs.interval))
+
 	// Initial fetch
+	hs.logger.Debug(fmt.Sprintf("initial fetch from %s", hs.uri))
 	fetch, _, err := hs.fetchBody(ctx, true)
 	if err != nil {
 		return err
@@ -124,8 +120,11 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	// Set ready state
 	hs.ready = true
 
-	hs.logger.Debug(fmt.Sprintf("polling %s every %d seconds", hs.uri, hs.interval))
-	_ = hs.cron.AddFunc(fmt.Sprintf("*/%d * * * *", hs.interval), func() {
+	hs.logger.Debug(fmt.Sprintf("polling %s every %ds (offset: %ds)", hs.uri, hs.interval, hs.poller.Offset()))
+
+	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.uri}
+
+	hs.poller.Start(ctx, func() {
 		hs.logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.uri))
 		previousBodySHA := hs.lastBodySHA
 		body, noChange, err := hs.fetchBody(ctx, false)
@@ -147,13 +146,6 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
 		}
 	})
-
-	hs.cron.Start()
-
-	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.uri}
-
-	<-ctx.Done()
-	hs.cron.Stop()
 
 	return nil
 }
@@ -281,13 +273,7 @@ func (hs *Sync) getClient() Client {
 	return client
 }
 
-func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
-	// Default to 5 seconds
-	var interval uint32 = 5
-	if config.Interval != 0 {
-		interval = config.Interval
-	}
-
+func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Poller, interval uint32) *Sync {
 	var oauthCredential *oauthCredentialHandler
 	if config.OAuth != nil {
 		oauthCredential = &oauthCredentialHandler{
@@ -309,7 +295,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger) *Sync {
 		authHeader:      config.AuthHeader,
 		headers:         config.Headers,
 		interval:        interval,
-		cron:            cron.New(),
+		poller:          poller,
 		oauthCredential: oauthCredential,
 		timeoutS:        time.Duration(config.TimeoutS),
 	}

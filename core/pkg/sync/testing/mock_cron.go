@@ -1,74 +1,57 @@
 package testing
 
 import (
-	"reflect"
-
-	"go.uber.org/mock/gomock"
+	"context"
+	"sync"
 )
 
-// MockCron is a mock of Cron interface.
-type MockCron struct {
-	ctrl     *gomock.Controller
-	recorder *MockCronMockRecorder
-	cmd      func()
+// MockPoller is a mock of the polling.Poller interface for testing.
+// It captures the callback so tests can trigger it manually via Tick().
+// All fields are synchronized via a ready channel and mutex so that
+// Tick() safely blocks until Start() has been called.
+type MockPoller struct {
+	mu       sync.Mutex
+	callback func()
+	ready    chan struct{}
 }
 
-// MockCronMockRecorder is the mock recorder for MockCron.
-type MockCronMockRecorder struct {
-	mock *MockCron
+// NewMockPoller creates a new MockPoller.
+func NewMockPoller() *MockPoller {
+	return &MockPoller{
+		ready: make(chan struct{}),
+	}
 }
 
-// NewMockCron creates a new mock instance.
-func NewMockCron(ctrl *gomock.Controller) *MockCron {
-	mock := &MockCron{ctrl: ctrl}
-	mock.recorder = &MockCronMockRecorder{mock}
-	return mock
+// Start captures the callback without blocking (unlike the real CronPoller).
+func (m *MockPoller) Start(_ context.Context, callback func()) {
+	m.mu.Lock()
+	m.callback = callback
+	m.mu.Unlock()
+	close(m.ready)
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCron) EXPECT() *MockCronMockRecorder {
-	return m.recorder
+// Tick blocks until Start has been called, then invokes the captured callback.
+func (m *MockPoller) Tick() {
+	<-m.ready
+	m.mu.Lock()
+	cb := m.callback
+	m.mu.Unlock()
+	if cb != nil {
+		cb()
+	}
 }
 
-// AddFunc mocks base method.
-func (m *MockCron) AddFunc(spec string, cmd func()) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddFunc", spec, cmd)
-	ret0, _ := ret[0].(error)
-	m.cmd = cmd
-	return ret0
+// Started returns whether Start was called (non-blocking).
+func (m *MockPoller) Started() bool {
+	select {
+	case <-m.ready:
+		return true
+	default:
+		return false
+	}
 }
 
-func (m *MockCron) Tick() {
-	m.cmd()
-}
-
-// AddFunc indicates an expected call of AddFunc.
-func (mr *MockCronMockRecorder) AddFunc(spec, cmd any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFunc", reflect.TypeOf((*MockCron)(nil).AddFunc), spec, cmd)
-}
-
-// Start mocks base method.
-func (m *MockCron) Start() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
-}
-
-// Start indicates an expected call of Start.
-func (mr *MockCronMockRecorder) Start() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockCron)(nil).Start))
-}
-
-// Stop mocks base method.
-func (m *MockCron) Stop() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop")
-}
-
-// Stop indicates an expected call of Stop.
-func (mr *MockCronMockRecorder) Stop() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockCron)(nil).Stop))
+// Offset returns 0 (no offset in tests by default).
+func (m *MockPoller) Offset() uint32 {
+	return 0
 }

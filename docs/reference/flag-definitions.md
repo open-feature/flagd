@@ -9,7 +9,7 @@ description: flagd flag definition
 `flags` is a **required** property.
 The flags property is a top-level property that contains a collection of individual flags and their corresponding flag configurations.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -24,7 +24,7 @@ The flags property is a top-level property that contains a collection of individ
 The flag key **must** uniquely identify a flag so it can be used during flag evaluation.
 The flag key **should** convey the intent of the flag.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -39,7 +39,7 @@ The flag key **should** convey the intent of the flag.
 
 A fully configured flag may look like this.
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -79,7 +79,7 @@ When the state is set to "DISABLED", flagd will behave like the flag doesn't exi
 
 Example:
 
-```json
+```jsonc
 "state": "ENABLED"
 ```
 
@@ -94,7 +94,7 @@ If another path, such as `/flagd.evaluation.v1.Service/ResolveString` is called,
 
 Example:
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
@@ -104,7 +104,7 @@ Example:
 
 Example:
 
-```json
+```jsonc
 "variants": {
   "on": true,
   "off": false
@@ -113,7 +113,7 @@ Example:
 
 Example of an invalid configuration:
 
-```json
+```jsonc
 "variants": {
   "on": true,
   "off": "false"
@@ -122,13 +122,24 @@ Example of an invalid configuration:
 
 ### Default Variant
 
-`defaultVariant` is a **required** property.
-The value **must** match the name of one of the variants defined above.
-The default variant is always used unless a targeting rule explicitly overrides it.
+`defaultVariant` is an **optional** property.
+If `defaultVariant` is a string, its value **must** match the name of one of the variants defined above.
+The default variant is used unless a targeting rule explicitly overrides it.
 
-Example:
+!!! note
 
-```json
+    In previous versions of flagd, when `defaultVariant` was omitted, flagd would behave as if the flag does not exist, returning `reason=ERROR` and `error=FLAG_NOT_FOUND`. flagd now gracefully falls back to the code-defined default value when `defaultVariant` is omitted or set to `null`. This change allows users to define their own default values in code, providing more flexibility for feature flag implementations.
+
+If `defaultVariant` is omitted or set to `null`, flagd will gracefully fall back to the code-defined default value.
+In this case, the evaluation response will:
+
+- Use reason code "DEFAULT"
+- Omit the `value` and `variant` fields
+- Allow the client to use its code-defined default value
+
+Example with explicit default:
+
+```jsonc
 "variants": {
   "on": true,
   "off": false
@@ -136,9 +147,9 @@ Example:
 "defaultVariant": "off"
 ```
 
-Example:
+Example with explicit default (string variants):
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
@@ -147,15 +158,58 @@ Example:
 "defaultVariant": "red"
 ```
 
+Example using code default (explicit null):
+
+```jsonc
+"variants": {
+  "on": true,
+  "off": false
+},
+"defaultVariant": null
+```
+
+Example using code default (absent defaultVariant):
+
+```jsonc
+"variants": {
+  "on": true,
+  "off": false
+}
+// defaultVariant omitted - also uses code default
+```
+
 Example of an invalid configuration:
 
-```json
+```jsonc
 "variants": {
   "red": "c05543",
   "green": "2f5230",
   "blue": "0d507b"
 },
 "defaultVariant": "purple"
+```
+
+#### Resolution Format
+
+When a configured default variant is used:
+
+```jsonc
+{
+  "value": false,
+  "reason": "DEFAULT",
+  "variant": "off",
+  "metadata": {}
+}
+```
+
+When code default is used (`defaultVariant: null` or omitted):
+
+```jsonc
+{
+  "reason": "DEFAULT",
+  "metadata": {}
+  // Note: value and variant fields are omitted
+}
 ```
 
 ### Targeting Rules
@@ -172,15 +226,31 @@ One exception to the above is that rules may return `true` or `false` which will
 If a null value is returned by the targeting rule, the `defaultVariant` is used.
 This can be useful for conditionally "exiting" targeting rules and falling back to the default (in this case the returned reason will be `DEFAULT`).
 If an invalid variant is returned (not a string, `true`, or `false`, or a string that is not in the set of variants) the evaluation is considered erroneous.
+If `defaultVariant` is not defined or is `null`, and no variant is resolved from `targeting`, flagd providers will revert to the code default.
 
 See [Boolean Variant Shorthand](#boolean-variant-shorthand).
 
 #### Evaluation Context
 
-Evaluation context is included as part of the evaluation request.
+Evaluation context provides the attributes used by targeting rules to determine flag values.
+Context can come from multiple sources, which are merged together before evaluation.
+
+##### Context Sources
+
+flagd supports three sources of evaluation context:
+
+| Source                | Flag                           | Description                                                   |
+| --------------------- | ------------------------------ | ------------------------------------------------------------- |
+| Request body          | -                              | Context sent with each evaluation request                     |
+| Static context        | `-X` / `--context-value`       | Key-value pairs added at startup, included in all evaluations |
+| Header-mapped context | `-H` / `--context-from-header` | Maps HTTP/gRPC request headers to context keys                |
+
+##### Request Body Context
+
+Context included as part of the evaluation request.
 For example, when accessing flagd via HTTP, the POST body may look like this:
 
-```json
+```jsonc
 {
   "flagKey": "booleanFlagKey",
   "context": {
@@ -189,10 +259,77 @@ For example, when accessing flagd via HTTP, the POST body may look like this:
 }
 ```
 
-The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
+This is the most common approach when the calling application has user or session information available.
 
-The evaluation context can be appended by arbitrary key value pairs
-via the `-X` command line flag.
+##### Static Context (`-X` flag)
+
+Static context values are specified at startup and automatically included in every evaluation.
+This is useful for server-wide or environment-specific values that don't change per-request.
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -X environment=production \
+  -X region=us-east-1 \
+  -X service=payment-api
+```
+
+**Use cases:**
+
+- **Environment identification**: Different flag behavior for production vs staging (`-X environment=production`)
+- **Regional configuration**: Apply region-specific rules (`-X region=eu-west-1`)
+- **Service identification**: When multiple services share flag definitions (`-X service=checkout`)
+- **Infrastructure metadata**: Cloud provider, datacenter, or cluster information
+
+##### Header-Mapped Context (`-H` flag)
+
+Header-mapped context extracts values from HTTP or gRPC request headers and adds them to the evaluation context.
+This enables context-sensitive evaluation without modifying request bodies.
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -H "X-User-Id=userId" \
+  -H "X-User-Tier=tier"
+```
+
+With this configuration:
+
+- A request with headers `X-User-Id: abc123` and `X-User-Tier: premium` will have `userId=abc123` and `tier=premium` in its evaluation context.
+
+**Use cases:**
+
+- **Gateway integration**: Extract user information from headers set by an API gateway or auth proxy
+- **Multi-tenancy**: Use tenant ID headers for tenant-specific flag behavior
+
+##### Context Merge Priority
+
+When the same key appears in multiple context sources, values are merged with this priority (highest wins):
+
+1. **Header-mapped context** (`-H` flag) - highest priority
+2. **Static context** (`-X` flag)
+3. **Request body context** - lowest priority
+
+For example, with this configuration:
+
+```shell
+flagd start \
+  --uri file:./flags.json \
+  -X tier=basic \
+  -H "X-User-Tier=tier"
+```
+
+| Request Body                    | Header                    | Resulting `tier` value           |
+| ------------------------------- | ------------------------- | -------------------------------- |
+| `{"context": {"tier": "free"}}` | (none)                    | `basic` (static overrides body)  |
+| `{"context": {"tier": "free"}}` | `X-User-Tier: premium`    | `premium` (header overrides all) |
+| (none)                          | `X-User-Tier: enterprise` | `enterprise`                     |
+
+This priority order allows operators to enforce certain context values at the infrastructure level while still accepting client-provided context for other attributes.
+
+##### Accessing Context in Targeting Rules
+
+The evaluation context can be accessed in targeting rules using the `var` operation followed by the evaluation context property name.
 
 | Description                                                    | Example                                              |
 | -------------------------------------------------------------- | ---------------------------------------------------- |
@@ -200,7 +337,11 @@ via the `-X` command line flag.
 | Retrieve property from the evaluation context or use a default | `#!json { "var": ["email", "noreply@example.com"] }` |
 | Retrieve a nested property from the evaluation context         | `#!json { "var": "user.email" }`                     |
 
-> For more information, see the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var).
+See the [cheat sheet](./cheat-sheet.md#context-aware-evaluation) for practical examples of context-sensitive evaluations. For details on extracting values from context, see the `var` section in the [JsonLogic documentation](https://jsonlogic.com/operations.html#var).
+
+!!! tip
+
+    flagd's evaluation engine is case-sensitive, including attribute extraction using the `var` operator.
 
 #### Conditions
 
@@ -252,12 +393,17 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 | `ends_with`                        | Attribute ends with the specified value             | string                                       | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md). |
 | `sem_ver`                          | Attribute matches a semantic versioning condition   | string (valid [semver](https://semver.org/)) | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                              |
 
+!!! info "Error handling in custom operations"
+
+    flagd's custom operations return `null` on invalid or unexpected inputs, consistent with how built-in JsonLogic operations represent no-value returns, for example how `var` treats missing keys.
+    When used inside an `if`, `null` is falsy, so evaluation falls through to the else branch rather than producing a false positive match.
+
 #### Targeting key
 
 flagd and flagd providers map the [targeting key](https://openfeature.dev/specification/glossary#targeting-key) into the `"targetingKey"` property of the context used in rules.
 For example, if the targeting key for a particular evaluation was set to `"5c3d8535-f81a-4478-a6d3-afaa4d51199e"`, the following expression would evaluate to `true`:
 
-```json
+```jsonc
 "==": [
     {
         "var": "targetingKey"
@@ -282,7 +428,7 @@ It's a collection of shared targeting configurations used to reduce the number o
 
 Example:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -346,6 +492,11 @@ Example:
 }
 ```
 
+!!! warning
+
+    Shared evaluators do not support references to other shared evaluators (nested `$ref`s).
+    Each `$evaluator` definition must be self-contained.
+
 ## Metadata
 
 Metadata can be defined at both the flag set (as a sibling of [flags](#flags)) and within each flag.
@@ -359,7 +510,7 @@ Since rules that return `true` or `false` map to the variant indexed by the equi
 
 For example, this:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
@@ -384,7 +535,7 @@ For example, this:
 
 can be shortened to this:
 
-```json
+```jsonc
 {
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {

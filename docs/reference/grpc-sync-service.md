@@ -40,3 +40,10 @@ final FlagdProvider flagdProvider =
                 .selector("myFlags.json")
                 .build());
 ```
+
+See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` examples using `FetchAllFlags` and `SyncFlags`.
+
+## Monitoring
+
+The gRPC sync service is instrumented with OpenTelemetry metrics for monitoring active connections and stream lifecycles.
+See the [Monitoring reference](./monitoring.md#grpc-sync-metrics) for the full list of exposed metrics and their attributes.

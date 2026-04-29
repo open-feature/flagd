@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,7 +17,6 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/notifications"
 	iservice "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
@@ -29,7 +30,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func TestConnectService_UnixConnection(t *testing.T) {
+const resolveAllURLFmt = "http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll"
+
+func TestConnectServiceUnixConnection(t *testing.T) {
 	type evalFields struct {
 		result   bool
 		variant  string
@@ -157,7 +160,10 @@ func TestAddMiddleware(t *testing.T) {
 	}()
 
 	require.Eventually(t, func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+		resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
+		if err == nil && resp != nil {
+			resp.Body.Close()
+		}
 		// with the default http handler we should get a method not allowed (405) when attempting a GET request
 		return err == nil && resp.StatusCode == http.StatusMethodNotAllowed
 	}, 3*time.Second, 100*time.Millisecond)
@@ -165,9 +171,10 @@ func TestAddMiddleware(t *testing.T) {
 	svc.AddMiddleware(mwMock)
 
 	// with the injected middleware, the GET method should work
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll", port))
+	resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
 
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	// verify that the status we return in the mocked middleware
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -243,7 +250,7 @@ func TestConnectServiceWatcher(t *testing.T) {
 			Key:            "flag1",
 			DefaultVariant: "off",
 		},
-	}, model.Metadata{})
+	}, model.Metadata{}, false)
 
 	// notification type
 	ofType := iservice.ConfigurationChange
@@ -254,8 +261,8 @@ func TestConnectServiceWatcher(t *testing.T) {
 	select {
 	case n := <-sChan:
 		require.Equal(t, ofType, n.Type, "expected notification type: %s, but received %s", ofType, n.Type)
-		notifications := n.Data["flags"].(notifications.Notifications)
-		flag1, ok := notifications["flag1"].(map[string]interface{})
+		flags := n.Data["flags"].(map[string]interface{})
+		flag1, ok := flags["flag1"].(map[string]interface{})
 		require.True(t, ok, "flag1 notification should be a map[string]interface{}")
 		require.Equal(t, flag1["type"], string(model.NotificationCreate), "expected notification type: %s, but received %s", model.NotificationCreate, flag1["type"])
 	case <-timeout.Done():
@@ -307,4 +314,80 @@ func TestConnectServiceShutdown(t *testing.T) {
 	case <-timeout.Done():
 		t.Error("timeout while waiting for notifications")
 	}
+}
+
+// startConnectService creates a ConnectService with a mock evaluator and metric recorder,
+// starts it in a background goroutine with the given configuration, and waits until it is ready.
+// It returns the port the service is listening on.
+func startConnectService(t *testing.T, port uint16, conf iservice.Configuration) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+
+	exp := metric.NewManualReader()
+	rs := resource.NewWithAttributes("testSchema")
+	metricRecorder := telemetry.NewOTelRecorder(exp, rs, "limit-test")
+
+	svc := NewConnectService(logger.NewLogger(nil, false), eval, nil, metricRecorder)
+
+	conf.ReadinessProbe = func() bool { return true }
+	conf.Port = port
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	go func() {
+		_ = svc.Serve(ctx, conf)
+	}()
+
+	require.Eventually(t, func() bool {
+		resp, err := http.Get(fmt.Sprintf(resolveAllURLFmt, port))
+		if err == nil && resp != nil {
+			resp.Body.Close()
+		}
+		return err == nil && resp != nil
+	}, 3*time.Second, 100*time.Millisecond)
+}
+
+func TestConnectServiceRequestBodySizeLimit(t *testing.T) {
+	const port = 18291
+
+	startConnectService(t, port, iservice.Configuration{
+		MaxRequestBodyBytes: 10, // allow only 10 bytes
+	})
+
+	// Valid JSON that exceeds the 10-byte body limit, so MaxBytesReader fires mid-parse.
+	largeBody := []byte(`{"flagKey":"` + strings.Repeat("a", 100) + `"}`)
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveBoolean", port),
+		bytes.NewReader(largeBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	// connect-go maps MaxBytesError (resource exhausted) to HTTP 429.
+	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
+}
+
+func TestConnectServiceRequestHeaderSizeLimit(t *testing.T) {
+	const port = 18292
+
+	startConnectService(t, port, iservice.Configuration{
+		MaxRequestHeaderBytes: 100, // 10000-byte test header value easily exceeds 100 + slop
+	})
+
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("http://localhost:%d/flagd.evaluation.v1.Service/ResolveBoolean", port),
+		bytes.NewReader([]byte("{}")))
+	require.NoError(t, err)
+	// Use valid ASCII to avoid client-side rejection; value exceeds MaxHeaderBytes + slop.
+	req.Header.Set("X-Large-Header", strings.Repeat("a", 10000))
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusRequestHeaderFieldsTooLarge, resp.StatusCode)
 }

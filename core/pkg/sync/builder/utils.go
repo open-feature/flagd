@@ -81,7 +81,7 @@ func ParseSyncProviderURIs(uris []string) ([]sync.SourceConfig, error) {
 			})
 		default:
 			return syncProvidersParsed, fmt.Errorf("invalid sync uri argument: %s, must start with 'file:', "+
-				"'http(s)://', 'grpc(s)://', 'gs://', 'azblob://' or 'core.openfeature.dev'", uri)
+				"'http(s)://', 'grpc(s)://', 'gs://', 'azblob://', 's3://' or 'core.openfeature.dev'", uri)
 		}
 	}
 	return syncProvidersParsed, nil

@@ -54,7 +54,8 @@ type Sync struct {
 	Selector                string
 	URI                     string
 	MaxMsgSize              int
-	Headers                 map[string]string
+	IncrementalUpdates      bool
+ 	Headers                 map[string]string
 
 	client FlagSyncServiceClient
 	ready  bool
@@ -117,8 +118,9 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 		return err
 	}
 	dataSync <- sync.DataSync{
-		FlagData: res.GetFlagConfiguration(),
-		Source:   g.URI,
+		FlagData:           res.GetFlagConfiguration(),
+		Source:             g.URI,
+		IncrementalUpdates: g.IncrementalUpdates,
 	}
 	return nil
 }
@@ -131,13 +133,14 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	g.Logger.Info(fmt.Sprintf("starting sync from %s", g.URI))
 
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
-	g.Logger.Info(fmt.Sprintf("initial stream connection to %s", g.URI))
+	g.Logger.Debug(fmt.Sprintf("initial stream connection to %s", g.URI))
 	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
 	if err != nil {
 		return fmt.Errorf("unable to sync flags: %w", err)
 	}
 
-	g.Logger.Info(fmt.Sprintf("watching %s for changes", g.URI))
+	g.Logger.Debug(fmt.Sprintf("watching %s for changes", g.URI))
+
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
 	err = g.handleFlagSync(syncClient, dataSync)
@@ -217,10 +220,11 @@ func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient,
 		}
 
 		dataSync <- sync.DataSync{
-			FlagData:    data.FlagConfiguration,
-			SyncContext: data.SyncContext,
-			Source:      g.URI,
-			Selector:    g.Selector,
+			FlagData:           data.FlagConfiguration,
+			SyncContext:        data.SyncContext,
+			Source:             g.URI,
+			Selector:           g.Selector,
+			IncrementalUpdates: g.IncrementalUpdates,
 		}
 
 		g.Logger.Debug("received full configuration payload")

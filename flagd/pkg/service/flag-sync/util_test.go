@@ -50,12 +50,12 @@ func getSimpleFlagStore(t testing.TB) (store.IStore, []string) {
 	flagStore.Update(testSource1, testSource1Flags, model.Metadata{
 		"keyDuped": "value",
 		"keyA":     "valueA",
-	})
+	}, false)
 
 	flagStore.Update(testSource2, testSource2Flags, model.Metadata{
 		"keyDuped": "value",
 		"keyB":     "valueB",
-	})
+	}, false)
 
 	return flagStore, sources
 }

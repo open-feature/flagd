@@ -1,5 +1,72 @@
 # Changelog
 
+## [0.9.4](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.3...flagd-proxy/v0.9.4) (2026-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#1933](https://github.com/open-feature/flagd/issues/1933)) ([04338dc](https://github.com/open-feature/flagd/commit/04338dc21358b80f96da7a5ac736107f08093d60))
+* **security:** update vulnerability-updates [security] ([#1934](https://github.com/open-feature/flagd/issues/1934)) ([40d444a](https://github.com/open-feature/flagd/commit/40d444abac6b0a40a1b5190c2205540eaaaa0b55))
+
+
+### 🧹 Chore
+
+* fix proxy test race ([17cd08f](https://github.com/open-feature/flagd/commit/17cd08f081e5ad2419fc4a3972b7ece2d2a54d33))
+
+## [0.9.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.2...flagd-proxy/v0.9.3) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+
+## [0.9.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.1...flagd-proxy/v0.9.2) (2026-03-21)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.79.3 [security] ([#1907](https://github.com/open-feature/flagd/issues/1907)) ([ad51d4e](https://github.com/open-feature/flagd/commit/ad51d4e8fe0570474c824273983f54b3ca38b083))
+
+## [0.9.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.0...flagd-proxy/v0.9.1) (2026-03-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update otel deps, minimum core Go version ([#1897](https://github.com/open-feature/flagd/issues/1897)) ([6b79bf8](https://github.com/open-feature/flagd/commit/6b79bf8419da1e269ecb1d1db03760379fc201cb))
+
+## [0.9.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.3...flagd-proxy/v0.9.0) (2026-03-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* no `defaultVariant` -> code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862))
+
+### ✨ New Features
+
+* no `defaultVariant` -&gt; code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862)) ([89117d8](https://github.com/open-feature/flagd/commit/89117d8eaba0e9d205b3b47544528c42d5698176))
+
+## [0.8.3](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.2...flagd-proxy/v0.8.3) (2026-01-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/open-feature/flagd/core to v0.13.1 [security] ([#1846](https://github.com/open-feature/flagd/issues/1846)) ([a8a57ad](https://github.com/open-feature/flagd/commit/a8a57adb1d49640bfc14bf02cf77961652f7516a))
+
+## [0.8.2](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.1...flagd-proxy/v0.8.2) (2025-12-27)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update go for various stdlib CVEs ([#1840](https://github.com/open-feature/flagd/issues/1840)) ([6dcb36d](https://github.com/open-feature/flagd/commit/6dcb36d2d6b55b7fe0b6107ac9a25baf302c5cdc))
+
+## [0.8.1](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.8.0...flagd-proxy/v0.8.1) (2025-12-23)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+* **security:** update module golang.org/x/crypto to v0.45.0 [security] ([#1826](https://github.com/open-feature/flagd/issues/1826)) ([7e0762b](https://github.com/open-feature/flagd/commit/7e0762b921ea70bed7915bcaab50e450e0a51158))
+
 ## [0.8.0](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.7.6...flagd-proxy/v0.8.0) (2025-07-21)
 
 

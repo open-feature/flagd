@@ -26,6 +26,8 @@ If you're interested in a full-featured solution for using flagd in Kubernetes, 
 
 For more information, see [OpenFeature Operator](./reference/openfeature-operator/overview.md).
 
+You can also choose to run a Kubernetes service in front of a deployment with multiple flagd pods connecting to the same data source. However, if doing so, be aware that synchronization is not instant. The service may return different values after a change until all pods have synchronized with the data source. This synchronization delay is typically brief.
+
 ---
 
 ## Binary
@@ -42,12 +44,6 @@ For more information, see [OpenFeature Operator](./reference/openfeature-operato
 ### systemd
 
 A systemd wrapper is available [here](https://github.com/open-feature/flagd/blob/main/systemd/flagd.service).
-
-### Homebrew
-
-```shell
-brew install flagd
-```
 
 ## Summary
 

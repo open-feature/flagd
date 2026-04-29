@@ -47,18 +47,20 @@ The flagd accepts a string argument, which should be a JSON representation of an
 
 Alternatively, these configurations can be passed to flagd via config file, specified using the `--config` flag.
 
-| Field       | Type               | Note                                                                                                                                                                                    |
-| ----------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| uri         | required `string`  | Flag configuration source of the sync                                                                                                                                                   |
-| provider    | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs` or `azblob`                                                                                         |
-| authHeader  | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).          |
-| interval    | optional `uint32`  | Used for http, gcs and azblob syncs; requests will be made at this interval. Defaults to 5 seconds.                                                                                     |
-| tls         | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                        |
-| providerID  | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                       |
-| selector    | optional `string`  | Value binds to grpc connection's selector field. gRPC server implementations may use this to filter flag configurations                                                                 |
-| certPath    | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                |
-| maxMsgSize  | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize) |
-| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests. Can also be set globally via the `--sync-provider-headers` CLI flag or `FLAGD_SYNC_PROVIDER_HEADERS` environment variable. Per-source values take precedence over global values for conflicting keys.                                                                                                                                                                                          |
+| Field              | Type               | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uri                | required `string`  | Flag configuration source of the sync                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| provider           | required `string`  | Provider type - `file`, `fsnotify`, `fileinfo`, `kubernetes`, `http`, `grpc`, `gcs`, `azblob` or `s3`                                                                                                                                                                                                                                                                                                                                                                                     |
+| authHeader         | optional `string`  | Used for http sync; set this to include the complete `Authorization` header value for any authentication scheme (e.g., "Bearer token_here", "Basic base64_credentials", etc.).                                                                                                                                                                                                                                                                                                            |
+| interval           | optional `uint32`  | Used for http, gcs, azblob and s3 syncs; requests will be made at this interval. Defaults to 5 seconds. Maximum is 86400 (1 day).                                                                                                                                                                                                                                                                                                                                                         |
+| intervalSeed       | optional `string`  | Used for http, gcs, azblob and s3 syncs; deterministic seed for poll schedule offset. Different seeds cause instances to poll at different wall-clock offsets within the interval, avoiding thundering herd. Instances with the same seed poll at the same offset. If unset, offset defaults to 0. In multi-instance deployments, setting this to a unique value per instance (e.g., the Kubernetes pod name via `fieldRef: metadata.name`) is recommended to avoid synchronized polling. |
+| tls                | optional `boolean` | Enable/Disable secure TLS connectivity. Currently used only by gRPC sync. Default (ex: if unset) is false, which will use an insecure connection                                                                                                                                                                                                                                                                                                                                          |
+| providerID         | optional `string`  | Value binds to grpc connection's providerID field. gRPC server implementations may use this to identify connecting flagd instance                                                                                                                                                                                                                                                                                                                                                         |
+| selector           | optional `string`  | Selector expression to filter flag configurations. Supports `source=<name>` and `flagSetId=<id>` syntax. See [selector syntax](selector-syntax.md) for details.                                                                                                                                                                                                                                                                                                                           |
+| certPath           | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                                                                                                                                                                                                                                                                                                                  |
+| maxMsgSize         | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize)                                                                                                                                                                                                                                                                                                   |
+| incrementalUpdates | optional `boolean` | **Experimental.** Used for gRPC sync. When true, each update only replaces flags matching the flagSetIds in the payload, allowing flags from other flagSetIds to accumulate. When false (default), each update replaces all flags for the source. See [caveats](#incremental-updates-experimental) below.    
+| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests. Can also be set globally via the `--sync-provider-headers` CLI flag or `FLAGD_SYNC_PROVIDER_HEADERS` environment variable. Per-source values take precedence over global values for conflicting keys.   |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -86,6 +88,7 @@ Sync providers:
 - `grpc`(envoy) - envoy://localhost:9211/test.service
 - `gcs` - gs://my-bucket/my-flags.json
 - `azblob` - azblob://my-container/my-flags.json
+- `s3` - s3://my-bucket/my-flags.json
 
 Startup command:
 
@@ -101,9 +104,10 @@ Startup command:
             {"uri":"grpc-source:8080","provider":"grpc"},
             {"uri":"my-flag-source:8080","provider":"grpc", "maxMsgSize": 5242880},
             {"uri":"envoy://localhost:9211/test.service", "provider":"grpc"},
-            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "tls": true, "providerID": "flagd-weatherapp-sidecar", "selector": "source=database,app=weatherapp"},
+            {"uri":"my-flag-source:8080","provider":"grpc", "certPath": "/certs/ca.cert", "tls": true, "providerID": "flagd-weatherapp-sidecar", "selector": "flagSetId=weatherapp"},
             {"uri":"gs://my-bucket/my-flag.json","provider":"gcs"},
-            {"uri":"azblob://my-container/my-flag.json","provider":"azblob"}]'
+            {"uri":"azblob://my-container/my-flag.json","provider":"azblob"},
+            {"uri":"s3://my-bucket/my-flag.json","provider":"s3"}]'
 ```
 
 Configuration file,
@@ -133,11 +137,13 @@ sources:
     certPath: /certs/ca.cert
     tls: true
     providerID: flagd-weatherapp-sidecar
-    selector: "source=database,app=weatherapp"
+    selector: "flagSetId=weatherapp"
   - uri: gs://my-bucket/my-flag.json
     provider: gcs
   - uri: azblob://my-container/my-flags.json
     provider: azblob
+  - uri: s3://my-bucket/my-flags.json
+    provider: s3
 ```
 
 ### HTTP Configuration
@@ -173,13 +179,7 @@ that requires OAuth-based authentication.
 
 #### CLI-based OAuth Configuration
 
-To enable OAuth, you need to update your Flagd configuration setting the `oauth` object which contains parameters to configure
-
-....
-
-#### File-based OAuth Configuration
-
-the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
+To enable OAuth, you need to update your Flagd configuration by setting the `oauth` object. This object contains parameters to configure the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
 
 ```sh
 ./bin/flagd start
@@ -195,10 +195,11 @@ the `clientID`, `clientSecret`, and the `tokenURL` for the OAuth Server.
   }}]'
 ```
 
-Secrets can also be managed from the file system. This can be handy when, for example, deploying Flagd in Kubernetes. In this case, the client id and secret
-will be read from the files `client-id` and `client-secret`, respectively. If the `folder` attribute is set, client id and secret on top level will be ignored.
-To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force
-the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
+#### File-based OAuth Configuration
+
+Secrets can also be managed from the file system. This can be handy when, for example, deploying Flagd in Kubernetes. If the `folder` attribute is set, any `clientID` and `clientSecret` values provided directly within the `oauth` object are ignored.
+In this case, the client id and secret will be read from the files `client-id` and `client-secret`, respectively.
+To support rotating the secrets without restarting flagd, the additional parameter `ReloadDelayS` can be used to force the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
 
 ```sh
 ./bin/flagd start
@@ -213,3 +214,44 @@ the reload of the secrets from the filesystem every `ReloadDelayS` seconds.
     "tokenURL": "http://localhost:8180/sso/oauth2/token" 
   }}]'
 ```
+
+## Selector Configuration
+
+Selectors allow you to filter flag configurations from sync sources. Add the `selector` field to source configurations:
+
+```yaml
+sources:
+  - uri: grpc://flag-server:8080
+    provider: grpc
+    selector: "flagSetId=payment-service"  # Flag set selection
+  - uri: grpc://flag-server:8080
+    provider: grpc
+    selector: "source=legacy-flags"        # Source selection (legacy)
+```
+
+### Selector Precedence
+
+1. **Request Headers**: `Flagd-Selector` header (highest priority)
+2. **Request Body**: `selector` field in request
+3. **Configuration**: `selector` field in source configuration (lowest priority)
+
+For complete selector syntax, patterns, and examples, see the [Selectors concepts](../concepts/selectors.md) and [Selector Syntax Reference](selector-syntax.md).
+
+## Incremental Updates (Experimental)
+
+By default, each sync update from a source is treated as a **full snapshot**: all existing flags for that source are removed and replaced with the flags in the update.
+
+When `incrementalUpdates` is set to `true` on a gRPC source, updates are instead scoped by `flagSetId`. Only flags belonging to the flagSetId(s) present in the update payload are replaced; flags from other flagSetIds are preserved. This is useful when a single gRPC sync backend streams per-flagSetId (e.g., per-project) updates rather than full snapshots.
+
+```yaml
+sources:
+  - uri: grpc://my-multi-project-backend:8080
+    provider: grpc
+    incrementalUpdates: true
+```
+
+### Caveats
+
+- **Orphaned flags**: if a flagSetId is renamed, removed, or stops being sent by the upstream, its flags will persist in the store until flagd is restarted. There is no automatic garbage collection. To manually clean up a specific flagSetId, the upstream must send an empty update with that flagSetId (i.e., `{"metadata": {"flagSetId": "old-id"}, "flags": []}`).
+- **This option is per-source, not per-message**: once enabled, all updates from that source use flagSetId-scoped deletion.
+- **This feature is experimental** and may change or be removed in a future release.

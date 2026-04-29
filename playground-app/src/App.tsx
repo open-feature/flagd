@@ -3,13 +3,17 @@ import { useMedia } from "react-use";
 import { FlagdCore, MemoryStorage } from "@openfeature/flagd-core";
 import { ScenarioName, scenarios } from "./scenarios";
 import type { FlagValueType } from "@openfeature/core";
-import { getString, isValidJson } from "./utils";
+import { getString, isValidYaml, yamlToCompactJson, yamlToPrettyJson, jsonToYaml } from "./utils";
 import { BeforeMount, Editor } from "@monaco-editor/react";
 import { Observable } from "react-use/lib/useObservable";
 
 declare global {
   var component$: Observable<{ ref: HTMLElement }>;
 }
+
+const LANG_JSON = "json" as const;
+const LANG_YAML = "yaml" as const;
+type DefinitionLanguage = typeof LANG_JSON | typeof LANG_YAML;
 
 // see: https://github.com/squidfunk/mkdocs-material/discussions/3429
 const BODY_COLOR_SCHEME_ATTR = "data-md-color-scheme";
@@ -44,11 +48,6 @@ const monacoBeforeMount: BeforeMount = (monaco) => {
   });
 };
 
-function shortenJson(formattedString: string) {
-  const object = JSON.parse(formattedString);
-  return JSON.stringify(object);
-};
-
 function formatJson(shortenedString: string) {
   const object = JSON.parse(shortenedString);
   return JSON.stringify(object, null, 2);
@@ -64,6 +63,8 @@ function App() {
   const [returnType, setReturnType] = useState(
     scenarios[selectedTemplate].returnType
   );
+  const [codeDefault, setCodeDefault] = useState(scenarios[selectedTemplate].codeDefault);
+  const [outputCodeDefault, setOutputCodeDefault] = useState<string | null>(null);
   const [evaluationContext, setEvaluationContext] = useState(
     getString(scenarios[selectedTemplate].context)
   );
@@ -82,20 +83,43 @@ function App() {
   const [editorTheme, updateEditorTheme] = useState<"custom" | "custom-dark">(
     getPalette()
   );
+  const [featureDefinitionLanguage, setFeatureDefinitionLanguage] = useState<DefinitionLanguage>(LANG_JSON);
+  const [isCustomScenario, setIsCustomScenario] = useState(false);
+
+  const handleLanguageSwitch = useCallback(() => {
+    try {
+      const newLang = featureDefinitionLanguage === LANG_JSON ? LANG_YAML : LANG_JSON;
+      if (newLang === LANG_YAML) {
+        setFeatureDefinition(jsonToYaml(featureDefinition));
+      } else {
+        setFeatureDefinition(yamlToPrettyJson(featureDefinition));
+      }
+      setFeatureDefinitionLanguage(newLang);
+      setIsCustomScenario(true);
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', newLang);
+      window.history.replaceState({}, '', url.href);
+    } catch (e) {
+      console.error("Failed to convert", e);
+    }
+  }, [featureDefinition, featureDefinitionLanguage]);
 
   const resetInputs = useCallback(() => {
     setOutput("");
     setShowOutput(false);
     const template = scenarios[selectedTemplate];
     setFeatureDefinition(template.flagDefinition);
+    setFeatureDefinitionLanguage(LANG_JSON);
     setFlagKey(template.flagKey);
     setReturnType(template.returnType);
+    setCodeDefault(template.codeDefault);
     setEvaluationContext(getString(template.context));
     setDescription(template.description);
     setValidFeatureDefinition(true);
     setValidEvaluationContext(true);
-    setShowCopyNotification(false)
+    setShowCopyNotification(false);
     setStatus("success");
+    setIsCustomScenario(false);
   }, [selectedTemplate]);
 
   useEffect(() => {
@@ -109,9 +133,10 @@ function App() {
   );
 
   useEffect(() => {
-    if (isValidJson(featureDefinition)) {
+    if (isValidYaml(featureDefinition)) {
       try {
-        flagdCore.setConfigurations(featureDefinition);
+        const jsonConfig = yamlToCompactJson(featureDefinition);
+        flagdCore.setConfigurations(jsonConfig);
         setAutocompleteFlagKeys(Array.from(flagdCore.getFlags().keys()));
         setValidFeatureDefinition(true);
       } catch (err) {
@@ -151,37 +176,69 @@ function App() {
     const flagsParam = urlParams.get('flags');
     const flagKeyParam = urlParams.get('flag-key');
     const returnTypeParam = urlParams.get('return-type');
+    const codeDefaultParam = urlParams.get('code-default');
     const evalContextParam = urlParams.get('eval-context');
+    const langParam = urlParams.get('lang');
     const scenarioParam = urlParams.get('scenario-name');
     if (flagsParam) {
       try {
-        const formattedFeatureDefinition = formatJson(flagsParam);
+        let formattedFeatureDefinition = formatJson(flagsParam);
+        let lang: DefinitionLanguage = LANG_JSON;
+        if (langParam === LANG_YAML) {
+          formattedFeatureDefinition = jsonToYaml(formattedFeatureDefinition);
+          lang = LANG_YAML;
+        }
         setFeatureDefinition(formattedFeatureDefinition);
+        setFeatureDefinitionLanguage(lang);
+        setIsCustomScenario(true);
         if (flagKeyParam) setFlagKey(flagKeyParam);
         if (returnTypeParam) setReturnType(returnTypeParam as FlagValueType);
+        if (codeDefaultParam) setCodeDefault(codeDefaultParam);
         if (evalContextParam) {
           const formattedEvaluationContext = formatJson(evalContextParam);
           setEvaluationContext(formattedEvaluationContext);
+          // evaluation context is always JSON
         }
       } catch (error) {
         console.error("Error decoding URL parameters: ", error);
       }
-    } else if (scenarioParam && scenarios[scenarioParam as keyof typeof scenarios]) {
-      setSelectedTemplate(scenarioParam as keyof typeof scenarios);
-      setFeatureDefinition(scenarios[scenarioParam as keyof typeof scenarios].flagDefinition);
+    } else if (scenarioParam && scenarios[decodeURIComponent(scenarioParam) as keyof typeof scenarios]) {
+      setSelectedTemplate(decodeURIComponent(scenarioParam) as keyof typeof scenarios);
+      setFeatureDefinition(scenarios[decodeURIComponent(scenarioParam) as keyof typeof scenarios].flagDefinition);
     }
   }, []);
+
+// Helper function to parse codeDefault string to the appropriate type based on returnType
+function parseCodeDefault(codeDefault: string, returnType: FlagValueType): any {
+  switch (returnType) {
+    case "boolean":
+      return codeDefault === "true" || codeDefault === "True" || codeDefault === "TRUE";
+    case "number":
+      const num = parseFloat(codeDefault);
+      return isNaN(num) ? 0 : num;
+    case "object":
+      try {
+        return JSON.parse(codeDefault);
+      } catch {
+        return {};
+      }
+    case "string":
+    default:
+      return codeDefault;
+  }
+}
 
   const evaluate = () => {
     setShowOutput(true);
     try {
       let result;
       const context = JSON.parse(evaluationContext);
+      const parsedCodeDefault = parseCodeDefault(codeDefault, returnType);
       switch (returnType) {
         case "boolean":
           result = flagdCore.resolveBooleanEvaluation(
             flagKey,
-            false,
+            parsedCodeDefault,
             context,
             console
           );
@@ -189,7 +246,7 @@ function App() {
         case "string":
           result = flagdCore.resolveStringEvaluation(
             flagKey,
-            "",
+            parsedCodeDefault,
             context,
             console
           );
@@ -197,7 +254,7 @@ function App() {
         case "number":
           result = flagdCore.resolveNumberEvaluation(
             flagKey,
-            0,
+            parsedCodeDefault,
             context,
             console
           );
@@ -205,13 +262,20 @@ function App() {
         case "object":
           result = flagdCore.resolveObjectEvaluation(
             flagKey,
-            {},
+            parsedCodeDefault,
             context,
             console
           );
           break;
       }
+
+      // If there's no variant, set value to undefined and use codeDefault
+      if (!result.variant) {
+        result.value = undefined;
+      }
+
       setStatus("success");
+      setOutputCodeDefault(codeDefault);
       setOutput(JSON.stringify(result, null, 2));
     } catch (error) {
       console.error("Invalid JSON input", error);
@@ -241,18 +305,19 @@ function App() {
   const copyUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
     const newUrl = new URL(baseUrl)
-    const encodedFeatureDefinition = shortenJson(featureDefinition);
-    const encodedEvaluationContext = shortenJson(evaluationContext);
+    const encodedFeatureDefinition = yamlToCompactJson(featureDefinition);
+    const encodedEvaluationContext = yamlToCompactJson(evaluationContext);
 
-    if (Object.keys(scenarios).includes(selectedTemplate) &&
-      scenarios[selectedTemplate].flagDefinition === featureDefinition) {
+    if (Object.keys(scenarios).includes(selectedTemplate) && !isCustomScenario) {
       newUrl.searchParams.set('scenario-name', selectedTemplate);
     } else {
       newUrl.searchParams.delete('scenario-name');
       newUrl.searchParams.set('flags', encodedFeatureDefinition);
       newUrl.searchParams.set('flag-key', flagKey);
       newUrl.searchParams.set('return-type', returnType);
+      newUrl.searchParams.set('code-default', codeDefault);
       newUrl.searchParams.set('eval-context', encodedEvaluationContext);
+      newUrl.searchParams.set('lang', featureDefinitionLanguage);
     }
     window.history.pushState({}, '', newUrl.href);
 
@@ -267,17 +332,29 @@ function App() {
     });
   };
 
+  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+
+    // resize and darken the button briefly to give click feedback
+    const button = e.currentTarget;
+    const originalBg = button.style.backgroundColor;
+    button.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+    button.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      button.style.backgroundColor = originalBg;
+      button.style.transform = '';
+    }, 150);
+  };
+
   return (
     <div
       style={{
-        maxWidth: "825px",
+        maxWidth: "100%",
       }}
     >
       <div>
+        <a href="../" className="playground-back">Back to docs</a>
         <p
           style={{
-            // Moves content closer to the page header for more screen real estate
-            margin: "-32px 0 0 0",
             lineHeight: "1.4",
             fontSize: "medium",
           }}
@@ -345,13 +422,26 @@ function App() {
               flex: "3",
             }}
           >
-            <h4>Feature definition</h4>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <h4 style={{ margin: 0 }}>Feature definition</h4>
+              <button
+                className="md-button"
+                style={{ padding: "2px 8px", fontSize: "small" }}
+                disabled={!validFeatureDefinition}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  handleLanguageSwitch();
+                }}
+              >
+                Switch to {featureDefinitionLanguage === LANG_JSON ? "YAML" : "JSON"}
+              </button>
+            </div>
             <div style={{ backgroundColor: codeStyle.backgroundColor }}>
               <Editor
                 theme={editorTheme}
                 width="100%"
                 height="500px"
-                language="json"
+                language={featureDefinitionLanguage}
                 value={featureDefinition}
                 options={{
                   minimap: { enabled: false },
@@ -361,6 +451,7 @@ function App() {
                 onChange={(value) => {
                   if (value) {
                     setFeatureDefinition(value);
+                    setIsCustomScenario(true);
                   }
                 }}
               />
@@ -384,7 +475,10 @@ function App() {
                 name="flag-key"
                 list="flag-keys"
                 value={flagKey}
-                onChange={(e) => setFlagKey(e.target.value)}
+                onChange={(e) => {
+                  setFlagKey(e.target.value);
+                  setIsCustomScenario(true);
+                }}
               />
               <datalist id="flag-keys">
                 {autocompleteFlagKeys.map((key, index) => (
@@ -401,7 +495,10 @@ function App() {
                   ...codeStyle,
                 }}
                 value={returnType}
-                onChange={(e) => setReturnType(e.target.value as FlagValueType)}
+                onChange={(e) => {
+                  setReturnType(e.target.value as FlagValueType);
+                  setIsCustomScenario(true);
+                }}
               >
                 <option value="boolean">boolean</option>
                 <option value="string">string</option>
@@ -410,12 +507,34 @@ function App() {
               </select>
             </div>
             <div>
+              <h4>Code default</h4>
+              <input
+                style={{
+                  width: "100%",
+                  maxWidth: "800px",
+                  padding: "8px",
+                  boxSizing: "border-box",
+                  ...codeStyle,
+                }}
+                name="code-default"
+                value={codeDefault}
+                onChange={(e) => {
+                  setCodeDefault(e.target.value);
+                  setIsCustomScenario(true);
+                }}
+              />
+              <p style={{ fontSize: "small", color: "var(--md-code-fg-color)", marginTop: "4px" }}>
+                The default value to use when defaultVariant is null/omitted, or when errors occur during evaluation.
+              </p>
+            </div>
+            <div>
               <h4>Evaluation context</h4>
               <div style={{ backgroundColor: codeStyle.backgroundColor }}>
                 <Editor
                   theme={editorTheme}
                   width="100%"
                   height="80px"
+                  // evaluation context is always JSON, even if the flag definition is in YAML
                   language="json"
                   options={{
                     minimap: { enabled: false },
@@ -427,6 +546,7 @@ function App() {
                   onChange={(value) => {
                     if (value) {
                       setEvaluationContext(value);
+                      setIsCustomScenario(true);
                     }
                   }}
                 />
@@ -435,17 +555,26 @@ function App() {
             <div style={{ display: "flex", gap: "8px", paddingTop: "8px" }}>
               <button
                 className="md-button md-button--primary"
-                onClick={evaluate}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  evaluate();
+                }}
                 disabled={!validFeatureDefinition || !validEvaluationContext}
               >
                 Evaluate
               </button>
-              <button className="md-button" onClick={resetInputs}>
+              <button className="md-button" onClick={(e) => {
+                  handleButtonClick(e);
+                  resetInputs();
+                }}>
                 Reset
               </button>
               <button
                 className="md-button"
-                onClick={copyUrl}
+                onClick={(e) => {
+                  handleButtonClick(e);
+                  copyUrl();
+                }}
                 disabled={!validFeatureDefinition || !validEvaluationContext}
               >
                 Share
@@ -465,6 +594,11 @@ function App() {
                       <strong>{key}:</strong> {JSON.stringify(value)}
                     </div>
                   ))}
+                  {outputCodeDefault && parsedOutput.value === undefined && (
+                    <div>
+                      <strong>value:</strong> {outputCodeDefault}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p>{parsedOutput}</p>

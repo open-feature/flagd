@@ -109,6 +109,22 @@ func Test_handler_HandleFlagEvaluation(t *testing.T) {
 			expectedStatus:       http.StatusBadRequest,
 			expectedResponseType: ofrep.EvaluationError{},
 		},
+		{
+			name:   "code default - flag without defaultVariant",
+			method: http.MethodPost,
+			path:   "/ofrep/v1/evaluate/flags/featureNoDefault",
+			input:  bytes.NewReader([]byte{}),
+			mockAnyResponse: &evaluator.AnyValue{
+				Value:    false, // code default (no defaultVariant)
+				Variant:  "",
+				Reason:   model.FallbackReason,
+				FlagKey:  "featureNoDefault",
+				Metadata: nil,
+				Error:    nil,
+			},
+			expectedStatus:       http.StatusOK,
+			expectedResponseType: ofrep.EvaluationSuccess{},
+		},
 	}
 
 	for _, test := range tests {
@@ -202,6 +218,30 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 			input:          bytes.NewReader([]byte("{some invalid context}")),
 			expectedStatus: http.StatusBadRequest,
 		},
+		{
+			name:   "bulk evaluation with code defaults",
+			method: http.MethodPost,
+			input:  bytes.NewReader([]byte{}),
+			mockAnyResponse: []evaluator.AnyValue{
+				{
+					Value:    true,
+					Variant:  "on",
+					Reason:   model.StaticReason,
+					FlagKey:  "featureWithDefault",
+					Metadata: nil,
+					Error:    nil,
+				},
+				{
+					Value:    false, // code default (no defaultVariant)
+					Variant:  "",
+					Reason:   model.FallbackReason,
+					FlagKey:  "featureNoDefault",
+					Metadata: map[string]interface{}{},
+					Error:    nil,
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
 	}
 
 	for _, test := range tests {
@@ -288,5 +328,49 @@ func TestWriteJSONResponse(t *testing.T) {
 				t.Errorf("incorrect payload in wire")
 			}
 		})
+	}
+}
+func TestFlagdContextInvalidContextType(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	result := flagdContext(
+		log,
+		"test-request-id",
+		ofrep.Request{Context: "not a map"}, // invalid: string instead of map
+		map[string]any{"staticKey": "staticValue"},
+		http.Header{},
+		map[string]string{},
+	)
+
+	if val, exists := result["staticKey"]; !exists || val != "staticValue" {
+		t.Errorf("expected static context to be included even with invalid request context")
+	}
+}
+
+func TestFlagdContextDelegatesContextMerging(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	h := http.Header{}
+	h.Set("X-User-Tier", "premium")
+
+	result := flagdContext(
+		log,
+		"test-request-id",
+		ofrep.Request{Context: map[string]any{"requestKey": "requestValue"}},
+		map[string]any{"staticKey": "staticValue"},
+		h,
+		map[string]string{"X-User-Tier": "userTier"},
+	)
+
+	expected := map[string]any{
+		"requestKey": "requestValue",
+		"staticKey":  "staticValue",
+		"userTier":   "premium",
+	}
+
+	for k, v := range expected {
+		if result[k] != v {
+			t.Errorf("expected key '%s' to have value '%s', but got '%v'", k, v, result[k])
+		}
 	}
 }

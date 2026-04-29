@@ -1,5 +1,161 @@
 # Changelog
 
+## [0.15.4](https://github.com/open-feature/flagd/compare/flagd/v0.15.3...flagd/v0.15.4) (2026-04-15)
+
+
+### ✨ New Features
+
+* add intervalSeed source option ([9926b95](https://github.com/open-feature/flagd/commit/9926b9584bae8478ee3fdca1110d1a6a865bd041))
+
+## [0.15.3](https://github.com/open-feature/flagd/compare/flagd/v0.15.2...flagd/v0.15.3) (2026-04-14)
+
+
+### 🐛 Bug Fixes
+
+* web and cli docs do not mention s3 ([#1941](https://github.com/open-feature/flagd/issues/1941)) ([49ff1cf](https://github.com/open-feature/flagd/commit/49ff1cfe2d5543feead69d363dc63ea18c718bc0))
+
+## [0.15.2](https://github.com/open-feature/flagd/compare/flagd/v0.15.1...flagd/v0.15.2) (2026-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#1933](https://github.com/open-feature/flagd/issues/1933)) ([04338dc](https://github.com/open-feature/flagd/commit/04338dc21358b80f96da7a5ac736107f08093d60))
+* **security:** update vulnerability-updates [security] ([#1934](https://github.com/open-feature/flagd/issues/1934)) ([40d444a](https://github.com/open-feature/flagd/commit/40d444abac6b0a40a1b5190c2205540eaaaa0b55))
+
+
+### ✨ New Features
+
+* gRPC sync experimental incremental updates ([#1922](https://github.com/open-feature/flagd/issues/1922)) ([d785557](https://github.com/open-feature/flagd/commit/d785557d2df6b89c9b86e886b6b923991dd44696))
+
+## [0.15.1](https://github.com/open-feature/flagd/compare/flagd/v0.15.0...flagd/v0.15.1) (2026-04-07)
+
+
+### 🐛 Bug Fixes
+
+* object flags without `defaultVaraint` dont default in RPC ([#1925](https://github.com/open-feature/flagd/issues/1925)) ([17f833e](https://github.com/open-feature/flagd/commit/17f833ea53341bce4e85250a089f237a0c002fb9))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.4 [security] ([#1929](https://github.com/open-feature/flagd/issues/1929)) ([cf22a11](https://github.com/open-feature/flagd/commit/cf22a110652af6f3ef867c17b9c6ea9471c9e5f1))
+* zombie process on metrics server fail ([#1926](https://github.com/open-feature/flagd/issues/1926)) ([0271068](https://github.com/open-feature/flagd/commit/0271068ec71b02a2c9ab6afda44193cc2a66a815))
+* mem leak due to unbounded metrics cardinality ([#1931](https://github.com/open-feature/flagd/issues/1931)) ([176866e](https://github.com/open-feature/flagd/commit/176866e71625bee9ef7770700d8ce14e8abd8110))
+
+## [0.15.0](https://github.com/open-feature/flagd/compare/flagd/v0.14.5...flagd/v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909))
+  * no breaking API changes - but fractional pseudorandom assignments will change; update all providers to ensure consistency
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1909](https://github.com/open-feature/flagd/issues/1909)) ([7190878](https://github.com/open-feature/flagd/commit/7190878fd0ea7a6f16fd8fbcdac68b55d9b9a2a5))
+
+## [0.14.5](https://github.com/open-feature/flagd/compare/flagd/v0.14.4...flagd/v0.14.5) (2026-03-27)
+
+
+### ✨ New Features
+
+* gRPC sync endpoint metrics ([#1861](https://github.com/open-feature/flagd/issues/1861)) ([b04dc50](https://github.com/open-feature/flagd/commit/b04dc5074a5be239914c4328653623aad36203ac))
+
+## [0.14.4](https://github.com/open-feature/flagd/compare/flagd/v0.14.3...flagd/v0.14.4) (2026-03-21)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.79.3 [security] ([#1907](https://github.com/open-feature/flagd/issues/1907)) ([ad51d4e](https://github.com/open-feature/flagd/commit/ad51d4e8fe0570474c824273983f54b3ca38b083))
+
+## [0.14.3](https://github.com/open-feature/flagd/compare/flagd/v0.14.2...flagd/v0.14.3) (2026-03-10)
+
+
+### 🐛 Bug Fixes
+
+* OFREP service CORS missing AllowedHeaders - blocks Flagd-Selector header ([#1900](https://github.com/open-feature/flagd/issues/1900)) ([08f0429](https://github.com/open-feature/flagd/commit/08f0429fc54f9562f351201d64fc71834588c3e5))
+
+## [0.14.2](https://github.com/open-feature/flagd/compare/flagd/v0.14.1...flagd/v0.14.2) (2026-03-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update otel deps, minimum core Go version ([#1897](https://github.com/open-feature/flagd/issues/1897)) ([6b79bf8](https://github.com/open-feature/flagd/commit/6b79bf8419da1e269ecb1d1db03760379fc201cb))
+
+
+### ✨ New Features
+
+* make max header and body size configurable, add default ([#1892](https://github.com/open-feature/flagd/issues/1892)) ([25c5fd7](https://github.com/open-feature/flagd/commit/25c5fd7e80c26eb2c00b20317b2456fe6f927ea3))
+
+
+### 🧹 Chore
+
+* reduce duplication in some tests ([#1895](https://github.com/open-feature/flagd/issues/1895)) ([4a82812](https://github.com/open-feature/flagd/commit/4a828120def8dcfd5d58f5893db1170cc34890eb))
+
+## [0.14.1](https://github.com/open-feature/flagd/compare/flagd/v0.14.0...flagd/v0.14.1) (2026-03-04)
+
+
+### 🐛 Bug Fixes
+
+* RPC event serialization error, dont send empty messages ([#1871](https://github.com/open-feature/flagd/issues/1871)) ([95d38fd](https://github.com/open-feature/flagd/commit/95d38fd8e7ec2cb17b3ed7a80a46f073e38d9e0e))
+
+## [0.14.0](https://github.com/open-feature/flagd/compare/flagd/v0.13.3...flagd/v0.14.0) (2026-03-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* no `defaultVariant` -> code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862))
+ * this is only a minor change impacting OFREP; now flags without default variants are returned without value/variant feilds
+
+### ✨ New Features
+
+* no `defaultVariant` -&gt; code default (previosuly FLAG_NOT_FOUND)  ([#1862](https://github.com/open-feature/flagd/issues/1862)) ([89117d8](https://github.com/open-feature/flagd/commit/89117d8eaba0e9d205b3b47544528c42d5698176))
+ * this is only a minor change impacting OFREP; now flags without default variants are returned without value/variant feilds 
+
+## [0.13.3](https://github.com/open-feature/flagd/compare/flagd/v0.13.2...flagd/v0.13.3) (2026-02-09)
+
+
+### 🐛 Bug Fixes
+
+* case sensitivity in header context mapping ([#1855](https://github.com/open-feature/flagd/issues/1855)) ([be5c94f](https://github.com/open-feature/flagd/commit/be5c94fc06f7cced8d6ee3701f59374a1f315fc3))
+
+## [0.13.2](https://github.com/open-feature/flagd/compare/flagd/v0.13.1...flagd/v0.13.2) (2026-01-09)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module github.com/open-feature/flagd/core to v0.13.1 [security] ([#1846](https://github.com/open-feature/flagd/issues/1846)) ([a8a57ad](https://github.com/open-feature/flagd/commit/a8a57adb1d49640bfc14bf02cf77961652f7516a))
+
+## [0.13.1](https://github.com/open-feature/flagd/compare/flagd/v0.13.0...flagd/v0.13.1) (2025-12-27)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update go for various stdlib CVEs ([#1840](https://github.com/open-feature/flagd/issues/1840)) ([6dcb36d](https://github.com/open-feature/flagd/commit/6dcb36d2d6b55b7fe0b6107ac9a25baf302c5cdc))
+
+## [0.13.0](https://github.com/open-feature/flagd/compare/flagd/v0.12.9...flagd/v0.13.0) (2025-12-23)
+
+
+### 🐛 Bug Fixes
+
+* fixing sync return format missing flag layer, adding full e2e suite ([#1827](https://github.com/open-feature/flagd/issues/1827)) ([570693d](https://github.com/open-feature/flagd/commit/570693d9e7b3200c0865e7ebb3b467ccfc38bb88))
+* **security:** update module github.com/go-viper/mapstructure/v2 to v2.4.0 [security] ([#1784](https://github.com/open-feature/flagd/issues/1784)) ([037e30b](https://github.com/open-feature/flagd/commit/037e30b2f87897499580b25497049b88da7e386c))
+* **security:** update module golang.org/x/crypto to v0.45.0 [security] ([#1826](https://github.com/open-feature/flagd/issues/1826)) ([7e0762b](https://github.com/open-feature/flagd/commit/7e0762b921ea70bed7915bcaab50e450e0a51158))
+
+
+### ✨ New Features
+
+* add support for http-based ofrep metrics ([#1803](https://github.com/open-feature/flagd/issues/1803)) ([fcd19b3](https://github.com/open-feature/flagd/commit/fcd19b310b319c9837b41c19d6f082ac750cb81d))
+* cleanup evaluator interface ([#1793](https://github.com/open-feature/flagd/issues/1793)) ([aa504f7](https://github.com/open-feature/flagd/commit/aa504f7077093746f886248a4766d9ae5587bf3d))
+* enable parsing of array flag configurations for flagd ([#1797](https://github.com/open-feature/flagd/issues/1797)) ([97c6ffa](https://github.com/open-feature/flagd/commit/97c6ffaf2b51765ccd6aaec38c2902ed2ac8f5f3))
+* multi-project support via selectors and flagSetId namespacing ([#1702](https://github.com/open-feature/flagd/issues/1702)) ([f9ce46f](https://github.com/open-feature/flagd/commit/f9ce46f1032e7cb423e0e5c75a7c02f91ab5a88f))
+* normalize selector in sync (use header as in OFREP and RPC)  ([#1815](https://github.com/open-feature/flagd/issues/1815)) ([c1f06cb](https://github.com/open-feature/flagd/commit/c1f06cb00fc5425d6ee73d6cfca314e9711913df))
+
+
+### 🧹 Chore
+
+* **refactor:** use memdb for flag storage ([#1697](https://github.com/open-feature/flagd/issues/1697)) ([5c5c1cf](https://github.com/open-feature/flagd/commit/5c5c1cfe84890c4cdd74c9b82504fd2632965221))
+
+
+### 🔄 Refactoring
+
+* store cleanup ([#1705](https://github.com/open-feature/flagd/issues/1705)) ([bcff8d7](https://github.com/open-feature/flagd/commit/bcff8d757b6d0ca69bccee26ba41880bdf2b5040))
+
 ## [0.12.9](https://github.com/open-feature/flagd/compare/flagd/v0.12.8...flagd/v0.12.9) (2025-07-28)
 
 

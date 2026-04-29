@@ -16,6 +16,7 @@ config:
   descriptive-link-text: false
   MD007:
     indent: 4
+  MD060: false # unfortunately, this is broken with emojis for now
 
 ignores:
   - "**/CHANGELOG.md"

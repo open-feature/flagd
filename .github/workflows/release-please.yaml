@@ -8,7 +8,7 @@ env:
   PUBLISHABLE_ITEMS: '["flagd","flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
-  DEFAULT_GO_VERSION: '~1.21'
+  DEFAULT_GO_VERSION: '~1.25'
   PUBLIC_KEY_FILE: publicKey.pub
   GOPRIVATE: buf.build/gen/go
 
@@ -22,7 +22,7 @@ jobs:
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - uses: google-github-actions/release-please-action@v3
+      - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 # v3
         id: release
         with:
           command: manifest
@@ -93,13 +93,13 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ matrix.path }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
         with:
           platforms: all
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@master
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Build
         id: build
@@ -211,23 +211,3 @@ jobs:
             ./sbom.xml
             ./*.tar.gz
             ./*.zip
-  homebrew:
-    name: Bump homebrew-core formula
-    needs: release-please
-    runs-on: ubuntu-latest
-    # Only run on non-forked flagd releases
-    if: ${{ github.repository_owner == 'open-feature' && needs.release-please.outputs.flagd_tag_name }}
-    steps:
-      - uses: mislav/bump-homebrew-formula-action@v2
-        with:
-          formula-name: flagd
-          # https://github.com/mislav/bump-homebrew-formula-action/issues/58
-          formula-path: Formula/f/flagd.rb
-          tag-name: ${{ needs.release-please.outputs.flagd_tag_name }}
-          download-url: https://github.com/${{ github.repository }}.git
-          commit-message: |
-            {{formulaName}} ${{ needs.release-please.outputs.flagd_version }}
-
-            Created by https://github.com/mislav/bump-homebrew-formula-action
-        env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}

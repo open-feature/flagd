@@ -192,6 +192,38 @@ func Test_ReSyncTests(t *testing.T) {
 	}
 }
 
+func Test_IncrementalUpdatesPropagatesToDataSync(t *testing.T) {
+	const target = "localBufCon"
+
+	bufCon := bufconn.Listen(5)
+	bufServer := bufferedServer{
+		listener:              bufCon,
+		fetchAllFlagsResponse: &v1.FetchAllFlagsResponse{FlagConfiguration: "flags"},
+	}
+	go serve(&bufServer)
+
+	dial, err := grpc.Dial(target,
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return bufCon.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+
+	grpcSync := Sync{
+		URI:                target,
+		Logger:             logger.NewLogger(nil, false),
+		IncrementalUpdates: true,
+		client:             syncv1grpc.NewFlagSyncServiceClient(dial),
+	}
+
+	syncChan := make(chan sync.DataSync, 1)
+	err = grpcSync.ReSync(context.Background(), syncChan)
+	require.NoError(t, err)
+
+	out := <-syncChan
+	require.True(t, out.IncrementalUpdates, "IncrementalUpdates should be propagated from Sync to DataSync via ReSync")
+}
+
 func Test_StreamListener(t *testing.T) {
 	const target = "localBufCon"
 

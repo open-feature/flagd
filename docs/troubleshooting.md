@@ -24,7 +24,7 @@ Why is my `int` response a `string`?
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v2.Service/ResolveInt" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -40,7 +40,7 @@ If a number value is required, and none of the provided SDK's can be used, then 
 Command:
 
 ```sh
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v2.Service/ResolveFloat" -d '{"flagKey":"myIntFlag","context":{}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -71,3 +71,82 @@ You may need to explicitly allow HTTP2 or gRPC in your platform if you're using 
 !!! note
 
     HTTP2 _is not_ strictly for the flag [evaluation gRPC service](./reference/specifications/protos.md#schemav1schemaproto), which is exposed both as a gRPC service and a RESTful HTTP/1.1 service, thanks to the [connect protocol](https://connectrpc.com/docs/protocol/).
+
+---
+
+## Selector Issues
+
+### No Flags Returned with Selector
+
+**Problem**: Provider returns no flags when using a selector.
+
+**Debugging Steps:**
+
+- Verify `flagSetId` in selector matches flag configuration exactly
+- Check selector syntax: `flagSetId=my-app` (not `flagSetId:my-app`)
+- Test without selector to confirm flags exist
+
+### Wrong Flags Returned
+
+**Problem**: Selector returns unexpected flags.
+
+**Debugging Steps:**
+
+- Check for flag-level `flagSetId` overrides in individual flags
+- Verify header precedence: `Flagd-Selector` header overrides request body
+- Use metadata reflection to see what selector was actually applied
+
+### Selector Ignored
+
+**Problem**: Selector appears to be ignored, all flags returned.
+
+**Debugging Steps:**
+
+- Verify selector syntax is correct (`key=value` format)
+- Check if provider configuration has a selector that overrides requests
+- Ensure selector value is not empty (`flagSetId=` returns all flags without flagSetId)
+
+**Debug with metadata reflection:**
+
+```bash
+curl -H "Flagd-Selector: flagSetId=my-app" \
+  http://localhost:8014/ofrep/v1/evaluate/flags
+# Check response metadata to see parsed selector
+```
+
+---
+
+## Variant/value not included in response
+
+When you see that `value` and `variant` fields are missing from flag evaluation responses, it indicates that flagd is delegating to the code-defined default value. This is the expected behavior when `defaultVariant` is set to `null` or omitted.
+
+### Configured Default
+
+When a flag has an explicit `defaultVariant` configured:
+
+```json
+{
+  "value": false,
+  "reason": "DEFAULT",
+  "variant": "off",
+  "metadata": {}
+}
+```
+
+This means the configured default variant was used because no targeting rule matched.
+
+### Code Default
+
+When a flag has `defaultVariant: null` or no `defaultVariant` is defined:
+
+```json
+{
+  "reason": "DEFAULT",
+  "metadata": {}
+  // Note: value and variant fields are omitted
+}
+```
+
+This indicates that flagd is delegating to the code-defined default value. The absence of `value` and `variant` fields signals to the client SDK to use its code default.
+
+For more information about code defaults, see [Code Defaults](./concepts/feature-flagging.md#code-defaults).
