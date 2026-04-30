@@ -3,10 +3,13 @@
 ## [0.15.5](https://github.com/open-feature/flagd/compare/flagd/v0.15.4...flagd/v0.15.5) (2026-04-30)
 
 
+
 ### 🐛 Bug Fixes
 
+* handle missing/null targeting keys in fractional evaluator ([#1949](https://github.com/open-feature/flagd/issues/1949)) ([651c7bb](https://github.com/open-feature/flagd/commit/651c7bb814eb70f72414ce164e1d2560e6055526))
+* override otel service name and version ([#1956](https://github.com/open-feature/flagd/issues/1956)) ([ec4ff12](https://github.com/open-feature/flagd/commit/ec4ff12e3f8dd37b61d6c7852a1f7dd2a8572d3a))
 * update jsonlogic for and/or bug ([#1957](https://github.com/open-feature/flagd/issues/1957)) ([6edd6e8](https://github.com/open-feature/flagd/commit/6edd6e83e56d7407dc925afe39deae795487dd8c))
-
+* various custom operator conformance fixes ([#1950](https://github.com/open-feature/flagd/issues/1950)) ([670c91c](https://github.com/open-feature/flagd/commit/670c91cdca80c29fd1cee378d1ea228c4ef36935))
 ## [0.15.4](https://github.com/open-feature/flagd/compare/flagd/v0.15.3...flagd/v0.15.4) (2026-04-15)
 
 
