@@ -85,12 +85,12 @@ func (je *SemVerComparison) SemVerEvaluation(values, _ interface{}) interface{} 
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("parse sem_ver evaluation data: %v", err))
-		return false
+		return nil
 	}
 	res, err := operator.compare(actualVersion, targetVersion)
 	if err != nil {
 		je.Logger.Error(fmt.Sprintf("sem_ver evaluation: %v", err))
-		return false
+		return nil
 	}
 	return res
 }
@@ -105,7 +105,7 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", errors.New("sem_ver evaluation must contain a value, an operator, and a comparison target")
 	}
 
-	actualVersion, err := parseSemanticVersion(parsed[0])
+	actualVersion, err := normalizeVersion(parsed[0])
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target property value: %w", err)
 	}
@@ -115,7 +115,7 @@ func parseSemverEvaluationData(values interface{}) (string, string, SemVerOperat
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse operator: %w", err)
 	}
 
-	targetVersion, err := parseSemanticVersion(parsed[2])
+	targetVersion, err := normalizeVersion(parsed[2])
 	if err != nil {
 		return "", "", "", fmt.Errorf("sem_ver evaluation: could not parse target value: %w", err)
 	}
@@ -131,11 +131,13 @@ func ensureString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
-func parseSemanticVersion(v interface{}) (string, error) {
+func normalizeVersion(v interface{}) (string, error) {
 	version := ensureString(v)
 	// version strings are only valid in the semver package if they start with a 'v'
 	// if it's not present in the given value, we prepend it
+	// 'V' is normalized to 'v'
 	if !strings.HasPrefix(version, "v") {
+		version = strings.TrimPrefix(version, "V")
 		version = "v" + version
 	}
 

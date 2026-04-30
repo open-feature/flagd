@@ -2,12 +2,9 @@ package evaluator
 
 import (
 	"context"
-	"errors"
 	"testing"
 
-	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
-	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,6 +76,16 @@ func TestSemVerOperator_Compare(t *testing.T) {
 			args: args{
 				v1: "v0.0.1",
 				v2: "0.0.1",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "uppercase V prefix equals lowercase or no prefix",
+			svo:  Equals,
+			args: args{
+				v1: "V1.0.0",
+				v2: "1.0.0",
 			},
 			want:    true,
 			wantErr: false,
@@ -320,15 +327,7 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 	var sources = []string{source}
 	ctx := context.Background()
 
-	tests := map[string]struct {
-		flags           []model.Flag
-		flagKey         string
-		context         map[string]any
-		expectedValue   string
-		expectedVariant string
-		expectedReason  string
-		expectedError   error
-	}{
+	tests := map[string]stringFlagEvalTestCase{
 		"versions and operator provided - match": {
 			flags: []model.Flag{{
 				Key:            "headerColor",
@@ -789,34 +788,27 @@ func TestJSONEvaluator_semVerEvaluation(t *testing.T) {
 		},
 	}
 
-	const reqID = "default"
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, sources)
-			if err != nil {
-				t.Fatalf("NewStore failed: %v", err)
-			}
-			je := NewJSON(log, s)
-			je.store.Update(source, tt.flags, model.Metadata{}, false)
+	runStringFlagEvalTests(t, ctx, source, sources, tests)
+}
 
-			value, variant, reason, _, err := resolve[string](ctx, reqID, tt.flagKey, tt.context, je.evaluateVariant)
+func TestSemVerEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
+	const source = "testSource"
+	ctx := context.Background()
 
-			if value != tt.expectedValue {
-				t.Errorf("expected value '%s', got '%s'", tt.expectedValue, value)
-			}
-
-			if variant != tt.expectedVariant {
-				t.Errorf("expected variant '%s', got '%s'", tt.expectedVariant, variant)
-			}
-
-			if reason != tt.expectedReason {
-				t.Errorf("expected reason '%s', got '%s'", tt.expectedReason, reason)
-			}
-
-			if !errors.Is(err, tt.expectedError) {
-				t.Errorf("expected err '%v', got '%v'", tt.expectedError, err)
-			}
-		})
+	tests := map[string]errorFallbackTestCase{
+		"invalid context version falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "=", "1.0.0"]}`,
+			context:   map[string]any{"version": "not-a-version"},
+		},
+		"invalid operator falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "===", "1.0.0"]}`,
+			context:   map[string]any{"version": "1.0.0"},
+		},
+		"wrong arg count falls back": {
+			targeting: `{"sem_ver": [{"var": "version"}, "="]}`,
+			context:   map[string]any{"version": "1.0.0"},
+		},
 	}
+
+	runErrorFallbackTests(t, ctx, source, "semver-op-error-fallback", tests)
 }
