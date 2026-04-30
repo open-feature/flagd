@@ -47,6 +47,8 @@ test-flagd:
 	go test -race -covermode=atomic -cover -short ./flagd/pkg/... -coverprofile=flagd-coverage.out
 test-flagd-proxy:
 	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out
+test-evaluator-gherkin:
+	cd core && go test -v -run TestEvaluatorGherkin ./pkg/evaluator/ -count=1
 flagd-benchmark-test:
 	go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee benchmark.txt
 flagd-integration-test-harness:
