@@ -30,6 +30,7 @@ type Sync struct {
 	lastBodySHA string
 	logger      *logger.Logger
 	authHeader  string
+	headers     map[string]string
 	interval    uint32
 	ready       bool
 	eTag        string
@@ -149,6 +150,16 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	return nil
 }
 
+func (hs *Sync) applyHeaders(req *http.Request) {
+	for key, value := range hs.headers {
+		if http.CanonicalHeaderKey(key) == "Host" {
+			req.Host = value
+		} else {
+			req.Header.Set(key, value)
+		}
+	}
+}
+
 func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, error) {
 	if hs.uri == "" {
 		return "", false, errors.New("no HTTP URL string set")
@@ -169,6 +180,9 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 	if hs.eTag != "" && !fetchAll {
 		req.Header.Set("If-None-Match", hs.eTag)
 	}
+
+	hs.applyHeaders(req)
+
 	client := hs.getClient()
 	resp, err := client.Do(req)
 	if err != nil {
@@ -279,6 +293,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 			zap.String("sync", "http"),
 		),
 		authHeader:      config.AuthHeader,
+		headers:         config.Headers,
 		interval:        interval,
 		poller:          poller,
 		oauthCredential: oauthCredential,
