@@ -168,7 +168,6 @@ Headers can also be set per-source in the JSON configuration:
 When both global and per-source headers are specified, per-source values take
 precedence for conflicting keys.
 
-
 The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
 that requires OAuth-based authentication.
 
