@@ -163,6 +163,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		SyncService:       flagSyncService,
 		OfrepService:      ofrepService,
 		EvaluationService: connectService,
+		StrictValidation:  config.StrictValidation,
+		ExpectedSources:   sources,
 		ServiceConfig: service.Configuration{
 			Port:                       config.ServicePort,
 			ManagementPort:             config.ManagementPort,

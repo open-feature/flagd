@@ -26,8 +26,11 @@ type Runtime struct {
 	EvaluationService service.IFlagEvaluationService
 	ServiceConfig     service.Configuration
 	Syncs             []sync.ISync
+	StrictValidation  bool
+	ExpectedSources   []string
 
-	mu msync.Mutex
+	mu               msync.Mutex
+	validatedSources map[string]bool
 }
 
 //nolint:funlen
@@ -45,12 +48,17 @@ func (r *Runtime) Start() error {
 	defer cancel()
 	g, gCtx := errgroup.WithContext(ctx)
 	dataSync := make(chan sync.DataSync, len(r.Syncs))
+	if r.validatedSources == nil {
+		r.validatedSources = make(map[string]bool, len(r.Syncs))
+	}
 	// Initialize DataSync channel watcher
 	g.Go(func() error {
 		for {
 			select {
 			case data := <-dataSync:
-				r.updateAndEmit(data)
+				if err := r.updateAndEmit(data); err != nil {
+					return err
+				}
 			case <-gCtx.Done():
 				return nil
 			}
@@ -119,18 +127,45 @@ func (r *Runtime) isReady() bool {
 			return false
 		}
 	}
+	// in strict-validation mode, readiness additionally requires every
+	// configured source to have produced at least one valid configuration.
+	if r.StrictValidation {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for _, src := range r.ExpectedSources {
+			if !r.validatedSources[src] {
+				return false
+			}
+		}
+	}
 	return true
 }
 
-// updateAndEmit helps to update state, notify changes and trigger sync updates
-func (r *Runtime) updateAndEmit(payload sync.DataSync) {
+// updateAndEmit helps to update state, notify changes and trigger sync updates.
+// In strict-validation mode, an error on the *first* payload from a given source
+// (i.e. before that source has ever produced a valid state) is returned so that
+// startup can fail fast. Once a source has produced at least one valid payload it
+// is recorded in validatedSources; subsequent errors from that source are logged
+// and the previous valid state is preserved (current behavior).
+func (r *Runtime) updateAndEmit(payload sync.DataSync) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	err := r.Evaluator.SetState(payload)
-	if err != nil {
-		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
-		return
+	if r.validatedSources == nil {
+		r.validatedSources = make(map[string]bool)
 	}
+
+	if err := r.Evaluator.SetState(payload); err != nil {
+		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
+		if r.StrictValidation && !r.validatedSources[payload.Source] {
+			return fmt.Errorf(
+				"strict validation: initial flag configuration from source %q is invalid: %w",
+				payload.Source, err,
+			)
+		}
+		return nil
+	}
+	r.validatedSources[payload.Source] = true
 	r.SyncService.Emit(payload.Source)
+	return nil
 }
