@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.5](https://github.com/open-feature/flagd/compare/flagd/v0.15.4...flagd/v0.15.5) (2026-04-30)
+
+
+### 🐛 Bug Fixes
+
+* update jsonlogic for and/or bug ([#1957](https://github.com/open-feature/flagd/issues/1957)) ([6edd6e8](https://github.com/open-feature/flagd/commit/6edd6e83e56d7407dc925afe39deae795487dd8c))
+
 ## [0.15.4](https://github.com/open-feature/flagd/compare/flagd/v0.15.3...flagd/v0.15.4) (2026-04-15)
 
 
