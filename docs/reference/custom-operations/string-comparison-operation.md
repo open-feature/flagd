@@ -73,7 +73,7 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 
 Result:
 
-```shell
+```json
 {"value":"#0000FF","reason":"TARGETING_MATCH","variant":"green"}
 ```
 
@@ -147,6 +147,6 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 
 Result:
 
-```shell
+```json
 {"value":"#0000FF","reason":"TARGETING_MATCH","variant":"green"}
 ```
