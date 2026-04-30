@@ -155,6 +155,23 @@ func TestBuildResourceFor(t *testing.T) {
 	}, "expected resource to contain service version")
 }
 
+func TestBuildResourceForEnvOverride(t *testing.T) {
+	t.Setenv("OTEL_RESOURCE_ATTRIBUTES", "service.version=9.9.9,service.name=overridden-svc")
+
+	res, err := buildResourceFor(context.Background(), "defaultSvc", "0.0.1")
+	require.Nil(t, err, "expected no error, but got: %v", err)
+
+	attributes := res.Attributes()
+	require.Containsf(t, attributes, attribute.KeyValue{
+		Key:   semconv.ServiceNameKey,
+		Value: attribute.StringValue("overridden-svc"),
+	}, "expected OTEL_RESOURCE_ATTRIBUTES to override the programmatic service name")
+	require.Containsf(t, attributes, attribute.KeyValue{
+		Key:   semconv.ServiceVersionKey,
+		Value: attribute.StringValue("9.9.9"),
+	}, "expected OTEL_RESOURCE_ATTRIBUTES to override the programmatic service version")
+}
+
 func TestErrorIntercepted(t *testing.T) {
 	// register the OTel error handling
 	observedZapCore, observedLogs := observer.New(zap.DebugLevel)

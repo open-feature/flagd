@@ -161,6 +161,7 @@ func buildResourceFor(ctx context.Context, serviceName string, serviceVersion st
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(serviceName),
 			semconv.ServiceVersionKey.String(serviceVersion)),
+		resource.WithFromEnv(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create resource identifier: %w", err)
