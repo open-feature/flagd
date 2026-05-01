@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -538,5 +539,144 @@ func (b *bufferedServer) FetchAllFlags(_ context.Context, _ *v1.FetchAllFlagsReq
 }
 
 func (b *bufferedServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
+	return &v1.GetMetadataResponse{}, nil
+}
+
+func Test_contextWithHeaders(t *testing.T) {
+	tests := []struct {
+		name            string
+		headers         map[string]string
+		expectUnchanged bool
+	}{
+		{
+			name:            "nil headers returns unchanged context",
+			headers:         nil,
+			expectUnchanged: true,
+		},
+		{
+			name:            "empty headers returns unchanged context",
+			headers:         map[string]string{},
+			expectUnchanged: true,
+		},
+		{
+			name: "headers are appended as metadata",
+			headers: map[string]string{
+				"X-Proxy-Gateway-Host": "myhost.service",
+				"X-Tenant-ID":           "tenant1",
+			},
+			expectUnchanged: false,
+		},
+		{
+			name: "single header",
+			headers: map[string]string{
+				"Authorization": "Bearer token123",
+			},
+			expectUnchanged: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			grpcSync := Sync{
+				Logger:  logger.NewLogger(nil, false),
+				Headers: tt.headers,
+			}
+
+			ctx := context.Background()
+			result := grpcSync.contextWithHeaders(ctx)
+
+			if tt.expectUnchanged {
+				require.Equal(t, ctx, result)
+				return
+			}
+
+			md, ok := metadata.FromOutgoingContext(result)
+			require.True(t, ok, "expected outgoing metadata in context")
+
+			for key, expectedVal := range tt.headers {
+				vals := md.Get(key)
+				require.Len(t, vals, 1, "expected exactly one value for key %s", key)
+				require.Equal(t, expectedVal, vals[0])
+			}
+		})
+	}
+}
+
+func Test_ReSyncWithHeaders(t *testing.T) {
+	const target = "localBufCon"
+
+	bufCon := bufconn.Listen(5)
+	receivedHeaders := make(chan map[string]string, 1)
+
+	server := grpc.NewServer()
+	syncv1grpc.RegisterFlagSyncServiceServer(server, &headerCapturingServer{
+		receivedHeaders: receivedHeaders,
+		response: &v1.FetchAllFlagsResponse{
+			FlagConfiguration: "{}",
+		},
+	})
+
+	go func() {
+		if err := server.Serve(bufCon); err != nil {
+			log.Fatalf("Server exited with error: %v", err)
+		}
+	}()
+
+	dial, err := grpc.Dial(target,
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return bufCon.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+
+	grpcSync := Sync{
+		URI:    target,
+		Logger: logger.NewLogger(nil, false),
+		Headers: map[string]string{
+			"x-proxy-gateway-host": "myhost.service",
+			"x-tenant-id":           "tenant1",
+		},
+		client: syncv1grpc.NewFlagSyncServiceClient(dial),
+	}
+
+	syncChan := make(chan sync.DataSync, 1)
+	err = grpcSync.ReSync(context.Background(), syncChan)
+	require.NoError(t, err)
+
+	select {
+	case headers := <-receivedHeaders:
+		require.Equal(t, "myhost.service", headers["x-proxy-gateway-host"])
+		require.Equal(t, "tenant1", headers["x-tenant-id"])
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for headers")
+	}
+}
+
+// headerCapturingServer captures incoming gRPC metadata headers
+type headerCapturingServer struct {
+	syncv1grpc.UnimplementedFlagSyncServiceServer
+	receivedHeaders chan map[string]string
+	response        *v1.FetchAllFlagsResponse
+}
+
+func (s *headerCapturingServer) FetchAllFlags(ctx context.Context, _ *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	headers := make(map[string]string)
+	if ok {
+		for k, v := range md {
+			if len(v) > 0 {
+				headers[k] = v[0]
+			}
+		}
+	}
+	s.receivedHeaders <- headers
+	return s.response, nil
+}
+
+func (s *headerCapturingServer) SyncFlags(_ *v1.SyncFlagsRequest, _ syncv1grpc.FlagSyncService_SyncFlagsServer) error {
+	return nil
+}
+
+func (s *headerCapturingServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
 	return &v1.GetMetadataResponse{}, nil
 }
