@@ -131,6 +131,31 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(syncHeadersFlagName, flags.Lookup(syncHeadersFlagName))
 }
 
+// parseSyncHeaders returns the global sync headers map. Viper cannot parse
+// StringToString flags from environment variables, so we fall back to manual
+// parsing of the raw env value when the typed accessor returns empty.
+func parseSyncHeaders() map[string]string {
+	if m := viper.GetStringMapString(syncHeadersFlagName); len(m) > 0 {
+		return m
+	}
+	return parseHeaderString(viper.GetString(syncHeadersFlagName))
+}
+
+// parseHeaderString parses a comma-separated "key=value" string into a map.
+func parseHeaderString(raw string) map[string]string {
+	if raw == "" {
+		return map[string]string{}
+	}
+	result := make(map[string]string)
+	for _, pair := range strings.Split(raw, ",") {
+		k, v, ok := strings.Cut(strings.TrimSpace(pair), "=")
+		if ok && k != "" {
+			result[k] = v
+		}
+	}
+	return result
+}
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -173,7 +198,7 @@ var startCmd = &cobra.Command{
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
 
-		globalHeaders := viper.GetStringMapString(syncHeadersFlagName)
+		globalHeaders := parseSyncHeaders()
 		for i := range syncProviders {
 			if syncProviders[i].Headers == nil {
 				syncProviders[i].Headers = make(map[string]string)
