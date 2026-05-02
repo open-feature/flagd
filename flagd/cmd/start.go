@@ -42,6 +42,7 @@ const (
 	streamDeadlineFlagName     = "stream-deadline"
 	maxRequestBodyFlagName     = "max-request-body"
 	maxRequestHeaderFlagName   = "max-request-header"
+	syncHeadersFlagName        = "sync-headers"
 )
 
 func init() {
@@ -96,6 +97,9 @@ func init() {
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
+	flags.StringToStringP(syncHeadersFlagName, "S", map[string]string{},
+		"Custom headers to inject into all sync provider requests (HTTP headers and gRPC metadata), "+
+			"formatted as key=value pairs")
 
 	bindFlags(flags)
 }
@@ -124,6 +128,32 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
 	_ = viper.BindPFlag(maxRequestBodyFlagName, flags.Lookup(maxRequestBodyFlagName))
 	_ = viper.BindPFlag(maxRequestHeaderFlagName, flags.Lookup(maxRequestHeaderFlagName))
+	_ = viper.BindPFlag(syncHeadersFlagName, flags.Lookup(syncHeadersFlagName))
+}
+
+// parseSyncHeaders returns the global sync headers map. Viper cannot parse
+// StringToString flags from environment variables, so we fall back to manual
+// parsing of the raw env value when the typed accessor returns empty.
+func parseSyncHeaders() map[string]string {
+	if m := viper.GetStringMapString(syncHeadersFlagName); len(m) > 0 {
+		return m
+	}
+	return parseHeaderString(viper.GetString(syncHeadersFlagName))
+}
+
+// parseHeaderString parses a comma-separated "key=value" string into a map.
+func parseHeaderString(raw string) map[string]string {
+	if raw == "" {
+		return map[string]string{}
+	}
+	result := make(map[string]string)
+	for _, pair := range strings.Split(raw, ",") {
+		k, v, ok := strings.Cut(strings.TrimSpace(pair), "=")
+		if ok && k != "" {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 // startCmd represents the start command
@@ -167,6 +197,25 @@ var startCmd = &cobra.Command{
 			}
 		}
 		syncProviders = append(syncProviders, syncProvidersFromConfig...)
+
+		globalHeaders := parseSyncHeaders()
+		for i := range syncProviders {
+			if syncProviders[i].Headers == nil {
+				syncProviders[i].Headers = make(map[string]string)
+			}
+			for k, v := range globalHeaders {
+				headerExists := false
+				for existingKey := range syncProviders[i].Headers {
+					if strings.EqualFold(existingKey, k) {
+						headerExists = true
+						break
+					}
+				}
+				if !headerExists {
+					syncProviders[i].Headers[k] = v
+				}
+			}
+		}
 
 		contextValuesToMap := make(map[string]any)
 		for k, v := range viper.GetStringMapString(contextValueFlagName) {
