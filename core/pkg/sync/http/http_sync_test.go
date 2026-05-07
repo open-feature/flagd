@@ -321,14 +321,14 @@ func TestHTTPSync_Fetch(t *testing.T) {
 }
 
 func TestNewHTTP_PassesHeaders(t *testing.T) {
-	headers := map[string]string{"X-Custom": "value"}
+	headers := map[string]string{"x-custom": "value"}
 	config := sync.SourceConfig{
 		URI:      "http://localhost",
 		Provider: "http",
 		Headers:  headers,
 	}
 	httpSync := NewHTTP(config, logger.NewLogger(nil, false), nil, 5)
-	require.Equal(t, headers, httpSync.headers)
+	require.Equal(t, map[string]string{"X-Custom": "value"}, httpSync.headers)
 }
 
 func TestHTTPSync_CustomHeaders(t *testing.T) {
