@@ -721,6 +721,74 @@ func TestUpdateFlagSetIdScoping(t *testing.T) {
 	}
 }
 
+func TestGetMembershipResolvesHighestPriority(t *testing.T) {
+	t.Parallel()
+
+	// Two sources: srcLow (priority 0) and srcHigh (priority 1).
+	// Both register a membership entry for the same (flagSetId, key).
+	// Get should return the flag from srcHigh (higher priority index).
+	srcLow := "srcLow"
+	srcHigh := "srcHigh"
+	sources := []string{srcLow, srcHigh}
+
+	s, err := NewStore(logger.NewLogger(nil, false), sources)
+	require.NoError(t, err)
+
+	// srcLow provides flag "shared" under flagSetId "A"
+	s.Update(srcLow, []model.Flag{
+		{Key: "shared", DefaultVariant: "low"},
+	}, model.Metadata{"flagSetId": "A"}, true)
+
+	// srcHigh provides the same flag "shared" under flagSetId "A"
+	s.Update(srcHigh, []model.Flag{
+		{Key: "shared", DefaultVariant: "high"},
+	}, model.Metadata{"flagSetId": "A"}, true)
+
+	// Get via flagSetId selector should resolve through membership
+	sel := NewSelector("flagSetId=A")
+	sel = sel.WithIndex("key", "shared")
+	got, _, err := s.Get(context.Background(), "shared", &sel)
+	require.NoError(t, err)
+	assert.Equal(t, "high", got.DefaultVariant, "Get should return the flag from the highest priority source")
+
+	// GetAll should also return the high-priority flag
+	selAll := NewSelector("flagSetId=A")
+	allFlags, _, err := s.GetAll(context.Background(), &selAll)
+	require.NoError(t, err)
+	require.Len(t, allFlags, 1)
+	assert.Equal(t, "high", allFlags[0].DefaultVariant, "GetAll should return the flag from the highest priority source")
+}
+
+func TestIncrementalUpdateRefreshesFlagContent(t *testing.T) {
+	t.Parallel()
+
+	const src = "src1"
+	sources := []string{src}
+
+	s, err := NewStore(logger.NewLogger(nil, false), sources)
+	require.NoError(t, err)
+
+	// Initial delivery: flag "toggle" with defaultVariant "off"
+	s.Update(src, []model.Flag{
+		{Key: "toggle", DefaultVariant: "off"},
+	}, model.Metadata{"flagSetId": "A"}, true)
+
+	sel := NewSelector("flagSetId=A")
+	sel = sel.WithIndex("key", "toggle")
+	got, _, err := s.Get(context.Background(), "toggle", &sel)
+	require.NoError(t, err)
+	assert.Equal(t, "off", got.DefaultVariant)
+
+	// Second delivery: same key, updated content
+	s.Update(src, []model.Flag{
+		{Key: "toggle", DefaultVariant: "on"},
+	}, model.Metadata{"flagSetId": "A"}, true)
+
+	got, _, err = s.Get(context.Background(), "toggle", &sel)
+	require.NoError(t, err)
+	assert.Equal(t, "on", got.DefaultVariant, "incremental update should refresh flag content")
+}
+
 func TestToLogStringCompound(t *testing.T) {
 	t.Parallel()
 
