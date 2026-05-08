@@ -29,5 +29,8 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "typescript": "^5.7.2",
     "vite": "^6.4.2"
+  },
+  "overrides": {
+    "postcss": ">=8.5.10"
   }
 }
