@@ -146,9 +146,7 @@ sources:
     provider: s3
 ```
 
-### HTTP Configuration
-
-#### Custom Headers
+### Custom Headers
 
 Custom headers can be set per-source in the JSON configuration using the `headers` field.
 Headers are sent as HTTP request headers for HTTP sync and as gRPC metadata for gRPC sync:
@@ -156,6 +154,8 @@ Headers are sent as HTTP request headers for HTTP sync and as gRPC metadata for 
 ```json
 [{"uri":"http://my-flags.com/flags","provider":"http","headers":{"X-Custom":"value","X-Tenant-ID":"tenant1"}}]
 ```
+
+### HTTP Configuration
 
 The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
 that requires OAuth-based authentication.
