@@ -60,6 +60,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | certPath           | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                                                                                                                                                                                                                                                                                                                  |
 | maxMsgSize         | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize)                                                                                                                                                                                                                                                                                                   |
 | incrementalUpdates | optional `boolean` | **Experimental.** Used for gRPC sync. When true, each update only replaces flags matching the flagSetIds in the payload, allowing flags from other flagSetIds to accumulate. When false (default), each update replaces all flags for the source. See [caveats](#incremental-updates-experimental) below.                                                                                                                                                                                 |
+| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.                                                                                                                                                                                                                                                                                                                                                                                                |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -143,6 +144,15 @@ sources:
     provider: azblob
   - uri: s3://my-bucket/my-flags.json
     provider: s3
+```
+
+### Custom Headers
+
+Custom headers can be set per-source in the JSON configuration using the `headers` field.
+Headers are sent as HTTP request headers for HTTP sync and as gRPC metadata for gRPC sync:
+
+```json
+[{"uri":"http://my-flags.com/flags","provider":"http","headers":{"X-Custom":"value","X-Tenant-ID":"tenant1"}}]
 ```
 
 ### HTTP Configuration
