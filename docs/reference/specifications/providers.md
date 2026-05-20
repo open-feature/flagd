@@ -42,7 +42,7 @@ The lifecycle is summarized below:
     - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
-    - [reconnect](#stream-reconnection) with exponential backoff offered by GRPC.
+    - [reconnect](#stream-reconnection) with automatic gRPC retry policy and explicit application-level backoff (see [stream reconnection](#stream-reconnection)).
         - if disconnected time <= `retryGracePeriod`
             - emit `PROVIDER_STALE`
             - RPC mode resolves `STALE` from cache where possible
@@ -109,6 +109,8 @@ Both the event and sync streams will forever attempt to be re-established in cas
 This is distinct from the [gRPC retry-policy](#grpc-retry-policy), which automatically retries *all RPCs* (streams or otherwise) a limited number of times to make the provider resilient to transient errors.
 It's also distinct from the [gRPC layer 4 reconnection mechanism](https://grpc.github.io/grpc/core/md_doc_connection-backoff.html) which only reconnects the TCP connection, but not any streams.
 When the stream is reconnecting, providers transition to the [STALE](https://openfeature.dev/docs/reference/concepts/events/#provider_stale) state, and after `retryGracePeriod`, transition to the ERROR state, emitting the respective events during these transitions.
+
+Due to the fact that neither the gRPC retry policy nor the L4 reconnection mechanism prevent tight loops when stream errors are returned immediately at the application layer (for example, by an intervening L7 proxy), providers must apply an explicit application-level delay of `retryBackoffMaxMs` before re-establishing the stream after an error or completion.
 
 ## gRPC Retry Policy
 

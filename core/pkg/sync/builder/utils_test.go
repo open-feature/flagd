@@ -126,6 +126,17 @@ func TestParseSource(t *testing.T) {
 			expectErr: true,
 			out:       []sync.SourceConfig{},
 		},
+		"with-headers": {
+			in:        `[{"uri":"http://test.com","provider":"http","headers":{"X-Custom":"value","X-Another":"val2"}}]`,
+			expectErr: false,
+			out: []sync.SourceConfig{
+				{
+					URI:      "http://test.com",
+					Provider: syncProviderHTTP,
+					Headers:  map[string]string{"X-Custom": "value", "X-Another": "val2"},
+				},
+			},
+		},
 	}
 
 	for name, tt := range test {

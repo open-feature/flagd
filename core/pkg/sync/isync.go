@@ -63,7 +63,8 @@ type SourceConfig struct {
 	// Note: flags from removed or renamed flagSetIds will not be automatically
 	// cleaned up; a restart or explicit empty update for the old flagSetId is
 	// required to purge them.
-	IncrementalUpdates bool `json:"incrementalUpdates,omitempty"`
+	IncrementalUpdates bool              `json:"incrementalUpdates,omitempty"`
+	Headers            map[string]string `json:"headers,omitempty"`
 
 	OAuth *OAuthCredentialHandler `json:"oauth,omitempty"`
 }
