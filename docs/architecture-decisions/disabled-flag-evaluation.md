@@ -1,6 +1,6 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: draft
+status: accepted
 author: Parth Suthar (@suthar26)
 created: 2026-04-01
 updated: 2026-04-28
