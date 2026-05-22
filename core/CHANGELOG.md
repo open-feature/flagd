@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.6](https://github.com/open-feature/flagd/compare/core/v0.15.5...core/v0.15.6) (2026-05-21)
+
+
+### ✨ New Features
+
+* add custom headers support for sync providers ([#1960](https://github.com/open-feature/flagd/issues/1960)) ([65d3796](https://github.com/open-feature/flagd/commit/65d37965db5fe287552e2376ce35b63cfcbb2cdf))
+
 ## [0.15.5](https://github.com/open-feature/flagd/compare/core/v0.15.4...core/v0.15.5) (2026-04-30)
 
 
