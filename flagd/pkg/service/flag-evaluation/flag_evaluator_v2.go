@@ -251,6 +251,13 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 				return fmt.Errorf("error setting response result: %w", err)
 			}
 		}
+	} else if reason == model.DisabledReason {
+		if respV2, ok := resp.(responseV2[T]); ok {
+			if err := respV2.SetReasonOnly(model.DisabledReason, metadata); err != nil {
+				logger.ErrorWithID(reqID, err.Error())
+				return fmt.Errorf("error setting response result: %w", err)
+			}
+		}
 	} else {
 		if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {
 			logger.ErrorWithID(reqID, err.Error())
@@ -286,8 +293,6 @@ func recordResolveErrorV2(span trace.Span, err error, flagKey string) {
 func errFormatV2(err error) error {
 	ReadableErrorMsg := model.GetErrorMessage(err.Error())
 	switch err.Error() {
-	case model.FlagDisabledErrorCode:
-		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.GeneralErrorCode:

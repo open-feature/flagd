@@ -90,6 +90,13 @@ func (s *OldFlagEvaluationService) ResolveAll(
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(ctx, value.Error, value.Reason, value.Variant, value.FlagKey)
 
+		if value.Reason == model.DisabledReason {
+			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
+				Reason: value.Reason,
+			}
+			continue
+		}
+
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
@@ -395,7 +402,7 @@ func formatContextKeys(context map[string]any) []string {
 func errFormat(err error) error {
 	ReadableErrorMsg := model.GetErrorMessage(err.Error())
 	switch err.Error() {
-	case model.FlagNotFoundErrorCode, model.FlagDisabledErrorCode:
+	case model.FlagNotFoundErrorCode:
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s", ReadableErrorMsg))

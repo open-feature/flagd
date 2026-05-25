@@ -975,10 +975,6 @@ func TestFlag_Evaluation_ErrorCodes(t *testing.T) {
 			code: connect.CodeDataLoss,
 		},
 		{
-			err:  errors.New(model.FlagDisabledErrorCode),
-			code: connect.CodeNotFound,
-		},
-		{
 			err:  errors.New(model.GeneralErrorCode),
 			code: connect.CodeUnknown,
 		},
@@ -1026,11 +1022,6 @@ func Test_Readable_ErrorMessage(t *testing.T) {
 			name: "Testing general error",
 			code: model.GeneralErrorCode,
 			want: model.ReadableErrorMessage[model.GeneralErrorCode],
-		},
-		{
-			name: "Testing flag disabled error",
-			code: model.FlagDisabledErrorCode,
-			want: model.ReadableErrorMessage[model.FlagDisabledErrorCode],
 		},
 		{
 			name: "Testing invalid context error",

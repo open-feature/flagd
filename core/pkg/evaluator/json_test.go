@@ -467,9 +467,11 @@ func TestResolveAllValues(t *testing.T) {
 		}
 
 		for _, val := range vals {
-			// disabled flag must be ignored from bulk evaluation
+			// disabled flag must not be ignored from bulk evaluation
 			if val.FlagKey == DisabledFlag {
-				t.Errorf("disabled flag '%s' is present in evaluation results", DisabledFlag)
+				assert.Equal(t, model.DisabledReason, val.Reason)
+				assert.Nil(t, val.Error)
+				continue
 			}
 
 			switch vT := val.Value.(type) {
@@ -510,7 +512,7 @@ func TestResolveBooleanValue(t *testing.T) {
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, false, model.DisabledReason, ""},
 	}
 	const reqID = "default"
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -545,7 +547,7 @@ func BenchmarkResolveBooleanValue(b *testing.B) {
 		{DynamicBoolFlag, map[string]interface{}{ColorProp: ColorValue}, StaticBoolValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, StaticBoolValue, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, StaticBoolValue, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, false, model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -585,7 +587,7 @@ func TestResolveStringValue(t *testing.T) {
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, "", model.DisabledReason, ""},
 	}
 	const reqID = "default"
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -621,7 +623,7 @@ func BenchmarkResolveStringValue(b *testing.B) {
 		{DynamicStringFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicStringValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, "", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "", model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, "", model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -661,7 +663,7 @@ func TestResolveFloatValue(t *testing.T) {
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, 0, model.DisabledReason, ""},
 	}
 	const reqID = "default"
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -697,7 +699,7 @@ func BenchmarkResolveFloatValue(b *testing.B) {
 		{DynamicFloatFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicFloatValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, 0, model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -737,7 +739,7 @@ func TestResolveIntValue(t *testing.T) {
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, 0, model.DisabledReason, ""},
 	}
 	const reqID = "default"
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -773,7 +775,7 @@ func BenchmarkResolveIntValue(b *testing.B) {
 		{DynamicIntFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicIntValue, model.TargetingMatchReason, ""},
 		{StaticObjectFlag, nil, 13, model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, 13, model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, 0, model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, 0, model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -813,7 +815,7 @@ func TestResolveObjectValue(t *testing.T) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, "", model.DisabledReason, ""},
 	}
 	const reqID = "default"
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -827,11 +829,15 @@ func TestResolveObjectValue(t *testing.T) {
 
 		if test.errorCode == "" {
 			if assert.NoError(t, err) {
-				marshalled, err := json.Marshal(val)
-				if assert.NoError(t, err) {
-					assert.JSONEq(t, test.val, string(marshalled))
-					assert.Equal(t, test.reason, reason)
+				if test.flagKey == DisabledFlag {
+					assert.Nil(t, val)
+				} else {
+					marshalled, err := json.Marshal(val)
+					if assert.NoError(t, err) {
+						assert.JSONEq(t, test.val, string(marshalled))
+					}
 				}
+				assert.Equal(t, test.reason, reason)
 			}
 		} else {
 			assert.Equal(t, model.ErrorReason, reason)
@@ -852,7 +858,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, "{}", model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
@@ -897,7 +903,7 @@ func TestResolveAsAnyValue(t *testing.T) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		// errors
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "{}", model.ErrorReason, model.FlagDisabledErrorCode},
+		{DisabledFlag, nil, "{}", model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())

@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
@@ -91,6 +92,12 @@ func (s *FlagEvaluationService) ResolveAll(
 	for _, resolved := range resolutions {
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
+		if resolved.Reason == model.DisabledReason {
+			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
+				Reason: resolved.Reason,
+			}
+			continue
+		}
 		switch v := resolved.Value.(type) {
 		case bool:
 			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{

@@ -7,7 +7,6 @@ const (
 	ParseErrorCode        = "PARSE_ERROR"
 	TypeMismatchErrorCode = "TYPE_MISMATCH"
 	GeneralErrorCode      = "GENERAL"
-	FlagDisabledErrorCode = "FLAG_DISABLED"
 	InvalidContextCode    = "INVALID_CONTEXT"
 )
 
@@ -16,7 +15,6 @@ var ReadableErrorMessage = map[string]string{
 	ParseErrorCode:        "Error parsing input or configuration",
 	TypeMismatchErrorCode: "Type mismatch error",
 	GeneralErrorCode:      "General error",
-	FlagDisabledErrorCode: "Flag is disabled",
 	InvalidContextCode:    "Invalid context provided",
 }
 
