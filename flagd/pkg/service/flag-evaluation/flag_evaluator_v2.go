@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const errSettingResponseResult = "error setting response result: %w"
+
 type FlagEvaluationServiceV2 struct {
 	logger                     *logger.Logger
 	eval                       evaluator.IEvaluator
@@ -244,28 +246,52 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	if reason == model.FallbackReason {
-		if respV2, ok := resp.(responseV2[T]); ok {
-			if err := respV2.SetReasonOnly(model.DefaultReason, metadata); err != nil {
-				logger.ErrorWithID(reqID, err.Error())
-				return fmt.Errorf("error setting response result: %w", err)
-			}
-		}
-	} else if reason == model.DisabledReason {
-		if respV2, ok := resp.(responseV2[T]); ok {
-			if err := respV2.SetReasonOnly(model.DisabledReason, metadata); err != nil {
-				logger.ErrorWithID(reqID, err.Error())
-				return fmt.Errorf("error setting response result: %w", err)
-			}
-		}
-	} else {
-		if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {
-			logger.ErrorWithID(reqID, err.Error())
-			return fmt.Errorf("error setting response result: %w", err)
-		}
+	if err := applyResolveV2Response(logger, reqID, resp, result, variant, reason, metadata, evalErr); err != nil {
+		return err
 	}
 
 	return evalErrFormatted
+}
+
+func applyResolveV2Response[T constraints](
+	logger *logger.Logger,
+	reqID string,
+	resp response[T],
+	result T,
+	variant, reason string,
+	metadata map[string]interface{},
+	evalErr error,
+) error {
+	switch reason {
+	case model.FallbackReason:
+		return setResolveV2ReasonOnly(logger, reqID, resp, model.DefaultReason, metadata)
+	case model.DisabledReason:
+		return setResolveV2ReasonOnly(logger, reqID, resp, model.DisabledReason, metadata)
+	default:
+		if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {
+			logger.ErrorWithID(reqID, err.Error())
+			return fmt.Errorf(errSettingResponseResult, err)
+		}
+	}
+	return nil
+}
+
+func setResolveV2ReasonOnly[T constraints](
+	logger *logger.Logger,
+	reqID string,
+	resp response[T],
+	reason string,
+	metadata map[string]interface{},
+) error {
+	respV2, ok := resp.(responseV2[T])
+	if !ok {
+		return nil
+	}
+	if err := respV2.SetReasonOnly(reason, metadata); err != nil {
+		logger.ErrorWithID(reqID, err.Error())
+		return fmt.Errorf(errSettingResponseResult, err)
+	}
+	return nil
 }
 
 // startResolveV2 initialises tracing and selector context common to every Resolve* method.

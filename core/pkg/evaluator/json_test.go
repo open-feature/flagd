@@ -803,6 +803,33 @@ func BenchmarkResolveIntValue(b *testing.B) {
 	}
 }
 
+func assertObjectResolveResult(
+	t *testing.T,
+	flagKey, expectedJSON, expectedReason, errorCode string,
+	val map[string]any,
+	reason string,
+	err error,
+) {
+	t.Helper()
+	if errorCode != "" {
+		assert.Equal(t, model.ErrorReason, reason)
+		assert.EqualError(t, err, errorCode)
+		return
+	}
+	if !assert.NoError(t, err) {
+		return
+	}
+	if flagKey == DisabledFlag {
+		assert.Nil(t, val)
+	} else {
+		marshalled, marshalErr := json.Marshal(val)
+		if assert.NoError(t, marshalErr) {
+			assert.JSONEq(t, expectedJSON, string(marshalled))
+		}
+	}
+	assert.Equal(t, expectedReason, reason)
+}
+
 func TestResolveObjectValue(t *testing.T) {
 	tests := []struct {
 		flagKey   string
@@ -826,23 +853,7 @@ func TestResolveObjectValue(t *testing.T) {
 
 	for _, test := range tests {
 		val, _, reason, _, err := evaluator.ResolveObjectValue(context.TODO(), reqID, test.flagKey, test.context)
-
-		if test.errorCode == "" {
-			if assert.NoError(t, err) {
-				if test.flagKey == DisabledFlag {
-					assert.Nil(t, val)
-				} else {
-					marshalled, err := json.Marshal(val)
-					if assert.NoError(t, err) {
-						assert.JSONEq(t, test.val, string(marshalled))
-					}
-				}
-				assert.Equal(t, test.reason, reason)
-			}
-		} else {
-			assert.Equal(t, model.ErrorReason, reason)
-			assert.EqualError(t, err, test.errorCode)
-		}
+		assertObjectResolveResult(t, test.flagKey, test.val, test.reason, test.errorCode, val, reason, err)
 	}
 }
 
