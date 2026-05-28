@@ -60,7 +60,7 @@ Alternatively, these configurations can be passed to flagd via config file, spec
 | certPath           | optional `string`  | Used for grpcs sync when TLS certificate is needed. If not provided, system certificates will be used for TLS connection                                                                                                                                                                                                                                                                                                                                                                  |
 | maxMsgSize         | optional `int`     | Used for gRPC sync to set max receive message size (in bytes) e.g. 5242880 for 5MB. If not provided, the default is [4MB](https://pkg.go.dev/google.golang.org#grpc#MaxCallRecvMsgSize)                                                                                                                                                                                                                                                                                                   |
 | incrementalUpdates | optional `boolean` | **Experimental.** Used for gRPC sync. When true, each update only replaces flags matching the flagSetIds in the payload, allowing flags from other flagSetIds to accumulate. When false (default), each update replaces all flags for the source. See [caveats](#incremental-updates-experimental) below.                                                                                                                                                                                 |
-| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.                                                                                                                                                                                                                                                                                                                                                                                                |
+| headers            | optional `map[string]string` | Custom key-value pairs sent as HTTP headers or gRPC metadata with outbound sync requests.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 The `uri` field values **do not** follow the [URI patterns](#uri-patterns). The provider type is instead derived
 from the `provider` field. Only exception is the remote provider where `http(s)://` is expected by default. Incorrect
@@ -146,19 +146,29 @@ sources:
     provider: s3
 ```
 
+### HTTP Configuration
+
+The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
+that requires OAuth-based authentication.
+
 ### Custom Headers
 
 Custom headers can be set per-source in the JSON configuration using the `headers` field.
-Headers are sent as HTTP request headers for HTTP sync and as gRPC metadata for gRPC sync:
+Headers are sent as HTTP request headers for HTTP sync and as gRPC metadata for gRPC sync.
+
+This is useful when the sync backend sits behind infrastructure that inspects request headers. For example, an API gateway, ingress proxy, or service mesh that performs routing, tenant isolation, or access control based on headers it expects to see on every request.
+
+For HTTP sync:
 
 ```json
 [{"uri":"http://my-flags.com/flags","provider":"http","headers":{"X-Custom":"value","X-Tenant-ID":"tenant1"}}]
 ```
 
-### HTTP Configuration
+For gRPC sync:
 
-The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
-that requires OAuth-based authentication.
+```json
+[{"uri":"my-flags.com:8080","provider":"grpc","selector": "flagSetId=flags", "headers":{"X-Custom":"value","X-Tenant-ID":"tenant1"}}]
+```
 
 #### CLI-based OAuth Configuration
 
