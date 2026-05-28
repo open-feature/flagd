@@ -464,6 +464,13 @@ func Test_S3Config(t *testing.T) {
 			expectedInterval: defaultInterval,
 		},
 		{
+			name:             "bucket options in query",
+			uri:              "s3://bucket/path/to/object?use_path_style=true",
+			expectedBucket:   "s3://bucket?use_path_style=true",
+			expectedObject:   "path/to/object",
+			expectedInterval: defaultInterval,
+		},
+		{
 			name:             "no object set", // Blob syncer will return error when fetching
 			uri:              "s3://bucket/",
 			expectedBucket:   "s3://bucket/",
