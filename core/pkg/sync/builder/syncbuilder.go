@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -291,8 +292,14 @@ func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) (*
 	// Extract bucket uri and object name from the full URI:
 	// s3://bucket/path/to/object results in s3://bucket/ as bucketUri and
 	// path/to/object as an object name.
-	bucketURI := regS3.FindString(config.URI)
-	objectName := regS3.ReplaceAllString(config.URI, "")
+	rawURI, query, hasQuery := strings.Cut(config.URI, "?")
+	bucketURI := regS3.FindString(rawURI)
+	objectName := regS3.ReplaceAllString(rawURI, "")
+	if hasQuery && query != "" {
+		// s3blob reads use_path_style/region/etc. from the bucket URL query string;
+		// the bucket host must not carry a trailing slash before "?".
+		bucketURI = strings.TrimSuffix(bucketURI, "/") + "?" + query
+	}
 
 	interval, poller, err := newPoller(config)
 	if err != nil {
