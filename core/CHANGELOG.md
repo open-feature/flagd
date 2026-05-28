@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.7](https://github.com/open-feature/flagd/compare/core/v0.15.6...core/v0.15.7) (2026-05-28)
+
+
+### ✨ New Features
+
+* **sync:** forward S3 URI query parameters to the bucket URL ([#1971](https://github.com/open-feature/flagd/issues/1971)) ([7e253f9](https://github.com/open-feature/flagd/commit/7e253f9211bc8fbbb1d665bacb0d3c0a77283680)), closes [#1961](https://github.com/open-feature/flagd/issues/1961)
+
 ## [0.15.6](https://github.com/open-feature/flagd/compare/core/v0.15.5...core/v0.15.6) (2026-05-21)
 
 

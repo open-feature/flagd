@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.6](https://github.com/open-feature/flagd/compare/flagd/v0.15.5...flagd/v0.15.6) (2026-05-28)
+
+
+### ✨ New Features
+
+* bump core for custom headers, add docs ([#1969](https://github.com/open-feature/flagd/issues/1969)) ([4f33a0c](https://github.com/open-feature/flagd/commit/4f33a0c71818ffcd8063295c4c8c0e9285818105))
+
 ## [0.15.5](https://github.com/open-feature/flagd/compare/flagd/v0.15.4...flagd/v0.15.5) (2026-04-30)
 
 
