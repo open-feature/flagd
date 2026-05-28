@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.5...flagd-proxy/v0.9.6) (2026-05-28)
+
+
+### ✨ New Features
+
+* bump core for custom headers, add docs ([#1969](https://github.com/open-feature/flagd/issues/1969)) ([4f33a0c](https://github.com/open-feature/flagd/commit/4f33a0c71818ffcd8063295c4c8c0e9285818105))
+
 ## [0.9.5](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.4...flagd-proxy/v0.9.5) (2026-04-30)
 
 
