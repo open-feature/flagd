@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.8](https://github.com/open-feature/flagd/compare/core/v0.15.7...core/v0.15.8) (2026-05-29)
+
+
+### 🐛 Bug Fixes
+
+* **sync:** panic on s3 URI with query string ([#1974](https://github.com/open-feature/flagd/issues/1974)) ([82040ff](https://github.com/open-feature/flagd/commit/82040ff47a33e914e0c4a91a9db321cc1e9510a4))
+
 ## [0.15.7](https://github.com/open-feature/flagd/compare/core/v0.15.6...core/v0.15.7) (2026-05-28)
 
 
