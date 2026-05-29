@@ -90,13 +90,6 @@ func (s *OldFlagEvaluationService) ResolveAll(
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(ctx, value.Error, value.Reason, value.Variant, value.FlagKey)
 
-		if value.Reason == model.DisabledReason {
-			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
-				Reason: value.Reason,
-			}
-			continue
-		}
-
 		switch v := value.Value.(type) {
 		case bool:
 			res.Flags[value.FlagKey] = &schemaV1.AnyFlag{
