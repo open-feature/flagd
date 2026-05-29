@@ -83,6 +83,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	sources := []string{}
 
+	// URIs are registered verbatim (including any blob query string like
+	// s3://bucket/key?use_path_style=true); the sync implementation must
+	// emit DataSync.Source matching this exact string. See flagd#1973.
 	for _, provider := range config.SyncProviders {
 		sources = append(sources, provider.URI)
 	}
