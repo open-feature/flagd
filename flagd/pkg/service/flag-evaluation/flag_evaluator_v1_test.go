@@ -19,6 +19,37 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+func TestConnectServiceV2_ResolveAll_DisabledFlagHasMetadata(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+		[]evaluator.AnyValue{
+			{
+				Reason:  model.DisabledReason,
+				FlagKey: "disabled-flag",
+				Metadata: model.Metadata{
+					"scope": "my-app",
+				},
+			},
+		},
+		model.Metadata{},
+		nil,
+	).AnyTimes()
+
+	metrics, _ := getMetricReader()
+	s := NewFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil, 0)
+
+	got, err := s.ResolveAll(context.Background(), connect.NewRequest(&evalV1.ResolveAllRequest{}))
+	require.NoError(t, err)
+
+	flag, ok := got.Msg.Flags["disabled-flag"]
+	require.True(t, ok, "disabled flag missing from ResolveAll response")
+	require.Equal(t, model.DisabledReason, flag.Reason)
+	require.Nil(t, flag.Value, "disabled flag must not carry a value")
+	require.NotNil(t, flag.Metadata, "disabled flag must propagate per-flag metadata")
+	require.Equal(t, "my-app", flag.Metadata.Fields["scope"].GetStringValue())
+}
+
 func TestConnectServiceV2_ResolveAll(t *testing.T) {
 	tests := map[string]struct {
 		req         *evalV1.ResolveAllRequest

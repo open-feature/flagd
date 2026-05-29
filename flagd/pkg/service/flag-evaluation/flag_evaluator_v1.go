@@ -93,8 +93,14 @@ func (s *FlagEvaluationService) ResolveAll(
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
 		if resolved.Reason == model.DisabledReason {
+			metadata, err := structpb.NewStruct(resolved.Metadata)
+			if err != nil {
+				s.logger.WarnWithID(reqID, fmt.Sprintf("error resolving all flags: %v", err))
+				return nil, fmt.Errorf("error resolving flags. Tracking ID: %s", reqID)
+			}
 			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
-				Reason: resolved.Reason,
+				Reason:   resolved.Reason,
+				Metadata: metadata,
 			}
 			continue
 		}
