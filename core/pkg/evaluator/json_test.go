@@ -869,7 +869,7 @@ func BenchmarkResolveObjectValue(b *testing.B) {
 		{DynamicObjectFlag, map[string]interface{}{ColorProp: ColorValue}, DynamicObjectValue, model.TargetingMatchReason, ""},
 		{StaticBoolFlag, nil, "{}", model.ErrorReason, model.TypeMismatchErrorCode},
 		{MissingFlag, nil, "{}", model.ErrorReason, model.FlagNotFoundErrorCode},
-		{DisabledFlag, nil, "{}", model.DisabledReason, ""},
+		{DisabledFlag, nil, "null", model.DisabledReason, ""},
 	}
 
 	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
