@@ -395,7 +395,7 @@ func formatContextKeys(context map[string]any) []string {
 func errFormat(err error) error {
 	ReadableErrorMsg := model.GetErrorMessage(err.Error())
 	switch err.Error() {
-	case model.FlagNotFoundErrorCode:
+	case model.FlagNotFoundErrorCode, model.FlagDisabledErrorCode:
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("%s", ReadableErrorMsg))
 	case model.TypeMismatchErrorCode:
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s", ReadableErrorMsg))
