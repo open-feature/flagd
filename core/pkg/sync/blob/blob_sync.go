@@ -10,6 +10,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/bloburi"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/utils"
 	"gocloud.dev/blob"
@@ -100,7 +101,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChe
 	if !skipCheckingModTime {
 		hs.lastUpdated = updated
 	}
-	dataSync <- sync.DataSync{FlagData: msg, Source: hs.Bucket + hs.Object}
+	dataSync <- sync.DataSync{FlagData: msg, Source: bloburi.Join(hs.Bucket, hs.Object)}
 	return nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
@@ -13,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/grpc"
 	"github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	httpSync "github.com/open-feature/flagd/core/pkg/sync/http"
+	"github.com/open-feature/flagd/core/pkg/sync/internal/bloburi"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
 	"go.uber.org/zap"
@@ -229,8 +229,7 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) (
 	// Extract bucket uri and object name from the full URI:
 	// gs://bucket/path/to/object results in gs://bucket/ as bucketUri and
 	// path/to/object as an object name.
-	bucketURI := regGcs.FindString(config.URI)
-	objectName := regGcs.ReplaceAllString(config.URI, "")
+	bucketURI, objectName := bloburi.Split(config.URI, regGcs)
 
 	interval, poller, err := newPoller(config)
 	if err != nil {
@@ -265,8 +264,7 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 	// Extract bucket uri and object name from the full URI:
 	// azblob://bucket/path/to/object results in azblob://bucket/ as bucketUri and
 	// path/to/object as an object name.
-	bucketURI := regAzblob.FindString(config.URI)
-	objectName := regAzblob.ReplaceAllString(config.URI, "")
+	bucketURI, objectName := bloburi.Split(config.URI, regAzblob)
 
 	interval, poller, err := newPoller(config)
 	if err != nil {
@@ -291,15 +289,9 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
 	// Extract bucket uri and object name from the full URI:
 	// s3://bucket/path/to/object results in s3://bucket/ as bucketUri and
-	// path/to/object as an object name.
-	rawURI, query, hasQuery := strings.Cut(config.URI, "?")
-	bucketURI := regS3.FindString(rawURI)
-	objectName := regS3.ReplaceAllString(rawURI, "")
-	if hasQuery && query != "" {
-		// s3blob reads use_path_style/region/etc. from the bucket URL query string;
-		// the bucket host must not carry a trailing slash before "?".
-		bucketURI = strings.TrimSuffix(bucketURI, "/") + "?" + query
-	}
+	// path/to/object as an object name. Any query string (e.g. use_path_style,
+	// region) is moved onto the bucket URL so gocloud's s3blob driver reads it.
+	bucketURI, objectName := bloburi.Split(config.URI, regS3)
 
 	interval, poller, err := newPoller(config)
 	if err != nil {
