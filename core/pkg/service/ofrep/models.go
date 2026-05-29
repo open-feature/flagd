@@ -70,10 +70,13 @@ func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
 			Metadata: result.Metadata,
 		}
 	}
+	// if reason is disabled, we want to omit the value and variant from the response
 	if result.Reason == model.DisabledReason {
 		return EvaluationSuccess{
+			Value:    nil, // not marshalled due to omitempty
 			Key:      result.FlagKey,
 			Reason:   model.DisabledReason,
+			Variant:  "", // not marshalled due to omitempty
 			Metadata: result.Metadata,
 		}
 	}
