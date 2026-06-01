@@ -70,6 +70,16 @@ func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
 			Metadata: result.Metadata,
 		}
 	}
+	// if reason is disabled, we want to omit the value and variant from the response
+	if result.Reason == model.DisabledReason {
+		return EvaluationSuccess{
+			Value:    nil, // not marshalled due to omitempty
+			Key:      result.FlagKey,
+			Reason:   model.DisabledReason,
+			Variant:  "", // not marshalled due to omitempty
+			Metadata: result.Metadata,
+		}
+	}
 	return EvaluationSuccess{
 		Value:    result.Value,
 		Key:      result.FlagKey,
@@ -114,10 +124,6 @@ func EvaluationErrorResponseFrom(result evaluator.AnyValue) (int, EvaluationErro
 		status = 404
 		payload.ErrorCode = model.FlagNotFoundErrorCode
 		payload.ErrorDetails = fmt.Sprintf("flag `%s` does not exist", result.FlagKey)
-	case model.FlagDisabledErrorCode:
-		status = 404
-		payload.ErrorCode = model.FlagNotFoundErrorCode
-		payload.ErrorDetails = fmt.Sprintf("flag `%s` is disabled", result.FlagKey)
 	case model.ParseErrorCode:
 		payload.ErrorCode = model.ParseErrorCode
 		payload.ErrorDetails = fmt.Sprintf("error parsing the flag `%s`", result.FlagKey)

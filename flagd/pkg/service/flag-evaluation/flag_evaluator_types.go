@@ -176,7 +176,7 @@ func (r *objectResponse) SetResult(value map[string]any, variant, reason string,
 // V2 response types with optional value and variant
 
 type responseV2[T constraints] interface {
-	SetResult(value T, variant, reason string, metadata map[string]interface{}) error
+	response[T]
 	SetReasonOnly(reason string, metadata map[string]interface{}) error
 }
 

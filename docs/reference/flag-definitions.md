@@ -75,7 +75,7 @@ See below for a detailed description of each property.
 
 `state` is a **required** property.
 Validate states are "ENABLED" or "DISABLED".
-When the state is set to "DISABLED", flagd will behave like the flag doesn't exist.
+When the state is set to "DISABLED", flagd returns a successful evaluation with `reason=DISABLED` and no value or variant; the SDK surfaces the caller-provided default.
 
 Example:
 
