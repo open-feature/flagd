@@ -289,6 +289,8 @@ func (s *FlagEvaluationServiceV2) startResolveV2(
 
 	selector, err := selectorFromHeader(header)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return ctx, span, err
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)

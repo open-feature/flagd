@@ -64,6 +64,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	watcher := make(chan store.FlagQueryResult, 1)
 	selector, err := store.NewSelector(selectorExpression)
 	if err != nil {
+		exitReason = "error"
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	ctx := server.Context()
