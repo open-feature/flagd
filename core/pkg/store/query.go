@@ -52,16 +52,6 @@ func NewSelector(selectorExpression string) (Selector, error) {
 	return Selector{indexMap: m}, nil
 }
 
-// NewSourceSelector creates a Selector that queries by source.
-func NewSourceSelector(source string) Selector {
-	return Selector{indexMap: map[string]string{sourceIndex: source}}
-}
-
-// NewFlagSetIdSelector creates a Selector that queries by flagSetId.
-func NewFlagSetIdSelector(flagSetId string) Selector {
-	return Selector{indexMap: map[string]string{flagSetIdIndex: flagSetId}}
-}
-
 func expressionToMap(sExp string) map[string]string {
 	selectorMap := make(map[string]string)
 	if sExp == "" {
@@ -89,17 +79,15 @@ func expressionToMap(sExp string) map[string]string {
 	return selectorMap
 }
 
-// WithIndex returns a new Selector with the given key-value pair added.
-// Returns an error if the key is not a valid user-facing selector key.
-func (s Selector) WithIndex(key string, value string) (Selector, error) {
-	if _, ok := validSelectorKeys[key]; !ok {
-		return s, fmt.Errorf("invalid selector key %q, valid keys: %q, %q", key, flagSetIdIndex, sourceIndex)
-	}
-	return s.withIndex(key, value), nil
-}
+func (s Selector) WithSource(source string) Selector    { return s.withIndex(sourceIndex, source) }
+func (s Selector) WithFlagSetId(id string) Selector     { return s.withIndex(flagSetIdIndex, id) }
+func (s Selector) withKey(key string) Selector          { return s.withIndex(keyIndex, key) }
 
-func (s Selector) withIndex(key string, value string) Selector {
+func (s Selector) withIndex(key, value string) Selector {
 	m := maps.Clone(s.indexMap)
+	if m == nil {
+		m = make(map[string]string, 1)
+	}
 	m[key] = value
 	return Selector{indexMap: m}
 }
