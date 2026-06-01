@@ -97,7 +97,15 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		h.writeJSONToResponse(http.StatusBadRequest, ofrep.EvaluationError{
+			Key:          flagKey,
+			ErrorCode:    model.GeneralErrorCode,
+			ErrorDetails: fmt.Sprintf("invalid selector: %v", err),
+		}, w)
+		return
+	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
@@ -122,7 +130,12 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	evaluationContext := flagdContext(h.Logger, requestID, request, h.contextValues, r.Header, h.headerToContextKeyMappings)
 	selectorExpression := r.Header.Get(service.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		res := ofrep.BulkEvaluationContextErrorFrom(model.GeneralErrorCode, fmt.Sprintf("invalid selector: %v", err))
+		h.writeJSONToResponse(http.StatusBadRequest, res, w)
+		return
+	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)

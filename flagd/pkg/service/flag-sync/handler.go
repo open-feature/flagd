@@ -62,7 +62,10 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}()
 
 	watcher := make(chan store.FlagQueryResult, 1)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
 	ctx := server.Context()
 
 	syncContextMap := make(map[string]any)
@@ -166,7 +169,10 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 	*syncv1.FetchAllFlagsResponse, error,
 ) {
 	selectorExpression := s.getSelectorExpression(ctx, req)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	flags, _, err := s.store.GetAll(ctx, &selector)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))

@@ -76,7 +76,10 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	}
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	values, _, err := s.eval.ResolveAllValues(ctx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), make(map[string]string)))
@@ -143,7 +146,10 @@ func (s *OldFlagEvaluationService) EventStream(
 
 	requestNotificationChan := make(chan service.Notification, 1)
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
@@ -186,7 +192,10 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	err := resolve[bool](
@@ -218,7 +227,10 @@ func (s *OldFlagEvaluationService) ResolveString(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
@@ -251,7 +263,10 @@ func (s *OldFlagEvaluationService) ResolveInt(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
@@ -284,7 +299,10 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
@@ -317,7 +335,10 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	defer span.End()
 
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})

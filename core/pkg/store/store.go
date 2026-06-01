@@ -153,7 +153,7 @@ func (s *Store) Get(_ context.Context, key string, selector *Selector) (model.Fl
 
 	// if present, use the selector to query the flags
 	if !selector.IsEmpty() {
-		selector := selector.WithIndex("key", key)
+		selector := selector.withIndex("key", key)
 		indexId, constraints := selector.ToQuery()
 		s.logger.Debug(fmt.Sprintf("getting flag with query: %s, %v", indexId, constraints))
 		raw, err := txn.First(flagsTable, indexId, constraints...)
@@ -274,7 +274,7 @@ func (s *Store) Update(
 			seenFlagSetIds[id.flagSetId] = struct{}{}
 		}
 		for fsi := range seenFlagSetIds {
-			sel := NewSelector(flagSetIdIndex+"="+fsi).WithIndex(sourceIndex, source)
+			sel := NewFlagSetIdSelector(fsi).withIndex(sourceIndex, source)
 			indexId, constraints := sel.ToQuery()
 			it, err := txn.Get(flagsTable, indexId, constraints...)
 			if err != nil {
@@ -284,7 +284,7 @@ func (s *Store) Update(
 			oldFlags = append(oldFlags, s.collect(it)...)
 		}
 	} else {
-		sel := NewSelector(sourceIndex + "=" + source)
+		sel := NewSourceSelector(source)
 		indexId, constraints := sel.ToQuery()
 		it, err := txn.Get(flagsTable, indexId, constraints...)
 		if err != nil {

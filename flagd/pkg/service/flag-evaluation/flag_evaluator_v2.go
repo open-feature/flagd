@@ -81,7 +81,10 @@ func (s *FlagEvaluationServiceV2) EventStream(
 	s.logger.Debug("starting event stream for request")
 	requestNotificationChan := make(chan service.Notification, 1)
 	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
@@ -123,11 +126,14 @@ func (s *FlagEvaluationServiceV2) ResolveBoolean(
 	ctx context.Context,
 	req *connect.Request[evalV2.ResolveBooleanRequest],
 ) (*connect.Response[evalV2.ResolveBooleanResponse], error) {
-	ctx, span := s.startResolveV2(ctx, "resolveBoolean", req.Header())
+	ctx, span, err := s.startResolveV2(ctx, "resolveBoolean", req.Header())
 	defer span.End()
+	if err != nil {
+		return nil, err
+	}
 
 	res := connect.NewResponse(&evalV2.ResolveBooleanResponse{})
-	err := resolveV2(
+	err = resolveV2(
 		ctx, s.logger, s.eval.ResolveBooleanValue, req.Header(),
 		req.Msg.GetFlagKey(), req.Msg.GetContext(),
 		&booleanResponseV2{evalV2Resp: res},
@@ -142,11 +148,14 @@ func (s *FlagEvaluationServiceV2) ResolveString(
 	ctx context.Context,
 	req *connect.Request[evalV2.ResolveStringRequest],
 ) (*connect.Response[evalV2.ResolveStringResponse], error) {
-	ctx, span := s.startResolveV2(ctx, "resolveString", req.Header())
+	ctx, span, err := s.startResolveV2(ctx, "resolveString", req.Header())
 	defer span.End()
+	if err != nil {
+		return nil, err
+	}
 
 	res := connect.NewResponse(&evalV2.ResolveStringResponse{})
-	err := resolveV2(
+	err = resolveV2(
 		ctx, s.logger, s.eval.ResolveStringValue, req.Header(),
 		req.Msg.GetFlagKey(), req.Msg.GetContext(),
 		&stringResponseV2{evalV2Resp: res},
@@ -161,11 +170,14 @@ func (s *FlagEvaluationServiceV2) ResolveInt(
 	ctx context.Context,
 	req *connect.Request[evalV2.ResolveIntRequest],
 ) (*connect.Response[evalV2.ResolveIntResponse], error) {
-	ctx, span := s.startResolveV2(ctx, "resolveInt", req.Header())
+	ctx, span, err := s.startResolveV2(ctx, "resolveInt", req.Header())
 	defer span.End()
+	if err != nil {
+		return nil, err
+	}
 
 	res := connect.NewResponse(&evalV2.ResolveIntResponse{})
-	err := resolveV2(
+	err = resolveV2(
 		ctx, s.logger, s.eval.ResolveIntValue, req.Header(),
 		req.Msg.GetFlagKey(), req.Msg.GetContext(),
 		&intResponseV2{evalV2Resp: res},
@@ -180,11 +192,14 @@ func (s *FlagEvaluationServiceV2) ResolveFloat(
 	ctx context.Context,
 	req *connect.Request[evalV2.ResolveFloatRequest],
 ) (*connect.Response[evalV2.ResolveFloatResponse], error) {
-	ctx, span := s.startResolveV2(ctx, "resolveFloat", req.Header())
+	ctx, span, err := s.startResolveV2(ctx, "resolveFloat", req.Header())
 	defer span.End()
+	if err != nil {
+		return nil, err
+	}
 
 	res := connect.NewResponse(&evalV2.ResolveFloatResponse{})
-	err := resolveV2(
+	err = resolveV2(
 		ctx, s.logger, s.eval.ResolveFloatValue, req.Header(),
 		req.Msg.GetFlagKey(), req.Msg.GetContext(),
 		&floatResponseV2{evalV2Resp: res},
@@ -199,11 +214,14 @@ func (s *FlagEvaluationServiceV2) ResolveObject(
 	ctx context.Context,
 	req *connect.Request[evalV2.ResolveObjectRequest],
 ) (*connect.Response[evalV2.ResolveObjectResponse], error) {
-	ctx, span := s.startResolveV2(ctx, "resolveObject", req.Header())
+	ctx, span, err := s.startResolveV2(ctx, "resolveObject", req.Header())
 	defer span.End()
+	if err != nil {
+		return nil, err
+	}
 
 	res := connect.NewResponse(&evalV2.ResolveObjectResponse{})
-	err := resolveV2(
+	err = resolveV2(
 		ctx, s.logger, s.eval.ResolveObjectValue, req.Header(),
 		req.Msg.GetFlagKey(), req.Msg.GetContext(),
 		&objectResponseV2{evalV2Resp: res},
@@ -268,14 +286,17 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 // startResolveV2 initialises tracing and selector context common to every Resolve* method.
 func (s *FlagEvaluationServiceV2) startResolveV2(
 	ctx context.Context, spanName string, header http.Header,
-) (context.Context, trace.Span) {
+) (context.Context, trace.Span, error) {
 	ctx, span := s.flagEvalTracer.Start(ctx, spanName, trace.WithSpanKind(trace.SpanKindServer))
 
 	selectorExpression := header.Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := store.NewSelector(selectorExpression)
+	if err != nil {
+		return ctx, span, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
-	return ctx, span
+	return ctx, span, nil
 }
 
 // recordResolveErrorV2 records an evaluation error on the active span.
