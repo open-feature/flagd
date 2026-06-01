@@ -244,21 +244,18 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	if reason == model.FallbackReason {
-		if respV2, ok := resp.(responseV2[T]); ok {
-			if err := respV2.SetReasonOnly(model.DefaultReason, metadata); err != nil {
-				logger.ErrorWithID(reqID, err.Error())
-				return fmt.Errorf("error setting response result: %w", err)
-			}
+	switch reason {
+	case model.FallbackReason:
+		if err := setReasonOnlyV2(resp, model.DefaultReason, metadata); err != nil {
+			logger.ErrorWithID(reqID, err.Error())
+			return fmt.Errorf("error setting fallback response: %w", err)
 		}
-	} else if reason == model.DisabledReason {
-		if respV2, ok := resp.(responseV2[T]); ok {
-			if err := respV2.SetReasonOnly(model.DisabledReason, metadata); err != nil {
-				logger.ErrorWithID(reqID, err.Error())
-				return fmt.Errorf("error setting response result: %w", err)
-			}
+	case model.DisabledReason:
+		if err := setReasonOnlyV2(resp, model.DisabledReason, metadata); err != nil {
+			logger.ErrorWithID(reqID, err.Error())
+			return fmt.Errorf("error setting disabled response: %w", err)
 		}
-	} else {
+	default:
 		if err := resp.SetResult(result, variant, reason, metadata); err != nil && evalErr == nil {
 			logger.ErrorWithID(reqID, err.Error())
 			return fmt.Errorf("error setting response result: %w", err)
@@ -289,15 +286,11 @@ func recordResolveErrorV2(span trace.Span, err error, flagKey string) {
 	}
 }
 
-// errFormatV2 formats errors for V2 API, excluding FLAG_NOT_FOUND and PARSE_ERROR which are not errors in V2
-func errFormatV2(err error) error {
-	ReadableErrorMsg := model.GetErrorMessage(err.Error())
-	switch err.Error() {
-	case model.TypeMismatchErrorCode:
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s", ReadableErrorMsg))
-	case model.GeneralErrorCode:
-		return connect.NewError(connect.CodeUnknown, fmt.Errorf("%s", ReadableErrorMsg))
+// setReasonOnlyV2 writes a reason-only response (no value/variant) when resp is a V2 response.
+func setReasonOnlyV2[T constraints](resp response[T], reason string, metadata map[string]any) error {
+	respV2, ok := resp.(responseV2[T])
+	if !ok {
+		return nil
 	}
-
-	return err
+	return respV2.SetReasonOnly(reason, metadata)
 }
