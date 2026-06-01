@@ -1046,3 +1046,63 @@ func Test_Readable_ErrorMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidSelector_OldFlagEvaluationService(t *testing.T) {
+	const invalidSelector = "invalidKey=val"
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+	metrics, _ := getMetricReader()
+	s := NewOldFlagEvaluationService(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil)
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{"ResolveAll", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveAllRequest{})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveAll(context.Background(), req)
+			return err
+		}},
+		{"ResolveBoolean", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveBooleanRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveBoolean(context.Background(), req)
+			return err
+		}},
+		{"ResolveString", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveStringRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveString(context.Background(), req)
+			return err
+		}},
+		{"ResolveInt", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveIntRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveInt(context.Background(), req)
+			return err
+		}},
+		{"ResolveFloat", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveFloatRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveFloat(context.Background(), req)
+			return err
+		}},
+		{"ResolveObject", func() error {
+			req := connect.NewRequest(&schemaV1.ResolveObjectRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveObject(context.Background(), req)
+			return err
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.call()
+			require.Error(t, err)
+			var connectErr *connect.Error
+			require.True(t, errors.As(err, &connectErr))
+			require.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
+		})
+	}
+}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	evalV2 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v2"
@@ -118,6 +119,60 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			var data metricdata.ResourceMetrics
 			require.NoError(t, exp.Collect(context.TODO(), &data))
 			require.Equal(t, 1, len(data.ScopeMetrics))
+		})
+	}
+}
+
+func TestInvalidSelector_FlagEvaluationServiceV2(t *testing.T) {
+	const invalidSelector = "invalidKey=val"
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+	metrics, _ := getMetricReader()
+	s := NewFlagEvaluationServiceV2(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil, 0)
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{"ResolveBoolean", func() error {
+			req := connect.NewRequest(&evalV2.ResolveBooleanRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveBoolean(context.Background(), req)
+			return err
+		}},
+		{"ResolveString", func() error {
+			req := connect.NewRequest(&evalV2.ResolveStringRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveString(context.Background(), req)
+			return err
+		}},
+		{"ResolveInt", func() error {
+			req := connect.NewRequest(&evalV2.ResolveIntRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveInt(context.Background(), req)
+			return err
+		}},
+		{"ResolveFloat", func() error {
+			req := connect.NewRequest(&evalV2.ResolveFloatRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveFloat(context.Background(), req)
+			return err
+		}},
+		{"ResolveObject", func() error {
+			req := connect.NewRequest(&evalV2.ResolveObjectRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelector)
+			_, err := s.ResolveObject(context.Background(), req)
+			return err
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.call()
+			require.Error(t, err)
+			var connectErr *connect.Error
+			require.True(t, errors.As(err, &connectErr))
+			require.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
 		})
 	}
 }
