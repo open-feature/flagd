@@ -15,7 +15,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -80,10 +79,9 @@ func (s *FlagEvaluationServiceV2) EventStream(
 
 	s.logger.Debug("starting event stream for request")
 	requestNotificationChan := make(chan service.Notification, 1)
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector, err := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return connect.NewError(connect.CodeInvalidArgument, err)
+		return err
 	}
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
@@ -289,10 +287,9 @@ func (s *FlagEvaluationServiceV2) startResolveV2(
 ) (context.Context, trace.Span, error) {
 	ctx, span := s.flagEvalTracer.Start(ctx, spanName, trace.WithSpanKind(trace.SpanKindServer))
 
-	selectorExpression := header.Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector, err := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(header)
 	if err != nil {
-		return ctx, span, connect.NewError(connect.CodeInvalidArgument, err)
+		return ctx, span, err
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
