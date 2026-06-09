@@ -30,7 +30,7 @@ These cases are reachable with simple flag definitions and surface as silent dat
 
 ## Considered options
 
-1. **Lossless coercion only, with a hard cap at the JSON-safe integer range (2^53 - 1)**: an accessor returns a value if and only if the conversion is lossless.
+1. **Lossless coercion only, with a hard cap at the IEEE-754-safe integer range (2^53 - 1)**: an accessor returns a value if and only if the conversion is lossless.
    Variants outside the safe-integer range are rejected up front so no transport ever has to silently lose precision.
 2. **Lossless coercion only, no cap**: same accessor rule as option 1, but variants beyond 2^53 are accepted with documented precision loss in JS / OFREP / JSON paths.
 3. **Strict per parsed type**: the variant's parsed JSON type (int vs float) is fixed; cross-type fetches always return `TYPE_MISMATCH`.
@@ -74,6 +74,11 @@ Each language applies the rule against whichever resolver was called, not agains
 The 2^53-1 cap matches the interoperable integer range that every JSON parser, including JavaScript's, can faithfully represent.
 Capping at this range removes the silent precision-loss case entirely; a value either round-trips exactly through every transport flagd supports, or it is rejected.
 The alternative (permitting larger values and documenting precision loss past 2^53) preserves silent corruption in the JS and OFREP paths and contradicts the lossless principle this contract is built on.
+
+The cap is enforced for the benefit of the configuration author rather than the application author.
+Consider a product manager defining a per-customer storage quota in bytes through a flag UI: they aren't writing code in any specific language, and they shouldn't have to know that the same value will be handled correctly by some consuming services and silently mishandled by others.
+**A hard cap surfaced in configuration validation gives them a predictable boundary that holds across every flagd-backed consumer;** the cap is high enough (2^53-1 ≈ 9 PB in bytes, or any millisecond timestamp through the year 287396) to comfortably cover the cases that motivate large numeric flags in practice.
+This is a deliberate trade-off against language-level expressiveness.
 
 ## Consequences
 
