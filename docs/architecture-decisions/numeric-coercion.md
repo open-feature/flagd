@@ -58,13 +58,14 @@ Otherwise the evaluator returns `TYPE_MISMATCH`.
 flagd additionally caps numeric flag values at the IEEE-754 safe-integer range, `[-(2^53 - 1), 2^53 - 1]`.
 Variants whose absolute value exceeds this range are considered invalid per the JSON schema (we'll add this limit there).
 
-| Variant kind                                                  | Fetched as Integer | Fetched as Float  |
-| ------------------------------------------------------------- | ------------------ | ----------------- |
-| int, fits the maximum of the numeric resolver in use          | value              | value (widened)   |
-| int, exceeds the maximum of the numeric resolver in use, but within 2^53-1 | `TYPE_MISMATCH`    | value (widened)   |
-| int, exceeds 2^53-1                                           | rejected at load (or `PARSE_ERROR` at evaluation if not validated) | rejected at load (or `PARSE_ERROR` at evaluation if not validated) |
-| float, whole-valued and within the resolver's int range (e.g. `10.0`) | value (e.g. `10`)  | value     |
-| float, fractional or out of the resolver's int range          | `TYPE_MISMATCH`    | value             |
+| Variant kind                                                          | Fetched as Integer                                                 | Fetched as Float                                                   |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| int, fits the resolver's max                                          | value                                                              | value (widened)                                                    |
+| int, exceeds the resolver's max but within 2^53-1                     | `TYPE_MISMATCH`                                                    | value (widened)                                                    |
+| int, exceeds 2^53-1                                                   | rejected at load (or `PARSE_ERROR` at evaluation if not validated) | rejected at load (or `PARSE_ERROR` at evaluation if not validated) |
+| float, whole-valued and within the resolver's int range (e.g. `10.0`) | value (e.g. `10`)                                                  | value                                                              |
+| float, fractional, magnitude within 2^53-1                            | `TYPE_MISMATCH`                                                    | value                                                              |
+| float, magnitude exceeds 2^53-1 (e.g. `1e16`)                         | rejected at load (or `PARSE_ERROR` at evaluation if not validated) | rejected at load (or `PARSE_ERROR` at evaluation if not validated) |
 
 The contract applies identically across all interfaces (gRPC, OFREP, and in-process evaluation).
 "Numeric resolver in use" means the accessor the caller invoked: a 32-bit `Integer` accessor caps at `int32` max, a `Long` accessor (e.g. forthcoming Java `getLong`, .NET `Int64`) caps at `int64` max, a `Float` accessor caps at the safe-integer range.
