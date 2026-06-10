@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.0](https://github.com/open-feature/flagd/compare/core/v0.15.8...core/v0.16.0) (2026-06-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* DISABLED is a successful evaluation (still defaults) ([#1968](https://github.com/open-feature/flagd/issues/1968))
+  * Disabled flags now resolve successfully with `reason=DISABLED` instead of returning a `FLAG_DISABLED` error. See the [ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/disabled-flag-evaluation.md).
+  * Breaking, but barely: resolved values are unchanged (SDKs still surface the caller-provided default).
+  * The break is only observable for consumers that inspect `reason` / `errorCode`, call flagd directly over gRPC / OFREP, or import `core/pkg/model`.
+
+### ✨ New Features
+
+* DISABLED is a successful evaluation (still defaults) ([#1968](https://github.com/open-feature/flagd/issues/1968)) ([3c1d00b](https://github.com/open-feature/flagd/commit/3c1d00bea2a258ca5f1cd724a31be45c4fe685d2))
+  * Disabled flags now resolve successfully with `reason=DISABLED` instead of returning a `FLAG_DISABLED` error. See the [ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/disabled-flag-evaluation.md).
+  * Breaking, but barely: resolved values are unchanged (SDKs still surface the caller-provided default).
+  * The break is only observable for consumers that inspect `reason` / `errorCode`, call flagd directly over gRPC / OFREP, or import `core/pkg/model`.
+
 ## [0.15.8](https://github.com/open-feature/flagd/compare/core/v0.15.7...core/v0.15.8) (2026-05-29)
 
 

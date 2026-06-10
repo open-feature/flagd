@@ -175,11 +175,6 @@ func (je *Resolver) ResolveAllValues(ctx context.Context, reqID string, context 
 	var metadata map[string]interface{}
 
 	for _, flag := range allFlags {
-		if flag.State == Disabled {
-			// ignore evaluation of disabled flag
-			continue
-		}
-
 		defaultValue := flag.Variants[flag.DefaultVariant]
 		switch defaultValue.(type) {
 		case bool:
@@ -313,6 +308,11 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return zero, variant, model.FallbackReason, metadata, nil
 	}
 
+	if reason == model.DisabledReason {
+		var zero T
+		return zero, "", model.DisabledReason, metadata, nil
+	}
+
 	var ok bool
 	value, ok = variants[variant].(T)
 	if !ok {
@@ -348,7 +348,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 
 	if flag.State == Disabled {
 		je.Logger.DebugWithID(reqID, fmt.Sprintf("requested flag is disabled: %s", flagKey))
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagDisabledErrorCode)
+		return "", nil, model.DisabledReason, metadata, nil
 	}
 
 	// get the targeting logic, if any

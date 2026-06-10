@@ -328,12 +328,6 @@ func TestErrorStatus(t *testing.T) {
 			expectedCode:   model.ParseErrorCode,
 		},
 		{
-			name:           "flag disabled",
-			modelError:     model.FlagDisabledErrorCode,
-			expectedStatus: 404,
-			expectedCode:   model.FlagNotFoundErrorCode,
-		},
-		{
 			name:           "general error",
 			modelError:     model.GeneralErrorCode,
 			expectedStatus: 400,
