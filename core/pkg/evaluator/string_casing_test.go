@@ -242,7 +242,7 @@ func Test_parseStringCasingEvaluationData(t *testing.T) {
 			wantProperty: "a",
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				assert.Nil(t, err)
-				return false
+				return true
 			},
 		},
 		{
@@ -251,7 +251,7 @@ func Test_parseStringCasingEvaluationData(t *testing.T) {
 			wantProperty: "a",
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				assert.Nil(t, err)
-				return false
+				return true
 			},
 		},
 		{
