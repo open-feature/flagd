@@ -39,14 +39,9 @@ func NewStringCasingEvaluator(log *logger.Logger) *StringCasingEvaluator {
 // { "email": "User@Example.com" }
 //
 // Casing is restricted to ASCII (A-Z) to remain deterministic and consistent across all flagd
-// provider implementations; see lowerString for details.
+// provider implementations; see asciiCase for details.
 func (sce *StringCasingEvaluator) LowerEvaluation(values, _ interface{}) interface{} {
-	value, err := parseStringCasingEvaluationData(values)
-	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse lower evaluation data: %v", err))
-		return nil
-	}
-	return lowerString(value)
+	return sce.evaluateCasing(LowerEvaluationName, values, toASCIILower)
 }
 
 // UpperEvaluation transforms the given string to upper case so that targeting rules can match
@@ -68,14 +63,21 @@ func (sce *StringCasingEvaluator) LowerEvaluation(values, _ interface{}) interfa
 // { "country": "us" }
 //
 // Casing is restricted to ASCII (a-z) to remain deterministic and consistent across all flagd
-// provider implementations; see upperString for details.
+// provider implementations; see asciiCase for details.
 func (sce *StringCasingEvaluator) UpperEvaluation(values, _ interface{}) interface{} {
+	return sce.evaluateCasing(UpperEvaluationName, values, toASCIIUpper)
+}
+
+// evaluateCasing parses the single string argument shared by the lower/upper operators and applies
+// the given per-byte case mapping. It returns nil (so jsonLogic falls back to the default variant)
+// when the argument cannot be resolved to a string.
+func (sce *StringCasingEvaluator) evaluateCasing(op string, values interface{}, mapByte func(byte) byte) interface{} {
 	value, err := parseStringCasingEvaluationData(values)
 	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse upper evaluation data: %v", err))
+		sce.Logger.Error(fmt.Sprintf("parse %s evaluation data: %v", op, err))
 		return nil
 	}
-	return upperString(value)
+	return asciiCase(value, mapByte)
 }
 
 // parseStringCasingEvaluationData tries to parse the input for the lower/upper evaluation.
@@ -105,28 +107,32 @@ func parseStringCasingEvaluationData(values interface{}) (string, error) {
 	return property, nil
 }
 
-// lowerString returns s with ASCII upper-case letters (A-Z) folded to lower case. Non-ASCII bytes
-// are left unchanged so the result is identical across SDKs that use different (locale-sensitive or
-// full) Unicode case mappings; strings.ToLower is intentionally avoided for this reason.
-func lowerString(s string) string {
+// asciiCase returns s with every byte remapped by mapByte. The mappers used here (toASCIILower and
+// toASCIIUpper) only alter ASCII letters and leave every other byte unchanged, so the result is
+// identical across SDKs that use different (locale-sensitive or full) Unicode case mappings;
+// strings.ToLower and strings.ToUpper are intentionally avoided for this reason.
+func asciiCase(s string, mapByte func(byte) byte) string {
 	b := []byte(s)
 	for i, c := range b {
-		if c >= 'A' && c <= 'Z' {
-			b[i] = c + ('a' - 'A')
-		}
+		b[i] = mapByte(c)
 	}
 	return string(b)
 }
 
-// upperString returns s with ASCII lower-case letters (a-z) folded to upper case. Non-ASCII bytes
-// are left unchanged so the result is identical across SDKs that use different (locale-sensitive or
-// full) Unicode case mappings; strings.ToUpper is intentionally avoided for this reason.
-func upperString(s string) string {
-	b := []byte(s)
-	for i, c := range b {
-		if c >= 'a' && c <= 'z' {
-			b[i] = c - ('a' - 'A')
-		}
+// toASCIILower folds an ASCII upper-case letter (A-Z) to lower case and leaves every other byte
+// unchanged.
+func toASCIILower(c byte) byte {
+	if c >= 'A' && c <= 'Z' {
+		return c + ('a' - 'A')
 	}
-	return string(b)
+	return c
+}
+
+// toASCIIUpper folds an ASCII lower-case letter (a-z) to upper case and leaves every other byte
+// unchanged.
+func toASCIIUpper(c byte) byte {
+	if c >= 'a' && c <= 'z' {
+		return c - ('a' - 'A')
+	}
+	return c
 }
