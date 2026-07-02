@@ -9,6 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// casingFlag builds the standard headerColor flag used by the lower/upper eval
+// tests, so each table case only has to supply its targeting rule rather than
+// repeating the flag boilerplate.
+func casingFlag(targeting string) []model.Flag {
+	return []model.Flag{{
+		Key:            "headerColor",
+		State:          "ENABLED",
+		DefaultVariant: "red",
+		Variants:       colorVariants,
+		Targeting:      []byte(targeting),
+	}}
+}
+
 func TestJSONEvaluator_lowerEvaluation(t *testing.T) {
 	const source = "testSource"
 	var sources = []string{source}
@@ -16,123 +29,43 @@ func TestJSONEvaluator_lowerEvaluation(t *testing.T) {
 
 	tests := map[string]stringFlagEvalTestCase{
 		"lower composed with == - match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"lower": [{"var": "email"}]}, "user@example.com"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "User@Example.com",
-			},
+			flags:           casingFlag(`{"if": [{"==": [{"lower": [{"var": "email"}]}, "user@example.com"]}, "red", "green"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"email": "User@Example.com"},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"lower composed with starts_with - match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"starts_with": [{"lower": [{"var": "email"}]}, "user@faas"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "USER@FAAS.com",
-			},
+			flags:           casingFlag(`{"if": [{"starts_with": [{"lower": [{"var": "email"}]}, "user@faas"]}, "red", "green"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"email": "USER@FAAS.com"},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"lower of bare string argument - match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"lower": {"var": "email"}}, "user@example.com"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"email": "USER@EXAMPLE.COM",
-			},
+			flags:           casingFlag(`{"if": [{"==": [{"lower": {"var": "email"}}, "user@example.com"]}, "red", "green"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"email": "USER@EXAMPLE.COM"},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"lower is ASCII-only, non-ASCII unchanged - no match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"lower": [{"var": "name"}]}, "stra\u00dfe"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
+			flags:   casingFlag(`{"if": [{"==": [{"lower": [{"var": "name"}]}, "stra\u00dfe"]}, "red", "green"]}`),
 			flagKey: "headerColor",
-			context: map[string]any{
-				// "STRAßE" lowered with ASCII-only rules stays "straße" (ß unchanged),
-				// not "strasse"; equality target is "straße" so this matches.
-				"name": "STRA\u00dfE",
-			},
+			// "STRAßE" lowered with ASCII-only rules stays "straße" (ß unchanged),
+			// not "strasse"; equality target is "straße" so this matches.
+			context:         map[string]any{"name": "STRA\u00dfE"},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"non-string input falls back to default": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"lower": [{"var": "num"}]}, "1"]
-											  },
-											  "blue", "red"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"num": 1,
-			},
+			flags:           casingFlag(`{"if": [{"==": [{"lower": [{"var": "num"}]}, "1"]}, "blue", "red"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"num": 1},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
@@ -149,74 +82,26 @@ func TestJSONEvaluator_upperEvaluation(t *testing.T) {
 
 	tests := map[string]stringFlagEvalTestCase{
 		"upper composed with == - match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"upper": [{"var": "country"}]}, "US"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"country": "us",
-			},
+			flags:           casingFlag(`{"if": [{"==": [{"upper": [{"var": "country"}]}, "US"]}, "red", "green"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"country": "us"},
 			expectedVariant: "red",
 			expectedValue:   "#FF0000",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"upper composed with == - no match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"upper": [{"var": "country"}]}, "US"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
-			flagKey: "headerColor",
-			context: map[string]any{
-				"country": "ca",
-			},
+			flags:           casingFlag(`{"if": [{"==": [{"upper": [{"var": "country"}]}, "US"]}, "red", "green"]}`),
+			flagKey:         "headerColor",
+			context:         map[string]any{"country": "ca"},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"upper is ASCII-only, non-ASCII unchanged - no match": {
-			flags: []model.Flag{{
-				Key:            "headerColor",
-				State:          "ENABLED",
-				DefaultVariant: "red",
-				Variants:       colorVariants,
-				Targeting: []byte(`{
-											"if": [
-											  {
-												"==": [{"upper": [{"var": "name"}]}, "STRASSE"]
-											  },
-											  "red", "green"
-											]
-										  }`),
-			},
-			},
+			flags:   casingFlag(`{"if": [{"==": [{"upper": [{"var": "name"}]}, "STRASSE"]}, "red", "green"]}`),
 			flagKey: "headerColor",
-			context: map[string]any{
-				// "straße" uppered with ASCII-only rules stays "STRAßE", never "STRASSE".
-				"name": "stra\u00dfe",
-			},
+			// "straße" uppered with ASCII-only rules stays "STRAßE", never "STRASSE".
+			context:         map[string]any{"name": "stra\u00dfe"},
 			expectedVariant: "green",
 			expectedValue:   "#00FF00",
 			expectedReason:  model.TargetingMatchReason,
