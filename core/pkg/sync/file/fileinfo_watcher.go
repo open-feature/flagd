@@ -26,6 +26,13 @@ type fileInfoWatcher struct {
 	// thread-safe interface to underlying files we are watching
 	mu      sync.RWMutex
 	watches map[string]fs.FileInfo // filename -> info
+	// done signals the timer goroutine to stop and aborts any in-flight send,
+	// so Close never closes evChan/erChan while the goroutine is still sending
+	done chan struct{}
+	// stopOnce guards done so Close is safe to call more than once
+	stopOnce sync.Once
+	// wg tracks the timer goroutine so Close can wait for it to exit
+	wg sync.WaitGroup
 }
 
 // NewFsNotifyWatcher returns a new fsNotifyWatcher
@@ -36,6 +43,7 @@ func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 		statFunc: getFileInfo,
 		logger:   logger,
 		watches:  make(map[string]fs.FileInfo),
+		done:     make(chan struct{}),
 	}
 	fiw.run(ctx, (1 * time.Second))
 	return fiw
@@ -44,9 +52,15 @@ func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 // fileInfoWatcher explicitly implements file.Watcher
 var _ Watcher = &fileInfoWatcher{}
 
-// Close calls close on the underlying fsnotify.Watcher
+// Close stops the timer goroutine and closes the event and error channels
 func (f *fileInfoWatcher) Close() error {
-	// close all channels and exit
+	// signal the timer goroutine to stop and abort any in-flight send, then wait
+	// for it to exit before closing the channels it sends on. Closing before the
+	// goroutine has stopped would race with its sends -> send on closed channel.
+	f.stopOnce.Do(func() {
+		close(f.done)
+	})
+	f.wg.Wait()
 	close(f.evChan)
 	close(f.erChan)
 	return nil
@@ -108,7 +122,9 @@ func (f *fileInfoWatcher) Errors() chan error {
 // run is a blocking function that starts the filewatcher's timer thread
 func (f *fileInfoWatcher) run(ctx context.Context, s time.Duration) {
 	// timer thread
+	f.wg.Add(1)
 	go func() {
+		defer f.wg.Done()
 		// execute update on the configured interval of time
 		ticker := time.NewTicker(s)
 		defer ticker.Stop()
@@ -117,9 +133,14 @@ func (f *fileInfoWatcher) run(ctx context.Context, s time.Duration) {
 			select {
 			case <-ctx.Done():
 				return
+			case <-f.done:
+				return
 			case <-ticker.C:
 				if err := f.update(); err != nil {
-					f.erChan <- err
+					select {
+					case f.erChan <- err:
+					case <-f.done:
+					}
 					return
 				}
 			}
@@ -137,9 +158,13 @@ func (f *fileInfoWatcher) update() error {
 			// if the file isn't there, it must have been removed
 			// fire off a remove event and remove it from the watches
 			if errors.Is(err, os.ErrNotExist) {
-				f.evChan <- fsnotify.Event{
+				select {
+				case f.evChan <- fsnotify.Event{
 					Name: path,
 					Op:   fsnotify.Remove,
+				}:
+				case <-f.done:
+					return nil
 				}
 				delete(f.watches, path)
 				continue
@@ -151,7 +176,11 @@ func (f *fileInfoWatcher) update() error {
 		if info != newInfo {
 			event := f.generateEvent(path, newInfo)
 			if event != nil {
-				f.evChan <- *event
+				select {
+				case f.evChan <- *event:
+				case <-f.done:
+					return nil
+				}
 			}
 			f.watches[path] = newInfo
 		}

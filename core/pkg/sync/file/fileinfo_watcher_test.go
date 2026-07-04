@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -35,6 +36,37 @@ func Test_fileInfoWatcher_Close(t *testing.T) {
 				t.Error("fileInfoWatcher.Close() failed to close events chan")
 			}
 		})
+	}
+}
+
+// Test_fileInfoWatcher_Close_racesWithTimer ensures Close does not panic with
+// "send on closed channel" when the timer goroutine is actively emitting events.
+// Close must stop that goroutine before closing the channels it sends on.
+func Test_fileInfoWatcher_Close_racesWithTimer(t *testing.T) {
+	watcher := makeTestWatcher(t, map[string]fs.FileInfo{
+		"foo": &mockFileInfo{name: "foo", modTime: time.Now()},
+	})
+	// every stat reports a newer modtime, so update() emits a Write event on
+	// every tick, keeping the timer goroutine busy sending on evChan
+	watcher.statFunc = func(_ string) (fs.FileInfo, error) {
+		return &mockFileInfo{name: "foo", modTime: time.Now().Add(time.Hour)}, nil
+	}
+
+	// nothing reads Events()/Errors(), so the buffer fills and the goroutine ends
+	// up blocked mid-send, which is exactly when the unguarded Close() panicked
+	watcher.run(context.Background(), time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
+
+	if err := watcher.Close(); err != nil {
+		t.Errorf("fileInfoWatcher.Close() error = %v", err)
+	}
+
+	// Close must have stopped the timer goroutine and closed both channels;
+	// draining the (buffered) events chan blocks forever unless it is closed
+	for range watcher.Events() {
+	}
+	if _, ok := <-watcher.Errors(); ok {
+		t.Error("fileInfoWatcher.Close() failed to close error chan")
 	}
 }
 
@@ -200,6 +232,7 @@ func makeTestWatcher(t *testing.T, watches map[string]fs.FileInfo) *fileInfoWatc
 		evChan:  make(chan fsnotify.Event, 512),
 		erChan:  make(chan error, 512),
 		watches: watches,
+		done:    make(chan struct{}),
 	}
 }
 
