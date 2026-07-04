@@ -137,8 +137,8 @@ func (s *Server) startMetricsServer() error {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		// if this is 'application/grpcServer' and HTTP2, handle with gRPC, otherwise HTTP.
-		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpcServer") {
+		// if this is 'application/grpc' and HTTP2, handle with gRPC, otherwise HTTP.
+		if request.ProtoMajor == 2 && strings.HasPrefix(request.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(writer, request)
 		} else {
 			mux.ServeHTTP(writer, request)
