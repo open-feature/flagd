@@ -65,7 +65,14 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 		}
 
 		eventing.logger.Debug(fmt.Sprintf("closing notify channel for id %v", id))
+		// Remove the subscription and close the notifier atomically under the
+		// write lock, so a concurrent EmitToAll (holding the read lock) can never
+		// observe this notifier in subs after it has been closed and send on a
+		// closed channel.
+		eventing.mu.Lock()
+		delete(eventing.subs, id)
 		close(notifier)
+		eventing.mu.Unlock()
 	}()
 
 	eventing.store.Watch(ctx, selector, watcher)
