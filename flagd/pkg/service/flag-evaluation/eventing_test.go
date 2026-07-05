@@ -21,7 +21,7 @@ func newTestEventingConfig(t *testing.T, sources []string) (*eventingConfigurati
 	s, err := store.NewStore(log, sources)
 	require.NoError(t, err)
 	return &eventingConfiguration{
-		subs:   make(map[interface{}]chan iservice.Notification),
+		subs:   make(map[interface{}]*subscription),
 		mu:     &sync.RWMutex{},
 		store:  s,
 		logger: log,
@@ -43,8 +43,8 @@ func TestSubscribe(t *testing.T) {
 	eventing.Subscribe(context.Background(), idB, nil, chanB)
 
 	// then
-	require.Equal(t, chanA, eventing.subs[idA], "incorrect subscription association")
-	require.Equal(t, chanB, eventing.subs[idB], "incorrect subscription association")
+	require.Equal(t, chanA, eventing.subs[idA].notifier, "incorrect subscription association")
+	require.Equal(t, chanB, eventing.subs[idB].notifier, "incorrect subscription association")
 }
 
 func TestUnsubscribe(t *testing.T) {
@@ -65,7 +65,7 @@ func TestUnsubscribe(t *testing.T) {
 	// then
 	require.Empty(t, eventing.subs[idA],
 		"expected subscription cleared, but value present: %v", eventing.subs[idA])
-	require.Equal(t, chanB, eventing.subs[idB], "incorrect subscription association")
+	require.Equal(t, chanB, eventing.subs[idB].notifier, "incorrect subscription association")
 }
 
 // TestNotificationCompatibleWithStructpb verifies that notification data from
@@ -134,5 +134,122 @@ func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 		t.Fatalf("unexpected notification received: %v", n)
 	case <-time.After(500 * time.Millisecond):
 		// expected: no notification sent
+	}
+}
+
+// TestEmitToAllVsSubscriberCancel is a regression test for a data race between
+// EmitToAll and the per-subscription goroutine that closes the notifier channel
+// on context cancellation. The subscription goroutine closes the notifier when
+// its store watcher stops (the store closes the watcher on ctx cancel), but that
+// close is independent of Unsubscribe. If the notifier is closed while it is
+// still present in subs, a concurrent EmitToAll sends on a closed channel and
+// panics ("send on closed channel"), which crashes the whole flagd process.
+// This is the exact interleaving ConnectService.Shutdown forces: it broadcasts a
+// Shutdown notification via EmitToAll precisely as the shared context is being
+// cancelled and every subscription is tearing down. Run with -race.
+func TestEmitToAllVsSubscriberCancel(t *testing.T) {
+	eventing, _ := newTestEventingConfig(t, []string{"source1", "source2"})
+
+	const subscribers = 50
+	cancels := make([]context.CancelFunc, 0, subscribers)
+	var drainers sync.WaitGroup
+
+	for i := 0; i < subscribers; i++ {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancels = append(cancels, cancel)
+
+		notifier := make(chan iservice.Notification, 1)
+		eventing.Subscribe(ctx, i, nil, notifier)
+
+		// Drain the notifier so EmitToAll never blocks on a full buffer, and so
+		// the range exits when the subscription goroutine closes the channel.
+		drainers.Add(1)
+		go func() {
+			defer drainers.Done()
+			for range notifier {
+				// Drain until cancellation closes the notifier.
+			}
+		}()
+	}
+
+	// Let the subscription goroutines start watching before we cancel them.
+	time.Sleep(50 * time.Millisecond)
+
+	var workers sync.WaitGroup
+
+	// Cancel every subscriber context: each cancel makes the store close the
+	// watcher, which makes the subscription goroutine close its notifier.
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		for _, cancel := range cancels {
+			cancel()
+		}
+	}()
+
+	// Concurrently hammer EmitToAll. Before the fix this reproducibly panics
+	// with "send on closed channel" when it sends to a notifier that the
+	// subscription goroutine has already closed but not removed from subs.
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 200; i++ {
+			eventing.EmitToAll(iservice.Notification{Type: iservice.Shutdown})
+		}
+	}()
+
+	workers.Wait()
+
+	// Cancelling the contexts closes every notifier; wait for the drainers so
+	// the test does not leak goroutines and the race detector sees clean exits.
+	drainers.Wait()
+}
+
+func TestBlockedSubscriberDoesNotBlockCleanup(t *testing.T) {
+	eventing, _ := newTestEventingConfig(t, []string{"source1"})
+
+	stalledCtx, cancelStalled := context.WithCancel(context.Background())
+	stalledNotifier := make(chan iservice.Notification)
+	eventing.Subscribe(stalledCtx, "stalled", nil, stalledNotifier)
+	stalledSub := eventing.subs["stalled"]
+
+	emitDone := make(chan struct{})
+	go func() {
+		defer close(emitDone)
+		eventing.EmitToAll(iservice.Notification{Type: iservice.Shutdown})
+	}()
+
+	require.Eventually(t, func() bool {
+		if stalledSub.mu.TryLock() {
+			stalledSub.mu.Unlock()
+			return false
+		}
+		return true
+	}, time.Second, time.Millisecond, "EmitToAll did not block on the stalled subscriber")
+
+	otherCtx, cancelOther := context.WithCancel(context.Background())
+	otherNotifier := make(chan iservice.Notification, 1)
+	eventing.Subscribe(otherCtx, "other", nil, otherNotifier)
+	cancelOther()
+
+	require.Eventually(t, func() bool {
+		eventing.mu.RLock()
+		defer eventing.mu.RUnlock()
+		_, ok := eventing.subs["other"]
+		return !ok
+	}, time.Second, time.Millisecond, "other subscriber cleanup was blocked")
+
+	select {
+	case _, ok := <-otherNotifier:
+		require.False(t, ok, "other subscriber notifier was not closed")
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for other subscriber notifier to close")
+	}
+
+	cancelStalled()
+	select {
+	case <-emitDone:
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for EmitToAll to stop after cancellation")
 	}
 }

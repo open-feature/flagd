@@ -24,14 +24,53 @@ var _ IEvents = &eventingConfiguration{}
 // eventingConfiguration is a wrapper for notification subscriptions
 type eventingConfiguration struct {
 	mu     *sync.RWMutex
-	subs   map[any]chan iservice.Notification
+	subs   map[any]*subscription
 	store  store.IStore
 	logger *logger.Logger
+}
+
+type subscription struct {
+	mu       sync.Mutex
+	notifier chan iservice.Notification
+	done     chan struct{}
+	stopOnce sync.Once
+	closed   bool
+}
+
+func (s *subscription) send(n iservice.Notification) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed {
+		return
+	}
+
+	select {
+	case s.notifier <- n:
+	case <-s.done:
+	}
+}
+
+func (s *subscription) close() {
+	s.stop()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.closed {
+		close(s.notifier)
+		s.closed = true
+	}
+}
+
+func (s *subscription) stop() {
+	s.stopOnce.Do(func() { close(s.done) })
 }
 
 func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, selector *store.Selector, notifier chan iservice.Notification) {
 	eventing.mu.Lock()
 	defer eventing.mu.Unlock()
+	sub := &subscription{notifier: notifier, done: make(chan struct{})}
 
 	// proxy events from our store watcher to the notify channel, so that RPC mode event streams
 	watcher := make(chan store.FlagQueryResult, 1)
@@ -53,37 +92,50 @@ func (eventing *eventingConfiguration) Subscribe(ctx context.Context, id any, se
 					oldFlags = newFlags
 					continue
 				}
-				notifier <- iservice.Notification{
+				sub.send(iservice.Notification{
 					Type: iservice.ConfigurationChange,
 					Data: map[string]interface{}{
 						// don't use our custom type or it cannot be serialized, convert to map
 						"flags": map[string]interface{}(notifications),
 					},
-				}
+				})
 			}
 			oldFlags = newFlags
 		}
 
 		eventing.logger.Debug(fmt.Sprintf("closing notify channel for id %v", id))
-		close(notifier)
+		eventing.mu.Lock()
+		if eventing.subs[id] == sub {
+			delete(eventing.subs, id)
+		}
+		eventing.mu.Unlock()
+		sub.close()
 	}()
 
 	eventing.store.Watch(ctx, selector, watcher)
-	eventing.subs[id] = notifier
+	eventing.subs[id] = sub
 }
 
 func (eventing *eventingConfiguration) EmitToAll(n iservice.Notification) {
 	eventing.mu.RLock()
-	defer eventing.mu.RUnlock()
+	subs := make([]*subscription, 0, len(eventing.subs))
+	for _, sub := range eventing.subs {
+		subs = append(subs, sub)
+	}
+	eventing.mu.RUnlock()
 
-	for _, send := range eventing.subs {
-		send <- n
+	for _, sub := range subs {
+		sub.send(n)
 	}
 }
 
 func (eventing *eventingConfiguration) Unsubscribe(id any) {
 	eventing.mu.Lock()
-	defer eventing.mu.Unlock()
-
+	sub := eventing.subs[id]
 	delete(eventing.subs, id)
+	eventing.mu.Unlock()
+
+	if sub != nil {
+		sub.stop()
+	}
 }
