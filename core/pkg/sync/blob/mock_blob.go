@@ -1,63 +1,37 @@
 package blob
 
 import (
+	"bytes"
 	"context"
-	"log"
+	"errors"
+	"fmt"
 	"net/url"
+	"time"
 
 	"gocloud.dev/blob"
-	"gocloud.dev/blob/memblob"
+	"gocloud.dev/blob/driver"
+	"gocloud.dev/gcerrors"
 )
 
+// MockBlob is a controllable blob source for tests. It is backed by a fake
+// driver.Bucket so tests can set the object's ETag, ModTime and body
+// independently, and can inspect how many full-object fetches occurred.
 type MockBlob struct {
 	mux    *blob.URLMux
 	scheme string
-	opener *fakeOpener
+	drv    *fakeBlobDriver
 }
 
-type fakeOpener struct {
-	object      string
-	content     string
-	keepModTime bool
-	getSync     func() *Sync
-}
-
-func (f *fakeOpener) OpenBucketURL(ctx context.Context, _ *url.URL) (*blob.Bucket, error) {
-	bucketURL, err := url.Parse("mem://")
-	if err != nil {
-		log.Fatalf("couldn't parse url: %s: %v", "mem://", err)
-	}
-	opener := &memblob.URLOpener{}
-	bucket, err := opener.OpenBucketURL(ctx, bucketURL)
-	if err != nil {
-		log.Fatalf("couldn't open in memory bucket: %v", err)
-	}
-	if f.object != "" {
-		err = bucket.WriteAll(ctx, f.object, []byte(f.content), nil)
-		if err != nil {
-			log.Fatalf("couldn't write in memory file: %v", err)
-		}
-	}
-	if f.keepModTime && f.object != "" {
-		attrs, err := bucket.Attributes(ctx, f.object)
-		if err != nil {
-			log.Fatalf("couldn't get memory file attributes: %v", err)
-		}
-		f.getSync().lastUpdated = attrs.ModTime
-	} else {
-		f.keepModTime = true
-	}
-	return bucket, nil
-}
-
-func NewMockBlob(scheme string, getSync func() *Sync) *MockBlob {
+// NewMockBlob registers a fake bucket under scheme and returns a handle for
+// controlling the object it serves.
+func NewMockBlob(scheme string) *MockBlob {
+	drv := &fakeBlobDriver{}
 	mux := new(blob.URLMux)
-	opener := &fakeOpener{getSync: getSync}
-	mux.RegisterBucket(scheme, opener)
+	mux.RegisterBucket(scheme, &fakeDriverOpener{drv: drv})
 	return &MockBlob{
 		mux:    mux,
 		scheme: scheme,
-		opener: opener,
+		drv:    drv,
 	}
 }
 
@@ -65,8 +39,106 @@ func (mb *MockBlob) URLMux() *blob.URLMux {
 	return mb.mux
 }
 
-func (mb *MockBlob) AddObject(object, content string) {
-	mb.opener.object = object
-	mb.opener.content = content
-	mb.opener.keepModTime = false
+// AddObject sets the object's content and assigns a fresh ETag and ModTime
+func (mb *MockBlob) AddObject(content string) {
+	mb.drv.revision++
+	mb.drv.etag = fmt.Sprintf("etag-%d", mb.drv.revision)
+	mb.drv.modTime = time.Now()
+	mb.drv.content = []byte(content)
+}
+
+// SetObject sets the object's ETag, ModTime and content explicitly
+func (mb *MockBlob) SetObject(etag string, modTime time.Time, content string) {
+	mb.drv.etag = etag
+	mb.drv.modTime = modTime
+	mb.drv.content = []byte(content)
+}
+
+// Reads reports how many full-object fetches (NewRangeReader calls) have happened
+func (mb *MockBlob) Reads() int {
+	return mb.drv.reads
+}
+
+// fakeBlobDriver is a controllable driver.Bucket. It keeps its state
+// across OpenBucket calls and never regenerates ETags or ModTimes on
+// its own, so tests decide exactly what a sync observes.
+type fakeBlobDriver struct {
+	etag     string
+	modTime  time.Time
+	content  []byte
+	reads    int // number of NewRangeReader calls, i.e. full-object fetches
+	revision int // monotonically bumped by AddObject to mint fresh ETags
+}
+
+func (d *fakeBlobDriver) Attributes(_ context.Context, _ string) (*driver.Attributes, error) {
+	return &driver.Attributes{
+		ContentType: "application/json",
+		ModTime:     d.modTime,
+		Size:        int64(len(d.content)),
+		ETag:        d.etag,
+	}, nil
+}
+
+func (d *fakeBlobDriver) NewRangeReader(
+	_ context.Context, _ string, offset, length int64, _ *driver.ReaderOptions,
+) (driver.Reader, error) {
+	d.reads++
+	data := d.content
+	if offset > int64(len(data)) {
+		offset = int64(len(data))
+	}
+	data = data[offset:]
+	if length >= 0 && length < int64(len(data)) {
+		data = data[:length]
+	}
+	return &fakeBlobReader{
+		Reader: bytes.NewReader(data),
+		attrs: driver.ReaderAttributes{
+			ContentType: "application/json",
+			ModTime:     d.modTime,
+			Size:        int64(len(d.content)),
+		},
+	}, nil
+}
+
+var errNotImplemented = errors.New("not implemented")
+
+func (d *fakeBlobDriver) ErrorCode(error) gcerrors.ErrorCode { return gcerrors.OK }
+func (d *fakeBlobDriver) As(any) bool                        { return false }
+func (d *fakeBlobDriver) ErrorAs(error, any) bool            { return false }
+func (d *fakeBlobDriver) Close() error                       { return nil }
+
+func (d *fakeBlobDriver) ListPaged(context.Context, *driver.ListOptions) (*driver.ListPage, error) {
+	return nil, errNotImplemented
+}
+
+func (d *fakeBlobDriver) NewTypedWriter(
+	context.Context, string, string, *driver.WriterOptions,
+) (driver.Writer, error) {
+	return nil, errNotImplemented
+}
+
+func (d *fakeBlobDriver) Copy(context.Context, string, string, *driver.CopyOptions) error {
+	return errNotImplemented
+}
+func (d *fakeBlobDriver) Delete(context.Context, string) error { return errNotImplemented }
+
+func (d *fakeBlobDriver) SignedURL(context.Context, string, *driver.SignedURLOptions) (string, error) {
+	return "", errNotImplemented
+}
+
+// fakeBlobReader adapts a bytes.Reader to the driver.Reader interface.
+type fakeBlobReader struct {
+	*bytes.Reader
+	attrs driver.ReaderAttributes
+}
+
+func (r *fakeBlobReader) Close() error                         { return nil }
+func (r *fakeBlobReader) Attributes() *driver.ReaderAttributes { return &r.attrs }
+func (r *fakeBlobReader) As(any) bool                          { return false }
+
+type fakeDriverOpener struct{ drv *fakeBlobDriver }
+
+func (o *fakeDriverOpener) OpenBucketURL(_ context.Context, _ *url.URL) (*blob.Bucket, error) {
+	return blob.NewBucket(o.drv), nil
 }
