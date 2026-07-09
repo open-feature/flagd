@@ -118,7 +118,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCha
 
 // attributesUnchanged reports whether the object can be considered unchanged
 // based on its attributes alone, allowing us to skip fetching the full object.
-// It prefers the ETag and falls back to the modification time for stores that don't expose one.
+// prefers the ETag and falls back to the mod time for stores that don't expose one.
 func (hs *Sync) attributesUnchanged(attrs *blob.Attributes) bool {
 	if attrs.ETag != "" {
 		return hs.lastETag == attrs.ETag
@@ -161,8 +161,6 @@ func (hs *Sync) fetchObjectAttributes(ctx context.Context, bucket *blob.Bucket) 
 	return attrs, nil
 }
 
-// fetchObject downloads the object and returns its JSON representation along
-// with a SHA-3 hash of the raw bytes, used to detect no-op changes.
 func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, string, error) {
 	r, err := bucket.NewReader(ctx, hs.Object, nil)
 	if err != nil {
