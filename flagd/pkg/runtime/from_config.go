@@ -41,6 +41,9 @@ type Config struct {
 	StreamDeadline        time.Duration
 	DisableSyncMetadata   bool
 
+	KeepAliveMinTime             time.Duration
+	KeepAlivePermitWithoutStream bool
+
 	SyncProviders []sync.SourceConfig
 	CORS          []string
 
@@ -137,6 +140,9 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		StreamDeadline:      config.StreamDeadline,
 		DisableSyncMetadata: config.DisableSyncMetadata,
 		MetricsRecorder:     recorder,
+
+		KeepAliveMinTime:             config.KeepAliveMinTime,
+		KeepAlivePermitWithoutStream: config.KeepAlivePermitWithoutStream,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)

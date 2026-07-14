@@ -42,6 +42,9 @@ const (
 	streamDeadlineFlagName     = "stream-deadline"
 	maxRequestBodyFlagName     = "max-request-body"
 	maxRequestHeaderFlagName   = "max-request-header"
+
+	keepAliveMinTimeFlagName             = "keep-alive-min-time"
+	keepAlivePermitWithoutStreamFlagName = "keep-alive-permit-without-stream"
 )
 
 func init() {
@@ -96,6 +99,8 @@ func init() {
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
+	flags.Duration(keepAliveMinTimeFlagName, 30*time.Second, "Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s.")
+	flags.Bool(keepAlivePermitWithoutStreamFlagName, true, "Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true.")
 
 	bindFlags(flags)
 }
@@ -124,6 +129,8 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
 	_ = viper.BindPFlag(maxRequestBodyFlagName, flags.Lookup(maxRequestBodyFlagName))
 	_ = viper.BindPFlag(maxRequestHeaderFlagName, flags.Lookup(maxRequestHeaderFlagName))
+	_ = viper.BindPFlag(keepAliveMinTimeFlagName, flags.Lookup(keepAliveMinTimeFlagName))
+	_ = viper.BindPFlag(keepAlivePermitWithoutStreamFlagName, flags.Lookup(keepAlivePermitWithoutStreamFlagName))
 }
 
 // startCmd represents the start command
@@ -190,28 +197,30 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:                       viper.GetStringSlice(corsFlagName),
-			MetricExporter:             viper.GetString(metricsExporter),
-			ManagementPort:             viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:           viper.GetUint16(ofrepPortFlagName),
-			OtelCollectorURI:           viper.GetString(otelCollectorURI),
-			OtelCertPath:               viper.GetString(otelCertPathFlagName),
-			OtelKeyPath:                viper.GetString(otelKeyPathFlagName),
-			OtelReloadInterval:         viper.GetDuration(otelReloadIntervalFlagName),
-			OtelCAPath:                 viper.GetString(otelCAPathFlagName),
-			ServiceCertPath:            viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:             viper.GetString(serverKeyPathFlagName),
-			ServicePort:                viper.GetUint16(portFlagName),
-			ServiceSocketPath:          viper.GetString(socketPathFlagName),
-			SyncServicePort:            viper.GetUint16(syncPortFlagName),
-			SyncServiceSocketPath:      viper.GetString(syncSocketPathFlagName),
-			StreamDeadline:             viper.GetDuration(streamDeadlineFlagName),
-			DisableSyncMetadata:        viper.GetBool(disableSyncMetadata),
-			SyncProviders:              syncProviders,
-			ContextValues:              contextValuesToMap,
-			HeaderToContextKeyMappings: headerToContextKeyMappings,
-			MaxRequestBodyBytes:        maxRequestBodyBytes,
-			MaxRequestHeaderBytes:      maxRequestHeaderBytes,
+			CORS:                         viper.GetStringSlice(corsFlagName),
+			MetricExporter:               viper.GetString(metricsExporter),
+			ManagementPort:               viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:             viper.GetUint16(ofrepPortFlagName),
+			OtelCollectorURI:             viper.GetString(otelCollectorURI),
+			OtelCertPath:                 viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:                  viper.GetString(otelKeyPathFlagName),
+			OtelReloadInterval:           viper.GetDuration(otelReloadIntervalFlagName),
+			OtelCAPath:                   viper.GetString(otelCAPathFlagName),
+			ServiceCertPath:              viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:               viper.GetString(serverKeyPathFlagName),
+			ServicePort:                  viper.GetUint16(portFlagName),
+			ServiceSocketPath:            viper.GetString(socketPathFlagName),
+			SyncServicePort:              viper.GetUint16(syncPortFlagName),
+			SyncServiceSocketPath:        viper.GetString(syncSocketPathFlagName),
+			StreamDeadline:               viper.GetDuration(streamDeadlineFlagName),
+			DisableSyncMetadata:          viper.GetBool(disableSyncMetadata),
+			KeepAliveMinTime:             viper.GetDuration(keepAliveMinTimeFlagName),
+			KeepAlivePermitWithoutStream: viper.GetBool(keepAlivePermitWithoutStreamFlagName),
+			SyncProviders:                syncProviders,
+			ContextValues:                contextValuesToMap,
+			HeaderToContextKeyMappings:   headerToContextKeyMappings,
+			MaxRequestBodyBytes:          maxRequestBodyBytes,
+			MaxRequestHeaderBytes:        maxRequestHeaderBytes,
 		})
 		if err != nil {
 			rtLogger.Fatal(err.Error())

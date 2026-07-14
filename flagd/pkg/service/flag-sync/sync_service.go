@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 type ISyncService interface {
@@ -27,17 +28,19 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger              *logger.Logger
-	Port                uint16
-	Sources             []string
-	Store               store.IStore
-	ContextValues       map[string]any
-	CertPath            string
-	KeyPath             string
-	SocketPath          string
-	StreamDeadline      time.Duration
-	DisableSyncMetadata bool
-	MetricsRecorder     telemetry.IMetricsRecorder
+	Logger                       *logger.Logger
+	Port                         uint16
+	Sources                      []string
+	Store                        store.IStore
+	ContextValues                map[string]any
+	CertPath                     string
+	KeyPath                      string
+	SocketPath                   string
+	StreamDeadline               time.Duration
+	DisableSyncMetadata          bool
+	MetricsRecorder              telemetry.IMetricsRecorder
+	KeepAliveMinTime             time.Duration
+	KeepAlivePermitWithoutStream bool
 }
 
 type Service struct {
@@ -65,25 +68,37 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 	return credentials.NewTLS(config), nil
 }
 
+// keepAliveEnforcementPolicy derives the gRPC keepalive enforcement policy for
+// the sync server from the service configuration. The sync server serves a
+// long-lived SyncFlags stream that in-process providers keep alive with
+// periodic keepalive pings, so the defaults deliberately widen grpc-go's
+// generic-RPC enforcement (MinTime 5m, PermitWithoutStream false) to tolerate
+// those pings instead of responding with GOAWAY ENHANCE_YOUR_CALM.
+func keepAliveEnforcementPolicy(cfg SvcConfigurations) keepalive.EnforcementPolicy {
+	return keepalive.EnforcementPolicy{
+		MinTime:             cfg.KeepAliveMinTime,
+		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream,
+	}
+}
+
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	var err error
 	l := cfg.Logger
 
-	var server *grpc.Server
+	serverOpts := []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy(cfg)),
+	}
+
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
 		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
 		}
-		server = grpc.NewServer(
-			grpc.Creds(tlsCredentials),
-			grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		)
-	} else {
-		server = grpc.NewServer(
-			grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		)
+		serverOpts = append(serverOpts, grpc.Creds(tlsCredentials))
 	}
+
+	server := grpc.NewServer(serverOpts...)
 
 	metricsRecorder := cfg.MetricsRecorder
 	if metricsRecorder == nil {
