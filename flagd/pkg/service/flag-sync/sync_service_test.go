@@ -311,7 +311,6 @@ func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
 			flagStore, sources := getSimpleFlagStore(t)
 
 			ctx, cancelFunc := context.WithCancel(context.Background())
-			defer cancelFunc()
 
 			service, err := NewSyncService(SvcConfigurations{
 				Logger:                       logger.NewLogger(nil, false),
@@ -323,10 +322,18 @@ func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
 			})
 			require.NoError(t, err)
 
+			serverDone := make(chan struct{})
 			go func() {
 				// error ignored, the assertions below fail if start does not succeed
 				_ = service.Start(ctx)
+				close(serverDone)
 			}()
+			// stop the server and wait for the listener to be released before the
+			// next subtest reuses the port
+			t.Cleanup(func() {
+				cancelFunc()
+				<-serverDone
+			})
 			for _, source := range sources {
 				service.Emit(source)
 			}
@@ -344,21 +351,10 @@ func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
 func floodKeepalivePings(t *testing.T, addr string) bool {
 	t.Helper()
 
-	var conn net.Conn
-	var err error
-	// the listener is created in NewSyncService but Serve is delayed until the
-	// startup tracker completes, so retry the dial briefly
-	for i := 0; i < 50; i++ {
-		conn, err = net.Dial("tcp", addr)
-		if err == nil {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	require.NoError(t, err)
+	conn := dialWithRetry(t, addr)
 	defer conn.Close()
 
-	_, err = io.WriteString(conn, http2.ClientPreface)
+	_, err := io.WriteString(conn, http2.ClientPreface)
 	require.NoError(t, err)
 
 	framer := http2.NewFramer(conn, conn)
@@ -373,24 +369,7 @@ func floodKeepalivePings(t *testing.T, addr string) bool {
 	// client connection preface must be followed by a SETTINGS frame
 	write(func() error { return framer.WriteSettings() })
 
-	enhanceYourCalm := make(chan bool, 1)
-	go func() {
-		for {
-			frame, err := framer.ReadFrame()
-			if err != nil {
-				return
-			}
-			switch f := frame.(type) {
-			case *http2.SettingsFrame:
-				if !f.IsAck() {
-					write(func() error { return framer.WriteSettingsAck() })
-				}
-			case *http2.GoAwayFrame:
-				enhanceYourCalm <- f.ErrCode == http2.ErrCodeEnhanceYourCalm
-				return
-			}
-		}
-	}()
+	enhanceYourCalm := watchForGoAway(framer, write)
 
 	// flood pings faster than any strict MinTime; grpc-go GOAWAYs after more
 	// than two "ping strikes", so a handful of rapid pings is enough
@@ -410,6 +389,49 @@ func floodKeepalivePings(t *testing.T, addr string) bool {
 	case <-time.After(2 * time.Second):
 		return false
 	}
+}
+
+// dialWithRetry dials addr, retrying briefly because the listener is created in
+// NewSyncService but Serve is delayed until the startup tracker completes.
+func dialWithRetry(t *testing.T, addr string) net.Conn {
+	t.Helper()
+
+	var conn net.Conn
+	var err error
+	for i := 0; i < 50; i++ {
+		conn, err = net.Dial("tcp", addr)
+		if err == nil {
+			return conn
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	require.NoError(t, err)
+	return conn
+}
+
+// watchForGoAway reads frames from the framer in the background, acking server
+// SETTINGS, and reports on the returned channel whether the first GOAWAY carries
+// the ENHANCE_YOUR_CALM code.
+func watchForGoAway(framer *http2.Framer, write func(func() error)) <-chan bool {
+	enhanceYourCalm := make(chan bool, 1)
+	go func() {
+		for {
+			frame, err := framer.ReadFrame()
+			if err != nil {
+				return
+			}
+			switch f := frame.(type) {
+			case *http2.SettingsFrame:
+				if !f.IsAck() {
+					write(func() error { return framer.WriteSettingsAck() })
+				}
+			case *http2.GoAwayFrame:
+				enhanceYourCalm <- f.ErrCode == http2.ErrCodeEnhanceYourCalm
+				return
+			}
+		}
+	}()
+	return enhanceYourCalm
 }
 
 func createAndStartSyncService(
