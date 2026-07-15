@@ -32,4 +32,20 @@ func TestGenerateSha(t *testing.T) {
 			t.Error("expected distinct non-json payloads to hash differently")
 		}
 	})
+
+	t.Run("preserves precision of large integers", func(t *testing.T) {
+		a := []byte(`{"flags":{"a":{"value":9007199254740993}}}`)
+		b := []byte(`{"flags":{"a":{"value":9007199254740992}}}`)
+		if GenerateSha(a) == GenerateSha(b) {
+			t.Error("expected distinct large integers to hash differently")
+		}
+	})
+
+	t.Run("rejects trailing garbage (}) after a valid json value", func(t *testing.T) {
+		valid := []byte(`{"flags":{}}`)
+		trailing := []byte(`{"flags":{}}}`)
+		if GenerateSha(valid) == GenerateSha(trailing) {
+			t.Error("expected trailing garbage to fall back to raw-byte hashing, not be silently ignored")
+		}
+	})
 }
