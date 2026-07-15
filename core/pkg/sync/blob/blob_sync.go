@@ -2,8 +2,6 @@ package blob
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -20,7 +18,6 @@ import (
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
 	_ "gocloud.dev/blob/gcsblob"   // needed to initialize GCS driver
 	_ "gocloud.dev/blob/s3blob"    // needed to initialize s3 driver
-	"golang.org/x/crypto/sha3"     //nolint:gosec
 )
 
 type Sync struct {
@@ -195,19 +192,5 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, s
 		return "", "", fmt.Errorf("error converting blob data to json: %w", err)
 	}
 
-	return flagJSON, hs.generateSha([]byte(flagJSON)), nil
-}
-
-func (hs *Sync) generateSha(body []byte) string {
-	canonical := body
-	var parsed interface{}
-	if err := json.Unmarshal(body, &parsed); err != nil {
-		hs.Logger.Debug(fmt.Sprintf("payload isn't valid json, hashing raw bytes instead: %v", err))
-	} else if b, err := json.Marshal(parsed); err == nil {
-		canonical = b
-	}
-
-	hasher := sha3.New256()
-	hasher.Write(canonical)
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return flagJSON, utils.GenerateSha([]byte(flagJSON)), nil
 }
