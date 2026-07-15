@@ -2,6 +2,7 @@ package file
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 )
@@ -298,5 +300,100 @@ func writeToFile(t *testing.T, fetchDirName, fileContents string) {
 	_, err = file.WriteAt([]byte(fileContents), 0)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// reAddMockWatcher is a minimal file.Watcher used to exercise reAddWatcher's
+// retry behavior without touching the real filesystem. Its Add fails the first
+// addFailUntil calls, then succeeds and records the watched name.
+type reAddMockWatcher struct {
+	addFailUntil int
+	addErr       error
+	addCalls     int
+	watchList    []string
+}
+
+func (m *reAddMockWatcher) Close() error { return nil }
+
+func (m *reAddMockWatcher) Add(name string) error {
+	m.addCalls++
+	if m.addCalls <= m.addFailUntil {
+		return m.addErr
+	}
+	m.watchList = append(m.watchList, name)
+	return nil
+}
+
+func (m *reAddMockWatcher) Remove(string) error         { return nil }
+func (m *reAddMockWatcher) WatchList() []string         { return m.watchList }
+func (m *reAddMockWatcher) Events() chan fsnotify.Event { return make(chan fsnotify.Event) }
+func (m *reAddMockWatcher) Errors() chan error          { return make(chan error) }
+
+func newReAddSync(w Watcher) *Sync {
+	return &Sync{
+		URI:     "/tmp/does-not-matter/flags.json",
+		Logger:  logger.NewLogger(nil, false),
+		watcher: w,
+		Mux:     &msync.RWMutex{},
+	}
+}
+
+// Happy path: the file is momentarily absent (Add fails once) then restored, so
+// the retry re-establishes the watch.
+func TestReAddWatcher_RetriesUntilSuccess(t *testing.T) {
+	mw := &reAddMockWatcher{addFailUntil: 1, addErr: errors.New("no such file or directory")}
+	fs := newReAddSync(mw)
+
+	if err := fs.reAddWatcher(context.Background()); err != nil {
+		t.Fatalf("expected watch to be re-established after a transient failure, got error: %v", err)
+	}
+	if mw.addCalls != 2 {
+		t.Errorf("expected 2 Add attempts (1 fail + 1 success), got %d", mw.addCalls)
+	}
+	if len(mw.watchList) != 1 || mw.watchList[0] != fs.URI {
+		t.Errorf("expected watch list to contain %q, got %v", fs.URI, mw.watchList)
+	}
+}
+
+// Edge case: the file is truly deleted, so every Add fails and the retry gives
+// up after the bounded number of attempts, returning the last error.
+func TestReAddWatcher_ExhaustsAttempts(t *testing.T) {
+	wantErr := errors.New("no such file or directory")
+	mw := &reAddMockWatcher{addFailUntil: reAddMaxAttempts + 1, addErr: wantErr}
+	fs := newReAddSync(mw)
+
+	err := fs.reAddWatcher(context.Background())
+	if err == nil {
+		t.Fatal("expected an error after exhausting all re-add attempts, got nil")
+	}
+	if !errors.Is(err, wantErr) {
+		t.Errorf("expected the last Add error, got %v", err)
+	}
+	if mw.addCalls != reAddMaxAttempts {
+		t.Errorf("expected exactly %d Add attempts, got %d", reAddMaxAttempts, mw.addCalls)
+	}
+}
+
+// Cancellation: a context cancelled during the backoff aborts the retry
+// promptly instead of running out the full attempt budget.
+func TestReAddWatcher_ContextCancelled(t *testing.T) {
+	mw := &reAddMockWatcher{addFailUntil: reAddMaxAttempts + 1, addErr: errors.New("no such file or directory")}
+	fs := newReAddSync(mw)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancelled before the first backoff completes
+
+	start := time.Now()
+	err := fs.reAddWatcher(ctx)
+	elapsed := time.Since(start)
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+	if mw.addCalls >= reAddMaxAttempts {
+		t.Errorf("expected retry to abort early, but it made %d attempts", mw.addCalls)
+	}
+	if elapsed >= reAddMaxAttempts*reAddBackoff {
+		t.Errorf("expected prompt return on cancellation, took %s", elapsed)
 	}
 }

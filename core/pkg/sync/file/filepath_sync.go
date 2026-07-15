@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	msync "sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -18,6 +19,17 @@ import (
 const (
 	FSNOTIFY = "fsnotify"
 	FILEINFO = "fileinfo"
+)
+
+const (
+	// reAddMaxAttempts bounds how many times we try to re-establish the watch
+	// after a remove event before giving up. A delete followed by a quick
+	// restore (e.g. an editor's atomic save, or a manual delete + undo) can
+	// leave the file momentarily absent when the first Add is attempted, so a
+	// single attempt is not enough to recover the watch.
+	reAddMaxAttempts = 5
+	// reAddBackoff is the delay between re-add attempts.
+	reAddBackoff = 100 * time.Millisecond
 )
 
 type Watcher interface {
@@ -114,7 +126,10 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
-				err := fs.watcher.Add(fs.URI)
+				// A delete quickly followed by a restore can leave the file
+				// momentarily absent, so retry the re-add for a short window
+				// rather than giving up after a single failed attempt.
+				err := fs.reAddWatcher(ctx)
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
@@ -147,6 +162,29 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 	}
+}
+
+// reAddWatcher re-establishes the watch on fs.URI after a remove event. It
+// retries fs.watcher.Add a bounded number of times with a short backoff so a
+// file that is deleted and quickly restored is picked back up instead of
+// silently losing its watch. It returns the last Add error if every attempt
+// fails, or ctx.Err() if the context is cancelled while backing off.
+func (fs *Sync) reAddWatcher(ctx context.Context) error {
+	var err error
+	for attempt := 0; attempt < reAddMaxAttempts; attempt++ {
+		if err = fs.watcher.Add(fs.URI); err == nil {
+			return nil
+		}
+		if attempt == reAddMaxAttempts-1 {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(reAddBackoff):
+		}
+	}
+	return err
 }
 
 func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync) {
