@@ -3,10 +3,12 @@ package blob
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
+	stdsync "sync"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -28,6 +30,7 @@ type Sync struct {
 	Poller      polling.Poller
 	Logger      *logger.Logger
 	Interval    uint32
+	mu          stdsync.Mutex
 	ready       bool
 	lastUpdated time.Time
 	lastETag    string
@@ -45,6 +48,8 @@ func (hs *Sync) Init(_ context.Context) error {
 }
 
 func (hs *Sync) IsReady() bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
 	return hs.ready
 }
 
@@ -58,7 +63,9 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
+	hs.mu.Lock()
 	hs.ready = true
+	hs.mu.Unlock()
 
 	hs.Logger.Debug(fmt.Sprintf("polling %s/%s every %ds (offset: %ds)",
 		hs.Bucket, hs.Object, hs.Interval, hs.Poller.Offset()))
@@ -101,17 +108,15 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCha
 		return fmt.Errorf("couldn't get object: %v", err)
 	}
 
-	// only publish if the content actually differs from what we last saw.
-	if !skipChangeDetection && bodySHA == hs.lastBodySHA {
+	// only publish if the content actually differs
+	if !skipChangeDetection && hs.bodyUnchanged(bodySHA) {
 		hs.Logger.Debug("configuration hasn't changed, skipping publishing")
 		hs.updateState(attrs, bodySHA)
 		return nil
 	}
 
 	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
-	if !skipChangeDetection {
-		hs.updateState(attrs, bodySHA)
-	}
+	hs.updateState(attrs, bodySHA)
 	dataSync <- sync.DataSync{FlagData: msg, Source: bloburi.Join(hs.Bucket, hs.Object)}
 	return nil
 }
@@ -120,6 +125,8 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCha
 // based on its attributes alone, allowing us to skip fetching the full object.
 // prefers the ETag and falls back to the mod time for stores that don't expose one.
 func (hs *Sync) attributesUnchanged(attrs *blob.Attributes) bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
 	if attrs.ETag != "" {
 		return hs.lastETag == attrs.ETag
 	}
@@ -132,9 +139,19 @@ func (hs *Sync) attributesUnchanged(attrs *blob.Attributes) bool {
 	return false
 }
 
+// bodyUnchanged reports whether bodySHA matches the body hash recorded by the
+// last updateState call.
+func (hs *Sync) bodyUnchanged(bodySHA string) bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
+	return bodySHA == hs.lastBodySHA
+}
+
 // updateState records the attributes and body hash of the object we just
 // observed so subsequent syncs can detect whether anything actually changed.
 func (hs *Sync) updateState(attrs *blob.Attributes, bodySHA string) {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
 	if attrs != nil {
 		hs.lastETag = attrs.ETag
 		hs.lastUpdated = attrs.ModTime
@@ -173,15 +190,24 @@ func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, s
 		return "", "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
-	json, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
+	flagJSON, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
 	if err != nil {
 		return "", "", fmt.Errorf("error converting blob data to json: %w", err)
 	}
-	return json, hs.generateSha(data), nil
+
+	return flagJSON, hs.generateSha([]byte(flagJSON)), nil
 }
 
 func (hs *Sync) generateSha(body []byte) string {
+	canonical := body
+	var parsed interface{}
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		hs.Logger.Debug(fmt.Sprintf("payload isn't valid json, hashing raw bytes instead: %v", err))
+	} else if b, err := json.Marshal(parsed); err == nil {
+		canonical = b
+	}
+
 	hasher := sha3.New256()
-	hasher.Write(body)
+	hasher.Write(canonical)
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

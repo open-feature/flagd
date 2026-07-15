@@ -183,6 +183,97 @@ func runSync(t *testing.T, s *Sync, blobMock *MockBlob, ch chan sync.DataSync) (
 	return fetched, published, data
 }
 
+func TestBlobSync_ReSync_DoesNotCauseFakeChange(t *testing.T) {
+	t1 := time.Now()
+	t2 := t1.Add(time.Second)
+
+	body1 := "{\"flags\":{\"a\":{}}}"
+	body2 := "{\"flags\":{\"b\":{}}}"
+
+	blobMock := NewMockBlob("fake")
+	blobMock.SetObject("v1", t1, body1)
+	s := &Sync{
+		Bucket:     "fake://bucket",
+		Object:     "flags.json",
+		BlobURLMux: blobMock.URLMux(),
+		Logger:     logger.NewLogger(nil, false),
+	}
+	ch := make(chan sync.DataSync, 1)
+
+	// Baseline regular sync establishes the ETag/ModTime/body hash.
+	fetched, published, data := runSync(t, s, blobMock, ch)
+	if !fetched || !published || data != body1 {
+		t.Fatalf("baseline sync: expected fetch+publish of %q, got fetched=%v published=%v data=%q",
+			body1, fetched, published, data)
+	}
+
+	blobMock.SetObject("v2", t2, body2)
+
+	// ReSync publishes the current content unconditionally.
+	if err := s.ReSync(context.Background(), ch); err != nil {
+		t.Fatalf("ReSync failed: %v", err)
+	}
+	select {
+	case d := <-ch:
+		if d.FlagData != body2 {
+			t.Fatalf("ReSync: expected published content %q, got %q", body2, d.FlagData)
+		}
+	default:
+		t.Fatalf("ReSync: expected a publish")
+	}
+
+	// The next regular poll observes the same, still-unchanged content.
+	// It must fetch (ETag differs from last regular sync) but must
+	// NOT republish, since the body matches what ReSync sent.
+	fetched, published, data = runSync(t, s, blobMock, ch)
+	if !fetched {
+		t.Errorf("expected the next regular poll to fetch due to the stale recorded ETag")
+	}
+	if published {
+		t.Errorf("expected no publish (fake change), got data=%q", data)
+	}
+}
+
+func TestBlobSync_SyncAndResync(t *testing.T) {
+	t0 := time.Now()
+	t1 := t0.Add(time.Second)
+
+	body1 := "{\"flags\":{\"a\":{}}}"
+	body2 := "{\"flags\":{\"b\":{}}}"
+
+	blobMock := NewMockBlob("fake")
+	blobMock.SetObject("v1", t0, body1)
+	s := &Sync{
+		Bucket:     "fake://bucket",
+		Object:     "flags.json",
+		BlobURLMux: blobMock.URLMux(),
+		Logger:     logger.NewLogger(nil, false),
+	}
+	ch := make(chan sync.DataSync, 1)
+
+	// Initial sync fetches and publishes
+	fetched, published, data := runSync(t, s, blobMock, ch)
+	if !fetched || !published || data != body1 {
+		t.Fatalf("initial sync: expected fetch+publish of %q, got fetched=%v published=%v data=%q",
+			body1, fetched, published, data)
+	}
+
+	// A change is fetched and published
+	blobMock.SetObject("v2", t1, body2)
+	fetched, published, data = runSync(t, s, blobMock, ch)
+	if !fetched || !published || data != body2 {
+		t.Fatalf("change sync: expected fetch+publish of %q, got fetched=%v published=%v data=%q",
+			body2, fetched, published, data)
+	}
+
+	// An identical tick is not fetched and published
+	fetched, published, data = runSync(t, s, blobMock, ch)
+	if fetched || published {
+		t.Errorf("identical tick: expected no fetch and no publish, got fetched=%v published=%v (data=%q)",
+			fetched, published, data)
+	}
+}
+
 func TestBlobSync_ChangeDetection(t *testing.T) {
 	t0 := time.Now()
 	t1 := t0.Add(time.Second)
