@@ -68,12 +68,9 @@ func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportC
 	return credentials.NewTLS(config), nil
 }
 
-// keepAliveEnforcementPolicy derives the gRPC keepalive enforcement policy for
-// the sync server from the service configuration. The sync server serves a
-// long-lived SyncFlags stream that in-process providers keep alive with
-// periodic keepalive pings, so the defaults deliberately widen grpc-go's
-// generic-RPC enforcement (MinTime 5m, PermitWithoutStream false) to tolerate
-// those pings instead of responding with GOAWAY ENHANCE_YOUR_CALM.
+// keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
+// provider keepalive pings on the long-lived SyncFlags stream aren't rejected
+// with GOAWAY ENHANCE_YOUR_CALM.
 func keepAliveEnforcementPolicy(cfg SvcConfigurations) keepalive.EnforcementPolicy {
 	return keepalive.EnforcementPolicy{
 		MinTime:             cfg.KeepAliveMinTime,
