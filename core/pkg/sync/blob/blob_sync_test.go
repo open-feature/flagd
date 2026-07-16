@@ -3,6 +3,7 @@ package blob
 import (
 	"context"
 	"log"
+	stdsync "sync"
 	"testing"
 	"time"
 
@@ -368,4 +369,47 @@ func TestBlobSync_ChangeDetection(t *testing.T) {
 			}
 		})
 	}
+}
+
+// runs sync and ReSync concurrently on a single blob to detect races due to missing locks
+func TestBlobSync_ConcurrentChanges(t *testing.T) {
+	blobMock := NewMockBlob("fake")
+	blobMock.SetObject("v1", time.Now(), "{\"flags\":{\"a\":{}}}")
+	s := &Sync{
+		Bucket:     "fake://bucket",
+		Object:     "flags.json",
+		BlobURLMux: blobMock.URLMux(),
+		Logger:     logger.NewLogger(nil, false),
+	}
+
+	// Drain published data so publishing syncs never block on the channel.
+	ch := make(chan sync.DataSync)
+	go func() {
+		for range ch {
+		}
+	}()
+
+	// run a bunch of sync/ReSyncs on the same blob
+	// will break under --race if we remove locks
+	ctx := context.Background()
+	var wg stdsync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 50; j++ {
+				if err := s.sync(ctx, ch, false); err != nil {
+					t.Errorf("sync failed: %v", err)
+					return
+				}
+				if err := s.ReSync(ctx, ch); err != nil {
+					t.Errorf("ReSync failed: %v", err)
+					return
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(ch) // all sends are done; stop the drainer
 }

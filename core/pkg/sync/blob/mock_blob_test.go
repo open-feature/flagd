@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sync/atomic"
 	"time"
 
 	"gocloud.dev/blob"
@@ -56,18 +57,20 @@ func (mb *MockBlob) SetObject(etag string, modTime time.Time, content string) {
 
 // Reads reports how many full-object fetches (NewRangeReader calls) have happened
 func (mb *MockBlob) Reads() int {
-	return mb.drv.reads
+	return int(mb.drv.reads.Load())
 }
 
 // fakeBlobDriver is a controllable driver.Bucket. It keeps its state
 // across OpenBucket calls and never regenerates ETags or ModTimes on
-// its own, so tests decide exactly what a sync observes.
+// its own, so tests decide exactly what a sync observes. Object state is
+// only mutated between syncs, but reads is bumped from within concurrent
+// syncs, so it is atomic to stay clean under `go test -race`.
 type fakeBlobDriver struct {
 	etag     string
 	modTime  time.Time
 	content  []byte
-	reads    int // number of NewRangeReader calls, i.e. full-object fetches
-	revision int // monotonically bumped by AddObject to mint fresh ETags
+	reads    atomic.Int64 // number of NewRangeReader calls, i.e. full-object fetches
+	revision int          // monotonically bumped by AddObject to mint fresh ETags
 }
 
 func (d *fakeBlobDriver) Attributes(_ context.Context, _ string) (*driver.Attributes, error) {
@@ -82,7 +85,7 @@ func (d *fakeBlobDriver) Attributes(_ context.Context, _ string) (*driver.Attrib
 func (d *fakeBlobDriver) NewRangeReader(
 	_ context.Context, _ string, offset, length int64, _ *driver.ReaderOptions,
 ) (driver.Reader, error) {
-	d.reads++
+	d.reads.Add(1)
 	data := d.content
 	if offset > int64(len(data)) {
 		offset = int64(len(data))
