@@ -16,6 +16,8 @@ flagd start [flags]
   -C, --cors-origin strings                  CORS allowed origins, * will allow all origins
       --disable-sync-metadata                Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.
   -h, --help                                 help for start
+      --keep-alive-min-time duration         Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s. (default 30s)
+      --keep-alive-permit-without-stream     Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true. (default true)
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)
   -B, --max-request-body int                 Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests. (default 1000000)

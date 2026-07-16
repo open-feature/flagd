@@ -3,13 +3,18 @@ package sync
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -240,6 +245,193 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestKeepAliveEnforcementPolicy(t *testing.T) {
+	tests := []struct {
+		name                string
+		minTime             time.Duration
+		permitWithoutStream bool
+	}{
+		{name: "flag defaults", minTime: 30 * time.Second, permitWithoutStream: true},
+		{name: "custom min time", minTime: 10 * time.Second, permitWithoutStream: true},
+		{name: "permit without stream disabled", minTime: 30 * time.Second, permitWithoutStream: false},
+		{name: "zero min time passed through unchanged", minTime: 0, permitWithoutStream: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			policy := keepAliveEnforcementPolicy(SvcConfigurations{
+				KeepAliveMinTime:             tt.minTime,
+				KeepAlivePermitWithoutStream: tt.permitWithoutStream,
+			})
+
+			assert.Equal(t, tt.minTime, policy.MinTime)
+			assert.Equal(t, tt.permitWithoutStream, policy.PermitWithoutStream)
+		})
+	}
+}
+
+// TestSyncServiceKeepAliveEnforcement proves the enforcement policy is applied
+// to the sync gRPC server. The Go gRPC client clamps its keepalive interval to a
+// 10s minimum, so we drive the HTTP/2 connection directly with a raw framer to
+// flood keepalive pings and observe how the server's configured policy reacts:
+// a permissive policy tolerates the pings, while a strict one tears the
+// connection down with GOAWAY ENHANCE_YOUR_CALM.
+func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
+	tests := []struct {
+		name                string
+		minTime             time.Duration
+		permitWithoutStream bool
+		wantEnhanceYourCalm bool
+	}{
+		{
+			name:                "permissive policy tolerates frequent pings",
+			minTime:             time.Millisecond,
+			permitWithoutStream: true,
+			wantEnhanceYourCalm: false,
+		},
+		{
+			name:                "strict min time rejects frequent pings with GOAWAY",
+			minTime:             time.Hour,
+			permitWithoutStream: true,
+			wantEnhanceYourCalm: true,
+		},
+		{
+			name:                "pings without an active stream are rejected when not permitted",
+			minTime:             time.Millisecond,
+			permitWithoutStream: false,
+			wantEnhanceYourCalm: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			port := 18017
+			flagStore, sources := getSimpleFlagStore(t)
+
+			ctx, cancelFunc := context.WithCancel(context.Background())
+			defer cancelFunc()
+
+			service, err := NewSyncService(SvcConfigurations{
+				Logger:                       logger.NewLogger(nil, false),
+				Port:                         uint16(port),
+				Sources:                      sources,
+				Store:                        flagStore,
+				KeepAliveMinTime:             tt.minTime,
+				KeepAlivePermitWithoutStream: tt.permitWithoutStream,
+			})
+			require.NoError(t, err)
+
+			serverDone := make(chan struct{})
+			go func() {
+				// error ignored, the assertions below fail if start does not succeed
+				_ = service.Start(ctx)
+				close(serverDone)
+			}()
+			// defer cancelFunc above stops the server; wait for the listener to be
+			// released before the next subtest reuses the port
+			t.Cleanup(func() {
+				<-serverDone
+			})
+			for _, source := range sources {
+				service.Emit(source)
+			}
+
+			gotEnhanceYourCalm := floodKeepalivePings(t, fmt.Sprintf("localhost:%d", port))
+			assert.Equal(t, tt.wantEnhanceYourCalm, gotEnhanceYourCalm)
+		})
+	}
+}
+
+// floodKeepalivePings opens a raw HTTP/2 (h2c) connection to the sync server and
+// sends keepalive PING frames in rapid succession without opening a stream. It
+// returns true if the server responds with GOAWAY ENHANCE_YOUR_CALM within a
+// short window, and false if the connection is left healthy.
+func floodKeepalivePings(t *testing.T, addr string) bool {
+	t.Helper()
+
+	conn := dialWithRetry(t, addr)
+	defer conn.Close()
+
+	_, err := io.WriteString(conn, http2.ClientPreface)
+	require.NoError(t, err)
+
+	framer := http2.NewFramer(conn, conn)
+
+	var writeMu sync.Mutex
+	write := func(fn func() error) {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		_ = fn()
+	}
+
+	// client connection preface must be followed by a SETTINGS frame
+	write(func() error { return framer.WriteSettings() })
+
+	enhanceYourCalm := watchForGoAway(framer, write)
+
+	// flood pings faster than any strict MinTime; grpc-go GOAWAYs after more
+	// than two "ping strikes", so a handful of rapid pings is enough
+	var pingData [8]byte
+	for i := 0; i < 8; i++ {
+		write(func() error { return framer.WritePing(false, pingData) })
+		select {
+		case got := <-enhanceYourCalm:
+			return got
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	select {
+	case got := <-enhanceYourCalm:
+		return got
+	case <-time.After(2 * time.Second):
+		return false
+	}
+}
+
+// dialWithRetry dials addr, retrying briefly because the listener is created in
+// NewSyncService but Serve is delayed until the startup tracker completes.
+func dialWithRetry(t *testing.T, addr string) net.Conn {
+	t.Helper()
+
+	var conn net.Conn
+	var err error
+	for i := 0; i < 50; i++ {
+		conn, err = net.Dial("tcp", addr)
+		if err == nil {
+			return conn
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	require.NoError(t, err)
+	return conn
+}
+
+// watchForGoAway reads frames from the framer in the background, acking server
+// SETTINGS, and reports on the returned channel whether the first GOAWAY carries
+// the ENHANCE_YOUR_CALM code.
+func watchForGoAway(framer *http2.Framer, write func(func() error)) <-chan bool {
+	enhanceYourCalm := make(chan bool, 1)
+	go func() {
+		for {
+			frame, err := framer.ReadFrame()
+			if err != nil {
+				return
+			}
+			switch f := frame.(type) {
+			case *http2.SettingsFrame:
+				if !f.IsAck() {
+					write(func() error { return framer.WriteSettingsAck() })
+				}
+			case *http2.GoAwayFrame:
+				enhanceYourCalm <- f.ErrCode == http2.ErrCodeEnhanceYourCalm
+				return
+			}
+		}
+	}()
+	return enhanceYourCalm
 }
 
 func createAndStartSyncService(
