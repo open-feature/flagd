@@ -311,6 +311,7 @@ func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
 			flagStore, sources := getSimpleFlagStore(t)
 
 			ctx, cancelFunc := context.WithCancel(context.Background())
+			defer cancelFunc()
 
 			service, err := NewSyncService(SvcConfigurations{
 				Logger:                       logger.NewLogger(nil, false),
@@ -328,10 +329,9 @@ func TestSyncServiceKeepAliveEnforcement(t *testing.T) {
 				_ = service.Start(ctx)
 				close(serverDone)
 			}()
-			// stop the server and wait for the listener to be released before the
-			// next subtest reuses the port
+			// defer cancelFunc above stops the server; wait for the listener to be
+			// released before the next subtest reuses the port
 			t.Cleanup(func() {
-				cancelFunc()
 				<-serverDone
 			})
 			for _, source := range sources {
