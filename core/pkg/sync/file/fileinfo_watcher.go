@@ -35,7 +35,7 @@ type fileInfoWatcher struct {
 	wg sync.WaitGroup
 }
 
-// NewFsNotifyWatcher returns a new fsNotifyWatcher
+// NewFileInfoWatcher returns a new fileInfoWatcher
 func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 	fiw := &fileInfoWatcher{
 		evChan:   make(chan fsnotify.Event, 32),
@@ -57,12 +57,13 @@ func (f *fileInfoWatcher) Close() error {
 	// signal the timer goroutine to stop and abort any in-flight send, then wait
 	// for it to exit before closing the channels it sends on. Closing before the
 	// goroutine has stopped would race with its sends -> send on closed channel.
+	// stopOnce guards the whole sequence so Close is idempotent.
 	f.stopOnce.Do(func() {
 		close(f.done)
+		f.wg.Wait()
+		close(f.evChan)
+		close(f.erChan)
 	})
-	f.wg.Wait()
-	close(f.evChan)
-	close(f.erChan)
 	return nil
 }
 
