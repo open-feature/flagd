@@ -7,6 +7,10 @@ They enable providers to sync or evaluate only specific subsets of flags instead
 
 In flagd, **selectors** provide a way to query flags based on different criteria. This is particularly powerful because flagd decouples **flag sources** from **flag sets**, allowing for more granular control over which flags are synchronized and evaluated.
 
+Selectors apply consistently across all of flagd's interfaces: single-flag and bulk evaluation (gRPC and OFREP), the evaluation `EventStream` change events, and the `FlagSyncService` (`FetchAllFlags` and `SyncFlags`) used by in-process providers.
+Whichever interface is used, the selector filters every operation down to the flags within the selected flag set(s), so a consumer can filter evaluations, change notifications, and synced payloads to just the flags it cares about.
+The selector is supplied either in the request body (where the message has a selector field, e.g. the sync API) or via the `Flagd-Selector` header; the evaluation `EventStream` has no body selector field, so it must use the header.
+
 ### Key Concepts
 
 - **Flag Source**: Where flag configuration data comes from (file, HTTP endpoint, gRPC service, etc.)

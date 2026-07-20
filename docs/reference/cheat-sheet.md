@@ -342,6 +342,18 @@ grpcurl -plaintext \
   flagd.evaluation.v1.Service/ResolveAll
 ```
 
+### Event Stream
+
+The `EventStream` is a server stream that pushes `configuration_change` events when flags change (used by RPC-mode providers for cache invalidation):
+
+```shell
+grpcurl -plaintext \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -d '{}' \
+  localhost:8013 \
+  flagd.evaluation.v1.Service/EventStream
+```
+
 ### Using Selector Header
 
 Filter which flags are evaluated using the `Flagd-Selector` header:
@@ -363,6 +375,20 @@ grpcurl -plaintext \
   localhost:8013 \
   flagd.evaluation.v1.Service/ResolveAll
 ```
+
+The same header also filters the `EventStream`, so it only reports `configuration_change` events for flags in the selected flag set(s):
+
+```shell
+# Only receive change events for the payment flag set
+grpcurl -plaintext \
+  -import-path "$PROTO_DIR" -proto flagd/evaluation/v1/evaluation.proto \
+  -H 'Flagd-Selector: flagSetId=payment-flags' \
+  -d '{}' \
+  localhost:8013 \
+  flagd.evaluation.v1.Service/EventStream
+```
+
+For the `EventStream`, the selector can only be supplied via the header; its request body has no selector field.
 
 ---
 
