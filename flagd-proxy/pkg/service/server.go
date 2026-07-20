@@ -16,7 +16,7 @@ import (
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"golang.org/x/net/http2/h2c" //nolint:staticcheck // deprecated package, still functionally correct
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -149,7 +149,14 @@ func (s *Server) startMetricsServer() error {
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.config.ManagementPort),
 		ReadHeaderTimeout: 3 * time.Second,
-		Handler:           h2c.NewHandler(handler, &http2.Server{}), // we need to use h2c to support plaintext HTTP2
+		// slowloris/slow-client DoS protection; safe for server streams
+		ReadTimeout: 5 * time.Second,
+		// we need to use h2c to support plaintext HTTP2. h2c.NewHandler is
+		// deprecated in favor of setting http.Server.Protocols, but that
+		// requires refactoring server construction; the handler still works
+		// correctly, so we keep using it for now.
+		//nolint:staticcheck
+		Handler: h2c.NewHandler(handler, &http2.Server{}),
 	}
 	if err := s.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error returned from metrics server: %w", err)
