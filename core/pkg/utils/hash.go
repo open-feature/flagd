@@ -25,7 +25,7 @@ func canonicalize(body []byte) []byte {
 	}
 	// check for leftover garbage after valid json
 	var extra json.RawMessage
-	if err := dec.Decode(&extra); err != io.EOF {
+	if dec.Decode(&extra) != io.EOF {
 		return body
 	}
 

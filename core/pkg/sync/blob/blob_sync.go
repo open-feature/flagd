@@ -81,7 +81,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return hs.sync(ctx, dataSync, true)
 }
 
-func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipChangeDetection bool) error {
+func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, forcePublish bool) error {
 	bucket, err := hs.getBucket(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't get bucket: %v", err)
@@ -89,7 +89,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCha
 	defer bucket.Close()
 
 	var attrs *blob.Attributes
-	if !skipChangeDetection {
+	if !forcePublish {
 		attrs, err = hs.fetchObjectAttributes(ctx, bucket)
 		if err != nil {
 			return fmt.Errorf("couldn't get object attributes: %v", err)
@@ -106,7 +106,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCha
 	}
 
 	// only publish if the content actually differs
-	if !skipChangeDetection && hs.bodyUnchanged(bodySHA) {
+	if !forcePublish && hs.bodyUnchanged(bodySHA) {
 		hs.Logger.Debug("configuration hasn't changed, skipping publishing")
 		hs.updateState(attrs, bodySHA)
 		return nil
