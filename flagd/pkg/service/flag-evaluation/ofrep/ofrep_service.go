@@ -56,7 +56,9 @@ func NewOfrepService(
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
 		Handler:           h,
 		ReadHeaderTimeout: 3 * time.Second,
-		MaxHeaderBytes:    int(cfg.MaxRequestHeaderBytes),
+		// slowloris/slow-client DoS protection; safe for server streams
+		ReadTimeout:    5 * time.Second,
+		MaxHeaderBytes: int(cfg.MaxRequestHeaderBytes),
 	}
 
 	return &Service{

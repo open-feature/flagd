@@ -149,9 +149,7 @@ func (s *Server) startMetricsServer() error {
 	s.metricsServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.config.ManagementPort),
 		ReadHeaderTimeout: 3 * time.Second,
-		// ReadTimeout bounds the full request read (ReadHeaderTimeout alone only
-		// covers header parsing), hardening the plain HTTP/h2c port against a
-		// slow-client (e.g. Slowloris) resource-exhaustion DoS.
+		// slowloris/slow-client DoS protection; safe for server streams
 		ReadTimeout: 5 * time.Second,
 		// we need to use h2c to support plaintext HTTP2. h2c.NewHandler is
 		// deprecated in favor of setting http.Server.Protocols, but that
