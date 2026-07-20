@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	msync "sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -18,6 +19,13 @@ import (
 const (
 	FSNOTIFY = "fsnotify"
 	FILEINFO = "fileinfo"
+)
+
+const (
+	// bounded re-add attempts after a remove event; 6 x 200ms backoff = ~1s window to survive a non-atomic replace (delete then recreate)
+	reAddMaxAttempts = 6
+	// delay between re-add attempts
+	reAddBackoff = 200 * time.Millisecond
 )
 
 type Watcher interface {
@@ -114,7 +122,8 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
-				err := fs.watcher.Add(fs.URI)
+				// a non-atomic replace (delete then recreate) leaves the file briefly absent; retry so we don't drop the watch
+				err := fs.reAddWatcher(ctx)
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
@@ -147,6 +156,25 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 	}
+}
+
+// reAddWatcher retries watcher.Add with backoff; returns the last Add error, or ctx.Err() if cancelled
+func (fs *Sync) reAddWatcher(ctx context.Context) error {
+	var err error
+	for attempt := 0; attempt < reAddMaxAttempts; attempt++ {
+		if err = fs.watcher.Add(fs.URI); err == nil {
+			return nil
+		}
+		if attempt == reAddMaxAttempts-1 {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(reAddBackoff):
+		}
+	}
+	return err
 }
 
 func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync) {
