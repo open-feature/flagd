@@ -121,3 +121,43 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidSelector_FlagEvaluationServiceV2(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+	metrics, _ := getMetricReader()
+	s := NewFlagEvaluationServiceV2(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil, 0)
+
+	assertInvalidSelectorConnect(t, []invalidSelectorCase{
+		{"ResolveBoolean", func() error {
+			req := connect.NewRequest(&evalV2.ResolveBooleanRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelectorExpr)
+			_, err := s.ResolveBoolean(context.Background(), req)
+			return err
+		}},
+		{"ResolveString", func() error {
+			req := connect.NewRequest(&evalV2.ResolveStringRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelectorExpr)
+			_, err := s.ResolveString(context.Background(), req)
+			return err
+		}},
+		{"ResolveInt", func() error {
+			req := connect.NewRequest(&evalV2.ResolveIntRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelectorExpr)
+			_, err := s.ResolveInt(context.Background(), req)
+			return err
+		}},
+		{"ResolveFloat", func() error {
+			req := connect.NewRequest(&evalV2.ResolveFloatRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelectorExpr)
+			_, err := s.ResolveFloat(context.Background(), req)
+			return err
+		}},
+		{"ResolveObject", func() error {
+			req := connect.NewRequest(&evalV2.ResolveObjectRequest{FlagKey: "f"})
+			req.Header().Set("Flagd-Selector", invalidSelectorExpr)
+			_, err := s.ResolveObject(context.Background(), req)
+			return err
+		}},
+	})
+}

@@ -258,3 +258,35 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 		})
 	}
 }
+
+func TestSyncHandler_InvalidSelector(t *testing.T) {
+	const invalidSelector = "invalidKey=val"
+
+	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
+	require.NoError(t, err)
+
+	h := syncHandler{
+		store:           flagStore,
+		log:             logger.NewLogger(nil, false),
+		contextValues:   map[string]any{},
+		metricsRecorder: &telemetry.NoopMetricsRecorder{},
+	}
+
+	ctxWithInvalidSelector := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.New(map[string]string{flagdService.FLAGD_SELECTOR_HEADER: invalidSelector}),
+	)
+
+	t.Run("SyncFlags", func(t *testing.T) {
+		stream := &mockSyncFlagsServer{ctx: ctxWithInvalidSelector, respReady: make(chan struct{}, 1)}
+		err := h.SyncFlags(&syncv1.SyncFlagsRequest{}, stream)
+		require.Error(t, err)
+		require.Equal(t, "rpc error: code = InvalidArgument desc = invalid selector key \"invalidKey\", valid keys: \"flagSetId\", \"source\"", err.Error())
+	})
+
+	t.Run("FetchAllFlags", func(t *testing.T) {
+		_, err := h.FetchAllFlags(ctxWithInvalidSelector, &syncv1.FetchAllFlagsRequest{})
+		require.Error(t, err)
+		require.Equal(t, "rpc error: code = InvalidArgument desc = invalid selector key \"invalidKey\", valid keys: \"flagSetId\", \"source\"", err.Error())
+	})
+}

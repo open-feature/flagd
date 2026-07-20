@@ -14,7 +14,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -75,8 +74,10 @@ func (s *OldFlagEvaluationService) ResolveAll(
 		Flags: make(map[string]*schemaV1.AnyFlag),
 	}
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	values, _, err := s.eval.ResolveAllValues(ctx, reqID, mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), make(map[string]string)))
@@ -142,8 +143,10 @@ func (s *OldFlagEvaluationService) EventStream(
 	s.logger.Debug(fmt.Sprintf("starting event stream for request"))
 
 	requestNotificationChan := make(chan service.Notification, 1)
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return err
+	}
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
@@ -185,11 +188,13 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	ctx, span := s.flagEvalTracer.Start(ctx, "resolveBoolean", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
-	err := resolve[bool](
+	err = resolve[bool](
 		ctx,
 		s.logger,
 		s.eval.ResolveBooleanValue,
@@ -217,12 +222,14 @@ func (s *OldFlagEvaluationService) ResolveString(
 	ctx, span := s.flagEvalTracer.Start(ctx, "resolveString", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveStringResponse{})
-	err := resolve[string](
+	err = resolve[string](
 		ctx,
 		s.logger,
 		s.eval.ResolveStringValue,
@@ -250,12 +257,14 @@ func (s *OldFlagEvaluationService) ResolveInt(
 	ctx, span := s.flagEvalTracer.Start(ctx, "resolveInt", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveIntResponse{})
-	err := resolve[int64](
+	err = resolve[int64](
 		ctx,
 		s.logger,
 		s.eval.ResolveIntValue,
@@ -283,12 +292,14 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 	ctx, span := s.flagEvalTracer.Start(ctx, "resolveFloat", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveFloatResponse{})
-	err := resolve[float64](
+	err = resolve[float64](
 		ctx,
 		s.logger,
 		s.eval.ResolveFloatValue,
@@ -316,12 +327,14 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	ctx, span := s.flagEvalTracer.Start(ctx, "resolveObject", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 
-	selectorExpression := req.Header().Get(flagdService.FLAGD_SELECTOR_HEADER)
-	selector := store.NewSelector(selectorExpression)
+	selector, err := selectorFromHeader(req.Header())
+	if err != nil {
+		return nil, recordSpanError(span, err)
+	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
 	res := connect.NewResponse(&schemaV1.ResolveObjectResponse{})
-	err := resolve[map[string]any](
+	err = resolve[map[string]any](
 		ctx,
 		s.logger,
 		s.eval.ResolveObjectValue,

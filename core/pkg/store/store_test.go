@@ -238,8 +238,8 @@ func TestGet(t *testing.T) {
 
 	sources := []string{sourceA.Name, sourceB.Name, sourceC.Name}
 
-	sourceASelector := NewSelector("source=" + sourceA.Name)
-	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
+	sourceASelector := Selector{}.WithSource(sourceA.Name)
+	flagSetIdCSelector := Selector{}.WithFlagSetId(flagSetIdC)
 
 	t.Parallel()
 	tests := []struct {
@@ -377,10 +377,10 @@ func TestGetAllNoWatcher(t *testing.T) {
 
 	sources := []string{sourceA.Name, sourceB.Name, sourceC.Name}
 
-	sourceASelector := NewSelector("source=" + sourceA.Name)
-	flagSetIdCSelector := NewSelector("flagSetId=" + flagSetIdC)
+	sourceASelector := Selector{}.WithSource(sourceA.Name)
+	flagSetIdCSelector := Selector{}.WithFlagSetId(flagSetIdC)
 	// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
-	//flagSetIdAndCSelector := NewSelector("flagSetId=" + flagSetIdC + ",source=" + sourceC.Name)
+	//flagSetIdAndCSelector := Selector{}.WithFlagSetId(flagSetIdC).withIndex(sourceIndex, sourceC.Name)
 
 	t.Parallel()
 	tests := []struct {
@@ -506,10 +506,10 @@ func TestWatch(t *testing.T) {
 	pauseTime := 100 * time.Millisecond // time for updates to settle
 	timeout := 1000 * time.Millisecond  // time to make sure we get enough updates, and no extras
 
-	sourceASelector := NewSelector("source=" + sourceA)
-	flagSetIdCSelector := NewSelector("flagSetId=" + myFlagSetId)
-	emptySelector := NewSelector("")
-	sourceCSelector := NewSelector("source=" + sourceC)
+	sourceASelector := Selector{}.WithSource(sourceA)
+	flagSetIdCSelector := Selector{}.WithFlagSetId(myFlagSetId)
+	emptySelector := Selector{}
+	sourceCSelector := Selector{}.WithSource(sourceC)
 
 	tests := []struct {
 		name        string
@@ -786,15 +786,15 @@ func TestQueryMetadata(t *testing.T) {
 	// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
 	// 		 these tests should then also cover more complex selectors
 
-	selector := NewSelector("flagSetId=" + nonExistingFlagSetId)
+	selector := Selector{}.WithFlagSetId(nonExistingFlagSetId)
 	_, metadata, _ := store.GetAll(context.Background(), &selector)
 	assert.Equal(t, metadata, model.Metadata{"flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 
-	selector = NewSelector("flagSetId=" + nonExistingFlagSetId)
+	selector = Selector{}.WithFlagSetId(nonExistingFlagSetId)
 	_, metadata, _ = store.Get(context.Background(), "key", &selector)
 	assert.Equal(t, metadata, model.Metadata{"flagSetId": nonExistingFlagSetId}, "metadata did not match expected")
 
-	selector = NewSelector("source=" + otherSource)
+	selector = Selector{}.WithSource(otherSource)
 	_, metadata, _ = store.Get(context.Background(), "key", &selector)
 	assert.Equal(t, metadata, model.Metadata{"source": otherSource}, "metadata did not match expected")
 }

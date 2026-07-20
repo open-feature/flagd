@@ -50,19 +50,23 @@ func TestSelector_IsEmpty(t *testing.T) {
 	}
 }
 
-func TestSelector_WithIndex(t *testing.T) {
-	oldS := Selector{indexMap: map[string]string{"source": "abc"}}
-	newS := oldS.WithIndex("flagSetId", "1234")
+func TestSelector_WithSourceAndFlagSetId(t *testing.T) {
+	s := Selector{}.WithSource("abc")
+	if s.indexMap[sourceIndex] != "abc" {
+		t.Errorf("WithSource did not set source")
+	}
 
-	if newS.indexMap["source"] != "abc" {
-		t.Errorf("WithIndex did not preserve existing keys")
+	s2 := s.WithFlagSetId("1234")
+	if s2.indexMap[sourceIndex] != "abc" {
+		t.Errorf("WithFlagSetId did not preserve source")
 	}
-	if newS.indexMap["flagSetId"] != "1234" {
-		t.Errorf("WithIndex did not add new key")
+	if s2.indexMap[flagSetIdIndex] != "1234" {
+		t.Errorf("WithFlagSetId did not set flagSetId")
 	}
+
 	// Ensure original is unchanged
-	if _, ok := oldS.indexMap["flagSetId"]; ok {
-		t.Errorf("WithIndex mutated original selector")
+	if _, ok := s.indexMap[flagSetIdIndex]; ok {
+		t.Errorf("WithFlagSetId mutated original selector")
 	}
 }
 
@@ -176,6 +180,7 @@ func TestNewSelector(t *testing.T) {
 		name    string
 		input   string
 		wantMap map[string]string
+		wantErr bool
 	}{
 		// #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
 		/*
@@ -205,12 +210,21 @@ func TestNewSelector(t *testing.T) {
 			input:   "",
 			wantMap: map[string]string{},
 		},
+		{
+			name:    "invalid key",
+			input:   "flagSetIds=abc",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSelector(tt.input)
-			if !reflect.DeepEqual(s.indexMap, tt.wantMap) {
+			s, err := NewSelector(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewSelector(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(s.indexMap, tt.wantMap) {
 				t.Errorf("NewSelector(%q) indexMap = %v, want %v", tt.input, s.indexMap, tt.wantMap)
 			}
 		})

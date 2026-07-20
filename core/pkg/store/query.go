@@ -33,14 +33,23 @@ type Selector struct {
 	indexMap map[string]string
 }
 
+var validSelectorKeys = map[string]struct{}{
+	flagSetIdIndex: {},
+	sourceIndex:    {},
+}
+
 // NewSelector creates a new Selector from a selector expression string.
 // #1708 Until we decide on the Selector syntax, only a single key=value pair is supported
 // For example, to select flags from source "./mySource" or flagSetId "1234", use the expressions:
 // "source=./mySource" or "flagSetId=1234"
-func NewSelector(selectorExpression string) Selector {
-	return Selector{
-		indexMap: expressionToMap(selectorExpression),
+func NewSelector(selectorExpression string) (Selector, error) {
+	m := expressionToMap(selectorExpression)
+	for key := range m {
+		if _, ok := validSelectorKeys[key]; !ok {
+			return Selector{}, fmt.Errorf("invalid selector key %q, valid keys: %q, %q", key, flagSetIdIndex, sourceIndex)
+		}
 	}
+	return Selector{indexMap: m}, nil
 }
 
 func expressionToMap(sExp string) map[string]string {
@@ -70,13 +79,17 @@ func expressionToMap(sExp string) map[string]string {
 	return selectorMap
 }
 
-// WithIndex creates a new Selector from the current Selector and adds the given key-value-pair
-func (s Selector) WithIndex(key string, value string) Selector {
+func (s Selector) WithSource(source string) Selector { return s.withIndex(sourceIndex, source) }
+func (s Selector) WithFlagSetId(id string) Selector  { return s.withIndex(flagSetIdIndex, id) }
+func (s Selector) withKey(key string) Selector       { return s.withIndex(keyIndex, key) }
+
+func (s Selector) withIndex(key, value string) Selector {
 	m := maps.Clone(s.indexMap)
-	m[key] = value
-	return Selector{
-		indexMap: m,
+	if m == nil {
+		m = make(map[string]string, 1)
 	}
+	m[key] = value
+	return Selector{indexMap: m}
 }
 
 func (s *Selector) IsEmpty() bool {

@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -373,4 +374,39 @@ func TestFlagdContextDelegatesContextMerging(t *testing.T) {
 			t.Errorf("expected key '%s' to have value '%s', but got '%v'", k, v, result[k])
 		}
 	}
+}
+
+func TestInvalidSelector_OFREPHandler(t *testing.T) {
+	const invalidSelector = "invalidKey=val"
+	log := logger.NewLogger(nil, false)
+
+	t.Run("HandleFlagEvaluation", func(t *testing.T) {
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		h := handler{Logger: log, evaluator: eval}
+
+		req, _ := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, bytes.NewReader([]byte{}))
+		req.Header.Set("Flagd-Selector", invalidSelector)
+
+		recorder := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc(singleEvaluation, h.HandleFlagEvaluation)
+		router.ServeHTTP(recorder, req)
+
+		require.Equal(t, http.StatusBadRequest, recorder.Code)
+	})
+
+	t.Run("HandleBulkEvaluation", func(t *testing.T) {
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		h := handler{Logger: log, evaluator: eval}
+
+		req, _ := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", bytes.NewReader([]byte{}))
+		req.Header.Set("Flagd-Selector", invalidSelector)
+
+		recorder := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc(bulkEvaluation, h.HandleBulkEvaluation)
+		router.ServeHTTP(recorder, req)
+
+		require.Equal(t, http.StatusBadRequest, recorder.Code)
+	})
 }
