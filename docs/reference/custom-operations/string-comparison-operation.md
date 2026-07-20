@@ -62,7 +62,7 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 Result:
 
 ```json
-{"value":"#00FF00","reason":"TARGETING_MATCH","variant":"red"}
+{"value":"#FF0000","reason":"TARGETING_MATCH","variant":"red"}
 ```
 
 Command:
@@ -74,7 +74,7 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 Result:
 
 ```json
-{"value":"#0000FF","reason":"TARGETING_MATCH","variant":"green"}
+{"value":"#00FF00","reason":"TARGETING_MATCH","variant":"green"}
 ```
 
 ## EndsWith Operation Configuration
@@ -136,7 +136,7 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 Result:
 
 ```json
-{"value":"#00FF00","reason":"TARGETING_MATCH","variant":"red"}
+{"value":"#FF0000","reason":"TARGETING_MATCH","variant":"red"}
 ```
 
 Command:
@@ -148,5 +148,5 @@ curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"fl
 Result:
 
 ```json
-{"value":"#0000FF","reason":"TARGETING_MATCH","variant":"green"}
+{"value":"#00FF00","reason":"TARGETING_MATCH","variant":"green"}
 ```
