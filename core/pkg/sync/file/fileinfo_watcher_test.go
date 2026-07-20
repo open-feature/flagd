@@ -1,10 +1,12 @@
 package file
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,6 +37,45 @@ func Test_fileInfoWatcher_Close(t *testing.T) {
 				t.Error("fileInfoWatcher.Close() failed to close events chan")
 			}
 		})
+	}
+}
+
+// Test_fileInfoWatcher_Close_racesWithTimer ensures Close does not panic with
+// "send on closed channel" when the timer goroutine is actively emitting events.
+// Close must stop that goroutine before closing the channels it sends on.
+func Test_fileInfoWatcher_Close_racesWithTimer(t *testing.T) {
+	watcher := makeTestWatcher(t, map[string]fs.FileInfo{
+		"foo": &mockFileInfo{name: "foo", modTime: time.Now()},
+	})
+	// an unbuffered event chan with no reader forces the timer goroutine to block
+	// mid-send, which is exactly when the unguarded Close() panicked
+	watcher.evChan = make(chan fsnotify.Event)
+	statCalled := make(chan struct{})
+	var statOnce sync.Once
+	// every stat reports a newer modtime, so update() emits a Write event and
+	// blocks on the send; statCalled signals the goroutine has reached update()
+	watcher.statFunc = func(_ string) (fs.FileInfo, error) {
+		statOnce.Do(func() { close(statCalled) })
+		return &mockFileInfo{name: "foo", modTime: time.Now().Add(time.Hour)}, nil
+	}
+
+	watcher.run(context.Background(), time.Millisecond)
+	<-statCalled
+
+	if err := watcher.Close(); err != nil {
+		t.Errorf("fileInfoWatcher.Close() error = %v", err)
+	}
+	// Close is idempotent: a second call must not panic on a re-closed channel
+	if err := watcher.Close(); err != nil {
+		t.Errorf("second fileInfoWatcher.Close() error = %v", err)
+	}
+
+	for range watcher.Events() {
+	    // Close must have stopped the timer goroutine and closed both channels;
+	    // draining the (buffered) events chan blocks forever unless it is closed
+	}
+	if _, ok := <-watcher.Errors(); ok {
+		t.Error("fileInfoWatcher.Close() failed to close error chan")
 	}
 }
 
@@ -200,6 +241,7 @@ func makeTestWatcher(t *testing.T, watches map[string]fs.FileInfo) *fileInfoWatc
 		evChan:  make(chan fsnotify.Event, 512),
 		erChan:  make(chan error, 512),
 		watches: watches,
+		done:    make(chan struct{}),
 	}
 }
 
