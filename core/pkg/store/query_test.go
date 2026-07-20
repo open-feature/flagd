@@ -70,7 +70,6 @@ func TestSelector_WithSourceAndFlagSetId(t *testing.T) {
 	}
 }
 
-
 func TestSelector_ToQuery(t *testing.T) {
 	tests := []struct {
 		name       string

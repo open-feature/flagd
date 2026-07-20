@@ -79,9 +79,9 @@ func expressionToMap(sExp string) map[string]string {
 	return selectorMap
 }
 
-func (s Selector) WithSource(source string) Selector    { return s.withIndex(sourceIndex, source) }
-func (s Selector) WithFlagSetId(id string) Selector     { return s.withIndex(flagSetIdIndex, id) }
-func (s Selector) withKey(key string) Selector          { return s.withIndex(keyIndex, key) }
+func (s Selector) WithSource(source string) Selector { return s.withIndex(sourceIndex, source) }
+func (s Selector) WithFlagSetId(id string) Selector  { return s.withIndex(flagSetIdIndex, id) }
+func (s Selector) withKey(key string) Selector       { return s.withIndex(keyIndex, key) }
 
 func (s Selector) withIndex(key, value string) Selector {
 	m := maps.Clone(s.indexMap)

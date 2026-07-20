@@ -76,7 +76,7 @@ func (s *FlagEvaluationService) ResolveAll(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
@@ -216,7 +216,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
@@ -251,7 +251,7 @@ func (s *FlagEvaluationService) ResolveString(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
@@ -286,7 +286,7 @@ func (s *FlagEvaluationService) ResolveInt(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
@@ -321,7 +321,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
@@ -356,7 +356,7 @@ func (s *FlagEvaluationService) ResolveObject(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")

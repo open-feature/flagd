@@ -76,7 +76,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -190,7 +190,7 @@ func (s *OldFlagEvaluationService) ResolveBoolean(
 	res := connect.NewResponse(&schemaV1.ResolveBooleanResponse{})
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -224,7 +224,7 @@ func (s *OldFlagEvaluationService) ResolveString(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -259,7 +259,7 @@ func (s *OldFlagEvaluationService) ResolveInt(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -294,7 +294,7 @@ func (s *OldFlagEvaluationService) ResolveFloat(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
@@ -329,7 +329,7 @@ func (s *OldFlagEvaluationService) ResolveObject(
 
 	selector, err := selectorFromHeader(req.Header())
 	if err != nil {
-		return nil, err
+		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
 
