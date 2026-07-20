@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	stdsync "sync"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -26,8 +27,11 @@ type Sync struct {
 	Poller      polling.Poller
 	Logger      *logger.Logger
 	Interval    uint32
+	mu          stdsync.Mutex
 	ready       bool
 	lastUpdated time.Time
+	lastETag    string
+	lastBodySHA string
 }
 
 func (hs *Sync) Init(_ context.Context) error {
@@ -41,6 +45,8 @@ func (hs *Sync) Init(_ context.Context) error {
 }
 
 func (hs *Sync) IsReady() bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
 	return hs.ready
 }
 
@@ -54,7 +60,9 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
+	hs.mu.Lock()
 	hs.ready = true
+	hs.mu.Unlock()
 
 	hs.Logger.Debug(fmt.Sprintf("polling %s/%s every %ds (offset: %ds)",
 		hs.Bucket, hs.Object, hs.Interval, hs.Poller.Offset()))
@@ -73,36 +81,79 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	return hs.sync(ctx, dataSync, true)
 }
 
-func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, skipCheckingModTime bool) error {
+func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, forcePublish bool) error {
 	bucket, err := hs.getBucket(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't get bucket: %v", err)
 	}
 	defer bucket.Close()
-	var updated time.Time
-	if !skipCheckingModTime {
-		updated, err = hs.fetchObjectModificationTime(ctx, bucket)
+
+	var attrs *blob.Attributes
+	if !forcePublish {
+		attrs, err = hs.fetchObjectAttributes(ctx, bucket)
 		if err != nil {
 			return fmt.Errorf("couldn't get object attributes: %v", err)
 		}
-		if hs.lastUpdated.Equal(updated) {
+		if hs.attributesUnchanged(attrs) {
 			hs.Logger.Debug("configuration hasn't changed, skipping fetching full object")
 			return nil
 		}
-		if hs.lastUpdated.After(updated) {
-			hs.Logger.Warn("configuration changed but the modification time decreased instead of increasing")
-		}
 	}
-	msg, err := hs.fetchObject(ctx, bucket)
+
+	msg, bodySHA, err := hs.fetchObject(ctx, bucket)
 	if err != nil {
 		return fmt.Errorf("couldn't get object: %v", err)
 	}
-	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
-	if !skipCheckingModTime {
-		hs.lastUpdated = updated
+
+	// only publish if the content actually differs
+	if !forcePublish && hs.bodyUnchanged(bodySHA) {
+		hs.Logger.Debug("configuration hasn't changed, skipping publishing")
+		hs.updateState(attrs, bodySHA)
+		return nil
 	}
+
+	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
+	hs.updateState(attrs, bodySHA)
 	dataSync <- sync.DataSync{FlagData: msg, Source: bloburi.Join(hs.Bucket, hs.Object)}
 	return nil
+}
+
+// attributesUnchanged reports whether the object can be considered unchanged
+// based on its attributes alone, allowing us to skip fetching the full object.
+// prefers the ETag and falls back to the mod time for stores that don't expose one.
+func (hs *Sync) attributesUnchanged(attrs *blob.Attributes) bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
+	if attrs.ETag != "" {
+		return hs.lastETag == attrs.ETag
+	}
+	if hs.lastUpdated.Equal(attrs.ModTime) {
+		return true
+	}
+	if hs.lastUpdated.After(attrs.ModTime) {
+		hs.Logger.Warn("configuration changed but the modification time decreased instead of increasing")
+	}
+	return false
+}
+
+// bodyUnchanged reports whether bodySHA matches the body hash recorded by the
+// last updateState call.
+func (hs *Sync) bodyUnchanged(bodySHA string) bool {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
+	return bodySHA == hs.lastBodySHA
+}
+
+// updateState records the attributes and body hash of the object we just
+// observed so subsequent syncs can detect whether anything actually changed.
+func (hs *Sync) updateState(attrs *blob.Attributes, bodySHA string) {
+	hs.mu.Lock()
+	defer hs.mu.Unlock()
+	if attrs != nil {
+		hs.lastETag = attrs.ETag
+		hs.lastUpdated = attrs.ModTime
+	}
+	hs.lastBodySHA = bodySHA
 }
 
 func (hs *Sync) getBucket(ctx context.Context) (*blob.Bucket, error) {
@@ -113,32 +164,33 @@ func (hs *Sync) getBucket(ctx context.Context) (*blob.Bucket, error) {
 	return b, nil
 }
 
-func (hs *Sync) fetchObjectModificationTime(ctx context.Context, bucket *blob.Bucket) (time.Time, error) {
+func (hs *Sync) fetchObjectAttributes(ctx context.Context, bucket *blob.Bucket) (*blob.Attributes, error) {
 	if hs.Object == "" {
-		return time.Time{}, errors.New("no object string set")
+		return nil, errors.New("no object string set")
 	}
 	attrs, err := bucket.Attributes(ctx, hs.Object)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("error fetching attributes for object %s/%s: %w", hs.Bucket, hs.Object, err)
+		return nil, fmt.Errorf("error fetching attributes for object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
-	return attrs.ModTime, nil
+	return attrs, nil
 }
 
-func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, error) {
+func (hs *Sync) fetchObject(ctx context.Context, bucket *blob.Bucket) (string, string, error) {
 	r, err := bucket.NewReader(ctx, hs.Object, nil)
 	if err != nil {
-		return "", fmt.Errorf("error opening reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
+		return "", "", fmt.Errorf("error opening reader for object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 	defer r.Close()
 
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
+		return "", "", fmt.Errorf("error downloading object %s/%s: %w", hs.Bucket, hs.Object, err)
 	}
 
-	json, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
+	flagJSON, err := utils.ConvertToJSON(data, filepath.Ext(hs.Object), r.ContentType())
 	if err != nil {
-		return "", fmt.Errorf("error converting blob data to json: %w", err)
+		return "", "", fmt.Errorf("error converting blob data to json: %w", err)
 	}
-	return json, nil
+
+	return flagJSON, utils.GenerateSha([]byte(flagJSON)), nil
 }

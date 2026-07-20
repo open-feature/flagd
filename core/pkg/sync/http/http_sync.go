@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +17,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/utils"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/sha3" //nolint:gosec
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -220,7 +218,7 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 	}
 
 	if json != "" {
-		hs.lastBodySHA = hs.generateSha([]byte(body))
+		hs.lastBodySHA = utils.GenerateSha([]byte(json))
 	}
 
 	return json, false, nil
@@ -234,12 +232,6 @@ func getFileExtensions(url string) string {
 	}
 
 	return filepath.Ext(u.Path)
-}
-
-func (hs *Sync) generateSha(body []byte) string {
-	hasher := sha3.New256()
-	hasher.Write(body)
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
 func (hs *Sync) Fetch(ctx context.Context) (string, error) {
