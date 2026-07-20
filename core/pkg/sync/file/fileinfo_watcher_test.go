@@ -70,9 +70,9 @@ func Test_fileInfoWatcher_Close_racesWithTimer(t *testing.T) {
 		t.Errorf("second fileInfoWatcher.Close() error = %v", err)
 	}
 
-	// Close must have stopped the timer goroutine and closed both channels;
-	// draining the events chan blocks forever unless it is closed
 	for range watcher.Events() {
+	    // Close must have stopped the timer goroutine and closed both channels;
+	    // draining the (buffered) events chan blocks forever unless it is closed
 	}
 	if _, ok := <-watcher.Errors(); ok {
 		t.Error("fileInfoWatcher.Close() failed to close error chan")
