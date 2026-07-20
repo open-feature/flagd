@@ -22,14 +22,10 @@ const (
 )
 
 const (
-	// reAddMaxAttempts bounds how many times we try to re-establish the watch
-	// after a remove event before giving up. A delete followed by a quick
-	// restore (e.g. an editor's atomic save, or a manual delete + undo) can
-	// leave the file momentarily absent when the first Add is attempted, so a
-	// single attempt is not enough to recover the watch.
-	reAddMaxAttempts = 5
-	// reAddBackoff is the delay between re-add attempts.
-	reAddBackoff = 100 * time.Millisecond
+	// bounded re-add attempts after a remove event; 6 x 200ms backoff = ~1s window to survive a non-atomic replace (delete then recreate)
+	reAddMaxAttempts = 6
+	// delay between re-add attempts
+	reAddBackoff = 200 * time.Millisecond
 )
 
 type Watcher interface {
@@ -126,9 +122,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case event.Has(fsnotify.Remove):
 				// K8s exposes config maps as symlinks.
 				// Updates cause a remove event, we need to re-add the watcher in this case.
-				// A delete quickly followed by a restore can leave the file
-				// momentarily absent, so retry the re-add for a short window
-				// rather than giving up after a single failed attempt.
+				// a non-atomic replace (delete then recreate) leaves the file briefly absent; retry so we don't drop the watch
 				err := fs.reAddWatcher(ctx)
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
@@ -164,11 +158,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 }
 
-// reAddWatcher re-establishes the watch on fs.URI after a remove event. It
-// retries fs.watcher.Add a bounded number of times with a short backoff so a
-// file that is deleted and quickly restored is picked back up instead of
-// silently losing its watch. It returns the last Add error if every attempt
-// fails, or ctx.Err() if the context is cancelled while backing off.
+// reAddWatcher retries watcher.Add with backoff; returns the last Add error, or ctx.Err() if cancelled
 func (fs *Sync) reAddWatcher(ctx context.Context) error {
 	var err error
 	for attempt := 0; attempt < reAddMaxAttempts; attempt++ {

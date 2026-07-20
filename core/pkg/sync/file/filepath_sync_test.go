@@ -303,9 +303,7 @@ func writeToFile(t *testing.T, fetchDirName, fileContents string) {
 	}
 }
 
-// reAddMockWatcher is a minimal file.Watcher used to exercise reAddWatcher's
-// retry behavior without touching the real filesystem. Its Add fails the first
-// addFailUntil calls, then succeeds and records the watched name.
+// reAddMockWatcher is a file.Watcher whose Add fails the first addFailUntil calls, then succeeds
 type reAddMockWatcher struct {
 	addFailUntil int
 	addErr       error
@@ -338,8 +336,7 @@ func newReAddSync(w Watcher) *Sync {
 	}
 }
 
-// Happy path: the file is momentarily absent (Add fails once) then restored, so
-// the retry re-establishes the watch.
+// Happy path: file briefly absent (Add fails once) then restored -> watch re-established
 func TestReAddWatcher_RetriesUntilSuccess(t *testing.T) {
 	mw := &reAddMockWatcher{addFailUntil: 1, addErr: errors.New("no such file or directory")}
 	fs := newReAddSync(mw)
@@ -355,8 +352,7 @@ func TestReAddWatcher_RetriesUntilSuccess(t *testing.T) {
 	}
 }
 
-// Edge case: the file is truly deleted, so every Add fails and the retry gives
-// up after the bounded number of attempts, returning the last error.
+// Edge case: file truly deleted -> every Add fails, retry gives up and returns the last error
 func TestReAddWatcher_ExhaustsAttempts(t *testing.T) {
 	wantErr := errors.New("no such file or directory")
 	mw := &reAddMockWatcher{addFailUntil: reAddMaxAttempts + 1, addErr: wantErr}
@@ -374,8 +370,7 @@ func TestReAddWatcher_ExhaustsAttempts(t *testing.T) {
 	}
 }
 
-// Cancellation: a context cancelled during the backoff aborts the retry
-// promptly instead of running out the full attempt budget.
+// Cancellation: a cancelled context aborts the retry promptly
 func TestReAddWatcher_ContextCancelled(t *testing.T) {
 	mw := &reAddMockWatcher{addFailUntil: reAddMaxAttempts + 1, addErr: errors.New("no such file or directory")}
 	fs := newReAddSync(mw)
