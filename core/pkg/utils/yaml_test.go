@@ -37,6 +37,16 @@ func TestYAMLToJSON(t *testing.T) {
 			expected:      `{"arr":[1,2],"bool":true,"num":123,"obj":{"nested":"value"},"str":"hello"}`,
 			expectedError: false,
 		},
+		"nested non-string map keys": {
+			input:         []byte("flags:\n  myObjectFlag:\n    state: ENABLED\n    defaultVariant: config\n    variants:\n      config:\n        1: first\n        2: second"),
+			expected:      `{"flags":{"myObjectFlag":{"defaultVariant":"config","state":"ENABLED","variants":{"config":{"1":"first","2":"second"}}}}}`,
+			expectedError: false,
+		},
+		"unquoted boolean-like keys and values stay strings": {
+			input:         []byte("variants:\n  on: A\n  off: B\ncountry: NO\nflag: yes"),
+			expected:      `{"country":"NO","flag":"yes","variants":{"off":"B","on":"A"}}`,
+			expectedError: false,
+		},
 	}
 
 	for name, tt := range tests {
