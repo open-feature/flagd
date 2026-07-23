@@ -13,6 +13,8 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -147,6 +149,59 @@ func TestCertificateReload(t *testing.T) {
 				t.Fatalf("expected certificate was not returned by GetCertificate. expectedCert: %v, actualCert: %v", expectedCertParsed.DNSNames[0], actualCertParsed.DNSNames[0])
 			}
 		})
+	}
+}
+
+// TestConcurrentCertificateReload verifies that many concurrent callers past the
+// reload interval reload the cert from disk exactly once, not once per caller.
+func TestConcurrentCertificateReload(t *testing.T) {
+	cert, key, cleanup := generateValidCertificateFiles(t)
+	defer cleanup()
+
+	reloader, err := NewCertReloader(Config{
+		CertPath:       cert,
+		KeyPath:        key,
+		ReloadInterval: time.Hour,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var reloads int32
+	original := loadX509KeyPair
+	loadX509KeyPair = func(certFile, keyFile string) (tls.Certificate, error) {
+		atomic.AddInt32(&reloads, 1)
+		return original(certFile, keyFile)
+	}
+	defer func() { loadX509KeyPair = original }()
+
+	// hold the write lock so all callers park on the read lock, then release to
+	// let them evaluate the reload condition together
+	reloader.mu.Lock()
+	reloader.nextReload = time.Now().Add(-time.Hour)
+
+	const callers = 50
+	var started, wg sync.WaitGroup
+	started.Add(callers)
+	wg.Add(callers)
+	for i := 0; i < callers; i++ {
+		go func() {
+			defer wg.Done()
+			started.Done()
+			if _, err := reloader.GetCertificate(); err != nil {
+				t.Errorf("GetCertificate returned error: %s", err)
+			}
+		}()
+	}
+
+	// wait for all goroutines to run, then let them block on the read lock before releasing
+	started.Wait()
+	time.Sleep(50 * time.Millisecond)
+	reloader.mu.Unlock()
+	wg.Wait()
+
+	if got := atomic.LoadInt32(&reloads); got != 1 {
+		t.Fatalf("expected exactly 1 reload for %d concurrent callers past the interval, got %d", callers, got)
 	}
 }
 
