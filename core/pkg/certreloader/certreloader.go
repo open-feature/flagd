@@ -48,9 +48,7 @@ func (r *CertReloader) GetCertificate() (*tls.Certificate, error) {
 		// Need to release the read lock, otherwise we deadlock
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		// Re-check the condition now that we hold the write lock: a concurrent
-		// caller may have already reloaded while we were blocked, in which case
-		// we skip the redundant reload (double-checked locking).
+		// re-check under the write lock; a concurrent caller may have already reloaded
 		if r.ReloadInterval != 0 && r.nextReload.Before(now) {
 			cert, err := r.loadCertificate()
 			if err != nil {
@@ -64,8 +62,7 @@ func (r *CertReloader) GetCertificate() (*tls.Certificate, error) {
 	return r.cert, nil
 }
 
-// loadX509KeyPair loads a certificate/key pair from disk. It is a package
-// variable so tests can observe reloads; production always uses the stdlib.
+// loadX509KeyPair is a package var so tests can observe reloads; prod uses the stdlib
 var loadX509KeyPair = tls.LoadX509KeyPair
 
 func (r *CertReloader) loadCertificate() (tls.Certificate, error) {

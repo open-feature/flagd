@@ -152,12 +152,8 @@ func TestCertificateReload(t *testing.T) {
 	}
 }
 
-// TestConcurrentCertificateReload verifies that when many goroutines call
-// GetCertificate concurrently after the reload interval has elapsed, the
-// certificate is reloaded from disk exactly once. GetCertificate is wired as
-// tls.Config.GetCertificate and is invoked in parallel per handshake, so a
-// missing second check under the write lock makes every racing caller reload
-// (a thundering herd of redundant disk reads), which this test guards against.
+// TestConcurrentCertificateReload verifies that many concurrent callers past the
+// reload interval reload the cert from disk exactly once, not once per caller.
 func TestConcurrentCertificateReload(t *testing.T) {
 	cert, key, cleanup := generateValidCertificateFiles(t)
 	defer cleanup()
@@ -179,10 +175,8 @@ func TestConcurrentCertificateReload(t *testing.T) {
 	}
 	defer func() { loadX509KeyPair = original }()
 
-	// Hold the write lock so every caller parks on the read lock inside
-	// GetCertificate. Releasing it lets them all evaluate the reload condition
-	// together (readers run concurrently), reproducing the case where several
-	// callers see a reload is due within the same interval window.
+	// hold the write lock so all callers park on the read lock, then release to
+	// let them evaluate the reload condition together
 	reloader.mu.Lock()
 	reloader.nextReload = time.Now().Add(-time.Hour)
 
@@ -200,8 +194,7 @@ func TestConcurrentCertificateReload(t *testing.T) {
 		}()
 	}
 
-	// Wait for every goroutine to be running, then give them a moment to block
-	// on the read lock before releasing it.
+	// wait for all goroutines to run, then let them block on the read lock before releasing
 	started.Wait()
 	time.Sleep(50 * time.Millisecond)
 	reloader.mu.Unlock()
