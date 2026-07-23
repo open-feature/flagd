@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	msync "sync"
 	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
@@ -41,8 +40,6 @@ type FlagSyncServiceClient interface {
 type FlagSyncServiceClientResponse interface {
 	syncv1grpc.FlagSyncService_SyncFlagsClient
 }
-
-var once msync.Once
 
 type Sync struct {
 	GrpcDialOptionsOverride []grpc.DialOption
@@ -208,9 +205,7 @@ func (g *Sync) connectWithRetry(
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
 func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
-	once.Do(func() {
-		g.ready = true
-	})
+	g.ready = true
 
 	for {
 		data, err := stream.Recv()
