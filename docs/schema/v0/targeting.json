@@ -400,6 +400,47 @@
         }
       }
     },
+    "stringCasingArg": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/anyRule"
+        }
+      ]
+    },
+    "stringCasingArgs": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/stringCasingArg"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringCasingArg"
+          }
+        }
+      ]
+    },
+    "stringCasingRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lower": {
+          "title": "Lower-Case Operation",
+          "description": "Transforms the string argument to ASCII lower case (A-Z), so comparisons can match case-insensitively. Non-ASCII characters are left unchanged.",
+          "$ref": "#/definitions/stringCasingArgs"
+        },
+        "upper": {
+          "title": "Upper-Case Operation",
+          "description": "Transforms the string argument to ASCII upper case (a-z), so comparisons can match case-insensitively. Non-ASCII characters are left unchanged.",
+          "$ref": "#/definitions/stringCasingArgs"
+        }
+      }
+    },
     "semVerString": {
       "title": "Semantic Version String",
       "description": "A string representing a valid semantic version expression as per https://semver.org/.",
@@ -579,6 +620,9 @@
         },
         {
           "$ref": "#/definitions/stringCompareRule"
+        },
+        {
+          "$ref": "#/definitions/stringCasingRule"
         },
         {
           "$ref": "#/definitions/ruleSemVer"
