@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,9 +23,11 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -104,6 +107,175 @@ func Test_InitWithSizeOverride(t *testing.T) {
 
 	require.Nilf(t, err, "%s: expected no error, but got non nil error", t.Name())
 	require.Equal(t, "setting max receive message size 10 bytes default 4MB", observedLogs.All()[0].Message)
+}
+
+// Test_InitMaxMsgSizeAffectsClient verifies that the MaxMsgSize configuration is
+// not just logged but actually wired into the gRPC client as a call option, by
+// observing that a response larger than the configured limit is rejected with
+// codes.ResourceExhausted while the same response succeeds when the limit is
+// disabled. It exercises the production (non-override) path of Init verbatim
+// against a real loopback listener so the grpc.MaxCallRecvMsgSize option at the
+// dial site is the only difference between the cases.
+func Test_InitMaxMsgSizeAffectsClient(t *testing.T) {
+	// A payload comfortably larger than the small limit but well under the 4MB default.
+	largePayload := strings.Repeat("a", 1024)
+
+	tests := []struct {
+		name       string
+		maxMsgSize int
+		wantErr    bool
+	}{
+		{
+			name:       "small MaxMsgSize rejects oversized response",
+			maxMsgSize: 100,
+			wantErr:    true,
+		},
+		{
+			name:       "unset MaxMsgSize accepts the same response",
+			maxMsgSize: 0,
+			wantErr:    false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			lis, err := net.Listen("tcp", "127.0.0.1:0")
+			require.NoError(t, err)
+
+			server := grpc.NewServer()
+			syncv1grpc.RegisterFlagSyncServiceServer(server, &bufferedServer{
+				fetchAllFlagsResponse: &v1.FetchAllFlagsResponse{FlagConfiguration: largePayload},
+			})
+			go func() {
+				_ = server.Serve(lis)
+			}()
+			t.Cleanup(server.Stop)
+
+			mockCtrl := gomock.NewController(t)
+			mockCredentialBuilder := credendialsmock.NewMockBuilder(mockCtrl)
+			mockCredentialBuilder.EXPECT().
+				Build(gomock.Any(), gomock.Any()).
+				Return(insecure.NewCredentials(), nil)
+
+			grpcSync := Sync{
+				URI:               lis.Addr().String(),
+				Logger:            logger.NewLogger(nil, false),
+				CredentialBuilder: mockCredentialBuilder,
+				MaxMsgSize:        test.maxMsgSize,
+			}
+
+			err = grpcSync.Init(context.Background())
+			require.NoError(t, err)
+
+			syncChan := make(chan sync.DataSync, 1)
+			err = grpcSync.ReSync(context.Background(), syncChan)
+
+			if test.wantErr {
+				require.Error(t, err)
+				require.Equal(t, codes.ResourceExhausted, status.Code(err),
+					"oversized response should be rejected because MaxMsgSize was applied to the client")
+				return
+			}
+
+			require.NoError(t, err)
+			out := <-syncChan
+			require.Equal(t, largePayload, out.FlagData)
+		})
+	}
+}
+
+// Test_InitDialOptionsOverrideBypassesCredentialBuilder verifies that providing
+// GrpcDialOptionsOverride takes the override branch of Init and therefore never
+// consults the CredentialBuilder. The mock builder is created with no expected
+// calls, so any call to Build would fail the test. The resulting client is also
+// exercised end to end to confirm the overridden dial options produce a usable
+// connection.
+func Test_InitDialOptionsOverrideBypassesCredentialBuilder(t *testing.T) {
+	// passthrough scheme hands the target verbatim to the context dialer below,
+	// so grpc.NewClient does not attempt DNS resolution.
+	const target = "passthrough:///localBufCon"
+
+	bufCon := bufconn.Listen(5)
+	bufServer := bufferedServer{
+		listener:              bufCon,
+		fetchAllFlagsResponse: &v1.FetchAllFlagsResponse{FlagConfiguration: "override-path"},
+	}
+	go serve(&bufServer)
+
+	mockCtrl := gomock.NewController(t)
+	// No EXPECT(): the override path must not call Build at all.
+	mockCredentialBuilder := credendialsmock.NewMockBuilder(mockCtrl)
+
+	grpcSync := Sync{
+		URI:               target,
+		Logger:            logger.NewLogger(nil, false),
+		CredentialBuilder: mockCredentialBuilder,
+		GrpcDialOptionsOverride: []grpc.DialOption{
+			grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
+				return bufCon.Dial()
+			}),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		},
+	}
+
+	err := grpcSync.Init(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, grpcSync.client, "expected client to be initialized via override dial options")
+
+	syncChan := make(chan sync.DataSync, 1)
+	err = grpcSync.ReSync(context.Background(), syncChan)
+	require.NoError(t, err)
+	out := <-syncChan
+	require.Equal(t, "override-path", out.FlagData)
+}
+
+// Test_ReSyncSendsConfiguredProviderIDAndSelector verifies that the ProviderID
+// and Selector configuration fields are propagated into the outgoing
+// FetchAllFlagsRequest, by capturing the request server-side.
+func Test_ReSyncSendsConfiguredProviderIDAndSelector(t *testing.T) {
+	const target = "localBufCon"
+
+	bufCon := bufconn.Listen(5)
+	receivedRequest := make(chan *v1.FetchAllFlagsRequest, 1)
+
+	server := grpc.NewServer()
+	syncv1grpc.RegisterFlagSyncServiceServer(server, &requestCapturingServer{
+		receivedFetchAll: receivedRequest,
+		response:         &v1.FetchAllFlagsResponse{FlagConfiguration: "{}"},
+	})
+	go func() {
+		if err := server.Serve(bufCon); err != nil {
+			log.Fatalf("Server exited with error: %v", err)
+		}
+	}()
+	t.Cleanup(server.Stop)
+
+	dial, err := grpc.Dial(target,
+		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
+			return bufCon.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+
+	grpcSync := Sync{
+		URI:        target,
+		ProviderID: "flagd-weatherapp-sidecar",
+		Selector:   "source=database,app=weatherapp",
+		Logger:     logger.NewLogger(nil, false),
+		client:     syncv1grpc.NewFlagSyncServiceClient(dial),
+	}
+
+	syncChan := make(chan sync.DataSync, 1)
+	err = grpcSync.ReSync(context.Background(), syncChan)
+	require.NoError(t, err)
+
+	select {
+	case req := <-receivedRequest:
+		require.Equal(t, "flagd-weatherapp-sidecar", req.GetProviderId())
+		require.Equal(t, "source=database,app=weatherapp", req.GetSelector())
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for request")
+	}
 }
 
 func Test_ReSyncTests(t *testing.T) {
@@ -678,5 +850,25 @@ func (s *headerCapturingServer) SyncFlags(_ *v1.SyncFlagsRequest, _ syncv1grpc.F
 }
 
 func (s *headerCapturingServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
+	return &v1.GetMetadataResponse{}, nil
+}
+
+// requestCapturingServer captures the incoming FetchAllFlagsRequest
+type requestCapturingServer struct {
+	syncv1grpc.UnimplementedFlagSyncServiceServer
+	receivedFetchAll chan *v1.FetchAllFlagsRequest
+	response         *v1.FetchAllFlagsResponse
+}
+
+func (s *requestCapturingServer) FetchAllFlags(_ context.Context, req *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
+	s.receivedFetchAll <- req
+	return s.response, nil
+}
+
+func (s *requestCapturingServer) SyncFlags(_ *v1.SyncFlagsRequest, _ syncv1grpc.FlagSyncService_SyncFlagsServer) error {
+	return nil
+}
+
+func (s *requestCapturingServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
 	return &v1.GetMetadataResponse{}, nil
 }
