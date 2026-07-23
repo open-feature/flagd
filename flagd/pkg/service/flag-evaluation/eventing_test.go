@@ -136,3 +136,70 @@ func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 		// expected: no notification sent
 	}
 }
+
+// TestEmitToAllVsSubscriberCancel is a regression test for a data race between
+// EmitToAll and the per-subscription goroutine that closes the notifier channel
+// on context cancellation. The subscription goroutine closes the notifier when
+// its store watcher stops (the store closes the watcher on ctx cancel), but that
+// close is independent of Unsubscribe. If the notifier is closed while it is
+// still present in subs, a concurrent EmitToAll sends on a closed channel and
+// panics ("send on closed channel"), which crashes the whole flagd process.
+// This is the exact interleaving ConnectService.Shutdown forces: it broadcasts a
+// Shutdown notification via EmitToAll precisely as the shared context is being
+// cancelled and every subscription is tearing down. Run with -race.
+func TestEmitToAllVsSubscriberCancel(t *testing.T) {
+	eventing, _ := newTestEventingConfig(t, []string{"source1", "source2"})
+
+	const subscribers = 50
+	cancels := make([]context.CancelFunc, 0, subscribers)
+	var drainers sync.WaitGroup
+
+	for i := 0; i < subscribers; i++ {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancels = append(cancels, cancel)
+
+		notifier := make(chan iservice.Notification, 1)
+		eventing.Subscribe(ctx, i, nil, notifier)
+
+		// Drain the notifier so EmitToAll never blocks on a full buffer, and so
+		// the range exits when the subscription goroutine closes the channel.
+		drainers.Add(1)
+		go func() {
+			defer drainers.Done()
+			for range notifier {
+			}
+		}()
+	}
+
+	// Let the subscription goroutines start watching before we cancel them.
+	time.Sleep(50 * time.Millisecond)
+
+	var workers sync.WaitGroup
+
+	// Cancel every subscriber context: each cancel makes the store close the
+	// watcher, which makes the subscription goroutine close its notifier.
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		for _, cancel := range cancels {
+			cancel()
+		}
+	}()
+
+	// Concurrently hammer EmitToAll. Before the fix this reproducibly panics
+	// with "send on closed channel" when it sends to a notifier that the
+	// subscription goroutine has already closed but not removed from subs.
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 200; i++ {
+			eventing.EmitToAll(iservice.Notification{Type: iservice.Shutdown})
+		}
+	}()
+
+	workers.Wait()
+
+	// Cancelling the contexts closes every notifier; wait for the drainers so
+	// the test does not leak goroutines and the race detector sees clean exits.
+	drainers.Wait()
+}
