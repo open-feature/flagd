@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.1](https://github.com/open-feature/flagd/compare/core/v0.16.0...core/v0.16.1) (2026-07-23)
+
+
+### 🐛 Bug Fixes
+
+* **certreloader:** re-check reload condition under write lock ([#1994](https://github.com/open-feature/flagd/issues/1994)) ([86489da](https://github.com/open-feature/flagd/commit/86489da5f435c7cbd5b63b3ca146a5e3bda8f28c))
+* handle invalid selector errors ([#1976](https://github.com/open-feature/flagd/issues/1976)) ([409a62e](https://github.com/open-feature/flagd/commit/409a62e913966c1e1356fcfc24fcb960aa567007))
+* **security:** update vulnerability-updates [security] ([#1984](https://github.com/open-feature/flagd/issues/1984)) ([2a5a6b6](https://github.com/open-feature/flagd/commit/2a5a6b62b1ccf8d17f095bee4dd8f797436f2abc))
+* **sync:** avoid send on closed channel in fileinfo watcher Close ([#1992](https://github.com/open-feature/flagd/issues/1992)) ([a7339ea](https://github.com/open-feature/flagd/commit/a7339ea37ab75c1494e4660548154024852e0d45))
+* **sync:** handle non-string YAML map keys in config parsing ([#1990](https://github.com/open-feature/flagd/issues/1990)) ([3c72e6f](https://github.com/open-feature/flagd/commit/3c72e6f7bcb9b7ac4cf5ba66b5d468a803516f31))
+* **sync:** re-establish file watch after delete and restore ([#2001](https://github.com/open-feature/flagd/issues/2001)) ([d434adf](https://github.com/open-feature/flagd/commit/d434adf89c82413c185fad2e8a9a68a99769f8c1))
+
+
+### ✨ New Features
+
+* improve ETag and body hash support to blob/http sync ([#1991](https://github.com/open-feature/flagd/issues/1991)) ([1e210d4](https://github.com/open-feature/flagd/commit/1e210d4ccb24f94b5e2d8ce40a16ddac9397bca5))
+
 ## [0.16.0](https://github.com/open-feature/flagd/compare/core/v0.15.8...core/v0.16.0) (2026-06-01)
 
 

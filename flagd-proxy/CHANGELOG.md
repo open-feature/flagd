@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.7](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.6...flagd-proxy/v0.9.7) (2026-07-23)
+
+
+### 🐛 Bug Fixes
+
+* add server ReadTimeouts, update security deps ([#1980](https://github.com/open-feature/flagd/issues/1980)) ([0e1e8b3](https://github.com/open-feature/flagd/commit/0e1e8b3bceb5afa22c9002ab47fed75391b6e2c2))
+* **security:** update vulnerability-updates [security] ([#1984](https://github.com/open-feature/flagd/issues/1984)) ([2a5a6b6](https://github.com/open-feature/flagd/commit/2a5a6b62b1ccf8d17f095bee4dd8f797436f2abc))
+
 ## [0.9.6](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.5...flagd-proxy/v0.9.6) (2026-05-28)
 
 

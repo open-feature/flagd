@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.1](https://github.com/open-feature/flagd/compare/flagd/v0.16.0...flagd/v0.16.1) (2026-07-23)
+
+
+### 🐛 Bug Fixes
+
+* add server ReadTimeouts, update security deps ([#1980](https://github.com/open-feature/flagd/issues/1980)) ([0e1e8b3](https://github.com/open-feature/flagd/commit/0e1e8b3bceb5afa22c9002ab47fed75391b6e2c2))
+* handle invalid selector errors ([#1976](https://github.com/open-feature/flagd/issues/1976)) ([409a62e](https://github.com/open-feature/flagd/commit/409a62e913966c1e1356fcfc24fcb960aa567007))
+* **security:** update vulnerability-updates [security] ([#1984](https://github.com/open-feature/flagd/issues/1984)) ([2a5a6b6](https://github.com/open-feature/flagd/commit/2a5a6b62b1ccf8d17f095bee4dd8f797436f2abc))
+
+
+### ✨ New Features
+
+* **sync:** configurable gRPC keepalive enforcement on sync server ([#1999](https://github.com/open-feature/flagd/issues/1999)) ([19e57b9](https://github.com/open-feature/flagd/commit/19e57b908b88e4ca19609ab249178f212f14fff5))
+
 ## [0.16.0](https://github.com/open-feature/flagd/compare/flagd/v0.15.7...flagd/v0.16.0) (2026-06-01)
 
 
