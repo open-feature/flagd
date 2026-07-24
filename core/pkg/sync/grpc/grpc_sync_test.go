@@ -109,15 +109,11 @@ func Test_InitWithSizeOverride(t *testing.T) {
 	require.Equal(t, "setting max receive message size 10 bytes default 4MB", observedLogs.All()[0].Message)
 }
 
-// Test_InitMaxMsgSizeAffectsClient verifies that the MaxMsgSize configuration is
-// not just logged but actually wired into the gRPC client as a call option, by
-// observing that a response larger than the configured limit is rejected with
-// codes.ResourceExhausted while the same response succeeds when the limit is
-// disabled. It exercises the production (non-override) path of Init verbatim
-// against a real loopback listener so the grpc.MaxCallRecvMsgSize option at the
-// dial site is the only difference between the cases.
+// Test_InitMaxMsgSizeAffectsClient verifies MaxMsgSize is wired into the client
+// (not just logged): an oversized response is rejected with ResourceExhausted, but
+// accepted when unset. Uses the non-override Init path so the option is the only variable.
 func Test_InitMaxMsgSizeAffectsClient(t *testing.T) {
-	// A payload comfortably larger than the small limit but well under the 4MB default.
+	// larger than the small limit, well under the 4MB default
 	largePayload := strings.Repeat("a", 1024)
 
 	tests := []struct {
@@ -184,15 +180,11 @@ func Test_InitMaxMsgSizeAffectsClient(t *testing.T) {
 	}
 }
 
-// Test_InitDialOptionsOverrideBypassesCredentialBuilder verifies that providing
-// GrpcDialOptionsOverride takes the override branch of Init and therefore never
-// consults the CredentialBuilder. The mock builder is created with no expected
-// calls, so any call to Build would fail the test. The resulting client is also
-// exercised end to end to confirm the overridden dial options produce a usable
-// connection.
+// Test_InitDialOptionsOverrideBypassesCredentialBuilder verifies GrpcDialOptionsOverride
+// takes the override branch and never calls CredentialBuilder (mock has no expected calls),
+// and that the resulting client works end to end.
 func Test_InitDialOptionsOverrideBypassesCredentialBuilder(t *testing.T) {
-	// passthrough scheme hands the target verbatim to the context dialer below,
-	// so grpc.NewClient does not attempt DNS resolution.
+	// passthrough scheme hands the target verbatim to the dialer; no DNS resolution
 	const target = "passthrough:///localBufCon"
 
 	bufCon := bufconn.Listen(5)
@@ -229,9 +221,8 @@ func Test_InitDialOptionsOverrideBypassesCredentialBuilder(t *testing.T) {
 	require.Equal(t, "override-path", out.FlagData)
 }
 
-// Test_ReSyncSendsConfiguredProviderIDAndSelector verifies that the ProviderID
-// and Selector configuration fields are propagated into the outgoing
-// FetchAllFlagsRequest, by capturing the request server-side.
+// Test_ReSyncSendsConfiguredProviderIDAndSelector verifies ProviderID and Selector
+// are propagated into the outgoing FetchAllFlagsRequest, captured server-side.
 func Test_ReSyncSendsConfiguredProviderIDAndSelector(t *testing.T) {
 	const target = "localBufCon"
 
