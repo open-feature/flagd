@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	testing2 "k8s.io/client-go/testing"
@@ -753,15 +754,17 @@ func TestNotify(t *testing.T) {
 	if msg.GetEvent().EventType != DefaultEventTypeReady {
 		t.Errorf("Expected message %v, got %v", DefaultEventTypeReady, msg)
 	}
-	// create: explicitly create the object via the watch stream so AddFunc fires
+	// ready fires before informer.Run establishes the watch; sync before mutating
+	syncCtx, syncCancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	defer syncCancel()
+	if !cache.WaitForCacheSync(syncCtx.Done(), k.informer.HasSynced) {
+		t.Fatal("informer cache failed to sync")
+	}
+	// retry first create until the watch is live and AddFunc fires
 	ff := &unstructured.Unstructured{}
 	cfg := getCFG(name, ns)
 	ff.SetUnstructuredContent(cfg)
-	_, err = fc.Resource(featureFlagResource).Namespace(ns).Create(context.TODO(), ff, v1.CreateOptions{})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	msg = <-c
+	msg = createUntilObserved(t, fc, ns, name, ff, c)
 	if msg.GetEvent().EventType != DefaultEventTypeCreate {
 		t.Errorf("Expected message %v, got %v", DefaultEventTypeCreate, msg)
 	}
@@ -835,6 +838,40 @@ func Test_NewK8sSync(t *testing.T) {
 	}
 	if k.dynamicClient != dc {
 		t.Errorf("Object not initialized with the right K8s dynamic client")
+	}
+}
+
+// createUntilObserved creates ff and retries until the AddFunc event lands on c;
+// the fake client drops watch events until the reflector's watch is registered
+func createUntilObserved(
+	t *testing.T,
+	fc dynamic.Interface,
+	ns, name string,
+	ff *unstructured.Unstructured,
+	c chan INotify,
+) INotify {
+	t.Helper()
+	deadline := time.After(10 * time.Second)
+	for {
+		if _, err := fc.Resource(featureFlagResource).Namespace(ns).
+			Create(context.TODO(), ff, v1.CreateOptions{}); err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		select {
+		case msg := <-c:
+			return msg
+		case <-time.After(200 * time.Millisecond):
+			// event dropped (watch not live yet); delete, drain, retry
+			_ = fc.Resource(featureFlagResource).Namespace(ns).
+				Delete(context.TODO(), name, v1.DeleteOptions{})
+			select {
+			case <-c:
+			default:
+			}
+		case <-deadline:
+			t.Fatal("timed out waiting for create event")
+			return nil
+		}
 	}
 }
 
