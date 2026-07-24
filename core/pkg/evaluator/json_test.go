@@ -1462,7 +1462,7 @@ func TestFlagStateSafeForConcurrentReadWrites(t *testing.T) {
 		},
 		"Update_ResolveStringValue": {
 			flagResolution: func(evaluator *flagdEvaluator.JSON) error {
-				_, _, _, _, err := evaluator.ResolveBooleanValue(context.TODO(), "", StaticStringValue, nil)
+				_, _, _, _, err := evaluator.ResolveStringValue(context.TODO(), "", StaticStringFlag, nil)
 				return err
 			},
 		},
