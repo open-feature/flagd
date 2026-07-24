@@ -338,6 +338,65 @@ func Test_StreamListener(t *testing.T) {
 	}
 }
 
+// Test_MultipleSyncsBecomeReady ensures readiness is tracked per Sync instance.
+// flagd builds a distinct *grpc.Sync per configured grpc source, and the runtime
+// only reports ready once every Sync.IsReady() is true. A shared, package-level
+// guard around g.ready would let only the first instance report ready, leaving any
+// flagd with 2+ grpc sources permanently NotReady. Both instances must become ready.
+func Test_MultipleSyncsBecomeReady(t *testing.T) {
+	const target = "localBufCon"
+
+	newReadySync := func() *Sync {
+		bufCon := bufconn.Listen(5)
+		bufServer := bufferedServer{
+			listener:      bufCon,
+			mockResponses: []serverPayload{{flags: "{\"flags\": {}}"}},
+		}
+		go serve(&bufServer)
+
+		dial, err := grpc.Dial(target,
+			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+				return bufCon.Dial()
+			}),
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+
+		return &Sync{
+			URI:    target,
+			Logger: logger.NewLogger(nil, false),
+			client: syncv1grpc.NewFlagSyncServiceClient(dial),
+		}
+	}
+
+	syncs := []*Sync{newReadySync(), newReadySync()}
+
+	for i, s := range syncs {
+		require.Falsef(t, s.IsReady(), "sync %d should not be ready before sync starts", i)
+	}
+
+	for i, s := range syncs {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+
+		syncChan := make(chan sync.DataSync, 1)
+		go func() {
+			if err := s.Sync(ctx, syncChan); err != nil && err != io.EOF {
+				t.Errorf("sync %d returned error: %s", i, err.Error())
+			}
+		}()
+
+		// Receiving a payload establishes that handleFlagSync ran (and set ready)
+		// for this instance before we read IsReady, keeping the check race-free.
+		select {
+		case <-syncChan:
+		case <-time.After(5 * time.Second):
+			t.Fatalf("timed out waiting for sync %d to emit", i)
+		}
+
+		require.Truef(t, s.IsReady(), "sync %d should be ready after its stream connects", i)
+	}
+}
+
 // Test_ConnectWithRetry is an attempt to validate grpc.connectWithRetry behavior
 func Test_ConnectWithRetry(t *testing.T) {
 	target := "grpc://local"
