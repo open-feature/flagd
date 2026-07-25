@@ -10,6 +10,7 @@ import (
 	parseUrl "net/url"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -30,7 +31,7 @@ type Sync struct {
 	authHeader  string
 	headers     map[string]string
 	interval    uint32
-	ready       bool
+	ready       atomic.Bool
 	eTag        string
 	timeoutS    time.Duration
 
@@ -102,7 +103,7 @@ func (hs *Sync) Init(_ context.Context) error {
 }
 
 func (hs *Sync) IsReady() bool {
-	return hs.ready
+	return hs.ready.Load()
 }
 
 func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -116,7 +117,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 
 	// Set ready state
-	hs.ready = true
+	hs.ready.Store(true)
 
 	hs.logger.Debug(fmt.Sprintf("polling %s every %ds (offset: %ds)", hs.uri, hs.interval, hs.poller.Offset()))
 

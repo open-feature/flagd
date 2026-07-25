@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	stdsync "sync"
 	"testing"
 	"time"
 
@@ -31,6 +32,16 @@ func buildHeaders(m map[string][]string) http.Header {
 		}
 	}
 	return h
+}
+
+type readinessHTTPClient struct{}
+
+func (readinessHTTPClient) Do(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}}),
+		Body:       io.NopCloser(strings.NewReader("{}")),
+		StatusCode: http.StatusOK,
+	}, nil
 }
 
 func TestSimpleSync(t *testing.T) {
@@ -69,6 +80,41 @@ func TestSimpleSync(t *testing.T) {
 
 	if data.FlagData != responseBody {
 		t.Errorf("expected content: %s, but received content: %s", responseBody, data.FlagData)
+	}
+}
+
+func TestIsReadyRaceFreeDuringHTTPStartup(t *testing.T) {
+	const attempts = 100
+
+	for i := 0; i < attempts; i++ {
+		httpSync := Sync{
+			uri:      "http://localhost/flags",
+			client:   readinessHTTPClient{},
+			poller:   synctesting.NewMockPoller(),
+			logger:   logger.NewLogger(nil, false),
+			interval: 1,
+		}
+
+		start := make(chan struct{})
+		var wg stdsync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			<-start
+			if err := httpSync.Sync(context.Background(), make(chan sync.DataSync, 1)); err != nil {
+				t.Errorf("sync: %v", err)
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+			<-start
+			_ = httpSync.IsReady()
+		}()
+
+		close(start)
+		wg.Wait()
 	}
 }
 
@@ -120,7 +166,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		authHeader     string
 		eTagHeader     string
 		lastBodySHA    string
-		handleResponse func(*testing.T, Sync, string, error)
+		handleResponse func(*testing.T, *Sync, string, error)
 	}{
 		"success": {
 			setup: func(_ *testing.T, client *syncmock.MockClient) {
@@ -131,7 +177,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}, nil)
 			},
 			uri: "http://localhost",
-			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ *Sync, fetched string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -143,7 +189,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 		},
 		"return an error if no uri": {
 			setup: func(_ *testing.T, _ *syncmock.MockClient) {},
-			handleResponse: func(t *testing.T, _ Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, _ *Sync, _ string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}
@@ -159,7 +205,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:         "http://localhost",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync *Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -190,7 +236,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			uri:         "http://localhost",
 			authHeader:  "Basic dXNlcjpwYXNz",
 			lastBodySHA: "",
-			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync *Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -212,7 +258,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 				}, nil)
 			},
 			uri: "http://localhost",
-			handleResponse: func(t *testing.T, _ Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, _ *Sync, _ string, err error) {
 				if err == nil {
 					t.Fatalf("expected unauthorized request to return an error")
 				}
@@ -235,7 +281,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:        "http://localhost",
 			eTagHeader: `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`,
-			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync *Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -278,7 +324,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			},
 			uri:        "http://localhost",
 			eTagHeader: `"1af17a664e3fa8e419b8ba05c2a173169df76162a5a286e0c405b460d478f7ef"`,
-			handleResponse: func(t *testing.T, httpSync Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, httpSync *Sync, _ string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -315,7 +361,7 @@ func TestHTTPSync_Fetch(t *testing.T) {
 			}
 
 			fetched, err := httpSync.Fetch(context.Background())
-			tt.handleResponse(t, httpSync, fetched, err)
+			tt.handleResponse(t, &httpSync, fetched, err)
 		})
 	}
 }
@@ -333,9 +379,9 @@ func TestNewHTTP_PassesHeaders(t *testing.T) {
 
 func TestHTTPSync_CustomHeaders(t *testing.T) {
 	tests := map[string]struct {
-		authHeader     string
-		headers        map[string]string
-		assertRequest  func(t *testing.T, req *http.Request)
+		authHeader    string
+		headers       map[string]string
+		assertRequest func(t *testing.T, req *http.Request)
 	}{
 		"injects custom headers": {
 			headers: map[string]string{"X-Interop-Gateway-Host": "myhost", "X-Tenant-ID": "tenant1"},
@@ -406,7 +452,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 		setup             func(t *testing.T, client *syncmock.MockClient)
 		uri               string
 		lastBodySHA       string
-		handleResponse    func(*testing.T, Sync, string, error)
+		handleResponse    func(*testing.T, *Sync, string, error)
 		wantErr           bool
 		wantNotifications []sync.DataSync
 	}{
@@ -419,7 +465,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 				}, nil)
 			},
 			uri: source,
-			handleResponse: func(t *testing.T, _ Sync, fetched string, err error) {
+			handleResponse: func(t *testing.T, _ *Sync, fetched string, err error) {
 				if err != nil {
 					t.Fatalf("fetch: %v", err)
 				}
@@ -438,7 +484,7 @@ func TestHTTPSync_Resync(t *testing.T) {
 		},
 		"error response": {
 			setup: func(_ *testing.T, _ *syncmock.MockClient) {},
-			handleResponse: func(t *testing.T, _ Sync, _ string, err error) {
+			handleResponse: func(t *testing.T, _ *Sync, _ string, err error) {
 				if err == nil {
 					t.Error("expected err, got nil")
 				}
