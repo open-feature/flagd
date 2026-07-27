@@ -5,8 +5,8 @@ go 1.25.8
 
 require (
 	github.com/go-git/go-git/v5 v5.19.1
-	github.com/open-feature/go-sdk-contrib/providers/flagd v0.5.0
-	github.com/open-feature/go-sdk-contrib/tests/flagd/v2 v2.0.2
+	github.com/open-feature/go-sdk-contrib/providers/flagd v0.6.0
+	github.com/open-feature/go-sdk-contrib/tests/flagd/v2 v2.1.0
 	github.com/testcontainers/testcontainers-go v0.41.0
 )
 
@@ -22,7 +22,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -45,7 +44,7 @@ require (
 	github.com/cucumber/messages/go/v21 v21.0.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/diegoholiveira/jsonlogic/v3 v3.9.0 // indirect
+	github.com/diegoholiveira/jsonlogic/v3 v3.9.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/buildx v0.33.0 // indirect
 	github.com/docker/cli v29.5.1+incompatible // indirect
@@ -117,7 +116,7 @@ require (
 	github.com/morikuni/aec v1.1.0 // indirect
 	github.com/onsi/gomega v1.35.1 // indirect
 	github.com/open-feature/flagd-schemas v0.2.13 // indirect
-	github.com/open-feature/flagd/core v0.15.0 // indirect
+	github.com/open-feature/flagd/core v0.16.0 // indirect
 	github.com/open-feature/go-sdk v1.17.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
@@ -160,10 +159,10 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.63.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.44.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
