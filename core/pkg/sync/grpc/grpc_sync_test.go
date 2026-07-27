@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	stdsync "sync"
 	"testing"
 	"time"
 
@@ -32,6 +33,14 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+type eofFlagSyncClient struct {
+	syncv1grpc.FlagSyncService_SyncFlagsClient
+}
+
+func (eofFlagSyncClient) Recv() (*v1.SyncFlagsResponse, error) {
+	return nil, io.EOF
+}
 
 func Test_InitWithMockCredentialBuilder(t *testing.T) {
 	tests := []struct {
@@ -560,6 +569,34 @@ func Test_MultipleSyncsBecomeReady(t *testing.T) {
 	}
 }
 
+func TestIsReadyRaceFreeDuringGRPCStreamStart(t *testing.T) {
+	const attempts = 1_000
+
+	grpcSync := Sync{}
+	start := make(chan struct{})
+	var wg stdsync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		<-start
+		for i := 0; i < attempts; i++ {
+			_ = grpcSync.handleFlagSync(eofFlagSyncClient{}, nil)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		<-start
+		for i := 0; i < attempts; i++ {
+			_ = grpcSync.IsReady()
+		}
+	}()
+
+	close(start)
+	wg.Wait()
+}
+
 // Test_ConnectWithRetry is an attempt to validate grpc.connectWithRetry behavior
 func Test_ConnectWithRetry(t *testing.T) {
 	target := "grpc://local"
@@ -784,7 +821,7 @@ func Test_contextWithHeaders(t *testing.T) {
 			name: "headers are appended as metadata",
 			headers: map[string]string{
 				"X-Proxy-Gateway-Host": "myhost.service",
-				"X-Tenant-ID":           "tenant1",
+				"X-Tenant-ID":          "tenant1",
 			},
 			expectUnchanged: false,
 		},
@@ -856,7 +893,7 @@ func Test_ReSyncWithHeaders(t *testing.T) {
 		Logger: logger.NewLogger(nil, false),
 		Headers: map[string]string{
 			"x-proxy-gateway-host": "myhost.service",
-			"x-tenant-id":           "tenant1",
+			"x-tenant-id":          "tenant1",
 		},
 		client: syncv1grpc.NewFlagSyncServiceClient(dial),
 	}

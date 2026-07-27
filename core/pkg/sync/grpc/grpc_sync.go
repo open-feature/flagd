@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync/atomic"
 	"time"
 
 	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
@@ -55,7 +56,7 @@ type Sync struct {
 	Headers                 map[string]string
 
 	client FlagSyncServiceClient
-	ready  bool
+	ready  atomic.Bool
 }
 
 func (g *Sync) Init(_ context.Context) error {
@@ -123,7 +124,7 @@ func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 }
 
 func (g *Sync) IsReady() bool {
-	return g.ready
+	return g.ready.Load()
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
@@ -205,7 +206,7 @@ func (g *Sync) connectWithRetry(
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
 func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
-	g.ready = true
+	g.ready.Store(true)
 
 	for {
 		data, err := stream.Recv()
