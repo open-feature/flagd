@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.7...flagd-proxy/v0.9.8) (2026-07-31)
+
+
+### 🧹 Chore
+
+* resolve open dependabot security alerts ([#2008](https://github.com/open-feature/flagd/issues/2008)) ([bbb05d4](https://github.com/open-feature/flagd/commit/bbb05d4bc3903ea8bf5123a88b1cf558750a22ab))
+
 ## [0.9.7](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.6...flagd-proxy/v0.9.7) (2026-07-27)
 
 
