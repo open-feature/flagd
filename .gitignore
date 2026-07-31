@@ -25,3 +25,6 @@ site
 
 # benchmark results
 benchmark.txt
+
+# git worktrees
+.worktrees/
