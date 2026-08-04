@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -29,12 +31,33 @@ const (
 	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
 )
 
+// configVersioner resolves the current config ETag / last-modified time for a selector so the
+// bulk handler can serve conditional (ETag/304) responses consistent with the SSE stream.
+// Implemented by the OFREP SSE change tracker; nil when SSE is disabled.
+type configVersioner interface {
+	Version(selector store.Selector) (etag string, lastModified int64, ok bool)
+}
+
 type handler struct {
 	Logger                     *logger.Logger
 	evaluator                  evaluator.IEvaluator
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	tracer                     trace.Tracer
+
+	versioner             configVersioner
+	sseEnabled            bool
+	sseInactivityDelaySec int
+	ssePublicURL          string
+}
+
+// SSEConfig carries the SSE advertisement settings the bulk handler needs to expose the
+// `eventStreams` block and conditional-evaluation ETags.
+type SSEConfig struct {
+	Enabled            bool
+	Versioner          configVersioner
+	InactivityDelaySec int
+	PublicURL          string
 }
 
 func NewOfrepHandler(
@@ -44,6 +67,7 @@ func NewOfrepHandler(
 	headerToContextKeyMappings map[string]string,
 	metricsRecorder telemetry.IMetricsRecorder,
 	serviceName string,
+	sseCfg SSEConfig,
 ) http.Handler {
 	h := handler{
 		Logger:                     logger,
@@ -51,6 +75,10 @@ func NewOfrepHandler(
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
 		tracer:                     otel.Tracer("flagd.ofrep.v1"),
+		versioner:                  sseCfg.Versioner,
+		sseEnabled:                 sseCfg.Enabled,
+		sseInactivityDelaySec:      sseCfg.InactivityDelaySec,
+		ssePublicURL:               sseCfg.PublicURL,
 	}
 
 	router := mux.NewRouter()
@@ -138,6 +166,20 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
+	// Conditional evaluation (ADR-0008): if the client already holds the current config
+	// version, short-circuit with 304 Not Modified instead of re-serving the flags.
+	etag, lastModified, hasVersion := "", int64(0), false
+	if h.versioner != nil {
+		etag, lastModified, hasVersion = h.versioner.Version(selector)
+	}
+	if hasVersion && etag != "" {
+		w.Header().Set("ETag", quoteETag(etag))
+		if clientEtag := requestETag(r); clientEtag != "" && normalizeETag(clientEtag) == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+	}
+
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
@@ -146,8 +188,62 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
 	} else {
-		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
+		response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
+		if h.sseEnabled {
+			response.EventStreams = h.eventStreams(selector)
+			if lastModified > 0 {
+				if response.Metadata == nil {
+					response.Metadata = model.Metadata{}
+				}
+				response.Metadata["flagConfigLastModified"] = lastModified
+			}
+		}
+		h.writeJSONToResponse(http.StatusOK, response, w)
 	}
+}
+
+// eventStreams builds the ADR-0008 eventStreams advertisement pointing OFREP clients back at
+// this flagd's SSE endpoint. The channel is the request's flagSetId; the internal nilFlagSetId
+// and a missing flagSetId both map to the catch-all channel (no `channels` parameter).
+//
+// It uses the structured `endpoint` form and omits origin unless a public URL is configured, so
+// the client resolves the requestUri against the OFREP base URL it is already talking to.
+func (h *handler) eventStreams(selector store.Selector) []ofrep.EventStream {
+	channel := selector.FlagSetId()
+	if channel == store.NilFlagSetId() {
+		channel = ""
+	}
+
+	requestURI := ssePath
+	if channel != "" {
+		requestURI += "?channels=" + url.QueryEscape(channel)
+	}
+
+	return []ofrep.EventStream{{
+		Type:               "sse",
+		InactivityDelaySec: h.sseInactivityDelaySec,
+		Endpoint: &ofrep.EventStreamEndpoint{
+			Origin:     strings.TrimSuffix(h.ssePublicURL, "/"),
+			RequestUri: requestURI,
+		},
+	}}
+}
+
+func requestETag(r *http.Request) string {
+	if e := r.URL.Query().Get("flagConfigEtag"); e != "" {
+		return e
+	}
+	return r.Header.Get("If-None-Match")
+}
+
+// normalizeETag strips optional surrounding quotes so quoted and unquoted forms compare equal.
+func normalizeETag(etag string) string {
+	return strings.Trim(etag, `"`)
+}
+
+// quoteETag wraps a bare ETag value in the double quotes required by the HTTP ETag header.
+func quoteETag(etag string) string {
+	return `"` + etag + `"`
 }
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {
