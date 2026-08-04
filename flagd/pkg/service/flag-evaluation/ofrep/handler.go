@@ -171,18 +171,12 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
-	// Conditional evaluation (ADR-0008): if the client already holds the current config
-	// version, short-circuit with 304 Not Modified instead of re-serving the flags.
-	etag, lastModified, hasVersion := "", int64(0), false
-	if h.versioner != nil {
-		etag, lastModified, hasVersion = h.versioner.Version(selector)
-	}
-	if hasVersion && etag != "" {
-		w.Header().Set("ETag", quoteETag(etag))
-		if clientEtag := requestETag(r); clientEtag != "" && normalizeETag(clientEtag) == etag {
-			w.WriteHeader(http.StatusNotModified)
-			return
-		}
+	// Conditional evaluation (ADR-0008): short-circuit with 304 when the client already holds
+	// the current config version.
+	lastModified, notModified := h.applyConditionalETag(w, r, selector)
+	if notModified {
+		w.WriteHeader(http.StatusNotModified)
+		return
 	}
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
@@ -197,19 +191,43 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		res := ofrep.BulkEvaluationContextErrorFrom(model.GeneralErrorCode,
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
-	} else {
-		response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
-		if h.sseEnabled {
-			response.EventStreams = h.eventStreams(selector)
-			if lastModified > 0 {
-				if response.Metadata == nil {
-					response.Metadata = model.Metadata{}
-				}
-				response.Metadata["flagConfigLastModified"] = lastModified
-			}
-		}
-		h.writeJSONToResponse(http.StatusOK, response, w)
+		return
 	}
+
+	h.writeJSONToResponse(http.StatusOK, h.bulkResponse(selector, evaluations, metadata, lastModified), w)
+}
+
+// applyConditionalETag resolves the current config version for the selector, sets the ETag
+// response header, and reports the lastModified time plus whether the request can be answered
+// with 304 Not Modified. It is a no-op (returns notModified=false) when SSE/versioning is off.
+func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, selector store.Selector) (lastModified int64, notModified bool) {
+	if h.versioner == nil {
+		return 0, false
+	}
+	etag, lastModified, ok := h.versioner.Version(selector)
+	if !ok || etag == "" {
+		return lastModified, false
+	}
+	w.Header().Set("ETag", quoteETag(etag))
+	clientEtag := requestETag(r)
+	return lastModified, clientEtag != "" && normalizeETag(clientEtag) == etag
+}
+
+// bulkResponse assembles the OFREP bulk response, adding the ADR-0008 eventStreams block and
+// lastModified metadata when SSE is enabled.
+func (h *handler) bulkResponse(selector store.Selector, evaluations []evaluator.AnyValue, metadata model.Metadata, lastModified int64) ofrep.BulkEvaluationResponse {
+	response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
+	if !h.sseEnabled {
+		return response
+	}
+	response.EventStreams = h.eventStreams(selector)
+	if lastModified > 0 {
+		if response.Metadata == nil {
+			response.Metadata = model.Metadata{}
+		}
+		response.Metadata["flagConfigLastModified"] = lastModified
+	}
+	return response
 }
 
 // eventStreams builds the ADR-0008 eventStreams advertisement pointing OFREP clients back at
