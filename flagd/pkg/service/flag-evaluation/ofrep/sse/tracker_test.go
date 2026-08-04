@@ -1,8 +1,10 @@
 package sse
 
 import (
+	"context"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/stretchr/testify/assert"
@@ -81,6 +83,53 @@ func TestTracker_Update_NilFlagSetIdNotSubscribable(t *testing.T) {
 	changed := tr.update([]model.Flag{testFlag(store.NilFlagSetId(), "a", "on")})
 	assert.Contains(t, changed, allChannel, "catch-all must fire for flags without a flagSetId")
 	assert.NotContains(t, changed, store.NilFlagSetId(), "internal nilFlagSetId must not be a subscribable channel")
+}
+
+func TestTracker_Run_NilStoreDoesNotPanic(t *testing.T) {
+	tr := NewTracker(logger.NewLogger(nil, false), nil, nil)
+	// Run must return promptly instead of dereferencing the nil store (which would panic in
+	// the background goroutine and terminate the process).
+	require.NotPanics(t, func() { tr.Run(context.Background()) })
+}
+
+// closingStore closes the watcher immediately without emitting, simulating store.Watch's
+// error-close path.
+type closingStore struct{}
+
+func (closingStore) Get(context.Context, string, *store.Selector) (model.Flag, model.Metadata, error) {
+	return model.Flag{}, nil, nil
+}
+func (closingStore) GetAll(context.Context, *store.Selector) ([]model.Flag, model.Metadata, error) {
+	return nil, nil, nil
+}
+func (closingStore) Watch(_ context.Context, _ *store.Selector, watcher chan<- store.FlagQueryResult) {
+	close(watcher)
+}
+func (closingStore) Update(string, []model.Flag, model.Metadata, bool) {}
+
+func TestTracker_Run_UnexpectedCloseInvalidatesVersions(t *testing.T) {
+	tr := NewTracker(logger.NewLogger(nil, false), closingStore{}, nil)
+	tr.versions = map[string]version{allKey: {etag: "frozen"}}
+
+	// context is NOT cancelled -> the watcher closing is unexpected (store error path)
+	tr.Run(context.Background())
+
+	_, _, ok := tr.Version(store.Selector{})
+	assert.False(t, ok, "frozen versions must be invalidated so the bulk handler stops serving stale 304s")
+}
+
+func TestTracker_Run_ContextCancelKeepsVersions(t *testing.T) {
+	tr := NewTracker(logger.NewLogger(nil, false), closingStore{}, nil)
+	tr.versions = map[string]version{allKey: {etag: "current"}}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // expected shutdown
+
+	tr.Run(ctx)
+
+	etag, _, ok := tr.Version(store.Selector{})
+	assert.True(t, ok, "versions must be retained on a normal context-cancel shutdown")
+	assert.Equal(t, "current", etag)
 }
 
 func TestTracker_Version(t *testing.T) {

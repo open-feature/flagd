@@ -209,8 +209,13 @@ func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, s
 		return lastModified, false
 	}
 	w.Header().Set("ETag", quoteETag(etag))
-	clientEtag := requestETag(r)
-	return lastModified, clientEtag != "" && normalizeETag(clientEtag) == etag
+
+	if trigger := r.URL.Query().Get(flagConfigEtagParam); trigger != "" {
+		h.Logger.Debug(fmt.Sprintf("bulk refetch triggered by %s=%s", flagConfigEtagParam, trigger))
+	}
+
+	clientCacheETag := r.Header.Get("If-None-Match")
+	return lastModified, clientCacheETag != "" && normalizeETag(clientCacheETag) == etag
 }
 
 // bulkResponse assembles the OFREP bulk response, adding the ADR-0008 eventStreams block and
@@ -257,12 +262,10 @@ func (h *handler) eventStreams(selector store.Selector) []ofrep.EventStream {
 	}}
 }
 
-func requestETag(r *http.Request) string {
-	if e := r.URL.Query().Get("flagConfigEtag"); e != "" {
-		return e
-	}
-	return r.Header.Get("If-None-Match")
-}
+// flagConfigEtagParam is the ADR-0008 query parameter carrying the config version that an SSE
+// refetch event advertised. It is trigger metadata only; the conditional response is decided by
+// the If-None-Match header. See applyConditionalETag.
+const flagConfigEtagParam = "flagConfigEtag"
 
 // normalizeETag strips optional surrounding quotes so quoted and unquoted forms compare equal.
 func normalizeETag(etag string) string {
