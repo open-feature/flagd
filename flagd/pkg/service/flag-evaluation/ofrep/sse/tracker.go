@@ -67,6 +67,13 @@ func NewTracker(log *logger.Logger, s store.IStore, es *eventsource.Server) *Tra
 // Run subscribes to all flag changes and publishes refetch events until ctx is cancelled.
 // It blocks, so it is intended to run in its own goroutine.
 func (t *Tracker) Run(ctx context.Context) {
+	if t.store == nil {
+		if t.logger != nil {
+			t.logger.Warn("ofrep sse tracker has no flag store; change notifications disabled")
+		}
+		return
+	}
+
 	watcher := make(chan store.FlagQueryResult, 1)
 	t.store.Watch(ctx, &store.Selector{}, watcher)
 
@@ -82,6 +89,22 @@ func (t *Tracker) Run(ctx context.Context) {
 			t.publish(ch)
 		}
 	}
+
+	// The store closed the watcher. That happens on context cancellation (expected shutdown) or
+	// on a selector/iterator error inside the store (unexpected). Distinguish them: on the
+	// unexpected path publishing has stopped and t.versions is now frozen, which would make the
+	// bulk handler keep returning stale 304s forever, so surface it and invalidate the versions
+	// (Version then reports no ETag and clients are served fresh flags instead of a stale 304).
+	if ctx.Err() != nil {
+		return
+	}
+	if t.logger != nil {
+		t.logger.Error("ofrep sse tracker stopped watching the flag store unexpectedly; " +
+			"refetch events will no longer be published and cached ETags are invalidated")
+	}
+	t.mu.Lock()
+	t.versions = map[string]version{}
+	t.mu.Unlock()
 }
 
 // Version returns the current config ETag and last-modified time (unix seconds) for the

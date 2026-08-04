@@ -50,13 +50,21 @@ func NewOfrepService(
 ) (*Service, error) {
 	corsMiddleware := corsmw.New(origins)
 
+	// SSE requires a flag store to watch; without one we cannot serve or advertise it, so treat
+	// a missing store as SSE disabled rather than crashing later in the tracker goroutine.
+	sseEnabled := cfg.SSEEnabled
+	if sseEnabled && flagStore == nil {
+		cfg.Logger.Warn("OFREP SSE requested but no flag store was provided; disabling SSE")
+		sseEnabled = false
+	}
+
 	var sseService *sse.Service
 	sseCfg := SSEConfig{
-		Enabled:            cfg.SSEEnabled,
+		Enabled:            sseEnabled,
 		InactivityDelaySec: cfg.SSEInactivityDelaySec,
 		PublicURL:          cfg.SSEPublicURL,
 	}
-	if cfg.SSEEnabled {
+	if sseEnabled {
 		sseService = sse.New(flagStore, sse.Config{Logger: cfg.Logger})
 		sseCfg.Versioner = sseService.Tracker()
 	}
