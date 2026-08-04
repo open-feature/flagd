@@ -24,6 +24,9 @@ flagd start [flags]
   -R, --max-request-header int               Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers. (default 1000000)
   -t, --metrics-exporter string              Set the metrics exporter. Default(if unset) is Prometheus. Can be override to otel - OpenTelemetry metric exporter. Overriding to otel require otelCollectorURI to be present
   -r, --ofrep-port int32                     ofrep service port (default 8016)
+      --ofrep-sse-enabled                    Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse on the ofrep port. Defaults to true. (default true)
+      --ofrep-sse-inactivity-delay int       Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120. (default 120)
+      --ofrep-sse-public-url string          Origin (scheme://host) advertised as the OFREP SSE eventStreams endpoint.origin. Omitted when empty, so clients resolve the requestUri against the OFREP base URL. Set when flagd is behind a proxy.
   -A, --otel-ca-path string                  tls certificate authority path to use with OpenTelemetry collector
   -D, --otel-cert-path string                tls certificate path to use with OpenTelemetry collector
   -o, --otel-collector-uri string            Set the grpc URI of the OpenTelemetry collector for flagd runtime. If unset, the collector setup will be ignored and traces will not be exported.
