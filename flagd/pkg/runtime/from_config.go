@@ -27,6 +27,9 @@ type Config struct {
 	MetricExporter        string
 	ManagementPort        uint16
 	OfrepServicePort      uint16
+	OfrepSSEEnabled       bool
+	OfrepSSEInactivityDel int
+	OfrepSSEPublicURL     string
 	OtelCollectorURI      string
 	OtelCertPath          string
 	OtelKeyPath           string
@@ -112,13 +115,16 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		recorder)
 
 	// ofrep service
-	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, config.CORS, ofrep.SvcConfiguration{
+	ofrepService, err := ofrep.NewOfrepService(jsonEvaluator, store, config.CORS, ofrep.SvcConfiguration{
 		Logger:                logger.WithFields(zap.String("component", "OFREPService")),
 		Port:                  config.OfrepServicePort,
 		ServiceName:           svcName,
 		MetricsRecorder:       recorder,
 		MaxRequestBodyBytes:   config.MaxRequestBodyBytes,
 		MaxRequestHeaderBytes: config.MaxRequestHeaderBytes,
+		SSEEnabled:            config.OfrepSSEEnabled,
+		SSEInactivityDelaySec: config.OfrepSSEInactivityDel,
+		SSEPublicURL:          config.OfrepSSEPublicURL,
 	},
 		config.ContextValues,
 		config.HeaderToContextKeyMappings,

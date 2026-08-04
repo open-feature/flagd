@@ -28,6 +28,11 @@ const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + 
 // any flag without a "flagSetId" is assigned this one; it's never exposed externally
 var nilFlagSetId = uuid.New().String()
 
+// NilFlagSetId returns the startup-generated flagSetId assigned to flags that have
+// no explicit flagSetId. It is never exposed to clients, but consumers that group or
+// fingerprint flags by flagSetId (e.g. the OFREP SSE tracker) need to recognise it.
+func NilFlagSetId() string { return nilFlagSetId }
+
 // A Selector represents a set of constraints used to query the store.
 type Selector struct {
 	indexMap map[string]string
@@ -82,6 +87,12 @@ func expressionToMap(sExp string) map[string]string {
 func (s Selector) WithSource(source string) Selector { return s.withIndex(sourceIndex, source) }
 func (s Selector) WithFlagSetId(id string) Selector  { return s.withIndex(flagSetIdIndex, id) }
 func (s Selector) withKey(key string) Selector       { return s.withIndex(keyIndex, key) }
+
+// FlagSetId returns the flagSetId constraint of the selector, or "" if none is set.
+func (s Selector) FlagSetId() string { return s.indexMap[flagSetIdIndex] }
+
+// Source returns the source constraint of the selector, or "" if none is set.
+func (s Selector) Source() string { return s.indexMap[sourceIndex] }
 
 func (s Selector) withIndex(key, value string) Selector {
 	m := maps.Clone(s.indexMap)

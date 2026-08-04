@@ -9,6 +9,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	github.com/dimiro1/banner v1.1.0
 	github.com/gorilla/mux v1.8.1
+	github.com/launchdarkly/eventsource v1.11.0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/open-feature/flagd/core v0.15.6
 	github.com/prometheus/client_golang v1.23.2

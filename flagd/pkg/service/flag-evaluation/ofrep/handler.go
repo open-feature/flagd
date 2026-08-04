@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -29,12 +31,33 @@ const (
 	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
 )
 
+// configVersioner resolves the current config ETag / last-modified time for a selector so the
+// bulk handler can serve conditional (ETag/304) responses consistent with the SSE stream.
+// Implemented by the OFREP SSE change tracker; nil when SSE is disabled.
+type configVersioner interface {
+	Version(selector store.Selector) (etag string, lastModified int64, ok bool)
+}
+
 type handler struct {
 	Logger                     *logger.Logger
 	evaluator                  evaluator.IEvaluator
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	tracer                     trace.Tracer
+
+	versioner             configVersioner
+	sseEnabled            bool
+	sseInactivityDelaySec int
+	ssePublicURL          string
+}
+
+// SSEConfig carries the SSE advertisement settings the bulk handler needs to expose the
+// `eventStreams` block and conditional-evaluation ETags.
+type SSEConfig struct {
+	Enabled            bool
+	Versioner          configVersioner
+	InactivityDelaySec int
+	PublicURL          string
 }
 
 func NewOfrepHandler(
@@ -44,6 +67,7 @@ func NewOfrepHandler(
 	headerToContextKeyMappings map[string]string,
 	metricsRecorder telemetry.IMetricsRecorder,
 	serviceName string,
+	sseCfg SSEConfig,
 ) http.Handler {
 	h := handler{
 		Logger:                     logger,
@@ -51,6 +75,10 @@ func NewOfrepHandler(
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
 		tracer:                     otel.Tracer("flagd.ofrep.v1"),
+		versioner:                  sseCfg.Versioner,
+		sseEnabled:                 sseCfg.Enabled,
+		sseInactivityDelaySec:      sseCfg.InactivityDelaySec,
+		ssePublicURL:               sseCfg.PublicURL,
 	}
 
 	router := mux.NewRouter()
@@ -138,6 +166,14 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
+	// Conditional evaluation (ADR-0008): short-circuit with 304 when the client already holds
+	// the current config version.
+	lastModified, notModified := h.applyConditionalETag(w, r, selector)
+	if notModified {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
@@ -145,9 +181,90 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		res := ofrep.BulkEvaluationContextErrorFrom(model.GeneralErrorCode,
 			fmt.Sprintf("Bulk evaluation failed. Tracking ID: %s", requestID))
 		h.writeJSONToResponse(http.StatusInternalServerError, res, w)
-	} else {
-		h.writeJSONToResponse(http.StatusOK, ofrep.BulkEvaluationResponseFrom(evaluations, metadata), w)
+		return
 	}
+
+	h.writeJSONToResponse(http.StatusOK, h.bulkResponse(selector, evaluations, metadata, lastModified), w)
+}
+
+// applyConditionalETag resolves the current config version for the selector, sets the ETag
+// response header, and reports the lastModified time plus whether the request can be answered
+// with 304 Not Modified. It is a no-op (returns notModified=false) when SSE/versioning is off.
+func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, selector store.Selector) (lastModified int64, notModified bool) {
+	if h.versioner == nil {
+		return 0, false
+	}
+	etag, lastModified, ok := h.versioner.Version(selector)
+	if !ok || etag == "" {
+		return lastModified, false
+	}
+	w.Header().Set("ETag", quoteETag(etag))
+
+	if trigger := r.URL.Query().Get(flagConfigEtagParam); trigger != "" {
+		h.Logger.Debug(fmt.Sprintf("bulk refetch triggered by %s=%s", flagConfigEtagParam, trigger))
+	}
+
+	clientCacheETag := r.Header.Get("If-None-Match")
+	return lastModified, clientCacheETag != "" && normalizeETag(clientCacheETag) == etag
+}
+
+// bulkResponse assembles the OFREP bulk response, adding the ADR-0008 eventStreams block and
+// lastModified metadata when SSE is enabled.
+func (h *handler) bulkResponse(selector store.Selector, evaluations []evaluator.AnyValue, metadata model.Metadata, lastModified int64) ofrep.BulkEvaluationResponse {
+	response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
+	if !h.sseEnabled {
+		return response
+	}
+	response.EventStreams = h.eventStreams(selector)
+	if lastModified > 0 {
+		if response.Metadata == nil {
+			response.Metadata = model.Metadata{}
+		}
+		response.Metadata["flagConfigLastModified"] = lastModified
+	}
+	return response
+}
+
+// eventStreams builds the ADR-0008 eventStreams advertisement pointing OFREP clients back at
+// this flagd's SSE endpoint. The channel is the request's flagSetId; the internal nilFlagSetId
+// and a missing flagSetId both map to the catch-all channel (no `channels` parameter).
+//
+// It uses the structured `endpoint` form and omits origin unless a public URL is configured, so
+// the client resolves the requestUri against the OFREP base URL it is already talking to.
+func (h *handler) eventStreams(selector store.Selector) []ofrep.EventStream {
+	channel := selector.FlagSetId()
+	if channel == store.NilFlagSetId() {
+		channel = ""
+	}
+
+	requestURI := ssePath
+	if channel != "" {
+		requestURI += "?channels=" + url.QueryEscape(channel)
+	}
+
+	return []ofrep.EventStream{{
+		Type:               "sse",
+		InactivityDelaySec: h.sseInactivityDelaySec,
+		Endpoint: &ofrep.EventStreamEndpoint{
+			Origin:     strings.TrimSuffix(h.ssePublicURL, "/"),
+			RequestUri: requestURI,
+		},
+	}}
+}
+
+// flagConfigEtagParam is the ADR-0008 query parameter carrying the config version that an SSE
+// refetch event advertised. It is trigger metadata only; the conditional response is decided by
+// the If-None-Match header. See applyConditionalETag.
+const flagConfigEtagParam = "flagConfigEtag"
+
+// normalizeETag strips optional surrounding quotes so quoted and unquoted forms compare equal.
+func normalizeETag(etag string) string {
+	return strings.Trim(etag, `"`)
+}
+
+// quoteETag wraps a bare ETag value in the double quotes required by the HTTP ETag header.
+func quoteETag(etag string) string {
+	return `"` + etag + `"`
 }
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {
