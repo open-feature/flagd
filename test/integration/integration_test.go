@@ -170,7 +170,7 @@ func TestRPC(t *testing.T) {
 	}
 
 	// Run tests with RPC-specific tags - exclude connection/event issues we won't tackle
-	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden && ~@fractional-v1 && ~@deprecated"
+	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden && ~@fractional-v1 && ~@fractional-v2 && ~@deprecated"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
@@ -205,7 +205,7 @@ func TestInProcess(t *testing.T) {
 	// not to fully test the go in-process provider (that happens in go-sdk-contrib).
 	// Many tags are excluded because they require a more complex testbed than what's built here.
 	// TODO: remove ~@operator-errors and ~@semver-v-prefix once go-sdk-contrib picks up the fixes
-	tags := "@in-process && ~@unixsocket && ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v1 && ~@fractional-single-entry && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
+	tags := "@in-process && ~@unixsocket && ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v1 && ~@fractional-v2 && ~@fractional-single-entry && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)

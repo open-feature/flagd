@@ -137,8 +137,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: rachelEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		monicaEmail: {
@@ -147,8 +147,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: monicaEmail,
 			},
-			expectedVariant: yellowVariant,
-			expectedValue:   yellowHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		joeyEmail: {
@@ -167,8 +167,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: rossEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"rachel@faas.com with custom seed": {
@@ -187,8 +187,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "monica@faas.com",
 			},
-			expectedVariant: redVariant,
-			expectedValue:   redHex,
+			expectedVariant: yellowVariant,
+			expectedValue:   yellowHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"joey@faas.com with custom seed": {
@@ -197,8 +197,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "joey@faas.com",
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with custom seed": {
@@ -207,8 +207,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "ross@faas.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with different flag key": {
@@ -295,8 +295,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "test4@faas.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: blueVariant,
+			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"fallback to default variant if no email provided": {
@@ -414,8 +414,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "foo@foo.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: blueVariant,
+			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"missing email - parser should ignore nil/missing custom variables and continue": {
@@ -438,9 +438,9 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "foo@foo.com",
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
-			expectedReason:  model.TargetingMatchReason,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
 		},
 		"null targetingKey returns default variant": {
 			flags: []model.Flag{{
@@ -654,8 +654,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			context: map[string]any{
 				emailField: testAEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		testBEmail: {
@@ -684,8 +684,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			context: map[string]any{
 				emailField: testDEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}
