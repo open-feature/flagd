@@ -72,6 +72,77 @@ func TestHandleBulkEvaluation_NotModified(t *testing.T) {
 	assert.Equal(t, `"abc123"`, recorder.Header().Get("ETag"))
 }
 
+// The 304 decision must use If-None-Match (the client's cached version), not the ADR-0008
+// flagConfigEtag change-trigger metadata.
+func TestHandleBulkEvaluation_ConditionalUsesIfNoneMatch(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	const current = "etag-v2"
+
+	tests := []struct {
+		name           string
+		flagConfigEtag string // query param (change-trigger metadata)
+		ifNoneMatch    string // header (cache validator)
+		wantStatus     int
+		wantEval       bool
+	}{
+		{
+			name:           "stale cache echoing new trigger etag is served fresh (regression)",
+			flagConfigEtag: "etag-v2",
+			ifNoneMatch:    `"etag-v1"`,
+			wantStatus:     http.StatusOK,
+			wantEval:       true,
+		},
+		{
+			name:        "current cache validator yields 304",
+			ifNoneMatch: `"etag-v2"`,
+			wantStatus:  http.StatusNotModified,
+			wantEval:    false,
+		},
+		{
+			name:           "trigger etag alone (no validator) is served fresh",
+			flagConfigEtag: "etag-v2",
+			wantStatus:     http.StatusOK,
+			wantEval:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			eval := mock.NewMockIEvaluator(gomock.NewController(t))
+			expect := eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
+			if tt.wantEval {
+				expect.Times(1)
+			} else {
+				expect.Times(0)
+			}
+
+			h := handler{
+				Logger:     log,
+				evaluator:  eval,
+				versioner:  fakeVersioner{etag: current, ok: true},
+				sseEnabled: true,
+			}
+
+			url := "/ofrep/v1/evaluate/flags"
+			if tt.flagConfigEtag != "" {
+				url += "?flagConfigEtag=" + tt.flagConfigEtag
+			}
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte{}))
+			require.NoError(t, err)
+			req.Header.Set(svc.FLAGD_SELECTOR_HEADER, "flagSetId=fs1")
+			if tt.ifNoneMatch != "" {
+				req.Header.Set("If-None-Match", tt.ifNoneMatch)
+			}
+
+			recorder := serveBulk(h, req)
+
+			assert.Equal(t, tt.wantStatus, recorder.Code)
+			assert.Equal(t, `"`+current+`"`, recorder.Header().Get("ETag"))
+		})
+	}
+}
+
 func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 
