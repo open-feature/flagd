@@ -137,72 +137,44 @@ func TestNoNotificationWhenFlagsUnchanged(t *testing.T) {
 	}
 }
 
-// TestEmitToAllVsSubscriberCancel is a regression test for a data race between
-// EmitToAll and the per-subscription goroutine that closes the notifier channel
-// on context cancellation. The subscription goroutine closes the notifier when
-// its store watcher stops (the store closes the watcher on ctx cancel), but that
-// close is independent of Unsubscribe. If the notifier is closed while it is
-// still present in subs, a concurrent EmitToAll sends on a closed channel and
-// panics ("send on closed channel"), which crashes the whole flagd process.
-// This is the exact interleaving ConnectService.Shutdown forces: it broadcasts a
-// Shutdown notification via EmitToAll precisely as the shared context is being
-// cancelled and every subscription is tearing down. Run with -race.
+// TestEmitToAllVsSubscriberCancel checks EmitToAll racing subscriber
+// cancellation (which closes notifiers) never sends on a closed channel.
 func TestEmitToAllVsSubscriberCancel(t *testing.T) {
-	eventing, _ := newTestEventingConfig(t, []string{"source1", "source2"})
+	// cancelling subscribers while hammering EmitToAll must not panic.
+	eventing, _ := newTestEventingConfig(t, []string{"source1"})
 
-	const subscribers = 50
-	cancels := make([]context.CancelFunc, 0, subscribers)
-	var drainers sync.WaitGroup
-
-	for i := 0; i < subscribers; i++ {
+	var drain, work sync.WaitGroup
+	cancels := make([]context.CancelFunc, 0, 50)
+	for i := 0; i < 50; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancels = append(cancels, cancel)
-
-		notifier := make(chan iservice.Notification, 1)
-		eventing.Subscribe(ctx, i, nil, notifier)
-
-		// Drain the notifier so EmitToAll never blocks on a full buffer, and so
-		// the range exits when the subscription goroutine closes the channel.
-		drainers.Add(1)
+		ch := make(chan iservice.Notification, 1)
+		eventing.Subscribe(ctx, i, nil, ch)
+		drain.Add(1)
 		go func() {
-			defer drainers.Done()
-			for range notifier {
-				// Drain until cancellation closes the notifier.
+			defer drain.Done()
+			for range ch { //nolint:revive // drain so EmitToAll never blocks on a full buffer
 			}
 		}()
 	}
+	time.Sleep(50 * time.Millisecond) // let subscription goroutines start watching
 
-	// Let the subscription goroutines start watching before we cancel them.
-	time.Sleep(50 * time.Millisecond)
-
-	var workers sync.WaitGroup
-
-	// Cancel every subscriber context: each cancel makes the store close the
-	// watcher, which makes the subscription goroutine close its notifier.
-	workers.Add(1)
+	work.Add(2)
 	go func() {
-		defer workers.Done()
-		for _, cancel := range cancels {
-			cancel()
+		defer work.Done()
+		for _, c := range cancels {
+			c() // cancel -> store closes watcher -> goroutine closes notifier
 		}
 	}()
-
-	// Concurrently hammer EmitToAll. Before the fix this reproducibly panics
-	// with "send on closed channel" when it sends to a notifier that the
-	// subscription goroutine has already closed but not removed from subs.
-	workers.Add(1)
 	go func() {
-		defer workers.Done()
+		defer work.Done()
 		for i := 0; i < 200; i++ {
+			// hammer EmitToAll into the teardown; panics before the fix
 			eventing.EmitToAll(iservice.Notification{Type: iservice.Shutdown})
 		}
 	}()
-
-	workers.Wait()
-
-	// Cancelling the contexts closes every notifier; wait for the drainers so
-	// the test does not leak goroutines and the race detector sees clean exits.
-	drainers.Wait()
+	work.Wait()
+	drain.Wait()
 }
 
 func TestBlockedSubscriberDoesNotBlockCleanup(t *testing.T) {
@@ -251,5 +223,29 @@ func TestBlockedSubscriberDoesNotBlockCleanup(t *testing.T) {
 	case <-emitDone:
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for EmitToAll to stop after cancellation")
+	}
+}
+
+func TestNoDeliveryAfterUnsubscribe(t *testing.T) {
+	// nothing should be delivered after Unsubscribe returns.
+	// looped because the unfixed select only leaks ~50% of the time.
+	for i := 0; i < 50; i++ {
+		eventing, _ := newTestEventingConfig(t, []string{"source1"})
+		ch := make(chan iservice.Notification, 1)
+		eventing.Subscribe(context.Background(), "id", nil, ch)
+		sub := eventing.subs["id"]
+
+		sub.mu.Lock() // park EmitToAll's send after it snapshots this sub
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			eventing.EmitToAll(iservice.Notification{Type: iservice.ConfigurationChange})
+		}()
+		time.Sleep(20 * time.Millisecond)
+		eventing.Unsubscribe("id") // closes done while the send is parked
+		sub.mu.Unlock()
+
+		<-done
+		require.Empty(t, ch, "notification delivered after Unsubscribe returned")
 	}
 }

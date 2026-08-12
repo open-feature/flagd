@@ -45,6 +45,13 @@ func (s *subscription) send(n iservice.Notification) {
 		return
 	}
 
+	// if the subscription is already stopped, deliver nothing;
+	select {
+	case <-s.done:
+		return
+	default:
+	}
+
 	select {
 	case s.notifier <- n:
 	case <-s.done:
