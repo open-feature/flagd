@@ -34,6 +34,7 @@ type handler struct {
 	evaluator                  evaluator.IEvaluator
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
+	metricsRecorder            telemetry.IMetricsRecorder
 	tracer                     trace.Tracer
 }
 
@@ -50,6 +51,7 @@ func NewOfrepHandler(
 		evaluator:                  evaluator,
 		contextValues:              contextValues,
 		headerToContextKeyMappings: headerToContextKeyMappings,
+		metricsRecorder:            metricsRecorder,
 		tracer:                     otel.Tracer("flagd.ofrep.v1"),
 	}
 
@@ -109,6 +111,9 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
+	if h.metricsRecorder != nil {
+		h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+	}
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
 		h.writeJSONToResponse(status, evaluationError, w)
@@ -139,6 +144,11 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
+	if h.metricsRecorder != nil {
+		for _, evaluation := range evaluations {
+			h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+		}
+	}
 	if err != nil {
 		h.Logger.WarnWithID(requestID, fmt.Sprintf("error from resolver: %v", err))
 
