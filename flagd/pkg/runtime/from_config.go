@@ -93,6 +93,11 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		sources = append(sources, provider.URI)
 	}
 
+	// tracks which sync sources are currently disconnected, so evaluations served
+	// from their (retained) flags can be reported with model.StaleReason.
+	// Declared before the `store` variable below, which shadows the package name.
+	sourceState := store.NewSourceState()
+
 	// build flag store, collect flag sources & fill sources details
 	store, err := store.NewStore(logger, sources)
 	if err != nil {
@@ -100,7 +105,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	}
 
 	// derive evaluator
-	jsonEvaluator := evaluator.NewJSON(logger, store)
+	jsonEvaluator := evaluator.NewJSON(logger, store, evaluator.WithSourceState(sourceState))
 
 	// derive services
 
@@ -182,7 +187,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			MaxRequestBodyBytes:        config.MaxRequestBodyBytes,
 			MaxRequestHeaderBytes:      config.MaxRequestHeaderBytes,
 		},
-		Syncs: iSyncs,
+		Syncs:       iSyncs,
+		SourceState: sourceState,
 	}, nil
 }
 

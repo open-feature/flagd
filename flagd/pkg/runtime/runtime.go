@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
+	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep"
 	flagsync "github.com/open-feature/flagd/flagd/pkg/service/flag-sync"
@@ -26,6 +27,9 @@ type Runtime struct {
 	EvaluationService service.IFlagEvaluationService
 	ServiceConfig     service.Configuration
 	Syncs             []sync.ISync
+	// SourceState is optional; when nil, sync disconnections are logged but no
+	// evaluation is reported stale.
+	SourceState *store.SourceState
 
 	mu msync.Mutex
 }
@@ -127,10 +131,25 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if payload.Stale {
+		// Connection-state notification, not flag data. The source's flags stay in
+		// the store on purpose -- continuing to serve last-known-good values beats
+		// failing evaluations open -- but they are now reported with
+		// model.StaleReason so callers can tell the data may be out of date.
+		// No Emit: nothing about the flag payload changed, and the sync protocol
+		// has no way to convey staleness to downstream clients.
+		r.SourceState.SetStale(payload.Source, true)
+		r.Logger.Warn(fmt.Sprintf(
+			"sync source %s is disconnected; its flags are still served but now reported as stale", payload.Source))
+		return
+	}
+
 	err := r.Evaluator.SetState(payload)
 	if err != nil {
 		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
 		return
 	}
+	// A successful payload means the source is reachable again.
+	r.SourceState.SetStale(payload.Source, false)
 	r.SyncService.Emit(payload.Source)
 }

@@ -358,9 +358,14 @@ func Test_ReSyncTests(t *testing.T) {
 			}
 		}
 
-		// channel must be empty
-		if len(syncChan) != 0 {
-			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
+		// No further flag payloads may arrive. A stream ending also emits a stale
+		// notification, which carries no flag data and is expected here.
+		for len(syncChan) > 0 {
+			leftover := <-syncChan
+			if !leftover.Stale {
+				t.Errorf("Data sync channel must hold no flag payloads after all test syncs, but received: %q",
+					leftover.FlagData)
+			}
 		}
 	}
 }
@@ -503,9 +508,14 @@ func Test_StreamListener(t *testing.T) {
 			}
 		}
 
-		// channel must be empty
-		if len(syncChan) != 0 {
-			t.Errorf("Data sync channel must be empty after all test syncs. But received non empty: %d", len(syncChan))
+		// No further flag payloads may arrive. A stream ending also emits a stale
+		// notification, which carries no flag data and is expected here.
+		for len(syncChan) > 0 {
+			leftover := <-syncChan
+			if !leftover.Stale {
+				t.Errorf("Data sync channel must hold no flag payloads after all test syncs, but received: %q",
+					leftover.FlagData)
+			}
 		}
 	}
 }
@@ -726,7 +736,7 @@ func Test_SyncRetry(t *testing.T) {
 		break
 	case data := <-syncChan:
 		if data.FlagData != emptyFlagData {
-			t.Errorf("sync start error: %s", err.Error())
+			t.Errorf("expected flag data %q, but got %q", emptyFlagData, data.FlagData)
 		}
 	}
 
@@ -740,15 +750,30 @@ func Test_SyncRetry(t *testing.T) {
 	// Restart the server
 	go serve(&bServer)
 
-	// validate connection re-establishment
-	select {
-	case <-tCtx.Done():
-		cancelFunc()
-		t.Error("timeout waiting for conditions to fulfil")
-	case data := <-syncChan:
-		if data.FlagData != emptyFlagData {
-			t.Errorf("sync start error: %s", err.Error())
+	// Validate connection re-establishment. Losing the stream now also emits a
+	// stale notification (carrying no flag data) ahead of the re-delivered
+	// payload, so drain messages until the payload arrives.
+	sawStale := false
+	for settled := false; !settled; {
+		select {
+		case <-tCtx.Done():
+			cancelFunc()
+			t.Error("timeout waiting for conditions to fulfil")
+			settled = true
+		case data := <-syncChan:
+			if data.Stale {
+				sawStale = true
+				continue
+			}
+			if data.FlagData != emptyFlagData {
+				t.Errorf("expected flag data %q, but got %q", emptyFlagData, data.FlagData)
+			}
+			settled = true
 		}
+	}
+
+	if !sawStale {
+		t.Error("expected a stale notification to be emitted when the sync stream dropped")
 	}
 }
 

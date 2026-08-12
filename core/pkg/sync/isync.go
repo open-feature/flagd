@@ -38,6 +38,14 @@ type DataSync struct {
 	// explicitly opted-in per source via SourceConfig.IncrementalUpdates.
 	// EXPERIMENTAL: this option may change or be removed in a future release.
 	IncrementalUpdates bool
+
+	// Stale marks this message as a connection-state notification rather than a
+	// flag payload: the source is currently disconnected, so the flags already
+	// held for it may no longer match the source of truth. FlagData is ignored
+	// for such messages and the store is left untouched -- flagd keeps serving
+	// last-known-good data -- but evaluations resolved from this source are
+	// reported with model.StaleReason until a subsequent payload arrives.
+	Stale bool
 }
 
 // SourceConfig is configuration option for flagd. This maps to startup parameter sources
