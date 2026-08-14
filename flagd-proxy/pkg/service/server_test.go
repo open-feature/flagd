@@ -3,13 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -94,4 +97,164 @@ func TestMetricsServerRoutesGRPCHealth(t *testing.T) {
 	if err := <-serveErr; err != nil {
 		t.Errorf("startMetricsServer returned an unexpected error: %v", err)
 	}
+}
+
+// Configuration with only the keepalive fields set, for table tests
+func keepAliveConfig(minTime time.Duration, permitWithoutStream bool) service.Configuration {
+	return service.Configuration{
+		KeepAliveMinTime:             minTime,
+		KeepAlivePermitWithoutStream: permitWithoutStream,
+	}
+}
+
+func TestKeepAliveEnforcementPolicy(t *testing.T) {
+	for name, cfg := range map[string]service.Configuration{
+		"flag defaults":                  keepAliveConfig(30*time.Second, true),
+		"custom min time":                keepAliveConfig(10*time.Second, true),
+		"permit without stream disabled": keepAliveConfig(30*time.Second, false),
+		"zero min time deferred to grpc": keepAliveConfig(0, false),
+	} {
+		t.Run(name, func(t *testing.T) {
+			policy := keepAliveEnforcementPolicy(cfg)
+
+			if policy.MinTime != cfg.KeepAliveMinTime {
+				t.Errorf("expected MinTime %v, got %v", cfg.KeepAliveMinTime, policy.MinTime)
+			}
+			if policy.PermitWithoutStream != cfg.KeepAlivePermitWithoutStream {
+				t.Errorf("expected PermitWithoutStream %v, got %v", cfg.KeepAlivePermitWithoutStream, policy.PermitWithoutStream)
+			}
+		})
+	}
+}
+
+// proves the policy reaches the sync server; grpc-go clamps client keepalive to 10s so we flood
+// pings via a raw HTTP/2 framer (strict policy -> GOAWAY ENHANCE_YOUR_CALM; default 5m severed streams)
+func TestServerKeepAliveEnforcement(t *testing.T) {
+	tests := []struct {
+		name                string
+		cfg                 service.Configuration
+		wantEnhanceYourCalm bool
+	}{
+		{"permissive policy tolerates frequent pings", keepAliveConfig(time.Millisecond, true), false},
+		{"strict min time rejects frequent pings with GOAWAY", keepAliveConfig(time.Hour, true), true},
+		{"pings without an active stream are rejected when not permitted", keepAliveConfig(time.Millisecond, false), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+
+			port := freePort(t)
+			s := NewServer(ctx, logger.NewLogger(nil, false), subscriptions.NewManager(ctx, logger.NewLogger(nil, false)))
+			s.config = tt.cfg
+			s.config.Port = port
+			s.config.ReadinessProbe = func() bool { return true }
+
+			serveErr := make(chan error, 1)
+			go func() { serveErr <- s.startServer() }()
+
+			addr := fmt.Sprintf("127.0.0.1:%d", port)
+			waitForListener(t, addr)
+			t.Cleanup(func() {
+				// grpcServer may be nil if a competing bind won the freed port; guard so we don't panic and bury the listen error
+				if s.grpcServer != nil {
+					s.grpcServer.Stop()
+				}
+				if err := <-serveErr; err != nil {
+					t.Errorf("startServer returned an unexpected error: %v", err)
+				}
+			})
+
+			if got := floodKeepalivePings(t, addr); got != tt.wantEnhanceYourCalm {
+				t.Errorf("expected GOAWAY ENHANCE_YOUR_CALM %v, got %v", tt.wantEnhanceYourCalm, got)
+			}
+		})
+	}
+}
+
+// floods keepalive PINGs over a raw HTTP/2 conn (no stream); returns true if the server sends GOAWAY ENHANCE_YOUR_CALM
+func floodKeepalivePings(t *testing.T, addr string) bool {
+	t.Helper()
+
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		t.Fatalf("failed to dial %s: %v", addr, err)
+	}
+	defer conn.Close()
+
+	if _, err := io.WriteString(conn, http2.ClientPreface); err != nil {
+		t.Fatalf("failed to write the HTTP/2 client preface: %v", err)
+	}
+
+	framer := http2.NewFramer(conn, conn)
+
+	var writeMu sync.Mutex
+	write := func(fn func() error) {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		_ = fn()
+	}
+
+	// the client connection preface must be followed by a SETTINGS frame
+	write(func() error { return framer.WriteSettings() })
+
+	serverReady, enhanceYourCalm := watchForGoAway(framer, write)
+
+	// wait for the server's SETTINGS frame first; a dial only reaches the listen backlog (pre-server),
+	// so pings sent then get buffered and read back-to-back, tripping MinTime even under a permissive policy
+	select {
+	case <-serverReady:
+	case <-time.After(3 * time.Second):
+		t.Fatal("server did not send its SETTINGS frame within the deadline")
+	}
+
+	// flood faster than any strict MinTime; grpc-go sends GOAWAY after >2 ping strikes
+	var pingData [8]byte
+	for i := 0; i < 8; i++ {
+		write(func() error { return framer.WritePing(false, pingData) })
+		select {
+		case got := <-enhanceYourCalm:
+			return got
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	select {
+	case got := <-enhanceYourCalm:
+		return got
+	case <-time.After(2 * time.Second):
+		return false
+	}
+}
+
+// reads frames in the background, acking server SETTINGS. returns serverReady (closed only when the
+// server's SETTINGS is seen, so a dead server trips the caller's timeout) and enhanceYourCalm (true if
+// the first GOAWAY carries ENHANCE_YOUR_CALM)
+func watchForGoAway(framer *http2.Framer, write func(func() error)) (<-chan struct{}, <-chan bool) {
+	serverReady := make(chan struct{})
+	// a server may legitimately send more than one non-ACK SETTINGS frame
+	var readyOnce sync.Once
+	markReady := func() { readyOnce.Do(func() { close(serverReady) }) }
+
+	enhanceYourCalm := make(chan bool, 1)
+	go func() {
+		for {
+			frame, err := framer.ReadFrame()
+			if err != nil {
+				return
+			}
+			switch f := frame.(type) {
+			case *http2.SettingsFrame:
+				if !f.IsAck() {
+					write(func() error { return framer.WriteSettingsAck() })
+					markReady()
+				}
+			case *http2.GoAwayFrame:
+				enhanceYourCalm <- f.ErrCode == http2.ErrCodeEnhanceYourCalm
+				return
+			}
+		}
+	}()
+	return serverReady, enhanceYourCalm
 }

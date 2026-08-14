@@ -38,6 +38,11 @@ type Configuration struct {
 	StreamDeadline             time.Duration
 	MaxRequestHeaderBytes      int64
 	MaxRequestBodyBytes        int64
+
+	// min interval the gRPC sync server permits between client keepalive pings; ignored by the connect eval service
+	KeepAliveMinTime time.Duration
+	// permit keepalive pings with no active stream; honoured by the same services as KeepAliveMinTime
+	KeepAlivePermitWithoutStream bool
 }
 
 /*

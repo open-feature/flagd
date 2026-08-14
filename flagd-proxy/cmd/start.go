@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iService "github.com/open-feature/flagd/core/pkg/service"
@@ -22,9 +23,11 @@ import (
 // start
 
 const (
-	logFormatFlagName      = "log-format"
-	managementPortFlagName = "management-port"
-	portFlagName           = "port"
+	logFormatFlagName                    = "log-format"
+	managementPortFlagName               = "management-port"
+	portFlagName                         = "port"
+	keepAliveMinTimeFlagName             = "keep-alive-min-time"
+	keepAlivePermitWithoutStreamFlagName = "keep-alive-permit-without-stream"
 )
 
 func init() {
@@ -34,10 +37,14 @@ func init() {
 	flags.Int32P(portFlagName, "p", 8015, "Port to listen on")
 	flags.Int32P(managementPortFlagName, "m", 8016, "Management port")
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
+	flags.Duration(keepAliveMinTimeFlagName, 30*time.Second, "Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s.")
+	flags.Bool(keepAlivePermitWithoutStreamFlagName, true, "Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true.")
 
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
+	_ = viper.BindPFlag(keepAliveMinTimeFlagName, flags.Lookup(keepAliveMinTimeFlagName))
+	_ = viper.BindPFlag(keepAlivePermitWithoutStreamFlagName, flags.Lookup(keepAlivePermitWithoutStreamFlagName))
 }
 
 // startCmd represents the start command
@@ -69,6 +76,9 @@ var startCmd = &cobra.Command{
 			ReadinessProbe: func() bool { return true },
 			Port:           viper.GetUint16(portFlagName),
 			ManagementPort: viper.GetUint16(managementPortFlagName),
+
+			KeepAliveMinTime:             viper.GetDuration(keepAliveMinTimeFlagName),
+			KeepAlivePermitWithoutStream: viper.GetBool(keepAlivePermitWithoutStreamFlagName),
 		}
 
 		errChan := make(chan error, 1)
