@@ -32,10 +32,7 @@ var (
 
 const invalidAPIVersionMsg = "invalid api version %s, expected %s"
 
-// Registering into the global client-go scheme has to happen once, before
-// anything can use it concurrently: runtime.Scheme is documented as "only
-// threadsafe after registration is complete". Doing it from Sync.Init instead
-// races on its unguarded maps, see https://github.com/open-feature/flagd/issues/2023.
+// register into the global client-go scheme once at init; doing it in Sync.Init races the scheme's maps (#2023)
 func init() {
 	utilruntime.Must(v1beta1.AddToScheme(scheme.Scheme))
 }

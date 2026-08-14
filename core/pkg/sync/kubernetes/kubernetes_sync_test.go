@@ -582,18 +582,14 @@ func TestSync_watcher(t *testing.T) {
 	}
 }
 
-// Captured from init() rather than read inside the test: Sync.Init registers
-// these types as a side effect, so once TestInit has run the scheme looks
-// populated either way. A package-level variable initialiser would be too early
-// — Go initialises all package variables before running any init function.
+// capture in init(), not a package var (too early) nor in-test (Sync.Init would mask it)
 var schemeRegisteredAtPackageInit bool
 
 func init() {
 	schemeRegisteredAtPackageInit = scheme.Scheme.Recognizes(v1beta1.GroupVersion.WithKind("FeatureFlag"))
 }
 
-// TestSchemeRegisteredAtPackageInit pins the fix without needing -race, which
-// complements TestConcurrentInit below.
+// pins the fix without needing -race
 func TestSchemeRegisteredAtPackageInit(t *testing.T) {
 	if !schemeRegisteredAtPackageInit {
 		t.Error("expected the FeatureFlag type to be registered in the global scheme by package init; " +
@@ -601,10 +597,7 @@ func TestSchemeRegisteredAtPackageInit(t *testing.T) {
 	}
 }
 
-// TestConcurrentInit reproduces the reported crash: flagd-proxy calls Init from
-// one goroutine per sync target, so registering into the global scheme there
-// races on its unguarded maps. Run under -race, which the Makefile's test target
-// uses.
+// reproduces #2023: concurrent Sync.Init races the global scheme (run under -race)
 func TestConcurrentInit(t *testing.T) {
 	var wg stdsync.WaitGroup
 	for i := 0; i < 16; i++ {
@@ -761,7 +754,7 @@ func TestNotify(t *testing.T) {
 	// only delivers events via the watch stream, not via the initial List/Replace.
 	// Pre-populating causes the object to silently land in the store without
 	// triggering AddFunc, so later UpdateStatus calls are seen as updates on an
-	// object the informer has never "added" — leaving the test waiting forever.
+	// object the informer has never "added", leaving the test waiting forever.
 	fc := fake.NewSimpleDynamicClient(scheme.Scheme)
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
