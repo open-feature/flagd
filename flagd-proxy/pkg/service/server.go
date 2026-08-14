@@ -96,9 +96,7 @@ func (s *Server) Shutdown() {
 	s.grpcServer.GracefulStop()
 }
 
-// keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
-// provider keepalive pings on the long-lived SyncFlags stream aren't rejected
-// with GOAWAY ENHANCE_YOUR_CALM.
+// keepalive policy so provider pings on the long-lived SyncFlags stream aren't rejected with GOAWAY ENHANCE_YOUR_CALM
 func keepAliveEnforcementPolicy(cfg service.Configuration) keepalive.EnforcementPolicy {
 	return keepalive.EnforcementPolicy{
 		MinTime:             cfg.KeepAliveMinTime,

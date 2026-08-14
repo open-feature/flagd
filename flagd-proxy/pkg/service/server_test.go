@@ -99,8 +99,7 @@ func TestMetricsServerRoutesGRPCHealth(t *testing.T) {
 	}
 }
 
-// keepAliveConfig builds a Configuration carrying only the keepalive settings,
-// so the tests below can name scenarios without restating the field mapping.
+// Configuration with only the keepalive fields set, for table tests
 func keepAliveConfig(minTime time.Duration, permitWithoutStream bool) service.Configuration {
 	return service.Configuration{
 		KeepAliveMinTime:             minTime,
@@ -128,14 +127,8 @@ func TestKeepAliveEnforcementPolicy(t *testing.T) {
 	}
 }
 
-// TestServerKeepAliveEnforcement proves the enforcement policy is applied to the
-// sync gRPC server. The Go gRPC client clamps its keepalive interval to a 10s
-// minimum, so we drive the HTTP/2 connection directly with a raw framer to flood
-// keepalive pings and observe how the server's configured policy reacts: a
-// permissive policy tolerates the pings, while a strict one tears the connection
-// down with GOAWAY ENHANCE_YOUR_CALM. Without the policy the server falls back to
-// gRPC's defaults (MinTime 5m, PermitWithoutStream false), which is what severed
-// the providers' sync streams roughly every 90 seconds.
+// proves the policy reaches the sync server; grpc-go clamps client keepalive to 10s so we flood
+// pings via a raw HTTP/2 framer (strict policy -> GOAWAY ENHANCE_YOUR_CALM; default 5m severed streams)
 func TestServerKeepAliveEnforcement(t *testing.T) {
 	tests := []struct {
 		name                string
@@ -164,11 +157,7 @@ func TestServerKeepAliveEnforcement(t *testing.T) {
 			addr := fmt.Sprintf("127.0.0.1:%d", port)
 			waitForListener(t, addr)
 			t.Cleanup(func() {
-				// s.grpcServer is only assigned once startServer's listener is
-				// up. freePort releases the port before the server rebinds it,
-				// so a competing bind leaves the field nil while waitForListener
-				// still succeeds against the competitor — stopping it
-				// unconditionally would panic and bury the real listen error.
+				// grpcServer may be nil if a competing bind won the freed port; guard so we don't panic and bury the listen error
 				if s.grpcServer != nil {
 					s.grpcServer.Stop()
 				}
@@ -184,10 +173,7 @@ func TestServerKeepAliveEnforcement(t *testing.T) {
 	}
 }
 
-// floodKeepalivePings opens a raw HTTP/2 connection to the sync server and sends
-// keepalive PING frames in rapid succession without opening a stream. It returns
-// true if the server responds with GOAWAY ENHANCE_YOUR_CALM within a short
-// window, and false if the connection is left healthy.
+// floods keepalive PINGs over a raw HTTP/2 conn (no stream); returns true if the server sends GOAWAY ENHANCE_YOUR_CALM
 func floodKeepalivePings(t *testing.T, addr string) bool {
 	t.Helper()
 
@@ -215,21 +201,15 @@ func floodKeepalivePings(t *testing.T, addr string) bool {
 
 	serverReady, enhanceYourCalm := watchForGoAway(framer, write)
 
-	// Wait for the server's own SETTINGS frame before flooding. A successful dial
-	// only means the kernel accepted the connection into the listen backlog, which
-	// happens before startServer builds the gRPC server; pings sent in that window
-	// would be buffered and then read back-to-back, registering as a MinTime
-	// violation no matter how permissive the policy is. The server's SETTINGS
-	// frame proves the HTTP/2 transport exists and its reader is live, so the
-	// pings below are paced by this loop rather than by the backlog.
+	// wait for the server's SETTINGS frame first; a dial only reaches the listen backlog (pre-server),
+	// so pings sent then get buffered and read back-to-back, tripping MinTime even under a permissive policy
 	select {
 	case <-serverReady:
 	case <-time.After(3 * time.Second):
 		t.Fatal("server did not send its SETTINGS frame within the deadline")
 	}
 
-	// flood pings faster than any strict MinTime; grpc-go sends GOAWAY after more
-	// than two "ping strikes", so a handful of rapid pings is enough
+	// flood faster than any strict MinTime; grpc-go sends GOAWAY after >2 ping strikes
 	var pingData [8]byte
 	for i := 0; i < 8; i++ {
 		write(func() error { return framer.WritePing(false, pingData) })
@@ -248,12 +228,9 @@ func floodKeepalivePings(t *testing.T, addr string) bool {
 	}
 }
 
-// watchForGoAway reads frames from the framer in the background, acking server
-// SETTINGS. It returns two channels: serverReady is closed once the server's
-// SETTINGS frame has been seen — deliberately never closed on any other path,
-// so a server that fails to come up trips the caller's timeout rather than
-// letting it flood a dead connection — and enhanceYourCalm reports whether the
-// first GOAWAY carries the ENHANCE_YOUR_CALM code.
+// reads frames in the background, acking server SETTINGS. returns serverReady (closed only when the
+// server's SETTINGS is seen, so a dead server trips the caller's timeout) and enhanceYourCalm (true if
+// the first GOAWAY carries ENHANCE_YOUR_CALM)
 func watchForGoAway(framer *http2.Framer, write func(func() error)) (<-chan struct{}, <-chan bool) {
 	serverReady := make(chan struct{})
 	// a server may legitimately send more than one non-ACK SETTINGS frame
