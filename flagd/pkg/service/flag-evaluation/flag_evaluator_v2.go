@@ -61,6 +61,20 @@ func NewFlagEvaluationServiceV2(log *logger.Logger,
 	return svc
 }
 
+// eventStreamSenderV2 is the subset of connect.ServerStream used to push events;
+// declared for testability of the initial-ready send.
+type eventStreamSenderV2 interface {
+	Send(*evalV2.EventStreamResponse) error
+}
+
+// sendInitialReady delivers the initial ProviderReady straight to the stream
+// rather than the notifier channel, which subscription cleanup may close.
+func (s *FlagEvaluationServiceV2) sendInitialReady(sender eventStreamSenderV2) {
+	if err := sender.Send(&evalV2.EventStreamResponse{Type: string(service.ProviderReady)}); err != nil {
+		s.logger.Error(err.Error())
+	}
+}
+
 // nolint: dupl
 func (s *FlagEvaluationServiceV2) EventStream(
 	ctx context.Context,
@@ -86,9 +100,8 @@ func (s *FlagEvaluationServiceV2) EventStream(
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
-	requestNotificationChan <- service.Notification{
-		Type: service.ProviderReady,
-	}
+	// send initial ready to the stream; the notifier channel may be closed by cleanup and this avoids racing with it
+	s.sendInitialReady(stream)
 	for {
 		select {
 		case <-time.After(20 * time.Second):

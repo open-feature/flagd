@@ -9,6 +9,8 @@ import (
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
+	iservice "github.com/open-feature/flagd/core/pkg/service"
+	flagevalmock "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/mock/gomock"
@@ -160,4 +162,16 @@ func TestInvalidSelector_FlagEvaluationServiceV2(t *testing.T) {
 			return err
 		}},
 	})
+}
+
+// locks the fix for the send-on-closed-channel
+// race: the initial ProviderReady must be delivered via the stream, not the
+// notifier channel that subscription cleanup closes on cancel.
+func TestSendInitialReadyUsesStream(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	sender := flagevalmock.NewMockeventStreamSenderV2(ctrl)
+	sender.EXPECT().Send(&evalV2.EventStreamResponse{Type: string(iservice.ProviderReady)}).Return(nil).Times(1)
+
+	s := &FlagEvaluationServiceV2{logger: logger.NewLogger(nil, false)}
+	s.sendInitialReady(sender)
 }
