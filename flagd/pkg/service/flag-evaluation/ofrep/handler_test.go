@@ -2,6 +2,7 @@ package ofrep
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
+	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -41,6 +43,31 @@ var genericErrorValue = evaluator.AnyValue{
 	Reason:  model.ErrorReason,
 	FlagKey: flagKey,
 	Error:   errors.New(model.GeneralErrorCode),
+}
+
+type recordedEvaluation struct {
+	errorText string
+	reason    string
+	variant   string
+	flagKey   string
+}
+
+type recordingMetricsRecorder struct {
+	telemetry.NoopMetricsRecorder
+	evaluations []recordedEvaluation
+}
+
+func (r *recordingMetricsRecorder) RecordEvaluation(_ context.Context, err error, reason, variant, flagKey string) {
+	errorText := ""
+	if err != nil {
+		errorText = err.Error()
+	}
+	r.evaluations = append(r.evaluations, recordedEvaluation{
+		errorText: errorText,
+		reason:    reason,
+		variant:   variant,
+		flagKey:   flagKey,
+	})
 }
 
 func Test_handler_HandleFlagEvaluation(t *testing.T) {
@@ -409,4 +436,83 @@ func TestInvalidSelector_OFREPHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, recorder.Code)
 	})
+}
+
+func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
+	tests := []struct {
+		name       string
+		evaluation evaluator.AnyValue
+		expected   recordedEvaluation
+	}{
+		{
+			name:       "successful evaluation",
+			evaluation: successValue,
+			expected: recordedEvaluation{
+				reason:  successValue.Reason,
+				variant: successValue.Variant,
+				flagKey: successValue.FlagKey,
+			},
+		},
+		{
+			name:       "failed evaluation",
+			evaluation: genericErrorValue,
+			expected: recordedEvaluation{
+				errorText: genericErrorValue.Error.Error(),
+				reason:    genericErrorValue.Reason,
+				variant:   genericErrorValue.Variant,
+				flagKey:   genericErrorValue.FlagKey,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			metrics := &recordingMetricsRecorder{}
+			eval := mock.NewMockIEvaluator(gomock.NewController(t))
+			eval.EXPECT().
+				ResolveAsAnyValue(gomock.Any(), gomock.Any(), flagKey, gomock.Any()).
+				Return(test.evaluation)
+			handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd")
+
+			request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, nil)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+
+			require.Len(t, metrics.evaluations, 1)
+			require.Equal(t, test.expected, metrics.evaluations[0])
+		})
+	}
+}
+
+func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
+	metrics := &recordingMetricsRecorder{}
+	evaluations := []evaluator.AnyValue{successValue, genericErrorValue, flagNotFoundValue}
+	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(evaluations, model.Metadata{}, nil)
+	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd")
+
+	request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	require.Equal(t, []recordedEvaluation{
+		{
+			reason:  successValue.Reason,
+			variant: successValue.Variant,
+			flagKey: successValue.FlagKey,
+		},
+		{
+			errorText: genericErrorValue.Error.Error(),
+			reason:    genericErrorValue.Reason,
+			variant:   genericErrorValue.Variant,
+			flagKey:   genericErrorValue.FlagKey,
+		},
+		{
+			errorText: flagNotFoundValue.Error.Error(),
+			reason:    flagNotFoundValue.Reason,
+			variant:   flagNotFoundValue.Variant,
+			flagKey:   flagNotFoundValue.FlagKey,
+		},
+	}, metrics.evaluations)
 }
