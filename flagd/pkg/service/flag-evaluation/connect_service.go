@@ -81,7 +81,7 @@ func NewConnectService(
 		eval:    evaluator,
 		metrics: &telemetry.NoopMetricsRecorder{},
 		eventingConfiguration: &eventingConfiguration{
-			subs:   make(map[interface{}]chan service.Notification),
+			subs:   make(map[interface{}]*subscription),
 			mu:     &sync.RWMutex{},
 			store:  store,
 			logger: logger,

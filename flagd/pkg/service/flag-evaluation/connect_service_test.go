@@ -237,7 +237,7 @@ func TestConnectServiceWatcher(t *testing.T) {
 		store:  s,
 		logger: log,
 		mu:     &sync.RWMutex{},
-		subs:   make(map[any]chan iservice.Notification),
+		subs:   make(map[any]*subscription),
 	}
 
 	// subscribe and wait for for the sub to be active
