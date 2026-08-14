@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -30,6 +31,11 @@ var (
 )
 
 const invalidAPIVersionMsg = "invalid api version %s, expected %s"
+
+// register into the global client-go scheme once at init; doing it in Sync.Init races the scheme's maps (#2023)
+func init() {
+	utilruntime.Must(v1beta1.AddToScheme(scheme.Scheme))
+}
 
 type SyncOption func(s *Sync)
 
@@ -71,10 +77,6 @@ func (k *Sync) Init(_ context.Context) error {
 	k.namespace, k.crdName, err = parseURI(k.URI)
 	if err != nil {
 		return fmt.Errorf("unable to parse uri %s: %w", k.URI, err)
-	}
-
-	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
-		return fmt.Errorf("unable to v1beta1 types to scheme: %w", err)
 	}
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
