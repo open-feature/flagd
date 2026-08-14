@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.2](https://github.com/open-feature/flagd/compare/core/v0.16.1...core/v0.16.2) (2026-08-14)
+
+
+### 🐛 Bug Fixes
+
+* **core:** register the OFO scheme at package init, not inside Sync.Init ([#2024](https://github.com/open-feature/flagd/issues/2024)) ([cf2db36](https://github.com/open-feature/flagd/commit/cf2db36492c405be68b717da5c32a3451915dd84))
+* **flagd-proxy:** set gRPC keepalive enforcement policy on the sync server ([#2022](https://github.com/open-feature/flagd/issues/2022)) ([5591fa8](https://github.com/open-feature/flagd/commit/5591fa8cff504f063d97bab83af18a40798d4dc9))
+* possible race on eventstream connection ([#2025](https://github.com/open-feature/flagd/issues/2025)) ([e38ecb7](https://github.com/open-feature/flagd/commit/e38ecb738513ad8d7d6d1081c7851125925194a0))
+
 ## [0.16.1](https://github.com/open-feature/flagd/compare/core/v0.16.0...core/v0.16.1) (2026-07-27)
 
 

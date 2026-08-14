@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.2](https://github.com/open-feature/flagd/compare/flagd/v0.16.1...flagd/v0.16.2) (2026-08-14)
+
+
+### 🐛 Bug Fixes
+
+* **eventing:** prevent send on closed channel in EmitToAll ([#1993](https://github.com/open-feature/flagd/issues/1993)) ([8d7d41f](https://github.com/open-feature/flagd/commit/8d7d41fc0b2bcd351ab0d0531842e6a7056b1090))
+* possible race on eventstream connection ([#2025](https://github.com/open-feature/flagd/issues/2025)) ([e38ecb7](https://github.com/open-feature/flagd/commit/e38ecb738513ad8d7d6d1081c7851125925194a0))
+* record OFREP evaluation metrics ([#2016](https://github.com/open-feature/flagd/issues/2016)) ([8dd34dc](https://github.com/open-feature/flagd/commit/8dd34dc95c6d256a2a63c985ffa0bd705feb3fab))
+
 ## [0.16.1](https://github.com/open-feature/flagd/compare/flagd/v0.16.0...flagd/v0.16.1) (2026-07-27)
 
 
