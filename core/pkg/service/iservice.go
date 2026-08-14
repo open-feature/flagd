@@ -38,6 +38,16 @@ type Configuration struct {
 	StreamDeadline             time.Duration
 	MaxRequestHeaderBytes      int64
 	MaxRequestBodyBytes        int64
+
+	// KeepAliveMinTime is the minimum interval the gRPC server permits between
+	// client keepalive pings. Pings arriving more frequently are rejected with
+	// GOAWAY (ENHANCE_YOUR_CALM). Honoured by services exposing a gRPC sync
+	// server; ignored by the connect-based flag evaluation service.
+	KeepAliveMinTime time.Duration
+	// KeepAlivePermitWithoutStream allows clients to send keepalive pings even
+	// when there is no active stream. Honoured by the same services as
+	// KeepAliveMinTime.
+	KeepAlivePermitWithoutStream bool
 }
 
 /*

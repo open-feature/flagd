@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
 )
 
 type Server struct {
@@ -95,6 +96,16 @@ func (s *Server) Shutdown() {
 	s.grpcServer.GracefulStop()
 }
 
+// keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
+// provider keepalive pings on the long-lived SyncFlags stream aren't rejected
+// with GOAWAY ENHANCE_YOUR_CALM.
+func keepAliveEnforcementPolicy(cfg service.Configuration) keepalive.EnforcementPolicy {
+	return keepalive.EnforcementPolicy{
+		MinTime:             cfg.KeepAliveMinTime,
+		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream,
+	}
+}
+
 func (s *Server) startServer() error {
 	var lis net.Listener
 	var err error
@@ -104,7 +115,9 @@ func (s *Server) startServer() error {
 		return fmt.Errorf("error setting up listener for address %s: %w", address, err)
 	}
 
-	s.grpcServer = grpc.NewServer()
+	s.grpcServer = grpc.NewServer(
+		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy(s.config)),
+	)
 	rpc.RegisterFlagSyncServiceServer(s.grpcServer, s.oldHandler)
 	syncv1.RegisterFlagSyncServiceServer(s.grpcServer, s.handler)
 
