@@ -88,6 +88,7 @@ mockgen: install-mockgen
 	cd core; mockgen -source=pkg/evaluator/ievaluator.go -destination=pkg/evaluator/mock/ievaluator.go -package=evalmock
 	cd core; mockgen -source=pkg/sync/builder/syncbuilder.go -destination=pkg/sync/builder/mock/syncbuilder.go -package=middlewaremocksyncbuildermock
 	cd flagd; mockgen -source=pkg/service/middleware/interface.go -destination=pkg/service/middleware/mock/interface.go -package=middlewaremock
+	cd flagd; mockgen -source=pkg/service/flag-evaluation/flag_evaluator_v2.go -destination=pkg/service/flag-evaluation/mock/eventstream.go -package=flagevalmock
 generate-docs:
 	cd flagd; go run ./cmd/doc/main.go
 

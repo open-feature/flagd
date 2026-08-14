@@ -150,8 +150,9 @@ func (s *OldFlagEvaluationService) EventStream(
 	s.eventingConfiguration.Subscribe(ctx, req, &selector, requestNotificationChan)
 	defer s.eventingConfiguration.Unsubscribe(req)
 
-	requestNotificationChan <- service.Notification{
-		Type: service.ProviderReady,
+	// send initial ready to the stream; the notifier channel may be closed by cleanup and this avoids racing with it
+	if err := stream.Send(&schemaV1.EventStreamResponse{Type: string(service.ProviderReady)}); err != nil {
+		s.logger.Error(err.Error())
 	}
 	for {
 		select {
