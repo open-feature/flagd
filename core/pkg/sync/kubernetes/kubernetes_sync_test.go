@@ -582,6 +582,47 @@ func TestSync_watcher(t *testing.T) {
 	}
 }
 
+// Captured from init() rather than read inside the test: Sync.Init registers
+// these types as a side effect, so once TestInit has run the scheme looks
+// populated either way. A package-level variable initialiser would be too early
+// — Go initialises all package variables before running any init function.
+var schemeRegisteredAtPackageInit bool
+
+func init() {
+	schemeRegisteredAtPackageInit = scheme.Scheme.Recognizes(v1beta1.GroupVersion.WithKind("FeatureFlag"))
+}
+
+// TestSchemeRegisteredAtPackageInit pins the fix without needing -race, which
+// complements TestConcurrentInit below.
+func TestSchemeRegisteredAtPackageInit(t *testing.T) {
+	if !schemeRegisteredAtPackageInit {
+		t.Error("expected the FeatureFlag type to be registered in the global scheme by package init; " +
+			"registering it from Sync.Init instead races on the scheme's unguarded maps")
+	}
+}
+
+// TestConcurrentInit reproduces the reported crash: flagd-proxy calls Init from
+// one goroutine per sync target, so registering into the global scheme there
+// races on its unguarded maps. Run under -race, which the Makefile's test target
+// uses.
+func TestConcurrentInit(t *testing.T) {
+	var wg stdsync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s := &Sync{
+				URI:           "myNS/myFF",
+				dynamicClient: fake.NewSimpleDynamicClient(runtime.NewScheme()),
+			}
+			if err := s.Init(context.Background()); err != nil {
+				t.Errorf("unexpected error from Init: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 func TestInit(t *testing.T) {
 	t.Run("expect error with wrong URI format", func(t *testing.T) {
 		k := Sync{URI: ""}
@@ -721,9 +762,6 @@ func TestNotify(t *testing.T) {
 	// Pre-populating causes the object to silently land in the store without
 	// triggering AddFunc, so later UpdateStatus calls are seen as updates on an
 	// object the informer has never "added" — leaving the test waiting forever.
-	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to add v1beta1 to scheme: %v", err)
-	}
 	fc := fake.NewSimpleDynamicClient(scheme.Scheme)
 	l, err := logger.NewZapLogger(zapcore.FatalLevel, "console")
 	if err != nil {
