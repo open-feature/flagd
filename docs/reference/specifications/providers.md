@@ -42,7 +42,7 @@ The lifecycle is summarized below:
     - for RPC providers, flags resolved with `reason=STATIC` are [cached](#flag-evaluation-caching)
     - if flags change the associated stream (event or sync) indicates flags have changed, flush cache, or update `flag set` rules respectively and emit `PROVIDER_CONFIGURATION_CHANGED`
 - if stream disconnects:
-    - [reconnect](#stream-reconnection) with automatic gRPC retry policy and explicit application-level backoff (see [stream reconnection](#stream-reconnection)).
+    - [reconnect](#stream-reconnection) with automatic gRPC retry policy and explicit, flat application-level backoff (see [stream reconnection](#stream-reconnection)).
         - if disconnected time <= `retryGracePeriod`
             - emit `PROVIDER_STALE`
             - RPC mode resolves `STALE` from cache where possible
@@ -310,8 +310,8 @@ Below are the supported configuration parameters (note that not all apply to bot
 | deadlineMs            | FLAGD_DEADLINE_MS              | deadline for unary calls, and timeout for initialization                                                        | int                          | 500                           | rpc & in-process & file |
 | streamDeadlineMs      | FLAGD_STREAM_DEADLINE_MS       | deadline for streaming calls, useful as an application-layer keepalive                                          | int                          | 600000                        | rpc & in-process        |
 | retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | initial backoff for stream retry                                                                                | int                          | 1000                          | rpc & in-process        |
-| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | maximum backoff for stream retry                                                                                | int                          | 12000                         | rpc & in-process        |
-| retryGracePeriod      | FLAGD_RETRY_GRACE_PERIOD       | period in seconds before provider moves from STALE to ERROR state                                               | int                          | 5                             | rpc & in-process & file |
+| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | maximum backoff for stream retry                                                                                | int                          | 5000                          | rpc & in-process        |
+| retryGracePeriod      | FLAGD_RETRY_GRACE_PERIOD       | period in seconds before provider moves from STALE to ERROR state                                               | int                          | 10                            | rpc & in-process & file |
 | keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | http 2 keepalive                                                                                                | long                         | 0                             | rpc & in-process        |
 | selector              | FLAGD_SOURCE_SELECTOR          | expression to filter flags (e.g., `flagSetId=my-app`, `source=config.json`)                                     | string                       | null                          | rpc & in-process        |
 | cache                 | FLAGD_CACHE                    | enable cache of static flags                                                                                    | string - `lru`, `disabled`   | lru                           | rpc                     |
