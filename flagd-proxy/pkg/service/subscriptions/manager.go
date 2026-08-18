@@ -68,17 +68,22 @@ func (s *Coordinator) FetchAllFlags(ctx context.Context, key interface{}, target
 	errChan := make(chan error, 1)
 	s.mu.RLock()
 	syncHandler, ok := s.multiplexers[target]
+	// syncRef is written by watchResource under s.mu, so read it while we still hold the lock
+	var syncRef isync.ISync
+	if ok {
+		syncRef = syncHandler.syncRef
+	}
 	s.mu.RUnlock()
 	if !ok {
 		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
-		if syncHandler.syncRef == nil {
+		if syncRef == nil {
 			return isync.DataSync{}, errors.New("sync ref not set")
 		}
 		go func() {
 			s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
-			if err := syncHandler.syncRef.ReSync(ctx, dataSyncChan); err != nil {
+			if err := syncRef.ReSync(ctx, dataSyncChan); err != nil {
 				errChan <- err
 			}
 		}()
@@ -106,7 +111,12 @@ func (s *Coordinator) RegisterSubscription(
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// is there a currently active subscription for this target?
+	// a multiplexer whose watcher has stopped can never deliver again, so treat it as absent (#2030)
 	sh, ok := s.multiplexers[target]
+	if ok && sh.isDead() {
+		s.logger.Debug(fmt.Sprintf("multiplexer for target %s is no longer watched, replacing it", target))
+		ok = false
+	}
 	if !ok {
 		// we need to start a sync for this
 		s.logger.Debug(
@@ -127,34 +137,37 @@ func (s *Coordinator) RegisterSubscription(
 		}
 		go s.watchResource(target)
 	} else {
-		// register our sub in the map
+		// register our sub in the map; subs is also read by the broadcasts under sh.mu
 		s.logger.Debug(fmt.Sprintf("registering sync subscription %p", key))
+		sh.mu.Lock()
 		sh.subs[key] = storedChannels{
 			errChan:  errChan,
 			dataSync: dataSync,
 		}
-		// access pointer + trigger resync passing the dataSync
-		if sh.syncRef != nil {
+		sh.mu.Unlock()
+		// read syncRef under the lock we hold, but never run ReSync under it: a stalled
+		// subscriber blocks it on an unbuffered send and would jam the coordinator
+		if syncRef := sh.syncRef; syncRef != nil {
 			go func() {
-				s.mu.RLock()
-				defer s.mu.RUnlock()
-				if _, ok := s.multiplexers[target]; ok {
-					s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
-					if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
-						errChan <- err
-					}
+				s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
+				if err := syncRef.ReSync(ctx, dataSync); err != nil {
+					errChan <- err
 				}
 			}()
 		}
 	}
-	// defer until context close to remove the key
+	// defer until context close to remove the key, from the multiplexer we actually joined:
+	// a rebuild may have replaced the entry for this target by then (#2030)
+	registered := s.multiplexers[target]
 	go func() {
 		<-ctx.Done()
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if s.multiplexers[target] != nil && s.multiplexers[target].subs != nil {
+		if sh := registered; sh != nil && sh.subs != nil {
 			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
-			delete(s.multiplexers[target].subs, key)
+			sh.mu.Lock()
+			delete(sh.subs, key)
+			sh.mu.Unlock()
 		}
 	}()
 }
@@ -162,21 +175,31 @@ func (s *Coordinator) RegisterSubscription(
 func (s *Coordinator) watchResource(target string) {
 	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
 	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
 	s.mu.Lock()
 	sh, ok := s.multiplexers[target]
 	if !ok {
 		s.mu.Unlock()
+		cancel()
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
 	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
 	sh.cancelFunc = cancel
+	sh.watcherCtx = ctx
 	s.mu.Unlock()
-	go func() {
-		<-ctx.Done()
+	var broadcastErr error
+	// cancel marks the multiplexer dead so a reconnecting client rebuilds instead of attaching (#2030)
+	defer func() {
+		cancel()
+		// broadcast before taking s.mu; a stalled ReSync can hold that lock indefinitely
+		if broadcastErr != nil {
+			sh.broadcastError(s.logger, broadcastErr)
+		}
 		s.mu.Lock()
-		delete(s.multiplexers, target)
+		// only our own entry; a later subscription may already have replaced it
+		if s.multiplexers[target] == sh {
+			delete(s.multiplexers, target)
+		}
 		s.mu.Unlock()
 	}()
 	// broadcast any data passed through the core channel to all subscribing channels
@@ -194,23 +217,26 @@ func (s *Coordinator) watchResource(target string) {
 	syncSource, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
-		sh.broadcastError(s.logger, err)
+		broadcastErr = err
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = syncSource.Init(ctx)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
-		sh.broadcastError(s.logger, err)
+		broadcastErr = err
 		return
 	}
 	// syncSource ref is used to trigger a resync on a single channel when a new subscription is started
-	// but the associated SyncHandler already exists, i.e. this function is not run
+	// but the associated SyncHandler already exists, i.e. this function is not run.
+	// written under s.mu because the readers hold it
+	s.mu.Lock()
 	sh.syncRef = syncSource
+	s.mu.Unlock()
 	err = syncSource.Sync(ctx, sh.dataSync)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
-		sh.broadcastError(s.logger, err)
+		broadcastErr = err
 	}
 }
 
