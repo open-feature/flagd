@@ -2,49 +2,34 @@ package sse
 
 import (
 	"net/http"
-	"sync"
+
+	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-// channelParam carries the ADR-0008 channel token (the flagSetId); empty selects the catch-all.
-const channelParam = "channels"
+// ChannelParam carries the selector expression the client wants change notifications for, using
+// the same syntax as the Flagd-Selector header; empty selects every flag. It is exported so the
+// bulk handler advertises the same parameter this handler reads.
+const ChannelParam = "channels"
 
-func channelFromRequest(r *http.Request) string {
-	return r.URL.Query().Get(channelParam)
-}
+// Handler resolves the request's selector, takes a reference on the matching subscription so the
+// store watch stays alive, and streams events until the client disconnects.
+func (svc *Service) Handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		channel := r.URL.Query().Get(ChannelParam)
+		selector, err := store.NewSelector(channel)
+		if err != nil {
+			// not echoing the expression back: it is unescaped client input
+			http.Error(w, "invalid selector in the 'channels' parameter", http.StatusBadRequest)
+			return
+		}
 
-// activeChannels is a reference-counted set of channels with at least one live subscriber, so
-// the heartbeat loop knows which channels to ping (the eventsource server exposes no registry).
-type activeChannels struct {
-	mu     sync.Mutex
-	counts map[string]int
-}
+		release, err := svc.tracker.Subscribe(channel, selector)
+		if err != nil {
+			http.Error(w, "unable to subscribe to flag changes", http.StatusServiceUnavailable)
+			return
+		}
+		defer release()
 
-func newActiveChannels() *activeChannels {
-	return &activeChannels{counts: map[string]int{}}
-}
-
-func (a *activeChannels) add(channel string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.counts[channel]++
-}
-
-func (a *activeChannels) remove(channel string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.counts[channel] <= 1 {
-		delete(a.counts, channel)
-		return
-	}
-	a.counts[channel]--
-}
-
-func (a *activeChannels) snapshot() []string {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	channels := make([]string, 0, len(a.counts))
-	for ch := range a.counts {
-		channels = append(channels, ch)
-	}
-	return channels
+		svc.es.Handler(channel).ServeHTTP(w, r)
+	})
 }

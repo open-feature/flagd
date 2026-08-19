@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,219 +18,188 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-// allChannel receives a refetch event on any flag change. It is advertised to OFREP clients
-// that use no flagSetId selector, mirroring a bulk request with no selector.
-const allChannel = ""
-
-// namespacing prefixes for the internal version map, so a flagSetId and a source with the
-// same string value never collide.
-const (
-	allKey    = "all"
-	fsPrefix  = "fs:"
-	srcPrefix = "src:"
-)
-
-func fsKey(id string) string   { return fsPrefix + id }
-func srcKey(src string) string { return srcPrefix + src }
-
 type version struct {
 	etag         string
 	lastModified int64
 }
 
-// Tracker owns a global store.Watch subscription. On every flag-configuration change it
-// recomputes a per-channel config fingerprint (used as an ETag), publishes an ADR-0008
-// refetchEvaluation event to each affected channel, and answers version lookups for the OFREP
-// bulk handler so conditional (ETag/304) evaluation stays consistent with the SSE stream.
+// subscription is a single store.Watch, shared by every client on the same channel. It is
+// reachable through Tracker.subs only while refs > 0.
+type subscription struct {
+	selector store.Selector // immutable after construction: the store retains &selector
+	cancel   context.CancelFunc
+
+	// ver is nil until the first snapshot lands, and again if the watch dies.
+	ver atomic.Pointer[version]
+
+	refs int // guarded by Tracker.mu
+}
+
 type Tracker struct {
 	logger *logger.Logger
 	store  store.IStore
 	es     *eventsource.Server
 
-	mu       sync.RWMutex
-	versions map[string]version
+	mu     sync.Mutex
+	subs   map[string]*subscription
+	closed bool
 
+	wg      sync.WaitGroup
 	eventID atomic.Int64
 }
 
-// NewTracker creates a Tracker. Call Run to begin watching the store.
 func NewTracker(log *logger.Logger, s store.IStore, es *eventsource.Server) *Tracker {
 	return &Tracker{
-		logger:   log,
-		store:    s,
-		es:       es,
-		versions: map[string]version{},
+		logger: log,
+		store:  s,
+		es:     es,
+		subs:   map[string]*subscription{},
 	}
 }
 
-// Run subscribes to all flag changes and publishes refetch events until ctx is cancelled.
-// It blocks, so it is intended to run in its own goroutine.
-func (t *Tracker) Run(ctx context.Context) {
-	if t.store == nil {
-		if t.logger != nil {
-			t.logger.Warn("ofrep sse tracker has no flag store; change notifications disabled")
-		}
-		return
-	}
-
-	watcher := make(chan store.FlagQueryResult, 1)
-	t.store.Watch(ctx, &store.Selector{}, watcher)
-
-	first := true
-	for res := range watcher {
-		channels := t.update(res.Flags)
-		if first {
-			// The first emission is the initialization snapshot; only seed fingerprints.
-			first = false
-			continue
-		}
-		for _, ch := range channels {
-			t.publish(ch)
-		}
-	}
-
-	// The store closed the watcher. That happens on context cancellation (expected shutdown) or
-	// on a selector/iterator error inside the store (unexpected). Distinguish them: on the
-	// unexpected path publishing has stopped and t.versions is now frozen, which would make the
-	// bulk handler keep returning stale 304s forever, so surface it and invalidate the versions
-	// (Version then reports no ETag and clients are served fresh flags instead of a stale 304).
-	if ctx.Err() != nil {
-		return
-	}
-	if t.logger != nil {
-		t.logger.Error("ofrep sse tracker stopped watching the flag store unexpectedly; " +
-			"refetch events will no longer be published and cached ETags are invalidated")
-	}
-	t.mu.Lock()
-	t.versions = map[string]version{}
-	t.mu.Unlock()
-}
-
-// Version returns the current config ETag and last-modified time (unix seconds) for the
-// channel matching the given selector. ok is false when no version is tracked for the
-// selector (e.g. an unknown source), letting the caller skip conditional handling.
-func (t *Tracker) Version(selector store.Selector) (etag string, lastModified int64, ok bool) {
-	var key string
-	switch {
-	case selector.IsEmpty():
-		key = allKey
-	case selector.FlagSetId() != "":
-		key = fsKey(selector.FlagSetId())
-	case selector.Source() != "":
-		key = srcKey(selector.Source())
-	default:
-		return "", 0, false
-	}
-
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	v, ok := t.versions[key]
-	return v.etag, v.lastModified, ok
-}
-
-// update recomputes fingerprints for the catch-all, per-flagSetId and per-source groups,
-// swaps them into the version map (preserving lastModified when a fingerprint is unchanged)
-// and returns the eventsource channels that should be notified.
-func (t *Tracker) update(flags []model.Flag) []string {
-	now := time.Now().Unix()
-
-	fsGroups := map[string][]model.Flag{}
-	srcGroups := map[string][]model.Flag{}
-	for _, f := range flags {
-		fsGroups[f.FlagSetId] = append(fsGroups[f.FlagSetId], f)
-		srcGroups[f.Source] = append(srcGroups[f.Source], f)
-	}
-
-	newVersions := make(map[string]version, len(fsGroups)+len(srcGroups)+1)
-	newVersions[allKey] = version{etag: fingerprint(flags)}
-	for id, g := range fsGroups {
-		newVersions[fsKey(id)] = version{etag: fingerprint(g)}
-	}
-	for src, g := range srcGroups {
-		newVersions[srcKey(src)] = version{etag: fingerprint(g)}
-	}
-
+// Subscribe registers interest in a channel, starting a store watch for its selector if this is
+// the first subscriber. The returned release must be called exactly once on disconnect.
+func (t *Tracker) Subscribe(channel string, selector store.Selector) (func(), error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// carry lastModified forward when the fingerprint is unchanged
-	for key, nv := range newVersions {
-		if old, exists := t.versions[key]; exists && old.etag == nv.etag {
-			nv.lastModified = old.lastModified
-		} else {
-			nv.lastModified = now
-		}
-		newVersions[key] = nv
+	if t.closed {
+		return nil, fmt.Errorf("ofrep sse tracker is shutting down")
 	}
 
-	changed := t.changedChannels(newVersions, fsGroups)
-	t.versions = newVersions
-	return changed
+	sub, existing := t.subs[channel]
+	if !existing {
+		// Subscriptions are shared, so they outlive any single request and are torn down by
+		// release or Close rather than by a request context.
+		ctx, cancel := context.WithCancel(context.Background())
+		sub = &subscription{selector: selector, cancel: cancel}
+		t.subs[channel] = sub
+		t.wg.Add(1)
+
+		watcher := make(chan store.FlagQueryResult, 1)
+		t.store.Watch(ctx, &sub.selector, watcher)
+		go t.watch(ctx, channel, sub, watcher)
+	}
+	sub.refs++
+
+	var once sync.Once
+	return func() { once.Do(func() { t.release(channel, sub) }) }, nil
 }
 
-// changedChannels compares the previous version map (t.versions, still held) with the freshly
-// computed one and returns the eventsource channels that clients subscribe to and whose config
-// changed: the catch-all channel plus any created/updated/removed flagSetId channels. Source
-// channels are tracked for ETag lookups but are not (yet) directly subscribable.
-func (t *Tracker) changedChannels(newVersions map[string]version, fsGroups map[string][]model.Flag) []string {
-	etagChanged := func(key string) bool {
-		old, oldOK := t.versions[key]
-		nv, newOK := newVersions[key]
-		if oldOK != newOK {
-			return true
-		}
-		return old.etag != nv.etag
+// release drops one reference, tearing the subscription down when the last one goes. The map
+// delete happens under the same lock as the refcount check and before cancel, so a concurrent
+// Subscribe cannot attach to a dying subscription.
+func (t *Tracker) release(channel string, sub *subscription) {
+	t.mu.Lock()
+	sub.refs--
+	last := sub.refs <= 0
+	if last && t.subs[channel] == sub {
+		delete(t.subs, channel)
 	}
+	t.mu.Unlock()
 
-	notify := map[string]struct{}{}
-	if etagChanged(allKey) {
-		notify[allChannel] = struct{}{}
+	if last {
+		sub.cancel()
 	}
+}
 
-	nilID := store.NilFlagSetId()
-	for id := range fsGroups {
-		if id == nilID {
-			continue // internal flagSetId, never subscribable
-		}
-		if etagChanged(fsKey(id)) {
-			notify[id] = struct{}{}
-		}
-	}
-	// flagSetId channels that existed before but have no flags now (whole set deleted)
-	for key := range t.versions {
-		id, ok := strings.CutPrefix(key, fsPrefix)
-		if !ok || id == nilID {
+func (t *Tracker) watch(ctx context.Context, channel string, sub *subscription, watcher <-chan store.FlagQueryResult) {
+	defer t.wg.Done()
+
+	first := true
+	// This loop must run until the channel closes: store.Watch's send does not select on
+	// ctx.Done(), so abandoning the channel would leak the store's goroutine.
+	for res := range watcher {
+		fp := fingerprint(res.Flags)
+		if prev := sub.ver.Load(); prev != nil && prev.etag == fp {
+			// A no-op wakeup: an identical re-sync, or a coarser radix watch channel firing
+			// for a change outside this selector.
 			continue
 		}
-		if _, present := fsGroups[id]; !present {
-			notify[id] = struct{}{}
+		sub.ver.Store(&version{etag: fp, lastModified: time.Now().Unix()})
+
+		if first {
+			// seed only; the connecting client re-fetches unconditionally anyway (ADR-0008)
+			first = false
+			continue
 		}
+		t.publish(channel, sub)
 	}
 
-	channels := make([]string, 0, len(notify))
-	for ch := range notify {
-		channels = append(channels, ch)
+	if ctx.Err() != nil {
+		return // our own teardown
 	}
-	return channels
+
+	// The store hit a selector/iterator error, so this channel will never fire again. Stop
+	// serving its ETag, which would otherwise answer 304 from a frozen fingerprint forever.
+	sub.ver.Store(nil)
+	if t.logger != nil {
+		t.logger.Error(fmt.Sprintf(
+			"ofrep sse watch for channel %q ended unexpectedly; its cached ETag is invalidated", channel))
+	}
 }
 
-// publish emits a refetch event to a single eventsource channel using that channel's current
-// ETag and lastModified.
-func (t *Tracker) publish(channel string) {
-	key := allKey
-	if channel != allChannel {
-		key = fsKey(channel)
+// publish must be called only after the new version is stored, so a client that refetches the
+// instant it receives the event cannot read the previous ETag and be served a stale 304.
+func (t *Tracker) publish(channel string, sub *subscription) {
+	v := sub.ver.Load()
+	if v == nil {
+		return
 	}
-
-	t.mu.RLock()
-	v := t.versions[key]
-	t.mu.RUnlock()
 
 	id := strconv.FormatInt(t.eventID.Add(1), 10)
 	t.es.Publish([]string{channel}, newRefetchEvent(id, v.etag, v.lastModified))
 	if t.logger != nil {
 		t.logger.Debug(fmt.Sprintf("published refetch event to channel %q (etag=%s)", channel, v.etag))
 	}
+}
+
+// Version returns the current config ETag and last-modified time (unix seconds) for the channel
+// matching the given selector expression. ok is false when no stream for it is live, so the
+// caller skips conditional handling.
+func (t *Tracker) Version(channel string) (etag string, lastModified int64, ok bool) {
+	t.mu.Lock()
+	sub, exists := t.subs[channel]
+	t.mu.Unlock()
+
+	if !exists {
+		return "", 0, false
+	}
+	v := sub.ver.Load()
+	if v == nil {
+		return "", 0, false
+	}
+	return v.etag, v.lastModified, true
+}
+
+// Channels returns the channels with at least one live subscriber.
+func (t *Tracker) Channels() []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	channels := make([]string, 0, len(t.subs))
+	for channel := range t.subs {
+		channels = append(channels, channel)
+	}
+	return channels
+}
+
+// Close stops accepting subscriptions and waits for every watch goroutine to exit. It must
+// complete before the eventsource server is closed, since a publish after that blocks forever.
+func (t *Tracker) Close() {
+	t.mu.Lock()
+	t.closed = true
+	subs := make([]*subscription, 0, len(t.subs))
+	for _, sub := range t.subs {
+		subs = append(subs, sub)
+	}
+	t.subs = map[string]*subscription{}
+	t.mu.Unlock()
+
+	for _, sub := range subs {
+		sub.cancel()
+	}
+	t.wg.Wait()
 }
 
 // fingerprint produces a deterministic, restart-stable hash of a group of flag definitions.

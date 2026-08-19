@@ -472,7 +472,7 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 			eval.EXPECT().
 				ResolveAsAnyValue(gomock.Any(), gomock.Any(), flagKey, gomock.Any()).
 				Return(test.evaluation)
-			handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd")
+			handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{})
 
 			request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, nil)
 			response := httptest.NewRecorder()
@@ -490,7 +490,7 @@ func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(evaluations, model.Metadata{}, nil)
-	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd")
+	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{})
 
 	request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
 	response := httptest.NewRecorder()

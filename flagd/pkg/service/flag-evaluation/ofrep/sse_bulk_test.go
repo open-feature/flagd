@@ -13,7 +13,6 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
-	"github.com/open-feature/flagd/core/pkg/store"
 	svc "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,7 @@ type fakeVersioner struct {
 	ok           bool
 }
 
-func (f fakeVersioner) Version(_ store.Selector) (string, int64, bool) {
+func (f fakeVersioner) Version(_ string) (string, int64, bool) {
 	return f.etag, f.lastModified, f.ok
 }
 
@@ -157,7 +156,28 @@ func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 			name:           "flagSetId selector, origin omitted",
 			selectorHeader: "flagSetId=fs1",
 			wantOrigin:     "",
-			wantRequestURI: "/ofrep/v1/sse?channels=fs1",
+			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3Dfs1",
+		},
+		{
+			// previously fell back to the catch-all channel, and so was woken by every change
+			name:           "source selector gets its own channel",
+			selectorHeader: "source=src1",
+			wantOrigin:     "",
+			wantRequestURI: "/ofrep/v1/sse?channels=source%3Dsrc1",
+		},
+		{
+			// advertised verbatim, so the SSE endpoint parses it back to the same selector
+			name:           "bare selector expression is advertised verbatim",
+			selectorHeader: "mySource",
+			wantOrigin:     "",
+			wantRequestURI: "/ofrep/v1/sse?channels=mySource",
+		},
+		{
+			// "flags with no flagSetId"; the internal nil flagSetId must never be advertised
+			name:           "empty flagSetId selector",
+			selectorHeader: "flagSetId=",
+			wantOrigin:     "",
+			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3D",
 		},
 		{
 			name:           "no selector (catch-all), origin omitted",
@@ -170,7 +190,7 @@ func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 			publicURL:      "https://flags.example.com/",
 			selectorHeader: "flagSetId=fs1",
 			wantOrigin:     "https://flags.example.com",
-			wantRequestURI: "/ofrep/v1/sse?channels=fs1",
+			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3Dfs1",
 		},
 	}
 
@@ -225,4 +245,32 @@ func TestHandleBulkEvaluation_SSEDisabled_NoEventStreams(t *testing.T) {
 	var resp ofrep.BulkEvaluationResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
 	assert.Empty(t, resp.EventStreams)
+}
+
+// TestHandleBulkEvaluation_NoLiveStream_NoETag pins the contract that follows from tracking
+// versions per live subscription: with no stream open there is no cache validator to offer, so
+// the response is a plain 200 that still advertises eventStreams.
+func TestHandleBulkEvaluation_NoLiveStream_NoETag(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
+
+	h := handler{
+		Logger:                log,
+		evaluator:             eval,
+		versioner:             fakeVersioner{ok: false},
+		sseEnabled:            true,
+		sseInactivityDelaySec: 120,
+	}
+
+	recorder := serveBulk(h, newBulkRequest(t, "flagSetId=fs1", `"stale-etag"`))
+
+	require.Equal(t, http.StatusOK, recorder.Code, "without a tracked version we must not serve a 304")
+	assert.Empty(t, recorder.Header().Get("ETag"))
+
+	var resp ofrep.BulkEvaluationResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	require.Len(t, resp.EventStreams, 1)
+	assert.NotContains(t, resp.Metadata, "flagConfigLastModified")
 }

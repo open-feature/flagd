@@ -2,7 +2,11 @@ package sse
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/launchdarkly/eventsource"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
@@ -29,6 +33,45 @@ func mustSelector(t *testing.T, expr string) store.Selector {
 	return s
 }
 
+func newTestStore(t *testing.T) *store.Store {
+	t.Helper()
+	s, err := store.NewStore(logger.NewLogger(nil, false), []string{"src1", "src2"})
+	require.NoError(t, err)
+	return s
+}
+
+// newTracker builds a Tracker over a real eventsource server, so publishes are exercised.
+func newTracker(t *testing.T, s store.IStore) *Tracker {
+	t.Helper()
+	es := eventsource.NewServer()
+	t.Cleanup(es.Close)
+
+	tr := NewTracker(logger.NewLogger(nil, false), s, es)
+	t.Cleanup(tr.Close)
+	return tr
+}
+
+// subscribe registers a channel and ties its release to the test cleanup.
+func subscribe(t *testing.T, tr *Tracker, expr string) {
+	t.Helper()
+	release, err := tr.Subscribe(expr, mustSelector(t, expr))
+	require.NoError(t, err)
+	t.Cleanup(release)
+}
+
+// versionOf polls until the channel has a seeded ETag, since seeding is asynchronous.
+func versionOf(t *testing.T, tr *Tracker, channel string) (string, int64) {
+	t.Helper()
+	var etag string
+	var lastModified int64
+	require.Eventually(t, func() bool {
+		var ok bool
+		etag, lastModified, ok = tr.Version(channel)
+		return ok
+	}, 3*time.Second, 5*time.Millisecond, "no version seeded for channel %q", channel)
+	return etag, lastModified
+}
+
 func TestFingerprint_StableAndSensitive(t *testing.T) {
 	a := testFlag("fs1", "a", "on")
 	b := testFlag("fs1", "b", "off")
@@ -48,113 +91,167 @@ func TestFingerprint_StableAndSensitive(t *testing.T) {
 	assert.Equal(t, emptyGroup, nilGroup)
 }
 
-func TestTracker_Update_ChangedChannels(t *testing.T) {
-	tr := &Tracker{versions: map[string]version{}}
+// TestTracker_PassesSelectorToStore pins that filtering is delegated to the store by handing it
+// the channel's selector, rather than re-implemented by grouping flags in memory.
+func TestTracker_PassesSelectorToStore(t *testing.T) {
+	rec := &recordingStore{}
+	tr := newTracker(t, rec)
 
-	fs1a := testFlag("fs1", "a", "on")
-	fs2b := testFlag("fs2", "b", "on")
+	subscribe(t, tr, "flagSetId=fs1")
 
-	// first update seeds every channel (this is the init snapshot Run skips)
-	first := tr.update([]model.Flag{fs1a, fs2b})
-	assert.Contains(t, first, allChannel)
-	assert.Contains(t, first, "fs1")
-	assert.Contains(t, first, "fs2")
-
-	// no change -> no channels
-	assert.Empty(t, tr.update([]model.Flag{fs1a, fs2b}))
-
-	// change only fs1 -> catch-all + fs1, not fs2
-	fs1aModified := testFlag("fs1", "a", "off")
-	changed := tr.update([]model.Flag{fs1aModified, fs2b})
-	assert.Contains(t, changed, allChannel)
-	assert.Contains(t, changed, "fs1")
-	assert.NotContains(t, changed, "fs2")
-
-	// deleting a whole flag set notifies that set's channel + catch-all
-	removed := tr.update([]model.Flag{fs1aModified})
-	assert.Contains(t, removed, allChannel)
-	assert.Contains(t, removed, "fs2")
-	assert.NotContains(t, removed, "fs1")
+	selectors := rec.selectors()
+	require.Len(t, selectors, 1)
+	expected := mustSelector(t, "flagSetId=fs1")
+	assert.Equal(t, expected.ToLogString(), selectors[0].ToLogString())
 }
 
-func TestTracker_Update_NilFlagSetIdNotSubscribable(t *testing.T) {
-	tr := &Tracker{versions: map[string]version{}}
+func TestTracker_SharesOneWatchPerChannel(t *testing.T) {
+	rec := &recordingStore{}
+	tr := newTracker(t, rec)
 
-	changed := tr.update([]model.Flag{testFlag(store.NilFlagSetId(), "a", "on")})
-	assert.Contains(t, changed, allChannel, "catch-all must fire for flags without a flagSetId")
-	assert.NotContains(t, changed, store.NilFlagSetId(), "internal nilFlagSetId must not be a subscribable channel")
+	subscribe(t, tr, "flagSetId=fs1")
+	subscribe(t, tr, "flagSetId=fs1")
+	assert.Len(t, rec.selectors(), 1, "subscribers on one channel must share a store watch")
+
+	subscribe(t, tr, "flagSetId=fs2")
+	assert.Len(t, rec.selectors(), 2, "a distinct channel needs its own watch")
 }
 
-func TestTracker_Run_NilStoreDoesNotPanic(t *testing.T) {
-	tr := NewTracker(logger.NewLogger(nil, false), nil, nil)
-	// Run must return promptly instead of dereferencing the nil store (which would panic in
-	// the background goroutine and terminate the process).
-	require.NotPanics(t, func() { tr.Run(context.Background()) })
+func TestTracker_Version_NoSubscription(t *testing.T) {
+	tr := newTracker(t, newTestStore(t))
+
+	_, _, ok := tr.Version("flagSetId=fs1")
+	assert.False(t, ok, "no live stream for the channel means no ETag and no 304")
 }
 
-// closingStore closes the watcher immediately without emitting, simulating store.Watch's
-// error-close path.
+func TestTracker_ReleaseTearsDownLastSubscriberOnly(t *testing.T) {
+	tr := newTracker(t, newTestStore(t))
+
+	releaseA, err := tr.Subscribe("flagSetId=fs1", mustSelector(t, "flagSetId=fs1"))
+	require.NoError(t, err)
+	releaseB, err := tr.Subscribe("flagSetId=fs1", mustSelector(t, "flagSetId=fs1"))
+	require.NoError(t, err)
+
+	releaseA()
+	assert.Len(t, tr.Channels(), 1, "one subscriber leaving must not tear down a shared channel")
+
+	releaseB()
+	assert.Empty(t, tr.Channels())
+	_, _, ok := tr.Version("flagSetId=fs1")
+	assert.False(t, ok)
+}
+
+func TestTracker_IdenticalUpdateIsSuppressed(t *testing.T) {
+	s := newTestStore(t)
+	flags := []model.Flag{testFlag("fs1", "a", "on")}
+	s.Update("src1", flags, model.Metadata{"flagSetId": "fs1"}, false)
+
+	tr := newTracker(t, s)
+	subscribe(t, tr, "flagSetId=fs1")
+
+	_, firstModified := versionOf(t, tr, "flagSetId=fs1")
+
+	// Update re-inserts unconditionally, so an identical re-sync still wakes the watch
+	s.Update("src1", flags, model.Metadata{"flagSetId": "fs1"}, false)
+	time.Sleep(200 * time.Millisecond)
+
+	_, stillModified := versionOf(t, tr, "flagSetId=fs1")
+	assert.Equal(t, firstModified, stillModified, "lastModified must not move when nothing changed")
+}
+
+func TestTracker_VersionTracksChanges(t *testing.T) {
+	s := newTestStore(t)
+	s.Update("src1", []model.Flag{testFlag("fs1", "a", "on")}, model.Metadata{"flagSetId": "fs1"}, false)
+
+	tr := newTracker(t, s)
+	subscribe(t, tr, "flagSetId=fs1")
+
+	before, _ := versionOf(t, tr, "flagSetId=fs1")
+
+	s.Update("src1", []model.Flag{testFlag("fs1", "a", "off")}, model.Metadata{"flagSetId": "fs1"}, false)
+	require.Eventually(t, func() bool {
+		etag, _, _ := tr.Version("flagSetId=fs1")
+		return etag != before
+	}, 3*time.Second, 5*time.Millisecond, "the ETag must move when the config changes")
+}
+
+// closingStore closes the watcher without emitting, simulating store.Watch's error-close path.
 type closingStore struct{}
 
 func (closingStore) Get(context.Context, string, *store.Selector) (model.Flag, model.Metadata, error) {
 	return model.Flag{}, nil, nil
 }
+
 func (closingStore) GetAll(context.Context, *store.Selector) ([]model.Flag, model.Metadata, error) {
 	return nil, nil, nil
 }
+
 func (closingStore) Watch(_ context.Context, _ *store.Selector, watcher chan<- store.FlagQueryResult) {
 	close(watcher)
 }
+
 func (closingStore) Update(string, []model.Flag, model.Metadata, bool) {}
 
-func TestTracker_Run_UnexpectedCloseInvalidatesVersions(t *testing.T) {
-	tr := NewTracker(logger.NewLogger(nil, false), closingStore{}, nil)
-	tr.versions = map[string]version{allKey: {etag: "frozen"}}
+func TestTracker_StoreErrorInvalidatesVersion(t *testing.T) {
+	tr := newTracker(t, closingStore{})
 
-	// context is NOT cancelled -> the watcher closing is unexpected (store error path)
-	tr.Run(context.Background())
+	subscribe(t, tr, "flagSetId=fs1")
 
-	_, _, ok := tr.Version(store.Selector{})
-	assert.False(t, ok, "frozen versions must be invalidated so the bulk handler stops serving stale 304s")
+	assert.Eventually(t, func() bool {
+		_, _, ok := tr.Version("flagSetId=fs1")
+		return !ok
+	}, 3*time.Second, 5*time.Millisecond,
+		"a dead watch must stop serving its ETag, or 304s would be stale forever")
 }
 
-func TestTracker_Run_ContextCancelKeepsVersions(t *testing.T) {
-	tr := NewTracker(logger.NewLogger(nil, false), closingStore{}, nil)
-	tr.versions = map[string]version{allKey: {etag: "current"}}
+func TestTracker_CloseRejectsNewSubscribers(t *testing.T) {
+	es := eventsource.NewServer()
+	defer es.Close()
+	tr := NewTracker(logger.NewLogger(nil, false), newTestStore(t), es)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // expected shutdown
+	release, err := tr.Subscribe("flagSetId=fs1", mustSelector(t, "flagSetId=fs1"))
+	require.NoError(t, err)
 
-	tr.Run(ctx)
+	require.NotPanics(t, tr.Close)
+	assert.Empty(t, tr.Channels())
 
-	etag, _, ok := tr.Version(store.Selector{})
-	assert.True(t, ok, "versions must be retained on a normal context-cancel shutdown")
-	assert.Equal(t, "current", etag)
+	_, err = tr.Subscribe("flagSetId=fs2", mustSelector(t, "flagSetId=fs2"))
+	assert.Error(t, err)
+
+	assert.NotPanics(t, release) // releasing after Close is a no-op
 }
 
-func TestTracker_Version(t *testing.T) {
-	tr := &Tracker{versions: map[string]version{}}
-	tr.update([]model.Flag{testFlag("fs1", "a", "on")})
-
-	// catch-all (empty selector)
-	allEtag, _, ok := tr.Version(store.Selector{})
-	require.True(t, ok)
-	assert.NotEmpty(t, allEtag)
-
-	// flagSetId selector
-	fsEtag, _, ok := tr.Version(mustSelector(t, "flagSetId=fs1"))
-	require.True(t, ok)
-	assert.NotEmpty(t, fsEtag)
-
-	// source selector is tracked for ETag lookups
-	_, _, ok = tr.Version(mustSelector(t, "source=src1"))
-	assert.True(t, ok)
-
-	// unknown source -> not tracked
-	_, _, ok = tr.Version(mustSelector(t, "source=missing"))
-	assert.False(t, ok)
-
-	// unknown flagSetId -> not tracked
-	_, _, ok = tr.Version(mustSelector(t, "flagSetId=nope"))
-	assert.False(t, ok)
+// recordingStore records the selector handed to each Watch call, mimicking the real store's
+// contract: an immediate initial snapshot on a buffered channel, closed on ctx cancellation.
+type recordingStore struct {
+	mu   sync.Mutex
+	sels []store.Selector
 }
+
+func (r *recordingStore) selectors() []store.Selector {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]store.Selector(nil), r.sels...)
+}
+
+func (r *recordingStore) Get(context.Context, string, *store.Selector) (model.Flag, model.Metadata, error) {
+	return model.Flag{}, nil, nil
+}
+
+func (r *recordingStore) GetAll(context.Context, *store.Selector) ([]model.Flag, model.Metadata, error) {
+	return nil, nil, nil
+}
+
+func (r *recordingStore) Watch(ctx context.Context, selector *store.Selector, watcher chan<- store.FlagQueryResult) {
+	r.mu.Lock()
+	r.sels = append(r.sels, *selector)
+	r.mu.Unlock()
+
+	go func() {
+		watcher <- store.FlagQueryResult{}
+		<-ctx.Done()
+		close(watcher)
+	}()
+}
+
+func (r *recordingStore) Update(string, []model.Flag, model.Metadata, bool) {}
