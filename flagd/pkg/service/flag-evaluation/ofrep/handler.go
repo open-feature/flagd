@@ -18,6 +18,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service"
 	evalservice "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
+	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep/sse"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -31,11 +32,12 @@ const (
 	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
 )
 
-// configVersioner resolves the current config ETag / last-modified time for a selector so the
-// bulk handler can serve conditional (ETag/304) responses consistent with the SSE stream.
-// Implemented by the OFREP SSE change tracker; nil when SSE is disabled.
+// configVersioner resolves the current config ETag / last-modified time for an SSE channel so
+// the bulk handler can serve conditional (ETag/304) responses consistent with the SSE stream.
+// Implemented by the OFREP SSE change tracker; nil when SSE is disabled. ok is false whenever no
+// stream for the channel is live, which is the normal state before a client connects.
 type configVersioner interface {
-	Version(selector store.Selector) (etag string, lastModified int64, ok bool)
+	Version(channel string) (etag string, lastModified int64, ok bool)
 }
 
 type handler struct {
@@ -173,7 +175,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	// Conditional evaluation (ADR-0008): short-circuit with 304 when the client already holds
 	// the current config version.
-	lastModified, notModified := h.applyConditionalETag(w, r, selector)
+	lastModified, notModified := h.applyConditionalETag(w, r, selectorExpression)
 	if notModified {
 		w.WriteHeader(http.StatusNotModified)
 		return
@@ -194,17 +196,18 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.writeJSONToResponse(http.StatusOK, h.bulkResponse(selector, evaluations, metadata, lastModified), w)
+	h.writeJSONToResponse(http.StatusOK,
+		h.bulkResponse(selectorExpression, evaluations, metadata, lastModified), w)
 }
 
 // applyConditionalETag resolves the current config version for the selector, sets the ETag
 // response header, and reports the lastModified time plus whether the request can be answered
 // with 304 Not Modified. It is a no-op (returns notModified=false) when SSE/versioning is off.
-func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, selector store.Selector) (lastModified int64, notModified bool) {
+func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, channel string) (lastModified int64, notModified bool) {
 	if h.versioner == nil {
 		return 0, false
 	}
-	etag, lastModified, ok := h.versioner.Version(selector)
+	etag, lastModified, ok := h.versioner.Version(channel)
 	if !ok || etag == "" {
 		return lastModified, false
 	}
@@ -220,12 +223,12 @@ func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, s
 
 // bulkResponse assembles the OFREP bulk response, adding the ADR-0008 eventStreams block and
 // lastModified metadata when SSE is enabled.
-func (h *handler) bulkResponse(selector store.Selector, evaluations []evaluator.AnyValue, metadata model.Metadata, lastModified int64) ofrep.BulkEvaluationResponse {
+func (h *handler) bulkResponse(selectorExpression string, evaluations []evaluator.AnyValue, metadata model.Metadata, lastModified int64) ofrep.BulkEvaluationResponse {
 	response := ofrep.BulkEvaluationResponseFrom(evaluations, metadata)
 	if !h.sseEnabled {
 		return response
 	}
-	response.EventStreams = h.eventStreams(selector)
+	response.EventStreams = h.eventStreams(selectorExpression)
 	if lastModified > 0 {
 		if response.Metadata == nil {
 			response.Metadata = model.Metadata{}
@@ -236,20 +239,15 @@ func (h *handler) bulkResponse(selector store.Selector, evaluations []evaluator.
 }
 
 // eventStreams builds the ADR-0008 eventStreams advertisement pointing OFREP clients back at
-// this flagd's SSE endpoint. The channel is the request's flagSetId; the internal nilFlagSetId
-// and a missing flagSetId both map to the catch-all channel (no `channels` parameter).
+// this flagd's SSE endpoint. The advertised channel is the request's own selector expression, so
+// the stream covers exactly the flags the client just evaluated.
 //
 // It uses the structured `endpoint` form and omits origin unless a public URL is configured, so
 // the client resolves the requestUri against the OFREP base URL it is already talking to.
-func (h *handler) eventStreams(selector store.Selector) []ofrep.EventStream {
-	channel := selector.FlagSetId()
-	if channel == store.NilFlagSetId() {
-		channel = ""
-	}
-
+func (h *handler) eventStreams(selectorExpression string) []ofrep.EventStream {
 	requestURI := ssePath
-	if channel != "" {
-		requestURI += "?channels=" + url.QueryEscape(channel)
+	if selectorExpression != "" {
+		requestURI += "?" + sse.ChannelParam + "=" + url.QueryEscape(selectorExpression)
 	}
 
 	return []ofrep.EventStream{{

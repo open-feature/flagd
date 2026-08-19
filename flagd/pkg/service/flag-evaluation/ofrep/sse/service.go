@@ -2,7 +2,6 @@ package sse
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/launchdarkly/eventsource"
@@ -25,7 +24,6 @@ type Service struct {
 	logger            *logger.Logger
 	es                *eventsource.Server
 	tracker           *Tracker
-	active            *activeChannels
 	heartbeatInterval time.Duration
 }
 
@@ -45,7 +43,6 @@ func New(s store.IStore, cfg Config) *Service {
 		logger:            cfg.Logger,
 		es:                es,
 		tracker:           NewTracker(cfg.Logger, s, es),
-		active:            newActiveChannels(),
 		heartbeatInterval: heartbeat,
 	}
 }
@@ -54,36 +51,25 @@ func New(s store.IStore, cfg Config) *Service {
 // for conditional (ETag/304) evaluation.
 func (svc *Service) Tracker() *Tracker { return svc.tracker }
 
-// Handler registers the request's channel in the active set (for heartbeats) and delegates to
-// the eventsource server, which streams until the client disconnects.
-func (svc *Service) Handler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		channel := channelFromRequest(r)
-		svc.active.add(channel)
-		defer svc.active.remove(channel)
-		svc.es.Handler(channel).ServeHTTP(w, r)
-	})
-}
-
-// Start runs the change tracker and heartbeat loop until ctx is cancelled, then shuts the
-// eventsource server down. It blocks and is intended to run in its own goroutine.
+// Start runs the heartbeat loop until ctx is cancelled, then shuts down. It blocks, so it is
+// intended to run in its own goroutine.
 func (svc *Service) Start(ctx context.Context) error {
-	go svc.tracker.Run(ctx)
-
 	ticker := time.NewTicker(svc.heartbeatInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			// Order matters: the tracker's watch goroutines are the only publishers, and
+			// eventsource.Server.Publish blocks forever once the server is closed.
+			svc.tracker.Close()
 			svc.es.Close()
 			if svc.logger != nil {
 				svc.logger.Info("shutting down ofrep sse service")
 			}
 			return nil
 		case <-ticker.C:
-			channels := svc.active.snapshot()
-			if len(channels) > 0 {
+			if channels := svc.tracker.Channels(); len(channels) > 0 {
 				svc.es.PublishComment(channels, "keep-alive")
 			}
 		}
