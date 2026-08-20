@@ -134,8 +134,7 @@ func (t *Tracker) watch(ctx context.Context, channel string, sub *subscription, 
 	// serving its ETag, which would otherwise answer 304 from a frozen fingerprint forever.
 	sub.ver.Store(nil)
 	if t.logger != nil {
-		t.logger.Error(fmt.Sprintf(
-			"ofrep sse watch for channel %q ended unexpectedly; its cached ETag is invalidated", channel))
+		t.logger.Error("ofrep sse watch ended unexpectedly; its cached ETag is invalidated", zap.String("channel", channel))
 	}
 }
 
@@ -150,7 +149,7 @@ func (t *Tracker) publish(channel string, sub *subscription) {
 	id := strconv.FormatInt(t.eventID.Add(1), 10)
 	t.es.Publish([]string{channel}, newRefetchEvent(id, v.etag, v.lastModified))
 	if t.logger != nil {
-		t.logger.Debug(fmt.Sprintf("published refetch event to channel %q (etag=%s)", channel, v.etag))
+		t.logger.Debug("published refetch event", zap.String("channel", channel), zap.String("etag", v.etag)
 	}
 }
 
