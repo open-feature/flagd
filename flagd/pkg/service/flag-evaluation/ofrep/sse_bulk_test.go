@@ -156,28 +156,35 @@ func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 			name:           "flagSetId selector, origin omitted",
 			selectorHeader: "flagSetId=fs1",
 			wantOrigin:     "",
-			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3Dfs1",
+			wantRequestURI: "/ofrep/v1/sse/flagSetId=fs1",
 		},
 		{
 			// previously fell back to the catch-all channel, and so was woken by every change
 			name:           "source selector gets its own channel",
 			selectorHeader: "source=src1",
 			wantOrigin:     "",
-			wantRequestURI: "/ofrep/v1/sse?channels=source%3Dsrc1",
+			wantRequestURI: "/ofrep/v1/sse/source=src1",
 		},
 		{
 			// advertised verbatim, so the SSE endpoint parses it back to the same selector
 			name:           "bare selector expression is advertised verbatim",
 			selectorHeader: "mySource",
 			wantOrigin:     "",
-			wantRequestURI: "/ofrep/v1/sse?channels=mySource",
+			wantRequestURI: "/ofrep/v1/sse/mySource",
+		},
+		{
+			// the channel is one path segment, so a source path must be escaped into it
+			name:           "source containing a slash is path-escaped",
+			selectorHeader: "source=./mySource",
+			wantOrigin:     "",
+			wantRequestURI: "/ofrep/v1/sse/source=.%2FmySource",
 		},
 		{
 			// "flags with no flagSetId"; the internal nil flagSetId must never be advertised
 			name:           "empty flagSetId selector",
 			selectorHeader: "flagSetId=",
 			wantOrigin:     "",
-			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3D",
+			wantRequestURI: "/ofrep/v1/sse/flagSetId=",
 		},
 		{
 			name:           "no selector (catch-all), origin omitted",
@@ -190,7 +197,7 @@ func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 			publicURL:      "https://flags.example.com/",
 			selectorHeader: "flagSetId=fs1",
 			wantOrigin:     "https://flags.example.com",
-			wantRequestURI: "/ofrep/v1/sse?channels=flagSetId%3Dfs1",
+			wantRequestURI: "/ofrep/v1/sse/flagSetId=fs1",
 		},
 	}
 

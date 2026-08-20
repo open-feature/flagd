@@ -88,7 +88,7 @@ func NewOfrepService(
 		evaluateHandler = http.MaxBytesHandler(evaluateHandler, cfg.MaxRequestBodyBytes)
 	}
 	if sseService != nil {
-		mux.Handle(ssePath, sseService.Handler())
+		sseService.Register(mux, ssePath)
 	}
 	mux.Handle("/", evaluateHandler)
 

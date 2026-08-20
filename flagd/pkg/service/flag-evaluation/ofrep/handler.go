@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -239,16 +238,14 @@ func (h *handler) bulkResponse(selectorExpression string, evaluations []evaluato
 }
 
 // eventStreams builds the ADR-0008 eventStreams advertisement pointing OFREP clients back at
-// this flagd's SSE endpoint. The advertised channel is the request's own selector expression, so
-// the stream covers exactly the flags the client just evaluated.
+// this flagd's SSE endpoint. The advertised channel is the request's own selector expression,
+// carried as the final path segment, so the stream covers exactly the flags the client just
+// evaluated.
 //
 // It uses the structured `endpoint` form and omits origin unless a public URL is configured, so
 // the client resolves the requestUri against the OFREP base URL it is already talking to.
 func (h *handler) eventStreams(selectorExpression string) []ofrep.EventStream {
-	requestURI := ssePath
-	if selectorExpression != "" {
-		requestURI += "?" + sse.ChannelParam + "=" + url.QueryEscape(selectorExpression)
-	}
+	requestURI := sse.ChannelPath(ssePath, selectorExpression)
 
 	return []ofrep.EventStream{{
 		Type:               "sse",

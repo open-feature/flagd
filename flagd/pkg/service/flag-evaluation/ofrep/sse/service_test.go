@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 	"time"
 
@@ -15,6 +14,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// testSSEPath mirrors the prefix the OFREP service mounts the stream on.
+const testSSEPath = "/ofrep/v1/sse"
+
+// newStreamServer mounts the service the way the OFREP service does, so requests exercise the
+// real routing: the channel is the final path segment.
+func newStreamServer(t *testing.T, svc *Service) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+	svc.Register(mux, testSSEPath)
+	ts := httptest.NewServer(mux)
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+// streamURL builds the stream URL for a channel on ts.
+func streamURL(ts *httptest.Server, channel string) string {
+	return ts.URL + ChannelPath(testSSEPath, channel)
+}
 
 // TestService_PublishesRefetchOnChange verifies the end-to-end wiring: a client subscribed with
 // a flagSetId selector receives an ADR-0008 refetchEvaluation event when that flag set changes.
@@ -30,11 +48,10 @@ func TestService_PublishesRefetchOnChange(t *testing.T) {
 	defer cancel()
 	go func() { _ = svc.Start(ctx) }()
 
-	ts := httptest.NewServer(svc.Handler())
-	defer ts.Close()
+	ts := newStreamServer(t, svc)
 
 	// the channel token is a selector expression, same syntax as Flagd-Selector
-	stream, err := eventsource.Subscribe(ts.URL+"?channels="+url.QueryEscape("flagSetId=fs1"), "")
+	stream, err := eventsource.SubscribeWithURL(streamURL(ts, "flagSetId=fs1"))
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -68,14 +85,13 @@ func TestService_SelectorScopedNotifications(t *testing.T) {
 	defer cancel()
 	go func() { _ = svc.Start(ctx) }()
 
-	ts := httptest.NewServer(svc.Handler())
-	defer ts.Close()
+	ts := newStreamServer(t, svc)
 
-	bySource, err := eventsource.Subscribe(ts.URL+"?channels="+url.QueryEscape("source=src1"), "")
+	bySource, err := eventsource.SubscribeWithURL(streamURL(ts, "source=src1"))
 	require.NoError(t, err)
 	defer bySource.Close()
 
-	byFlagSet, err := eventsource.Subscribe(ts.URL+"?channels="+url.QueryEscape("flagSetId=fs2"), "")
+	byFlagSet, err := eventsource.SubscribeWithURL(streamURL(ts, "flagSetId=fs2"))
 	require.NoError(t, err)
 	defer byFlagSet.Close()
 
@@ -103,13 +119,35 @@ func TestService_Handler_InvalidSelectorReturns400(t *testing.T) {
 	require.NoError(t, err)
 
 	svc := New(s, Config{Logger: log, HeartbeatInterval: time.Hour})
-	ts := httptest.NewServer(svc.Handler())
-	defer ts.Close()
+	ts := newStreamServer(t, svc)
 
-	resp, err := http.Get(ts.URL + "?channels=" + url.QueryEscape("bogusKey=1"))
+	resp, err := http.Get(streamURL(ts, "bogusKey=1"))
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	assert.Empty(t, svc.Tracker().Channels(), "a rejected request must not create a subscription")
+}
+
+// TestService_ChannelComesFromPath pins the routing: the channel is the final path segment, the
+// bare path is the catch-all, and a selector carrying a "/" survives the round trip escaped.
+func TestService_ChannelComesFromPath(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, []string{"./mySource"})
+	require.NoError(t, err)
+
+	svc := New(s, Config{Logger: log, HeartbeatInterval: time.Hour})
+	ts := newStreamServer(t, svc)
+
+	for _, channel := range []string{"", "flagSetId=fs1", "source=./mySource"} {
+		stream, err := eventsource.SubscribeWithURL(streamURL(ts, channel))
+		require.NoError(t, err, "channel %q", channel)
+		defer stream.Close()
+	}
+
+	assert.Eventually(t, func() bool {
+		return len(svc.Tracker().Channels()) == 3
+	}, 3*time.Second, 5*time.Millisecond)
+	assert.ElementsMatch(t, []string{"", "flagSetId=fs1", "source=./mySource"}, svc.Tracker().Channels(),
+		"the subscription must key off the decoded path segment, not its escaped form")
 }

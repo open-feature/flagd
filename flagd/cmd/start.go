@@ -61,7 +61,7 @@ func init() {
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
 
-	flags.Bool(ofrepSSEEnabledFlagName, true, "Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse on the ofrep port. Defaults to true.")
+	flags.Bool(ofrepSSEEnabledFlagName, true, "Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse/{channel} on the ofrep port, where the channel is a selector expression. Defaults to true.")
 	flags.Int(ofrepSSEInactivityFlagName, 120, "Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120.")
 	flags.String(ofrepSSEPublicURLFlagName, "", "Origin (scheme://host) advertised as the OFREP SSE eventStreams endpoint.origin. Omitted when empty, so clients resolve the requestUri against the OFREP base URL. Set when flagd is behind a proxy.")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+

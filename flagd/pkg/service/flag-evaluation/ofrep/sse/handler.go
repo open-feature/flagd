@@ -6,20 +6,24 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 )
 
-// ChannelParam carries the selector expression the client wants change notifications for, using
-// the same syntax as the Flagd-Selector header; empty selects every flag. It is exported so the
-// bulk handler advertises the same parameter this handler reads.
-const ChannelParam = "channels"
+// channelPathVar is the path wildcard carrying the selector expression the client wants change
+// notifications for, using the same syntax as the Flagd-Selector header. An empty channel (the
+// bare stream path) selects every flag. See Service.Register for the routes it is bound to.
+const channelPathVar = "channel"
 
 // Handler resolves the request's selector, takes a reference on the matching subscription so the
 // store watch stays alive, and streams events until the client disconnects.
+//
+// It must be mounted through Service.Register: the channel is read from the request path, so the
+// route has to declare the channel wildcard.
 func (svc *Service) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		channel := r.URL.Query().Get(ChannelParam)
+		// already percent-decoded by the mux, so a source containing "/" arrives intact
+		channel := r.PathValue(channelPathVar)
 		selector, err := store.NewSelector(channel)
 		if err != nil {
 			// not echoing the expression back: it is unescaped client input
-			http.Error(w, "invalid selector in the 'channels' parameter", http.StatusBadRequest)
+			http.Error(w, "invalid selector in the channel path segment", http.StatusBadRequest)
 			return
 		}
 

@@ -2,6 +2,8 @@ package sse
 
 import (
 	"context"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/launchdarkly/eventsource"
@@ -50,6 +52,24 @@ func New(s store.IStore, cfg Config) *Service {
 // Tracker exposes the change tracker so the OFREP bulk handler can resolve config versions
 // for conditional (ETag/304) evaluation.
 func (svc *Service) Tracker() *Tracker { return svc.tracker }
+
+// Register mounts the stream on mux as {prefix}/{channel}, where the channel is a selector
+// expression. The bare prefix is registered too, so subscribing to every flag does not depend on
+// a trailing-slash redirect.
+func (svc *Service) Register(mux *http.ServeMux, prefix string) {
+	h := svc.Handler()
+	mux.Handle(prefix, h)
+	mux.Handle(prefix+"/{"+channelPathVar+"}", h)
+}
+
+// ChannelPath returns the stream path for a channel under prefix. The selector expression is a
+// single path segment, so it is escaped: source selectors routinely contain "/".
+func ChannelPath(prefix, channel string) string {
+	if channel == "" {
+		return prefix
+	}
+	return prefix + "/" + url.PathEscape(channel)
+}
 
 // Start runs the heartbeat loop until ctx is cancelled, then shuts down. It blocks, so it is
 // intended to run in its own goroutine.
