@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"go.uber.org/zap"
 )
 
 type version struct {
@@ -44,8 +45,7 @@ type Tracker struct {
 	subs   map[string]*subscription
 	closed bool
 
-	wg      sync.WaitGroup
-	eventID atomic.Int64
+	wg sync.WaitGroup
 }
 
 func NewTracker(log *logger.Logger, s store.IStore, es *eventsource.Server) *Tracker {
@@ -110,13 +110,14 @@ func (t *Tracker) watch(ctx context.Context, channel string, sub *subscription, 
 	// This loop must run until the channel closes: store.Watch's send does not select on
 	// ctx.Done(), so abandoning the channel would leak the store's goroutine.
 	for res := range watcher {
-		fp := fingerprint(res.Flags)
-		if prev := sub.ver.Load(); prev != nil && prev.etag == fp {
+		fp := fingerprint(&sub.selector, res.Flags)
+		prev := sub.ver.Load()
+		if prev != nil && prev.etag == fp {
 			// A no-op wakeup: an identical re-sync, or a coarser radix watch channel firing
 			// for a change outside this selector.
 			continue
 		}
-		sub.ver.Store(&version{etag: fp, lastModified: time.Now().Unix()})
+		sub.ver.CompareAndSwap(prev, &version{etag: fp, lastModified: time.Now().Unix()})
 
 		if first {
 			// seed only; the connecting client re-fetches unconditionally anyway (ADR-0008)
@@ -146,10 +147,10 @@ func (t *Tracker) publish(channel string, sub *subscription) {
 		return
 	}
 
-	id := strconv.FormatInt(t.eventID.Add(1), 10)
+	id := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	t.es.Publish([]string{channel}, newRefetchEvent(id, v.etag, v.lastModified))
 	if t.logger != nil {
-		t.logger.Debug("published refetch event", zap.String("channel", channel), zap.String("etag", v.etag)
+		t.logger.Debug("published refetch event", zap.String("channel", channel), zap.String("etag", v.etag))
 	}
 }
 
@@ -201,37 +202,28 @@ func (t *Tracker) Close() {
 	t.wg.Wait()
 }
 
-// fingerprint produces a deterministic, restart-stable hash of a group of flag definitions.
-// nilFlagSetId is normalised to "" so identical config yields the same fingerprint across
-// restarts.
-func fingerprint(flags []model.Flag) string {
-	sorted := make([]model.Flag, len(flags))
-	copy(sorted, flags)
-	sort.Slice(sorted, func(i, j int) bool {
-		if sorted[i].FlagSetId != sorted[j].FlagSetId {
-			return sorted[i].FlagSetId < sorted[j].FlagSetId
-		}
-		if sorted[i].Source != sorted[j].Source {
-			return sorted[i].Source < sorted[j].Source
-		}
-		return sorted[i].Key < sorted[j].Key
-	})
-
-	nilID := store.NilFlagSetId()
-	h := sha256.New()
-	for _, f := range sorted {
-		fsid := f.FlagSetId
-		if fsid == nilID {
-			fsid = ""
-		}
-		h.Write([]byte(fsid))
-		h.Write([]byte{0})
+// fingerprint produces a deterministic hash of the result set a channel's watch resolves to.
+func fingerprint(selector *store.Selector, flags []model.Flag) string {
+	digests := make([]string, 0, len(flags))
+	for _, f := range flags {
+		h := sha256.New()
 		h.Write([]byte(f.Key))
 		h.Write([]byte{0})
-		// model.Flag.MarshalJSON is stable (map keys sorted) and covers the definition fields.
+		h.Write([]byte(f.Source))
+		h.Write([]byte{0})
 		b, _ := json.Marshal(f)
 		h.Write(b)
-		h.Write([]byte{0})
+		digests = append(digests, string(h.Sum(nil)))
+	}
+	sort.Strings(digests)
+
+	h := sha256.New()
+	// the selector path scopes the hash to this watch, so two channels resolving to the same
+	// flags never share an ETag unless they come from the same selector source.
+	h.Write([]byte(selector.ToLogString()))
+	h.Write([]byte{0})
+	for _, d := range digests {
+		h.Write([]byte(d))
 	}
 	return hex.EncodeToString(h.Sum(nil))
 }

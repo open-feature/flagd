@@ -28,11 +28,6 @@ const flagSetIdKeySourceCompoundIndex = flagSetIdIndex + "+" + keyIndex + "+" + 
 // any flag without a "flagSetId" is assigned this one; it's never exposed externally
 var nilFlagSetId = uuid.New().String()
 
-// NilFlagSetId returns the startup-generated flagSetId assigned to flags that have
-// no explicit flagSetId. It is never exposed to clients, but consumers that group or
-// fingerprint flags by flagSetId (e.g. the OFREP SSE tracker) need to recognise it.
-func NilFlagSetId() string { return nilFlagSetId }
-
 // A Selector represents a set of constraints used to query the store.
 type Selector struct {
 	indexMap map[string]string

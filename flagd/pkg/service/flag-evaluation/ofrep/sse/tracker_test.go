@@ -73,22 +73,29 @@ func versionOf(t *testing.T, tr *Tracker, channel string) (string, int64) {
 }
 
 func TestFingerprint_StableAndSensitive(t *testing.T) {
+	sel := mustSelector(t, "flagSetId=fs1")
 	a := testFlag("fs1", "a", "on")
 	b := testFlag("fs1", "b", "off")
 
 	// deterministic for identical input
-	assert.Equal(t, fingerprint([]model.Flag{a, b}), fingerprint([]model.Flag{a, b}))
+	assert.Equal(t, fingerprint(&sel, []model.Flag{a, b}), fingerprint(&sel, []model.Flag{a, b}))
 	// order independent
-	assert.Equal(t, fingerprint([]model.Flag{a, b}), fingerprint([]model.Flag{b, a}))
+	assert.Equal(t, fingerprint(&sel, []model.Flag{a, b}), fingerprint(&sel, []model.Flag{b, a}))
 
 	// sensitive to a definition change
 	aModified := testFlag("fs1", "a", "off")
-	assert.NotEqual(t, fingerprint([]model.Flag{a}), fingerprint([]model.Flag{aModified}))
+	assert.NotEqual(t, fingerprint(&sel, []model.Flag{a}), fingerprint(&sel, []model.Flag{aModified}))
 
-	// nilFlagSetId is normalised so it does not leak the random UUID into the hash
-	nilGroup := fingerprint([]model.Flag{testFlag(store.NilFlagSetId(), "a", "on")})
-	emptyGroup := fingerprint([]model.Flag{testFlag("", "a", "on")})
-	assert.Equal(t, emptyGroup, nilGroup)
+	// duplicates are not collapsed: a flag appearing twice is a different result set
+	assert.NotEqual(t, fingerprint(&sel, []model.Flag{a}), fingerprint(&sel, []model.Flag{a, a}))
+
+	// the flagSetId carried on a flag is not part of the identity; the selector the watch was
+	// opened with is
+	relabelled := testFlag("some-other-flag-set", "a", "on")
+	assert.Equal(t, fingerprint(&sel, []model.Flag{a}), fingerprint(&sel, []model.Flag{relabelled}))
+
+	other := mustSelector(t, "source=src1")
+	assert.NotEqual(t, fingerprint(&sel, []model.Flag{a}), fingerprint(&other, []model.Flag{a}))
 }
 
 // TestTracker_PassesSelectorToStore pins that filtering is delegated to the store by handing it
