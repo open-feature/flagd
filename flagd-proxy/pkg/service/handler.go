@@ -29,7 +29,7 @@ func (nh *handler) SyncFlags(
 	defer cancel()
 	errChan := make(chan error)
 	dataSync := make(chan sync.DataSync)
-	nh.syncStore.RegisterSubscription(ctx, request.GetSelector(), request, dataSync, errChan)
+	nh.syncStore.RegisterSubscription(ctx, request.GetSelector(), request, dataSync, errChan) //nolint:staticcheck // Deprecated: migrate to Flagd-Selector header
 	for {
 		select {
 		case e := <-errChan:
@@ -52,7 +52,7 @@ func (nh *handler) FetchAllFlags(
 	ctx context.Context,
 	request *syncv12.FetchAllFlagsRequest,
 ) (*syncv12.FetchAllFlagsResponse, error) {
-	data, err := nh.syncStore.FetchAllFlags(ctx, request, request.GetSelector())
+	data, err := nh.syncStore.FetchAllFlags(ctx, request, request.GetSelector()) //nolint:staticcheck // Deprecated: migrate to Flagd-Selector header
 	if err != nil {
 		return &syncv12.FetchAllFlagsResponse{}, fmt.Errorf("error fetching all flags from sync store: %w", err)
 	}

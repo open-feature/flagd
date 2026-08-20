@@ -24,14 +24,16 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+type contextKey string
+
 const (
 	SelectorMetadataKey = "scope"
 	flagdPropertiesKey  = "$flagd"
 	// targetingKeyKey is used to extract the targetingKey to bucket on in fractional
 	// evaluation if the user did not supply the optional bucketing property.
-	targetingKeyKey = "targetingKey"
-	Disabled        = "DISABLED"
-	ProtoVersionKey = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
+	targetingKeyKey            = "targetingKey"
+	Disabled                   = "DISABLED"
+	ProtoVersionKey contextKey = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
 )
 
 func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
@@ -326,7 +328,6 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
-
 	var selector store.Selector
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {

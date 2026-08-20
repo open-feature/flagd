@@ -10,7 +10,7 @@ import (
 )
 
 func GenerateSha(body []byte) string {
-	hasher := sha3.New256()
+	hasher := sha3.New256() //nolint:govet
 	hasher.Write(canonicalize(body))
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

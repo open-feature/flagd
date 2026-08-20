@@ -20,6 +20,7 @@ import (
 type MockeventStreamSenderV2 struct {
 	ctrl     *gomock.Controller
 	recorder *MockeventStreamSenderV2MockRecorder
+	isgomock struct{}
 }
 
 // MockeventStreamSenderV2MockRecorder is the mock recorder for MockeventStreamSenderV2.

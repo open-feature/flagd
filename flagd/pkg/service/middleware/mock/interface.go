@@ -20,6 +20,7 @@ import (
 type MockIMiddleware struct {
 	ctrl     *gomock.Controller
 	recorder *MockIMiddlewareMockRecorder
+	isgomock struct{}
 }
 
 // MockIMiddlewareMockRecorder is the mock recorder for MockIMiddleware.

@@ -13,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	grpccredential "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials"
 	_ "github.com/open-feature/flagd/core/pkg/sync/grpc/nameresolvers" // initialize custom resolvers e.g. envoy.Init()
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -39,7 +40,7 @@ type FlagSyncServiceClient interface {
 	syncv1grpc.FlagSyncServiceClient
 }
 type FlagSyncServiceClientResponse interface {
-	syncv1grpc.FlagSyncService_SyncFlagsClient
+	grpc.ServerStreamingClient[v1.SyncFlagsResponse]
 }
 
 type Sync struct {
@@ -109,7 +110,7 @@ func (g *Sync) contextWithHeaders(ctx context.Context) context.Context {
 }
 
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	res, err := g.client.FetchAllFlags(g.contextWithHeaders(ctx), &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	res, err := g.client.FetchAllFlags(g.contextWithHeaders(ctx), &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // Deprecated: migrate to Flagd-Selector header
 	if err != nil {
 		err = fmt.Errorf("error fetching all flags: %w", err)
 		g.Logger.Error(err.Error())
@@ -128,25 +129,23 @@ func (g *Sync) IsReady() bool {
 }
 
 func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	g.Logger.Info(fmt.Sprintf("starting sync from %s", g.URI))
+	g.Logger.Info("starting sync", zap.String("uri", g.URI))
 
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
-	g.Logger.Debug(fmt.Sprintf("initial stream connection to %s", g.URI))
-	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	g.Logger.Debug("initial stream connection", zap.String("uri", g.URI))
+	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // Deprecated: migrate to Flagd-Selector header
 	if err != nil {
 		return fmt.Errorf("unable to sync flags: %w", err)
 	}
 
-	g.Logger.Debug(fmt.Sprintf("watching %s for changes", g.URI))
+	g.Logger.Debug("watching for changes", zap.String("uri", g.URI))
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
-	err = g.handleFlagSync(syncClient, dataSync)
-	if err == nil {
+	err = g.handleFlagSync(syncClient, dataSync) //nolint:staticcheck
+	if err != nil {                              //nolint:staticcheck
 		// This should not happen as handleFlagSync expects to return with an error
-		return nil
+		g.Logger.Warn("error with stream listener", zap.Error(err))
 	}
-
-	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
 
 	// retry connection establishment
 	for {
@@ -156,9 +155,9 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 
-		err = g.handleFlagSync(syncClient, dataSync)
-		if err != nil {
-			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
+		err = g.handleFlagSync(syncClient, dataSync) //nolint:staticcheck
+		if err != nil {                              //nolint:staticcheck
+			g.Logger.Warn("error with stream listener", zap.Error(err))
 			continue
 		}
 	}
@@ -193,7 +192,7 @@ func (g *Sync) connectWithRetry(
 
 		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.URI))
 
-		syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+		syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // Deprecated: migrate to Flagd-Selector header
 		if err != nil {
 			g.Logger.Debug(fmt.Sprintf("error opening service client: %s", err.Error()))
 			continue
@@ -205,7 +204,7 @@ func (g *Sync) connectWithRetry(
 }
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
-func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+func (g *Sync) handleFlagSync(stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error { //nolint:staticcheck
 	g.ready.Store(true)
 
 	for {

@@ -39,7 +39,7 @@ func NewOfrepService(
 ) (*Service, error) {
 	corsMiddleware := corsmw.New(origins)
 
-	var h http.Handler = NewOfrepHandler(
+	h := NewOfrepHandler(
 		cfg.Logger,
 		evaluator,
 		contextValues,

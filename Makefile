@@ -11,6 +11,7 @@ FLAGD_PROXY_IMG ?= flagd-proxy:latest
 FLAGD_PROXY_IMG_ZD ?= flagd-proxy:zd
 
 DOCS_DIR ?= docs
+GOBIN := $(or $(shell go env GOBIN),$(shell go env GOPATH | cut -d: -f1)/bin)
 
 workspace-init: workspace-clean
 	go work init
@@ -74,13 +75,13 @@ uninstall:
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
-	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run $(module)/...;)
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.0
+	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOBIN}/golangci-lint run $(module)/...;)
 lint-fix:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
-	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --fix $(module)/...;)
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.0
+	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOBIN}/golangci-lint run --fix $(module)/...;)
 install-mockgen:
-	go install go.uber.org/mock/mockgen@v0.4.0
+	go install go.uber.org/mock/mockgen@v0.6.0
 mockgen: install-mockgen
 	cd core; mockgen -source=pkg/sync/http/http_sync.go -destination=pkg/sync/http/mock/http.go -package=syncmock
 	cd core; mockgen -source=pkg/sync/grpc/grpc_sync.go -destination=pkg/sync/grpc/mock/grpc.go -package=grpcmock

@@ -23,6 +23,7 @@ import (
 type MockIEvaluator struct {
 	ctrl     *gomock.Controller
 	recorder *MockIEvaluatorMockRecorder
+	isgomock struct{}
 }
 
 // MockIEvaluatorMockRecorder is the mock recorder for MockIEvaluator.
@@ -43,9 +44,9 @@ func (m *MockIEvaluator) EXPECT() *MockIEvaluatorMockRecorder {
 }
 
 // ResolveAllValues mocks base method.
-func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, arg2 map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, context)
+	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, arg2)
 	ret0, _ := ret[0].([]evaluator.AnyValue)
 	ret1, _ := ret[1].(model.Metadata)
 	ret2, _ := ret[2].(error)
@@ -53,29 +54,29 @@ func (m *MockIEvaluator) ResolveAllValues(ctx context.Context, reqID string, con
 }
 
 // ResolveAllValues indicates an expected call of ResolveAllValues.
-func (mr *MockIEvaluatorMockRecorder) ResolveAllValues(ctx, reqID, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveAllValues(ctx, reqID, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAllValues", reflect.TypeOf((*MockIEvaluator)(nil).ResolveAllValues), ctx, reqID, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAllValues", reflect.TypeOf((*MockIEvaluator)(nil).ResolveAllValues), ctx, reqID, arg2)
 }
 
 // ResolveAsAnyValue mocks base method.
-func (m *MockIEvaluator) ResolveAsAnyValue(ctx context.Context, reqID, flagKey string, context map[string]any) evaluator.AnyValue {
+func (m *MockIEvaluator) ResolveAsAnyValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) evaluator.AnyValue {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAsAnyValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveAsAnyValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(evaluator.AnyValue)
 	return ret0
 }
 
 // ResolveAsAnyValue indicates an expected call of ResolveAsAnyValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAsAnyValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveAsAnyValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAsAnyValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveAsAnyValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (bool, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -85,15 +86,15 @@ func (m *MockIEvaluator) ResolveBooleanValue(ctx context.Context, reqID, flagKey
 }
 
 // ResolveBooleanValue indicates an expected call of ResolveBooleanValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveBooleanValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveBooleanValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveBooleanValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveBooleanValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (float64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -103,15 +104,15 @@ func (m *MockIEvaluator) ResolveFloatValue(ctx context.Context, reqID, flagKey s
 }
 
 // ResolveFloatValue indicates an expected call of ResolveFloatValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveFloatValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveFloatValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveFloatValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveFloatValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (int64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -121,15 +122,15 @@ func (m *MockIEvaluator) ResolveIntValue(ctx context.Context, reqID, flagKey str
 }
 
 // ResolveIntValue indicates an expected call of ResolveIntValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveIntValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveIntValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveIntValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveIntValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveIntValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveIntValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (map[string]any, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -139,15 +140,15 @@ func (m *MockIEvaluator) ResolveObjectValue(ctx context.Context, reqID, flagKey 
 }
 
 // ResolveObjectValue indicates an expected call of ResolveObjectValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveObjectValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveObjectValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveObjectValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveObjectValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, model.Metadata, error) {
+func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (string, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -157,9 +158,9 @@ func (m *MockIEvaluator) ResolveStringValue(ctx context.Context, reqID, flagKey 
 }
 
 // ResolveStringValue indicates an expected call of ResolveStringValue.
-func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIEvaluatorMockRecorder) ResolveStringValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveStringValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveStringValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveStringValue", reflect.TypeOf((*MockIEvaluator)(nil).ResolveStringValue), ctx, reqID, flagKey, arg3)
 }
 
 // SetState mocks base method.
@@ -180,6 +181,7 @@ func (mr *MockIEvaluatorMockRecorder) SetState(payload any) *gomock.Call {
 type MockIResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockIResolverMockRecorder
+	isgomock struct{}
 }
 
 // MockIResolverMockRecorder is the mock recorder for MockIResolver.
@@ -200,9 +202,9 @@ func (m *MockIResolver) EXPECT() *MockIResolverMockRecorder {
 }
 
 // ResolveAllValues mocks base method.
-func (m *MockIResolver) ResolveAllValues(ctx context.Context, reqID string, context map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
+func (m *MockIResolver) ResolveAllValues(ctx context.Context, reqID string, arg2 map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, context)
+	ret := m.ctrl.Call(m, "ResolveAllValues", ctx, reqID, arg2)
 	ret0, _ := ret[0].([]evaluator.AnyValue)
 	ret1, _ := ret[1].(model.Metadata)
 	ret2, _ := ret[2].(error)
@@ -210,29 +212,29 @@ func (m *MockIResolver) ResolveAllValues(ctx context.Context, reqID string, cont
 }
 
 // ResolveAllValues indicates an expected call of ResolveAllValues.
-func (mr *MockIResolverMockRecorder) ResolveAllValues(ctx, reqID, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveAllValues(ctx, reqID, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAllValues", reflect.TypeOf((*MockIResolver)(nil).ResolveAllValues), ctx, reqID, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAllValues", reflect.TypeOf((*MockIResolver)(nil).ResolveAllValues), ctx, reqID, arg2)
 }
 
 // ResolveAsAnyValue mocks base method.
-func (m *MockIResolver) ResolveAsAnyValue(ctx context.Context, reqID, flagKey string, context map[string]any) evaluator.AnyValue {
+func (m *MockIResolver) ResolveAsAnyValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) evaluator.AnyValue {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAsAnyValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveAsAnyValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(evaluator.AnyValue)
 	return ret0
 }
 
 // ResolveAsAnyValue indicates an expected call of ResolveAsAnyValue.
-func (mr *MockIResolverMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveAsAnyValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAsAnyValue", reflect.TypeOf((*MockIResolver)(nil).ResolveAsAnyValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAsAnyValue", reflect.TypeOf((*MockIResolver)(nil).ResolveAsAnyValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveBooleanValue mocks base method.
-func (m *MockIResolver) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, context map[string]any) (bool, string, string, model.Metadata, error) {
+func (m *MockIResolver) ResolveBooleanValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (bool, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveBooleanValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -242,15 +244,15 @@ func (m *MockIResolver) ResolveBooleanValue(ctx context.Context, reqID, flagKey 
 }
 
 // ResolveBooleanValue indicates an expected call of ResolveBooleanValue.
-func (mr *MockIResolverMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveBooleanValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveBooleanValue", reflect.TypeOf((*MockIResolver)(nil).ResolveBooleanValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveBooleanValue", reflect.TypeOf((*MockIResolver)(nil).ResolveBooleanValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveFloatValue mocks base method.
-func (m *MockIResolver) ResolveFloatValue(ctx context.Context, reqID, flagKey string, context map[string]any) (float64, string, string, model.Metadata, error) {
+func (m *MockIResolver) ResolveFloatValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (float64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveFloatValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -260,15 +262,15 @@ func (m *MockIResolver) ResolveFloatValue(ctx context.Context, reqID, flagKey st
 }
 
 // ResolveFloatValue indicates an expected call of ResolveFloatValue.
-func (mr *MockIResolverMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveFloatValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveFloatValue", reflect.TypeOf((*MockIResolver)(nil).ResolveFloatValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveFloatValue", reflect.TypeOf((*MockIResolver)(nil).ResolveFloatValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveIntValue mocks base method.
-func (m *MockIResolver) ResolveIntValue(ctx context.Context, reqID, flagKey string, context map[string]any) (int64, string, string, model.Metadata, error) {
+func (m *MockIResolver) ResolveIntValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (int64, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveIntValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -278,15 +280,15 @@ func (m *MockIResolver) ResolveIntValue(ctx context.Context, reqID, flagKey stri
 }
 
 // ResolveIntValue indicates an expected call of ResolveIntValue.
-func (mr *MockIResolverMockRecorder) ResolveIntValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveIntValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveIntValue", reflect.TypeOf((*MockIResolver)(nil).ResolveIntValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveIntValue", reflect.TypeOf((*MockIResolver)(nil).ResolveIntValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveObjectValue mocks base method.
-func (m *MockIResolver) ResolveObjectValue(ctx context.Context, reqID, flagKey string, context map[string]any) (map[string]any, string, string, model.Metadata, error) {
+func (m *MockIResolver) ResolveObjectValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (map[string]any, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveObjectValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -296,15 +298,15 @@ func (m *MockIResolver) ResolveObjectValue(ctx context.Context, reqID, flagKey s
 }
 
 // ResolveObjectValue indicates an expected call of ResolveObjectValue.
-func (mr *MockIResolverMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveObjectValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveObjectValue", reflect.TypeOf((*MockIResolver)(nil).ResolveObjectValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveObjectValue", reflect.TypeOf((*MockIResolver)(nil).ResolveObjectValue), ctx, reqID, flagKey, arg3)
 }
 
 // ResolveStringValue mocks base method.
-func (m *MockIResolver) ResolveStringValue(ctx context.Context, reqID, flagKey string, context map[string]any) (string, string, string, model.Metadata, error) {
+func (m *MockIResolver) ResolveStringValue(ctx context.Context, reqID, flagKey string, arg3 map[string]any) (string, string, string, model.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, context)
+	ret := m.ctrl.Call(m, "ResolveStringValue", ctx, reqID, flagKey, arg3)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -314,7 +316,7 @@ func (m *MockIResolver) ResolveStringValue(ctx context.Context, reqID, flagKey s
 }
 
 // ResolveStringValue indicates an expected call of ResolveStringValue.
-func (mr *MockIResolverMockRecorder) ResolveStringValue(ctx, reqID, flagKey, context any) *gomock.Call {
+func (mr *MockIResolverMockRecorder) ResolveStringValue(ctx, reqID, flagKey, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveStringValue", reflect.TypeOf((*MockIResolver)(nil).ResolveStringValue), ctx, reqID, flagKey, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveStringValue", reflect.TypeOf((*MockIResolver)(nil).ResolveStringValue), ctx, reqID, flagKey, arg3)
 }

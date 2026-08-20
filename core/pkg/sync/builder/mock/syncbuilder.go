@@ -22,6 +22,7 @@ import (
 type MockISyncBuilder struct {
 	ctrl     *gomock.Controller
 	recorder *MockISyncBuilderMockRecorder
+	isgomock struct{}
 }
 
 // MockISyncBuilderMockRecorder is the mock recorder for MockISyncBuilder.
@@ -42,39 +43,40 @@ func (m *MockISyncBuilder) EXPECT() *MockISyncBuilderMockRecorder {
 }
 
 // SyncFromURI mocks base method.
-func (m *MockISyncBuilder) SyncFromURI(uri string, logger *logger.Logger) (sync.ISync, error) {
+func (m *MockISyncBuilder) SyncFromURI(uri string, arg1 *logger.Logger) (sync.ISync, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SyncFromURI", uri, logger)
+	ret := m.ctrl.Call(m, "SyncFromURI", uri, arg1)
 	ret0, _ := ret[0].(sync.ISync)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SyncFromURI indicates an expected call of SyncFromURI.
-func (mr *MockISyncBuilderMockRecorder) SyncFromURI(uri, logger any) *gomock.Call {
+func (mr *MockISyncBuilderMockRecorder) SyncFromURI(uri, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncFromURI", reflect.TypeOf((*MockISyncBuilder)(nil).SyncFromURI), uri, logger)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncFromURI", reflect.TypeOf((*MockISyncBuilder)(nil).SyncFromURI), uri, arg1)
 }
 
 // SyncsFromConfig mocks base method.
-func (m *MockISyncBuilder) SyncsFromConfig(sourceConfig []sync.SourceConfig, logger *logger.Logger) ([]sync.ISync, error) {
+func (m *MockISyncBuilder) SyncsFromConfig(sourceConfig []sync.SourceConfig, arg1 *logger.Logger) ([]sync.ISync, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SyncsFromConfig", sourceConfig, logger)
+	ret := m.ctrl.Call(m, "SyncsFromConfig", sourceConfig, arg1)
 	ret0, _ := ret[0].([]sync.ISync)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SyncsFromConfig indicates an expected call of SyncsFromConfig.
-func (mr *MockISyncBuilderMockRecorder) SyncsFromConfig(sourceConfig, logger any) *gomock.Call {
+func (mr *MockISyncBuilderMockRecorder) SyncsFromConfig(sourceConfig, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncsFromConfig", reflect.TypeOf((*MockISyncBuilder)(nil).SyncsFromConfig), sourceConfig, logger)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncsFromConfig", reflect.TypeOf((*MockISyncBuilder)(nil).SyncsFromConfig), sourceConfig, arg1)
 }
 
 // MockIK8sClientBuilder is a mock of IK8sClientBuilder interface.
 type MockIK8sClientBuilder struct {
 	ctrl     *gomock.Controller
 	recorder *MockIK8sClientBuilderMockRecorder
+	isgomock struct{}
 }
 
 // MockIK8sClientBuilderMockRecorder is the mock recorder for MockIK8sClientBuilder.

@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	syncv1grpc "buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -24,6 +23,7 @@ import (
 type MockFlagSyncServiceClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockFlagSyncServiceClientMockRecorder
+	isgomock struct{}
 }
 
 // MockFlagSyncServiceClientMockRecorder is the mock recorder for MockFlagSyncServiceClient.
@@ -84,14 +84,14 @@ func (mr *MockFlagSyncServiceClientMockRecorder) GetMetadata(ctx, in any, opts .
 }
 
 // SyncFlags mocks base method.
-func (m *MockFlagSyncServiceClient) SyncFlags(ctx context.Context, in *syncv1.SyncFlagsRequest, opts ...grpc.CallOption) (syncv1grpc.FlagSyncService_SyncFlagsClient, error) {
+func (m *MockFlagSyncServiceClient) SyncFlags(ctx context.Context, in *syncv1.SyncFlagsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[syncv1.SyncFlagsResponse], error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "SyncFlags", varargs...)
-	ret0, _ := ret[0].(syncv1grpc.FlagSyncService_SyncFlagsClient)
+	ret0, _ := ret[0].(grpc.ServerStreamingClient[syncv1.SyncFlagsResponse])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -107,6 +107,7 @@ func (mr *MockFlagSyncServiceClientMockRecorder) SyncFlags(ctx, in any, opts ...
 type MockFlagSyncServiceClientResponse struct {
 	ctrl     *gomock.Controller
 	recorder *MockFlagSyncServiceClientResponseMockRecorder
+	isgomock struct{}
 }
 
 // MockFlagSyncServiceClientResponseMockRecorder is the mock recorder for MockFlagSyncServiceClientResponse.
