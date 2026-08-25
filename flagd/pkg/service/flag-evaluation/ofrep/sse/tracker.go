@@ -189,10 +189,7 @@ func (t *Tracker) Channels() []string {
 func (t *Tracker) Close() {
 	t.mu.Lock()
 	t.closed = true
-	subs := make([]*subscription, 0, len(t.subs))
-	for _, sub := range t.subs {
-		subs = append(subs, sub)
-	}
+	subs := t.subs
 	t.subs = map[string]*subscription{}
 	t.mu.Unlock()
 
