@@ -20,7 +20,7 @@ import (
 )
 
 type version struct {
-	etag         string
+	configEtag   string
 	lastModified int64
 }
 
@@ -112,12 +112,12 @@ func (t *Tracker) watch(ctx context.Context, channel string, sub *subscription, 
 	for res := range watcher {
 		fp := fingerprint(&sub.selector, res.Flags)
 		prev := sub.ver.Load()
-		if prev != nil && prev.etag == fp {
+		if prev != nil && prev.configEtag == fp {
 			// A no-op wakeup: an identical re-sync, or a coarser radix watch channel firing
 			// for a change outside this selector.
 			continue
 		}
-		sub.ver.CompareAndSwap(prev, &version{etag: fp, lastModified: time.Now().Unix()})
+		sub.ver.CompareAndSwap(prev, &version{configEtag: fp, lastModified: time.Now().Unix()})
 
 		if first {
 			// seed only; the connecting client re-fetches unconditionally anyway (ADR-0008)
@@ -148,16 +148,16 @@ func (t *Tracker) publish(channel string, sub *subscription) {
 	}
 
 	id := strconv.FormatInt(time.Now().UnixMilli(), 10)
-	t.es.Publish([]string{channel}, newRefetchEvent(id, v.etag, v.lastModified))
+	t.es.Publish([]string{channel}, newRefetchEvent(id, v.configEtag, v.lastModified))
 	if t.logger != nil {
-		t.logger.Debug("published refetch event", zap.String("channel", channel), zap.String("etag", v.etag))
+		t.logger.Debug("published refetch event", zap.String("channel", channel), zap.String("etag", v.configEtag))
 	}
 }
 
 // Version returns the current config ETag and last-modified time (unix seconds) for the channel
 // matching the given selector expression. ok is false when no stream for it is live, so the
 // caller skips conditional handling.
-func (t *Tracker) Version(channel string) (etag string, lastModified int64, ok bool) {
+func (t *Tracker) Version(channel string) (configEtag string, lastModified int64, ok bool) {
 	t.mu.Lock()
 	sub, exists := t.subs[channel]
 	t.mu.Unlock()
@@ -169,7 +169,7 @@ func (t *Tracker) Version(channel string) (etag string, lastModified int64, ok b
 	if v == nil {
 		return "", 0, false
 	}
-	return v.etag, v.lastModified, true
+	return v.configEtag, v.lastModified, true
 }
 
 // Channels returns the channels with at least one live subscriber.
