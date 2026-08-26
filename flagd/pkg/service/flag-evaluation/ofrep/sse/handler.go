@@ -27,7 +27,7 @@ func (svc *Service) Handler() http.Handler {
 			return
 		}
 
-		release, err := svc.tracker.Subscribe(selector.ToLogString(), selector)
+		release, err := svc.tracker.Subscribe(channel, selector)
 		if err != nil {
 			http.Error(w, "unable to subscribe to flag changes", http.StatusServiceUnavailable)
 			return
