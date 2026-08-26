@@ -83,6 +83,12 @@ func (s Selector) WithSource(source string) Selector { return s.withIndex(source
 func (s Selector) WithFlagSetId(id string) Selector  { return s.withIndex(flagSetIdIndex, id) }
 func (s Selector) withKey(key string) Selector       { return s.withIndex(keyIndex, key) }
 
+// FlagSetId returns the flagSetId constraint of the selector, or "" if none is set.
+func (s Selector) FlagSetId() string { return s.indexMap[flagSetIdIndex] }
+
+// Source returns the source constraint of the selector, or "" if none is set.
+func (s Selector) Source() string { return s.indexMap[sourceIndex] }
+
 func (s Selector) withIndex(key, value string) Selector {
 	m := maps.Clone(s.indexMap)
 	if m == nil {
