@@ -1,13 +1,23 @@
 package ofrep
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// bodyETag recomputes the tag in one shot, so the assertions cross-check the recorder's incremental
+// digest rather than restating it.
+func bodyETag(body []byte) string {
+	sum := sha256.Sum256(body)
+	return hex.EncodeToString(sum[:])
+}
 
 func serveWithETag(t *testing.T, status int, body, ifNoneMatch string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -204,4 +214,43 @@ func TestConditionalETag_EmptyBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, quoteETag(bodyETag(nil)), recorder.Header().Get("ETag"))
+}
+
+// A large body followed by a small one lands the small response in a recycled buffer whose capacity
+// still holds the large one's bytes.
+func TestConditionalETag_RecycledBufferCarriesNoStaleBytes(t *testing.T) {
+	const small = `{"flags":[]}`
+	large := strings.Repeat(small, 512)
+
+	require.Equal(t, large, serveWithETag(t, http.StatusOK, large, "").Body.String())
+
+	recorder := serveWithETag(t, http.StatusOK, small, "")
+	assert.Equal(t, small, recorder.Body.String(), "the recycled buffer must not prepend the previous body")
+	assert.Equal(t, quoteETag(bodyETag([]byte(small))), recorder.Header().Get("ETag"),
+		"the digest must cover this response only")
+}
+
+// benchWriter keeps httptest.NewRecorder's per-iteration allocations out of the measurement.
+type benchWriter struct{ header http.Header }
+
+func (w *benchWriter) Header() http.Header         { return w.header }
+func (w *benchWriter) Write(b []byte) (int, error) { return len(b), nil }
+func (w *benchWriter) WriteHeader(int)             {}
+
+// BenchmarkConditionalETag guards B/op: the pool should keep it far below the body size.
+func BenchmarkConditionalETag(b *testing.B) {
+	body := []byte(`{"flags":[` + strings.Repeat(`{"key":"flag","value":true,"reason":"STATIC"},`, 512) + `]}`)
+	handler := conditionalETag(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
+	w := &benchWriter{header: http.Header{}}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		handler.ServeHTTP(w, req)
+	}
 }

@@ -4,17 +4,21 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"hash"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // conditionalETag tags a 200 with a strong ETag over the bytes the handler wrote, and answers 304
 // when the client's If-None-Match matches. Hashing the response rather than the flag configuration
-// keeps the validator correct for context-dependent values; the trade is that producing the tag
-// needs the response, so a 304 saves bandwidth, not work.
+// keeps the validator correct for context-dependent values.
 func conditionalETag(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
+		body := getBodyBuffer()
+		defer putBodyBuffer(body)
+
+		rec := newResponseRecorder(w, body)
 		next.ServeHTTP(rec, r)
 
 		if rec.status != http.StatusOK {
@@ -22,7 +26,7 @@ func conditionalETag(next http.Handler) http.Handler {
 			return
 		}
 
-		etag := bodyETag(rec.body.Bytes())
+		etag := rec.etag()
 		w.Header().Set("ETag", quoteETag(etag))
 
 		if ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
@@ -36,12 +40,42 @@ func conditionalETag(next http.Handler) http.Handler {
 	})
 }
 
+// bodyBuffers recycles response buffers: consecutive bulk evaluations are close in size, so a
+// recycled buffer already holds the capacity the next one needs.
+var bodyBuffers = sync.Pool{
+	New: func() any { return new(bytes.Buffer) },
+}
+
+// getBodyBuffer lends out an empty buffer.
+func getBodyBuffer() *bytes.Buffer {
+	buf := bodyBuffers.Get().(*bytes.Buffer)
+	buf.Reset()
+
+	return buf
+}
+
+// putBodyBuffer returns a buffer whatever it grew to.
+func putBodyBuffer(buf *bytes.Buffer) {
+	bodyBuffers.Put(buf)
+}
+
 type responseRecorder struct {
 	http.ResponseWriter
 
 	status  int
-	body    bytes.Buffer
+	body    *bytes.Buffer
+	digest  hash.Hash
 	written bool
+}
+
+// newResponseRecorder records into body, hashing as it goes.
+func newResponseRecorder(w http.ResponseWriter, body *bytes.Buffer) *responseRecorder {
+	return &responseRecorder{
+		ResponseWriter: w,
+		status:         http.StatusOK,
+		body:           body,
+		digest:         sha256.New(),
+	}
 }
 
 func (rec *responseRecorder) WriteHeader(status int) {
@@ -56,7 +90,13 @@ func (rec *responseRecorder) Write(b []byte) (int, error) {
 	if !rec.written {
 		rec.WriteHeader(http.StatusOK)
 	}
+	_, _ = rec.digest.Write(b) // never errors
+
 	return rec.body.Write(b)
+}
+
+func (rec *responseRecorder) etag() string {
+	return hex.EncodeToString(rec.digest.Sum(nil))
 }
 
 func (rec *responseRecorder) flush() {
@@ -64,11 +104,6 @@ func (rec *responseRecorder) flush() {
 	if rec.body.Len() > 0 {
 		_, _ = rec.ResponseWriter.Write(rec.body.Bytes())
 	}
-}
-
-func bodyETag(body []byte) string {
-	sum := sha256.Sum256(body)
-	return hex.EncodeToString(sum[:])
 }
 
 // ifNoneMatch reports whether any of the client's If-None-Match field values selects the
@@ -80,9 +115,7 @@ func bodyETag(body []byte) string {
 // rather than the 304 OFREP asks for on this POST route.
 //
 // The scan is more forgiving than net/http's, which abandons the whole field on the first entry
-// that is not a syntactically valid entity tag. A malformed entry is compared as an opaque token
-// instead, so neither it nor an unquoted tag hides a valid tag listed beside it. Erring this way
-// only ever costs a client the bandwidth of a body it already holds.
+// that is not a syntactically valid entity tag.
 func ifNoneMatch(fields []string, etag string) bool {
 	for _, field := range fields {
 		for _, candidate := range splitETagList(field) {
