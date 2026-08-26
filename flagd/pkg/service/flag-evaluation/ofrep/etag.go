@@ -25,7 +25,7 @@ func conditionalETag(next http.Handler) http.Handler {
 		etag := bodyETag(rec.body.Bytes())
 		w.Header().Set("ETag", quoteETag(etag))
 
-		if clientETag := r.Header.Get("If-None-Match"); clientETag != "" && normalizeETag(clientETag) == etag {
+		if ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
 			w.Header().Del("Content-Type")
 			w.Header().Del("Content-Length")
 			w.WriteHeader(http.StatusNotModified)
@@ -71,9 +71,67 @@ func bodyETag(body []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// normalizeETag lets quoted and unquoted forms compare equal.
+// ifNoneMatch reports whether any of the client's If-None-Match field values selects the
+// representation tagged with etag. Per RFC 9110 §13.1.2 the field is either "*" or a list of
+// entity tags, repeated fields extend that list, and the comparison is weak.
+//
+// net/http parses this too, but scanETag and checkIfNoneMatch are unexported, and the one
+// exported way in, http.ServeContent, answers a failed precondition on a non-GET method with 412
+// rather than the 304 OFREP asks for on this POST route.
+//
+// The scan is more forgiving than net/http's, which abandons the whole field on the first entry
+// that is not a syntactically valid entity tag. A malformed entry is compared as an opaque token
+// instead, so neither it nor an unquoted tag hides a valid tag listed beside it. Erring this way
+// only ever costs a client the bandwidth of a body it already holds.
+func ifNoneMatch(fields []string, etag string) bool {
+	for _, field := range fields {
+		for _, candidate := range splitETagList(field) {
+			if candidate == "*" || normalizeETag(candidate) == etag {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// splitETagList splits a list of entity tags on its commas. A comma inside a quoted tag belongs
+// to the tag, so the split tracks quoting instead of reaching for strings.Split.
+func splitETagList(list string) []string {
+	var (
+		tags    []string
+		current strings.Builder
+		quoted  bool
+	)
+
+	flush := func() {
+		if tag := strings.TrimSpace(current.String()); tag != "" {
+			tags = append(tags, tag)
+		}
+		current.Reset()
+	}
+
+	for i := 0; i < len(list); i++ {
+		switch c := list[i]; {
+		case c == '"':
+			quoted = !quoted
+			current.WriteByte(c)
+		case c == ',' && !quoted:
+			flush()
+		default:
+			current.WriteByte(c)
+		}
+	}
+	flush()
+
+	return tags
+}
+
+// normalizeETag reduces an entity tag to the opaque value the weak comparison function looks at:
+// neither the quotes nor a weakness prefix carries meaning there. Dropping the quotes also lets
+// the unquoted form a lenient client may send compare equal.
 func normalizeETag(etag string) string {
-	return strings.Trim(etag, `"`)
+	return strings.Trim(strings.TrimPrefix(etag, "W/"), `"`)
 }
 
 func quoteETag(etag string) string {

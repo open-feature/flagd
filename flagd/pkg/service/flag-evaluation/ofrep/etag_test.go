@@ -12,6 +12,19 @@ import (
 func serveWithETag(t *testing.T, status int, body, ifNoneMatch string) *httptest.ResponseRecorder {
 	t.Helper()
 
+	var fields []string
+	if ifNoneMatch != "" {
+		fields = []string{ifNoneMatch}
+	}
+
+	return serveWithETagFields(t, status, body, fields)
+}
+
+// serveWithETagFields sends one If-None-Match header line per field, which is how a client spreads
+// its validators over repeated fields instead of one list.
+func serveWithETagFields(t *testing.T, status int, body string, ifNoneMatch []string) *httptest.ResponseRecorder {
+	t.Helper()
+
 	handler := conditionalETag(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
@@ -19,8 +32,8 @@ func serveWithETag(t *testing.T, status int, body, ifNoneMatch string) *httptest
 	}))
 
 	req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
-	if ifNoneMatch != "" {
-		req.Header.Set("If-None-Match", ifNoneMatch)
+	for _, field := range ifNoneMatch {
+		req.Header.Add("If-None-Match", field)
 	}
 
 	recorder := httptest.NewRecorder()
@@ -78,6 +91,57 @@ func TestConditionalETag_StaleValidatorIsServedFresh(t *testing.T) {
 	assert.NotEqual(t, `"stale"`, recorder.Header().Get("ETag"))
 }
 
+// If-None-Match is a list, not a single value: any member matching under weak comparison is a hit.
+func TestConditionalETag_ValidatorListForms(t *testing.T) {
+	const body = `{"flags":[]}`
+	current := serveWithETag(t, http.StatusOK, body, "").Header().Get("ETag")
+	require.NotEmpty(t, current)
+
+	for name, tests := range map[string]struct {
+		ifNoneMatch string
+		want        int
+	}{
+		"wildcard":                     {`*`, http.StatusNotModified},
+		"current tag last in list":     {`"stale", ` + current, http.StatusNotModified},
+		"current tag first in list":    {current + `, "stale"`, http.StatusNotModified},
+		"weak current tag":             {`W/` + current, http.StatusNotModified},
+		"weak current tag in list":     {`W/"stale", W/` + current, http.StatusNotModified},
+		"unquoted current tag in list": {`"stale",` + normalizeETag(current), http.StatusNotModified},
+		"empty list entries":           {`, ,` + current, http.StatusNotModified},
+		"only stale tags":              {`"stale", W/"staler"`, http.StatusOK},
+		"empty list":                   {`,`, http.StatusOK},
+		// net/http stops scanning at the first entry that is not a valid entity tag, which would
+		// let junk hide the tag beside it. This scan compares the junk and carries on.
+		"malformed entry beside a valid tag": {`bogus, ` + current, http.StatusNotModified},
+		"unterminated quoted tag":            {`"` + normalizeETag(current), http.StatusNotModified},
+		// The wildcard has to be the whole entry, which is stricter than net/http.
+		"wildcard with trailing junk": {`*junk`, http.StatusOK},
+		// A comma inside a quoted tag belongs to the tag, so this is one stale validator rather
+		// than a list whose members happen to bracket the current tag.
+		"comma inside a quoted tag": {`"` + normalizeETag(current) + `,` + normalizeETag(current) + `"`, http.StatusOK},
+	} {
+		t.Run(name, func(t *testing.T) {
+			recorder := serveWithETag(t, http.StatusOK, body, tests.ifNoneMatch)
+
+			assert.Equal(t, tests.want, recorder.Code)
+			assert.Equal(t, current, recorder.Header().Get("ETag"), "the tag names the representation either way")
+		})
+	}
+}
+
+// Repeated header fields carry the same meaning as one comma-joined list.
+func TestConditionalETag_RepeatedValidatorFields(t *testing.T) {
+	const body = `{"flags":[]}`
+	current := serveWithETag(t, http.StatusOK, body, "").Header().Get("ETag")
+	require.NotEmpty(t, current)
+
+	recorder := serveWithETagFields(t, http.StatusOK, body, []string{`"stale"`, current})
+	assert.Equal(t, http.StatusNotModified, recorder.Code)
+
+	stale := serveWithETagFields(t, http.StatusOK, body, []string{`"stale"`, `"staler"`})
+	assert.Equal(t, http.StatusOK, stale.Code)
+}
+
 // A stale validator must not 304 an error body.
 func TestConditionalETag_NonOKResponsesAreNotTagged(t *testing.T) {
 	for _, status := range []int{
@@ -107,6 +171,31 @@ func TestConditionalETag_ImplicitOK(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.NotEmpty(t, recorder.Header().Get("ETag"))
 	assert.Equal(t, `{"flags":[]}`, recorder.Body.String())
+}
+
+func TestSplitETagList(t *testing.T) {
+	for name, tests := range map[string]struct {
+		list string
+		want []string
+	}{
+		"empty":               {"", nil},
+		"single tag":          {`"abc"`, []string{`"abc"`}},
+		"list":                {`"abc", "def"`, []string{`"abc"`, `"def"`}},
+		"list without spaces": {`"abc","def"`, []string{`"abc"`, `"def"`}},
+		"weak tags":           {`W/"abc", W/"def"`, []string{`W/"abc"`, `W/"def"`}},
+		"wildcard":            {`*`, []string{`*`}},
+		"unquoted tag":        {`abc`, []string{`abc`}},
+		"empty entries":       {`, "abc" , ,`, []string{`"abc"`}},
+		"only separators":     {` , `, nil},
+		"comma inside a tag":  {`"a,b"`, []string{`"a,b"`}},
+		"comma inside a tag in a list": {
+			`"a,b", "c"`, []string{`"a,b"`, `"c"`},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tests.want, splitETagList(tests.list))
+		})
+	}
 }
 
 // An empty 200 is still a representation, so it gets a validator.
