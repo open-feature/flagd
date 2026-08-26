@@ -2,6 +2,7 @@ package ofrep
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -43,103 +44,158 @@ func newBulkRequest(t *testing.T, selectorHeader, clientEtag string) *http.Reque
 	return req
 }
 
+// serveBulk mirrors the production route, so conditionalETag is exercised.
 func serveBulk(h handler, req *http.Request) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	router := mux.NewRouter()
-	router.HandleFunc(bulkEvaluation, h.HandleBulkEvaluation)
+	router.Handle(bulkEvaluation, conditionalETag(http.HandlerFunc(h.HandleBulkEvaluation)))
 	router.ServeHTTP(recorder, req)
 	return recorder
 }
 
-func TestHandleBulkEvaluation_NotModified(t *testing.T) {
-	log := logger.NewLogger(nil, false)
-	eval := mock.NewMockIEvaluator(gomock.NewController(t))
-	// evaluation must be skipped on a 304
-	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+func bulkRequestWithContext(t *testing.T, evalContext map[string]any, clientEtag string) *http.Request {
+	t.Helper()
+	body, err := json.Marshal(ofrep.Request{Context: evalContext})
+	require.NoError(t, err)
 
-	h := handler{
-		Logger:                log,
-		evaluator:             eval,
-		versioner:             fakeVersioner{etag: "abc123", ok: true},
-		sseEnabled:            true,
-		sseInactivityDelaySec: 120,
+	req, err := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", bytes.NewReader(body))
+	require.NoError(t, err)
+	req.Host = "flagd.example:8016"
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(svc.FLAGD_SELECTOR_HEADER, "flagSetId=fs1")
+	if clientEtag != "" {
+		req.Header.Set("If-None-Match", clientEtag)
 	}
-
-	recorder := serveBulk(h, newBulkRequest(t, "flagSetId=fs1", `"abc123"`))
-
-	assert.Equal(t, http.StatusNotModified, recorder.Code)
-	assert.Equal(t, `"abc123"`, recorder.Header().Get("ETag"))
+	return req
 }
 
-// The 304 decision must use If-None-Match (the client's cached version), not the ADR-0008
-// flagConfigEtag change-trigger metadata.
+func boolFlag(key string, value bool) evaluator.AnyValue {
+	variant := "off"
+	if value {
+		variant = "on"
+	}
+	return evaluator.AnyValue{Value: value, Variant: variant, Reason: model.StaticReason, FlagKey: key}
+}
+
+func TestHandleBulkEvaluation_ETagCoversResponseBody(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	serve := func(values []evaluator.AnyValue, clientEtag string) *httptest.ResponseRecorder {
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(values, model.Metadata{}, nil)
+
+		h := handler{Logger: log, evaluator: eval}
+		return serveBulk(h, newBulkRequest(t, "flagSetId=fs1", clientEtag))
+	}
+
+	first := serve([]evaluator.AnyValue{boolFlag("a", true)}, "")
+	require.Equal(t, http.StatusOK, first.Code)
+	etag := first.Header().Get("ETag")
+	require.NotEmpty(t, etag)
+
+	t.Run("identical response yields the same validator", func(t *testing.T) {
+		again := serve([]evaluator.AnyValue{boolFlag("a", true)}, "")
+		assert.Equal(t, etag, again.Header().Get("ETag"))
+	})
+
+	t.Run("matching validator yields an empty 304", func(t *testing.T) {
+		conditional := serve([]evaluator.AnyValue{boolFlag("a", true)}, etag)
+		assert.Equal(t, http.StatusNotModified, conditional.Code)
+		assert.Equal(t, etag, conditional.Header().Get("ETag"))
+		assert.Empty(t, conditional.Body.String(), "a 304 must not carry a body")
+	})
+
+	t.Run("a changed evaluated value invalidates the validator", func(t *testing.T) {
+		changed := serve([]evaluator.AnyValue{boolFlag("a", false)}, etag)
+		require.Equal(t, http.StatusOK, changed.Code, "a different resolved value must not be served as 304")
+		assert.NotEqual(t, etag, changed.Header().Get("ETag"))
+	})
+}
+
+// Regression test for the config-scoped validator: ofrep-web only drops its cached ETag when
+// targetingKey changes, so any other context change sent a stale If-None-Match and was answered
+// 304 with evaluations for the previous context.
+func TestHandleBulkEvaluation_ContextChangeInvalidatesETag(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	// same flag configuration throughout; only the context differs
+	serve := func(evalContext map[string]any, clientEtag string) *httptest.ResponseRecorder {
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, _ string, ec map[string]any) ([]evaluator.AnyValue, model.Metadata, error) {
+				return []evaluator.AnyValue{boolFlag("discount-banner", ec["plan"] == "pro")}, model.Metadata{}, nil
+			})
+
+		h := handler{
+			Logger:     log,
+			evaluator:  eval,
+			versioner:  fakeVersioner{etag: "unchanged-config", lastModified: 1700000000, ok: true},
+			sseEnabled: true,
+		}
+		return serveBulk(h, bulkRequestWithContext(t, evalContext, clientEtag))
+	}
+
+	free := serve(map[string]any{"targetingKey": "user-1", "plan": "free"}, "")
+	require.Equal(t, http.StatusOK, free.Code)
+	freeEtag := free.Header().Get("ETag")
+	require.NotEmpty(t, freeEtag)
+
+	// targetingKey is unchanged, so ofrep-web keeps sending the cached validator
+	pro := serve(map[string]any{"targetingKey": "user-1", "plan": "pro"}, freeEtag)
+
+	require.Equal(t, http.StatusOK, pro.Code,
+		"a context change must be served fresh even when the flag configuration is untouched")
+	assert.NotEqual(t, freeEtag, pro.Header().Get("ETag"))
+
+	var resp ofrep.BulkEvaluationResponse
+	require.NoError(t, json.Unmarshal(pro.Body.Bytes(), &resp))
+	require.Len(t, resp.Flags, 1)
+	flag, ok := resp.Flags[0].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, true, flag["value"], "the response must carry values for the new context")
+}
+
+// The 304 decision must use If-None-Match, not the ADR-0008 flagConfigEtag trigger metadata.
 func TestHandleBulkEvaluation_ConditionalUsesIfNoneMatch(t *testing.T) {
 	log := logger.NewLogger(nil, false)
-	const current = "etag-v2"
+	values := []evaluator.AnyValue{boolFlag("a", true)}
 
-	tests := []struct {
-		name           string
-		flagConfigEtag string // query param (change-trigger metadata)
-		ifNoneMatch    string // header (cache validator)
-		wantStatus     int
-		wantEval       bool
-	}{
-		{
-			name:           "stale cache echoing new trigger etag is served fresh (regression)",
-			flagConfigEtag: "etag-v2",
-			ifNoneMatch:    `"etag-v1"`,
-			wantStatus:     http.StatusOK,
-			wantEval:       true,
-		},
-		{
-			name:        "current cache validator yields 304",
-			ifNoneMatch: `"etag-v2"`,
-			wantStatus:  http.StatusNotModified,
-			wantEval:    false,
-		},
-		{
-			name:           "trigger etag alone (no validator) is served fresh",
-			flagConfigEtag: "etag-v2",
-			wantStatus:     http.StatusOK,
-			wantEval:       true,
-		},
+	serve := func(t *testing.T, query, ifNoneMatch string) *httptest.ResponseRecorder {
+		t.Helper()
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(values, model.Metadata{}, nil)
+
+		req, err := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags"+query, bytes.NewReader([]byte{}))
+		require.NoError(t, err)
+		req.Header.Set(svc.FLAGD_SELECTOR_HEADER, "flagSetId=fs1")
+		if ifNoneMatch != "" {
+			req.Header.Set("If-None-Match", ifNoneMatch)
+		}
+
+		h := handler{Logger: log, evaluator: eval, versioner: fakeVersioner{etag: "cfg", ok: true}, sseEnabled: true}
+		return serveBulk(h, req)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			eval := mock.NewMockIEvaluator(gomock.NewController(t))
-			expect := eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
-			if tt.wantEval {
-				expect.Times(1)
-			} else {
-				expect.Times(0)
-			}
+	current := serve(t, "", "").Header().Get("ETag")
+	require.NotEmpty(t, current)
 
-			h := handler{
-				Logger:     log,
-				evaluator:  eval,
-				versioner:  fakeVersioner{etag: current, ok: true},
-				sseEnabled: true,
-			}
+	t.Run("current validator yields 304", func(t *testing.T) {
+		assert.Equal(t, http.StatusNotModified, serve(t, "", current).Code)
+	})
 
-			url := "/ofrep/v1/evaluate/flags"
-			if tt.flagConfigEtag != "" {
-				url += "?flagConfigEtag=" + tt.flagConfigEtag
-			}
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte{}))
-			require.NoError(t, err)
-			req.Header.Set(svc.FLAGD_SELECTOR_HEADER, "flagSetId=fs1")
-			if tt.ifNoneMatch != "" {
-				req.Header.Set("If-None-Match", tt.ifNoneMatch)
-			}
+	t.Run("stale validator is served fresh", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "", `"stale"`).Code)
+	})
 
-			recorder := serveBulk(h, req)
+	t.Run("trigger etag alone is not a validator", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=cfg", "").Code)
+	})
 
-			assert.Equal(t, tt.wantStatus, recorder.Code)
-			assert.Equal(t, `"`+current+`"`, recorder.Header().Get("ETag"))
-		})
-	}
+	t.Run("trigger etag does not override a stale validator", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=cfg", `"stale"`).Code)
+	})
 }
 
 func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
@@ -219,7 +275,7 @@ func TestHandleBulkEvaluation_AdvertisesEventStreams(t *testing.T) {
 			recorder := serveBulk(h, newBulkRequest(t, tt.selectorHeader, ""))
 
 			require.Equal(t, http.StatusOK, recorder.Code)
-			assert.Equal(t, `"etag-1"`, recorder.Header().Get("ETag"))
+			assert.NotEmpty(t, recorder.Header().Get("ETag"))
 
 			var resp ofrep.BulkEvaluationResponse
 			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
@@ -241,23 +297,21 @@ func TestHandleBulkEvaluation_SSEDisabled_NoEventStreams(t *testing.T) {
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]evaluator.AnyValue{}, model.Metadata{}, nil)
 
-	// sseEnabled false, no versioner: behaves like the legacy handler
 	h := handler{Logger: log, evaluator: eval}
 
 	recorder := serveBulk(h, newBulkRequest(t, "", ""))
 
 	require.Equal(t, http.StatusOK, recorder.Code)
-	assert.Empty(t, recorder.Header().Get("ETag"))
+	// the validator describes the response, so it is offered regardless of SSE
+	assert.NotEmpty(t, recorder.Header().Get("ETag"))
 
 	var resp ofrep.BulkEvaluationResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
 	assert.Empty(t, resp.EventStreams)
 }
 
-// TestHandleBulkEvaluation_NoLiveStream_NoETag pins the contract that follows from tracking
-// versions per live subscription: with no stream open there is no cache validator to offer, so
-// the response is a plain 200 that still advertises eventStreams.
-func TestHandleBulkEvaluation_NoLiveStream_NoETag(t *testing.T) {
+// The validator comes from the response, so it needs no live subscription.
+func TestHandleBulkEvaluation_NoLiveStream_StillHasETag(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -273,8 +327,8 @@ func TestHandleBulkEvaluation_NoLiveStream_NoETag(t *testing.T) {
 
 	recorder := serveBulk(h, newBulkRequest(t, "flagSetId=fs1", `"stale-etag"`))
 
-	require.Equal(t, http.StatusOK, recorder.Code, "without a tracked version we must not serve a 304")
-	assert.Empty(t, recorder.Header().Get("ETag"))
+	require.Equal(t, http.StatusOK, recorder.Code, "a stale validator must be served fresh")
+	assert.NotEmpty(t, recorder.Header().Get("ETag"))
 
 	var resp ofrep.BulkEvaluationResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))

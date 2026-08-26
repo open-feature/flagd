@@ -31,10 +31,9 @@ const (
 	bulkEvaluation   = "/ofrep/v1/evaluate/{path:flags\\/|flags}"
 )
 
-// configVersioner resolves the current config ETag / last-modified time for an SSE channel so
-// the bulk handler can serve conditional (ETag/304) responses consistent with the SSE stream.
-// Implemented by the OFREP SSE change tracker; nil when SSE is disabled. ok is false whenever no
-// stream for the channel is live, which is the normal state before a client connects.
+// configVersioner resolves when the flag configuration behind an SSE channel last changed, for the
+// ADR-0008 flagConfigLastModified metadata. Implemented by the SSE change tracker; nil when SSE is
+// disabled, and ok is false until a stream for the channel is live.
 type configVersioner interface {
 	Version(channel string) (etag string, lastModified int64, ok bool)
 }
@@ -94,13 +93,14 @@ func NewOfrepHandler(
 		}).Handler(http.HandlerFunc(h.HandleFlagEvaluation)),
 	).Methods("POST")
 
+	// conditionalETag sits inside the metrics middleware so a 304 is recorded as a 304.
 	router.Handle(bulkEvaluation,
 		metricsmw.NewHTTPMetric(metricsmw.Config{
 			Service:        serviceName,
 			MetricRecorder: metricsRecorder,
 			Logger:         logger,
 			HandlerID:      bulkEvaluation,
-		}).Handler(http.HandlerFunc(h.HandleBulkEvaluation)),
+		}).Handler(conditionalETag(http.HandlerFunc(h.HandleBulkEvaluation))),
 	).Methods("POST")
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
@@ -172,12 +172,8 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
-	// Conditional evaluation (ADR-0008): short-circuit with 304 when the client already holds
-	// the current config version.
-	lastModified, notModified := h.applyConditionalETag(w, r, selectorExpression)
-	if notModified {
-		w.WriteHeader(http.StatusNotModified)
-		return
+	if trigger := r.URL.Query().Get(flagConfigEtagParam); trigger != "" {
+		h.Logger.Debug(fmt.Sprintf("bulk refetch triggered by %s=%s", flagConfigEtagParam, trigger))
 	}
 
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
@@ -196,28 +192,21 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.writeJSONToResponse(http.StatusOK,
-		h.bulkResponse(selectorExpression, evaluations, metadata, lastModified), w)
+		h.bulkResponse(selectorExpression, evaluations, metadata, h.configLastModified(selectorExpression)), w)
 }
 
-// applyConditionalETag resolves the current config version for the selector, sets the ETag
-// response header, and reports the lastModified time plus whether the request can be answered
-// with 304 Not Modified. It is a no-op (returns notModified=false) when SSE/versioning is off.
-func (h *handler) applyConditionalETag(w http.ResponseWriter, r *http.Request, channel string) (lastModified int64, notModified bool) {
+// configLastModified reports when the flag configuration behind the selector last changed, or 0
+// when nothing is tracking it. The tracker's config ETag is deliberately unused: it describes the
+// configuration, not the response, so it cannot validate this endpoint's cache.
+func (h *handler) configLastModified(channel string) int64 {
 	if h.versioner == nil {
-		return 0, false
+		return 0
 	}
-	etag, lastModified, ok := h.versioner.Version(channel)
-	if !ok || etag == "" {
-		return lastModified, false
+	_, lastModified, ok := h.versioner.Version(channel)
+	if !ok {
+		return 0
 	}
-	w.Header().Set("ETag", quoteETag(etag))
-
-	if trigger := r.URL.Query().Get(flagConfigEtagParam); trigger != "" {
-		h.Logger.Debug(fmt.Sprintf("bulk refetch triggered by %s=%s", flagConfigEtagParam, trigger))
-	}
-
-	clientCacheETag := r.Header.Get("If-None-Match")
-	return lastModified, clientCacheETag != "" && normalizeETag(clientCacheETag) == etag
+	return lastModified
 }
 
 // bulkResponse assembles the OFREP bulk response, adding the ADR-0008 eventStreams block and
@@ -259,18 +248,8 @@ func (h *handler) eventStreams(selectorExpression string) []ofrep.EventStream {
 
 // flagConfigEtagParam is the ADR-0008 query parameter carrying the config version that an SSE
 // refetch event advertised. It is trigger metadata only; the conditional response is decided by
-// the If-None-Match header. See applyConditionalETag.
+// the If-None-Match header.
 const flagConfigEtagParam = "flagConfigEtag"
-
-// normalizeETag strips optional surrounding quotes so quoted and unquoted forms compare equal.
-func normalizeETag(etag string) string {
-	return strings.Trim(etag, `"`)
-}
-
-// quoteETag wraps a bare ETag value in the double quotes required by the HTTP ETag header.
-func quoteETag(etag string) string {
-	return `"` + etag + `"`
-}
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {
 	// first marshal payload
