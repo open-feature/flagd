@@ -100,7 +100,7 @@ func NewOfrepHandler(
 			MetricRecorder: metricsRecorder,
 			Logger:         logger,
 			HandlerID:      bulkEvaluation,
-		}).Handler(conditionalETag(http.HandlerFunc(h.HandleBulkEvaluation))),
+		}).Handler(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation))),
 	).Methods("POST")
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
@@ -247,9 +247,25 @@ func (h *handler) eventStreams(selectorExpression string) []ofrep.EventStream {
 }
 
 // flagConfigEtagParam is the ADR-0008 query parameter carrying the config version that an SSE
-// refetch event advertised. It is trigger metadata only; the conditional response is decided by
-// the If-None-Match header.
+// refetch event advertised.
 const flagConfigEtagParam = "flagConfigEtag"
+
+// configEtagDiffers reports whether the client's flagConfigEtag names a config version other than
+// the one its selector resolves to now. A param that cannot be compared does not differ.
+func (h *handler) configEtagDiffers(r *http.Request) bool {
+	trigger := r.URL.Query().Get(flagConfigEtagParam)
+	if trigger == "" || h.versioner == nil {
+		return false
+	}
+
+	current, _, ok := h.versioner.Version(r.Header.Get(service.FLAGD_SELECTOR_HEADER))
+	if !ok {
+		return false
+	}
+
+	// quoted so the shared scan accepts the param bare, quoted, or weak
+	return !ifNoneMatch([]string{trigger}, `"`+current+`"`)
+}
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {
 	// first marshal payload

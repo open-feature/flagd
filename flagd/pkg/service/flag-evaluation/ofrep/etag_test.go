@@ -16,8 +16,16 @@ import (
 // digest rather than restating it.
 func bodyETag(body []byte) string {
 	sum := sha256.Sum256(body)
-	return hex.EncodeToString(sum[:])
+	return `"` + hex.EncodeToString(sum[:]) + `"`
 }
+
+func unquote(etag string) string { return strings.Trim(etag, `"`) }
+
+// quotedETag is a strong entity-tag: exactly one pair of quotes around the hex digest.
+const quotedETag = `^"[0-9a-f]{64}"$`
+
+// noConfigEtagVeto isolates the header path; the veto is covered in sse_bulk_test.go.
+func noConfigEtagVeto(*http.Request) bool { return false }
 
 func serveWithETag(t *testing.T, status int, body, ifNoneMatch string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -35,7 +43,7 @@ func serveWithETag(t *testing.T, status int, body, ifNoneMatch string) *httptest
 func serveWithETagFields(t *testing.T, status int, body string, ifNoneMatch []string) *httptest.ResponseRecorder {
 	t.Helper()
 
-	handler := conditionalETag(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := conditionalETag(noConfigEtagVeto, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write([]byte(body))
@@ -60,7 +68,8 @@ func TestConditionalETag_HashesWrittenBytes(t *testing.T) {
 
 	etag := first.Header().Get("ETag")
 	require.NotEmpty(t, etag)
-	assert.Equal(t, quoteETag(bodyETag([]byte(body))), etag, "the tag must be the hash of the written bytes")
+	assert.Regexp(t, quotedETag, etag, "the tag must carry exactly one pair of quotes")
+	assert.Equal(t, bodyETag([]byte(body)), etag, "the tag must be the hash of the written bytes")
 
 	t.Run("identical bytes yield the same tag", func(t *testing.T) {
 		assert.Equal(t, etag, serveWithETag(t, http.StatusOK, body, "").Header().Get("ETag"))
@@ -89,7 +98,7 @@ func TestConditionalETag_UnquotedValidatorMatches(t *testing.T) {
 	const body = `{"flags":[]}`
 	etag := serveWithETag(t, http.StatusOK, body, "").Header().Get("ETag")
 
-	recorder := serveWithETag(t, http.StatusOK, body, normalizeETag(etag))
+	recorder := serveWithETag(t, http.StatusOK, body, unquote(etag))
 	assert.Equal(t, http.StatusNotModified, recorder.Code)
 }
 
@@ -116,19 +125,22 @@ func TestConditionalETag_ValidatorListForms(t *testing.T) {
 		"current tag first in list":    {current + `, "stale"`, http.StatusNotModified},
 		"weak current tag":             {`W/` + current, http.StatusNotModified},
 		"weak current tag in list":     {`W/"stale", W/` + current, http.StatusNotModified},
-		"unquoted current tag in list": {`"stale",` + normalizeETag(current), http.StatusNotModified},
+		"unquoted current tag in list": {`"stale",` + unquote(current), http.StatusNotModified},
 		"empty list entries":           {`, ,` + current, http.StatusNotModified},
 		"only stale tags":              {`"stale", W/"staler"`, http.StatusOK},
 		"empty list":                   {`,`, http.StatusOK},
 		// net/http stops scanning at the first entry that is not a valid entity tag, which would
 		// let junk hide the tag beside it. This scan compares the junk and carries on.
 		"malformed entry beside a valid tag": {`bogus, ` + current, http.StatusNotModified},
-		"unterminated quoted tag":            {`"` + normalizeETag(current), http.StatusNotModified},
+		// Comparison is against the quoted tag, so a bare tag matches and a half-quoted one cannot.
+		"unterminated quoted tag": {`"` + unquote(current), http.StatusOK},
 		// The wildcard has to be the whole entry, which is stricter than net/http.
 		"wildcard with trailing junk": {`*junk`, http.StatusOK},
+		// The wildcard is matched before the weakness prefix is trimmed, so W/* is not one.
+		"weak wildcard": {`W/*`, http.StatusOK},
 		// A comma inside a quoted tag belongs to the tag, so this is one stale validator rather
 		// than a list whose members happen to bracket the current tag.
-		"comma inside a quoted tag": {`"` + normalizeETag(current) + `,` + normalizeETag(current) + `"`, http.StatusOK},
+		"comma inside a quoted tag": {`"` + unquote(current) + `,` + unquote(current) + `"`, http.StatusOK},
 	} {
 		t.Run(name, func(t *testing.T) {
 			recorder := serveWithETag(t, http.StatusOK, body, tests.ifNoneMatch)
@@ -161,7 +173,7 @@ func TestConditionalETag_NonOKResponsesAreNotTagged(t *testing.T) {
 	} {
 		t.Run(http.StatusText(status), func(t *testing.T) {
 			body := `{"errorDetails":"nope"}`
-			recorder := serveWithETag(t, status, body, quoteETag(bodyETag([]byte(body))))
+			recorder := serveWithETag(t, status, body, bodyETag([]byte(body)))
 
 			assert.Equal(t, status, recorder.Code)
 			assert.Empty(t, recorder.Header().Get("ETag"))
@@ -171,7 +183,7 @@ func TestConditionalETag_NonOKResponsesAreNotTagged(t *testing.T) {
 }
 
 func TestConditionalETag_ImplicitOK(t *testing.T) {
-	handler := conditionalETag(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := conditionalETag(noConfigEtagVeto, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"flags":[]}`))
 	}))
 
@@ -213,11 +225,10 @@ func TestConditionalETag_EmptyBody(t *testing.T) {
 	recorder := serveWithETag(t, http.StatusOK, "", "")
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
-	assert.Equal(t, quoteETag(bodyETag(nil)), recorder.Header().Get("ETag"))
+	assert.Equal(t, bodyETag(nil), recorder.Header().Get("ETag"))
 }
 
-// A large body followed by a small one lands the small response in a recycled buffer whose capacity
-// still holds the large one's bytes.
+// A small response lands in a recycled buffer whose capacity still holds the large one's bytes.
 func TestConditionalETag_RecycledBufferCarriesNoStaleBytes(t *testing.T) {
 	const small = `{"flags":[]}`
 	large := strings.Repeat(small, 512)
@@ -226,7 +237,7 @@ func TestConditionalETag_RecycledBufferCarriesNoStaleBytes(t *testing.T) {
 
 	recorder := serveWithETag(t, http.StatusOK, small, "")
 	assert.Equal(t, small, recorder.Body.String(), "the recycled buffer must not prepend the previous body")
-	assert.Equal(t, quoteETag(bodyETag([]byte(small))), recorder.Header().Get("ETag"),
+	assert.Equal(t, bodyETag([]byte(small)), recorder.Header().Get("ETag"),
 		"the digest must cover this response only")
 }
 
@@ -240,7 +251,7 @@ func (w *benchWriter) WriteHeader(int)             {}
 // BenchmarkConditionalETag guards B/op: the pool should keep it far below the body size.
 func BenchmarkConditionalETag(b *testing.B) {
 	body := []byte(`{"flags":[` + strings.Repeat(`{"key":"flag","value":true,"reason":"STATIC"},`, 512) + `]}`)
-	handler := conditionalETag(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := conditionalETag(noConfigEtagVeto, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	}))

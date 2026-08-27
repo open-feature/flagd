@@ -13,7 +13,7 @@ import (
 // conditionalETag tags a 200 with a strong ETag over the bytes the handler wrote, and answers 304
 // when the client's If-None-Match matches. Hashing the response rather than the flag configuration
 // keeps the validator correct for context-dependent values.
-func conditionalETag(next http.Handler) http.Handler {
+func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := getBodyBuffer()
 		defer putBodyBuffer(body)
@@ -27,9 +27,10 @@ func conditionalETag(next http.Handler) http.Handler {
 		}
 
 		etag := rec.etag()
-		w.Header().Set("ETag", quoteETag(etag))
+		w.Header().Set("ETag", etag)
 
-		if ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
+		// ADR-0008 §9: a differing flagConfigEtag dictates a 200 no validator may downgrade.
+		if !configEtagDiffers(r) && ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
 			w.Header().Del("Content-Type")
 			w.Header().Del("Content-Length")
 			w.WriteHeader(http.StatusNotModified)
@@ -96,7 +97,7 @@ func (rec *responseRecorder) Write(b []byte) (int, error) {
 }
 
 func (rec *responseRecorder) etag() string {
-	return hex.EncodeToString(rec.digest.Sum(nil))
+	return `"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
 }
 
 func (rec *responseRecorder) flush() {
@@ -119,7 +120,13 @@ func (rec *responseRecorder) flush() {
 func ifNoneMatch(fields []string, etag string) bool {
 	for _, field := range fields {
 		for _, candidate := range splitETagList(field) {
-			if candidate == "*" || normalizeETag(candidate) == etag {
+			if candidate == "*" {
+				return true
+			}
+
+			// a lenient client may drop the quotes the generated tag carries
+			candidate = strings.TrimPrefix(candidate, "W/")
+			if candidate == etag || `"`+candidate+`"` == etag {
 				return true
 			}
 		}
@@ -158,15 +165,4 @@ func splitETagList(list string) []string {
 	flush()
 
 	return tags
-}
-
-// normalizeETag reduces an entity tag to the opaque value the weak comparison function looks at:
-// neither the quotes nor a weakness prefix carries meaning there. Dropping the quotes also lets
-// the unquoted form a lenient client may send compare equal.
-func normalizeETag(etag string) string {
-	return strings.Trim(strings.TrimPrefix(etag, "W/"), `"`)
-}
-
-func quoteETag(etag string) string {
-	return `"` + etag + `"`
 }

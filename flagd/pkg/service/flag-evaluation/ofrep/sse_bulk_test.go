@@ -48,7 +48,7 @@ func newBulkRequest(t *testing.T, selectorHeader, clientEtag string) *http.Reque
 func serveBulk(h handler, req *http.Request) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	router := mux.NewRouter()
-	router.Handle(bulkEvaluation, conditionalETag(http.HandlerFunc(h.HandleBulkEvaluation)))
+	router.Handle(bulkEvaluation, conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation)))
 	router.ServeHTTP(recorder, req)
 	return recorder
 }
@@ -156,7 +156,8 @@ func TestHandleBulkEvaluation_ContextChangeInvalidatesETag(t *testing.T) {
 	assert.Equal(t, true, flag["value"], "the response must carry values for the new context")
 }
 
-// The 304 decision must use If-None-Match, not the ADR-0008 flagConfigEtag trigger metadata.
+// ADR-0008 §9: a differing flagConfigEtag dictates a 200 no validator may downgrade. Absent that
+// veto, the param takes no part in the decision.
 func TestHandleBulkEvaluation_ConditionalUsesIfNoneMatch(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 	values := []evaluator.AnyValue{boolFlag("a", true)}
@@ -189,12 +190,74 @@ func TestHandleBulkEvaluation_ConditionalUsesIfNoneMatch(t *testing.T) {
 		assert.Equal(t, http.StatusOK, serve(t, "", `"stale"`).Code)
 	})
 
-	t.Run("trigger etag alone is not a validator", func(t *testing.T) {
-		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=cfg", "").Code)
+	t.Run("matching trigger etag alone is not a validator", func(t *testing.T) {
+		recorder := serve(t, "?flagConfigEtag=cfg", "")
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, current, recorder.Header().Get("ETag"), "the 200 still names the representation")
 	})
 
-	t.Run("trigger etag does not override a stale validator", func(t *testing.T) {
+	t.Run("differing trigger etag alone is served fresh", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=differs", "").Code)
+	})
+
+	t.Run("matching trigger etag does not rescue a stale validator", func(t *testing.T) {
 		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=cfg", `"stale"`).Code)
+	})
+
+	t.Run("differing trigger etag is not downgraded by a matching validator", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=differs", current).Code)
+	})
+
+	t.Run("matching trigger etag leaves normal conditional handling alone", func(t *testing.T) {
+		assert.Equal(t, http.StatusNotModified, serve(t, "?flagConfigEtag=cfg", current).Code)
+	})
+
+	// A parse failure would read as "differs" and veto the 304, so a 304 proves the quoting parsed.
+	for name, query := range map[string]string{
+		"quoted trigger etag":      "?flagConfigEtag=%22cfg%22",
+		"weak quoted trigger etag": "?flagConfigEtag=W/%22cfg%22",
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, http.StatusNotModified, serve(t, query, current).Code)
+		})
+	}
+
+	t.Run("quoted differing trigger etag still vetoes", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=%22differs%22", current).Code)
+	})
+}
+
+// An uncomparable trigger etag neither grants a 304 nor vetoes one.
+func TestHandleBulkEvaluation_UncomparableTriggerEtag(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	serve := func(t *testing.T, query, ifNoneMatch string) *httptest.ResponseRecorder {
+		t.Helper()
+		eval := mock.NewMockIEvaluator(gomock.NewController(t))
+		eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return([]evaluator.AnyValue{boolFlag("a", true)}, model.Metadata{}, nil)
+
+		req, err := http.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags"+query, bytes.NewReader([]byte{}))
+		require.NoError(t, err)
+		req.Header.Set(svc.FLAGD_SELECTOR_HEADER, "flagSetId=fs1")
+		if ifNoneMatch != "" {
+			req.Header.Set("If-None-Match", ifNoneMatch)
+		}
+
+		h := handler{Logger: log, evaluator: eval, versioner: fakeVersioner{etag: "cfg", ok: false}, sseEnabled: true}
+		return serveBulk(h, req)
+	}
+
+	current := serve(t, "", "").Header().Get("ETag")
+	require.NotEmpty(t, current)
+
+	t.Run("alone it grants nothing", func(t *testing.T) {
+		assert.Equal(t, http.StatusOK, serve(t, "?flagConfigEtag=anything", "").Code)
+	})
+
+	t.Run("it does not veto the validator", func(t *testing.T) {
+		assert.Equal(t, http.StatusNotModified, serve(t, "?flagConfigEtag=anything", current).Code)
 	})
 }
 

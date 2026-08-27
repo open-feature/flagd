@@ -10,7 +10,7 @@ const eventName = "message"
 
 type refetchPayload struct {
 	Type         string `json:"type"`
-	Etag         string `json:"etag,omitempty"`
+	Etag         string `json:"etag,omitempty"` // config version token, not an HTTP entity-tag
 	LastModified int64  `json:"lastModified,omitempty"`
 }
 
