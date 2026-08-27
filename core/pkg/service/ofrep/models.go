@@ -22,6 +22,24 @@ type EvaluationSuccess struct {
 type BulkEvaluationResponse struct {
 	Flags    []interface{}  `json:"flags"`
 	Metadata model.Metadata `json:"metadata"`
+	// EventStreams advertises SSE endpoints clients can subscribe to for change
+	// notifications, per OpenFeature protocol ADR-0008. Omitted when SSE is disabled.
+	EventStreams []EventStream `json:"eventStreams,omitempty"`
+}
+
+// EventStream describes a Server-Sent Events endpoint a client can subscribe to in order to
+// be notified (via a `refetchEvaluation` event) when the flag configuration changes.
+type EventStream struct {
+	Type               string               `json:"type"`
+	Endpoint           *EventStreamEndpoint `json:"endpoint"`
+	InactivityDelaySec int                  `json:"inactivityDelaySec,omitempty"`
+}
+
+// EventStreamEndpoint is the ADR-0008 structured form of an event-stream location. Origin is
+// optional; when omitted the client resolves RequestUri against its OFREP base URL origin.
+type EventStreamEndpoint struct {
+	Origin     string `json:"origin,omitempty"`
+	RequestUri string `json:"requestUri"`
 }
 
 type EvaluationError struct {
@@ -54,8 +72,8 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 	}
 
 	return BulkEvaluationResponse{
-		evaluations,
-		metadata,
+		Flags:    evaluations,
+		Metadata: metadata,
 	}
 }
 

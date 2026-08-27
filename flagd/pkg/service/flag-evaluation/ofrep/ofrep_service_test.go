@@ -37,7 +37,7 @@ func TestOfrepServiceStartStop(t *testing.T) {
 		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
-	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
+	service, err := NewOfrepService(eval, nil, []string{"*"}, cfg, nil, nil)
 	if err != nil {
 		t.Fatalf(errCreateOfrepService, err)
 	}
@@ -193,7 +193,7 @@ func startOfrepService(t *testing.T, cfg SvcConfiguration) (*Service, uint16) {
 	t.Helper()
 
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
-	service, err := NewOfrepService(eval, []string{"*"}, cfg, nil, nil)
+	service, err := NewOfrepService(eval, nil, []string{"*"}, cfg, nil, nil)
 	if err != nil {
 		t.Fatalf(errCreateOfrepService, err)
 	}

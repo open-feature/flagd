@@ -23,6 +23,9 @@ const (
 	managementPortFlagName     = "management-port"
 	metricsExporter            = "metrics-exporter"
 	ofrepPortFlagName          = "ofrep-port"
+	ofrepSSEEnabledFlagName    = "ofrep-sse-enabled"
+	ofrepSSEInactivityFlagName = "ofrep-sse-inactivity-delay"
+	ofrepSSEPublicURLFlagName  = "ofrep-sse-public-url"
 	otelCollectorURI           = "otel-collector-uri"
 	otelCertPathFlagName       = "otel-cert-path"
 	otelKeyPathFlagName        = "otel-key-path"
@@ -58,6 +61,9 @@ func init() {
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
 
+	flags.Bool(ofrepSSEEnabledFlagName, true, "Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse/{channel} on the ofrep port, where the channel is a selector expression. Defaults to true.")
+	flags.Int(ofrepSSEInactivityFlagName, 120, "Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120.")
+	flags.String(ofrepSSEPublicURLFlagName, "", "Origin (scheme://host) advertised as the OFREP SSE eventStreams endpoint.origin. Omitted when empty, so clients resolve the requestUri against the OFREP base URL. Set when flagd is behind a proxy.")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+
 		"With grpc the evaluations service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
@@ -123,6 +129,9 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
+	_ = viper.BindPFlag(ofrepSSEEnabledFlagName, flags.Lookup(ofrepSSEEnabledFlagName))
+	_ = viper.BindPFlag(ofrepSSEInactivityFlagName, flags.Lookup(ofrepSSEInactivityFlagName))
+	_ = viper.BindPFlag(ofrepSSEPublicURLFlagName, flags.Lookup(ofrepSSEPublicURLFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
@@ -201,6 +210,9 @@ var startCmd = &cobra.Command{
 			MetricExporter:               viper.GetString(metricsExporter),
 			ManagementPort:               viper.GetUint16(managementPortFlagName),
 			OfrepServicePort:             viper.GetUint16(ofrepPortFlagName),
+			OfrepSSEEnabled:              viper.GetBool(ofrepSSEEnabledFlagName),
+			OfrepSSEInactivityDel:        viper.GetInt(ofrepSSEInactivityFlagName),
+			OfrepSSEPublicURL:            viper.GetString(ofrepSSEPublicURLFlagName),
 			OtelCollectorURI:             viper.GetString(otelCollectorURI),
 			OtelCertPath:                 viper.GetString(otelCertPathFlagName),
 			OtelKeyPath:                  viper.GetString(otelKeyPathFlagName),
