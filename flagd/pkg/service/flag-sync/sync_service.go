@@ -3,8 +3,10 @@ package sync
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"slices"
 	"time"
 
@@ -41,12 +43,24 @@ type SvcConfigurations struct {
 	MetricsRecorder              telemetry.IMetricsRecorder
 	KeepAliveMinTime             time.Duration
 	KeepAlivePermitWithoutStream bool
+
+	// HTTPPort serves the flag configuration over HTTP. Zero disables it.
+	HTTPPort              uint16
+	ServiceName           string
+	CORS                  []string
+	MaxRequestHeaderBytes int64
 }
 
 type Service struct {
 	listener net.Listener
 	logger   *logger.Logger
 	server   *grpc.Server
+
+	certPath     string
+	keyPath      string
+	httpServer   *http.Server
+	httpListener net.Listener
+	modTime      *modTime
 
 	startupTracker syncTracker
 }
@@ -97,10 +111,11 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 
 	server := grpc.NewServer(serverOpts...)
 
-	metricsRecorder := cfg.MetricsRecorder
-	if metricsRecorder == nil {
-		metricsRecorder = &telemetry.NoopMetricsRecorder{}
+	// Normalized on cfg itself so the HTTP server built below sees the same recorder.
+	if cfg.MetricsRecorder == nil {
+		cfg.MetricsRecorder = &telemetry.NoopMetricsRecorder{}
 	}
+	metricsRecorder := cfg.MetricsRecorder
 
 	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
 		store:               cfg.Store,
@@ -123,31 +138,54 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
-	return &Service{
+	svc := &Service{
 		listener: lis,
 		logger:   l,
 		server:   server,
+		certPath: cfg.CertPath,
+		keyPath:  cfg.KeyPath,
+		modTime:  &modTime{},
 		startupTracker: syncTracker{
 			sources:  slices.Clone(cfg.Sources),
 			doneChan: make(chan interface{}),
 		},
-	}, nil
+	}
+
+	if cfg.HTTPPort != 0 {
+		// Bound here, like the gRPC listener above, so a port conflict fails while the runtime is
+		// still being built.
+		l.Info(fmt.Sprintf("starting flag sync http service on port %d", cfg.HTTPPort))
+		svc.httpListener, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.HTTPPort))
+		if err != nil {
+			lis.Close()
+			return nil, fmt.Errorf("error creating http listener: %w", err)
+		}
+
+		svc.httpServer = newHTTPServer(cfg, httpHandler{
+			store:   cfg.Store,
+			log:     l,
+			modTime: svc.modTime,
+		})
+	}
+
+	return svc, nil
 }
 
 func (s *Service) Start(ctx context.Context) error {
 	// derive errgroup so we track ctx for exit as well as startup errors
 	g, lCtx := errgroup.WithContext(ctx)
 
+	// One gate shared by every server, so the initial-sync timeout is armed once and both are
+	// released together.
+	ready := make(chan struct{})
 	g.Go(func() error {
-		// delay server start until we see all syncs from known sync sources OR timeout
-		select {
-		case <-time.After(5 * time.Second):
-			s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
-				"continuing sync service")
-			break
-		case <-s.startupTracker.getDone():
-			break
-		}
+		s.waitForInitialSync()
+		close(ready)
+		return nil
+	})
+
+	g.Go(func() error {
+		<-ready
 
 		err := s.server.Serve(s.listener)
 		if err != nil {
@@ -155,6 +193,18 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 		return nil
 	})
+
+	if s.httpServer != nil {
+		g.Go(func() error {
+			<-ready
+
+			err := s.serveHTTP()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				s.logger.Warn(fmt.Sprintf("error from sync http server start: %v", err))
+			}
+			return nil
+		})
+	}
 
 	g.Go(func() error {
 		<-lCtx.Done()
@@ -173,11 +223,32 @@ func (s *Service) Start(ctx context.Context) error {
 
 func (s *Service) Emit(source string) {
 	s.startupTracker.trackAndRemove(source)
+	// Stamped here rather than from a store watch, which would re-marshal the whole configuration
+	// just to date it. Emit can run ahead of a real content change; the ETag stays exact.
+	s.modTime.set(time.Now())
+}
+
+// waitForInitialSync delays serving until every known sync source has reported its first sync, so
+// clients cannot be handed a partial configuration at startup.
+func (s *Service) waitForInitialSync() {
+	select {
+	case <-time.After(5 * time.Second):
+		s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
+			"continuing sync service")
+	case <-s.startupTracker.getDone():
+	}
 }
 
 func (s *Service) shutdown() {
 	s.logger.Info("shutting down gRPC sync service")
 	s.server.Stop()
+
+	if s.httpServer != nil {
+		s.logger.Info("shutting down http sync service")
+		if err := s.httpServer.Close(); err != nil {
+			s.logger.Warn(fmt.Sprintf("error from sync http server shutdown: %v", err))
+		}
+	}
 }
 
 // syncTracker is a helper to track sync payloads at the startup
