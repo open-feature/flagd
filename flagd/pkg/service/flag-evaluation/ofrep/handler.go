@@ -172,10 +172,6 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
-	if trigger := r.URL.Query().Get(flagConfigEtagParam); trigger != "" {
-		h.Logger.Debug(fmt.Sprintf("bulk refetch triggered by %s=%s", flagConfigEtagParam, trigger))
-	}
-
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if h.metricsRecorder != nil {
 		for _, evaluation := range evaluations {
