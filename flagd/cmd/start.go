@@ -38,6 +38,7 @@ const (
 	socketPathFlagName         = "socket-path"
 	sourcesFlagName            = "sources"
 	syncPortFlagName           = "sync-port"
+	syncHTTPPortFlagName       = "sync-http-port"
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	disableSyncMetadata        = "disable-sync-metadata"
@@ -61,6 +62,7 @@ func init() {
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
 	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
+	flags.Int32(syncHTTPPortFlagName, 8017, "HTTP port serving the flag configuration at /v1/flags, the HTTP equivalent of the gRPC FetchAllFlags. Set to 0 to disable. Defaults to 8017.")
 
 	flags.Bool(ofrepSSEEnabledFlagName, true, "Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse/{channel} on the ofrep port, where the channel is a selector expression. Defaults to true.")
 	flags.Int(ofrepSSEInactivityFlagName, 120, "Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120.")
@@ -128,6 +130,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
+	_ = viper.BindPFlag(syncHTTPPortFlagName, flags.Lookup(syncHTTPPortFlagName))
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 	_ = viper.BindPFlag(ofrepSSEEnabledFlagName, flags.Lookup(ofrepSSEEnabledFlagName))
@@ -233,6 +236,7 @@ var startCmd = &cobra.Command{
 			ServicePort:                  viper.GetUint16(portFlagName),
 			ServiceSocketPath:            viper.GetString(socketPathFlagName),
 			SyncServicePort:              viper.GetUint16(syncPortFlagName),
+			SyncServiceHTTPPort:          viper.GetUint16(syncHTTPPortFlagName),
 			SyncServiceSocketPath:        viper.GetString(syncSocketPathFlagName),
 			StreamDeadline:               viper.GetDuration(streamDeadlineFlagName),
 			DisableSyncMetadata:          viper.GetBool(disableSyncMetadata),

@@ -40,6 +40,7 @@ type Config struct {
 	ServicePort           uint16
 	ServiceSocketPath     string
 	SyncServicePort       uint16
+	SyncServiceHTTPPort   uint16
 	SyncServiceSocketPath string
 	StreamDeadline        time.Duration
 	DisableSyncMetadata   bool
@@ -143,10 +144,14 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		KeyPath:             config.ServiceKeyPath,
 		CertPath:            config.ServiceCertPath,
 		SocketPath:          config.SyncServiceSocketPath,
+		HTTPPort:            config.SyncServiceHTTPPort,
+		ServiceName:         svcName,
+		CORS:                config.CORS,
 		StreamDeadline:      config.StreamDeadline,
 		DisableSyncMetadata: config.DisableSyncMetadata,
 		MetricsRecorder:     recorder,
 
+		MaxRequestHeaderBytes:        config.MaxRequestHeaderBytes,
 		KeepAliveMinTime:             config.KeepAliveMinTime,
 		KeepAlivePermitWithoutStream: config.KeepAlivePermitWithoutStream,
 	})

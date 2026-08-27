@@ -90,7 +90,7 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	for {
 		select {
 		case payload := <-watcher:
-			flags, err := s.generateResponse(payload.Flags)
+			flags, err := generateResponse(payload.Flags)
 			if err != nil {
 				s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
 				exitReason = "error"
@@ -116,12 +116,12 @@ func (s syncHandler) SyncFlags(req *syncv1.SyncFlagsRequest, server syncv1grpc.F
 	}
 }
 
-func (s syncHandler) generateResponse(payload []model.Flag) ([]byte, error) {
-	flagConfig := map[string]interface{}{
-		"flags": s.convertMap(payload),
-	}
+type flagConfiguration struct {
+	Flags map[string]model.Flag `json:"flags"`
+}
 
-	flags, err := json.Marshal(flagConfig)
+func generateResponse(payload []model.Flag) ([]byte, error) {
+	flags, err := json.Marshal(flagConfiguration{Flags: convertMap(payload)})
 	return flags, err
 }
 
@@ -158,7 +158,7 @@ func (s syncHandler) getSelectorExpression(ctx context.Context, req interface{})
 	return bodySelector
 }
 
-func (s syncHandler) convertMap(flags []model.Flag) map[string]model.Flag {
+func convertMap(flags []model.Flag) map[string]model.Flag {
 	flagMap := make(map[string]model.Flag, len(flags))
 	for _, flag := range flags {
 		flagMap[flag.Key] = flag
@@ -180,7 +180,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 		return nil, status.Error(codes.Internal, "error retrieving flags from store")
 	}
 
-	flagsString, err := s.generateResponse(flags)
+	flagsString, err := generateResponse(flags)
 
 	if err != nil {
 		return nil, err
@@ -193,6 +193,7 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *syncv1.FetchAllFlag
 
 // Deprecated - GetMetadata is deprecated and will be removed in a future release.
 // Use the sync_context field in syncv1.SyncFlagsResponse, providing same info.
+//
 //nolint:staticcheck // SA1019 temporarily suppress deprecation warning
 func (s syncHandler) GetMetadata(_ context.Context, _ *syncv1.GetMetadataRequest) (
 	*syncv1.GetMetadataResponse, error,
