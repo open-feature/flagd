@@ -21,20 +21,20 @@ import (
 
 // startHTTPSyncService leaves sources un-emitted so callers can exercise the startup gate.
 func startHTTPSyncService(
-	t *testing.T, ctx context.Context, httpPort int, certPath, keyPath string,
+	t *testing.T, ctx context.Context, port int, certPath, keyPath string,
 ) (svc *Service, flagStore store.IStore, emit func(), done chan interface{}) {
 	t.Helper()
 
 	flagStore, sources := getSimpleFlagStore(t)
 
 	svc, err := NewSyncService(SvcConfigurations{
-		Logger:   logger.NewLogger(nil, false),
-		Port:     uint16(httpPort + 1000),
-		Sources:  sources,
-		Store:    flagStore,
-		HTTPPort: uint16(httpPort),
-		CertPath: certPath,
-		KeyPath:  keyPath,
+		Logger:      logger.NewLogger(nil, false),
+		Port:        uint16(port),
+		Sources:     sources,
+		Store:       flagStore,
+		HTTPEnabled: true,
+		CertPath:    certPath,
+		KeyPath:     keyPath,
 	})
 	require.NoError(t, err)
 
@@ -66,7 +66,11 @@ func httpSyncClient(t *testing.T, caCertPath string) *http.Client {
 	pool := x509.NewCertPool()
 	require.True(t, pool.AppendCertsFromPEM(pemCA))
 
-	client.Transport = &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}}
+	client.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12},
+		// a hand-built Transport is HTTP/1.1 only unless asked, which would hide h2 routing bugs
+		ForceAttemptHTTP2: true,
+	}
 	return client
 }
 
@@ -177,21 +181,22 @@ func TestHTTPService_ShutsDownWithContext(t *testing.T) {
 	assert.Error(t, err, "endpoint still answering after shutdown")
 }
 
-// Port 0 must opt out of the endpoint without disturbing the gRPC service alongside it.
-func TestHTTPService_DisabledOnZeroPort(t *testing.T) {
+// HTTPEnabled=false must opt out of the endpoint without disturbing the gRPC service alongside it.
+func TestHTTPService_Disabled(t *testing.T) {
 	flagStore, sources := getSimpleFlagStore(t)
 
 	svc, err := NewSyncService(SvcConfigurations{
-		Logger:   logger.NewLogger(nil, false),
-		Port:     19024,
-		Sources:  sources,
-		Store:    flagStore,
-		HTTPPort: 0,
+		Logger:      logger.NewLogger(nil, false),
+		Port:        19024,
+		Sources:     sources,
+		Store:       flagStore,
+		HTTPEnabled: false,
 	})
 	require.NoError(t, err)
 
 	assert.Nil(t, svc.httpServer)
 	assert.Nil(t, svc.httpListener)
+	assert.NotNil(t, svc.grpcListener)
 }
 
 // Last-Modified is only advertised once a sync source has actually reported in.
@@ -218,11 +223,11 @@ func TestInitialSyncGate_WarnsOnce(t *testing.T) {
 
 	flagStore, sources := getSimpleFlagStore(t)
 	svc, err := NewSyncService(SvcConfigurations{
-		Logger:   logger.NewLogger(zap.New(core), false),
-		Port:     18030,
-		Sources:  sources,
-		Store:    flagStore,
-		HTTPPort: 18031,
+		Logger:      logger.NewLogger(zap.New(core), false),
+		Port:        18030,
+		Sources:     sources,
+		Store:       flagStore,
+		HTTPEnabled: true,
 	})
 	require.NoError(t, err)
 
@@ -238,4 +243,28 @@ func TestInitialSyncGate_WarnsOnce(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	require.Equal(t, 1, logs.FilterMessageSnippet("timeout while waiting for all sync sources").Len(),
 		"initial-sync timeout warned more than once")
+}
+
+// The mux sends every h2 connection to gRPC, so ALPN ordering is what keeps the config endpoint
+// reachable over TLS: an h2-capable client must be steered to http/1.1 rather than into gRPC.
+func TestHTTPService_TLSNegotiatesHTTP11(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, _, emit, _ := startHTTPSyncService(t, ctx, 18026,
+		"./test-cert/server-cert.pem", "./test-cert/server-key.pem")
+	emit()
+
+	// httpSyncClient sets ForceAttemptHTTP2, so this client offers h2 and would be routed to gRPC
+	// if the server preferred it.
+	client := httpSyncClient(t, "./test-cert/ca-cert.pem")
+	resp := getWithRetry(t, client, fmt.Sprintf("https://0.0.0.0:%d%s", 18026, flagsPath))
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, resp.ProtoMajor, "h2 was negotiated, which routes to gRPC")
+	assert.Contains(t, string(body), "flagA")
 }

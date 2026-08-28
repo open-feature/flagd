@@ -24,26 +24,26 @@ const svcName = "flagd"
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter        string
-	ManagementPort        uint16
-	OfrepServicePort      uint16
-	OfrepSSEEnabled       bool
-	OfrepSSEInactivityDel int
-	OfrepSSEPublicURL     string
-	OtelCollectorURI      string
-	OtelCertPath          string
-	OtelKeyPath           string
-	OtelCAPath            string
-	OtelReloadInterval    time.Duration
-	ServiceCertPath       string
-	ServiceKeyPath        string
-	ServicePort           uint16
-	ServiceSocketPath     string
-	SyncServicePort       uint16
-	SyncServiceHTTPPort   uint16
-	SyncServiceSocketPath string
-	StreamDeadline        time.Duration
-	DisableSyncMetadata   bool
+	MetricExporter         string
+	ManagementPort         uint16
+	OfrepServicePort       uint16
+	OfrepSSEEnabled        bool
+	OfrepSSEInactivityDel  int
+	OfrepSSEPublicURL      string
+	OtelCollectorURI       string
+	OtelCertPath           string
+	OtelKeyPath            string
+	OtelCAPath             string
+	OtelReloadInterval     time.Duration
+	ServiceCertPath        string
+	ServiceKeyPath         string
+	ServicePort            uint16
+	ServiceSocketPath      string
+	SyncServicePort        uint16
+	SyncServiceHTTPEnabled bool
+	SyncServiceSocketPath  string
+	StreamDeadline         time.Duration
+	DisableSyncMetadata    bool
 
 	KeepAliveMinTime             time.Duration
 	KeepAlivePermitWithoutStream bool
@@ -144,7 +144,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		KeyPath:             config.ServiceKeyPath,
 		CertPath:            config.ServiceCertPath,
 		SocketPath:          config.SyncServiceSocketPath,
-		HTTPPort:            config.SyncServiceHTTPPort,
+		HTTPEnabled:         config.SyncServiceHTTPEnabled,
 		ServiceName:         svcName,
 		CORS:                config.CORS,
 		StreamDeadline:      config.StreamDeadline,

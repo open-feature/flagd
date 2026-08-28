@@ -14,10 +14,10 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"github.com/soheilhy/cmux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -44,8 +44,7 @@ type SvcConfigurations struct {
 	KeepAliveMinTime             time.Duration
 	KeepAlivePermitWithoutStream bool
 
-	// HTTPPort serves the flag configuration over HTTP. Zero disables it.
-	HTTPPort              uint16
+	HTTPEnabled           bool
 	ServiceName           string
 	CORS                  []string
 	MaxRequestHeaderBytes int64
@@ -56,30 +55,28 @@ type Service struct {
 	logger   *logger.Logger
 	server   *grpc.Server
 
-	certPath     string
-	keyPath      string
-	httpServer   *http.Server
+	// mux splits listener by protocol; grpcListener and httpListener are its two halves.
+	mux          cmux.CMux
+	grpcListener net.Listener
 	httpListener net.Listener
+	httpServer   *http.Server
 	modTime      *modTime
 
 	startupTracker syncTracker
 }
 
-func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportCredentials, error) {
-	// Load server's certificate and private key
+func loadTLSConfig(certPath string, keyPath string) (*tls.Config, error) {
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load key pair from certificate paths '%s' and '%s': %w", certPath, keyPath, err)
 	}
 
-	// Create the credentials and return it
-	config := &tls.Config{
+	return &tls.Config{
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.NoClientCert,
 		MinVersion:   tls.VersionTLS12,
-	}
-
-	return credentials.NewTLS(config), nil
+		NextProtos:   []string{"http/1.1", "h2"},
+	}, nil
 }
 
 // keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
@@ -99,14 +96,6 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	serverOpts := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy(cfg)),
-	}
-
-	if cfg.CertPath != "" && cfg.KeyPath != "" {
-		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
-		}
-		serverOpts = append(serverOpts, grpc.Creds(tlsCredentials))
 	}
 
 	server := grpc.NewServer(serverOpts...)
@@ -138,12 +127,19 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
+	if cfg.CertPath != "" && cfg.KeyPath != "" {
+		tlsConfig, tlsErr := loadTLSConfig(cfg.CertPath, cfg.KeyPath)
+		if tlsErr != nil {
+			lis.Close()
+			return nil, fmt.Errorf("failed to load TLS cert and key: %w", tlsErr)
+		}
+		lis = tls.NewListener(lis, tlsConfig)
+	}
+
 	svc := &Service{
 		listener: lis,
 		logger:   l,
 		server:   server,
-		certPath: cfg.CertPath,
-		keyPath:  cfg.KeyPath,
 		modTime:  &modTime{},
 		startupTracker: syncTracker{
 			sources:  slices.Clone(cfg.Sources),
@@ -151,21 +147,23 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		},
 	}
 
-	if cfg.HTTPPort != 0 {
-		// Bound here, like the gRPC listener above, so a port conflict fails while the runtime is
-		// still being built.
-		l.Info(fmt.Sprintf("starting flag sync http service on port %d", cfg.HTTPPort))
-		svc.httpListener, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.HTTPPort))
-		if err != nil {
-			lis.Close()
-			return nil, fmt.Errorf("error creating http listener: %w", err)
-		}
-
+	// Split the one listener by protocol rather than serving gRPC through http.Handler, so gRPC
+	// keeps grpc-go's own HTTP/2 server and its keepalive enforcement.
+	svc.mux = cmux.New(lis)
+	if cfg.HTTPEnabled {
+		// Split on the HTTP/2 preface. Both content-type matchers are
+		// unusable here: the SendSettings one writes a SETTINGS frame while probing and corrupts
+		// non-gRPC h2 connections, and the read-only one waits for HEADERS that grpc-go will not
+		// send until it has read a SETTINGS frame, deadlocking every gRPC client.
+		svc.grpcListener = svc.mux.Match(cmux.HTTP2())
+		svc.httpListener = svc.mux.Match(cmux.Any())
 		svc.httpServer = newHTTPServer(cfg, httpHandler{
 			store:   cfg.Store,
 			log:     l,
 			modTime: svc.modTime,
 		})
+	} else {
+		svc.grpcListener = svc.mux.Match(cmux.Any())
 	}
 
 	return svc, nil
@@ -187,7 +185,7 @@ func (s *Service) Start(ctx context.Context) error {
 	g.Go(func() error {
 		<-ready
 
-		err := s.server.Serve(s.listener)
+		err := s.server.Serve(s.grpcListener)
 		if err != nil {
 			s.logger.Warn(fmt.Sprintf("error from sync server start: %v", err))
 		}
@@ -198,13 +196,23 @@ func (s *Service) Start(ctx context.Context) error {
 		g.Go(func() error {
 			<-ready
 
-			err := s.serveHTTP()
+			err := s.httpServer.Serve(s.httpListener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				s.logger.Warn(fmt.Sprintf("error from sync http server start: %v", err))
 			}
 			return nil
 		})
 	}
+
+	g.Go(func() error {
+		<-ready
+
+		err := s.mux.Serve()
+		if err != nil && !errors.Is(err, net.ErrClosed) {
+			s.logger.Warn(fmt.Sprintf("error from sync listener mux: %v", err))
+		}
+		return nil
+	})
 
 	g.Go(func() error {
 		<-lCtx.Done()
@@ -249,6 +257,9 @@ func (s *Service) shutdown() {
 			s.logger.Warn(fmt.Sprintf("error from sync http server shutdown: %v", err))
 		}
 	}
+
+	s.mux.Close()
+	s.listener.Close()
 }
 
 // syncTracker is a helper to track sync payloads at the startup

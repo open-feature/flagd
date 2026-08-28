@@ -5,6 +5,7 @@ import (
 	"time"
 
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
+	h2cmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/h2c"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -19,6 +20,10 @@ func newHTTPServer(cfg SvcConfigurations, handler http.Handler) *http.Server {
 
 	h := otelhttp.NewHandler(mux, "flagd.sync.http")
 	h = corsmw.New(cfg.CORS).Handler(h)
+	// TLS is terminated at the listener, so http.Server sees a plain conn and would speak HTTP/1.1
+	// only. ALPN still has to advertise h2 for gRPC, so h2 clients land here and need h2c to be
+	// understood.
+	h = h2cmw.New().Handler(h)
 
 	return &http.Server{
 		Handler:           h,
@@ -37,12 +42,4 @@ func httpMetrics(cfg SvcConfigurations, handlerID string) metricsmw.Middleware {
 		Logger:         cfg.Logger,
 		HandlerID:      handlerID,
 	})
-}
-
-// serveHTTP applies TLS on the same both-or-neither condition as the gRPC listener.
-func (s *Service) serveHTTP() error {
-	if s.certPath != "" && s.keyPath != "" {
-		return s.httpServer.ServeTLS(s.httpListener, s.certPath, s.keyPath)
-	}
-	return s.httpServer.Serve(s.httpListener)
 }
