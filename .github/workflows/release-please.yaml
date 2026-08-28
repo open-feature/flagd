@@ -13,10 +13,6 @@ env:
   GOPRIVATE: buf.build/gen/go
   # The toolchain determines which FIPS snapshots exist, so pin it.
   GOTOOLCHAIN: local
-  # The FIPS variant is built against the CMVP-certified Go Cryptographic Module
-  # v1.0.0 (certificate #5247).
-  FIPS_GOFIPS140: v1.0.0
-  FIPS_TAGS: fips140
 
 name: Release Please
 jobs:
@@ -145,8 +141,7 @@ jobs:
             VERSION=${{ env.VERSION }}
             COMMIT=${{ github.sha }}
             DATE=${{ needs.release-please.outputs.date }}
-            GOFIPS140=${{ env.FIPS_GOFIPS140 }}
-            GO_BUILD_TAGS=${{ env.FIPS_TAGS }}
+            FIPS=on
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4
@@ -233,14 +228,17 @@ jobs:
       # environment for the module.
       - name: build FIPS variant
         env:
-          GOFIPS140: ${{ env.FIPS_GOFIPS140 }}
+          # The CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247).
+          GOFIPS140: v1.0.0
         run: |
           set -euo pipefail
           build_fips() {
             goos="$1"; goarch="$2"; label="$3"; format="$4"
             bin="./${{ matrix.path }}-fips_${goos}_${goarch}"
-            env CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build ${{ env.BUILD_ARGS }} -tags "${{ env.FIPS_TAGS }}" -o "$bin" ./${{ matrix.path }}/main.go
-            go version -m "$bin" | grep -q 'GOFIPS140=v1\.0\.0' \
+            env CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build ${{ env.BUILD_ARGS }} -tags fips140 -o "$bin" ./${{ matrix.path }}/main.go
+            # The toolchain adds fips140v1.0 only when GOFIPS140 is set, so both
+            # tags together prove the binary built as the FIPS variant.
+            go version -m "$bin" | grep -q -- '-tags=fips140,fips140v1.0' \
               || { echo "::error::$bin is not a FIPS 140-3 build"; exit 1; }
             archive="${{ matrix.path }}-fips_${{ env.VERSION_NO_PREFIX }}_${label}"
             if [ "$format" = tar ]; then

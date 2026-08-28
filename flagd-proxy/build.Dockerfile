@@ -11,13 +11,9 @@ ARG TARGETARCH
 ARG VERSION
 ARG COMMIT
 ARG DATE
-# Build variant. The defaults produce the standard build; the FIPS variant is
-# built with GOFIPS140=v1.0.0 and GO_BUILD_TAGS=fips140, which selects the
-# CMVP-certified Go Cryptographic Module (certificate #5247) and makes the
-# binary require it at startup. Use the literal version, not the
-# "certified"/"inprocess" aliases, which vary by toolchain.
-ARG GOFIPS140=off
-ARG GO_BUILD_TAGS=
+# Set to "on" for the FIPS variant, built against the CMVP-certified Go
+# Cryptographic Module v1.0.0 (certificate #5247).
+ARG FIPS=off
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
@@ -41,14 +37,12 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,source=./core,target=./core \
     --mount=type=bind,source=./flagd,target=./flagd \
     --mount=type=bind,source=./flagd-proxy,target=./flagd-proxy \
-    CGO_ENABLED=0 GOFIPS140=${GOFIPS140} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -tags "${GO_BUILD_TAGS}" -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-proxy flagd-proxy/main.go
+    if [ "${FIPS}" = on ]; then export GOFIPS140=v1.0.0 TAGS=fips140; else TAGS=; fi; \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -tags "${TAGS}" -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-proxy flagd-proxy/main.go
 
-# Fail closed if a FIPS build was requested but the settings did not reach the binary.
-RUN if [ "${GOFIPS140}" != "off" ]; then \
-      go version -m /bin/flagd-proxy | grep -q 'GOFIPS140=v1\.0\.0' \
-        || (echo "ERROR: /bin/flagd-proxy is not a FIPS 140-3 build" && exit 1); \
-      go version -m /bin/flagd-proxy | grep -E 'GOFIPS140=|-tags='; \
-    fi
+# Both tags together prove the variant built as intended: the toolchain adds
+# fips140v1.0 only when GOFIPS140 is set, and fips140 is flagd's own.
+RUN [ "${FIPS}" != on ] || go version -m /bin/flagd-proxy | grep -q -- '-tags=fips140,fips140v1.0'
 
 # # Use distroless as minimal base image to package the manager binary
 # # Refer to https://github.com/GoogleContainerTools/distroless for more details
