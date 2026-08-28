@@ -107,16 +107,10 @@ func (rec *responseRecorder) flush() {
 	}
 }
 
-// ifNoneMatch reports whether any of the client's If-None-Match field values selects the
-// representation tagged with etag. Per RFC 9110 §13.1.2 the field is either "*" or a list of
-// entity tags, repeated fields extend that list, and the comparison is weak.
-//
-// net/http parses this too, but scanETag and checkIfNoneMatch are unexported, and the one
-// exported way in, http.ServeContent, answers a failed precondition on a non-GET method with 412
-// rather than the 304 OFREP asks for on this POST route.
-//
-// The scan is more forgiving than net/http's, which abandons the whole field on the first entry
-// that is not a syntactically valid entity tag.
+// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag.
+// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags. 
+// Hand-rolled because net/http's parser is unexported and its only public path (ServeContent) answers 412,
+// not the 304 OFREP wants on this POST route.
 func ifNoneMatch(fields []string, etag string) bool {
 	for _, field := range fields {
 		for _, candidate := range splitETagList(field) {
