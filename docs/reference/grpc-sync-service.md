@@ -5,8 +5,7 @@ description: flagd as a gRPC sync service
 # Overview
 
 flagd can expose a gRPC sync service, allowing in-process providers to obtain their flag definitions.
-The gRPC sync stream contains flag definitions currently configured at flagd
-as [sync-configurations](./sync-configuration.md).
+The gRPC sync stream contains flag definitions currently configured at flagd as [sync-configurations](./sync-configuration.md).
 
 ```mermaid
 ---
@@ -22,8 +21,7 @@ erDiagram
 
 You may change the default port of the service using startup flag `--sync-port` (or `-g` shothand flag).
 
-By default, the gRPC stream exposes all the flag configurations, with conflicting flag keys merged following flag's
-standard merge strategy.
+By default, the gRPC stream exposes all the flag configurations, with conflicting flag keys merged following flag's standard merge strategy.
 You can read more about the merge strategy in our dedicated [concepts guide on syncs](../concepts/syncs.md).
 
 If you specify a `selector` in the gRPC sync request, the gRPC service will attempt match the provided selector value to
@@ -46,14 +44,12 @@ final FlagdProvider flagdProvider =
                 .build());
 ```
 
-See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` examples using `FetchAllFlags` and
-`SyncFlags`.
+See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` examples using `FetchAllFlags` and `SyncFlags`.
 
 ## HTTP flag configuration endpoint
 
 flagd also serves the same flag configuration over plain HTTP, as the unary equivalent of `FetchAllFlags`.
-This is useful for clients that cannot speak gRPC, and it lets one flagd instance use another as
-an [HTTP sync source](./sync-configuration.md).
+This is useful for clients that cannot speak gRPC, and it lets one flagd instance use another as an [HTTP sync source](./sync-configuration.md).
 
 The endpoint listens on its own port, `8017` by default, which you may change with the `--sync-http-port` startup flag.
 Set the flag to `0` to disable the endpoint entirely.
@@ -62,8 +58,7 @@ Set the flag to `0` to disable the endpoint entirely.
 curl http://localhost:8017/v1/flags
 ```
 
-The response body is the flag configuration document itself, identical to the string `FetchAllFlags` returns in its
-`flag_configuration` field:
+The response body is the flag configuration document itself, identical to the string `FetchAllFlags` returns in its `flag_configuration` field:
 
 ```json
 {
@@ -95,8 +90,7 @@ curl http://localhost:8017/v1/flags/flagSetId%3Dpayments
 curl 'http://localhost:8017/v1/flags?selector=flagSetId=payments'
 ```
 
-Source selectors routinely contain `/`, so escaping matters for the path form:
-`source=./flags.json` is requested as `/v1/flags/source%3D.%2Fflags.json`.
+Source selectors routinely contain `/`, so escaping matters for the path form: `source=./flags.json` is requested as `/v1/flags/source%3D.%2Fflags.json`.
 No file extension is stripped from the path segment, so a selector ending in `.json` is preserved as written.
 
 The endpoint distinguishes three outcomes:
@@ -107,17 +101,14 @@ The endpoint distinguishes three outcomes:
 | Well-formed, but names an unknown filter     | `bogus=1`                         | `404`                     |
 | Valid filter that currently matches no flags | `flagSetId=empty-set`             | `200` with `{"flags":{}}` |
 
-An empty result is deliberately not a `404`: a flag set holding no flags is a normal state, and a downstream flagd
-syncing from this endpoint should not break when it happens.
+An empty result is deliberately not a `404`: a flag set holding no flags is a normal state, and a downstream flagd syncing from this endpoint should not break when it happens.
 
 ### Caching
 
 Responses carry both validators, so pollers can revalidate cheaply:
 
 - `ETag` is computed from the response body, so it is exact for the requested selector.
-- `Last-Modified` is the last time flagd observed a change to **any** flag configuration, not just the selected subset.
-  It is therefore conservative: it may cost a request a `304` it could have had, but it never serves a stale one. An
-  identical re-sync does not advance it.
+- `Last-Modified` is the last time flagd observed a change to **any** flag configuration, not just the selected subset. It is therefore conservative: it may cost a request a `304` it could have had, but it never serves a stale one. An identical re-sync does not advance it.
 
 `If-None-Match` and `If-Modified-Since` are both honored, with `If-None-Match` taking precedence when both are sent.
 
@@ -137,7 +128,5 @@ flagd's HTTP sync sends `If-None-Match` on each poll, so steady-state polling co
 
 ## Monitoring
 
-The gRPC sync service is instrumented with OpenTelemetry metrics for monitoring active connections and stream
-lifecycles.
-See the [Monitoring reference](./monitoring.md#grpc-sync-metrics) for the full list of exposed metrics and their
-attributes.
+The gRPC sync service is instrumented with OpenTelemetry metrics for monitoring active connections and stream lifecycles.
+See the [Monitoring reference](./monitoring.md#grpc-sync-metrics) for the full list of exposed metrics and their attributes.
