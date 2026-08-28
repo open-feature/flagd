@@ -1,10 +1,6 @@
 # Dockerfile with pprof profiler
 # Build the manager binary
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine@sha256:28d89ee9cc0ff9fec75c82ca201e6bf7fdf9a679d4b7b24dfa04f2bb766bb468 AS builder
-# CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247). The literal
-# version is required; the "certified"/"inprocess" aliases vary by toolchain.
-# Also makes the binary default to GODEBUG=fips140=on.
-ENV GOFIPS140=v1.0.0
 # The toolchain determines which FIPS snapshots exist, so pin it.
 ENV GOTOOLCHAIN=local
 
@@ -15,6 +11,13 @@ ARG TARGETARCH
 ARG VERSION
 ARG COMMIT
 ARG DATE
+# Build variant. The defaults produce the standard build; the FIPS variant is
+# built with GOFIPS140=v1.0.0 and GO_BUILD_TAGS=fips140, which selects the
+# CMVP-certified Go Cryptographic Module (certificate #5247) and makes the
+# binary require it at startup. Use the literal version, not the
+# "certified"/"inprocess" aliases, which vary by toolchain.
+ARG GOFIPS140=off
+ARG GO_BUILD_TAGS=
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
@@ -35,12 +38,14 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=bind,source=./core,target=./core \
     --mount=type=bind,source=./flagd,target=./flagd \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -trimpath -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-build ./flagd/main.go ./flagd/profiler.go
+    CGO_ENABLED=0 GOFIPS140=${GOFIPS140} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -tags "${GO_BUILD_TAGS}" -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" -o /bin/flagd-build ./flagd/main.go ./flagd/profiler.go
 
-# Fail closed if the FIPS build settings did not reach the binary.
-RUN go version -m /bin/flagd-build | grep -q 'GOFIPS140=v1\.0\.0' \
-      || (echo "ERROR: /bin/flagd-build is not a FIPS 140-3 build" && exit 1) \
-    && go version -m /bin/flagd-build | grep -E 'GOFIPS140=|-tags=fips140'
+# Fail closed if a FIPS build was requested but the settings did not reach the binary.
+RUN if [ "${GOFIPS140}" != "off" ]; then \
+      go version -m /bin/flagd-build | grep -q 'GOFIPS140=v1\.0\.0' \
+        || (echo "ERROR: /bin/flagd-build is not a FIPS 140-3 build" && exit 1); \
+      go version -m /bin/flagd-build | grep -E 'GOFIPS140=|-tags='; \
+    fi
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

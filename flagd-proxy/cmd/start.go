@@ -68,11 +68,9 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l, Debug)
 
-		fipsStatus := fips.Current()
-		logger.Info(fmt.Sprintf("FIPS 140-3 mode: %s", fipsStatus))
-		if fipsStatus.Degraded() {
-			logger.Fatal("refusing to start: this flagd-proxy binary was built for FIPS 140-3 but FIPS mode " +
-				"is disabled at runtime; remove fips140=off from GODEBUG")
+		logger.Info(fmt.Sprintf("build variant: %s, FIPS 140-3 mode: %s", fips.Variant, fips.Current()))
+		if err := fips.Check(); err != nil {
+			logger.Fatal(fmt.Sprintf("refusing to start: %s", err))
 		}
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -29,6 +29,7 @@ var versionCmd = &cobra.Command{
 			}
 		}
 		fmt.Printf("flagd: %s (%s), built at: %s\n", Version, Commit, Date)
+		fmt.Printf("build variant: %s\n", fips.Variant)
 		fmt.Printf("FIPS 140-3 mode: %s\n", fips.Current())
 	},
 }

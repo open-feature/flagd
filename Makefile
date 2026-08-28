@@ -3,9 +3,12 @@ PREFIX=/usr/local
 PUBLIC_JSON_SCHEMA_DIR=docs/schema/v0/
 ALL_GO_MOD_DIRS := $(shell find . -path ./test/integration -prune -o -type f -name 'go.mod' -exec dirname {} \; | sort)
 
-# CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247). The literal
-# version is required; the "certified"/"inprocess" aliases vary by toolchain.
-export GOFIPS140 ?= v1.0.0
+# The FIPS variant builds against the CMVP-certified Go Cryptographic Module
+# v1.0.0 (certificate #5247). The literal version is required; the
+# "certified"/"inprocess" aliases vary by toolchain. The fips140 tag makes the
+# binary require that module at startup rather than merely report on it.
+FIPS_ENV  := GOFIPS140=v1.0.0 CGO_ENABLED=0
+FIPS_TAGS := fips140
 
 FLAGD_DEV_NAMESPACE ?= flagd-dev
 ZD_TEST_NAMESPACE_FLAGD_PROXY ?= flagd-proxy-zd-test
@@ -42,8 +45,12 @@ docker-push-flagd:
 build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
-	CGO_ENABLED=0 go build -trimpath -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
-	go version -m ./bin/flagd | grep -E 'GOFIPS140=|-tags=fips140'
+	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
+
+.PHONY: build-flagd-fips
+build-flagd-fips:
+	$(FIPS_ENV) go build -tags $(FIPS_TAGS) -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd-fips ./flagd
+	go version -m ./bin/flagd-fips | grep -E 'GOFIPS140=|-tags='
 .PHONY: test
 test: test-core test-flagd test-flagd-proxy
 test-core:
@@ -61,14 +68,14 @@ test-flagd-proxy:
 # TLS negotiate X25519 and fail under fips140=only.
 .PHONY: test-fips
 test-fips:
-	go test -short -count=1 -exec 'env GODEBUG=fips140=only' ./core/... ./flagd/... ./flagd-proxy/...
+	$(FIPS_ENV) go test -tags $(FIPS_TAGS) -short -count=1 -exec 'env GODEBUG=fips140=only' ./core/... ./flagd/... ./flagd-proxy/...
 
 # Regenerate the crypto dependency closure recorded in the FIPS docs. Pinned to
 # linux/amd64: the closure is platform-dependent, so an unpinned run would
 # differ between a developer machine and CI.
 .PHONY: fips-closure
 fips-closure:
-	@GOOS=linux GOARCH=amd64 go list -deps ./flagd ./flagd-proxy \
+	@$(FIPS_ENV) GOOS=linux GOARCH=amd64 go list -tags $(FIPS_TAGS) -deps ./flagd ./flagd-proxy \
 	  | grep -E '^(crypto|golang\.org/x/crypto)($$|/)|/crypto($$|/)' \
 	  | sort -u > docs/reference/fips-crypto-closure.txt
 	@echo "wrote docs/reference/fips-crypto-closure.txt"

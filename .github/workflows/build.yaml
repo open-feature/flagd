@@ -16,8 +16,6 @@ on:
       - "docs/**"
 
 env:
-  # CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247).
-  GOFIPS140: v1.0.0
   # The toolchain determines which FIPS snapshots exist, so pin it.
   GOTOOLCHAIN: local
 
@@ -85,23 +83,42 @@ jobs:
       - run: make workspace-init
 
       # Fails if any tested code path reaches a non-approved algorithm.
-      - name: Test with strict FIPS enforcement
+      - name: Test the FIPS variant with strict enforcement
         run: make test-fips
 
-      - name: Build and verify the artifact carries the certified module
+      - name: Build both variants
         run: |
           set -euo pipefail
           make build-flagd
-          go version -m ./bin/flagd | grep -q 'GOFIPS140=v1\.0\.0'
-          go version -m ./bin/flagd | grep -q 'DefaultGODEBUG=fips140=on'
-          ./bin/flagd version | grep -q 'FIPS 140-3 mode: enabled'
+          make build-flagd-fips
 
-      - name: Verify flagd refuses to run outside FIPS mode
+      - name: The standard build must not claim FIPS
         run: |
           set -euo pipefail
-          GODEBUG=fips140=off ./bin/flagd version | grep -q 'FIPS 140-3 mode: disabled'
-          if GODEBUG=fips140=off ./bin/flagd start -f file:./config/samples/example_flags.flagd.json; then
-            echo "::error::flagd started with FIPS mode disabled"; exit 1
+          ./bin/flagd version | grep -q 'build variant: standard'
+          ./bin/flagd version | grep -q 'FIPS 140-3 mode: disabled'
+          # The standard build must still run with FIPS mode forced off.
+          GODEBUG=fips140=off ./bin/flagd version >/dev/null
+
+      - name: The FIPS build must carry and require the certified module
+        run: |
+          set -euo pipefail
+          go version -m ./bin/flagd-fips | grep -q 'GOFIPS140=v1\.0\.0'
+          go version -m ./bin/flagd-fips | grep -q 'DefaultGODEBUG=fips140=on'
+          go version -m ./bin/flagd-fips | grep -q -- '-tags=fips140'
+          ./bin/flagd-fips version | grep -q 'build variant: fips'
+          ./bin/flagd-fips version | grep -q 'FIPS 140-3 mode: enabled'
+          # Enforcement is unconditional: no flag can turn it off.
+          if GODEBUG=fips140=off ./bin/flagd-fips start -f file:./config/samples/example_flags.flagd.json; then
+            echo "::error::the FIPS build started with FIPS mode disabled"; exit 1
+          fi
+
+      - name: A fips140-tagged build without GOFIPS140 must refuse to start
+        run: |
+          set -euo pipefail
+          go build -tags fips140 -o /tmp/flagd-mismatch ./flagd
+          if /tmp/flagd-mismatch start -f file:./config/samples/example_flags.flagd.json; then
+            echo "::error::a mislabelled FIPS build started"; exit 1
           fi
 
       - name: Check the cryptographic dependency closure has not drifted

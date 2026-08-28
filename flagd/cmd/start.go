@@ -166,11 +166,9 @@ var startCmd = &cobra.Command{
 
 		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
 
-		fipsStatus := fips.Current()
-		rtLogger.Info(fmt.Sprintf("FIPS 140-3 mode: %s", fipsStatus))
-		if fipsStatus.Degraded() {
-			rtLogger.Fatal("refusing to start: this flagd binary was built for FIPS 140-3 but FIPS mode is " +
-				"disabled at runtime; remove fips140=off from GODEBUG")
+		rtLogger.Info(fmt.Sprintf("build variant: %s, FIPS 140-3 mode: %s", fips.Variant, fips.Current()))
+		if err := fips.Check(); err != nil {
+			rtLogger.Fatal(fmt.Sprintf("refusing to start: %s", err))
 		}
 
 		syncProviders, err := syncbuilder.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))

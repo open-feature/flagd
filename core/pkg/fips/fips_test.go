@@ -12,21 +12,19 @@ func TestStatusClassification(t *testing.T) {
 		status       Status
 		builtForFIPS bool
 		certified    bool
-		degraded     bool
 		wantInString string
 	}{
 		{
-			name:         "released artifact in approved mode",
-			status:       Status{Enabled: true, ModuleVersion: "v1.0.0", BuildSetting: "v1.0.0-c2097c7c"},
+			name:         "released FIPS artifact in approved mode",
+			status:       Status{Enabled: true, ModuleVersion: "v1.0.0", BuildSetting: CertifiedModuleSnapshot},
 			builtForFIPS: true,
 			certified:    true,
 			wantInString: "enabled (Go Cryptographic Module v1.0.0",
 		},
 		{
-			name:         "released artifact started with GODEBUG=fips140=off",
-			status:       Status{Enabled: false, ModuleVersion: "v1.0.0", BuildSetting: "v1.0.0-c2097c7c"},
+			name:         "FIPS artifact started with GODEBUG=fips140=off",
+			status:       Status{Enabled: false, ModuleVersion: "v1.0.0", BuildSetting: CertifiedModuleSnapshot},
 			builtForFIPS: true,
-			degraded:     true,
 			wantInString: "GODEBUG=fips140=off at startup",
 		},
 		{
@@ -35,12 +33,12 @@ func TestStatusClassification(t *testing.T) {
 			wantInString: "uncertified",
 		},
 		{
-			name:         "local build, FIPS forced on at runtime only",
+			name:         "standard build with FIPS forced on at runtime",
 			status:       Status{Enabled: true, ModuleVersion: "latest"},
 			wantInString: "uncertified",
 		},
 		{
-			name:         "plain local build",
+			name:         "standard build",
 			status:       Status{Enabled: false, ModuleVersion: "latest"},
 			wantInString: "disabled (binary not built with GOFIPS140)",
 		},
@@ -53,9 +51,6 @@ func TestStatusClassification(t *testing.T) {
 			}
 			if got := tt.status.Certified(); got != tt.certified {
 				t.Errorf("Certified() = %v, want %v", got, tt.certified)
-			}
-			if got := tt.status.Degraded(); got != tt.degraded {
-				t.Errorf("Degraded() = %v, want %v", got, tt.degraded)
 			}
 			if got := tt.status.String(); !strings.Contains(got, tt.wantInString) {
 				t.Errorf("String() = %q, want it to contain %q", got, tt.wantInString)
@@ -74,8 +69,26 @@ func TestCurrentMatchesRuntime(t *testing.T) {
 	if got.ModuleVersion != fips140.Version() {
 		t.Errorf("Current().ModuleVersion = %q, want %q", got.ModuleVersion, fips140.Version())
 	}
-	// When the test binary itself is built with GOFIPS140, the two must agree.
-	if got.BuiltForFIPS() && !got.Enabled {
-		t.Error("built against the certified module but FIPS mode is off; flagd would refuse to start")
+}
+
+// TestCheckMatchesVariant runs under both build variants: the standard build
+// must never refuse, and the FIPS build must refuse exactly when the certified
+// module is not active.
+func TestCheckMatchesVariant(t *testing.T) {
+	err := Check()
+	if !RequireCertified {
+		if Variant != "standard" {
+			t.Errorf("Variant = %q, want %q", Variant, "standard")
+		}
+		if err != nil {
+			t.Errorf("standard build: Check() = %v, want nil", err)
+		}
+		return
+	}
+	if Variant != "fips" {
+		t.Errorf("Variant = %q, want %q", Variant, "fips")
+	}
+	if certified := Current().Certified(); certified != (err == nil) {
+		t.Errorf("Check() = %v but Certified() = %v; they must agree", err, certified)
 	}
 }
