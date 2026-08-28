@@ -33,6 +33,7 @@ flagd start [flags]
   -K, --otel-key-path string                 tls key path to use with OpenTelemetry collector
   -I, --otel-reload-interval duration        how long between reloading the otel tls certificate from disk (default 1h0m0s)
   -p, --port int32                           Port to listen on (default 8013)
+      --require-fips                         Refuse to start if this binary was built for FIPS 140-3 but FIPS mode is disabled at runtime via GODEBUG=fips140=off. Set to false to run a FIPS build with FIPS mode off, for example when TLS is terminated by a proxy in front of flagd. Defaults to true. (default true)
   -c, --server-cert-path string              Server side tls certificate path
   -k, --server-key-path string               Server side tls key path
   -d, --socket-path string                   Flagd unix socket path. With grpc the evaluations service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.

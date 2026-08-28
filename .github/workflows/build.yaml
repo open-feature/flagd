@@ -15,6 +15,12 @@ on:
       - "README.md"
       - "docs/**"
 
+env:
+  # CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247).
+  GOFIPS140: v1.0.0
+  # The toolchain determines which FIPS snapshots exist, so pin it.
+  GOTOOLCHAIN: local
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -62,6 +68,58 @@ jobs:
       - run: make test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # v4
+
+  fips:
+    name: FIPS 140-3
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/open-feature/flagd
+      GOBIN: /home/runner/work/open-feature/flagd/bin
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - name: Setup go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        with:
+          go-version-file: 'flagd/go.mod'
+      - run: make workspace-init
+
+      # Fails if any tested code path reaches a non-approved algorithm.
+      - name: Test with strict FIPS enforcement
+        run: make test-fips
+
+      - name: Build and verify the artifact carries the certified module
+        run: |
+          set -euo pipefail
+          make build-flagd
+          go version -m ./bin/flagd | grep -q 'GOFIPS140=v1\.0\.0'
+          go version -m ./bin/flagd | grep -q 'DefaultGODEBUG=fips140=on'
+          ./bin/flagd version | grep -q 'FIPS 140-3 mode: enabled'
+
+      - name: Verify the FIPS opt-out behaves both ways
+        run: |
+          set -euo pipefail
+          GODEBUG=fips140=off ./bin/flagd version | grep -q 'FIPS 140-3 mode: disabled'
+
+          # Default: refuse to start once FIPS mode has been turned off.
+          if GODEBUG=fips140=off ./bin/flagd start -f file:./config/samples/example_flags.flagd.json; then
+            echo "::error::flagd started with FIPS mode disabled and no opt-out"; exit 1
+          fi
+
+          # --require-fips=false: start anyway, with a warning.
+          GODEBUG=fips140=off ./bin/flagd start --require-fips=false \
+            -f file:./config/samples/example_flags.flagd.json > /tmp/optout.log 2>&1 &
+          pid=$!
+          sleep 5
+          kill "$pid" || true
+          grep -q 'running with FIPS 140-3 mode disabled' /tmp/optout.log \
+            || { echo "::error::--require-fips=false did not start flagd"; cat /tmp/optout.log; exit 1; }
+
+      - name: Check the cryptographic dependency closure has not drifted
+        run: |
+          make fips-closure
+          git diff --exit-code docs/reference/fips-crypto-closure.txt \
+            || { echo "::error::cryptographic dependency closure changed; review docs/reference/fips-140-3.md and commit the regenerated closure"; exit 1; }
 
   docker-local:
     runs-on: ubuntu-latest

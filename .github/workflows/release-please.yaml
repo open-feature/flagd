@@ -8,9 +8,14 @@ env:
   PUBLISHABLE_ITEMS: '["flagd","flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
-  DEFAULT_GO_VERSION: '~1.25'
+  DEFAULT_GO_VERSION: '~1.26'
   PUBLIC_KEY_FILE: publicKey.pub
   GOPRIVATE: buf.build/gen/go
+  # CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247). go build
+  # reads this from the environment, so it covers every build step below.
+  GOFIPS140: v1.0.0
+  # The toolchain determines which FIPS snapshots exist, so pin it.
+  GOTOOLCHAIN: local
 
 name: Release Please
 jobs:
@@ -153,7 +158,7 @@ jobs:
       VERSION_NO_PREFIX: ${{ needs.release-please.outputs[format('{0}_version', matrix.path)] }}
       COMMIT: ${{ github.sha }}
       DATE: ${{ needs.release-please.outputs.date }}
-      BUILD_ARGS: '-a -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
+      BUILD_ARGS: '-a -trimpath -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"'
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -198,10 +203,18 @@ jobs:
         run: |
           env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_x86_64 ./${{ matrix.path }}/main.go
           zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_x86_64.zip ./${{ matrix.path }}_windows_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build windows i386
+      # windows/386 is not built: FIPS mode is unsupported there, so the
+      # binary panics at startup.
+      - name: Verify binaries were built against the certified crypto module
         run: |
-          env CGO_ENABLED=0 GOOS=windows GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
-          zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+          set -euo pipefail
+          for suffix in darwin_arm64 darwin_x86_64 linux_arm64 linux_x86_64 linux_i386 windows_x86_64; do
+            bin="./${{ matrix.path }}_${suffix}"
+            go version -m "$bin" | grep -q 'GOFIPS140=v1\.0\.0' \
+              || { echo "::error::$bin is not a FIPS 140-3 build"; exit 1; }
+            echo "ok: $bin"
+          done
+
       # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1

@@ -22,3 +22,7 @@ parts:
     plugin: go
     source-type: git
     source: https://github.com/open-feature/flagd.git
+    build-environment:
+      # Match the release pipeline's certified crypto module.
+      - GOFIPS140: v1.0.0
+      - CGO_ENABLED: "0"

@@ -1,6 +1,8 @@
 module zero-downtime-test
 
-go 1.25.5
+go 1.26.0
+
+toolchain go1.26.4
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.6.1-20260217192757-1388a552fc3c.1

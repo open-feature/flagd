@@ -2,15 +2,17 @@ package utils
 
 import (
 	"bytes"
+	"crypto/sha3"
 	"encoding/base64"
 	"encoding/json"
+	"hash"
 	"io"
-
-	"golang.org/x/crypto/sha3" //nolint:gosec
 )
 
+// GenerateSha returns a SHA3-256 digest of the canonicalized body.
 func GenerateSha(body []byte) string {
-	hasher := sha3.New256()
+	// hash.Hash rather than *sha3.SHA3: its Write never returns an error.
+	var hasher hash.Hash = sha3.New256()
 	hasher.Write(canonicalize(body))
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
