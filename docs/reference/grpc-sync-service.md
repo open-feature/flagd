@@ -51,11 +51,16 @@ See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` ex
 flagd also serves the same flag configuration over plain HTTP, as the unary equivalent of `FetchAllFlags`.
 This is useful for clients that cannot speak gRPC, and it lets one flagd instance use another as an [HTTP sync source](./sync-configuration.md).
 
-The endpoint listens on its own port, `8017` by default, which you may change with the `--sync-http-port` startup flag.
-Set the flag to `0` to disable the endpoint entirely.
+The endpoint is served on the sync port itself (`8015` by default), alongside gRPC: connections are split on the HTTP/2 preface, so gRPC keeps its own HTTP/2 server and its keepalive settings.
+TLS, when configured, covers both.
+
+Because every HTTP/2 connection is routed to gRPC, this endpoint is served over HTTP/1.1.
+Ordinary clients need no configuration for this: over TLS the server's ALPN preference settles them on `http/1.1`, and over plaintext they do not attempt HTTP/2 in the first place.
+A client forcing prior-knowledge h2c will reach the gRPC service instead.
+Set `--sync-http-enabled=false` to disable the endpoint.
 
 ```shell
-curl http://localhost:8017/v1/flags
+curl http://localhost:8015/v1/flags
 ```
 
 The response body is the flag configuration document itself, identical to the string `FetchAllFlags` returns in its `flag_configuration` field:
@@ -81,13 +86,13 @@ The [selector](./selector-syntax.md) may be supplied three ways, in descending o
 
 ```shell
 # 1. the Flagd-Selector header, consistent with the other flagd services
-curl -H 'Flagd-Selector: flagSetId=payments' http://localhost:8017/v1/flags
+curl -H 'Flagd-Selector: flagSetId=payments' http://localhost:8015/v1/flags
 
 # 2. a path segment; the expression is a single segment, so it must be URL-escaped
-curl http://localhost:8017/v1/flags/flagSetId%3Dpayments
+curl http://localhost:8015/v1/flags/flagSetId%3Dpayments
 
 # 3. a query parameter
-curl 'http://localhost:8017/v1/flags?selector=flagSetId=payments'
+curl 'http://localhost:8015/v1/flags?selector=flagSetId=payments'
 ```
 
 Source selectors routinely contain `/`, so escaping matters for the path form: `source=./flags.json` is requested as `/v1/flags/source%3D.%2Fflags.json`.
@@ -113,7 +118,7 @@ Responses carry both validators, so pollers can revalidate cheaply:
 `If-None-Match` and `If-Modified-Since` are both honored, with `If-None-Match` taking precedence when both are sent.
 
 ```shell
-curl -H 'If-None-Match: "<etag>"' -i http://localhost:8017/v1/flags   # 304 Not Modified
+curl -H 'If-None-Match: "<etag>"' -i http://localhost:8015/v1/flags   # 304 Not Modified
 ```
 
 ### Chaining flagd instances
@@ -121,7 +126,7 @@ curl -H 'If-None-Match: "<etag>"' -i http://localhost:8017/v1/flags   # 304 Not 
 Because the body is an ordinary flag configuration document, another flagd can consume it directly:
 
 ```shell
-flagd start --uri http://localhost:8017/v1/flags
+flagd start --uri http://localhost:8015/v1/flags
 ```
 
 flagd's HTTP sync sends `If-None-Match` on each poll, so steady-state polling costs a `304` with no body.

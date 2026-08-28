@@ -204,7 +204,7 @@ Source selectors routinely contain `/`, which would otherwise split the segment:
 
 ```bash
 # source=./flags.json
-curl http://localhost:8017/v1/flags/source%3D.%2Fflags.json
+curl http://localhost:8015/v1/flags/source%3D.%2Fflags.json
 ```
 
 No file extension is stripped, so a selector whose value ends in `.json` is preserved as written.
