@@ -3,8 +3,6 @@ module integration_test
 
 go 1.26.7
 
-toolchain go1.26.7
-
 require (
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/open-feature/go-sdk-contrib/providers/flagd v0.6.0
