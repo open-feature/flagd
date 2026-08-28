@@ -29,7 +29,6 @@ const (
 	portFlagName                         = "port"
 	keepAliveMinTimeFlagName             = "keep-alive-min-time"
 	keepAlivePermitWithoutStreamFlagName = "keep-alive-permit-without-stream"
-	requireFIPSFlagName                  = "require-fips"
 )
 
 func init() {
@@ -41,14 +40,12 @@ func init() {
 	flags.StringP(logFormatFlagName, "z", "console", "Set the logging format, e.g. console or json")
 	flags.Duration(keepAliveMinTimeFlagName, 30*time.Second, "Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s.")
 	flags.Bool(keepAlivePermitWithoutStreamFlagName, true, "Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true.")
-	flags.Bool(requireFIPSFlagName, true, "Refuse to start if this binary was built for FIPS 140-3 but FIPS mode is disabled at runtime via GODEBUG=fips140=off. Set to false to run a FIPS build with FIPS mode off. Defaults to true.")
 
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
 	_ = viper.BindPFlag(portFlagName, flags.Lookup(portFlagName))
 	_ = viper.BindPFlag(keepAliveMinTimeFlagName, flags.Lookup(keepAliveMinTimeFlagName))
 	_ = viper.BindPFlag(keepAlivePermitWithoutStreamFlagName, flags.Lookup(keepAlivePermitWithoutStreamFlagName))
-	_ = viper.BindPFlag(requireFIPSFlagName, flags.Lookup(requireFIPSFlagName))
 }
 
 // startCmd represents the start command
@@ -74,12 +71,8 @@ var startCmd = &cobra.Command{
 		fipsStatus := fips.Current()
 		logger.Info(fmt.Sprintf("FIPS 140-3 mode: %s", fipsStatus))
 		if fipsStatus.Degraded() {
-			if viper.GetBool(requireFIPSFlagName) {
-				logger.Fatal("refusing to start: this flagd-proxy binary was built for FIPS 140-3 but FIPS " +
-					"mode is disabled at runtime; remove fips140=off from GODEBUG, or pass " +
-					"--require-fips=false to run without it")
-			}
-			logger.Warn("running with FIPS 140-3 mode disabled because --require-fips=false was set")
+			logger.Fatal("refusing to start: this flagd-proxy binary was built for FIPS 140-3 but FIPS mode " +
+				"is disabled at runtime; remove fips140=off from GODEBUG")
 		}
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

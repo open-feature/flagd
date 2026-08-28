@@ -6,13 +6,14 @@ import (
 	"crypto/fips140"
 	"fmt"
 	"runtime/debug"
-	"strings"
 )
 
-// CertifiedModuleVersion is the module flagd builds against: CMVP certificate
-// #5247. GOFIPS140 records a resolved snapshot ("v1.0.0-c2097c7c"), so this is
-// matched as a prefix.
+// CertifiedModuleVersion is the formal module version reported by
+// crypto/fips140.Version for CMVP certificate #5247.
 const CertifiedModuleVersion = "v1.0.0"
+
+// CertifiedModuleSnapshot is the exact frozen snapshot GOFIPS140 records.
+const CertifiedModuleSnapshot = "v1.0.0-c2097c7c"
 
 // Status describes the FIPS 140-3 state of this process.
 type Status struct {
@@ -46,7 +47,7 @@ func Current() Status {
 // BuiltForFIPS reports whether the certified module was compiled in. Release
 // artifacts always are; a plain `go build` is not.
 func (s Status) BuiltForFIPS() bool {
-	return strings.HasPrefix(s.BuildSetting, CertifiedModuleVersion)
+	return s.BuildSetting == CertifiedModuleSnapshot
 }
 
 // Certified reports whether the certified module is both compiled in and active.

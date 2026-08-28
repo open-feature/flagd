@@ -30,6 +30,11 @@ func TestStatusClassification(t *testing.T) {
 			wantInString: "GODEBUG=fips140=off at startup",
 		},
 		{
+			name:         "a different frozen module snapshot is not the certified one",
+			status:       Status{Enabled: true, ModuleVersion: "v1.0.0", BuildSetting: "v1.0.0-deadbeef"},
+			wantInString: "uncertified",
+		},
+		{
 			name:         "local build, FIPS forced on at runtime only",
 			status:       Status{Enabled: true, ModuleVersion: "latest"},
 			wantInString: "uncertified",

@@ -49,8 +49,6 @@ const (
 
 	keepAliveMinTimeFlagName             = "keep-alive-min-time"
 	keepAlivePermitWithoutStreamFlagName = "keep-alive-permit-without-stream"
-
-	requireFIPSFlagName = "require-fips"
 )
 
 func init() {
@@ -110,14 +108,12 @@ func init() {
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
 	flags.Duration(keepAliveMinTimeFlagName, 30*time.Second, "Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s.")
 	flags.Bool(keepAlivePermitWithoutStreamFlagName, true, "Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true.")
-	flags.Bool(requireFIPSFlagName, true, "Refuse to start if this binary was built for FIPS 140-3 but FIPS mode is disabled at runtime via GODEBUG=fips140=off. Set to false to run a FIPS build with FIPS mode off, for example when TLS is terminated by a proxy in front of flagd. Defaults to true.")
 
 	bindFlags(flags)
 }
 
 func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(corsFlagName, flags.Lookup(corsFlagName))
-	_ = viper.BindPFlag(requireFIPSFlagName, flags.Lookup(requireFIPSFlagName))
 	_ = viper.BindPFlag(logFormatFlagName, flags.Lookup(logFormatFlagName))
 	_ = viper.BindPFlag(metricsExporter, flags.Lookup(metricsExporter))
 	_ = viper.BindPFlag(managementPortFlagName, flags.Lookup(managementPortFlagName))
@@ -173,12 +169,8 @@ var startCmd = &cobra.Command{
 		fipsStatus := fips.Current()
 		rtLogger.Info(fmt.Sprintf("FIPS 140-3 mode: %s", fipsStatus))
 		if fipsStatus.Degraded() {
-			if viper.GetBool(requireFIPSFlagName) {
-				rtLogger.Fatal("refusing to start: this flagd binary was built for FIPS 140-3 but FIPS mode is " +
-					"disabled at runtime; remove fips140=off from GODEBUG, or pass --require-fips=false to " +
-					"run without it")
-			}
-			rtLogger.Warn("running with FIPS 140-3 mode disabled because --require-fips=false was set")
+			rtLogger.Fatal("refusing to start: this flagd binary was built for FIPS 140-3 but FIPS mode is " +
+				"disabled at runtime; remove fips140=off from GODEBUG")
 		}
 
 		syncProviders, err := syncbuilder.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))

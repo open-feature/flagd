@@ -96,24 +96,13 @@ jobs:
           go version -m ./bin/flagd | grep -q 'DefaultGODEBUG=fips140=on'
           ./bin/flagd version | grep -q 'FIPS 140-3 mode: enabled'
 
-      - name: Verify the FIPS opt-out behaves both ways
+      - name: Verify flagd refuses to run outside FIPS mode
         run: |
           set -euo pipefail
           GODEBUG=fips140=off ./bin/flagd version | grep -q 'FIPS 140-3 mode: disabled'
-
-          # Default: refuse to start once FIPS mode has been turned off.
           if GODEBUG=fips140=off ./bin/flagd start -f file:./config/samples/example_flags.flagd.json; then
-            echo "::error::flagd started with FIPS mode disabled and no opt-out"; exit 1
+            echo "::error::flagd started with FIPS mode disabled"; exit 1
           fi
-
-          # --require-fips=false: start anyway, with a warning.
-          GODEBUG=fips140=off ./bin/flagd start --require-fips=false \
-            -f file:./config/samples/example_flags.flagd.json > /tmp/optout.log 2>&1 &
-          pid=$!
-          sleep 5
-          kill "$pid" || true
-          grep -q 'running with FIPS 140-3 mode disabled' /tmp/optout.log \
-            || { echo "::error::--require-fips=false did not start flagd"; cat /tmp/optout.log; exit 1; }
 
       - name: Check the cryptographic dependency closure has not drifted
         run: |
