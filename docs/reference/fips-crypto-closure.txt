@@ -65,7 +65,6 @@ crypto/subtle
 crypto/tls
 crypto/tls/internal/fips140tls
 crypto/x509
-crypto/x509/internal/macos
 crypto/x509/pkix
 github.com/aws/aws-sdk-go-v2/internal/v4a/internal/crypto
 golang.org/x/crypto/chacha20

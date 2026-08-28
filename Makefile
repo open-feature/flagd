@@ -55,14 +55,20 @@ test-flagd-proxy:
 # fips140=only makes non-approved algorithms error or panic, so this fails if a
 # tested path reaches MD5, SHA-1, RC4, 3DES or ChaCha20-Poly1305. Test mode only;
 # released binaries run with fips140=on.
+#
+# -exec applies the GODEBUG to the test binaries only. Setting it in the
+# environment would also apply it to the go command, whose module fetches over
+# TLS negotiate X25519 and fail under fips140=only.
 .PHONY: test-fips
 test-fips:
-	GODEBUG=fips140=only go test -short -count=1 ./core/... ./flagd/... ./flagd-proxy/...
+	go test -short -count=1 -exec 'env GODEBUG=fips140=only' ./core/... ./flagd/... ./flagd-proxy/...
 
-# Regenerate the crypto dependency closure recorded in the FIPS docs.
+# Regenerate the crypto dependency closure recorded in the FIPS docs. Pinned to
+# linux/amd64: the closure is platform-dependent, so an unpinned run would
+# differ between a developer machine and CI.
 .PHONY: fips-closure
 fips-closure:
-	@go list -deps ./flagd ./flagd-proxy \
+	@GOOS=linux GOARCH=amd64 go list -deps ./flagd ./flagd-proxy \
 	  | grep -E '^(crypto|golang\.org/x/crypto)($$|/)|/crypto($$|/)' \
 	  | sort -u > docs/reference/fips-crypto-closure.txt
 	@echo "wrote docs/reference/fips-crypto-closure.txt"
