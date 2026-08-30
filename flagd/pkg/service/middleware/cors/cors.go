@@ -36,6 +36,8 @@ func New(allowedOrigins []string) *Middleware {
 				"Grpc-Message",
 				"Grpc-Status",
 				"Grpc-Status-Details-Bin",
+				// not safelisted, so browsers cannot read it to send If-None-Match
+				"ETag",
 			},
 		}),
 	}

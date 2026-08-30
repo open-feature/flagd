@@ -2,6 +2,7 @@ package sse
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,7 +64,11 @@ func TestService_PublishesRefetchOnChange(t *testing.T) {
 	select {
 	case ev := <-stream.Events:
 		assert.Equal(t, eventName, ev.Event())
-		assert.Contains(t, ev.Data(), refetchEventType)
+
+		var payload refetchPayload
+		require.NoError(t, json.Unmarshal([]byte(ev.Data()), &payload))
+		assert.Equal(t, refetchEventType, payload.Type)
+		assert.NotEmpty(t, payload.Etag, "the event must carry the config version")
 	case <-time.After(3 * time.Second):
 		t.Fatal("timed out waiting for refetch event on channel fs1")
 	}

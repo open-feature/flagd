@@ -3,6 +3,7 @@ package cors
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
@@ -41,4 +42,24 @@ func TestMiddleware(t *testing.T) {
 
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// Without this a browser cannot read the ETag cross-origin, so it never sends If-None-Match and
+// the OFREP bulk endpoint's 304 path is unreachable.
+func TestMiddleware_ExposesETag(t *testing.T) {
+	handler := New([]string{"*"}).Handler(http.HandlerFunc(
+		func(writer http.ResponseWriter, _ *http.Request) {
+			writer.Header().Set("ETag", `"abc123"`)
+			writer.WriteHeader(http.StatusOK)
+		},
+	))
+
+	req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
+	req.Header.Set("Origin", "https://app.example.com")
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, req)
+
+	exposed := recorder.Header().Get("Access-Control-Expose-Headers")
+	require.Contains(t, strings.ToLower(exposed), "etag")
 }
