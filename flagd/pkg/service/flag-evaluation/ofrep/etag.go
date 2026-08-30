@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"hash"
+	"iter"
 	"net/http"
 	"strings"
 	"sync"
@@ -108,12 +109,12 @@ func (rec *responseRecorder) flush() {
 }
 
 // ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag.
-// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags. 
+// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags.
 // Hand-rolled because net/http's parser is unexported and its only public path (ServeContent) answers 412,
 // not the 304 OFREP wants on this POST route.
 func ifNoneMatch(fields []string, etag string) bool {
 	for _, field := range fields {
-		for _, candidate := range splitETagList(field) {
+		for candidate := range splitETagList(field) {
 			if candidate == "*" {
 				return true
 			}
