@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -215,7 +216,7 @@ func TestSplitETagList(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tests.want, splitETagList(tests.list))
+			assert.Equal(t, tests.want, slices.Collect(splitETagList(tests.list)))
 		})
 	}
 }
