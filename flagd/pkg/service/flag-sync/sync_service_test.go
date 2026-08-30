@@ -187,12 +187,21 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			socketPath := ""
 
 			ctx, cancelFunc := context.WithCancel(context.Background())
-			defer cancelFunc()
 
-			_, _, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
+			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
 			if err != nil {
 				t.Fatal("error creating sync service")
 			}
+			// wait for the listener to actually close before returning, so the
+			// next subtest's bind to the same port doesn't race this shutdown.
+			defer func() {
+				cancelFunc()
+				select {
+				case <-doneChan:
+				case <-time.After(2 * time.Second):
+					t.Fatal("service did not exit within sufficient timeframe")
+				}
+			}()
 
 			// when - derive a client for sync service
 			serviceClient := getSyncClient(t, "./test-cert/ca-cert.pem", "", true, port, nil)
