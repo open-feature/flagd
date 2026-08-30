@@ -52,6 +52,7 @@ crypto/internal/rand
 crypto/internal/randutil
 crypto/internal/sysrand
 crypto/md5
+crypto/mldsa
 crypto/mlkem
 crypto/pbkdf2
 crypto/rand
