@@ -131,32 +131,31 @@ func ifNoneMatch(fields []string, etag string) bool {
 
 // splitETagList splits a list of entity tags on its commas. A comma inside a quoted tag belongs
 // to the tag, so the split tracks quoting instead of reaching for strings.Split.
-func splitETagList(list string) []string {
-	var (
-		tags    []string
-		current strings.Builder
-		quoted  bool
-	)
-
-	flush := func() {
-		if tag := strings.TrimSpace(current.String()); tag != "" {
-			tags = append(tags, tag)
+func splitETagList(list string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		var (
+			start  int
+			quoted bool
+		)
+		flush := func(end int) bool {
+			if tag := strings.TrimSpace(list[start:end]); tag != "" {
+				if !yield(tag) {
+					return false
+				}
+			}
+			return true
 		}
-		current.Reset()
-	}
-
-	for i := 0; i < len(list); i++ {
-		switch c := list[i]; {
-		case c == '"':
-			quoted = !quoted
-			current.WriteByte(c)
-		case c == ',' && !quoted:
-			flush()
-		default:
-			current.WriteByte(c)
+		for i := 0; i < len(list); i++ {
+			switch c := list[i]; {
+			case c == '"':
+				quoted = !quoted
+			case c == ',' && !quoted:
+				if !flush(i) {
+					return
+				}
+				start = i + 1
+			}
 		}
+		flush(len(list))
 	}
-	flush()
-
-	return tags
 }
