@@ -22,10 +22,3 @@ parts:
     plugin: go
     source-type: git
     source: https://github.com/open-feature/flagd.git
-    build-environment:
-      # Match the release pipeline's certified crypto module. GOTOOLCHAIN is
-      # pinned because the snapcraft go plugin otherwise picks its own, which
-      # changes which FIPS snapshots exist.
-      - GOFIPS140: v1.0.0
-      - GOTOOLCHAIN: local
-      - CGO_ENABLED: "0"
