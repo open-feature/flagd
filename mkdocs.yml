@@ -111,6 +111,7 @@ nav:
         - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
       - 'Schema': 'reference/schema.md'
     - 'Monitoring': 'reference/monitoring.md'
+    - 'FIPS 140-3': 'reference/fips-140-3.md'
     - 'Specifications':
       - 'Providers': 'reference/specifications/providers.md'
       - 'Protobuf Schemas': 'reference/specifications/protos.md' 

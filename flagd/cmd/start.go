@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/fips"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
@@ -163,7 +164,16 @@ var startCmd = &cobra.Command{
 		logger := logger.NewLogger(l, Debug)
 		rtLogger := logger.WithFields(zap.String("component", "start"))
 
-		rtLogger.Info(fmt.Sprintf("flagd version: %s (%s), built at: %s", Version, Commit, Date))
+		rtLogger.Info("flagd version",
+			zap.String("version", Version),
+			zap.String("commit", Commit),
+			zap.String("date", Date),
+			zap.String("variant", fips.Variant),
+			zap.Stringer("FIPS 140-3 mode", fips.Current()),
+		)
+		if err := fips.Check(); err != nil {
+			rtLogger.Fatal("refusing to start", zap.Error(err))
+		}
 
 		syncProviders, err := syncbuilder.ParseSyncProviderURIs(viper.GetStringSlice(uriFlagName))
 		if err != nil {

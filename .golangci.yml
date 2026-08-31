@@ -1,8 +1,28 @@
 version: "2"
 linters:
+  enable:
+    - depguard
   settings:
     funlen:
       statements: 50
+    depguard:
+      rules:
+        # These sit outside the FIPS 140-3 validated module boundary.
+        # See docs/reference/fips-140-3.md.
+        fips-140-3:
+          files:
+            - "!$test"
+          deny:
+            - pkg: golang.org/x/crypto
+              desc: use the stdlib crypto/* equivalent so the call routes through the validated Go Cryptographic Module
+            - pkg: crypto/md5
+              desc: MD5 is not an approved algorithm and is not part of the validated module
+            - pkg: crypto/sha1
+              desc: SHA-1 is not an approved algorithm and is not part of the validated module
+            - pkg: crypto/des
+              desc: DES/3DES is not an approved algorithm
+            - pkg: crypto/rc4
+              desc: RC4 is not an approved algorithm
   exclusions:
     generated: lax
     presets:

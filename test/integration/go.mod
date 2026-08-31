@@ -1,7 +1,7 @@
 // this is a intentionally an "orphaned" module so that it effectively does e2e testing independently of the rest of the code
 module integration_test
 
-go 1.25.8
+go 1.27
 
 require (
 	github.com/go-git/go-git/v5 v5.19.2
