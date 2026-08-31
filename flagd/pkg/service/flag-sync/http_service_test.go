@@ -116,7 +116,7 @@ func TestHTTPService_Serves(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			defer cancel()
 
 			_, _, emit, _ := startHTTPSyncService(t, ctx, tt.port, tt.certPath, tt.keyPath)
@@ -141,7 +141,7 @@ func TestHTTPService_Serves(t *testing.T) {
 // The listener is bound eagerly so the TCP connect succeeds; it is the HTTP exchange that must not
 // complete until every source has reported in.
 func TestHTTPService_WaitsForInitialSync(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	_, _, emit, _ := startHTTPSyncService(t, ctx, 18022, "", "")
@@ -160,7 +160,7 @@ func TestHTTPService_WaitsForInitialSync(t *testing.T) {
 }
 
 func TestHTTPService_ShutsDownWithContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	_, _, emit, done := startHTTPSyncService(t, ctx, 18023, "", "")
 	emit()
@@ -201,7 +201,7 @@ func TestHTTPService_Disabled(t *testing.T) {
 
 // Last-Modified is only advertised once a sync source has actually reported in.
 func TestHTTPService_ModTimeStampedOnEmit(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	svc, _, emit, _ := startHTTPSyncService(t, ctx, 18025, "", "")
@@ -231,7 +231,7 @@ func TestInitialSyncGate_WarnsOnce(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	go func() { _ = svc.Start(ctx) }()
 
@@ -248,7 +248,7 @@ func TestInitialSyncGate_WarnsOnce(t *testing.T) {
 // The mux sends every h2 connection to gRPC, so ALPN ordering is what keeps the config endpoint
 // reachable over TLS: an h2-capable client must be steered to http/1.1 rather than into gRPC.
 func TestHTTPService_TLSNegotiatesHTTP11(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	_, _, emit, _ := startHTTPSyncService(t, ctx, 18026,

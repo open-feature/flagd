@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -15,6 +14,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
+	"go.uber.org/zap"
 )
 
 const (
@@ -75,14 +75,14 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	flags, _, err := h.store.GetAll(r.Context(), &selector)
 	if err != nil {
-		h.log.Error(fmt.Sprintf("error retrieving flags from store: %v", err))
+		h.log.Error("error retrieving flags from store", zap.Error(err))
 		http.Error(w, "error retrieving flags from store", http.StatusInternalServerError)
 		return
 	}
 
 	body, err := generateResponse(flags)
 	if err != nil {
-		h.log.Error(fmt.Sprintf("error marshalling flags: %v", err))
+		h.log.Error("error marshalling flags", zap.Error(err))
 		http.Error(w, "error marshalling flags", http.StatusInternalServerError)
 		return
 	}

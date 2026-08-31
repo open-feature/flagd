@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/soheilhy/cmux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -254,7 +255,7 @@ func (s *Service) shutdown() {
 	if s.httpServer != nil {
 		s.logger.Info("shutting down http sync service")
 		if err := s.httpServer.Close(); err != nil {
-			s.logger.Warn(fmt.Sprintf("error from sync http server shutdown: %v", err))
+			s.logger.Warn("error from sync http server shutdown", zap.Error(err))
 		}
 	}
 
