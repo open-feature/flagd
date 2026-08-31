@@ -1,7 +1,7 @@
 {
     "name": "flagd dev container",
     // Image details: https://github.com/devcontainers/images/tree/main/src/go
-    "image": "mcr.microsoft.com/devcontainers/go:1.26",
+    "image": "mcr.microsoft.com/devcontainers/go:1.27",
     // Features to add to the dev container. More info: https://containers.dev/features.
     "features": {
         "ghcr.io/devcontainers/features/github-cli:1": {},

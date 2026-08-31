@@ -18,6 +18,7 @@ import (
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -68,9 +69,9 @@ var startCmd = &cobra.Command{
 		}
 		logger := logger.NewLogger(l, Debug)
 
-		logger.Info(fmt.Sprintf("build variant: %s, FIPS 140-3 mode: %s", fips.Variant, fips.Current()))
+		logger.Info("build info", zap.String("variant", fips.Variant), zap.Stringer("FIPS 140-3 mode", fips.Current()))
 		if err := fips.Check(); err != nil {
-			logger.Fatal(fmt.Sprintf("refusing to start: %s", err))
+			logger.Fatal("refusing to start", zap.Error(err))
 		}
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

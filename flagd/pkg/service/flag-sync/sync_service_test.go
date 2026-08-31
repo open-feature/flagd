@@ -187,6 +187,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			socketPath := ""
 
 			ctx, cancelFunc := context.WithCancel(context.Background())
+			defer cancelFunc()
 
 			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
 			if err != nil {
