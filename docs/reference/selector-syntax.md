@@ -219,4 +219,4 @@ An unresolvable selector is reported differently depending on why it failed:
 | Well-formed, but names an unknown filter     | `bogus=1`                         | `404`                      |
 | Valid filter that currently matches no flags | `flagSetId=empty-set`             | `200` with an empty result |
 
-Note that the flag configuration endpoint returns `404` for an unknown filter, while the OFREP endpoints return `400` and the gRPC services return `InvalidArgument` for the same input. Error responses never echo the submitted expression back.
+Note that the flag configuration endpoint returns `404` for an unknown filter, while the OFREP endpoints return `400` and the sync service RPCs return `invalid_argument` for the same input. Error responses never echo the submitted expression back.

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,16 +56,15 @@ func TestHTTPHandler_MatchesFetchAllFlags(t *testing.T) {
 
 	for _, selector := range []string{"", "source=" + testSource1, "source=" + testSource2} {
 		t.Run("selector="+selector, func(t *testing.T) {
-			grpcResp, err := grpcHandler.FetchAllFlags(context.Background(), &syncv1.FetchAllFlagsRequest{
-				Selector: selector,
-			})
+			grpcResp, err := grpcHandler.FetchAllFlags(context.Background(),
+				connect.NewRequest(&syncv1.FetchAllFlagsRequest{Selector: selector}))
 			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodGet, flagsPath+"?selector="+url.QueryEscape(selector), nil)
 			rec := serve(h, req)
 
 			require.Equal(t, http.StatusOK, rec.Code)
-			assert.Equal(t, grpcResp.GetFlagConfiguration(), rec.Body.String())
+			assert.Equal(t, grpcResp.Msg.GetFlagConfiguration(), rec.Body.String())
 		})
 	}
 }
@@ -81,7 +80,7 @@ func TestHTTPHandler_SelectorSources(t *testing.T) {
 			name: "header",
 			request: func() *http.Request {
 				req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
-				req.Header.Set(flagdService.FLAGD_SELECTOR_HEADER, "source="+testSource1)
+				req.Header.Set(selectorHeaderKey, "source="+testSource1)
 				return req
 			},
 		},
@@ -119,7 +118,7 @@ func TestHTTPHandler_SelectorPrecedence(t *testing.T) {
 	t.Run("header beats path and query", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet,
 			flagsPath+"/"+url.PathEscape("source="+testSource2)+"?selector="+url.QueryEscape("source="+testSource2), nil)
-		req.Header.Set(flagdService.FLAGD_SELECTOR_HEADER, "source="+testSource1)
+		req.Header.Set(selectorHeaderKey, "source="+testSource1)
 
 		rec := serve(h, req)
 
@@ -165,7 +164,7 @@ func TestHTTPHandler_SelectorStatuses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
-			req.Header.Set(flagdService.FLAGD_SELECTOR_HEADER, tt.selector)
+			req.Header.Set(selectorHeaderKey, tt.selector)
 
 			rec := serve(h, req)
 
@@ -332,7 +331,7 @@ func TestHTTPHandler_SelectorEquivalence(t *testing.T) {
 
 	get := func(expression string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
-		req.Header.Set(flagdService.FLAGD_SELECTOR_HEADER, expression)
+		req.Header.Set(selectorHeaderKey, expression)
 		return serve(h, req)
 	}
 
@@ -346,7 +345,7 @@ func TestHTTPHandler_SelectorEquivalence(t *testing.T) {
 
 	// an ETag from one form must satisfy a conditional request made with the other
 	req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
-	req.Header.Set(flagdService.FLAGD_SELECTOR_HEADER, "source="+testSource1)
+	req.Header.Set(selectorHeaderKey, "source="+testSource1)
 	req.Header.Set("If-None-Match", bare.Header().Get("ETag"))
 	assert.Equal(t, http.StatusNotModified, serve(h, req).Code)
 }

@@ -10,16 +10,12 @@ import (
 	"slices"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"github.com/soheilhy/cmux"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 )
 
 type ISyncService interface {
@@ -31,37 +27,31 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger                       *logger.Logger
-	Port                         uint16
-	Sources                      []string
-	Store                        store.IStore
-	ContextValues                map[string]any
-	CertPath                     string
-	KeyPath                      string
-	SocketPath                   string
-	StreamDeadline               time.Duration
-	DisableSyncMetadata          bool
-	MetricsRecorder              telemetry.IMetricsRecorder
-	KeepAliveMinTime             time.Duration
-	KeepAlivePermitWithoutStream bool
+	Logger              *logger.Logger
+	Port                uint16
+	Sources             []string
+	Store               store.IStore
+	ContextValues       map[string]any
+	CertPath            string
+	KeyPath             string
+	SocketPath          string
+	StreamDeadline      time.Duration
+	DisableSyncMetadata bool
+	MetricsRecorder     telemetry.IMetricsRecorder
 
 	HTTPEnabled           bool
 	ServiceName           string
 	CORS                  []string
+	Options               []connect.HandlerOption
 	MaxRequestHeaderBytes int64
+	MaxRequestBodyBytes   int64
 }
 
 type Service struct {
 	listener net.Listener
 	logger   *logger.Logger
-	server   *grpc.Server
-
-	// mux splits listener by protocol; grpcListener and httpListener are its two halves.
-	mux          cmux.CMux
-	grpcListener net.Listener
-	httpListener net.Listener
-	httpServer   *http.Server
-	modTime      *modTime
+	server   *http.Server
+	modTime  *modTime
 
 	startupTracker syncTracker
 }
@@ -76,45 +66,19 @@ func loadTLSConfig(certPath string, keyPath string) (*tls.Config, error) {
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.NoClientCert,
 		MinVersion:   tls.VersionTLS12,
-		NextProtos:   []string{"http/1.1", "h2"},
+		// h2 first so gRPC clients get HTTP/2; http/1.1 keeps the other surfaces reachable
+		NextProtos: []string{"h2", "http/1.1"},
 	}, nil
-}
-
-// keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
-// provider keepalive pings on the long-lived SyncFlags stream aren't rejected
-// with GOAWAY ENHANCE_YOUR_CALM.
-func keepAliveEnforcementPolicy(cfg SvcConfigurations) keepalive.EnforcementPolicy {
-	return keepalive.EnforcementPolicy{
-		MinTime:             cfg.KeepAliveMinTime,
-		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream,
-	}
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	var err error
 	l := cfg.Logger
 
-	serverOpts := []grpc.ServerOption{
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy(cfg)),
-	}
-
-	server := grpc.NewServer(serverOpts...)
-
-	// Normalized on cfg itself so the HTTP server built below sees the same recorder.
+	// Normalized on cfg so the server built below sees the same recorder.
 	if cfg.MetricsRecorder == nil {
 		cfg.MetricsRecorder = &telemetry.NoopMetricsRecorder{}
 	}
-	metricsRecorder := cfg.MetricsRecorder
-
-	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
-		store:               cfg.Store,
-		log:                 l,
-		contextValues:       cfg.ContextValues,
-		deadline:            cfg.StreamDeadline,
-		disableSyncMetadata: cfg.DisableSyncMetadata,
-		metricsRecorder:     metricsRecorder,
-	})
 
 	var lis net.Listener
 	if cfg.SocketPath != "" {
@@ -128,54 +92,49 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
+	stamp := &modTime{}
+
+	// nil leaves the routes unregistered
+	var flagsHandler http.Handler
+	if cfg.HTTPEnabled {
+		flagsHandler = httpHandler{store: cfg.Store, log: l, modTime: stamp}
+	}
+
+	server := newConnectServer(cfg, syncHandler{
+		store:               cfg.Store,
+		log:                 l,
+		contextValues:       cfg.ContextValues,
+		deadline:            cfg.StreamDeadline,
+		disableSyncMetadata: cfg.DisableSyncMetadata,
+		metricsRecorder:     cfg.MetricsRecorder,
+	}, flagsHandler)
+
+	// Loaded here rather than in ServeTLS so a bad path fails at construction.
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
 		tlsConfig, tlsErr := loadTLSConfig(cfg.CertPath, cfg.KeyPath)
 		if tlsErr != nil {
 			lis.Close()
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", tlsErr)
 		}
-		lis = tls.NewListener(lis, tlsConfig)
+		server.TLSConfig = tlsConfig
 	}
 
-	svc := &Service{
+	return &Service{
 		listener: lis,
 		logger:   l,
 		server:   server,
-		modTime:  &modTime{},
+		modTime:  stamp,
 		startupTracker: syncTracker{
 			sources:  slices.Clone(cfg.Sources),
 			doneChan: make(chan interface{}),
 		},
-	}
-
-	// Split the one listener by protocol rather than serving gRPC through http.Handler, so gRPC
-	// keeps grpc-go's own HTTP/2 server and its keepalive enforcement.
-	svc.mux = cmux.New(lis)
-	if cfg.HTTPEnabled {
-		// Split on the HTTP/2 preface. Both content-type matchers are
-		// unusable here: the SendSettings one writes a SETTINGS frame while probing and corrupts
-		// non-gRPC h2 connections, and the read-only one waits for HEADERS that grpc-go will not
-		// send until it has read a SETTINGS frame, deadlocking every gRPC client.
-		svc.grpcListener = svc.mux.Match(cmux.HTTP2())
-		svc.httpListener = svc.mux.Match(cmux.Any())
-		svc.httpServer = newHTTPServer(cfg, httpHandler{
-			store:   cfg.Store,
-			log:     l,
-			modTime: svc.modTime,
-		})
-	} else {
-		svc.grpcListener = svc.mux.Match(cmux.Any())
-	}
-
-	return svc, nil
+	}, nil
 }
 
 func (s *Service) Start(ctx context.Context) error {
 	// derive errgroup so we track ctx for exit as well as startup errors
 	g, lCtx := errgroup.WithContext(ctx)
 
-	// One gate shared by every server, so the initial-sync timeout is armed once and both are
-	// released together.
 	ready := make(chan struct{})
 	g.Go(func() error {
 		s.waitForInitialSync()
@@ -186,31 +145,9 @@ func (s *Service) Start(ctx context.Context) error {
 	g.Go(func() error {
 		<-ready
 
-		err := s.server.Serve(s.grpcListener)
-		if err != nil {
+		err := s.serve()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Warn(fmt.Sprintf("error from sync server start: %v", err))
-		}
-		return nil
-	})
-
-	if s.httpServer != nil {
-		g.Go(func() error {
-			<-ready
-
-			err := s.httpServer.Serve(s.httpListener)
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				s.logger.Warn(fmt.Sprintf("error from sync http server start: %v", err))
-			}
-			return nil
-		})
-	}
-
-	g.Go(func() error {
-		<-ready
-
-		err := s.mux.Serve()
-		if err != nil && !errors.Is(err, net.ErrClosed) {
-			s.logger.Warn(fmt.Sprintf("error from sync listener mux: %v", err))
 		}
 		return nil
 	})
@@ -230,10 +167,18 @@ func (s *Service) Start(ctx context.Context) error {
 	return nil
 }
 
+// serve leaves the ServeTLS paths empty because the certificates are already in TLSConfig.
+func (s *Service) serve() error {
+	if s.server.TLSConfig != nil {
+		return s.server.ServeTLS(s.listener, "", "")
+	}
+	return s.server.Serve(s.listener)
+}
+
 func (s *Service) Emit(source string) {
 	s.startupTracker.trackAndRemove(source)
-	// Stamped here rather than from a store watch, which would re-marshal the whole configuration
-	// just to date it. Emit can run ahead of a real content change; the ETag stays exact.
+	// Stamped here rather than from a store watch, which would re-marshal just to date it. This can
+	// run ahead of a real content change; the ETag stays exact.
 	s.modTime.set(time.Now())
 }
 
@@ -249,17 +194,14 @@ func (s *Service) waitForInitialSync() {
 }
 
 func (s *Service) shutdown() {
-	s.logger.Info("shutting down gRPC sync service")
-	s.server.Stop()
+	s.logger.Info("shutting down flag sync service")
 
-	if s.httpServer != nil {
-		s.logger.Info("shutting down http sync service")
-		if err := s.httpServer.Close(); err != nil {
-			s.logger.Warn("error from sync http server shutdown", zap.Error(err))
-		}
+	// Close, not Shutdown: a long-lived SyncFlags stream would hold a graceful shutdown to its timeout.
+	if err := s.server.Close(); err != nil {
+		s.logger.Warn("error from sync server shutdown", zap.Error(err))
 	}
 
-	s.mux.Close()
+	// Serve may never have started, in which case http.Server does not know the listener.
 	s.listener.Close()
 }
 
