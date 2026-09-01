@@ -192,22 +192,9 @@ The selector syntax is designed to be extensible. Future versions may support:
 
 **Flag Configuration Endpoint:**
 
-- `GET /v1/flags`: Supports selector in header or `selector` query parameter
-- `GET /v1/flags/{selector}`: Supports selector as a URL-escaped path segment
+- `GET /v1/flags`: Supports selector in header
 
 All HTTP endpoints support the `Flagd-Selector` header for selector specification.
-
-### Path Segment Encoding
-
-The selector occupies a single path segment, so it must be URL-escaped.
-Source selectors routinely contain `/`, which would otherwise split the segment:
-
-```bash
-# source=./flags.json
-curl http://localhost:8015/v1/flags/source%3D.%2Fflags.json
-```
-
-No file extension is stripped, so a selector whose value ends in `.json` is preserved as written.
 
 ### Error Responses
 
@@ -219,4 +206,4 @@ An unresolvable selector is reported differently depending on why it failed:
 | Well-formed, but names an unknown filter     | `bogus=1`                         | `404`                      |
 | Valid filter that currently matches no flags | `flagSetId=empty-set`             | `200` with an empty result |
 
-Note that the flag configuration endpoint returns `404` for an unknown filter, while the OFREP endpoints return `400` and the gRPC services return `InvalidArgument` for the same input. Error responses never echo the submitted expression back.
+Note that the flag configuration endpoint returns `404` for an unknown filter, while the OFREP endpoints return `400` and the sync service RPCs return `invalid_argument` for the same input. Error responses never echo the submitted expression back.

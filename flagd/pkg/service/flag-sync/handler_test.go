@@ -2,21 +2,20 @@ package sync
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/metadata"
 )
 
 func TestSyncHandler_SyncFlags(t *testing.T) {
@@ -70,24 +69,20 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 
 				// Test getting metadata from `GetMetadata` (deprecated)
 				// remove when `GetMetadata` is full removed and deprecated
-				metaResp, err := handler.GetMetadata(context.Background(), &syncv1.GetMetadataRequest{})
+				metaResp, err := handler.GetMetadata(context.Background(), connect.NewRequest(&syncv1.GetMetadataRequest{}))
 				if !disableSyncMetadata {
 					require.NoError(t, err)
-					respMetadata := metaResp.GetMetadata().AsMap()
+					respMetadata := metaResp.Msg.GetMetadata().AsMap()
 					assert.Equal(t, tt.wantMetadata, respMetadata)
 				} else {
 					assert.NotNil(t, err)
 				}
 
 				// Test metadata from sync_context
-				stream := &mockSyncFlagsServer{
-					ctx:       context.Background(),
-					mu:        sync.Mutex{},
-					respReady: make(chan struct{}, 1),
-				}
+				stream := newMockSyncFlagsStream()
 
 				go func() {
-					err := handler.SyncFlags(&syncv1.SyncFlagsRequest{}, stream)
+					err := handler.syncFlags(context.Background(), nil, "", "", stream)
 					assert.NoError(t, err)
 				}()
 
@@ -105,20 +100,18 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 	}
 }
 
-// Mock server for testing
-type mockSyncFlagsServer struct {
-	syncv1grpc.FlagSyncService_SyncFlagsServer
-	ctx       context.Context
+// mockSyncFlagsStream stands in for connect.ServerStream, which cannot be constructed in a test.
+type mockSyncFlagsStream struct {
 	mu        sync.Mutex
 	lastResp  *syncv1.SyncFlagsResponse
 	respReady chan struct{}
 }
 
-func (m *mockSyncFlagsServer) Context() context.Context {
-	return m.ctx
+func newMockSyncFlagsStream() *mockSyncFlagsStream {
+	return &mockSyncFlagsStream{respReady: make(chan struct{}, 1)}
 }
 
-func (m *mockSyncFlagsServer) Send(resp *syncv1.SyncFlagsResponse) error {
+func (m *mockSyncFlagsStream) Send(resp *syncv1.SyncFlagsResponse) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.lastResp = resp
@@ -129,7 +122,7 @@ func (m *mockSyncFlagsServer) Send(resp *syncv1.SyncFlagsResponse) error {
 	return nil
 }
 
-func (m *mockSyncFlagsServer) GetLastResponse() *syncv1.SyncFlagsResponse {
+func (m *mockSyncFlagsStream) GetLastResponse() *syncv1.SyncFlagsResponse {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.lastResp
@@ -214,46 +207,42 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 				metricsRecorder: &telemetry.NoopMetricsRecorder{},
 			}
 
-			// Create context with or without header metadata
-			var ctx context.Context
+			var header http.Header
 			if tt.hasHeader {
-				md := metadata.New(map[string]string{
-					flagdService.FLAGD_SELECTOR_HEADER: tt.headerSelector,
-				})
-				ctx = metadata.NewIncomingContext(context.Background(), md)
-			} else {
-				ctx = context.Background()
+				header = selectorHeader(tt.headerSelector)
 			}
 
 			if strings.Contains(tt.name, "SyncFlags") {
 				// Test SyncFlags
-				stream := &mockSyncFlagsServer{
-					ctx:       ctx,
-					mu:        sync.Mutex{},
-					respReady: make(chan struct{}, 1),
-				}
+				stream := newMockSyncFlagsStream()
 
 				go func() {
-					err := handler.SyncFlags(&syncv1.SyncFlagsRequest{Selector: tt.bodySelector}, stream)
+					err := handler.syncFlags(context.Background(), header, "", tt.bodySelector, stream)
 					assert.NoError(t, err)
 				}()
 
 				select {
 				case <-stream.respReady:
-					assert.Contains(t, stream.lastResp.FlagConfiguration, tt.expectedFlag)
-					assert.Contains(t, stream.lastResp.FlagConfiguration, tt.expectedSource)
-					assert.NotContains(t, stream.lastResp.FlagConfiguration, tt.shouldNotContain)
+					config := stream.GetLastResponse().GetFlagConfiguration()
+					assert.Contains(t, config, tt.expectedFlag)
+					assert.Contains(t, config, tt.expectedSource)
+					assert.NotContains(t, config, tt.shouldNotContain)
 				case <-time.After(time.Second):
 					t.Fatal("timeout waiting for response")
 				}
 			} else {
 				// Test FetchAllFlags
-				resp, err := handler.FetchAllFlags(ctx, &syncv1.FetchAllFlagsRequest{Selector: tt.bodySelector})
+				req := connect.NewRequest(&syncv1.FetchAllFlagsRequest{Selector: tt.bodySelector})
+				for key, values := range header {
+					req.Header()[key] = values
+				}
+
+				resp, err := handler.FetchAllFlags(context.Background(), req)
 				require.NoError(t, err)
 
-				assert.Contains(t, resp.FlagConfiguration, tt.expectedFlag)
-				assert.Contains(t, resp.FlagConfiguration, tt.expectedSource)
-				assert.NotContains(t, resp.FlagConfiguration, tt.shouldNotContain)
+				assert.Contains(t, resp.Msg.GetFlagConfiguration(), tt.expectedFlag)
+				assert.Contains(t, resp.Msg.GetFlagConfiguration(), tt.expectedSource)
+				assert.NotContains(t, resp.Msg.GetFlagConfiguration(), tt.shouldNotContain)
 			}
 		})
 	}
@@ -261,6 +250,7 @@ func TestSyncHandler_SelectorLocationPrecedence(t *testing.T) {
 
 func TestSyncHandler_InvalidSelector(t *testing.T) {
 	const invalidSelector = "invalidKey=val"
+	const wantMessage = `invalid selector key "invalidKey", valid keys: "flagSetId", "source"`
 
 	flagStore, err := store.NewStore(logger.NewLogger(nil, false), []string{})
 	require.NoError(t, err)
@@ -272,21 +262,27 @@ func TestSyncHandler_InvalidSelector(t *testing.T) {
 		metricsRecorder: &telemetry.NoopMetricsRecorder{},
 	}
 
-	ctxWithInvalidSelector := metadata.NewIncomingContext(
-		context.Background(),
-		metadata.New(map[string]string{flagdService.FLAGD_SELECTOR_HEADER: invalidSelector}),
-	)
+	header := selectorHeader(invalidSelector)
 
 	t.Run("SyncFlags", func(t *testing.T) {
-		stream := &mockSyncFlagsServer{ctx: ctxWithInvalidSelector, respReady: make(chan struct{}, 1)}
-		err := h.SyncFlags(&syncv1.SyncFlagsRequest{}, stream)
-		require.Error(t, err)
-		require.Equal(t, "rpc error: code = InvalidArgument desc = invalid selector key \"invalidKey\", valid keys: \"flagSetId\", \"source\"", err.Error())
+		err := h.syncFlags(context.Background(), header, "", "", newMockSyncFlagsStream())
+		requireConnectError(t, err, connect.CodeInvalidArgument, wantMessage)
 	})
 
 	t.Run("FetchAllFlags", func(t *testing.T) {
-		_, err := h.FetchAllFlags(ctxWithInvalidSelector, &syncv1.FetchAllFlagsRequest{})
-		require.Error(t, err)
-		require.Equal(t, "rpc error: code = InvalidArgument desc = invalid selector key \"invalidKey\", valid keys: \"flagSetId\", \"source\"", err.Error())
+		req := connect.NewRequest(&syncv1.FetchAllFlagsRequest{})
+		req.Header().Set(selectorHeaderKey, invalidSelector)
+
+		_, err := h.FetchAllFlags(context.Background(), req)
+		requireConnectError(t, err, connect.CodeInvalidArgument, wantMessage)
 	})
+}
+
+func requireConnectError(t *testing.T, err error, wantCode connect.Code, wantMessage string) {
+	t.Helper()
+
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, wantCode, connectErr.Code())
+	assert.Equal(t, wantMessage, connectErr.Message())
 }
