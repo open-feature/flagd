@@ -179,19 +179,20 @@ func (s *Coordinator) watchResource(target string) {
 	sh, ok := s.multiplexers[target]
 	if !ok {
 		s.mu.Unlock()
-		cancel()
+		cancel() // bare: no multiplexer exists for this target, so there is nothing to mark
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
 	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
 	sh.cancelFunc = cancel
-	sh.watcherCtx = ctx
+	sh.done = make(chan struct{})
 	s.mu.Unlock()
 	var broadcastErr error
-	// cancel marks the multiplexer dead so a reconnecting client rebuilds instead of attaching (#2030)
+	// kill, never a bare cancel: a reconnecting client must rebuild rather than attach (#2030)
 	defer func() {
-		cancel()
-		// broadcast before taking s.mu; a stalled ReSync can hold that lock indefinitely
+		sh.kill()
+		// broadcast outside s.mu: not required now that ReSync runs off the lock, but it
+		// keeps the failure path clear of the coordinator lock entirely
 		if broadcastErr != nil {
 			sh.broadcastError(s.logger, broadcastErr)
 		}
@@ -248,11 +249,11 @@ func (s *Coordinator) cleanup() {
 		case <-time.After(5 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.multiplexers {
-				// delete any multiplexers with 0 active subscriptions through cancelling its context
+				// reap any multiplexer with 0 active subscriptions; kill, never a bare cancel (#2030)
 				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, len(v.subs)))
 				if len(v.subs) == 0 {
 					s.logger.Debug(fmt.Sprintf("shutting down multiplexer %s", k))
-					s.multiplexers[k].cancelFunc()
+					s.multiplexers[k].kill()
 				}
 			}
 			s.mu.Unlock()
