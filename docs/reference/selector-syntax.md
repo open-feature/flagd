@@ -192,22 +192,9 @@ The selector syntax is designed to be extensible. Future versions may support:
 
 **Flag Configuration Endpoint:**
 
-- `GET /v1/flags`: Supports selector in header or `selector` query parameter
-- `GET /v1/flags/{selector}`: Supports selector as a URL-escaped path segment
+- `GET /v1/flags`: Supports selector in header
 
 All HTTP endpoints support the `Flagd-Selector` header for selector specification.
-
-### Path Segment Encoding
-
-The selector occupies a single path segment, so it must be URL-escaped.
-Source selectors routinely contain `/`, which would otherwise split the segment:
-
-```bash
-# source=./flags.json
-curl http://localhost:8015/v1/flags/source%3D.%2Fflags.json
-```
-
-No file extension is stripped, so a selector whose value ends in `.json` is preserved as written.
 
 ### Error Responses
 

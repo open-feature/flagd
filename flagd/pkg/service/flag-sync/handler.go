@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -169,8 +170,8 @@ func (s syncHandler) GetMetadata(_ context.Context, _ *connect.Request[syncv1.Ge
 
 // connectError maps a fetch failure onto a status; both selector failures are InvalidArgument.
 func (s syncHandler) connectError(err error) error {
-	var fetchErr fetchError
-	if !errors.As(err, &fetchErr) {
+	fetchErr, ok := errors.AsType[fetchError](err)
+	if !ok {
 		return err
 	}
 
@@ -178,10 +179,10 @@ func (s syncHandler) connectError(err error) error {
 	case fetchSelectorMalformed, fetchSelectorInvalid:
 		return connect.NewError(connect.CodeInvalidArgument, fetchErr.cause)
 	case fetchMarshal:
-		s.log.Error(fmt.Sprintf("error marshalling flags: %v", fetchErr.cause))
+		s.log.Error("error marshalling flags", zap.Error(fetchErr.cause))
 		return connect.NewError(connect.CodeDataLoss, errors.New("error marshalling flags"))
 	default:
-		s.log.Error(fmt.Sprintf("error retrieving flags from store: %v", fetchErr.cause))
+		s.log.Error("error retrieving flags from store", zap.Error(fetchErr.cause))
 		return connect.NewError(connect.CodeInternal, errors.New("error retrieving flags from store"))
 	}
 }
@@ -195,9 +196,9 @@ func (s syncHandler) getSelectorExpression(header http.Header, bodySelector stri
 	}
 
 	if resolveSelector(header, "") != "" {
-		s.log.Debug(fmt.Sprintf("using selector from request header: %s", expression))
+		s.log.Debug("using selector from request header", zap.String("expression", expression))
 	} else {
-		s.log.Debug(fmt.Sprintf("using selector from request body: %s", expression))
+		s.log.Debug("using selector from request body", zap.String("expression", expression))
 	}
 	return expression
 }
@@ -207,8 +208,7 @@ type flagConfiguration struct {
 }
 
 func generateResponse(payload []model.Flag) ([]byte, error) {
-	flags, err := json.Marshal(flagConfiguration{Flags: convertMap(payload)})
-	return flags, err
+	return json.Marshal(flagConfiguration{Flags: convertMap(payload)})
 }
 
 func convertMap(flags []model.Flag) map[string]model.Flag {

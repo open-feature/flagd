@@ -158,7 +158,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	options, err := telemetry.BuildConnectOptions(telCfg)
 	if err != nil {
 		// log the error but continue
-		logger.Error(fmt.Sprintf("failed to build connect options, %v", err))
+		logger.Error("failed to build connect options", zap.Error(err))
 	}
 
 	// flag sync service

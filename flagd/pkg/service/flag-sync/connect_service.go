@@ -38,13 +38,11 @@ func newConnectServer(
 
 	// Traced by the interceptor in cfg.Options; an otelhttp wrapper here would double every span.
 	connectPath, connectHandler := syncv1connect.NewFlagSyncServiceHandler(handler, opts...)
-	mux.Handle(connectPath, httpMetrics(cfg, "").Handler(connectHandler))
+	mux.Handle(connectPath, httpMetrics(cfg, connectPath).Handler(connectHandler))
 
 	if flagsHandler != nil {
 		// Registering "GET" gets 405s and HEAD for free.
-		selectorPath := flagsPath + "/{" + selectorPathVar + "}"
 		mux.Handle("GET "+flagsPath, instrumentFlagsRoute(cfg, flagsPath, flagsHandler))
-		mux.Handle("GET "+selectorPath, instrumentFlagsRoute(cfg, selectorPath, flagsHandler))
 	}
 
 	var h http.Handler = mux

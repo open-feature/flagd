@@ -16,9 +16,6 @@ import (
 
 const (
 	flagsPath = "/v1/flags"
-	// a single path segment, percent-decoded by the mux, so a source containing "/" arrives intact
-	selectorPathVar    = "selector"
-	selectorQueryParam = "selector"
 	// only used by http.ServeContent to sniff the content type
 	contentName = "flags.json"
 )
@@ -54,7 +51,7 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Sampled before the read: a later stamp would strand the client on stale flags.
 	lastModified := h.modTime.get()
 
-	body, err := fetchAllFlags(r.Context(), h.store, h.selectorExpression(r))
+	body, err := fetchAllFlags(r.Context(), h.store, resolveSelector(r.Header, ""))
 	if err != nil {
 		h.writeError(w, err)
 		return
@@ -64,15 +61,6 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// ServeContent applies RFC 9110 precedence: If-None-Match wins when both validators are sent.
 	http.ServeContent(w, r, contentName, lastModified, bytes.NewReader(body))
-}
-
-// selectorExpression falls back to the path segment, then the query parameter.
-func (h httpHandler) selectorExpression(r *http.Request) string {
-	fallback := r.PathValue(selectorPathVar)
-	if fallback == "" {
-		fallback = r.URL.Query().Get(selectorQueryParam)
-	}
-	return resolveSelector(r.Header, fallback)
 }
 
 // writeError maps a fetch failure onto a status. No branch echoes the expression back: it is

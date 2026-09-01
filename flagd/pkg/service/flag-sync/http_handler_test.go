@@ -33,11 +33,10 @@ func newTestHTTPHandler(t *testing.T) (httpHandler, store.IStore) {
 	}, flagStore
 }
 
-// serve routes through a mux so PathValue and the method restriction behave as they do in production.
+// serve routes through a mux so the method restriction behaves as it does in production.
 func serve(h httpHandler, req *http.Request) *httptest.ResponseRecorder {
 	mux := http.NewServeMux()
 	mux.Handle("GET "+flagsPath, h)
-	mux.Handle("GET "+flagsPath+"/{"+selectorPathVar+"}", h)
 
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
@@ -60,7 +59,8 @@ func TestHTTPHandler_MatchesFetchAllFlags(t *testing.T) {
 				connect.NewRequest(&syncv1.FetchAllFlagsRequest{Selector: selector}))
 			require.NoError(t, err)
 
-			req := httptest.NewRequest(http.MethodGet, flagsPath+"?selector="+url.QueryEscape(selector), nil)
+			req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
+			req.Header.Set(selectorHeaderKey, selector)
 			rec := serve(h, req)
 
 			require.Equal(t, http.StatusOK, rec.Code)
@@ -69,73 +69,41 @@ func TestHTTPHandler_MatchesFetchAllFlags(t *testing.T) {
 	}
 }
 
-func TestHTTPHandler_SelectorSources(t *testing.T) {
+func TestHTTPHandler_SelectorFromHeader(t *testing.T) {
 	h, _ := newTestHTTPHandler(t)
 
-	tests := []struct {
-		name    string
-		request func() *http.Request
-	}{
-		{
-			name: "header",
-			request: func() *http.Request {
-				req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
-				req.Header.Set(selectorHeaderKey, "source="+testSource1)
-				return req
-			},
-		},
-		{
-			name: "path segment",
-			request: func() *http.Request {
-				return httptest.NewRequest(http.MethodGet,
-					flagsPath+"/"+url.PathEscape("source="+testSource1), nil)
-			},
-		},
-		{
-			name: "query param",
-			request: func() *http.Request {
-				return httptest.NewRequest(http.MethodGet,
-					flagsPath+"?selector="+url.QueryEscape("source="+testSource1), nil)
-			},
-		},
-	}
+	req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
+	req.Header.Set(selectorHeaderKey, "source="+testSource1)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rec := serve(h, tt.request())
+	rec := serve(h, req)
 
-			require.Equal(t, http.StatusOK, rec.Code)
-			assert.Contains(t, rec.Body.String(), "flagA")
-			assert.NotContains(t, rec.Body.String(), "flagB")
-		})
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "flagA")
+	assert.NotContains(t, rec.Body.String(), "flagB")
 }
 
-// Pins header > path > query, the order the gRPC and OFREP services already document.
-func TestHTTPHandler_SelectorPrecedence(t *testing.T) {
+// The header is the only selector slot; the path and query forms carry no meaning.
+func TestHTTPHandler_NonHeaderSelectorsIgnored(t *testing.T) {
 	h, _ := newTestHTTPHandler(t)
 
-	t.Run("header beats path and query", func(t *testing.T) {
+	t.Run("path segment is not routed", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet,
-			flagsPath+"/"+url.PathEscape("source="+testSource2)+"?selector="+url.QueryEscape("source="+testSource2), nil)
-		req.Header.Set(selectorHeaderKey, "source="+testSource1)
+			flagsPath+"/"+url.PathEscape("source="+testSource1), nil)
 
 		rec := serve(h, req)
 
-		require.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, rec.Body.String(), "flagA")
-		assert.NotContains(t, rec.Body.String(), "flagB")
+		require.Equal(t, http.StatusNotFound, rec.Code)
 	})
 
-	t.Run("path beats query", func(t *testing.T) {
+	t.Run("query param does not filter", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet,
-			flagsPath+"/"+url.PathEscape("source="+testSource1)+"?selector="+url.QueryEscape("source="+testSource2), nil)
+			flagsPath+"?selector="+url.QueryEscape("source="+testSource1), nil)
 
 		rec := serve(h, req)
 
 		require.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "flagA")
-		assert.NotContains(t, rec.Body.String(), "flagB")
+		assert.Contains(t, rec.Body.String(), "flagB")
 	})
 }
 
@@ -180,7 +148,7 @@ func TestHTTPHandler_SelectorStatuses(t *testing.T) {
 	}
 }
 
-// Source selectors routinely contain "/", which the path-segment form has to survive.
+// Source selectors routinely contain "/", which the header form has to survive.
 func TestHTTPHandler_SelectorContainingSlash(t *testing.T) {
 	sources := []string{"./flags.json"}
 	flagStore, err := store.NewStore(logger.NewLogger(nil, false), sources)
@@ -191,8 +159,8 @@ func TestHTTPHandler_SelectorContainingSlash(t *testing.T) {
 	mt.set(time.Now())
 	h := httpHandler{store: flagStore, log: logger.NewLogger(nil, false), modTime: mt}
 
-	req := httptest.NewRequest(http.MethodGet,
-		flagsPath+"/"+url.PathEscape("source=./flags.json"), nil)
+	req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
+	req.Header.Set(selectorHeaderKey, "source=./flags.json")
 
 	rec := serve(h, req)
 

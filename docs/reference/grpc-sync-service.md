@@ -104,21 +104,12 @@ is byte-identical to the string that RPC returns in its `flag_configuration` fie
 
 ### Selecting flags
 
-The [selector](./selector-syntax.md) may be supplied three ways, in descending order of precedence:
+The [selector](./selector-syntax.md) is supplied with the `Flagd-Selector` header, consistent with
+the other flagd services:
 
 ```shell
-# 1. the Flagd-Selector header, consistent with the other flagd services
 curl -H 'Flagd-Selector: flagSetId=payments' http://localhost:8015/v1/flags
-
-# 2. a path segment; the expression is a single segment, so it must be URL-escaped
-curl http://localhost:8015/v1/flags/flagSetId%3Dpayments
-
-# 3. a query parameter
-curl 'http://localhost:8015/v1/flags?selector=flagSetId=payments'
 ```
-
-Source selectors routinely contain `/`, so escaping matters for the path form: `source=./flags.json` is requested as `/v1/flags/source%3D.%2Fflags.json`.
-No file extension is stripped from the path segment, so a selector ending in `.json` is preserved as written.
 
 The endpoint distinguishes three outcomes:
 
@@ -150,6 +141,12 @@ Because the body is an ordinary flag configuration document, another flagd can c
 
 ```shell
 flagd start --uri http://localhost:8015/v1/flags
+```
+
+To sync only a subset, set the selector header on the source, which needs the `--sources` form:
+
+```shell
+flagd start --sources='[{"uri":"http://localhost:8015/v1/flags","provider":"http","headers":{"Flagd-Selector":"flagSetId=payments"}}]'
 ```
 
 flagd's HTTP sync sends `If-None-Match` on each poll, so steady-state polling costs a `304` with no body.
