@@ -3,6 +3,13 @@ PREFIX=/usr/local
 PUBLIC_JSON_SCHEMA_DIR=docs/schema/v0/
 ALL_GO_MOD_DIRS := $(shell find . -path ./test/integration -prune -o -type f -name 'go.mod' -exec dirname {} \; | sort)
 
+# The FIPS variant builds against the CMVP-certified Go Cryptographic Module
+# v1.0.0 (certificate #5247). The literal version is required; the
+# "certified"/"inprocess" aliases vary by toolchain. The fips140 tag makes the
+# binary require that module at startup rather than merely report on it.
+FIPS_ENV  := GOFIPS140=v1.0.0 CGO_ENABLED=0
+FIPS_TAGS := fips140
+
 FLAGD_DEV_NAMESPACE ?= flagd-dev
 ZD_TEST_NAMESPACE_FLAGD_PROXY ?= flagd-proxy-zd-test
 ZD_TEST_NAMESPACE ?= flagd-zd-test
@@ -39,6 +46,11 @@ build: workspace-init # default to flagd
 	make build-flagd
 build-flagd:
 	go build -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd ./flagd
+
+.PHONY: build-flagd-fips
+build-flagd-fips:
+	$(FIPS_ENV) go build -tags $(FIPS_TAGS) -ldflags "-X main.version=dev -X main.commit=$$(git rev-parse --short HEAD) -X main.date=$$(date +%FT%TZ)" -o ./bin/flagd-fips ./flagd
+	go version -m ./bin/flagd-fips | grep -E 'GOFIPS140=|-tags='
 .PHONY: test
 test: test-core test-flagd test-flagd-proxy
 test-core:
@@ -47,6 +59,27 @@ test-flagd:
 	go test -race -covermode=atomic -cover -short ./flagd/pkg/... -coverprofile=flagd-coverage.out
 test-flagd-proxy:
 	go test -race -covermode=atomic -cover -short ./flagd-proxy/pkg/... -coverprofile=flagd-proxy-coverage.out
+# fips140=only makes non-approved algorithms error or panic, so this fails if a
+# tested path reaches MD5, SHA-1, RC4, 3DES or ChaCha20-Poly1305. Test mode only;
+# released binaries run with fips140=on.
+#
+# -exec applies the GODEBUG to the test binaries only. Setting it in the
+# environment would also apply it to the go command, whose module fetches over
+# TLS negotiate X25519 and fail under fips140=only.
+.PHONY: test-fips
+test-fips:
+	$(FIPS_ENV) go test -tags $(FIPS_TAGS) -short -count=1 -exec 'env GODEBUG=fips140=only' ./core/... ./flagd/... ./flagd-proxy/...
+
+# Regenerate the crypto dependency closure recorded in the FIPS docs. Pinned to
+# linux/amd64: the closure is platform-dependent, so an unpinned run would
+# differ between a developer machine and CI.
+.PHONY: fips-closure
+fips-closure:
+	@$(FIPS_ENV) GOOS=linux GOARCH=amd64 go list -tags $(FIPS_TAGS) -deps ./flagd ./flagd-proxy \
+	  | grep -E '^(crypto|golang\.org/x/crypto)($$|/)|/crypto($$|/)' \
+	  | sort -u > docs/reference/fips-crypto-closure.txt
+	@echo "wrote docs/reference/fips-crypto-closure.txt"
+
 flagd-benchmark-test:
 	go test -bench=Bench -short -benchtime=5s -benchmem ./core/... | tee benchmark.txt
 flagd-integration-test-harness:
@@ -74,10 +107,10 @@ uninstall:
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
 	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run $(module)/...;)
 lint-fix:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
 	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --fix $(module)/...;)
 install-mockgen:
 	go install go.uber.org/mock/mockgen@v0.4.0

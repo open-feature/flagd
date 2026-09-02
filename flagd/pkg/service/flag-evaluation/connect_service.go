@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -191,6 +192,8 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		ReadTimeout:    5 * time.Second,
 		Handler:        svcHandler,
 		MaxHeaderBytes: int(svcConf.MaxRequestHeaderBytes),
+		// Cipher suites and curves are left unset; FIPS mode filters them.
+		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
 	// Add middlewares

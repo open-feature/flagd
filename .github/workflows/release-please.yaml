@@ -8,9 +8,11 @@ env:
   PUBLISHABLE_ITEMS: '["flagd","flagd-proxy"]'
   REGISTRY: ghcr.io
   REPO_OWNER: ${{ github.repository_owner }}
-  DEFAULT_GO_VERSION: '~1.25'
+  DEFAULT_GO_VERSION: '~1.27'
   PUBLIC_KEY_FILE: publicKey.pub
   GOPRIVATE: buf.build/gen/go
+  # The toolchain determines which FIPS snapshots exist, so pin it.
+  GOTOOLCHAIN: local
 
 name: Release Please
 jobs:
@@ -120,12 +122,34 @@ jobs:
             VERSION=${{ env.VERSION }}
             COMMIT=${{ github.sha }}
             DATE=${{ needs.release-please.outputs.date }}
+      - name: Build FIPS variant
+        id: build-fips
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./${{ matrix.path }}/build.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          provenance: mode=max
+          sbom: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest-fips
+            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}-fips
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ needs.release-please.outputs.date }}
+            FIPS=on
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4
 
-      - name: Sign the image
+      - name: Sign the images
         run: |
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}@${{ steps.build.outputs.digest }}
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}@${{ steps.build-fips.outputs.digest }}
           cosign public-key --key env://COSIGN_PRIVATE_KEY --outfile ${{ env.PUBLIC_KEY_FILE }}
         env:
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
@@ -189,10 +213,6 @@ jobs:
         run: |
           env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_linux_x86_64 ./${{ matrix.path }}/main.go
           tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_x86_64.tar.gz ./${{ matrix.path }}_linux_x86_64 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
-      - name: build linux i386
-        run: |
-          env CGO_ENABLED=0 GOOS=linux GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_linux_i386 ./${{ matrix.path }}/main.go
-          tar -cvzf ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Linux_i386.tar.gz ./${{ matrix.path }}_linux_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
       # Windows artifacts use .zip archive
       - name: build windows x86_64
         run: |
@@ -202,6 +222,36 @@ jobs:
         run: |
           env CGO_ENABLED=0 GOOS=windows GOARCH=386 go build ${{ env.BUILD_ARGS }} -o ./${{ matrix.path }}_windows_i386 ./${{ matrix.path }}/main.go
           zip -r ${{ matrix.path }}_${{ env.VERSION_NO_PREFIX }}_Windows_i386.zip ./${{ matrix.path }}_windows_i386 ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+
+      # FIPS variant. Fewer targets than the standard build: FIPS mode is
+      # unsupported on windows/386, and linux/386 is not a validated operating
+      # environment for the module.
+      - name: build FIPS variant
+        env:
+          # The CMVP-certified Go Cryptographic Module v1.0.0 (certificate #5247).
+          GOFIPS140: v1.0.0
+        run: |
+          set -euo pipefail
+          build_fips() {
+            goos="$1"; goarch="$2"; label="$3"; format="$4"
+            bin="./${{ matrix.path }}-fips_${goos}_${goarch}"
+            env CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build ${{ env.BUILD_ARGS }} -tags fips140 -o "$bin" ./${{ matrix.path }}/main.go
+            # The toolchain adds fips140v1.0 only when GOFIPS140 is set, so both
+            # tags together prove the binary built as the FIPS variant.
+            go version -m "$bin" | grep -q -- '-tags=fips140,fips140v1.0' \
+              || { echo "::error::$bin is not a FIPS 140-3 build"; exit 1; }
+            archive="${{ matrix.path }}-fips_${{ env.VERSION_NO_PREFIX }}_${label}"
+            if [ "$format" = tar ]; then
+              tar -cvzf "${archive}.tar.gz" "$bin" ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+            else
+              zip -r "${archive}.zip" "$bin" ./LICENSE ./CHANGELOG.md ./README.md ./sbom.xml
+            fi
+          }
+          build_fips darwin  arm64 Darwin_arm64   tar
+          build_fips darwin  amd64 Darwin_x86_64  tar
+          build_fips linux   arm64 Linux_arm64    tar
+          build_fips linux   amd64 Linux_x86_64   tar
+          build_fips windows amd64 Windows_x86_64 zip
       # Bundle release artifacts
       - name: Bundle release assets
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1

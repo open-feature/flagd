@@ -11,12 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/open-feature/flagd/core/pkg/fips"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	iService "github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service"
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -66,6 +68,11 @@ var startCmd = &cobra.Command{
 			log.Fatalf("can't initialize zap logger: %v", err)
 		}
 		logger := logger.NewLogger(l, Debug)
+
+		logger.Info("build info", zap.String("variant", fips.Variant), zap.Stringer("FIPS 140-3 mode", fips.Current()))
+		if err := fips.Check(); err != nil {
+			logger.Fatal("refusing to start", zap.Error(err))
+		}
 
 		ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 

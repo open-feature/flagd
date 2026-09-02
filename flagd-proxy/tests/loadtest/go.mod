@@ -1,6 +1,6 @@
 module github.com/open-feature/flagd/flagd-proxy/tests/loadtest
 
-go 1.25.5
+go 1.27
 
 require (
 	buf.build/gen/go/open-feature/flagd/grpc/go v1.6.1-20260217192757-1388a552fc3c.1
