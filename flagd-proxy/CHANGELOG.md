@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.8...flagd-proxy/v0.9.9) (2026-09-02)
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+
 ## [0.9.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.7...flagd-proxy/v0.9.8) (2026-08-14)
 
 
