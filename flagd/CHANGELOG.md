@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.3](https://github.com/open-feature/flagd/compare/flagd/v0.16.2...flagd/v0.16.3) (2026-09-02)
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+* HTTP fetch equivalent of the gRPC FetchAllFlags ([#2037](https://github.com/open-feature/flagd/issues/2037)) ([48be8de](https://github.com/open-feature/flagd/commit/48be8de6209e15fe8a8aa7c57ff93ea770ec74cd))
+* SSE support for OFREP endpoints ([#2012](https://github.com/open-feature/flagd/issues/2012)) ([aa042fe](https://github.com/open-feature/flagd/commit/aa042fe42669710364c40e6a1c29093baa3cf863))
+
+
+### 🧹 Chore
+
+* OFREP ETag response based on full response body. ([#2036](https://github.com/open-feature/flagd/issues/2036)) ([2911ec1](https://github.com/open-feature/flagd/commit/2911ec189c962c2669d8d7c1c7d88e07f4c0e5ae))
+
 ## [0.16.2](https://github.com/open-feature/flagd/compare/flagd/v0.16.1...flagd/v0.16.2) (2026-08-14)
 
 
