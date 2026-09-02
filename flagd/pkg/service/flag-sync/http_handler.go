@@ -58,6 +58,7 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("ETag", etagOf(body))
+	w.Header().Set("Vary", flagdService.FLAGD_SELECTOR_HEADER)
 
 	// ServeContent applies RFC 9110 precedence: If-None-Match wins when both validators are sent.
 	http.ServeContent(w, r, contentName, lastModified, bytes.NewReader(body))
