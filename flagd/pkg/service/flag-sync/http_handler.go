@@ -66,8 +66,8 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // writeError maps a fetch failure onto a status. No branch echoes the expression back: it is
 // unescaped client input.
 func (h httpHandler) writeError(w http.ResponseWriter, err error) {
-	var fetchErr fetchError
-	if !errors.As(err, &fetchErr) {
+	fetchErr, ok := errors.AsType[fetchError](err)
+	if !ok {
 		fetchErr = fetchError{kind: fetchStoreRead, cause: err}
 	}
 

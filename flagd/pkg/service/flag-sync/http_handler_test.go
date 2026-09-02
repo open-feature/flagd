@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -55,7 +54,7 @@ func TestHTTPHandler_MatchesFetchAllFlags(t *testing.T) {
 
 	for _, selector := range []string{"", "source=" + testSource1, "source=" + testSource2} {
 		t.Run("selector="+selector, func(t *testing.T) {
-			grpcResp, err := grpcHandler.FetchAllFlags(context.Background(),
+			grpcResp, err := grpcHandler.FetchAllFlags(t.Context(),
 				connect.NewRequest(&syncv1.FetchAllFlagsRequest{Selector: selector}))
 			require.NoError(t, err)
 

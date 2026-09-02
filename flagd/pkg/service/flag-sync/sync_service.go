@@ -18,6 +18,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// shutdownTimeout bounds the graceful drain of in-flight non-streaming requests.
+const shutdownTimeout = 5 * time.Second
+
 type ISyncService interface {
 	// Start the sync service
 	Start(context.Context) error
@@ -80,18 +83,6 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		cfg.MetricsRecorder = &telemetry.NoopMetricsRecorder{}
 	}
 
-	var lis net.Listener
-	if cfg.SocketPath != "" {
-		l.Info(fmt.Sprintf("starting flag sync service at %s", cfg.SocketPath))
-		lis, err = net.Listen("unix", cfg.SocketPath)
-	} else {
-		l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))
-		lis, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
-	}
-	if err != nil {
-		return nil, fmt.Errorf("error creating listener: %w", err)
-	}
-
 	stamp := &modTime{}
 
 	// nil leaves the routes unregistered
@@ -113,10 +104,21 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	if cfg.CertPath != "" && cfg.KeyPath != "" {
 		tlsConfig, tlsErr := loadTLSConfig(cfg.CertPath, cfg.KeyPath)
 		if tlsErr != nil {
-			lis.Close()
 			return nil, fmt.Errorf("failed to load TLS cert and key: %w", tlsErr)
 		}
 		server.TLSConfig = tlsConfig
+	}
+
+	var lis net.Listener
+	if cfg.SocketPath != "" {
+		l.Info(fmt.Sprintf("starting flag sync service at %s", cfg.SocketPath))
+		lis, err = net.Listen("unix", cfg.SocketPath)
+	} else {
+		l.Info(fmt.Sprintf("starting flag sync service on port %d", cfg.Port))
+		lis, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error creating listener: %w", err)
 	}
 
 	return &Service{
@@ -196,13 +198,22 @@ func (s *Service) waitForInitialSync() {
 func (s *Service) shutdown() {
 	s.logger.Info("shutting down flag sync service")
 
-	// Close, not Shutdown: a long-lived SyncFlags stream would hold a graceful shutdown to its timeout.
-	if err := s.server.Close(); err != nil {
+	// Bounded: a long-lived SyncFlags stream would otherwise hold the graceful shutdown open
+	// indefinitely, while unary requests get the window to finish.
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Warn("error from sync server shutdown", zap.Error(err))
+		if err := s.server.Close(); err != nil {
+			s.logger.Warn("error from sync server close", zap.Error(err))
+		}
 	}
 
 	// Serve may never have started, in which case http.Server does not know the listener.
-	s.listener.Close()
+	if err := s.listener.Close(); err != nil {
+		s.logger.Debug("error closing sync service listener", zap.Error(err))
+	}
 }
 
 // syncTracker is a helper to track sync payloads at the startup

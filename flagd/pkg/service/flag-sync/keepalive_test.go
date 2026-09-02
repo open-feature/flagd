@@ -84,8 +84,7 @@ func TestSyncService_ToleratesAggressiveClientKeepalive(t *testing.T) {
 func TestSyncService_StreamOutlivesReadTimeout(t *testing.T) {
 	const port = 18051
 
-	ctx, cancel := context.WithCancel(t.Context())
-	defer cancel()
+	ctx := t.Context()
 
 	_, flagStore, emit, _ := startSyncService(t, ctx, SvcConfigurations{Port: port})
 	emit()
