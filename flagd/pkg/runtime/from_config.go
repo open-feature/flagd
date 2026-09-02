@@ -24,27 +24,30 @@ const svcName = "flagd"
 
 // Config is the configuration structure derived from startup arguments.
 type Config struct {
-	MetricExporter        string
-	ManagementPort        uint16
-	OfrepServicePort      uint16
-	OfrepSSEEnabled       bool
-	OfrepSSEInactivityDel int
-	OfrepSSEPublicURL     string
-	OtelCollectorURI      string
-	OtelCertPath          string
-	OtelKeyPath           string
-	OtelCAPath            string
-	OtelReloadInterval    time.Duration
-	ServiceCertPath       string
-	ServiceKeyPath        string
-	ServicePort           uint16
-	ServiceSocketPath     string
-	SyncServicePort       uint16
-	SyncServiceSocketPath string
-	StreamDeadline        time.Duration
-	DisableSyncMetadata   bool
+	MetricExporter         string
+	ManagementPort         uint16
+	OfrepServicePort       uint16
+	OfrepSSEEnabled        bool
+	OfrepSSEInactivityDel  int
+	OfrepSSEPublicURL      string
+	OtelCollectorURI       string
+	OtelCertPath           string
+	OtelKeyPath            string
+	OtelCAPath             string
+	OtelReloadInterval     time.Duration
+	ServiceCertPath        string
+	ServiceKeyPath         string
+	ServicePort            uint16
+	ServiceSocketPath      string
+	SyncServicePort        uint16
+	SyncServiceHTTPEnabled bool
+	SyncServiceSocketPath  string
+	StreamDeadline         time.Duration
+	DisableSyncMetadata    bool
 
-	KeepAliveMinTime             time.Duration
+	// Deprecated: no-op, retained so existing configurations keep working. See warnOnNoOpConfig.
+	KeepAliveMinTime time.Duration
+	// Deprecated: no-op, see KeepAliveMinTime.
 	KeepAlivePermitWithoutStream bool
 
 	SyncProviders []sync.SourceConfig
@@ -56,9 +59,28 @@ type Config struct {
 	MaxRequestHeaderBytes      int64
 }
 
+// Defaults of the removed keepalive enforcement policy, kept so an unchanged config stays silent.
+const (
+	KeepAliveMinTimeDefault             = 30 * time.Second
+	KeepAlivePermitWithoutStreamDefault = true
+)
+
+// warnOnNoOpConfig reports settings that are still accepted but no longer do anything.
+func warnOnNoOpConfig(logger *logger.Logger, config Config) {
+	//nolint:staticcheck // SA1019 reading the no-op fields is the point
+	if config.KeepAliveMinTime != KeepAliveMinTimeDefault ||
+		config.KeepAlivePermitWithoutStream != KeepAlivePermitWithoutStreamDefault {
+		logger.Warn("keep-alive-min-time and keep-alive-permit-without-stream are no-ops and will be " +
+			"removed in a later version. The flag sync server is served by connect over net/http, which " +
+			"imposes no minimum keepalive ping interval and always permits pings without an active stream.")
+	}
+}
+
 // FromConfig builds a runtime from startup configurations
 // nolint: funlen
 func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime, error) {
+	warnOnNoOpConfig(logger, config)
+
 	telCfg := telemetry.Config{
 		MetricsExporter: config.MetricExporter,
 		CollectorConfig: telemetry.CollectorConfig{
@@ -133,6 +155,12 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error creating OFREP service: %w", err)
 	}
 
+	options, err := telemetry.BuildConnectOptions(telCfg)
+	if err != nil {
+		// log the error but continue
+		logger.Error("failed to build connect options", zap.Error(err))
+	}
+
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
 		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
@@ -143,12 +171,16 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		KeyPath:             config.ServiceKeyPath,
 		CertPath:            config.ServiceCertPath,
 		SocketPath:          config.SyncServiceSocketPath,
+		HTTPEnabled:         config.SyncServiceHTTPEnabled,
+		ServiceName:         svcName,
+		CORS:                config.CORS,
+		Options:             options,
 		StreamDeadline:      config.StreamDeadline,
 		DisableSyncMetadata: config.DisableSyncMetadata,
 		MetricsRecorder:     recorder,
 
-		KeepAliveMinTime:             config.KeepAliveMinTime,
-		KeepAlivePermitWithoutStream: config.KeepAlivePermitWithoutStream,
+		MaxRequestHeaderBytes: config.MaxRequestHeaderBytes,
+		MaxRequestBodyBytes:   config.MaxRequestBodyBytes,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sync service: %w", err)
@@ -159,12 +191,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders)
 	if err != nil {
 		return nil, err
-	}
-
-	options, err := telemetry.BuildConnectOptions(telCfg)
-	if err != nil {
-		// log the error but continue
-		logger.Error(fmt.Sprintf("failed to build connect options, %v", err))
 	}
 
 	return &Runtime{

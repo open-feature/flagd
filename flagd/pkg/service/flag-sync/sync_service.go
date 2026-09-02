@@ -3,21 +3,23 @@ package sync
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"slices"
 	"time"
 
-	"buf.build/gen/go/open-feature/flagd/grpc/go/flagd/sync/v1/syncv1grpc"
+	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 )
+
+// shutdownTimeout bounds the graceful drain of in-flight non-streaming requests.
+const shutdownTimeout = 5 * time.Second
 
 type ISyncService interface {
 	// Start the sync service
@@ -28,88 +30,84 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger                       *logger.Logger
-	Port                         uint16
-	Sources                      []string
-	Store                        store.IStore
-	ContextValues                map[string]any
-	CertPath                     string
-	KeyPath                      string
-	SocketPath                   string
-	StreamDeadline               time.Duration
-	DisableSyncMetadata          bool
-	MetricsRecorder              telemetry.IMetricsRecorder
-	KeepAliveMinTime             time.Duration
-	KeepAlivePermitWithoutStream bool
+	Logger              *logger.Logger
+	Port                uint16
+	Sources             []string
+	Store               store.IStore
+	ContextValues       map[string]any
+	CertPath            string
+	KeyPath             string
+	SocketPath          string
+	StreamDeadline      time.Duration
+	DisableSyncMetadata bool
+	MetricsRecorder     telemetry.IMetricsRecorder
+
+	HTTPEnabled           bool
+	ServiceName           string
+	CORS                  []string
+	Options               []connect.HandlerOption
+	MaxRequestHeaderBytes int64
+	MaxRequestBodyBytes   int64
 }
 
 type Service struct {
 	listener net.Listener
 	logger   *logger.Logger
-	server   *grpc.Server
+	server   *http.Server
+	modTime  *modTime
 
 	startupTracker syncTracker
 }
 
-func loadTLSCredentials(certPath string, keyPath string) (credentials.TransportCredentials, error) {
-	// Load server's certificate and private key
+func loadTLSConfig(certPath string, keyPath string) (*tls.Config, error) {
 	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load key pair from certificate paths '%s' and '%s': %w", certPath, keyPath, err)
 	}
 
-	// Create the credentials and return it
-	config := &tls.Config{
+	return &tls.Config{
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.NoClientCert,
 		MinVersion:   tls.VersionTLS12,
-	}
-
-	return credentials.NewTLS(config), nil
-}
-
-// keepAliveEnforcementPolicy builds the gRPC keepalive enforcement policy so
-// provider keepalive pings on the long-lived SyncFlags stream aren't rejected
-// with GOAWAY ENHANCE_YOUR_CALM.
-func keepAliveEnforcementPolicy(cfg SvcConfigurations) keepalive.EnforcementPolicy {
-	return keepalive.EnforcementPolicy{
-		MinTime:             cfg.KeepAliveMinTime,
-		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream,
-	}
+		// h2 first so gRPC clients get HTTP/2; http/1.1 keeps the other surfaces reachable
+		NextProtos: []string{"h2", "http/1.1"},
+	}, nil
 }
 
 func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	var err error
 	l := cfg.Logger
 
-	serverOpts := []grpc.ServerOption{
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy(cfg)),
+	// Normalized on cfg so the server built below sees the same recorder.
+	if cfg.MetricsRecorder == nil {
+		cfg.MetricsRecorder = &telemetry.NoopMetricsRecorder{}
 	}
 
-	if cfg.CertPath != "" && cfg.KeyPath != "" {
-		tlsCredentials, err := loadTLSCredentials(cfg.CertPath, cfg.KeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load TLS cert and key: %w", err)
-		}
-		serverOpts = append(serverOpts, grpc.Creds(tlsCredentials))
+	stamp := &modTime{}
+
+	// nil leaves the routes unregistered
+	var flagsHandler http.Handler
+	if cfg.HTTPEnabled {
+		flagsHandler = httpHandler{store: cfg.Store, log: l, modTime: stamp}
 	}
 
-	server := grpc.NewServer(serverOpts...)
-
-	metricsRecorder := cfg.MetricsRecorder
-	if metricsRecorder == nil {
-		metricsRecorder = &telemetry.NoopMetricsRecorder{}
-	}
-
-	syncv1grpc.RegisterFlagSyncServiceServer(server, &syncHandler{
+	server := newConnectServer(cfg, syncHandler{
 		store:               cfg.Store,
 		log:                 l,
 		contextValues:       cfg.ContextValues,
 		deadline:            cfg.StreamDeadline,
 		disableSyncMetadata: cfg.DisableSyncMetadata,
-		metricsRecorder:     metricsRecorder,
-	})
+		metricsRecorder:     cfg.MetricsRecorder,
+	}, flagsHandler)
+
+	// Loaded here rather than in ServeTLS so a bad path fails at construction.
+	if cfg.CertPath != "" && cfg.KeyPath != "" {
+		tlsConfig, tlsErr := loadTLSConfig(cfg.CertPath, cfg.KeyPath)
+		if tlsErr != nil {
+			return nil, fmt.Errorf("failed to load TLS cert and key: %w", tlsErr)
+		}
+		server.TLSConfig = tlsConfig
+	}
 
 	var lis net.Listener
 	if cfg.SocketPath != "" {
@@ -127,6 +125,7 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 		listener: lis,
 		logger:   l,
 		server:   server,
+		modTime:  stamp,
 		startupTracker: syncTracker{
 			sources:  slices.Clone(cfg.Sources),
 			doneChan: make(chan interface{}),
@@ -138,19 +137,18 @@ func (s *Service) Start(ctx context.Context) error {
 	// derive errgroup so we track ctx for exit as well as startup errors
 	g, lCtx := errgroup.WithContext(ctx)
 
+	ready := make(chan struct{})
 	g.Go(func() error {
-		// delay server start until we see all syncs from known sync sources OR timeout
-		select {
-		case <-time.After(5 * time.Second):
-			s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
-				"continuing sync service")
-			break
-		case <-s.startupTracker.getDone():
-			break
-		}
+		s.waitForInitialSync()
+		close(ready)
+		return nil
+	})
 
-		err := s.server.Serve(s.listener)
-		if err != nil {
+	g.Go(func() error {
+		<-ready
+
+		err := s.serve()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Warn(fmt.Sprintf("error from sync server start: %v", err))
 		}
 		return nil
@@ -171,13 +169,51 @@ func (s *Service) Start(ctx context.Context) error {
 	return nil
 }
 
+// serve leaves the ServeTLS paths empty because the certificates are already in TLSConfig.
+func (s *Service) serve() error {
+	if s.server.TLSConfig != nil {
+		return s.server.ServeTLS(s.listener, "", "")
+	}
+	return s.server.Serve(s.listener)
+}
+
 func (s *Service) Emit(source string) {
 	s.startupTracker.trackAndRemove(source)
+	// Stamped here rather than from a store watch, which would re-marshal just to date it. This can
+	// run ahead of a real content change; the ETag stays exact.
+	s.modTime.set(time.Now())
+}
+
+// waitForInitialSync delays serving until every known sync source has reported its first sync, so
+// clients cannot be handed a partial configuration at startup.
+func (s *Service) waitForInitialSync() {
+	select {
+	case <-time.After(5 * time.Second):
+		s.logger.Warn("timeout while waiting for all sync sources to complete their initial sync. " +
+			"continuing sync service")
+	case <-s.startupTracker.getDone():
+	}
 }
 
 func (s *Service) shutdown() {
-	s.logger.Info("shutting down gRPC sync service")
-	s.server.Stop()
+	s.logger.Info("shutting down flag sync service")
+
+	// Bounded: a long-lived SyncFlags stream would otherwise hold the graceful shutdown open
+	// indefinitely, while unary requests get the window to finish.
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := s.server.Shutdown(ctx); err != nil {
+		s.logger.Warn("error from sync server shutdown", zap.Error(err))
+		if err := s.server.Close(); err != nil {
+			s.logger.Warn("error from sync server close", zap.Error(err))
+		}
+	}
+
+	// Serve may never have started, in which case http.Server does not know the listener.
+	if err := s.listener.Close(); err != nil {
+		s.logger.Debug("error closing sync service listener", zap.Error(err))
+	}
 }
 
 // syncTracker is a helper to track sync payloads at the startup

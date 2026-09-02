@@ -20,6 +20,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	h2cmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/h2c"
@@ -141,7 +142,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		svcConf.ContextValues,
 	)
 
-	marshalOpts := WithJSON(
+	marshalOpts := flagdService.WithJSON(
 		// json parsing configuration - we emit "unpopulated" fields (falsy fields are not dropped)
 		protojson.MarshalOptions{EmitUnpopulated: true},
 		protojson.UnmarshalOptions{DiscardUnknown: true},

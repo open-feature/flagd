@@ -72,7 +72,9 @@ When selectors are provided in multiple locations, flagd uses the following prec
 
 1. **gRPC Metadata**: `Flagd-Selector` header in gRPC metadata
 2. **HTTP Header**: `Flagd-Selector` header in HTTP requests
-3. **Request Body**: `selector` field in protobuf/JSON request body
+3. **URL Path**: selector path segment, on endpoints that accept one
+4. **Query String**: `selector` query parameter, on endpoints that accept one
+5. **Request Body**: `selector` field in protobuf/JSON request body
 
 ### Example: Header Precedence
 
@@ -188,4 +190,20 @@ The selector syntax is designed to be extensible. Future versions may support:
 - `POST /ofrep/v1/evaluate/flags/{key}`: Supports selector in header
 - `POST /ofrep/v1/evaluate/flags`: Supports selector in header
 
+**Flag Configuration Endpoint:**
+
+- `GET /v1/flags`: Supports selector in header
+
 All HTTP endpoints support the `Flagd-Selector` header for selector specification.
+
+### Error Responses
+
+An unresolvable selector is reported differently depending on why it failed:
+
+| Result                                       | Example                           | Status                     |
+|----------------------------------------------|-----------------------------------|----------------------------|
+| Selector string is not well-formed           | control characters, invalid UTF-8 | `400`                      |
+| Well-formed, but names an unknown filter     | `bogus=1`                         | `404`                      |
+| Valid filter that currently matches no flags | `flagSetId=empty-set`             | `200` with an empty result |
+
+Note that the flag configuration endpoint returns `404` for an unknown filter, while the OFREP endpoints return `400` and the sync service RPCs return `invalid_argument` for the same input. Error responses never echo the submitted expression back.
