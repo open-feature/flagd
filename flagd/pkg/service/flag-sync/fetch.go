@@ -24,7 +24,6 @@ type fetchErrorKind int
 
 const (
 	fetchSelectorMalformed fetchErrorKind = iota
-	fetchSelectorInvalid
 	fetchStoreRead
 	fetchMarshal
 )
@@ -47,7 +46,7 @@ func newSelector(expression string) (store.Selector, error) {
 
 	selector, err := store.NewSelector(expression)
 	if err != nil {
-		return store.Selector{}, fetchError{kind: fetchSelectorInvalid, cause: err}
+		return store.Selector{}, fetchError{kind: fetchSelectorMalformed, cause: err}
 	}
 
 	return selector, nil

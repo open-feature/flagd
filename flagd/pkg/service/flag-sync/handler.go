@@ -176,7 +176,7 @@ func (s syncHandler) connectError(err error) error {
 	}
 
 	switch fetchErr.kind {
-	case fetchSelectorMalformed, fetchSelectorInvalid:
+	case fetchSelectorMalformed:
 		return connect.NewError(connect.CodeInvalidArgument, fetchErr.cause)
 	case fetchMarshal:
 		s.log.Error("error marshalling flags", zap.Error(fetchErr.cause))

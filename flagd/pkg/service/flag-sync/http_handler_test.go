@@ -119,7 +119,7 @@ func TestHTTPHandler_SelectorStatuses(t *testing.T) {
 	}{
 		{name: "control character", selector: "bad\x01char", wantStatus: http.StatusBadRequest},
 		{name: "invalid utf-8", selector: "bad\xffutf8", wantStatus: http.StatusBadRequest},
-		{name: "unknown filter key", selector: "bogus=1", wantStatus: http.StatusNotFound},
+		{name: "unknown filter key", selector: "bogus=1", wantStatus: http.StatusBadRequest},
 		{
 			name:       "valid filter matching nothing",
 			selector:   "flagSetId=does-not-exist",

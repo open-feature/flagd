@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	flagdService "github.com/open-feature/flagd/flagd/pkg/service"
 	"go.uber.org/zap"
 )
 
@@ -75,8 +76,6 @@ func (h httpHandler) writeError(w http.ResponseWriter, err error) {
 	switch fetchErr.kind {
 	case fetchSelectorMalformed:
 		http.Error(w, "malformed selector", http.StatusBadRequest)
-	case fetchSelectorInvalid:
-		http.Error(w, "no such selector", http.StatusNotFound)
 	case fetchMarshal:
 		h.log.Error("error marshalling flags", zap.Error(fetchErr.cause))
 		http.Error(w, "error marshalling flags", http.StatusInternalServerError)

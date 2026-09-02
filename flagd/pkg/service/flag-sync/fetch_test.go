@@ -43,7 +43,6 @@ func TestNewSelector_ErrorKinds(t *testing.T) {
 	}{
 		{name: "control character", expression: "source=a\x00b", wantKind: fetchSelectorMalformed},
 		{name: "invalid utf8", expression: "source=\xc3\x28", wantKind: fetchSelectorMalformed},
-		{name: "unknown key", expression: "invalidKey=val", wantKind: fetchSelectorInvalid},
 	}
 
 	for _, test := range tests {
@@ -77,7 +76,7 @@ func TestFetchAllFlags(t *testing.T) {
 
 		var fetchErr fetchError
 		require.ErrorAs(t, err, &fetchErr)
-		require.Equal(t, fetchSelectorInvalid, fetchErr.kind)
+		require.Equal(t, fetchSelectorMalformed, fetchErr.kind)
 	})
 }
 
@@ -99,7 +98,7 @@ func TestConnectError(t *testing.T) {
 		},
 		{
 			name:        "invalid selector",
-			err:         fetchError{kind: fetchSelectorInvalid, cause: errors.New("invalid selector key")},
+			err:         fetchError{kind: fetchSelectorMalformed, cause: errors.New("invalid selector key")},
 			wantCode:    connect.CodeInvalidArgument,
 			wantMessage: "invalid selector key",
 		},
