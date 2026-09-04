@@ -38,6 +38,7 @@ const (
 	socketPathFlagName         = "socket-path"
 	sourcesFlagName            = "sources"
 	syncPortFlagName           = "sync-port"
+	syncHTTPFlagName           = "sync-http-enabled"
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	disableSyncMetadata        = "disable-sync-metadata"
@@ -59,8 +60,9 @@ func init() {
 
 	flags.Int32P(managementPortFlagName, "m", 8014, "Port for management operations")
 	flags.Int32P(portFlagName, "p", 8013, "Port to listen on")
-	flags.Int32P(syncPortFlagName, "g", 8015, "gRPC Sync port")
+	flags.Int32P(syncPortFlagName, "g", 8015, "Flag sync service port, serving gRPC, gRPC-Web and Connect")
 	flags.Int32P(ofrepPortFlagName, "r", 8016, "ofrep service port")
+	flags.Bool(syncHTTPFlagName, true, "Serve the flag configuration document over HTTP at /v1/flags on the sync port. Defaults to true.")
 
 	flags.Bool(ofrepSSEEnabledFlagName, true, "Enable the OFREP SSE change-notification endpoint (ADR-0008) at /ofrep/v1/sse/{channel} on the ofrep port, where the channel is a selector expression. Defaults to true.")
 	flags.Int(ofrepSSEInactivityFlagName, 120, "Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120.")
@@ -106,8 +108,8 @@ func init() {
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
-	flags.Duration(keepAliveMinTimeFlagName, 30*time.Second, "Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s.")
-	flags.Bool(keepAlivePermitWithoutStreamFlagName, true, "Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true.")
+	flags.Duration(keepAliveMinTimeFlagName, runtime.KeepAliveMinTimeDefault, "No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which has no keepalive enforcement policy to configure and imposes no minimum ping interval.")
+	flags.Bool(keepAlivePermitWithoutStreamFlagName, runtime.KeepAlivePermitWithoutStreamDefault, "No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which always permits keepalive pings without an active stream.")
 
 	bindFlags(flags)
 }
@@ -128,6 +130,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(sourcesFlagName, flags.Lookup(sourcesFlagName))
 	_ = viper.BindPFlag(uriFlagName, flags.Lookup(uriFlagName))
 	_ = viper.BindPFlag(syncPortFlagName, flags.Lookup(syncPortFlagName))
+	_ = viper.BindPFlag(syncHTTPFlagName, flags.Lookup(syncHTTPFlagName))
 	_ = viper.BindPFlag(syncSocketPathFlagName, flags.Lookup(syncSocketPathFlagName))
 	_ = viper.BindPFlag(ofrepPortFlagName, flags.Lookup(ofrepPortFlagName))
 	_ = viper.BindPFlag(ofrepSSEEnabledFlagName, flags.Lookup(ofrepSSEEnabledFlagName))
@@ -216,27 +219,30 @@ var startCmd = &cobra.Command{
 
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
-			CORS:                         viper.GetStringSlice(corsFlagName),
-			MetricExporter:               viper.GetString(metricsExporter),
-			ManagementPort:               viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:             viper.GetUint16(ofrepPortFlagName),
-			OfrepSSEEnabled:              viper.GetBool(ofrepSSEEnabledFlagName),
-			OfrepSSEInactivityDel:        viper.GetInt(ofrepSSEInactivityFlagName),
-			OfrepSSEPublicURL:            viper.GetString(ofrepSSEPublicURLFlagName),
-			OtelCollectorURI:             viper.GetString(otelCollectorURI),
-			OtelCertPath:                 viper.GetString(otelCertPathFlagName),
-			OtelKeyPath:                  viper.GetString(otelKeyPathFlagName),
-			OtelReloadInterval:           viper.GetDuration(otelReloadIntervalFlagName),
-			OtelCAPath:                   viper.GetString(otelCAPathFlagName),
-			ServiceCertPath:              viper.GetString(serverCertPathFlagName),
-			ServiceKeyPath:               viper.GetString(serverKeyPathFlagName),
-			ServicePort:                  viper.GetUint16(portFlagName),
-			ServiceSocketPath:            viper.GetString(socketPathFlagName),
-			SyncServicePort:              viper.GetUint16(syncPortFlagName),
-			SyncServiceSocketPath:        viper.GetString(syncSocketPathFlagName),
-			StreamDeadline:               viper.GetDuration(streamDeadlineFlagName),
-			DisableSyncMetadata:          viper.GetBool(disableSyncMetadata),
-			KeepAliveMinTime:             viper.GetDuration(keepAliveMinTimeFlagName),
+			CORS:                   viper.GetStringSlice(corsFlagName),
+			MetricExporter:         viper.GetString(metricsExporter),
+			ManagementPort:         viper.GetUint16(managementPortFlagName),
+			OfrepServicePort:       viper.GetUint16(ofrepPortFlagName),
+			OfrepSSEEnabled:        viper.GetBool(ofrepSSEEnabledFlagName),
+			OfrepSSEInactivityDel:  viper.GetInt(ofrepSSEInactivityFlagName),
+			OfrepSSEPublicURL:      viper.GetString(ofrepSSEPublicURLFlagName),
+			OtelCollectorURI:       viper.GetString(otelCollectorURI),
+			OtelCertPath:           viper.GetString(otelCertPathFlagName),
+			OtelKeyPath:            viper.GetString(otelKeyPathFlagName),
+			OtelReloadInterval:     viper.GetDuration(otelReloadIntervalFlagName),
+			OtelCAPath:             viper.GetString(otelCAPathFlagName),
+			ServiceCertPath:        viper.GetString(serverCertPathFlagName),
+			ServiceKeyPath:         viper.GetString(serverKeyPathFlagName),
+			ServicePort:            viper.GetUint16(portFlagName),
+			ServiceSocketPath:      viper.GetString(socketPathFlagName),
+			SyncServicePort:        viper.GetUint16(syncPortFlagName),
+			SyncServiceHTTPEnabled: viper.GetBool(syncHTTPFlagName),
+			SyncServiceSocketPath:  viper.GetString(syncSocketPathFlagName),
+			StreamDeadline:         viper.GetDuration(streamDeadlineFlagName),
+			DisableSyncMetadata:    viper.GetBool(disableSyncMetadata),
+			//nolint:staticcheck // SA1019 no-ops, read so FromConfig can warn when they are set
+			KeepAliveMinTime: viper.GetDuration(keepAliveMinTimeFlagName),
+			//nolint:staticcheck // SA1019 see above
 			KeepAlivePermitWithoutStream: viper.GetBool(keepAlivePermitWithoutStreamFlagName),
 			SyncProviders:                syncProviders,
 			ContextValues:                contextValuesToMap,

@@ -16,8 +16,8 @@ flagd start [flags]
   -C, --cors-origin strings                  CORS allowed origins, * will allow all origins
       --disable-sync-metadata                Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.
   -h, --help                                 help for start
-      --keep-alive-min-time duration         Minimum interval the flag sync gRPC server permits between client keepalive pings. Pings arriving more frequently than this are rejected with GOAWAY (ENHANCE_YOUR_CALM). Defaults to 30s. (default 30s)
-      --keep-alive-permit-without-stream     Permit clients of the flag sync gRPC server to send keepalive pings even when there is no active stream. Defaults to true. (default true)
+      --keep-alive-min-time duration         No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which has no keepalive enforcement policy to configure and imposes no minimum ping interval. (default 30s)
+      --keep-alive-permit-without-stream     No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which always permits keepalive pings without an active stream. (default true)
   -z, --log-format string                    Set the logging format, e.g. console or json (default "console")
   -m, --management-port int32                Port for management operations (default 8014)
   -B, --max-request-body int                 Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests. (default 1000000)
@@ -38,7 +38,8 @@ flagd start [flags]
   -d, --socket-path string                   Flagd unix socket path. With grpc the evaluations service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
   -s, --sources string                       JSON representation of an array of SourceConfig objects. Required fields: uri (string) and provider (string). Optional source-specific fields are also available, see https://flagd.dev/reference/sync-configuration/#source-configuration
       --stream-deadline duration             Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).
-  -g, --sync-port int32                      gRPC Sync port (default 8015)
+      --sync-http-enabled                    Serve the flag configuration document over HTTP at /v1/flags on the sync port. Defaults to true. (default true)
+  -g, --sync-port int32                      Flag sync service port, serving gRPC, gRPC-Web and Connect (default 8015)
   -e, --sync-socket-path string              Flagd sync service socket path. With grpc the sync service will be available on this address.
   -f, --uri .yaml/.yml/.json                 Set a sync provider uri to read data from, this can be a filepath, URL (HTTP and gRPC), FeatureFlag custom resource, or GCS, Azure Blob or S3. When flag keys are duplicated across multiple providers the merge priority follows the index of the flag arguments, as such flags from the uri at index 0 take the lowest precedence, with duplicated keys being overwritten by those from the uri at index 1. Please note that if you are using filepath, flagd only supports files with .yaml/.yml/.json extension.
 ```
