@@ -145,8 +145,7 @@ func (s *Coordinator) RegisterSubscription(
 			dataSync: dataSync,
 		}
 		sh.mu.Unlock()
-		// read syncRef under the lock we hold, but never run ReSync under it: a stalled
-		// subscriber blocks it on an unbuffered send and would jam the coordinator
+		// the goroutine takes neither lock: the subscriber channel is unbuffered and can stall
 		if syncRef := sh.syncRef; syncRef != nil {
 			go func() {
 				s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))

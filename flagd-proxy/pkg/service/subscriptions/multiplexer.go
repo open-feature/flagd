@@ -15,8 +15,9 @@ type multiplexer struct {
 	subs       map[interface{}]storedChannels
 	dataSync   chan sourceSync.DataSync
 	cancelFunc context.CancelFunc
-	syncRef    sourceSync.ISync
-	mu         *sync.RWMutex
+	// syncRef is written by watchResource and read by the resync paths, all under Coordinator.mu
+	syncRef sourceSync.ISync
+	mu      *sync.RWMutex
 	// done is closed by kill once the watcher is cancelled. Nil until the watcher starts.
 	// Written once by watchResource under Coordinator.mu; readers hold it too, except
 	// watchResource's own defer, which is the writer.
