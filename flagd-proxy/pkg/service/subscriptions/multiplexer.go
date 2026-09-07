@@ -11,40 +11,68 @@ import (
 
 // multiplexer distributes updates for a target to all of its subscribers
 type multiplexer struct {
-	// subs is written holding both Coordinator.mu and mu, and read holding either
+	// subs, done and cancelFunc are guarded by mu; use the methods below rather than taking it
+	// directly, so a Coordinator.mu call site is never mistaken for a multiplexer one.
+	// subs is additionally only ever written with Coordinator.mu held, which is what lets
+	// cleanup trust two subCount reads in a row
 	subs       map[interface{}]storedChannels
-	dataSync   chan sourceSync.DataSync
+	done       bool
 	cancelFunc context.CancelFunc
+	dataSync   chan sourceSync.DataSync
 	// syncRef is written by watchResource and read by the resync paths, all under Coordinator.mu
 	syncRef sourceSync.ISync
-	mu      *sync.RWMutex
-	// done is closed by kill once the watcher is cancelled. Nil until the watcher starts.
-	// Written once by watchResource under Coordinator.mu; readers hold it too, except
-	// watchResource's own defer, which is the writer.
-	done    chan struct{}
-	dieOnce sync.Once
+	mu      sync.RWMutex
 }
 
-// kill is the only way to cancel a watcher: mark first, so it never reads alive once cancelled.
-// A watcher that has not started yet is skipped here and reaped on a later tick instead (#2030).
+// watchedBy records the watcher's cancel, which is also what makes the multiplexer killable.
+func (h *multiplexer) watchedBy(cancel context.CancelFunc) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.cancelFunc = cancel
+}
+
+// kill is the only way to cancel a watcher. One whose watcher has not started is left for a
+// later tick: marking it would let RegisterSubscription replace the entry, and the pending
+// watchResource would adopt the replacement and orphan its watcher. Marking precedes the
+// cancel, which runs with mu released (#2030).
 func (h *multiplexer) kill() {
-	if h.done != nil {
-		h.dieOnce.Do(func() { close(h.done) })
+	h.mu.Lock()
+	cancel := h.cancelFunc
+	if cancel == nil {
+		h.mu.Unlock()
+		return
 	}
-	if h.cancelFunc != nil {
-		h.cancelFunc()
-	}
+	h.done = true
+	h.mu.Unlock()
+	cancel()
 }
 
-// isDead reports whether this multiplexer's watcher was cancelled and can no longer deliver;
-// one that has not started yet is not dead. Callers must hold Coordinator.mu (#2030).
+// isDead reports whether this multiplexer's watcher was cancelled and can no longer deliver (#2030).
 func (h *multiplexer) isDead() bool {
-	select {
-	case <-h.done: // a nil channel blocks, so a watcher that never started is not dead
-		return true
-	default:
-		return false
-	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.done
+}
+
+// addSub registers a subscriber's channels.
+func (h *multiplexer) addSub(key interface{}, chans storedChannels) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.subs[key] = chans
+}
+
+// removeSub drops a subscriber that has gone away.
+func (h *multiplexer) removeSub(key interface{}) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.subs, key)
+}
+
+// subCount reports how many subscribers are still attached.
+func (h *multiplexer) subCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.subs)
 }
 
 func (h *multiplexer) broadcastError(logger *logger.Logger, err error) {

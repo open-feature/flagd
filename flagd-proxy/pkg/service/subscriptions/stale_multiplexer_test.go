@@ -106,10 +106,9 @@ func (w *watchedTarget) subscribeAgain(ctx context.Context) chan isync.DataSync 
 // Test_RegisterSubscription_afterWatcherStopped covers #2030 end to end: a client that
 // reconnects after its sync failed must receive data again. It usually gets there via the
 // removed map entry rather than isDead, so it does not by itself prove the dead-multiplexer
-// path; Test_RegisterSubscription_whileStoppingWatcherBroadcasts pins that one down.
+// path; Test_RegisterSubscription_afterCleanupLoopCancelled pins that one down.
 func Test_RegisterSubscription_afterWatcherStopped(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	w := newWatchedTarget(t, ctx)
 
 	// the resource does not exist yet, so the sync fails and watchResource returns
@@ -133,8 +132,7 @@ func Test_RegisterSubscription_afterWatcherStopped(t *testing.T) {
 // the cleanup loop cancels multiplexers that have no subscriptions left. A subscription
 // arriving after that cancellation must also get a new watcher.
 func Test_RegisterSubscription_afterIdleShutdown(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	w := newWatchedTarget(t, ctx)
 
 	// what the cleanup loop does to an idle multiplexer
@@ -149,12 +147,11 @@ func Test_RegisterSubscription_afterIdleShutdown(t *testing.T) {
 	waitForData(t, secondData, "subscription is wedged: no watcher was started after the idle shutdown")
 }
 
-// Test_multiplexerSubsGuardedConsistently covers a second race in the same area: subs is
-// written under Coordinator.mu but read under multiplexer.mu, so a subscriber going away
-// while the watcher broadcasts tears the map. Run under -race, which the Makefile uses.
+// Test_multiplexerSubsGuardedConsistently covers a second race in the same area: subs used to
+// be written under Coordinator.mu but read under multiplexer.mu, so a subscriber going away
+// while the watcher broadcasts tore the map. Run under -race, which the Makefile uses.
 func Test_multiplexerSubsGuardedConsistently(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	builder := &freshSyncBuilder{}
@@ -170,9 +167,7 @@ func Test_multiplexerSubsGuardedConsistently(t *testing.T) {
 	// keep broadcasting while subscribers come and go
 	done := make(chan struct{})
 	var pushers sync.WaitGroup
-	pushers.Add(1)
-	go func() {
-		defer pushers.Done()
+	pushers.Go(func() {
 		for {
 			select {
 			case <-done:
@@ -180,9 +175,9 @@ func Test_multiplexerSubsGuardedConsistently(t *testing.T) {
 			case syncSrc.dataSyncChanIn <- isync.DataSync{FlagData: "update"}:
 			}
 		}
-	}()
+	})
 
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		subCtx, subCancel := context.WithCancel(ctx)
 		syncStore.RegisterSubscription(subCtx, target, i, make(chan isync.DataSync, 1), make(chan error, 1))
 		subCancel()
@@ -196,8 +191,7 @@ func Test_multiplexerSubsGuardedConsistently(t *testing.T) {
 // stopping watcher must not remove a multiplexer that a later subscription already
 // rebuilt for the same target, which would strand that subscription in turn.
 func Test_watchResource_doesNotDeleteReplacement(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
@@ -253,8 +247,7 @@ func (b *stalledResyncSync) ReSync(_ context.Context, _ chan<- isync.DataSync) e
 // Test_watchResource_broadcastsErrorWhileResyncStalls keeps the sync error reachable when a
 // ReSync is stalled: the broadcast must not sit behind a lock that ReSync can hold (#2030).
 func Test_watchResource_broadcastsErrorWhileResyncStalls(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	stalled := &stalledResyncSync{
@@ -359,8 +352,7 @@ func (b *gatedSyncBuilder) waitForSync(t *testing.T, n int) *gatedSync {
 // than simulating it, so it covers the second way a multiplexer dies: every cancellation
 // site has to mark the multiplexer dead, not just watchResource's own defer (#2030).
 func Test_RegisterSubscription_afterCleanupLoopCancelled(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	builder := &gatedSyncBuilder{release: make(chan struct{})}
 	defer close(builder.release)
@@ -399,81 +391,33 @@ func Test_RegisterSubscription_afterCleanupLoopCancelled(t *testing.T) {
 	waitForData(t, secondData, "subscription attached to a multiplexer the cleanup loop had cancelled")
 }
 
-// Test_RegisterSubscription_whileStoppingWatcherBroadcasts pins the second half of the
-// invariant kill() carries: a stopping watcher parks in broadcastError before it can remove
-// its own map entry, so the multiplexer has to already read as dead in that window (#2030).
-func Test_RegisterSubscription_whileStoppingWatcherBroadcasts(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+// Test_watchResource_marksDeadWhenItStops covers the second kill site: watchResource's defer.
+// The cleanup loop is the other one, and afterCleanupLoopCancelled covers that. Without this a
+// stopping watcher can leave its multiplexer readable as alive until the map entry goes (#2030).
+func Test_watchResource_marksDeadWhenItStops(t *testing.T) {
+	ctx := t.Context()
 	w := newWatchedTarget(t, ctx)
 
 	w.store.mu.RLock()
 	sh := w.store.multiplexers[w.target]
 	w.store.mu.RUnlock()
 
-	// park the stopping watcher inside broadcastError, which it reaches after kill() but
-	// before it takes Coordinator.mu to delete itself. The lock is held on its own
-	// goroutine: the test goroutine then only ever takes Coordinator.mu, so it cannot
-	// invert the Coordinator.mu -> multiplexer.mu order and hang instead of failing
-	release := parkMultiplexer(sh, 5*time.Second)
-	defer close(release)
+	// the resource does not exist, so the sync fails and watchResource returns
 	w.sync.errChanIn <- errors.New("resource not found")
-
-	deadline := time.Now().Add(3 * time.Second)
-	for {
-		w.store.mu.RLock()
-		dead := sh.isDead()
-		w.store.mu.RUnlock()
-		if dead {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("stopping watcher never marked its multiplexer dead")
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-
-	// this only proves anything while the dead entry is still mapped: otherwise the rebuild
-	// comes from a map miss and the isDead branch is never reached
-	requireStillMapped(t, w.store, w.target, sh)
-
-	// off the test goroutine, so a regression that attaches to the dead multiplexer blocks
-	// there instead of taking the whole package down with the -timeout
-	registered := make(chan chan isync.DataSync, 1)
-	go func() { registered <- w.subscribeAgain(ctx) }()
-	var secondData chan isync.DataSync
 	select {
-	case secondData = <-registered:
+	case <-w.errChan:
 	case <-time.After(3 * time.Second):
-		t.Fatal("RegisterSubscription attached to the dead multiplexer instead of rebuilding")
+		t.Fatal("sync error was never broadcast")
 	}
 
-	second := w.builder.waitForSync(t, 2)
-	second.dataSyncChanIn <- isync.DataSync{FlagData: "after the watcher stopped"}
-	waitForData(t, secondData, "subscription attached to a multiplexer whose watcher had stopped")
+	// the error goes out after the kill, so receiving it means the mark has already happened
+	if !sh.isDead() {
+		t.Fatal("the stopping watcher broadcast its error before marking the multiplexer dead")
+	}
 }
 
-// parkMultiplexer holds sh.mu on a goroutine of its own until the returned channel is closed
-// or the hold expires. The timeout is load-bearing: a caller stuck on Coordinator.mu cannot
-// close the channel, so without it a lock-order regression deadlocks instead of failing.
-func parkMultiplexer(sh *multiplexer, hold time.Duration) chan struct{} {
-	release := make(chan struct{})
-	parked := make(chan struct{})
-	go func() {
-		sh.mu.Lock()
-		close(parked)
-		select {
-		case <-release:
-		case <-time.After(hold):
-		}
-		sh.mu.Unlock()
-	}()
-	<-parked
-	return release
-}
-
-// requireStillMapped fails unless target still resolves to sh, so the tests that depend on a
-// dead-but-present multiplexer cannot quietly degrade into map-miss tests.
+// requireStillMapped fails unless target still resolves to sh, so a test that depends on a
+// dead-but-present multiplexer cannot quietly degrade into a map-miss test.
 func requireStillMapped(t *testing.T, store *Coordinator, target string, sh *multiplexer) {
 	t.Helper()
 	store.mu.RLock()
@@ -485,12 +429,11 @@ func requireStillMapped(t *testing.T, store *Coordinator, target string, sh *mul
 
 // Test_kill_multiplexerWithoutWatcher covers the state RegisterSubscription leaves behind when
 // a subscriber goes away before watchResource has taken Coordinator.mu to set cancelFunc: the
-// cleanup loop reaps it on the next tick and must not panic on the nil cancelFunc or done.
+// cleanup loop reaps it on the next tick, and a multiplexer with no cancel is not killable.
 func Test_kill_multiplexerWithoutWatcher(t *testing.T) {
 	sh := &multiplexer{
 		dataSync: make(chan isync.DataSync),
 		subs:     map[interface{}]storedChannels{},
-		mu:       &sync.RWMutex{},
 	}
 
 	sh.kill()
@@ -503,12 +446,40 @@ func Test_kill_multiplexerWithoutWatcher(t *testing.T) {
 // Test_kill_marksBeforeCancelling pins the ordering half of kill's contract: a watcher must
 // never observe its own cancellation while the multiplexer still reads as alive (#2030).
 func Test_kill_marksBeforeCancelling(t *testing.T) {
-	sh := &multiplexer{mu: &sync.RWMutex{}, done: make(chan struct{})}
-	sh.cancelFunc = func() {
+	sh := &multiplexer{}
+	sh.watchedBy(func() {
 		if !sh.isDead() {
 			t.Error("watcher cancelled while the multiplexer still read as alive")
 		}
-	}
+	})
 
 	sh.kill()
+}
+
+// Test_watchResource_teardownIsAtomic pins the structure the fix relies on: kill, delete and
+// broadcast all happen under one hold of Coordinator.mu, so a RegisterSubscription can never
+// land between them and attach to a multiplexer that is about to die (#2030).
+func Test_watchResource_teardownIsAtomic(t *testing.T) {
+	ctx := t.Context()
+	w := newWatchedTarget(t, ctx)
+
+	w.store.mu.RLock()
+	sh := w.store.multiplexers[w.target]
+	w.store.mu.RUnlock()
+
+	// hold the coordinator lock, so no part of the teardown may run
+	w.store.mu.Lock()
+	defer w.store.mu.Unlock()
+	w.sync.errChanIn <- errors.New("resource not found")
+
+	deadline := time.Now().Add(50 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if sh.isDead() {
+			t.Fatal("the stopping watcher killed its multiplexer without Coordinator.mu")
+		}
+		if _, ok := w.store.multiplexers[w.target]; !ok {
+			t.Fatal("the stopping watcher removed its entry without Coordinator.mu")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }

@@ -133,18 +133,11 @@ func (s *Coordinator) RegisterSubscription(
 					dataSync: dataSync,
 				},
 			},
-			mu: &sync.RWMutex{},
 		}
 		go s.watchResource(target)
 	} else {
-		// register our sub in the map; subs is also read by the broadcasts under sh.mu
 		s.logger.Debug(fmt.Sprintf("registering sync subscription %p", key))
-		sh.mu.Lock()
-		sh.subs[key] = storedChannels{
-			errChan:  errChan,
-			dataSync: dataSync,
-		}
-		sh.mu.Unlock()
+		sh.addSub(key, storedChannels{errChan: errChan, dataSync: dataSync})
 		// the goroutine takes neither lock: the subscriber channel is unbuffered and can stall
 		if syncRef := sh.syncRef; syncRef != nil {
 			go func() {
@@ -162,12 +155,8 @@ func (s *Coordinator) RegisterSubscription(
 		<-ctx.Done()
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if sh := registered; sh != nil && sh.subs != nil {
-			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
-			sh.mu.Lock()
-			delete(sh.subs, key)
-			sh.mu.Unlock()
-		}
+		s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
+		registered.removeSub(key)
 	}()
 }
 
@@ -182,23 +171,22 @@ func (s *Coordinator) watchResource(target string) {
 		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
 		return
 	}
-	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
-	sh.cancelFunc = cancel
-	sh.done = make(chan struct{})
+	// keeps the Coordinator.mu -> multiplexer.mu order
+	sh.watchedBy(cancel)
 	s.mu.Unlock()
 	var broadcastErr error
-	// kill, never a bare cancel: a reconnecting client must rebuild rather than attach (#2030)
 	defer func() {
-		sh.kill()
-		// broadcast outside s.mu: not required now that ReSync runs off the lock, but it
-		// keeps the failure path clear of the coordinator lock entirely
-		if broadcastErr != nil {
-			sh.broadcastError(s.logger, broadcastErr)
-		}
+		// one hold of Coordinator.mu for the whole teardown, so a RegisterSubscription cannot
+		// land in between and attach to a multiplexer about to die (#2030)
 		s.mu.Lock()
+		sh.kill()
 		// only our own entry; a later subscription may already have replaced it
 		if s.multiplexers[target] == sh {
 			delete(s.multiplexers, target)
+		}
+		// still under the lock: whoever registered before this is still a subscriber here
+		if broadcastErr != nil {
+			sh.broadcastError(s.logger, broadcastErr)
 		}
 		s.mu.Unlock()
 	}()
@@ -249,8 +237,8 @@ func (s *Coordinator) cleanup() {
 			s.mu.Lock()
 			for k, v := range s.multiplexers {
 				// reap any multiplexer with 0 active subscriptions; kill, never a bare cancel (#2030)
-				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, len(v.subs)))
-				if len(v.subs) == 0 {
+				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, v.subCount()))
+				if v.subCount() == 0 {
 					s.logger.Debug(fmt.Sprintf("shutting down multiplexer %s", k))
 					s.multiplexers[k].kill()
 				}
@@ -266,7 +254,7 @@ func (s *Coordinator) GetActiveSubscriptionsInt64() int64 {
 
 	syncs := 0
 	for _, v := range s.multiplexers {
-		syncs += len(v.subs)
+		syncs += v.subCount()
 	}
 
 	return int64(syncs)
