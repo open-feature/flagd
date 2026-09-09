@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,8 +24,7 @@ import (
 // watcher fail and return, and clients retry into that window. On an unguarded subs map
 // this kills the process with "fatal error: concurrent map iteration and map write" (#2030).
 func Test_SyncFlags_churnOnMissingResource(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	flagFile := filepath.Join(t.TempDir(), "flags.json")
 	target := "file:" + flagFile
@@ -33,10 +33,35 @@ func Test_SyncFlags_churnOnMissingResource(t *testing.T) {
 	log := logger.NewLogger(nil, false)
 	s := NewServer(ctx, log, subscriptions.NewManager(ctx, log))
 	s.config = service.Configuration{Port: port, ManagementPort: freePort(t), ReadinessProbe: func() bool { return true }}
-	go func() { _ = s.startServer() }()
+	serving := make(chan error, 1)
+	go func() { serving <- s.startServer() }()
+	t.Cleanup(func() {
+		select {
+		case err := <-serving:
+			// it exited on its own, so there is nothing to stop and Shutdown would
+			// dereference a grpcServer that startServer never got as far as assigning
+			if err != nil {
+				t.Errorf("proxy server exited with %v", err)
+			}
+			return
+		default:
+		}
+		s.Shutdown()
+		if err := <-serving; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			t.Errorf("proxy server exited with %v", err)
+		}
+	})
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	waitForListener(t, addr)
+	// freePort only reserves a port briefly, so the listener we just reached may belong to
+	// whoever took it from us. Surface that now rather than 30s later as a missing config
+	select {
+	case err := <-serving:
+		serving <- err // hand it back: the cleanup reads it to decide whether to Shutdown
+		t.Fatalf("proxy server exited before serving: %v", err)
+	default:
+	}
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -64,16 +89,14 @@ func Test_SyncFlags_churnOnMissingResource(t *testing.T) {
 	// repeatedly. A subscription landing in it attaches to a dead multiplexer and then
 	// neither errors nor delivers: it just hangs to its own deadline.
 	results := make(chan bool, 400)
-	for round := 0; round < 20; round++ {
+	for range 20 {
 		var wg sync.WaitGroup
-		for c := 0; c < 20; c++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+		for range 20 {
+			wg.Go(func() {
 				start := time.Now()
 				cfg, err := attempt()
 				results <- err != nil && cfg == "" && time.Since(start) > 1500*time.Millisecond
-			}()
+			})
 		}
 		wg.Wait()
 	}

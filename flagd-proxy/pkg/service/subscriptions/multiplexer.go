@@ -13,8 +13,8 @@ import (
 type multiplexer struct {
 	// subs, done and cancelFunc are guarded by mu; use the methods below rather than taking it
 	// directly, so a Coordinator.mu call site is never mistaken for a multiplexer one.
-	// subs is additionally only ever written with Coordinator.mu held, which is what lets
-	// cleanup trust two subCount reads in a row
+	// subs is additionally only ever written with Coordinator.mu held, which is what lets the
+	// teardown broadcast to exactly the subscribers it saw under that lock
 	subs       map[interface{}]storedChannels
 	done       bool
 	cancelFunc context.CancelFunc
@@ -31,20 +31,44 @@ func (h *multiplexer) watchedBy(cancel context.CancelFunc) {
 	h.cancelFunc = cancel
 }
 
-// kill is the only way to cancel a watcher. One whose watcher has not started is left for a
-// later tick: marking it would let RegisterSubscription replace the entry, and the pending
-// watchResource would adopt the replacement and orphan its watcher. Marking precedes the
-// cancel, which runs with mu released (#2030).
-func (h *multiplexer) kill() {
-	h.mu.Lock()
-	cancel := h.cancelFunc
-	if cancel == nil {
-		h.mu.Unlock()
-		return
+// markDeadLocked flags the multiplexer and hands back the cancel for the caller to run with mu
+// released, or nil when its watcher has not started: marking that one would let
+// RegisterSubscription replace the entry, and the pending watchResource would adopt the
+// replacement and orphan its watcher (#2030). Callers hold mu.
+func (h *multiplexer) markDeadLocked() context.CancelFunc {
+	if h.cancelFunc == nil {
+		return nil
 	}
 	h.done = true
+	return h.cancelFunc
+}
+
+// kill is the only way to cancel a watcher: the mark precedes the cancel, which runs with mu
+// released so no cancel callback executes under its own lock (#2030).
+func (h *multiplexer) kill() {
+	h.mu.Lock()
+	cancel := h.markDeadLocked()
 	h.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+}
+
+// killIfIdle kills the multiplexer when no subscribers remain, deciding and marking under one
+// hold of mu rather than counting and killing separately, and reports the count it saw (#2030).
+func (h *multiplexer) killIfIdle() (int, bool) {
+	h.mu.Lock()
+	subs := len(h.subs)
+	var cancel context.CancelFunc
+	if subs == 0 {
+		cancel = h.markDeadLocked()
+	}
+	h.mu.Unlock()
+	if cancel == nil {
+		return subs, false
+	}
 	cancel()
+	return subs, true
 }
 
 // isDead reports whether this multiplexer's watcher was cancelled and can no longer deliver (#2030).

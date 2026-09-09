@@ -128,14 +128,15 @@ func Test_RegisterSubscription_afterWatcherStopped(t *testing.T) {
 	waitForData(t, secondData, "subscription is wedged: no watcher was started for it")
 }
 
-// Test_RegisterSubscription_afterIdleShutdown covers the second way a multiplexer dies:
-// the cleanup loop cancels multiplexers that have no subscriptions left. A subscription
-// arriving after that cancellation must also get a new watcher.
-func Test_RegisterSubscription_afterIdleShutdown(t *testing.T) {
+// Test_RegisterSubscription_afterKill covers a subscription arriving after a multiplexer has
+// been killed but before its entry is gone. afterCleanupLoopCancelled drives the real idle
+// path; this one starts from the killed state whichever site produced it.
+func Test_RegisterSubscription_afterKill(t *testing.T) {
 	ctx := t.Context()
 	w := newWatchedTarget(t, ctx)
 
-	// what the cleanup loop does to an idle multiplexer
+	// a killed multiplexer, however it got there: the cleanup loop reaps idle ones and
+	// watchResource's defer kills its own on the way out
 	w.store.mu.Lock()
 	w.store.multiplexers[w.target].kill()
 	w.store.mu.Unlock()
@@ -143,8 +144,8 @@ func Test_RegisterSubscription_afterIdleShutdown(t *testing.T) {
 	secondData := w.subscribeAgain(ctx)
 
 	second := w.builder.waitForSync(t, 2)
-	second.dataSyncChanIn <- isync.DataSync{FlagData: "after shutdown"}
-	waitForData(t, secondData, "subscription is wedged: no watcher was started after the idle shutdown")
+	second.dataSyncChanIn <- isync.DataSync{FlagData: "after the kill"}
+	waitForData(t, secondData, "subscription is wedged: no watcher was started after the multiplexer was killed")
 }
 
 // Test_multiplexerSubsGuardedConsistently covers a second race in the same area: subs used to
@@ -481,5 +482,57 @@ func Test_watchResource_teardownIsAtomic(t *testing.T) {
 			t.Fatal("the stopping watcher removed its entry without Coordinator.mu")
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// Test_killIfIdle_leavesBusyMultiplexerAlone pins the condition the cleanup loop reaps on: a
+// multiplexer that still has subscribers must survive the tick, cancel and flag untouched.
+func Test_killIfIdle_leavesBusyMultiplexerAlone(t *testing.T) {
+	sh := &multiplexer{subs: map[interface{}]storedChannels{"sub": {}}}
+	sh.watchedBy(func() { t.Error("a multiplexer with subscribers was cancelled") })
+
+	subs, killed := sh.killIfIdle()
+
+	if killed || subs != 1 {
+		t.Fatalf("killIfIdle with one subscriber = (%d, %v), want (1, false)", subs, killed)
+	}
+	if sh.isDead() {
+		t.Fatal("a multiplexer with subscribers must not read as dead")
+	}
+}
+
+// Test_killIfIdle_multiplexerWithoutWatcher covers the other entry point into the unstarted
+// guard: an idle multiplexer whose watcher has not started must not be marked dead, or
+// RegisterSubscription may replace the entry that watchResource is about to adopt (#2030).
+func Test_killIfIdle_multiplexerWithoutWatcher(t *testing.T) {
+	sh := &multiplexer{subs: map[interface{}]storedChannels{}}
+
+	subs, killed := sh.killIfIdle()
+
+	if killed || subs != 0 {
+		t.Fatalf("killIfIdle without a watcher = (%d, %v), want (0, false)", subs, killed)
+	}
+	if sh.isDead() {
+		t.Fatal("a multiplexer whose watcher never started must not read as dead")
+	}
+}
+
+// Test_killIfIdle_marksBeforeCancelling pins mark-before-cancel on the cleanup loop's path,
+// which is the one #2030 was reported on. kill has its own test for the same ordering (#2030).
+func Test_killIfIdle_marksBeforeCancelling(t *testing.T) {
+	sh := &multiplexer{subs: map[interface{}]storedChannels{}}
+	sh.watchedBy(func() {
+		if !sh.isDead() {
+			t.Error("watcher cancelled while the multiplexer still read as alive")
+		}
+	})
+
+	subs, killed := sh.killIfIdle()
+
+	if !killed || subs != 0 {
+		t.Fatalf("killIfIdle on an idle watched multiplexer = (%d, %v), want (0, true)", subs, killed)
+	}
+	if !sh.isDead() {
+		t.Fatal("a killed multiplexer must read as dead")
 	}
 }

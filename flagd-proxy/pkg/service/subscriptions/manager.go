@@ -236,11 +236,11 @@ func (s *Coordinator) cleanup() {
 		case <-time.After(5 * time.Second):
 			s.mu.Lock()
 			for k, v := range s.multiplexers {
-				// reap any multiplexer with 0 active subscriptions; kill, never a bare cancel (#2030)
-				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, v.subCount()))
-				if v.subCount() == 0 {
-					s.logger.Debug(fmt.Sprintf("shutting down multiplexer %s", k))
-					s.multiplexers[k].kill()
+				// reap any multiplexer with 0 active subscriptions (#2030)
+				if subs, killed := v.killIfIdle(); killed {
+					s.logger.Debug(fmt.Sprintf("shutting down idle multiplexer %s", k))
+				} else {
+					s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, subs))
 				}
 			}
 			s.mu.Unlock()
