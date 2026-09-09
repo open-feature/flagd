@@ -35,8 +35,13 @@ type fileInfoWatcher struct {
 	wg sync.WaitGroup
 }
 
+const defaultFileInfoPollIntervalMs = 1000
+
 // NewFileInfoWatcher returns a new fileInfoWatcher
-func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
+func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger, pollIntervalMs int) Watcher {
+	if pollIntervalMs <= 0 {
+		pollIntervalMs = defaultFileInfoPollIntervalMs
+	}
 	fiw := &fileInfoWatcher{
 		evChan:   make(chan fsnotify.Event, 32),
 		erChan:   make(chan error, 32),
@@ -45,7 +50,7 @@ func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger) Watcher {
 		watches:  make(map[string]fs.FileInfo),
 		done:     make(chan struct{}),
 	}
-	fiw.run(ctx, (1 * time.Second))
+	fiw.run(ctx, time.Duration(pollIntervalMs)*time.Millisecond)
 	return fiw
 }
 
