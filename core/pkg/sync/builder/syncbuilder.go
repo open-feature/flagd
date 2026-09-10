@@ -150,6 +150,7 @@ func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync
 	return file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FSNOTIFY,
+		0, // poll interval is unused by the fsnotify watcher
 		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", syncProviderFsNotify),
@@ -162,6 +163,7 @@ func (sb *SyncBuilder) newFileInfo(uri string, logger *logger.Logger) *file.Sync
 	return file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FILEINFO,
+		0, // 0 => use the fileinfo watcher's default poll interval
 		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", syncProviderFileInfo),

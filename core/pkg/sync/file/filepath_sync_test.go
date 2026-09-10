@@ -392,3 +392,20 @@ func TestReAddWatcher_ContextCancelled(t *testing.T) {
 		t.Errorf("expected prompt return on cancellation, took %s", elapsed)
 	}
 }
+
+// TestNewFileSync_PollIntervalMs verifies the poll interval (in milliseconds) is threaded through the
+// constructor so the FILEINFO watcher can use it.
+func TestNewFileSync_PollIntervalMs(t *testing.T) {
+	want := 250
+	fs := NewFileSync("/tmp/flags.json", FILEINFO, want, logger.NewLogger(nil, false))
+
+	if fs.pollIntervalMs != want {
+		t.Errorf("expected pollIntervalMs %d, got %d", want, fs.pollIntervalMs)
+	}
+	if fs.watchType != FILEINFO {
+		t.Errorf("expected watchType %q, got %q", FILEINFO, fs.watchType)
+	}
+	if fs.URI != "/tmp/flags.json" {
+		t.Errorf("unexpected URI %q", fs.URI)
+	}
+}

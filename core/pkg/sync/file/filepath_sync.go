@@ -41,18 +41,20 @@ type Sync struct {
 	URI    string
 	Logger *logger.Logger
 	// watchType indicates how to watch the file FSNOTIFY|FILEINFO
-	watchType string
-	watcher   Watcher
-	ready     bool
-	Mux       *msync.RWMutex
+	watchType      string
+	pollIntervalMs int
+	watcher        Watcher
+	ready          bool
+	Mux            *msync.RWMutex
 }
 
-func NewFileSync(uri string, watchType string, logger *logger.Logger) *Sync {
+func NewFileSync(uri string, watchType string, pollIntervalMs int, logger *logger.Logger) *Sync {
 	return &Sync{
-		URI:       uri,
-		watchType: watchType,
-		Logger:    logger,
-		Mux:       &msync.RWMutex{},
+		URI:            uri,
+		watchType:      watchType,
+		pollIntervalMs: pollIntervalMs,
+		Logger:         logger,
+		Mux:            &msync.RWMutex{},
 	}
 }
 
@@ -75,7 +77,7 @@ func (fs *Sync) Init(ctx context.Context) error {
 		}
 		fs.watcher = w
 	case FILEINFO:
-		w := NewFileInfoWatcher(ctx, fs.Logger)
+		w := NewFileInfoWatcher(ctx, fs.pollIntervalMs, fs.Logger)
 		fs.watcher = w
 	default:
 		return fmt.Errorf("unknown watcher type: '%s'", fs.watchType)
