@@ -22,7 +22,7 @@ Recommended tools:
 !!! note "Protocols and tabs"
 
     flagd exposes the same functionality over multiple protocols, so the examples below are tabbed.
-    Not every operation supports every protocol (streaming methods, for example, are gRPC only).
+    Not every operation supports every protocol. Streaming methods use native gRPC or Connect streaming over HTTP; OFREP exposes REST evaluation.
 
     - **HTTP (REST)** - plain `curl` against [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) (evaluation) or `GET /v1/flags` (sync). The simplest path.
     - **HTTP (Connect)** - the gRPC service methods as HTTP/JSON via the [Connect protocol](https://connectrpc.com/docs/protocol/); plain `curl` with `Content-Type: application/json`, no gRPC client required.
@@ -650,7 +650,7 @@ grpcurl -plaintext \
 ```
 
 ```shell
-# Stream only changes to the app flags
+# Stream the app flags (initial config, then updates as they change)
 grpcurl -plaintext \
   -import-path "$PROTO_DIR" -proto flagd/sync/v1/sync.proto \
   -d '{"selector": "flagSetId=app-flags"}' \
