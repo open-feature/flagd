@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.17.0](https://github.com/open-feature/flagd/compare/core/v0.16.2...core/v0.17.0) (2026-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* make file poll interval configurable ([#2045](https://github.com/open-feature/flagd/issues/2045))
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.83.1 [security] ([#2043](https://github.com/open-feature/flagd/issues/2043)) ([e17886a](https://github.com/open-feature/flagd/commit/e17886a01f1960b4d36e3d79ea7474f129abb2b7))
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+* HTTP fetch equivalent of the gRPC FetchAllFlags ([#2037](https://github.com/open-feature/flagd/issues/2037)) ([48be8de](https://github.com/open-feature/flagd/commit/48be8de6209e15fe8a8aa7c57ff93ea770ec74cd))
+* make file poll interval configurable ([#2045](https://github.com/open-feature/flagd/issues/2045)) ([58a47b9](https://github.com/open-feature/flagd/commit/58a47b9f81a0802ec3c5e8a9ef81a8146e900aec))
+* SSE support for OFREP endpoints ([#2012](https://github.com/open-feature/flagd/issues/2012)) ([aa042fe](https://github.com/open-feature/flagd/commit/aa042fe42669710364c40e6a1c29093baa3cf863))
+
 ## [0.16.2](https://github.com/open-feature/flagd/compare/core/v0.16.1...core/v0.16.2) (2026-08-14)
 
 
