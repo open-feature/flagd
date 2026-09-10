@@ -38,7 +38,7 @@ type fileInfoWatcher struct {
 const defaultFileInfoPollIntervalMs = 1000
 
 // NewFileInfoWatcher returns a new fileInfoWatcher
-func NewFileInfoWatcher(ctx context.Context, logger *logger.Logger, pollIntervalMs int) Watcher {
+func NewFileInfoWatcher(ctx context.Context, pollIntervalMs int, logger *logger.Logger) Watcher {
 	if pollIntervalMs <= 0 {
 		pollIntervalMs = defaultFileInfoPollIntervalMs
 	}

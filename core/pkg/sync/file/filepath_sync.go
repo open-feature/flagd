@@ -77,7 +77,7 @@ func (fs *Sync) Init(ctx context.Context) error {
 		}
 		fs.watcher = w
 	case FILEINFO:
-		w := NewFileInfoWatcher(ctx, fs.Logger, fs.pollIntervalMs)
+		w := NewFileInfoWatcher(ctx, fs.pollIntervalMs, fs.Logger)
 		fs.watcher = w
 	default:
 		return fmt.Errorf("unknown watcher type: '%s'", fs.watchType)
