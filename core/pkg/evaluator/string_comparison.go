@@ -13,6 +13,14 @@ const (
 	EndsWithEvaluationName   = "ends_with"
 )
 
+// errPropertyAbsent signals that the property operand resolved to nil, meaning
+// the evaluation context simply did not carry the attribute. Targeting rules
+// routinely reference optional attributes, so this is an ordinary condition
+// rather than a misconfiguration, and is reported separately from a genuine
+// type error so the two can be logged differently.
+var errPropertyAbsent = errors.New(
+	"[start/end]s_with evaluation: property is absent from the evaluation context")
+
 type StringComparisonEvaluator struct {
 	Logger *logger.Logger
 }
@@ -41,12 +49,32 @@ func NewStringComparisonEvaluator(log *logger.Logger) *StringComparisonEvaluator
 // Note that the 'starts_with' evaluation rule must contain exactly two items, which both resolve to a
 // string value
 func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}) interface{} {
+	return sce.evaluate(StartsWithEvaluationName, values, strings.HasPrefix)
+}
+
+// evaluate applies cmp to the parsed operands, returning nil -- which jsonLogic
+// treats as falsy -- when they cannot be used.
+//
+// The logging severity here is deliberate. This runs on every evaluation of a
+// rule, so its volume tracks request rate rather than the number of bad rules,
+// and error level additionally attaches a stack trace to each occurrence. A rule
+// referencing an attribute that a client did not send would therefore emit tens
+// of log lines per evaluation, for a condition that is entirely normal. An
+// absent property is logged at debug; a genuinely malformed rule is logged at
+// warn, which still surfaces it but without the stack trace.
+func (sce *StringComparisonEvaluator) evaluate(
+	name string, values interface{}, cmp func(string, string) bool,
+) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
+		if errors.Is(err, errPropertyAbsent) {
+			sce.Logger.Debug(fmt.Sprintf("%s: %v", name, err))
+		} else {
+			sce.Logger.Warn(fmt.Sprintf("parse %s evaluation data: %v", name, err))
+		}
 		return nil
 	}
-	return strings.HasPrefix(propertyValue, target)
+	return cmp(propertyValue, target)
 }
 
 // EndsWithEvaluation checks if the given property ends with a certain prefix.
@@ -69,12 +97,7 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 // Note that the 'ends_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
 func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
-	propertyValue, target, err := parseStringComparisonEvaluationData(values)
-	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
-		return nil
-	}
-	return strings.HasSuffix(propertyValue, target)
+	return sce.evaluate(EndsWithEvaluationName, values, strings.HasSuffix)
 }
 
 // parseStringComparisonEvaluationData tries to parse the input for the starts_with/ends_with evaluation.
@@ -109,6 +132,12 @@ func parseStringComparisonEvaluationData(values interface{}) (string, string, er
 
 	if len(parsed) != 2 {
 		return "", "", errors.New("[start/end]s_with evaluation must contain a value and a comparison target")
+	}
+
+	// jsonLogic resolves a `var` referencing a missing attribute to nil, so this
+	// distinguishes "the context did not carry it" from "it was the wrong type".
+	if parsed[0] == nil {
+		return "", "", errPropertyAbsent
 	}
 
 	property, ok := parsed[0].(string)
