@@ -170,7 +170,7 @@ func TestRPC(t *testing.T) {
 	}
 
 	// Run tests with RPC-specific tags - exclude connection/event issues we won't tackle
-	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden && ~@fractional-v1 && ~@deprecated"
+	tags := "@rpc && ~@unixsocket && ~@targetURI && ~@sync && ~@metadata && ~@grace && ~@events && ~@customCert && ~@reconnect && ~@caching && ~@forbidden && ~@fractional-v1 && ~@fractional-v2 && ~@deprecated"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
@@ -204,8 +204,11 @@ func TestInProcess(t *testing.T) {
 	// not the local flagd evaluator code. The goal is to verify the sync.proto interface,
 	// not to fully test the go in-process provider (that happens in go-sdk-contrib).
 	// Many tags are excluded because they require a more complex testbed than what's built here.
+	// In-process uses the published go-sdk-contrib provider and its published core (v2 fractional,
+	// no CBOR/v3 yet), so we exclude @fractional-v3 here and keep running @fractional-v2.
+	// TODO: flip to v3 once go-sdk-contrib ships CBOR hashing.
 	// TODO: remove ~@operator-errors and ~@semver-v-prefix once go-sdk-contrib picks up the fixes
-	tags := "@in-process && ~@unixsocket && ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v1 && ~@fractional-single-entry && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
+	tags := "@in-process && ~@unixsocket && ~@metadata && ~@contextEnrichment && ~@customCert && ~@forbidden && ~@sync-port && ~@sync-payload && ~@fractional-v1 && ~@fractional-v3 && ~@fractional-single-entry && ~@deprecated && ~@operator-errors && ~@semver-v-prefix"
 
 	if err := runner.RunGherkinTestsWithSubtests(t, featurePaths, tags); err != nil {
 		t.Fatalf("Gherkin tests failed: %v", err)
