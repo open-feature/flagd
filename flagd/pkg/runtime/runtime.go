@@ -27,6 +27,9 @@ type Runtime struct {
 	ServiceConfig     service.Configuration
 	Syncs             []sync.ISync
 
+	// sourceReadiness records whether each configured source has successfully updated the evaluator.
+	sourceReadiness map[string]bool
+
 	mu msync.Mutex
 }
 
@@ -119,6 +122,14 @@ func (r *Runtime) isReady() bool {
 			return false
 		}
 	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, ready := range r.sourceReadiness {
+		if !ready {
+			return false
+		}
+	}
 	return true
 }
 
@@ -131,6 +142,10 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) {
 	if err != nil {
 		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
 		return
+	}
+
+	if _, configured := r.sourceReadiness[payload.Source]; configured {
+		r.sourceReadiness[payload.Source] = true
 	}
 	r.SyncService.Emit(payload.Source)
 }
