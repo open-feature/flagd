@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.8...flagd-proxy/v0.9.9) (2026-09-10)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.83.1 [security] ([#2043](https://github.com/open-feature/flagd/issues/2043)) ([e17886a](https://github.com/open-feature/flagd/commit/e17886a01f1960b4d36e3d79ea7474f129abb2b7))
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+
+
+### 🧹 Chore
+
+* resolve open dependabot security alerts ([#2040](https://github.com/open-feature/flagd/issues/2040)) ([98ff80f](https://github.com/open-feature/flagd/commit/98ff80f4faa4b0f4fa56625810ac8f25c80d09e8))
+
 ## [0.9.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.7...flagd-proxy/v0.9.8) (2026-08-14)
 
 
