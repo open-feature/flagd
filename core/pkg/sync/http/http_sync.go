@@ -16,6 +16,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/flagd/core/pkg/utils"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -36,7 +37,16 @@ type Sync struct {
 	timeoutS    time.Duration
 
 	oauthCredential *oauthCredentialHandler
+
+	// syncMetricsRecorder is the source-agnostic client-side sync-metrics recorder shared
+	// by every sync provider. Nil is safe — record methods no-op on nil.
+	syncMetricsRecorder *syncmetrics.Recorder
 }
+
+// SetSyncMetricsRecorder wires the shared syncmetrics.Recorder onto this provider. Called
+// by SyncBuilder after construction so NewHTTP retains its existing signature for
+// backward compatibility with test call sites.
+func (hs *Sync) SetSyncMetricsRecorder(r *syncmetrics.Recorder) { hs.syncMetricsRecorder = r }
 
 type oauthCredentialHandler struct {
 	clientId           string
@@ -94,6 +104,7 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	if err != nil {
 		return err
 	}
+	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 	dataSync <- sync.DataSync{FlagData: msg, Source: hs.uri}
 	return nil
 }
@@ -121,6 +132,7 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	hs.logger.Debug(fmt.Sprintf("polling %s every %ds (offset: %ds)", hs.uri, hs.interval, hs.poller.Offset()))
 
+	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.uri}
 
 	hs.poller.Start(ctx, func() {
@@ -139,9 +151,11 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		if previousBodySHA == "" {
 			hs.logger.Debug("configuration created")
+			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
 		} else if previousBodySHA != hs.lastBodySHA {
 			hs.logger.Debug("configuration updated")
+			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
 		}
 	})

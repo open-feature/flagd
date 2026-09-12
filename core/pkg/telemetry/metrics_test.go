@@ -186,25 +186,25 @@ func TestMetrics(t *testing.T) {
 			metricsLen: 2,
 		},
 		{
-			name: "SyncActiveStreams",
+			name: "SyncServerActiveStreams",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				ctx := t.Context()
 				for i := 0; i < n; i++ {
-					rec.SyncStreamStart(ctx, attrs)
-					rec.SyncStreamEnd(ctx, attrs)
+					rec.SyncServerStreamStart(ctx, attrs)
+					rec.SyncServerStreamEnd(ctx, attrs)
 				}
 			},
 			metricsLen: 1,
 		},
 		{
-			name: "SyncStreamDuration",
+			name: "SyncServerStreamDuration",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.SyncStreamDuration(t.Context(), 100*time.Millisecond, attrs)
+					rec.SyncServerStreamDuration(t.Context(), 100*time.Millisecond, attrs)
 				}
 			},
 			metricsLen: 1,
@@ -265,19 +265,19 @@ func TestNoopMetricsRecorderImpressions(t *testing.T) {
 	no.Impressions(t.Context(), "", "", "")
 }
 
-func TestNoopMetricsRecorderSyncStreamStart(t *testing.T) {
+func TestNoopMetricsRecorderSyncServerStreamStart(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamStart(t.Context(), nil)
+	no.SyncServerStreamStart(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorderSyncStreamEnd(t *testing.T) {
+func TestNoopMetricsRecorderSyncServerStreamEnd(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamEnd(t.Context(), nil)
+	no.SyncServerStreamEnd(t.Context(), nil)
 }
 
-func TestNoopMetricsRecorderSyncStreamDuration(t *testing.T) {
+func TestNoopMetricsRecorderSyncServerStreamDuration(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.SyncStreamDuration(t.Context(), 0, nil)
+	no.SyncServerStreamDuration(t.Context(), 0, nil)
 }
 
 // testHistogramBuckets is a helper function that tests histogram bucket configuration
@@ -338,12 +338,12 @@ func TestHTTPResponseSizeBuckets(t *testing.T) {
 	)
 }
 
-func TestGRPCSyncStreamDurationBuckets(t *testing.T) {
+func TestGRPCSyncServerStreamDurationBuckets(t *testing.T) {
 	testHistogramBuckets(t,
-		syncStreamDurationMetric,
+		syncServerStreamDurationMetric,
 		[]float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800},
 		func(t *testing.T, rec *MetricsRecorder, attrs []attribute.KeyValue) {
-			rec.SyncStreamDuration(t.Context(), 100*time.Millisecond, attrs)
+			rec.SyncServerStreamDuration(t.Context(), 100*time.Millisecond, attrs)
 		},
 		"Expected histogram buckets for long-lived sync streams (30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h)",
 	)
