@@ -87,7 +87,6 @@ func newSyncHandler() (*multiplexer, string) {
 				dataSync: dataSyncChan,
 			},
 		},
-		mu: &sync.RWMutex{},
 	}, key
 }
 
@@ -302,9 +301,9 @@ func Test_watchResource_Cleanup(t *testing.T) {
 	syncHandler, _ := newSyncHandler()
 	syncHandler.subs = map[interface{}]storedChannels{}
 	doneChan := make(chan struct{}, 1)
-	syncHandler.cancelFunc = func() {
+	syncHandler.watchedBy(func() {
 		doneChan <- struct{}{}
-	}
+	})
 	syncStore.mu.Lock()
 	syncStore.multiplexers[target] = syncHandler
 	syncStore.mu.Unlock()
