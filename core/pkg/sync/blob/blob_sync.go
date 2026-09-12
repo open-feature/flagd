@@ -13,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/bloburi"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/flagd/core/pkg/utils"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob" // needed to initialize Azure Blob Storage driver
@@ -32,6 +33,9 @@ type Sync struct {
 	lastUpdated time.Time
 	lastETag    string
 	lastBodySHA string
+
+	// SyncMetricsRecorder is the source-agnostic client-side sync-metrics recorder. Nil is safe.
+	SyncMetricsRecorder *syncmetrics.Recorder
 }
 
 func (hs *Sync) Init(_ context.Context) error {
@@ -114,6 +118,7 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, forcePu
 
 	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
 	hs.updateState(attrs, bodySHA)
+	hs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceBlob, bloburi.Join(hs.Bucket, hs.Object), "")
 	dataSync <- sync.DataSync{FlagData: msg, Source: bloburi.Join(hs.Bucket, hs.Object)}
 	return nil
 }

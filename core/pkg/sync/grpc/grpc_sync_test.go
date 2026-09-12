@@ -581,7 +581,7 @@ func TestIsReadyRaceFreeDuringGRPCStreamStart(t *testing.T) {
 		defer wg.Done()
 		<-start
 		for i := 0; i < attempts; i++ {
-			_ = grpcSync.handleFlagSync(eofFlagSyncClient{}, nil)
+			_ = grpcSync.handleFlagSync(context.Background(), eofFlagSyncClient{}, nil)
 		}
 	}()
 
