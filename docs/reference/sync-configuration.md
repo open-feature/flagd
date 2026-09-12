@@ -148,6 +148,9 @@ sources:
 
 ### HTTP Configuration
 
+The HTTP sync polls the source every `interval` (default 5s). Polling is cheap when nothing has changed: flagd sends `If-None-Match` with the last `ETag`, and a `304 Not Modified` means a body need not be parsed.
+See [HTTP sync](../concepts/syncs.md#http-sync) for the client behavior and [gRPC Sync Service](./grpc-sync-service.md#caching) for the validators flagd emits when it serves flags.
+
 The HTTP Configuration also supports OAuth that allows to securely fetch feature flag configurations from an HTTP endpoint
 that requires OAuth-based authentication.
 

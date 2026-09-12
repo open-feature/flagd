@@ -53,7 +53,7 @@ final FlagdProvider flagdProvider =
                 .build());
 ```
 
-See the [cheat sheet](./cheat-sheet.md#grpc-sync-api-syncproto) for `grpcurl` examples using `FetchAllFlags` and `SyncFlags`.
+See the [cheat sheet](./cheat-sheet.md#syncing-flag-configuration) for `grpcurl` examples using `FetchAllFlags` and `SyncFlags`.
 
 ## Protocols
 
@@ -111,16 +111,15 @@ the other flagd services:
 curl -H 'Flagd-Selector: flagSetId=payments' http://localhost:8015/v1/flags
 ```
 
-The endpoint distinguishes three outcomes:
+The endpoint distinguishes two outcomes:
 
-| Result                                       | Example                           | Status                    |
-|----------------------------------------------|-----------------------------------|---------------------------|
-| Selector string is not well-formed           | control characters, invalid UTF-8 | `400`                     |
-| Well-formed, but names an unknown filter     | `bogus=1`                         | `404`                     |
-| Valid filter that currently matches no flags | `flagSetId=empty-set`             | `200` with `{"flags":{}}` |
+| Result                                           | Example                       | Status                    |
+| ------------------------------------------------ | ----------------------------- | ------------------------- |
+| Selector is malformed or names an unknown filter | control characters, `bogus=1` | `400`                     |
+| Valid filter that currently matches no flags     | `flagSetId=empty-set`         | `200` with `{"flags":{}}` |
 
-An empty result is deliberately not a `404`: a flag set holding no flags is a normal state, and a downstream flagd syncing from this endpoint should not break when it happens.
-The RPC surface reports both selector failures as `invalid_argument`, since it has no equivalent of the `400`/`404` split.
+An empty result is deliberately not an error: a flag set holding no flags is a normal state, and a downstream flagd syncing from this endpoint should not break when it happens.
+The RPC surface reports selector failures as `invalid_argument`.
 
 ### Caching
 

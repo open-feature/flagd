@@ -23,7 +23,7 @@ To evaluate all flags currently configured at flagd, use OFREP bulk evaluation r
 curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 ```
 
-See the [cheat sheet](./cheat-sheet.md#ofrep-api-http) for more OFREP examples including context-sensitive evaluation and selectors.
+See the [cheat sheet](./cheat-sheet.md#evaluating-flags) for more OFREP examples including context-sensitive evaluation and selectors.
 
 ## Monitoring
 
