@@ -147,6 +147,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 
 	g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
+	g.notifyStale(ctx, dataSync)
 
 	// retry connection establishment
 	for {
@@ -159,8 +160,20 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		err = g.handleFlagSync(syncClient, dataSync)
 		if err != nil {
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
+			g.notifyStale(ctx, dataSync)
 			continue
 		}
+	}
+}
+
+// notifyStale tells the runtime that this source is disconnected, so evaluations
+// served from its flags can be reported as stale. Flags stay in the store; only
+// the reported reason changes. The send is best-effort: a blocked or cancelled
+// runtime must never stall the reconnection loop.
+func (g *Sync) notifyStale(ctx context.Context, dataSync chan<- sync.DataSync) {
+	select {
+	case dataSync <- sync.DataSync{Source: g.URI, Stale: true}:
+	case <-ctx.Done():
 	}
 }
 

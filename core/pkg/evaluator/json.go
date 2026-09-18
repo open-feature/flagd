@@ -140,6 +140,18 @@ type Resolver struct {
 	store  store.IStore
 	Logger *logger.Logger
 	tracer trace.Tracer
+	// sourceState is optional; when nil, no flag is ever reported stale and
+	// behaviour is identical to releases before stale reporting existed.
+	sourceState *store.SourceState
+}
+
+// WithSourceState wires per-source connection state into the evaluator, so that
+// flags resolved from a sync source which is currently disconnected are reported
+// with model.StaleReason instead of their usual reason.
+func WithSourceState(s *store.SourceState) JSONEvaluatorOption {
+	return func(je *JSON) {
+		je.Resolver.sourceState = s
+	}
 }
 
 func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
@@ -344,6 +356,20 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		if value != nil {
 			metadata[key] = value
 		}
+	}
+
+	// A flag resolved from a disconnected sync source may no longer match the
+	// source of truth. flagd deliberately keeps serving last-known-good data
+	// rather than failing the evaluation, so the uncertainty is surfaced in the
+	// reason instead. STALE only ever replaces a successful resolution: errors
+	// keep their own reason, and FALLBACK is left alone because it carries
+	// internal meaning that is translated in the API response.
+	if je.sourceState.IsStale(flag.Source) {
+		defer func() {
+			if err == nil && reason != model.ErrorReason && reason != model.FallbackReason {
+				reason = model.StaleReason
+			}
+		}()
 	}
 
 	if flag.State == Disabled {
