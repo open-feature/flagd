@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.4](https://github.com/open-feature/flagd/compare/flagd/v0.16.3...flagd/v0.16.4) (2026-09-18)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module go.opentelemetry.io/otel/sdk to v1.45.0 [security] ([#2056](https://github.com/open-feature/flagd/issues/2056)) ([904232a](https://github.com/open-feature/flagd/commit/904232a03b89f55a632aea35733777e98f678382))
+
 ## [0.16.3](https://github.com/open-feature/flagd/compare/flagd/v0.16.2...flagd/v0.16.3) (2026-09-10)
 
 
