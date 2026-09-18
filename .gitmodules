@@ -17,7 +17,7 @@
 # than a no-op. See open-feature/community-tooling#125.
 [submodule "test-harness"]
 	path = test-harness
-	url = https://github.com/open-feature/test-harness.git
+	url = https://github.com/open-feature/flagd-testbed.git
 	branch = v3.8.2
 [submodule "spec"]
 	path = spec
