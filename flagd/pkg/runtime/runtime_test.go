@@ -49,6 +49,18 @@ func (s *recordingSyncService) Emit(source string) {
 	s.emitted = append(s.emitted, source)
 }
 
+type signalingSyncService struct {
+	emitted chan<- struct{}
+}
+
+func (s signalingSyncService) Start(context.Context) error {
+	return nil
+}
+
+func (s signalingSyncService) Emit(string) {
+	s.emitted <- struct{}{}
+}
+
 type controlledSync struct {
 	payloads <-chan coresync.DataSync
 	started  chan<- struct{}
@@ -123,17 +135,21 @@ func requireSignal(t *testing.T, signal <-chan struct{}) {
 	}
 }
 
-func TestRuntimeReadinessRequiresSuccessfulStateFromEveryProvider(t *testing.T) {
-	const source = "file:/shared.flagd.json"
+func TestRuntimeReadinessRequiresSuccessfulStateForEverySource(t *testing.T) {
+	const (
+		firstSource  = "file:/first.flagd.json"
+		secondSource = "file:/second.flagd.json"
+	)
 
-	payload := coresync.DataSync{Source: source}
+	firstPayload := coresync.DataSync{Source: firstSource}
+	secondPayload := coresync.DataSync{Source: secondSource}
 	evaluatorError := errors.New("invalid flag configuration")
 
 	ctrl := gomock.NewController(t)
 	evaluator := evalmock.NewMockIEvaluator(ctrl)
-	evaluator.EXPECT().SetState(payload).Return(evaluatorError)
-	evaluator.EXPECT().SetState(payload).Return(nil)
-	evaluator.EXPECT().SetState(payload).Return(nil)
+	evaluator.EXPECT().SetState(firstPayload).Return(evaluatorError)
+	evaluator.EXPECT().SetState(firstPayload).Return(nil)
+	evaluator.EXPECT().SetState(secondPayload).Return(nil)
 
 	syncService := &recordingSyncService{}
 	runtime := Runtime{
@@ -144,50 +160,58 @@ func TestRuntimeReadinessRequiresSuccessfulStateFromEveryProvider(t *testing.T) 
 			readySync{ready: true},
 			readySync{ready: true},
 		},
-		sourceReadiness: []bool{false, false},
+		sourceReadiness: map[string]bool{
+			firstSource:  false,
+			secondSource: false,
+		},
 	}
 
 	require.False(t, runtime.isReady())
 
-	runtime.updateAndEmit(payload, 0)
+	runtime.updateAndEmit(firstPayload)
 	require.False(t, runtime.isReady())
 
-	runtime.updateAndEmit(payload, 0)
+	runtime.updateAndEmit(firstPayload)
 	require.False(t, runtime.isReady())
 
-	runtime.updateAndEmit(payload, 1)
+	runtime.updateAndEmit(secondPayload)
 	require.True(t, runtime.isReady())
-	require.Equal(t, []string{source, source}, syncService.emitted)
+	require.Equal(t, []string{firstSource, secondSource}, syncService.emitted)
 }
 
-func TestRuntimeStartTracksProvidersWithSameSourceSeparately(t *testing.T) {
-	const source = "file:/shared.flagd.json"
+func TestRuntimeStartWaitsForEverySource(t *testing.T) {
+	const (
+		firstSource  = "file:/first.flagd.json"
+		secondSource = "file:/second.flagd.json"
+	)
 
-	payload := coresync.DataSync{Source: source}
+	firstPayload := coresync.DataSync{Source: firstSource}
+	secondPayload := coresync.DataSync{Source: secondSource}
 	started := make(chan struct{}, 2)
 	firstProviderData := make(chan coresync.DataSync)
 	secondProviderData := make(chan coresync.DataSync)
-	updated := make(chan struct{}, 2)
+	emitted := make(chan struct{}, 2)
 	stop := make(chan struct{})
 
 	ctrl := gomock.NewController(t)
 	evaluator := evalmock.NewMockIEvaluator(ctrl)
-	evaluator.EXPECT().SetState(payload).DoAndReturn(func(coresync.DataSync) error {
-		updated <- struct{}{}
-		return nil
-	}).Times(2)
+	evaluator.EXPECT().SetState(firstPayload).Return(nil)
+	evaluator.EXPECT().SetState(secondPayload).Return(nil)
 
 	runtime := Runtime{
 		Evaluator:         evaluator,
 		Logger:            logger.NewLogger(nil, false),
-		SyncService:       &recordingSyncService{},
+		SyncService:       signalingSyncService{emitted: emitted},
 		OfrepService:      blockingOfrepService{},
 		EvaluationService: blockingEvaluationService{stop: stop},
 		Syncs: []coresync.ISync{
 			controlledSync{payloads: firstProviderData, started: started},
 			controlledSync{payloads: secondProviderData, started: started},
 		},
-		sourceReadiness: []bool{false, false},
+		sourceReadiness: map[string]bool{
+			firstSource:  false,
+			secondSource: false,
+		},
 	}
 
 	startErr := make(chan error, 1)
@@ -198,12 +222,13 @@ func TestRuntimeStartTracksProvidersWithSameSourceSeparately(t *testing.T) {
 	requireSignal(t, started)
 	requireSignal(t, started)
 
-	firstProviderData <- payload
-	requireSignal(t, updated)
+	// Emit runs after the readiness bookkeeping, so waiting on it makes isReady deterministic.
+	firstProviderData <- firstPayload
+	requireSignal(t, emitted)
 	require.False(t, runtime.isReady())
 
-	secondProviderData <- payload
-	requireSignal(t, updated)
+	secondProviderData <- secondPayload
+	requireSignal(t, emitted)
 	require.True(t, runtime.isReady())
 
 	close(stop)

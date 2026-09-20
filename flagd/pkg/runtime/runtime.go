@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	msync "sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -27,15 +28,12 @@ type Runtime struct {
 	ServiceConfig     service.Configuration
 	Syncs             []sync.ISync
 
-	// sourceReadiness records whether each configured sync provider has successfully updated the evaluator.
-	sourceReadiness []bool
+	// sourceReadiness records whether each configured source has successfully updated the evaluator.
+	sourceReadiness map[string]bool
+	// initialized is set once every configured source has successfully updated the evaluator.
+	initialized atomic.Bool
 
 	mu msync.Mutex
-}
-
-type providerDataSync struct {
-	payload       sync.DataSync
-	providerIndex int
 }
 
 //nolint:funlen
@@ -52,13 +50,13 @@ func (r *Runtime) Start() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	g, gCtx := errgroup.WithContext(ctx)
-	dataSync := make(chan providerDataSync, len(r.Syncs))
+	dataSync := make(chan sync.DataSync, len(r.Syncs))
 	// Initialize DataSync channel watcher
 	g.Go(func() error {
 		for {
 			select {
 			case data := <-dataSync:
-				r.updateAndEmit(data.payload, data.providerIndex)
+				r.updateAndEmit(data)
 			case <-gCtx.Done():
 				return nil
 			}
@@ -70,30 +68,11 @@ func (r *Runtime) Start() error {
 			return fmt.Errorf("sync provider Init returned error: %w", err)
 		}
 	}
-	// Start sync providers. Each provider has its own channel so the runtime can preserve
-	// provider identity even when two configured providers share a source URI.
-	for index, s := range r.Syncs {
-		p, providerIndex := s, index
-		providerData := make(chan sync.DataSync, 1)
+	// Start sync provider
+	for _, s := range r.Syncs {
+		p := s
 		g.Go(func() error {
-			for {
-				select {
-				case data, ok := <-providerData:
-					if !ok {
-						return nil
-					}
-					select {
-					case dataSync <- providerDataSync{payload: data, providerIndex: providerIndex}:
-					case <-gCtx.Done():
-						return nil
-					}
-				case <-gCtx.Done():
-					return nil
-				}
-			}
-		})
-		g.Go(func() error {
-			if err := p.Sync(gCtx, providerData); err != nil {
+			if err := p.Sync(gCtx, dataSync); err != nil {
 				return fmt.Errorf("sync provider returned error: %w", err)
 			}
 			return nil
@@ -140,25 +119,20 @@ func (r *Runtime) Start() error {
 }
 
 func (r *Runtime) isReady() bool {
-	// if all providers can watch for flag changes, we are ready.
-	for _, p := range r.Syncs {
-		if !p.IsReady() {
-			return false
+	if r.initialized.Load() {
+		// if all providers can watch for flag changes, we are ready.
+		for _, p := range r.Syncs {
+			if !p.IsReady() {
+				return false
+			}
 		}
+		return true
 	}
-
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for _, ready := range r.sourceReadiness {
-		if !ready {
-			return false
-		}
-	}
-	return true
+	return false
 }
 
 // updateAndEmit helps to update state, notify changes and trigger sync updates
-func (r *Runtime) updateAndEmit(payload sync.DataSync, providerIndex int) {
+func (r *Runtime) updateAndEmit(payload sync.DataSync) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -168,8 +142,18 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync, providerIndex int) {
 		return
 	}
 
-	if providerIndex < len(r.sourceReadiness) {
-		r.sourceReadiness[providerIndex] = true
+	if !r.initialized.Load() {
+		if _, configured := r.sourceReadiness[payload.Source]; configured {
+			r.sourceReadiness[payload.Source] = true
+		}
+
+		allReady := true
+		for _, ready := range r.sourceReadiness {
+			allReady = allReady && ready
+		}
+		if allReady {
+			r.initialized.Store(true)
+		}
 	}
 	r.SyncService.Emit(payload.Source)
 }
