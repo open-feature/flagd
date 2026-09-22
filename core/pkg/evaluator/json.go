@@ -29,9 +29,10 @@ const (
 	flagdPropertiesKey  = "$flagd"
 	// targetingKeyKey is used to extract the targetingKey to bucket on in fractional
 	// evaluation if the user did not supply the optional bucketing property.
-	targetingKeyKey = "targetingKey"
-	Disabled        = "DISABLED"
-	ProtoVersionKey = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
+	targetingKeyKey         = "targetingKey"
+	Disabled                = "DISABLED"
+	ProtoVersionKey         = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
+	jsonEvaluatorTracerName = "jsonEvaluator"
 )
 
 func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
@@ -66,6 +67,16 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 	}
 }
 
+// WithTraceProvider configures the evaluator (and its resolver) to create spans using the given TracerProvider
+// instead of the global one.
+func WithTraceProvider(tp trace.TracerProvider) JSONEvaluatorOption {
+	return func(je *JSON) {
+		tracer := tp.Tracer(jsonEvaluatorTracerName)
+		je.jsonEvalTracer = tracer
+		je.Resolver.tracer = tracer
+	}
+}
+
 // JSON evaluator
 type JSON struct {
 	store          store.IStore
@@ -80,7 +91,7 @@ func NewJSON(logger *logger.Logger, s store.IStore, opts ...JSONEvaluatorOption)
 		zap.String("component", "evaluator"),
 		zap.String("evaluator", "json"),
 	)
-	tracer := otel.Tracer("jsonEvaluator")
+	tracer := otel.Tracer(jsonEvaluatorTracerName)
 
 	// Create a new JSON Schema compiler
 	compiler := jsonschema.NewCompiler()
@@ -326,7 +337,6 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey string, evalCtx map[string]any) (
 	variant string, variants map[string]interface{}, reason string, metadata map[string]interface{}, err error,
 ) {
-
 	var selector store.Selector
 	s := ctx.Value(store.SelectorContextKey{})
 	if s != nil {
