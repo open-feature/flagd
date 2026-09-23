@@ -117,6 +117,10 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	for _, provider := range config.SyncProviders {
 		sources = append(sources, provider.URI)
 	}
+	sourceReadiness := make(map[string]bool, len(sources))
+	for _, source := range sources {
+		sourceReadiness[source] = false
+	}
 
 	// build flag store, collect flag sources & fill sources details
 	store, err := store.NewStore(logger, sources)
@@ -214,7 +218,8 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			MaxRequestBodyBytes:        config.MaxRequestBodyBytes,
 			MaxRequestHeaderBytes:      config.MaxRequestHeaderBytes,
 		},
-		Syncs: iSyncs,
+		Syncs:           iSyncs,
+		sourceReadiness: sourceReadiness,
 	}, nil
 }
 
