@@ -19,6 +19,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	credendialsmock "github.com/open-feature/flagd/core/pkg/sync/grpc/credentials/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
@@ -40,6 +41,62 @@ type eofFlagSyncClient struct {
 
 func (eofFlagSyncClient) Recv() (*v1.SyncFlagsResponse, error) {
 	return nil, io.EOF
+}
+
+type payloadThenEOFClient struct {
+	syncv1grpc.FlagSyncService_SyncFlagsClient
+	flags string
+	sent  bool
+}
+
+func (c *payloadThenEOFClient) Recv() (*v1.SyncFlagsResponse, error) {
+	if c.sent {
+		return nil, io.EOF
+	}
+	c.sent = true
+	return &v1.SyncFlagsResponse{FlagConfiguration: c.flags}, nil
+}
+
+// Test_ReconnectCountedOnlyAfterStreamDelivers verifies a reconnect counts only when the re-established stream serves a payload
+func Test_ReconnectCountedOnlyAfterStreamDelivers(t *testing.T) {
+	t.Run("stream rejected on first Recv does not count a reconnect", func(t *testing.T) {
+		m, reader := newTestClientStreamMetrics(t)
+		g := Sync{URI: "grpc://x", Logger: logger.NewLogger(nil, false), streamMetrics: m}
+
+		// eofFlagSyncClient errors on first Recv, like an immediate upstream rejection
+		_ = g.handleFlagSync(context.Background(), eofFlagSyncClient{}, nil, true)
+
+		rm := collectClientStream(t, reader)
+		require.Nil(t, findClientStreamMetric(rm, metricClientStreamReconnects),
+			"a stream rejected on first Recv must not increment reconnects")
+	})
+
+	t.Run("stream that delivers a payload counts one reconnect", func(t *testing.T) {
+		m, reader := newTestClientStreamMetrics(t)
+		g := Sync{URI: "grpc://x", Logger: logger.NewLogger(nil, false), streamMetrics: m}
+		dataSync := make(chan sync.DataSync, 1)
+
+		_ = g.handleFlagSync(context.Background(), &payloadThenEOFClient{flags: "{}"}, dataSync, true)
+
+		rm := collectClientStream(t, reader)
+		metric := findClientStreamMetric(rm, metricClientStreamReconnects)
+		require.NotNil(t, metric)
+		sum := metric.Data.(metricdata.Sum[int64])
+		require.Len(t, sum.DataPoints, 1)
+		require.EqualValues(t, 1, sum.DataPoints[0].Value)
+	})
+
+	t.Run("initial (non-reconnect) stream never counts a reconnect", func(t *testing.T) {
+		m, reader := newTestClientStreamMetrics(t)
+		g := Sync{URI: "grpc://x", Logger: logger.NewLogger(nil, false), streamMetrics: m}
+		dataSync := make(chan sync.DataSync, 1)
+
+		_ = g.handleFlagSync(context.Background(), &payloadThenEOFClient{flags: "{}"}, dataSync, false)
+
+		rm := collectClientStream(t, reader)
+		require.Nil(t, findClientStreamMetric(rm, metricClientStreamReconnects),
+			"the initial connection is not a reconnect")
+	})
 }
 
 func Test_InitWithMockCredentialBuilder(t *testing.T) {
@@ -581,7 +638,7 @@ func TestIsReadyRaceFreeDuringGRPCStreamStart(t *testing.T) {
 		defer wg.Done()
 		<-start
 		for i := 0; i < attempts; i++ {
-			_ = grpcSync.handleFlagSync(context.Background(), eofFlagSyncClient{}, nil)
+			_ = grpcSync.handleFlagSync(context.Background(), eofFlagSyncClient{}, nil, false)
 		}
 	}()
 

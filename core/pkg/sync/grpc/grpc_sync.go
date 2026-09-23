@@ -169,7 +169,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	g.Logger.Debug(fmt.Sprintf("watching %s for changes", g.URI))
 
 	// Initial stream listening. Error will be logged and continue and retry connection establishment
-	err = g.handleFlagSync(ctx, syncClient, dataSync)
+	err = g.handleFlagSync(ctx, syncClient, dataSync, false)
 	g.streamMetrics.recordStreamClosed(ctx, g.URI, g.Selector)
 	if err == nil {
 		// This should not happen as handleFlagSync expects to return with an error
@@ -186,9 +186,8 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 		g.streamMetrics.recordStreamOpened(ctx, g.URI, g.Selector)
-		g.streamMetrics.recordReconnect(ctx, g.URI, g.Selector)
 
-		err = g.handleFlagSync(ctx, syncClient, dataSync)
+		err = g.handleFlagSync(ctx, syncClient, dataSync, true)
 		g.streamMetrics.recordStreamClosed(ctx, g.URI, g.Selector)
 		if err != nil {
 			g.Logger.Warn(fmt.Sprintf("error with stream listener: %s", err.Error()))
@@ -238,13 +237,27 @@ func (g *Sync) connectWithRetry(
 }
 
 // handleFlagSync wraps the stream listening and push updates through dataSync channel
-func (g *Sync) handleFlagSync(ctx context.Context, stream syncv1grpc.FlagSyncService_SyncFlagsClient, dataSync chan<- sync.DataSync) error {
+func (g *Sync) handleFlagSync(
+	ctx context.Context,
+	stream syncv1grpc.FlagSyncService_SyncFlagsClient,
+	dataSync chan<- sync.DataSync,
+	isReconnect bool,
+) error {
 	g.ready.Store(true)
 
+	firstRecv := true
 	for {
 		data, err := stream.Recv()
 		if err != nil {
 			return fmt.Errorf("error receiving payload from stream: %w", err)
+		}
+
+		// only count a reconnect once the stream is confirmed; a rejected stream errors above
+		if firstRecv {
+			firstRecv = false
+			if isReconnect {
+				g.streamMetrics.recordReconnect(ctx, g.URI, g.Selector)
+			}
 		}
 
 		update := sync.DataSync{
