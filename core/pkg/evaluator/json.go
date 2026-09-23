@@ -67,9 +67,9 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 	}
 }
 
-// WithTraceProvider configures the evaluator (and its resolver) to create spans using the given TracerProvider
+// WithTracerProvider configures the evaluator (and its resolver) to create spans using the given TracerProvider
 // instead of the global one.
-func WithTraceProvider(tp trace.TracerProvider) JSONEvaluatorOption {
+func WithTracerProvider(tp trace.TracerProvider) JSONEvaluatorOption {
 	return func(je *JSON) {
 		tracer := tp.Tracer(jsonEvaluatorTracerName)
 		je.jsonEvalTracer = tracer
