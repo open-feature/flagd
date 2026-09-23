@@ -187,6 +187,7 @@ func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync)
 	fs.Logger.Debug(fmt.Sprintf("Data sync received for %s", fs.URI))
 
 	msg := defaultState
+	fetched := false
 	m, err := fs.fetch(ctx)
 	switch {
 	case err != nil:
@@ -195,11 +196,13 @@ func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync)
 		fs.Logger.Warn(fmt.Sprintf("file %s is empty", fs.URI))
 	default:
 		msg = m
-		// Record only when a real payload was fetched from disk; a failed or
-		// empty read falls back to defaultState and must not bump the counter.
-		fs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceFile, fs.URI, "")
+		fetched = true
 	}
 	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
+	// only count a real payload, not the empty/error fallback to defaultState
+	if fetched {
+		fs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceFile, fs.URI, "")
+	}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {

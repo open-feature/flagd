@@ -104,8 +104,8 @@ func (hs *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error
 	if err != nil {
 		return err
 	}
-	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 	dataSync <- sync.DataSync{FlagData: msg, Source: hs.uri}
+	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 	return nil
 }
 
@@ -132,8 +132,8 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	hs.logger.Debug(fmt.Sprintf("polling %s every %ds (offset: %ds)", hs.uri, hs.interval, hs.poller.Offset()))
 
-	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 	dataSync <- sync.DataSync{FlagData: fetch, Source: hs.uri}
+	hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 
 	hs.poller.Start(ctx, func() {
 		hs.logger.Debug(fmt.Sprintf("fetching configuration from %s", hs.uri))
@@ -151,12 +151,12 @@ func (hs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		if previousBodySHA == "" {
 			hs.logger.Debug("configuration created")
-			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
+			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 		} else if previousBodySHA != hs.lastBodySHA {
 			hs.logger.Debug("configuration updated")
-			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 			dataSync <- sync.DataSync{FlagData: body, Source: hs.uri}
+			hs.syncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceHTTP, hs.uri, "")
 		}
 	})
 

@@ -118,8 +118,8 @@ func (hs *Sync) sync(ctx context.Context, dataSync chan<- sync.DataSync, forcePu
 
 	hs.Logger.Debug(fmt.Sprintf("configuration updated: %s", msg))
 	hs.updateState(attrs, bodySHA)
-	hs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceBlob, bloburi.Join(hs.Bucket, hs.Object), "")
 	dataSync <- sync.DataSync{FlagData: msg, Source: bloburi.Join(hs.Bucket, hs.Object)}
+	hs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceBlob, bloburi.Join(hs.Bucket, hs.Object), "")
 	return nil
 }
 

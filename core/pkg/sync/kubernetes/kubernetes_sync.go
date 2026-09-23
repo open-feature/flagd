@@ -71,8 +71,8 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 	if err != nil {
 		return fmt.Errorf("unable to fetch flag configuration: %w", err)
 	}
-	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 	return nil
 }
 
@@ -109,8 +109,8 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 		return err
 	}
 
-	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 
 	k.logger.Debug(fmt.Sprintf("watching %s for changes", k.URI))
 
@@ -153,8 +153,8 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 			case DefaultEventTypeModify:
 				k.logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
@@ -163,8 +163,8 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 					continue
 				}
 
-				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 			case DefaultEventTypeDelete:
 				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
