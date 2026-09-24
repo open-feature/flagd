@@ -15,6 +15,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/internal/bloburi"
 	"github.com/open-feature/flagd/core/pkg/sync/internal/polling"
 	"github.com/open-feature/flagd/core/pkg/sync/kubernetes"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"go.uber.org/zap"
 	"gocloud.dev/blob"
 	"k8s.io/client-go/dynamic"
@@ -65,6 +66,10 @@ type ISyncBuilder interface {
 
 type SyncBuilder struct {
 	k8sClientBuilder IK8sClientBuilder
+
+	// SyncMetricsRecorder, when non-nil, is passed to every sync provider so they can
+	// record the universal client-side sync metrics
+	SyncMetricsRecorder *syncmetrics.Recorder
 }
 
 func NewSyncBuilder() *SyncBuilder {
@@ -147,7 +152,7 @@ func (sb *SyncBuilder) newFile(uri string, logger *logger.Logger) *file.Sync {
 
 // return a new file.Sync that uses fsnotify under the hood
 func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync {
-	return file.NewFileSync(
+	s := file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FSNOTIFY,
 		0, // poll interval is unused by the fsnotify watcher
@@ -156,11 +161,13 @@ func (sb *SyncBuilder) newFsNotify(uri string, logger *logger.Logger) *file.Sync
 			zap.String("sync", syncProviderFsNotify),
 		),
 	)
+	s.SyncMetricsRecorder = sb.SyncMetricsRecorder
+	return s
 }
 
 // return a new file.Sync that uses os.Stat/fs.FileInfo under the hood
 func (sb *SyncBuilder) newFileInfo(uri string, logger *logger.Logger) *file.Sync {
-	return file.NewFileSync(
+	s := file.NewFileSync(
 		regFile.ReplaceAllString(uri, ""),
 		file.FILEINFO,
 		0, // 0 => use the fileinfo watcher's default poll interval
@@ -169,6 +176,8 @@ func (sb *SyncBuilder) newFileInfo(uri string, logger *logger.Logger) *file.Sync
 			zap.String("sync", syncProviderFileInfo),
 		),
 	)
+	s.SyncMetricsRecorder = sb.SyncMetricsRecorder
+	return s
 }
 
 func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sync, error) {
@@ -177,14 +186,16 @@ func (sb *SyncBuilder) newK8s(uri string, logger *logger.Logger) (*kubernetes.Sy
 		return nil, fmt.Errorf("error creating kubernetes clients: %w", err)
 	}
 
-	return kubernetes.NewK8sSync(
+	s := kubernetes.NewK8sSync(
 		logger.WithFields(
 			zap.String("component", "sync"),
 			zap.String("sync", "kubernetes"),
 		),
 		regCrd.ReplaceAllString(uri, ""),
 		dynamicClient,
-	), nil
+	)
+	s.SyncMetricsRecorder = sb.SyncMetricsRecorder
+	return s, nil
 }
 
 func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) *grpc.Sync {
@@ -194,14 +205,15 @@ func (sb *SyncBuilder) newGRPC(config sync.SourceConfig, logger *logger.Logger) 
 			zap.String("component", "sync"),
 			zap.String("sync", "grpc"),
 		),
-		CredentialBuilder:  &credentials.CredentialBuilder{},
-		CertPath:           config.CertPath,
-		ProviderID:         config.ProviderID,
-		Secure:             config.TLS,
-		Selector:           config.Selector,
-		MaxMsgSize:         config.MaxMsgSize,
-		IncrementalUpdates: config.IncrementalUpdates,
-		Headers:            config.Headers,
+		CredentialBuilder:   &credentials.CredentialBuilder{},
+		CertPath:            config.CertPath,
+		ProviderID:          config.ProviderID,
+		Secure:              config.TLS,
+		Selector:            config.Selector,
+		MaxMsgSize:          config.MaxMsgSize,
+		IncrementalUpdates:  config.IncrementalUpdates,
+		Headers:             config.Headers,
+		SyncMetricsRecorder: sb.SyncMetricsRecorder,
 	}
 }
 
@@ -224,7 +236,9 @@ func (sb *SyncBuilder) newHTTP(config sync.SourceConfig, logger *logger.Logger) 
 	if err != nil {
 		return nil, fmt.Errorf("invalid http sync configuration: %w", err)
 	}
-	return httpSync.NewHTTP(config, logger, poller, interval), nil
+	s := httpSync.NewHTTP(config, logger, poller, interval)
+	s.SetSyncMetricsRecorder(sb.SyncMetricsRecorder)
+	return s, nil
 }
 
 func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) (*blobSync.Sync, error) {
@@ -248,8 +262,9 @@ func (sb *SyncBuilder) newGcs(config sync.SourceConfig, logger *logger.Logger) (
 			zap.String("component", "sync"),
 			zap.String("sync", "gcs"),
 		),
-		Interval: interval,
-		Poller:   poller,
+		Interval:            interval,
+		Poller:              poller,
+		SyncMetricsRecorder: sb.SyncMetricsRecorder,
 	}, nil
 }
 
@@ -283,8 +298,9 @@ func (sb *SyncBuilder) newAzblob(config sync.SourceConfig, logger *logger.Logger
 			zap.String("component", "sync"),
 			zap.String("sync", "azblob"),
 		),
-		Interval: interval,
-		Poller:   poller,
+		Interval:            interval,
+		Poller:              poller,
+		SyncMetricsRecorder: sb.SyncMetricsRecorder,
 	}, nil
 }
 
@@ -310,8 +326,9 @@ func (sb *SyncBuilder) newS3(config sync.SourceConfig, logger *logger.Logger) (*
 			zap.String("component", "sync"),
 			zap.String("sync", "s3"),
 		),
-		Interval: interval,
-		Poller:   poller,
+		Interval:            interval,
+		Poller:              poller,
+		SyncMetricsRecorder: sb.SyncMetricsRecorder,
 	}, nil
 }
 

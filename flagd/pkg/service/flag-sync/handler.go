@@ -60,7 +60,7 @@ func (s syncHandler) syncFlags(
 	}
 
 	// Record stream start
-	s.metricsRecorder.SyncStreamStart(ctx, attrs)
+	s.metricsRecorder.SyncServerStreamStart(ctx, attrs)
 
 	// Track exit reason for duration metric
 	var exitReason string
@@ -68,8 +68,8 @@ func (s syncHandler) syncFlags(
 		duration := time.Since(startTime)
 		reasonAttrs := append([]attribute.KeyValue{}, attrs...)
 		reasonAttrs = append(reasonAttrs, attribute.String("reason", exitReason))
-		s.metricsRecorder.SyncStreamEnd(ctx, attrs)
-		s.metricsRecorder.SyncStreamDuration(ctx, duration, reasonAttrs)
+		s.metricsRecorder.SyncServerStreamEnd(ctx, attrs)
+		s.metricsRecorder.SyncServerStreamDuration(ctx, duration, reasonAttrs)
 	}()
 
 	watcher := make(chan store.FlagQueryResult, 1)

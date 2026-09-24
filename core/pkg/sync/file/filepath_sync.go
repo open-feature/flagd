@@ -13,6 +13,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/flagd/core/pkg/utils"
 )
 
@@ -46,6 +47,9 @@ type Sync struct {
 	watcher        Watcher
 	ready          bool
 	Mux            *msync.RWMutex
+
+	// SyncMetricsRecorder is the source-agnostic client-side sync-metrics recorder. Nil is safe.
+	SyncMetricsRecorder *syncmetrics.Recorder
 }
 
 func NewFileSync(uri string, watchType string, pollIntervalMs int, logger *logger.Logger) *Sync {
@@ -183,17 +187,22 @@ func (fs *Sync) sendDataSync(ctx context.Context, dataSync chan<- sync.DataSync)
 	fs.Logger.Debug(fmt.Sprintf("Data sync received for %s", fs.URI))
 
 	msg := defaultState
+	fetched := false
 	m, err := fs.fetch(ctx)
-	if err != nil {
+	switch {
+	case err != nil:
 		fs.Logger.Error(fmt.Sprintf("Error fetching %s: %s", fs.URI, err.Error()))
-	}
-	if m == "" {
+	case m == "":
 		fs.Logger.Warn(fmt.Sprintf("file %s is empty", fs.URI))
-	} else {
+	default:
 		msg = m
+		fetched = true
 	}
-
 	dataSync <- sync.DataSync{FlagData: msg, Source: fs.URI}
+	// only count a real payload, not the empty/error fallback to defaultState
+	if fetched {
+		fs.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceFile, fs.URI, "")
+	}
 }
 
 func (fs *Sync) fetch(_ context.Context) (string, error) {
