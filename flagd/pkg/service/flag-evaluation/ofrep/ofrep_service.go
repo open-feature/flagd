@@ -37,6 +37,10 @@ type SvcConfiguration struct {
 	SSEEnabled            bool
 	SSEInactivityDelaySec int
 	SSEPublicURL          string
+
+	// Response compression settings
+	CompressionEnabled bool
+	CompressionMinSize int
 }
 
 type Service struct {
@@ -50,11 +54,6 @@ func NewOfrepService(
 	evaluator evaluator.IEvaluator, flagStore store.IStore, origins []string, cfg SvcConfiguration, contextValues map[string]any, headerToContextKeyMappings map[string]string,
 ) (*Service, error) {
 	corsMiddleware := corsmw.New(origins)
-
-	compressMiddleware, err := compressmw.New()
-	if err != nil {
-		return nil, err
-	}
 
 	// SSE requires a flag store to watch; without one we cannot serve or advertise it, so treat
 	// a missing store as SSE disabled rather than crashing later in the tracker goroutine.
@@ -95,7 +94,13 @@ func NewOfrepService(
 	}
 	// Compression wraps only the evaluate routes. The SSE stream is registered separately below
 	// and must stay uncompressed so each event reaches the client as it is flushed.
-	evaluateHandler = compressMiddleware.Handler(evaluateHandler)
+	if cfg.CompressionEnabled {
+		compressMiddleware, err := compressmw.New(compressmw.Config{MinSize: cfg.CompressionMinSize})
+		if err != nil {
+			return nil, err
+		}
+		evaluateHandler = compressMiddleware.Handler(evaluateHandler)
+	}
 	if sseService != nil {
 		sseService.Register(mux, ssePath)
 	}

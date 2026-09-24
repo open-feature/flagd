@@ -7,10 +7,16 @@ import (
 	"github.com/klauspost/compress/gzhttp"
 )
 
-// minSize is the smallest response worth compressing. A single-flag OFREP evaluation is a couple
-// of hundred bytes, where the gzip framing costs more than it saves; bulk evaluations are far
-// larger and compress well.
-const minSize = 1024
+// DefaultMinSize is the smallest response worth compressing by default. See the benchmarks in this
+// package: below roughly a kilobyte gzip costs more CPU than the bytes it saves, and for the very
+// smallest payloads it makes the response larger.
+const DefaultMinSize = 1024
+
+type Config struct {
+	// MinSize is the smallest response body, in bytes, that is compressed. Zero compresses every
+	// response the content-type filter accepts, whatever its size.
+	MinSize int
+}
 
 // Middleware negotiates gzip on JSON responses. Compression only happens when the client
 // advertises it with Accept-Encoding, so clients that do not are unaffected.
@@ -23,9 +29,14 @@ type Middleware struct {
 	wrap func(http.Handler) http.HandlerFunc
 }
 
-func New() (*Middleware, error) {
+func New(cfg Config) (*Middleware, error) {
+	if cfg.MinSize < 0 {
+		return nil, fmt.Errorf("compression min size must not be negative, got %d", cfg.MinSize)
+	}
+
 	wrap, err := gzhttp.NewWrapper(
-		gzhttp.MinSize(minSize),
+		// gzhttp rejects a zero MinSize, so "compress everything" is expressed as a single byte.
+		gzhttp.MinSize(max(cfg.MinSize, 1)),
 		gzhttp.ContentTypes([]string{"application/json"}),
 	)
 	if err != nil {

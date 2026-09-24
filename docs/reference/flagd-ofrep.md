@@ -28,12 +28,16 @@ See the [cheat sheet](./cheat-sheet.md#evaluating-flags) for more OFREP examples
 ## Compression
 
 Evaluation responses are gzip compressed when the client sends an `Accept-Encoding: gzip` header.
-Responses below 1KB are left uncompressed, since gzip framing costs more than it saves at that size; in practice this means bulk evaluation responses compress and single-flag evaluations do not.
-The SSE stream is never compressed, so events reach subscribers as soon as they are flushed.
 
 ```shell
 curl -X POST --compressed 'http://localhost:8016/ofrep/v1/evaluate/flags'
 ```
+
+By default, responses smaller than 1024 bytes are left uncompressed. Gzip costs a near-fixed few microseconds per response regardless of size, so on small bodies that CPU buys very little: a single-flag evaluation is around 150 bytes and barely compresses at all, while a 10-flag bulk response compresses roughly 3.5x and a 100-flag response roughly 7x. Use `--ofrep-compression-min-size` to move the threshold, or set it to `0` to compress every response whatever its size.
+
+Compression can be turned off entirely with `--ofrep-compression=false`, which is worth doing when a proxy in front of flagd already compresses.
+
+The SSE stream is never compressed, so events reach subscribers as soon as they are flushed.
 
 Compression does not affect the `ETag` on bulk evaluation responses: the tag is a digest of the uncompressed body, so an `If-None-Match` request still gets its `304 Not Modified` whichever encoding the original response used.
 

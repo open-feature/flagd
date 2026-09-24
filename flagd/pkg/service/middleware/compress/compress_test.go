@@ -30,7 +30,13 @@ func jsonHandler(status int, body string, headers map[string]string) http.Handle
 func serve(t *testing.T, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
 	t.Helper()
 
-	mw, err := New()
+	return serveWithConfig(t, Config{MinSize: DefaultMinSize}, handler, acceptEncoding)
+}
+
+func serveWithConfig(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	mw, err := New(cfg)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
@@ -70,7 +76,7 @@ func TestLeavesBodyAloneWithoutAcceptEncoding(t *testing.T) {
 // A single-flag evaluation is far below minSize, where gzip framing would make the response bigger.
 func TestSkipsResponsesBelowMinSize(t *testing.T) {
 	small := `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
-	require.Less(t, len(small), minSize)
+	require.Less(t, len(small), DefaultMinSize)
 
 	recorder := serve(t, jsonHandler(http.StatusOK, small, nil), "gzip")
 
@@ -109,4 +115,37 @@ func TestSkipsNonJSONContentTypes(t *testing.T) {
 	}), "gzip")
 
 	assert.Empty(t, recorder.Header().Get("Content-Encoding"))
+}
+
+// MinSize 0 means "compress everything the content-type filter accepts", for operators who would
+// rather spend the CPU than the bytes.
+func TestMinSizeZeroCompressesEverything(t *testing.T) {
+	small := `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
+	require.Less(t, len(small), DefaultMinSize)
+
+	recorder := serveWithConfig(t, Config{MinSize: 0}, jsonHandler(http.StatusOK, small, nil), "gzip")
+
+	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
+
+	reader, err := gzip.NewReader(recorder.Body)
+	require.NoError(t, err)
+	decoded, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	assert.Equal(t, small, string(decoded))
+}
+
+func TestCustomMinSize(t *testing.T) {
+	body := `{"flags":[` + strings.Repeat(`{"key":"f","value":1},`, 10) + `{"key":"last","value":1}]}`
+	require.Less(t, len(body), DefaultMinSize)
+
+	recorder := serveWithConfig(t, Config{MinSize: len(body)}, jsonHandler(http.StatusOK, body, nil), "gzip")
+	assert.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"), "a body at exactly MinSize should compress")
+
+	recorder = serveWithConfig(t, Config{MinSize: len(body) + 1}, jsonHandler(http.StatusOK, body, nil), "gzip")
+	assert.Empty(t, recorder.Header().Get("Content-Encoding"), "a body below MinSize should not compress")
+}
+
+func TestRejectsNegativeMinSize(t *testing.T) {
+	_, err := New(Config{MinSize: -1})
+	require.Error(t, err)
 }
