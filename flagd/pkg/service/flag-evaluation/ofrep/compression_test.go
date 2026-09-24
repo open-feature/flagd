@@ -35,7 +35,10 @@ func (r *sizeRecordingMetricsRecorder) HTTPResponseSize(_ context.Context, sizeB
 	r.sizes = append(r.sizes, sizeBytes)
 }
 
-// compressibleEvaluations returns enough flags for the bulk response to clear DefaultMinSize.
+// flagCount is enough flags for a bulk response to clear DefaultMinSize.
+const flagCount = 40
+
+// compressibleEvaluations builds a bulk evaluation result of n flags.
 func compressibleEvaluations(n int) []evaluator.AnyValue {
 	values := make([]evaluator.AnyValue, 0, n)
 	for i := range n {
@@ -78,7 +81,7 @@ func serveCompressedBulk(handler http.Handler, acceptEncoding, ifNoneMatch strin
 }
 
 func TestBulkEvaluationIsCompressed(t *testing.T) {
-	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(40))
+	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(flagCount))
 
 	recorder := serveCompressedBulk(handler, "gzip", "")
 
@@ -94,27 +97,21 @@ func TestBulkEvaluationIsCompressed(t *testing.T) {
 		Flags []map[string]any `json:"flags"`
 	}
 	require.NoError(t, json.Unmarshal(decoded, &body))
-	assert.Len(t, body.Flags, 40)
+	assert.Len(t, body.Flags, flagCount)
 }
 
 // The compressed body is a different representation, so it must not reuse the uncompressed
-// response's strong validator (RFC 9110 8.8.1).
-func TestCompressedBulkEvaluationTagsItsOwnRepresentation(t *testing.T) {
-	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(40))
-
-	gzipped := serveCompressedBulk(handler, "gzip", "").Header().Get("ETag")
-	identity := serveCompressedBulk(handler, "identity", "").Header().Get("ETag")
-
-	require.NotEmpty(t, identity)
-	assert.NotEqual(t, identity, gzipped, "the two encodings must not share one strong validator")
-	assert.Equal(t, identity, compressmw.TrimETagSuffix(gzipped), "the marker should hide a recoverable digest")
-}
-
-func TestCompressedBulkEvaluationConditionalRequests(t *testing.T) {
-	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(40))
+// response's strong validator (RFC 9110 8.8.1), and flagd has to strip the marker back off to
+// keep answering conditional requests.
+func TestCompressedBulkEvaluationETags(t *testing.T) {
+	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(flagCount))
 
 	gzipETag := serveCompressedBulk(handler, "gzip", "").Header().Get("ETag")
 	identityETag := serveCompressedBulk(handler, "identity", "").Header().Get("ETag")
+
+	require.NotEmpty(t, identityETag)
+	require.NotEqual(t, identityETag, gzipETag, "the two encodings must not share one strong validator")
+	require.Equal(t, identityETag, compressmw.TrimETagSuffix(gzipETag), "the marker should hide a recoverable digest")
 
 	tests := map[string]struct {
 		acceptEncoding string
@@ -139,7 +136,7 @@ func TestCompressedBulkEvaluationConditionalRequests(t *testing.T) {
 // the wire rather than the body the evaluator produced.
 func TestRecordedResponseSizeIsTheCompressedSize(t *testing.T) {
 	metrics := &sizeRecordingMetricsRecorder{}
-	handler := compressingHandler(t, metrics, compressibleEvaluations(40))
+	handler := compressingHandler(t, metrics, compressibleEvaluations(flagCount))
 
 	recorder := serveCompressedBulk(handler, "gzip", "")
 
