@@ -97,11 +97,12 @@ func (rec *responseRecorder) Write(b []byte) (int, error) {
 	return rec.body.Write(b)
 }
 
-// etag returns a weak validator. The gzip middleware above may or may not compress what the
-// handler wrote, and the two encodings are different representations that must not share one
-// strong tag (RFC 9110 8.8.1). A weak tag asserts semantic equivalence rather than byte equality,
-// which is exactly the relationship between the compressed and uncompressed forms of one body, so
-// a single weak tag covers both and this handler never has to guess which one goes out.
+// etag returns a weak validator. The gzip middleware around this handler compresses the response
+// whenever the client accepts gzip, so the bytes on the wire are either the compressed or the
+// uncompressed form of what was written here, depending on who asked. Those are two different
+// representations and must not share one strong tag (RFC 9110 8.8.1). A weak tag asserts semantic
+// equivalence rather than byte equality, which is exactly the relationship between them, so a
+// single weak tag covers both and this handler never has to know which one goes out.
 func (rec *responseRecorder) etag() string {
 	return `W/"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
 }
