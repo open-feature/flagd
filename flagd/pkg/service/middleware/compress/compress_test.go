@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// bulkBody stands in for a bulk evaluation response: comfortably over DefaultMinSize, so the size
-// threshold is never what is under test.
+// bulkBody stands in for a bulk evaluation response.
 var bulkBody = `{"flags":[` + strings.Repeat(`{"key":"flag","value":true},`, 200) + `{"key":"last","value":true}]}`
 
-// singleBody stands in for a single-flag evaluation, which falls below DefaultMinSize.
+// singleBody stands in for a single-flag evaluation, which is compressed too: there is no size
+// threshold.
 const singleBody = `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
 
 // jsonHandler writes body as JSON, plus any extra headers, at the given status.
@@ -31,10 +31,11 @@ func jsonHandler(status int, body string, headers map[string]string) http.Handle
 	})
 }
 
-func serve(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
+// serve runs handler behind the middleware and returns the recorded response.
+func serve(t *testing.T, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
 	t.Helper()
 
-	mw, err := New(cfg)
+	mw, err := New()
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
@@ -48,27 +49,34 @@ func serve(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string
 	return recorder
 }
 
-// The ETag assertion is the load-bearing one: the compressed body is a different representation of
-// the same resource, so it must not reuse the strong validator of the uncompressed one (RFC 9110
-// 8.8.1). The digest is preserved underneath the marker so a handler can recover the original.
 func TestCompressesJSONWhenClientAcceptsGzip(t *testing.T) {
-	const etag = `"0123456789abcdef"`
+	tests := map[string]string{"a bulk response": bulkBody, "a single evaluation": singleBody}
 
-	recorder := serve(t, Config{MinSize: DefaultMinSize},
-		jsonHandler(http.StatusOK, bulkBody, map[string]string{"ETag": etag}), "gzip")
+	for name, body := range tests {
+		t.Run(name, func(t *testing.T) {
+			recorder := serve(t, jsonHandler(http.StatusOK, body, nil), "gzip")
 
-	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
-	assert.Contains(t, recorder.Header().Values("Vary"), "Accept-Encoding")
-	assert.Equal(t, `"0123456789abcdef`+ETagSuffix+`"`, recorder.Header().Get("ETag"))
-	assert.Equal(t, etag, TrimETagSuffix(recorder.Header().Get("ETag")))
-	assert.Less(t, recorder.Body.Len(), len(bulkBody), "compressed body should be smaller than the original")
+			require.Equal(t, http.StatusOK, recorder.Code)
+			require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
+			assert.Contains(t, recorder.Header().Values("Vary"), "Accept-Encoding")
 
-	reader, err := gzip.NewReader(recorder.Body)
-	require.NoError(t, err)
-	decoded, err := io.ReadAll(reader)
-	require.NoError(t, err)
-	assert.Equal(t, bulkBody, string(decoded))
+			reader, err := gzip.NewReader(recorder.Body)
+			require.NoError(t, err)
+			decoded, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			assert.Equal(t, body, string(decoded))
+		})
+	}
+}
+
+// The middleware must leave the ETag alone. A weak validator covers both encodings, so suffixing
+// it would only make the two look like different representations to a cache.
+func TestPreservesETag(t *testing.T) {
+	const etag = `W/"0123456789abcdef"`
+
+	recorder := serve(t, jsonHandler(http.StatusOK, bulkBody, map[string]string{"ETag": etag}), "gzip")
+
+	assert.Equal(t, etag, recorder.Header().Get("ETag"))
 }
 
 func TestLeavesResponseUncompressed(t *testing.T) {
@@ -82,8 +90,7 @@ func TestLeavesResponseUncompressed(t *testing.T) {
 		acceptEncoding string
 	}{
 		"client does not accept gzip": {jsonHandler(http.StatusOK, bulkBody, nil), ""},
-		// gzip framing would cost more than it saves on a single-flag evaluation
-		"body below the minimum size": {jsonHandler(http.StatusOK, singleBody, nil), "gzip"},
+		"client refuses gzip by name": {jsonHandler(http.StatusOK, bulkBody, nil), "identity"},
 		// SSE is routed around this middleware entirely; the content-type filter is the backstop
 		"content type is not JSON": {eventStream, "gzip"},
 		"no body to encode":        {jsonHandler(http.StatusNotModified, "", nil), "gzip"},
@@ -91,74 +98,8 @@ func TestLeavesResponseUncompressed(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			recorder := serve(t, Config{MinSize: DefaultMinSize}, test.handler, test.acceptEncoding)
+			recorder := serve(t, test.handler, test.acceptEncoding)
 			assert.Empty(t, recorder.Header().Get("Content-Encoding"))
 		})
-	}
-}
-
-func TestMinSize(t *testing.T) {
-	require.Less(t, len(singleBody), DefaultMinSize)
-
-	tests := map[string]struct {
-		minSize  int
-		compress bool
-	}{
-		"zero compresses whatever the size": {0, true},
-		"a body at exactly the minimum":     {len(singleBody), true},
-		"a body one byte under":             {len(singleBody) + 1, false},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			recorder := serve(t, Config{MinSize: test.minSize}, jsonHandler(http.StatusOK, singleBody, nil), "gzip")
-
-			if !test.compress {
-				assert.Empty(t, recorder.Header().Get("Content-Encoding"))
-				return
-			}
-
-			require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
-			reader, err := gzip.NewReader(recorder.Body)
-			require.NoError(t, err)
-			decoded, err := io.ReadAll(reader)
-			require.NoError(t, err)
-			assert.Equal(t, singleBody, string(decoded))
-		})
-	}
-
-	_, err := New(Config{MinSize: -1})
-	require.Error(t, err, "a negative minimum should be rejected rather than silently clamped")
-}
-
-func TestTrimETagSuffix(t *testing.T) {
-	tests := map[string]string{
-		`"abc` + ETagSuffix + `"`: `"abc"`,
-		`"abc"`:                   `"abc"`,
-		"abc" + ETagSuffix:        "abc", // a client that dropped the quotes
-		"abc":                     "abc",
-		"":                        "",
-	}
-
-	for tagged, want := range tests {
-		assert.Equal(t, want, TrimETagSuffix(tagged), "trimming %q", tagged)
-	}
-}
-
-func TestAcceptsGzip(t *testing.T) {
-	tests := map[string]bool{
-		"gzip":              true,
-		"GZIP":              true,
-		"br, gzip, deflate": true,
-		"identity":          false,
-		"":                  false,
-	}
-
-	for header, want := range tests {
-		req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
-		if header != "" {
-			req.Header.Set("Accept-Encoding", header)
-		}
-		assert.Equal(t, want, AcceptsGzip(req), "Accept-Encoding: %q", header)
 	}
 }

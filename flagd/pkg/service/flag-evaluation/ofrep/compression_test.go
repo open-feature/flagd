@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,18 +36,15 @@ func (r *sizeRecordingMetricsRecorder) HTTPResponseSize(_ context.Context, sizeB
 	r.sizes = append(r.sizes, sizeBytes)
 }
 
-// flagCount is enough flags for a bulk response to clear DefaultMinSize.
-const flagCount = 40
-
-// compressibleEvaluations builds a bulk evaluation result of n flags.
-func compressibleEvaluations(n int) []evaluator.AnyValue {
+// evaluations builds a bulk evaluation result of n flags.
+func evaluations(n int) []evaluator.AnyValue {
 	values := make([]evaluator.AnyValue, 0, n)
 	for i := range n {
 		values = append(values, evaluator.AnyValue{
 			Value:   true,
 			Variant: "on",
 			Reason:  model.StaticReason,
-			FlagKey: fmt.Sprintf("my-service-feature-flag-%d", i),
+			FlagKey: fmt.Sprintf("flag-%d", i),
 		})
 	}
 
@@ -61,7 +59,7 @@ func compressingHandler(t *testing.T, metrics telemetry.IMetricsRecorder, evalua
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(evaluations, model.Metadata{}, nil).AnyTimes()
 
-	compression, err := compressmw.New(compressmw.Config{MinSize: compressmw.DefaultMinSize})
+	compression, err := compressmw.New()
 	require.NoError(t, err)
 
 	return NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{}, compression)
@@ -81,7 +79,7 @@ func serveCompressedBulk(handler http.Handler, acceptEncoding, ifNoneMatch strin
 }
 
 func TestBulkEvaluationIsCompressed(t *testing.T) {
-	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(flagCount))
+	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, evaluations(3))
 
 	recorder := serveCompressedBulk(handler, "gzip", "")
 
@@ -97,37 +95,31 @@ func TestBulkEvaluationIsCompressed(t *testing.T) {
 		Flags []map[string]any `json:"flags"`
 	}
 	require.NoError(t, json.Unmarshal(decoded, &body))
-	assert.Len(t, body.Flags, flagCount)
+	assert.Len(t, body.Flags, 3)
 }
 
-// The compressed body is a different representation, so it must not reuse the uncompressed
-// response's strong validator (RFC 9110 8.8.1), and flagd has to strip the marker back off to
-// keep answering conditional requests.
-func TestCompressedBulkEvaluationETags(t *testing.T) {
-	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, compressibleEvaluations(flagCount))
+// The validator is weak, so it covers the compressed and uncompressed forms of one body alike and
+// a client revalidates successfully whether or not its Accept-Encoding has changed since.
+func TestBulkEvaluationETagIsEncodingAgnostic(t *testing.T) {
+	handler := compressingHandler(t, &telemetry.NoopMetricsRecorder{}, evaluations(3))
 
 	gzipETag := serveCompressedBulk(handler, "gzip", "").Header().Get("ETag")
 	identityETag := serveCompressedBulk(handler, "identity", "").Header().Get("ETag")
 
 	require.NotEmpty(t, identityETag)
-	require.NotEqual(t, identityETag, gzipETag, "the two encodings must not share one strong validator")
-	require.Equal(t, identityETag, compressmw.TrimETagSuffix(gzipETag), "the marker should hide a recoverable digest")
+	require.True(t, strings.HasPrefix(identityETag, `W/"`), "expected a weak validator, got %q", identityETag)
+	require.Equal(t, identityETag, gzipETag, "one weak tag should cover both encodings")
 
-	tests := map[string]struct {
-		acceptEncoding string
-		ifNoneMatch    string
-		expected       int
-	}{
-		"gzip tag, still accepting gzip":     {"gzip", gzipETag, http.StatusNotModified},
-		"identity tag, still identity":       {"identity", identityETag, http.StatusNotModified},
-		"identity tag, now accepting gzip":   {"gzip", identityETag, http.StatusNotModified},
-		"gzip tag, no longer accepting gzip": {"identity", gzipETag, http.StatusOK},
+	tests := map[string]string{
+		"still accepting gzip": "gzip",
+		"no longer accepting":  "identity",
 	}
 
-	for name, test := range tests {
+	for name, acceptEncoding := range tests {
 		t.Run(name, func(t *testing.T) {
-			recorder := serveCompressedBulk(handler, test.acceptEncoding, test.ifNoneMatch)
-			assert.Equal(t, test.expected, recorder.Code)
+			recorder := serveCompressedBulk(handler, acceptEncoding, gzipETag)
+			assert.Equal(t, http.StatusNotModified, recorder.Code)
+			assert.Equal(t, gzipETag, recorder.Header().Get("ETag"), "the 304 must carry the tag of what would be served")
 		})
 	}
 }
@@ -136,7 +128,7 @@ func TestCompressedBulkEvaluationETags(t *testing.T) {
 // the wire rather than the body the evaluator produced.
 func TestRecordedResponseSizeIsTheCompressedSize(t *testing.T) {
 	metrics := &sizeRecordingMetricsRecorder{}
-	handler := compressingHandler(t, metrics, compressibleEvaluations(flagCount))
+	handler := compressingHandler(t, metrics, evaluations(3))
 
 	recorder := serveCompressedBulk(handler, "gzip", "")
 
@@ -152,13 +144,11 @@ func TestSSEStreamIsNotCompressed(t *testing.T) {
 	require.NoError(t, err)
 
 	service, err := NewOfrepService(eval, flagStore, []string{"*"}, SvcConfiguration{
-		Logger:             logger.NewLogger(nil, false),
-		Port:               18286,
-		ServiceName:        testServiceName,
-		MetricsRecorder:    &telemetry.NoopMetricsRecorder{},
-		SSEEnabled:         true,
-		CompressionEnabled: true,
-		CompressionMinSize: 0, // compress everything, so an exemption is the only way to stay plain
+		Logger:          logger.NewLogger(nil, false),
+		Port:            18286,
+		ServiceName:     testServiceName,
+		MetricsRecorder: &telemetry.NoopMetricsRecorder{},
+		SSEEnabled:      true,
 	}, nil, nil)
 	require.NoError(t, err)
 

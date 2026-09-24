@@ -88,10 +88,7 @@ func NewOfrepHandler(
 	// compress sits inside the metrics middleware so the recorded response size is the number of
 	// bytes actually put on the wire, and outside conditionalETag so the tag stays a digest of the
 	// uncompressed body.
-	compress := func(next http.Handler) http.Handler { return next }
-	if compression != nil {
-		compress = compression.Handler
-	}
+	compress := compression.Handler
 
 	router := mux.NewRouter()
 	router.Handle(singleEvaluation,
@@ -269,9 +266,8 @@ func (h *handler) configEtagDiffers(r *http.Request) bool {
 		return false
 	}
 
-	// quoted so the shared scan accepts the param bare, quoted, or weak. Never gzip-suffixed: this
-	// tag comes from an SSE event's metadata, not from a response the compression middleware saw.
-	return !ifNoneMatch([]string{trigger}, `"`+current+`"`, false)
+	// quoted so the shared scan accepts the param bare, quoted, or weak
+	return !ifNoneMatch([]string{trigger}, `"`+current+`"`)
 }
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {

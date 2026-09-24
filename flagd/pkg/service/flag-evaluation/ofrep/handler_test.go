@@ -18,6 +18,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/open-feature/flagd/core/pkg/service/ofrep"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
+	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -472,7 +474,7 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 			eval.EXPECT().
 				ResolveAsAnyValue(gomock.Any(), gomock.Any(), flagKey, gomock.Any()).
 				Return(test.evaluation)
-			handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{}, nil)
+			handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{}, newCompression(t))
 
 			request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, nil)
 			response := httptest.NewRecorder()
@@ -490,7 +492,7 @@ func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(evaluations, model.Metadata{}, nil)
-	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{}, nil)
+	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, metrics, "flagd", SSEConfig{}, newCompression(t))
 
 	request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
 	response := httptest.NewRecorder()
@@ -515,4 +517,15 @@ func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 			flagKey:   flagNotFoundValue.FlagKey,
 		},
 	}, metrics.evaluations)
+}
+
+// newCompression builds the gzip middleware the production handler always carries. These tests do
+// not send Accept-Encoding, so it passes their responses through untouched.
+func newCompression(t *testing.T) middleware.IMiddleware {
+	t.Helper()
+
+	compression, err := compressmw.New()
+	require.NoError(t, err)
+
+	return compression
 }

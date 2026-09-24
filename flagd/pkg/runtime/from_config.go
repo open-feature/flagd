@@ -31,8 +31,6 @@ type Config struct {
 	OfrepSSEEnabled        bool
 	OfrepSSEInactivityDel  int
 	OfrepSSEPublicURL      string
-	OfrepCompression       bool
-	OfrepCompressionMin    int
 	OtelCollectorURI       string
 	OtelCertPath           string
 	OtelKeyPath            string
@@ -154,8 +152,6 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		SSEEnabled:            config.OfrepSSEEnabled,
 		SSEInactivityDelaySec: config.OfrepSSEInactivityDel,
 		SSEPublicURL:          config.OfrepSSEPublicURL,
-		CompressionEnabled:    config.OfrepCompression,
-		CompressionMinSize:    config.OfrepCompressionMin,
 	},
 		config.ContextValues,
 		config.HeaderToContextKeyMappings,

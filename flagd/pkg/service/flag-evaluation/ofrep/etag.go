@@ -9,11 +9,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-
-	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 )
 
-// conditionalETag tags a 200 with a strong ETag over the bytes the handler wrote, and answers 304
+// conditionalETag tags a 200 with a weak ETag over the bytes the handler wrote, and answers 304
 // when the client's If-None-Match matches. Hashing the response rather than the flag configuration
 // keeps the validator correct for context-dependent values.
 func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handler) http.Handler {
@@ -33,7 +31,7 @@ func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handl
 		w.Header().Set("ETag", etag)
 
 		// ADR-0008 §9: a differing flagConfigEtag dictates a 200 no validator may downgrade.
-		if !configEtagDiffers(r) && ifNoneMatch(r.Header.Values("If-None-Match"), etag, compressmw.AcceptsGzip(r)) {
+		if !configEtagDiffers(r) && ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
 			w.Header().Del("Content-Type")
 			w.Header().Del("Content-Length")
 			w.WriteHeader(http.StatusNotModified)
@@ -99,8 +97,13 @@ func (rec *responseRecorder) Write(b []byte) (int, error) {
 	return rec.body.Write(b)
 }
 
+// etag returns a weak validator. The gzip middleware above may or may not compress what the
+// handler wrote, and the two encodings are different representations that must not share one
+// strong tag (RFC 9110 8.8.1). A weak tag asserts semantic equivalence rather than byte equality,
+// which is exactly the relationship between the compressed and uncompressed forms of one body, so
+// a single weak tag covers both and this handler never has to guess which one goes out.
 func (rec *responseRecorder) etag() string {
-	return `"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
+	return `W/"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
 }
 
 func (rec *responseRecorder) flush() {
@@ -110,17 +113,14 @@ func (rec *responseRecorder) flush() {
 	}
 }
 
-// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag,
-// which is the digest of the uncompressed body. Per RFC 9110 13.1.2 the field is "*" or a
-// weakly-compared list of entity tags.
+// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag.
+// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags, so the W/ prefix
+// is stripped from both sides before comparing.
 // Hand-rolled because net/http's parser is unexported and its only public path (ServeContent) answers 412,
 // not the 304 OFREP wants on this POST route.
-//
-// acceptsGzip makes the comparison encoding-aware. The compression middleware suffixes the tags it
-// puts on compressed responses, so a client holding the gzip representation sends a suffixed tag
-// back. That tag only describes what the client would be served again if it still accepts gzip;
-// honouring it otherwise would answer 304 for a representation the client cannot use.
-func ifNoneMatch(fields []string, etag string, acceptsGzip bool) bool {
+func ifNoneMatch(fields []string, etag string) bool {
+	opaque := strings.TrimPrefix(etag, "W/")
+
 	for _, field := range fields {
 		for candidate := range splitETagList(field) {
 			if candidate == "*" {
@@ -129,10 +129,7 @@ func ifNoneMatch(fields []string, etag string, acceptsGzip bool) bool {
 
 			// a lenient client may drop the quotes the generated tag carries
 			candidate = strings.TrimPrefix(candidate, "W/")
-			if acceptsGzip {
-				candidate = compressmw.TrimETagSuffix(candidate)
-			}
-			if candidate == etag || `"`+candidate+`"` == etag {
+			if candidate == opaque || `"`+candidate+`"` == opaque {
 				return true
 			}
 		}
