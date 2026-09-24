@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 )
 
 // conditionalETag tags a 200 with a strong ETag over the bytes the handler wrote, and answers 304
@@ -31,7 +33,7 @@ func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handl
 		w.Header().Set("ETag", etag)
 
 		// ADR-0008 §9: a differing flagConfigEtag dictates a 200 no validator may downgrade.
-		if !configEtagDiffers(r) && ifNoneMatch(r.Header.Values("If-None-Match"), etag) {
+		if !configEtagDiffers(r) && ifNoneMatch(r.Header.Values("If-None-Match"), etag, compressmw.AcceptsGzip(r)) {
 			w.Header().Del("Content-Type")
 			w.Header().Del("Content-Length")
 			w.WriteHeader(http.StatusNotModified)
@@ -108,11 +110,17 @@ func (rec *responseRecorder) flush() {
 	}
 }
 
-// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag.
-// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags.
+// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag,
+// which is the digest of the uncompressed body. Per RFC 9110 13.1.2 the field is "*" or a
+// weakly-compared list of entity tags.
 // Hand-rolled because net/http's parser is unexported and its only public path (ServeContent) answers 412,
 // not the 304 OFREP wants on this POST route.
-func ifNoneMatch(fields []string, etag string) bool {
+//
+// acceptsGzip makes the comparison encoding-aware. The compression middleware suffixes the tags it
+// puts on compressed responses, so a client holding the gzip representation sends a suffixed tag
+// back. That tag only describes what the client would be served again if it still accepts gzip;
+// honouring it otherwise would answer 304 for a representation the client cannot use.
+func ifNoneMatch(fields []string, etag string, acceptsGzip bool) bool {
 	for _, field := range fields {
 		for candidate := range splitETagList(field) {
 			if candidate == "*" {
@@ -121,6 +129,9 @@ func ifNoneMatch(fields []string, etag string) bool {
 
 			// a lenient client may drop the quotes the generated tag carries
 			candidate = strings.TrimPrefix(candidate, "W/")
+			if acceptsGzip {
+				candidate = compressmw.TrimETagSuffix(candidate)
+			}
 			if candidate == etag || `"`+candidate+`"` == etag {
 				return true
 			}

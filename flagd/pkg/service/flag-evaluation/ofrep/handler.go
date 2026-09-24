@@ -18,6 +18,7 @@ import (
 	"github.com/open-feature/flagd/flagd/pkg/service"
 	evalservice "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep/sse"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -69,6 +70,7 @@ func NewOfrepHandler(
 	metricsRecorder telemetry.IMetricsRecorder,
 	serviceName string,
 	sseCfg SSEConfig,
+	compression middleware.IMiddleware,
 ) http.Handler {
 	h := handler{
 		Logger:                     logger,
@@ -83,6 +85,14 @@ func NewOfrepHandler(
 		ssePublicURL:               sseCfg.PublicURL,
 	}
 
+	// compress sits inside the metrics middleware so the recorded response size is the number of
+	// bytes actually put on the wire, and outside conditionalETag so the tag stays a digest of the
+	// uncompressed body.
+	compress := func(next http.Handler) http.Handler { return next }
+	if compression != nil {
+		compress = compression.Handler
+	}
+
 	router := mux.NewRouter()
 	router.Handle(singleEvaluation,
 		metricsmw.NewHTTPMetric(metricsmw.Config{
@@ -90,7 +100,7 @@ func NewOfrepHandler(
 			MetricRecorder: metricsRecorder,
 			Logger:         logger,
 			HandlerID:      singleEvaluation,
-		}).Handler(http.HandlerFunc(h.HandleFlagEvaluation)),
+		}).Handler(compress(http.HandlerFunc(h.HandleFlagEvaluation))),
 	).Methods("POST")
 
 	// conditionalETag sits inside the metrics middleware so a 304 is recorded as a 304.
@@ -100,7 +110,7 @@ func NewOfrepHandler(
 			MetricRecorder: metricsRecorder,
 			Logger:         logger,
 			HandlerID:      bulkEvaluation,
-		}).Handler(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation))),
+		}).Handler(compress(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation)))),
 	).Methods("POST")
 
 	return otelhttp.NewHandler(router, "flagd.ofrep")
@@ -259,8 +269,9 @@ func (h *handler) configEtagDiffers(r *http.Request) bool {
 		return false
 	}
 
-	// quoted so the shared scan accepts the param bare, quoted, or weak
-	return !ifNoneMatch([]string{trigger}, `"`+current+`"`)
+	// quoted so the shared scan accepts the param bare, quoted, or weak. Never gzip-suffixed: this
+	// tag comes from an SSE event's metadata, not from a response the compression middleware saw.
+	return !ifNoneMatch([]string{trigger}, `"`+current+`"`, false)
 }
 
 func (h *handler) writeJSONToResponse(status int, payload interface{}, w http.ResponseWriter) {

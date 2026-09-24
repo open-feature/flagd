@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep/sse"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	"golang.org/x/sync/errgroup"
@@ -74,6 +75,18 @@ func NewOfrepService(
 		sseCfg.Versioner = sseService.Tracker()
 	}
 
+	// Compression is handed to the evaluate routes rather than wrapped around the whole mux: the
+	// SSE stream registered below must stay uncompressed so each event reaches the client as it is
+	// flushed, and the per-route metrics middleware should see the compressed byte count.
+	var compression middleware.IMiddleware
+	if cfg.CompressionEnabled {
+		compressMiddleware, err := compressmw.New(compressmw.Config{MinSize: cfg.CompressionMinSize})
+		if err != nil {
+			return nil, err
+		}
+		compression = compressMiddleware
+	}
+
 	ofrepHandler := NewOfrepHandler(
 		cfg.Logger,
 		evaluator,
@@ -82,6 +95,7 @@ func NewOfrepService(
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
 		sseCfg,
+		compression,
 	)
 
 	// Route the long-lived SSE stream separately from the request/response evaluate routes so
@@ -91,15 +105,6 @@ func NewOfrepService(
 	var evaluateHandler http.Handler = ofrepHandler
 	if cfg.MaxRequestBodyBytes > 0 {
 		evaluateHandler = http.MaxBytesHandler(evaluateHandler, cfg.MaxRequestBodyBytes)
-	}
-	// Compression wraps only the evaluate routes. The SSE stream is registered separately below
-	// and must stay uncompressed so each event reaches the client as it is flushed.
-	if cfg.CompressionEnabled {
-		compressMiddleware, err := compressmw.New(compressmw.Config{MinSize: cfg.CompressionMinSize})
-		if err != nil {
-			return nil, err
-		}
-		evaluateHandler = compressMiddleware.Handler(evaluateHandler)
 	}
 	if sseService != nil {
 		sseService.Register(mux, ssePath)

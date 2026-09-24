@@ -48,8 +48,9 @@ func serve(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string
 	return recorder
 }
 
-// The ETag assertion is the load-bearing one: OFREP's bulk tag digests the uncompressed body, so it
-// must survive compression untouched for a client's If-None-Match to still match on the next request.
+// The ETag assertion is the load-bearing one: the compressed body is a different representation of
+// the same resource, so it must not reuse the strong validator of the uncompressed one (RFC 9110
+// 8.8.1). The digest is preserved underneath the marker so a handler can recover the original.
 func TestCompressesJSONWhenClientAcceptsGzip(t *testing.T) {
 	const etag = `"0123456789abcdef"`
 
@@ -59,7 +60,8 @@ func TestCompressesJSONWhenClientAcceptsGzip(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
 	assert.Contains(t, recorder.Header().Values("Vary"), "Accept-Encoding")
-	assert.Equal(t, etag, recorder.Header().Get("ETag"))
+	assert.Equal(t, `"0123456789abcdef`+ETagSuffix+`"`, recorder.Header().Get("ETag"))
+	assert.Equal(t, etag, TrimETagSuffix(recorder.Header().Get("ETag")))
 	assert.Less(t, recorder.Body.Len(), len(bulkBody), "compressed body should be smaller than the original")
 
 	reader, err := gzip.NewReader(recorder.Body)
@@ -127,4 +129,36 @@ func TestMinSize(t *testing.T) {
 
 	_, err := New(Config{MinSize: -1})
 	require.Error(t, err, "a negative minimum should be rejected rather than silently clamped")
+}
+
+func TestTrimETagSuffix(t *testing.T) {
+	tests := map[string]string{
+		`"abc` + ETagSuffix + `"`: `"abc"`,
+		`"abc"`:                   `"abc"`,
+		"abc" + ETagSuffix:        "abc", // a client that dropped the quotes
+		"abc":                     "abc",
+		"":                        "",
+	}
+
+	for tagged, want := range tests {
+		assert.Equal(t, want, TrimETagSuffix(tagged), "trimming %q", tagged)
+	}
+}
+
+func TestAcceptsGzip(t *testing.T) {
+	tests := map[string]bool{
+		"gzip":              true,
+		"GZIP":              true,
+		"br, gzip, deflate": true,
+		"identity":          false,
+		"":                  false,
+	}
+
+	for header, want := range tests {
+		req := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags", nil)
+		if header != "" {
+			req.Header.Set("Accept-Encoding", header)
+		}
+		assert.Equal(t, want, AcceptsGzip(req), "Accept-Encoding: %q", header)
+	}
 }

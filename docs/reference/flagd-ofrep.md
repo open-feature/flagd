@@ -39,7 +39,7 @@ Compression can be turned off entirely with `--ofrep-compression=false`, which i
 
 The SSE stream is never compressed, so events reach subscribers as soon as they are flushed.
 
-Compression does not affect the `ETag` on bulk evaluation responses: the tag is a digest of the uncompressed body, so an `If-None-Match` request still gets its `304 Not Modified` whichever encoding the original response used.
+A compressed bulk evaluation response carries a distinct `ETag`, suffixed with `-gzip`, because the compressed and uncompressed bodies are different representations and must not share one validator. flagd strips the suffix when matching `If-None-Match`, so clients keep getting their `304 Not Modified` and do not need to do anything special.
 
 ## Monitoring
 
