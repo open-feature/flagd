@@ -25,6 +25,18 @@ curl -X POST 'http://localhost:8016/ofrep/v1/evaluate/flags'
 
 See the [cheat sheet](./cheat-sheet.md#evaluating-flags) for more OFREP examples including context-sensitive evaluation and selectors.
 
+## Compression
+
+Evaluation responses are gzip compressed when the client sends an `Accept-Encoding: gzip` header.
+Responses below 1KB are left uncompressed, since gzip framing costs more than it saves at that size; in practice this means bulk evaluation responses compress and single-flag evaluations do not.
+The SSE stream is never compressed, so events reach subscribers as soon as they are flushed.
+
+```shell
+curl -X POST --compressed 'http://localhost:8016/ofrep/v1/evaluate/flags'
+```
+
+Compression does not affect the `ETag` on bulk evaluation responses: the tag is a digest of the uncompressed body, so an `If-None-Match` request still gets its `304 Not Modified` whichever encoding the original response used.
+
 ## Monitoring
 
 The OFREP endpoint is instrumented with OpenTelemetry HTTP and flag evaluation metrics.
