@@ -27,30 +27,29 @@ const (
 	ofrepPortFlagName          = "ofrep-port"
 	ofrepSSEEnabledFlagName    = "ofrep-sse-enabled"
 	ofrepSSEInactivityFlagName = "ofrep-sse-inactivity-delay"
+	ofrepCompressionFlagName   = "ofrep-compression"
+	ofrepCompressMinFlagName   = "ofrep-compression-min-size"
 	ofrepSSEPublicURLFlagName  = "ofrep-sse-public-url"
-
-	ofrepCompressionFlagName        = "ofrep-compression"
-	ofrepCompressionMinSizeFlagName = "ofrep-compression-min-size"
-	otelCollectorURI                = "otel-collector-uri"
-	otelCertPathFlagName            = "otel-cert-path"
-	otelKeyPathFlagName             = "otel-key-path"
-	otelCAPathFlagName              = "otel-ca-path"
-	otelReloadIntervalFlagName      = "otel-reload-interval"
-	portFlagName                    = "port"
-	serverCertPathFlagName          = "server-cert-path"
-	serverKeyPathFlagName           = "server-key-path"
-	socketPathFlagName              = "socket-path"
-	sourcesFlagName                 = "sources"
-	syncPortFlagName                = "sync-port"
-	syncHTTPFlagName                = "sync-http-enabled"
-	syncSocketPathFlagName          = "sync-socket-path"
-	uriFlagName                     = "uri"
-	disableSyncMetadata             = "disable-sync-metadata"
-	contextValueFlagName            = "context-value"
-	headerToContextKeyFlagName      = "context-from-header"
-	streamDeadlineFlagName          = "stream-deadline"
-	maxRequestBodyFlagName          = "max-request-body"
-	maxRequestHeaderFlagName        = "max-request-header"
+	otelCollectorURI           = "otel-collector-uri"
+	otelCertPathFlagName       = "otel-cert-path"
+	otelKeyPathFlagName        = "otel-key-path"
+	otelCAPathFlagName         = "otel-ca-path"
+	otelReloadIntervalFlagName = "otel-reload-interval"
+	portFlagName               = "port"
+	serverCertPathFlagName     = "server-cert-path"
+	serverKeyPathFlagName      = "server-key-path"
+	socketPathFlagName         = "socket-path"
+	sourcesFlagName            = "sources"
+	syncPortFlagName           = "sync-port"
+	syncHTTPFlagName           = "sync-http-enabled"
+	syncSocketPathFlagName     = "sync-socket-path"
+	uriFlagName                = "uri"
+	disableSyncMetadata        = "disable-sync-metadata"
+	contextValueFlagName       = "context-value"
+	headerToContextKeyFlagName = "context-from-header"
+	streamDeadlineFlagName     = "stream-deadline"
+	maxRequestBodyFlagName     = "max-request-body"
+	maxRequestHeaderFlagName   = "max-request-header"
 
 	keepAliveMinTimeFlagName             = "keep-alive-min-time"
 	keepAlivePermitWithoutStreamFlagName = "keep-alive-permit-without-stream"
@@ -72,7 +71,7 @@ func init() {
 	flags.Int(ofrepSSEInactivityFlagName, 120, "Inactivity delay (seconds) advertised to OFREP SSE clients in the eventStreams block. Clients close idle connections after this. Defaults to 120.")
 	flags.String(ofrepSSEPublicURLFlagName, "", "Origin (scheme://host) advertised as the OFREP SSE eventStreams endpoint.origin. Omitted when empty, so clients resolve the requestUri against the OFREP base URL. Set when flagd is behind a proxy.")
 	flags.Bool(ofrepCompressionFlagName, true, "Gzip OFREP evaluation responses when the client sends Accept-Encoding: gzip. Disable when a proxy in front of flagd already compresses. Defaults to true.")
-	flags.Int(ofrepCompressionMinSizeFlagName, compress.DefaultMinSize, "Smallest OFREP response body (bytes) that is gzipped. Below this, compression costs more CPU than the bytes it saves. Set to 0 to compress every response. Defaults to 1024.")
+	flags.Int(ofrepCompressMinFlagName, compress.DefaultMinSize, "Smallest OFREP response body (bytes) that is gzipped. Below this, compression costs more CPU than the bytes it saves. Set to 0 to compress every response. Defaults to 1024.")
 	flags.StringP(socketPathFlagName, "d", "", "Flagd unix socket path. "+
 		"With grpc the evaluations service will become available on this address. "+
 		"With http(s) the grpc-gateway proxy will use this address internally.")
@@ -143,7 +142,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(ofrepSSEInactivityFlagName, flags.Lookup(ofrepSSEInactivityFlagName))
 	_ = viper.BindPFlag(ofrepSSEPublicURLFlagName, flags.Lookup(ofrepSSEPublicURLFlagName))
 	_ = viper.BindPFlag(ofrepCompressionFlagName, flags.Lookup(ofrepCompressionFlagName))
-	_ = viper.BindPFlag(ofrepCompressionMinSizeFlagName, flags.Lookup(ofrepCompressionMinSizeFlagName))
+	_ = viper.BindPFlag(ofrepCompressMinFlagName, flags.Lookup(ofrepCompressMinFlagName))
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
@@ -235,7 +234,7 @@ var startCmd = &cobra.Command{
 			OfrepSSEInactivityDel:  viper.GetInt(ofrepSSEInactivityFlagName),
 			OfrepSSEPublicURL:      viper.GetString(ofrepSSEPublicURLFlagName),
 			OfrepCompression:       viper.GetBool(ofrepCompressionFlagName),
-			OfrepCompressionMin:    viper.GetInt(ofrepCompressionMinSizeFlagName),
+			OfrepCompressionMin:    viper.GetInt(ofrepCompressMinFlagName),
 			OtelCollectorURI:       viper.GetString(otelCollectorURI),
 			OtelCertPath:           viper.GetString(otelCertPathFlagName),
 			OtelKeyPath:            viper.GetString(otelKeyPathFlagName),

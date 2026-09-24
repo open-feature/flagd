@@ -12,8 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// jsonBody is comfortably over minSize so the middleware's size threshold is not what is under test.
-var jsonBody = `{"flags":[` + strings.Repeat(`{"key":"flag","value":true},`, 200) + `{"key":"last","value":true}]}`
+// bulkBody stands in for a bulk evaluation response: comfortably over DefaultMinSize, so the size
+// threshold is never what is under test.
+var bulkBody = `{"flags":[` + strings.Repeat(`{"key":"flag","value":true},`, 200) + `{"key":"last","value":true}]}`
+
+// singleBody stands in for a single-flag evaluation, which falls below DefaultMinSize.
+const singleBody = `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
 
 // jsonHandler writes body as JSON, plus any extra headers, at the given status.
 func jsonHandler(status int, body string, headers map[string]string) http.Handler {
@@ -27,13 +31,7 @@ func jsonHandler(status int, body string, headers map[string]string) http.Handle
 	})
 }
 
-func serve(t *testing.T, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
-	t.Helper()
-
-	return serveWithConfig(t, Config{MinSize: DefaultMinSize}, handler, acceptEncoding)
-}
-
-func serveWithConfig(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
+func serve(t *testing.T, cfg Config, handler http.Handler, acceptEncoding string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	mw, err := New(cfg)
@@ -50,102 +48,83 @@ func serveWithConfig(t *testing.T, cfg Config, handler http.Handler, acceptEncod
 	return recorder
 }
 
+// The ETag assertion is the load-bearing one: OFREP's bulk tag digests the uncompressed body, so it
+// must survive compression untouched for a client's If-None-Match to still match on the next request.
 func TestCompressesJSONWhenClientAcceptsGzip(t *testing.T) {
-	recorder := serve(t, jsonHandler(http.StatusOK, jsonBody, nil), "gzip")
+	const etag = `"0123456789abcdef"`
+
+	recorder := serve(t, Config{MinSize: DefaultMinSize},
+		jsonHandler(http.StatusOK, bulkBody, map[string]string{"ETag": etag}), "gzip")
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
 	assert.Contains(t, recorder.Header().Values("Vary"), "Accept-Encoding")
-	assert.Less(t, recorder.Body.Len(), len(jsonBody), "compressed body should be smaller than the original")
+	assert.Equal(t, etag, recorder.Header().Get("ETag"))
+	assert.Less(t, recorder.Body.Len(), len(bulkBody), "compressed body should be smaller than the original")
 
 	reader, err := gzip.NewReader(recorder.Body)
 	require.NoError(t, err)
 	decoded, err := io.ReadAll(reader)
 	require.NoError(t, err)
-	assert.Equal(t, jsonBody, string(decoded))
+	assert.Equal(t, bulkBody, string(decoded))
 }
 
-func TestLeavesBodyAloneWithoutAcceptEncoding(t *testing.T) {
-	recorder := serve(t, jsonHandler(http.StatusOK, jsonBody, nil), "")
-
-	require.Equal(t, http.StatusOK, recorder.Code)
-	assert.Empty(t, recorder.Header().Get("Content-Encoding"))
-	assert.Equal(t, jsonBody, recorder.Body.String())
-}
-
-// A single-flag evaluation is far below minSize, where gzip framing would make the response bigger.
-func TestSkipsResponsesBelowMinSize(t *testing.T) {
-	small := `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
-	require.Less(t, len(small), DefaultMinSize)
-
-	recorder := serve(t, jsonHandler(http.StatusOK, small, nil), "gzip")
-
-	assert.Empty(t, recorder.Header().Get("Content-Encoding"))
-	assert.Equal(t, small, recorder.Body.String())
-}
-
-// OFREP's bulk ETag digests the uncompressed body, so it must survive compression untouched for a
-// client's If-None-Match to still match on the next request.
-func TestPreservesETag(t *testing.T) {
-	const etag = `"0123456789abcdef"`
-
-	recorder := serve(t, jsonHandler(http.StatusOK, jsonBody, map[string]string{"ETag": etag}), "gzip")
-
-	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
-	assert.Equal(t, etag, recorder.Header().Get("ETag"))
-}
-
-// A 304 carries no body, so there is nothing to encode and the client must not be told otherwise.
-func TestLeavesNotModifiedAlone(t *testing.T) {
-	recorder := serve(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotModified)
-	}), "gzip")
-
-	require.Equal(t, http.StatusNotModified, recorder.Code)
-	assert.Empty(t, recorder.Header().Get("Content-Encoding"))
-	assert.Empty(t, recorder.Body.Bytes())
-}
-
-// text/event-stream is not in the compressed content types; SSE is additionally routed around this
-// middleware entirely, but the filter is the backstop if that ever changes.
-func TestSkipsNonJSONContentTypes(t *testing.T) {
-	recorder := serve(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+func TestLeavesResponseUncompressed(t *testing.T) {
+	eventStream := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		_, _ = w.Write([]byte(strings.Repeat("data: {}\n\n", 500)))
-	}), "gzip")
+	})
 
-	assert.Empty(t, recorder.Header().Get("Content-Encoding"))
+	tests := map[string]struct {
+		handler        http.Handler
+		acceptEncoding string
+	}{
+		"client does not accept gzip": {jsonHandler(http.StatusOK, bulkBody, nil), ""},
+		// gzip framing would cost more than it saves on a single-flag evaluation
+		"body below the minimum size": {jsonHandler(http.StatusOK, singleBody, nil), "gzip"},
+		// SSE is routed around this middleware entirely; the content-type filter is the backstop
+		"content type is not JSON": {eventStream, "gzip"},
+		"no body to encode":        {jsonHandler(http.StatusNotModified, "", nil), "gzip"},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			recorder := serve(t, Config{MinSize: DefaultMinSize}, test.handler, test.acceptEncoding)
+			assert.Empty(t, recorder.Header().Get("Content-Encoding"))
+		})
+	}
 }
 
-// MinSize 0 means "compress everything the content-type filter accepts", for operators who would
-// rather spend the CPU than the bytes.
-func TestMinSizeZeroCompressesEverything(t *testing.T) {
-	small := `{"key":"my-flag","value":true,"reason":"STATIC","variant":"on"}`
-	require.Less(t, len(small), DefaultMinSize)
+func TestMinSize(t *testing.T) {
+	require.Less(t, len(singleBody), DefaultMinSize)
 
-	recorder := serveWithConfig(t, Config{MinSize: 0}, jsonHandler(http.StatusOK, small, nil), "gzip")
+	tests := map[string]struct {
+		minSize  int
+		compress bool
+	}{
+		"zero compresses whatever the size": {0, true},
+		"a body at exactly the minimum":     {len(singleBody), true},
+		"a body one byte under":             {len(singleBody) + 1, false},
+	}
 
-	require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			recorder := serve(t, Config{MinSize: test.minSize}, jsonHandler(http.StatusOK, singleBody, nil), "gzip")
 
-	reader, err := gzip.NewReader(recorder.Body)
-	require.NoError(t, err)
-	decoded, err := io.ReadAll(reader)
-	require.NoError(t, err)
-	assert.Equal(t, small, string(decoded))
-}
+			if !test.compress {
+				assert.Empty(t, recorder.Header().Get("Content-Encoding"))
+				return
+			}
 
-func TestCustomMinSize(t *testing.T) {
-	body := `{"flags":[` + strings.Repeat(`{"key":"f","value":1},`, 10) + `{"key":"last","value":1}]}`
-	require.Less(t, len(body), DefaultMinSize)
+			require.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"))
+			reader, err := gzip.NewReader(recorder.Body)
+			require.NoError(t, err)
+			decoded, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			assert.Equal(t, singleBody, string(decoded))
+		})
+	}
 
-	recorder := serveWithConfig(t, Config{MinSize: len(body)}, jsonHandler(http.StatusOK, body, nil), "gzip")
-	assert.Equal(t, "gzip", recorder.Header().Get("Content-Encoding"), "a body at exactly MinSize should compress")
-
-	recorder = serveWithConfig(t, Config{MinSize: len(body) + 1}, jsonHandler(http.StatusOK, body, nil), "gzip")
-	assert.Empty(t, recorder.Header().Get("Content-Encoding"), "a body below MinSize should not compress")
-}
-
-func TestRejectsNegativeMinSize(t *testing.T) {
 	_, err := New(Config{MinSize: -1})
-	require.Error(t, err)
+	require.Error(t, err, "a negative minimum should be rejected rather than silently clamped")
 }
