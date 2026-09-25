@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.10](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.9...flagd-proxy/v0.9.10) (2026-09-25)
+
+
+### 🧹 Chore
+
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to e2e927e ([#2068](https://github.com/open-feature/flagd/issues/2068)) ([8554906](https://github.com/open-feature/flagd/commit/8554906b04ba2ceedfa2ab3f8203945bb022b655))
+
 ## [0.9.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.8...flagd-proxy/v0.9.9) (2026-09-10)
 
 

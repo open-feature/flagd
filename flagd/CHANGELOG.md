@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.17.0](https://github.com/open-feature/flagd/compare/flagd/v0.16.3...flagd/v0.17.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sync:** server-side sync metrics renamed (client metrics added alongside):   feature_flag.flagd.sync.active_streams  -> feature_flag.flagd.sync.server.active_streams   feature_flag.flagd.sync.stream.duration -> feature_flag.flagd.sync.server.stream.duration
+
+### 🐛 Bug Fixes
+
+* **security:** update module go.opentelemetry.io/otel/sdk to v1.45.0 [security] ([#2056](https://github.com/open-feature/flagd/issues/2056)) ([904232a](https://github.com/open-feature/flagd/commit/904232a03b89f55a632aea35733777e98f678382))
+* wait for flag state before reporting ready ([#2050](https://github.com/open-feature/flagd/issues/2050)) ([1c517f5](https://github.com/open-feature/flagd/commit/1c517f5772c1f3e55f2546afed47afeb715969fb))
+
+
+### ✨ New Features
+
+* gzip compression for OFREP evaluation responses ([#2071](https://github.com/open-feature/flagd/issues/2071)) ([d0cc7fc](https://github.com/open-feature/flagd/commit/d0cc7fca44d2526eb7a1c0b53a39098d8acf091b))
+* **sync:** instrument the outbound sync channel (flagd as client) ([#2051](https://github.com/open-feature/flagd/issues/2051)) ([ad63aad](https://github.com/open-feature/flagd/commit/ad63aad303abc1f78f62765e01a6dd216c50dbad))
+
+
+### 🧹 Chore
+
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to e2e927e ([#2068](https://github.com/open-feature/flagd/issues/2068)) ([8554906](https://github.com/open-feature/flagd/commit/8554906b04ba2ceedfa2ab3f8203945bb022b655))
+
 ## [0.16.3](https://github.com/open-feature/flagd/compare/flagd/v0.16.2...flagd/v0.16.3) (2026-09-10)
 
 
