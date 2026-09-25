@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep/sse"
+	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 	corsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/cors"
 	"golang.org/x/sync/errgroup"
 )
@@ -69,6 +70,14 @@ func NewOfrepService(
 		sseCfg.Versioner = sseService.Tracker()
 	}
 
+	// Compression is handed to the evaluate routes rather than wrapped around the whole mux: the
+	// SSE stream registered below must stay uncompressed so each event reaches the client as it is
+	// flushed, and the per-route metrics middleware should see the compressed byte count.
+	compression, err := compressmw.New()
+	if err != nil {
+		return nil, err
+	}
+
 	ofrepHandler := NewOfrepHandler(
 		cfg.Logger,
 		evaluator,
@@ -77,6 +86,7 @@ func NewOfrepService(
 		cfg.MetricsRecorder,
 		cfg.ServiceName,
 		sseCfg,
+		compression,
 	)
 
 	// Route the long-lived SSE stream separately from the request/response evaluate routes so
