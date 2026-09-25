@@ -13,6 +13,8 @@ const (
 	EndsWithEvaluationName   = "ends_with"
 )
 
+var errPropertyAbsent = errors.New("property is absent (resolved to nil)")
+
 type StringComparisonEvaluator struct {
 	Logger *logger.Logger
 }
@@ -43,14 +45,20 @@ func NewStringComparisonEvaluator(log *logger.Logger) *StringComparisonEvaluator
 func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
+		// Absent properties are normal (e.g. optional context fields from browser clients).
+		// Only log at debug to avoid flooding logs on every evaluation; config errors remain at error.
+		if errors.Is(err, errPropertyAbsent) {
+			sce.Logger.Debug(fmt.Sprintf("starts_with evaluation: property is absent, skipping: %v", err))
+		} else {
+			sce.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
+		}
 		return nil
 	}
 	return strings.HasPrefix(propertyValue, target)
 }
 
-// EndsWithEvaluation checks if the given property ends with a certain prefix.
-// It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
+// EndsWithEvaluation checks if the given property ends with a certain suffix.
+// It returns 'true', if the value of the given property ends with the suffix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
 //	{
@@ -71,7 +79,11 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
+		if errors.Is(err, errPropertyAbsent) {
+			sce.Logger.Debug(fmt.Sprintf("ends_with evaluation: property is absent, skipping: %v", err))
+		} else {
+			sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
+		}
 		return nil
 	}
 	return strings.HasSuffix(propertyValue, target)
@@ -113,6 +125,9 @@ func parseStringComparisonEvaluationData(values interface{}) (string, string, er
 
 	property, ok := parsed[0].(string)
 	if !ok {
+		if parsed[0] == nil {
+			return "", "", errPropertyAbsent
+		}
 		return "", "", errors.New("[start/end]s_with evaluation: property did not resolve to a string value")
 	}
 
