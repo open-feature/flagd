@@ -4,26 +4,26 @@ package subscriptions
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	isync "github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
+	"go.uber.org/zap"
 )
 
 // Manager defines the interface for the subscription management
 type Manager interface {
 	FetchAllFlags(
 		ctx context.Context,
-		key interface{},
+		key any,
 		target string,
 	) (isync.DataSync, error)
 	RegisterSubscription(
 		ctx context.Context,
 		target string,
-		key interface{},
+		key any,
 		dataSync chan isync.DataSync,
 		errChan chan error,
 	)
@@ -62,22 +62,22 @@ func NewManager(ctx context.Context, logger *logger.Logger) *Coordinator {
 
 // FetchAllFlags returns a DataSync containing the full set of flag configurations from the Coordinator.
 // This will either occur via triggering a resync, or through setting up a new subscription to the resource
-func (s *Coordinator) FetchAllFlags(ctx context.Context, key interface{}, target string) (isync.DataSync, error) {
-	s.logger.Debug(fmt.Sprintf("fetching all flags for target %s", target))
+func (s *Coordinator) FetchAllFlags(ctx context.Context, key any, target string) (isync.DataSync, error) {
+	s.logger.Debug("fetching all flags", zap.String("target", target))
 	dataSyncChan := make(chan isync.DataSync, 1)
 	errChan := make(chan error, 1)
 	s.mu.RLock()
 	syncHandler, ok := s.multiplexers[target]
 	s.mu.RUnlock()
 	if !ok {
-		s.logger.Debug(fmt.Sprintf("sync handler does not exist for target %s, registering a new subscription", target))
+		s.logger.Debug("sync handler does not exist, registering a new subscription", zap.String("target", target))
 		s.RegisterSubscription(ctx, target, key, dataSyncChan, errChan)
 	} else {
 		if syncHandler.syncRef == nil {
 			return isync.DataSync{}, errors.New("sync ref not set")
 		}
 		go func() {
-			s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
+			s.logger.Debug("sync handler exists, triggering a resync", zap.String("target", target))
 			if err := syncHandler.syncRef.ReSync(ctx, dataSyncChan); err != nil {
 				errChan <- err
 			}
@@ -99,7 +99,7 @@ func (s *Coordinator) FetchAllFlags(ctx context.Context, key interface{}, target
 func (s *Coordinator) RegisterSubscription(
 	ctx context.Context,
 	target string,
-	key interface{},
+	key any,
 	dataSync chan isync.DataSync,
 	errChan chan error,
 ) {
@@ -110,14 +110,13 @@ func (s *Coordinator) RegisterSubscription(
 	if !ok {
 		// we need to start a sync for this
 		s.logger.Debug(
-			fmt.Sprintf(
-				"sync handler does not exist for target %s, registering multiplexer with sub %p",
-				target,
-				key,
-			))
+			"sync handler does not exist, registering multiplexer with sub",
+			zap.String("target", target),
+			zap.Any("key", key),
+		)
 		s.multiplexers[target] = &multiplexer{
 			dataSync: make(chan isync.DataSync),
-			subs: map[interface{}]storedChannels{
+			subs: map[any]storedChannels{
 				key: {
 					errChan:  errChan,
 					dataSync: dataSync,
@@ -128,7 +127,7 @@ func (s *Coordinator) RegisterSubscription(
 		go s.watchResource(target)
 	} else {
 		// register our sub in the map
-		s.logger.Debug(fmt.Sprintf("registering sync subscription %p", key))
+		s.logger.Debug("registering sync subscription", zap.Any("key", key))
 		sh.subs[key] = storedChannels{
 			errChan:  errChan,
 			dataSync: dataSync,
@@ -139,7 +138,7 @@ func (s *Coordinator) RegisterSubscription(
 				s.mu.RLock()
 				defer s.mu.RUnlock()
 				if _, ok := s.multiplexers[target]; ok {
-					s.logger.Debug(fmt.Sprintf("sync handler exists for target %s, triggering a resync", target))
+					s.logger.Debug("sync handler exists, triggering a resync", zap.String("target", target))
 					if err := sh.syncRef.ReSync(ctx, dataSync); err != nil {
 						errChan <- err
 					}
@@ -153,21 +152,21 @@ func (s *Coordinator) RegisterSubscription(
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		if s.multiplexers[target] != nil && s.multiplexers[target].subs != nil {
-			s.logger.Debug(fmt.Sprintf("removing sync subscription due to context cancellation %p", key))
+			s.logger.Debug("removing sync subscription due to context cancellation", zap.Any("key", key))
 			delete(s.multiplexers[target].subs, key)
 		}
 	}()
 }
 
 func (s *Coordinator) watchResource(target string) {
-	s.logger.Debug(fmt.Sprintf("watching resource %s", target))
+	s.logger.Debug("watching resource", zap.String("target", target))
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
 	s.mu.Lock()
 	sh, ok := s.multiplexers[target]
 	if !ok {
 		s.mu.Unlock()
-		s.logger.Error(fmt.Sprintf("no sync handler exists for target %s", target))
+		s.logger.Error("no sync handler exists", zap.String("target", target))
 		return
 	}
 	// this cancel is accessed by the cleanup method shutdown the listener + delete the multiplexer
@@ -193,14 +192,14 @@ func (s *Coordinator) watchResource(target string) {
 	// setup sync, if this fails an error is broadcasted, and the defer results in cleanup
 	syncSource, err := s.syncBuilder.SyncFromURI(target, s.logger)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("unable to build sync from URI for target %s: %s", target, err.Error()))
+		s.logger.Error("unable to build sync from URI", zap.String("target", target), zap.Error(err))
 		sh.broadcastError(s.logger, err)
 		return
 	}
 	// init sync, if this fails an error is broadcasted, and the defer results in cleanup
 	err = syncSource.Init(ctx)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("unable to initiate sync for target %s: %s", target, err.Error()))
+		s.logger.Error("unable to initiate sync", zap.String("target", target), zap.Error(err))
 		sh.broadcastError(s.logger, err)
 		return
 	}
@@ -209,7 +208,7 @@ func (s *Coordinator) watchResource(target string) {
 	sh.syncRef = syncSource
 	err = syncSource.Sync(ctx, sh.dataSync)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("error from sync for target %s: %s", target, err.Error()))
+		s.logger.Error("error from sync", zap.String("target", target), zap.Error(err))
 		sh.broadcastError(s.logger, err)
 	}
 }
@@ -223,9 +222,9 @@ func (s *Coordinator) cleanup() {
 			s.mu.Lock()
 			for k, v := range s.multiplexers {
 				// delete any multiplexers with 0 active subscriptions through cancelling its context
-				s.logger.Debug(fmt.Sprintf("multiplexer for target %s has %d subscriptions", k, len(v.subs)))
+				s.logger.Debug("multiplexer subscription count", zap.String("target", k), zap.Int("subscriptions", len(v.subs)))
 				if len(v.subs) == 0 {
-					s.logger.Debug(fmt.Sprintf("shutting down multiplexer %s", k))
+					s.logger.Debug("shutting down multiplexer", zap.String("target", k))
 					s.multiplexers[k].cancelFunc()
 				}
 			}
