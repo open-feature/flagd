@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.0](https://github.com/open-feature/flagd/compare/core/v0.17.0...core/v0.18.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sync:** server-side sync metrics renamed (client metrics added alongside):   feature_flag.flagd.sync.active_streams  -> feature_flag.flagd.sync.server.active_streams   feature_flag.flagd.sync.stream.duration -> feature_flag.flagd.sync.server.stream.duration
+
+### 🐛 Bug Fixes
+
+* **security:** update module go.opentelemetry.io/otel/sdk to v1.45.0 [security] ([#2056](https://github.com/open-feature/flagd/issues/2056)) ([904232a](https://github.com/open-feature/flagd/commit/904232a03b89f55a632aea35733777e98f678382))
+
+
+### ✨ New Features
+
+* enable override of `TraceProvider` in JSON evaluations ([#2070](https://github.com/open-feature/flagd/issues/2070)) ([d090fa7](https://github.com/open-feature/flagd/commit/d090fa742884034a4733d94c40b3d9187b93e389))
+* **sync:** instrument the outbound sync channel (flagd as client) ([#2051](https://github.com/open-feature/flagd/issues/2051)) ([ad63aad](https://github.com/open-feature/flagd/commit/ad63aad303abc1f78f62765e01a6dd216c50dbad))
+
 ## [0.17.0](https://github.com/open-feature/flagd/compare/core/v0.16.2...core/v0.17.0) (2026-09-10)
 
 

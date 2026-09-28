@@ -46,7 +46,7 @@ RUN [ "${FIPS}" != on ] || go version -m /bin/flagd-proxy | grep -q -- '-tags=fi
 
 # # Use distroless as minimal base image to package the manager binary
 # # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot@sha256:1c2c046bc09ed40fad370b599a0b1ae7987f55b01e247cf27a7c27cd97e5bbc7
+FROM gcr.io/distroless/static:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3
 WORKDIR /
 COPY --from=builder /bin/flagd-proxy .
 USER 65532:65532

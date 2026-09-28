@@ -11,9 +11,7 @@ import (
 	"sync"
 )
 
-// conditionalETag tags a 200 with a strong ETag over the bytes the handler wrote, and answers 304
-// when the client's If-None-Match matches. Hashing the response rather than the flag configuration
-// keeps the validator correct for context-dependent values.
+// conditionalETag tags a 200 with the written bytes and answers 304 on a match (response hashed, not config)
 func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := getBodyBuffer()
@@ -42,8 +40,7 @@ func conditionalETag(configEtagDiffers func(*http.Request) bool, next http.Handl
 	})
 }
 
-// bodyBuffers recycles response buffers: consecutive bulk evaluations are close in size, so a
-// recycled buffer already holds the capacity the next one needs.
+// bodyBuffers recycles response buffers; consecutive bulk evaluations are close in size
 var bodyBuffers = sync.Pool{
 	New: func() any { return new(bytes.Buffer) },
 }
@@ -97,8 +94,9 @@ func (rec *responseRecorder) Write(b []byte) (int, error) {
 	return rec.body.Write(b)
 }
 
+// etag returns a weak validator; gzip and identity share it since they cannot share a strong tag (RFC 9110 8.8.1)
 func (rec *responseRecorder) etag() string {
-	return `"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
+	return `W/"` + hex.EncodeToString(rec.digest.Sum(nil)) + `"`
 }
 
 func (rec *responseRecorder) flush() {
@@ -108,11 +106,10 @@ func (rec *responseRecorder) flush() {
 	}
 }
 
-// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag.
-// Per RFC 9110 13.1.2 the field is "*" or a weakly-compared list of entity tags.
-// Hand-rolled because net/http's parser is unexported and its only public path (ServeContent) answers 412,
-// not the 304 OFREP wants on this POST route.
+// ifNoneMatch reports whether any If-None-Match value selects the representation tagged with etag (RFC 9110 13.1.2)
 func ifNoneMatch(fields []string, etag string) bool {
+	opaque := strings.TrimPrefix(etag, "W/")
+
 	for _, field := range fields {
 		for candidate := range splitETagList(field) {
 			if candidate == "*" {
@@ -121,7 +118,7 @@ func ifNoneMatch(fields []string, etag string) bool {
 
 			// a lenient client may drop the quotes the generated tag carries
 			candidate = strings.TrimPrefix(candidate, "W/")
-			if candidate == etag || `"`+candidate+`"` == etag {
+			if candidate == opaque || `"`+candidate+`"` == opaque {
 				return true
 			}
 		}
@@ -130,8 +127,7 @@ func ifNoneMatch(fields []string, etag string) bool {
 	return false
 }
 
-// splitETagList splits a list of entity tags on its commas. A comma inside a quoted tag belongs
-// to the tag, so the split tracks quoting instead of reaching for strings.Split.
+// splitETagList splits a list of entity tags on commas, tracking quoting since a quoted tag may contain one
 func splitETagList(list string) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		var (

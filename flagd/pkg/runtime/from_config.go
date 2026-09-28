@@ -11,6 +11,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	flageval "github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation"
 	"github.com/open-feature/flagd/flagd/pkg/service/flag-evaluation/ofrep"
@@ -117,6 +118,10 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 	for _, provider := range config.SyncProviders {
 		sources = append(sources, provider.URI)
 	}
+	sourceReadiness := make(map[string]bool, len(sources))
+	for _, source := range sources {
+		sourceReadiness[source] = false
+	}
 
 	// build flag store, collect flag sources & fill sources details
 	store, err := store.NewStore(logger, sources)
@@ -186,9 +191,12 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 		return nil, fmt.Errorf("error creating sync service: %w", err)
 	}
 
-	// build sync providers
+	// build sync providers with a shared source-agnostic sync-metrics recorder so every
+	// provider (grpc, http, file, kubernetes, blob) emits the universal client-side sync
+	// metrics into the same reader as the rest of flagd's telemetry.
 	syncLogger := logger.WithFields(zap.String("component", "sync"))
-	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders)
+	syncMetricsRecorder := syncmetrics.NewRecorder(nil)
+	iSyncs, err := syncProvidersFromConfig(syncLogger, config.SyncProviders, syncMetricsRecorder)
 	if err != nil {
 		return nil, err
 	}
@@ -214,13 +222,21 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			MaxRequestBodyBytes:        config.MaxRequestBodyBytes,
 			MaxRequestHeaderBytes:      config.MaxRequestHeaderBytes,
 		},
-		Syncs: iSyncs,
+		Syncs:           iSyncs,
+		sourceReadiness: sourceReadiness,
 	}, nil
 }
 
-// syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig
-func syncProvidersFromConfig(logger *logger.Logger, sources []sync.SourceConfig) ([]sync.ISync, error) {
+// syncProvidersFromConfig is a helper to build ISync implementations from SourceConfig.
+// The syncMetricsRecorder is forwarded to every sync provider so they can record the
+// universal client-side sync metrics. A nil recorder is safe (methods no-op).
+func syncProvidersFromConfig(
+	logger *logger.Logger,
+	sources []sync.SourceConfig,
+	syncMetricsRecorder *syncmetrics.Recorder,
+) ([]sync.ISync, error) {
 	builder := syncbuilder.NewSyncBuilder()
+	builder.SyncMetricsRecorder = syncMetricsRecorder
 	syncs, err := builder.SyncsFromConfig(sources, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create sync sources from config: %w", err)

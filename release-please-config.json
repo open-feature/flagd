@@ -1,6 +1,7 @@
 {
   "include-component-in-tag": true,
   "tag-separator": "/",
+  "signoff": "OpenFeature Bot <109696520+openfeaturebot@users.noreply.github.com>",
   "last-release-sha": "4f7b3cf32d6abbf91bd002abbfe851e84fc3dac5",
   "packages": {
     "flagd": {

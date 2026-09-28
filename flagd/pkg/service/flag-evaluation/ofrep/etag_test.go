@@ -17,13 +17,18 @@ import (
 // digest rather than restating it.
 func bodyETag(body []byte) string {
 	sum := sha256.Sum256(body)
-	return `"` + hex.EncodeToString(sum[:]) + `"`
+	return `W/"` + hex.EncodeToString(sum[:]) + `"`
 }
 
-func unquote(etag string) string { return strings.Trim(etag, `"`) }
+// unquote reduces a tag to its bare opaque part, dropping both the weakness prefix and the quotes.
+func unquote(etag string) string { return strings.Trim(strings.TrimPrefix(etag, "W/"), `"`) }
 
-// quotedETag is a strong entity-tag: exactly one pair of quotes around the hex digest.
-const quotedETag = `^"[0-9a-f]{64}"$`
+// strongForm is the tag as a client that dropped the weakness prefix would send it back.
+func strongForm(etag string) string { return strings.TrimPrefix(etag, "W/") }
+
+// quotedETag is a weak entity-tag: the W/ prefix and exactly one pair of quotes around the digest.
+// Weak, because gzip and identity responses share it; see responseRecorder.etag.
+const quotedETag = `^W/"[0-9a-f]{64}"$`
 
 // noConfigEtagVeto isolates the header path; the veto is covered in sse_bulk_test.go.
 func noConfigEtagVeto(*http.Request) bool { return false }
@@ -69,7 +74,7 @@ func TestConditionalETag_HashesWrittenBytes(t *testing.T) {
 
 	etag := first.Header().Get("ETag")
 	require.NotEmpty(t, etag)
-	assert.Regexp(t, quotedETag, etag, "the tag must carry exactly one pair of quotes")
+	assert.Regexp(t, quotedETag, etag, "the tag must be weak and carry exactly one pair of quotes")
 	assert.Equal(t, bodyETag([]byte(body)), etag, "the tag must be the hash of the written bytes")
 
 	t.Run("identical bytes yield the same tag", func(t *testing.T) {
@@ -121,15 +126,15 @@ func TestConditionalETag_ValidatorListForms(t *testing.T) {
 		ifNoneMatch string
 		want        int
 	}{
-		"wildcard":                     {`*`, http.StatusNotModified},
-		"current tag last in list":     {`"stale", ` + current, http.StatusNotModified},
-		"current tag first in list":    {current + `, "stale"`, http.StatusNotModified},
-		"weak current tag":             {`W/` + current, http.StatusNotModified},
-		"weak current tag in list":     {`W/"stale", W/` + current, http.StatusNotModified},
-		"unquoted current tag in list": {`"stale",` + unquote(current), http.StatusNotModified},
-		"empty list entries":           {`, ,` + current, http.StatusNotModified},
-		"only stale tags":              {`"stale", W/"staler"`, http.StatusOK},
-		"empty list":                   {`,`, http.StatusOK},
+		"wildcard":                       {`*`, http.StatusNotModified},
+		"current tag last in list":       {`"stale", ` + current, http.StatusNotModified},
+		"current tag first in list":      {current + `, "stale"`, http.StatusNotModified},
+		"strong form of the current tag": {strongForm(current), http.StatusNotModified},
+		"current tag in a weak list":     {`W/"stale", ` + current, http.StatusNotModified},
+		"unquoted current tag in list":   {`"stale",` + unquote(current), http.StatusNotModified},
+		"empty list entries":             {`, ,` + current, http.StatusNotModified},
+		"only stale tags":                {`"stale", W/"staler"`, http.StatusOK},
+		"empty list":                     {`,`, http.StatusOK},
 		// net/http stops scanning at the first entry that is not a valid entity tag, which would
 		// let junk hide the tag beside it. This scan compares the junk and carries on.
 		"malformed entry beside a valid tag": {`bogus, ` + current, http.StatusNotModified},

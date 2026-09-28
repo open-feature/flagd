@@ -1,9 +1,28 @@
+# The `branch` lines below are load-bearing, not decorative.
+#
+# Renovate's git-submodules manager reads `branch` as the dependency's current
+# version. With it, a new submodule release arrives as an ordinary version PR
+# that bumps both the pointer and the `branch` value. Without it there is no
+# version to compare against, so Renovate can only chase the upstream default
+# branch instead -- which is not what we want to track, and which
+# open-feature/community-tooling#126 switches off entirely.
+#
+# So deleting a `branch` line silently switches off updates for that submodule.
+# That has happened several times; see open-feature/flagd-testbed#398. Keep the
+# pin, and let Renovate move it.
+#
+# `schemas` is deliberately left unpinned for now: it tracks an untagged commit,
+# and flagd-schemas publishes two independent release-please series
+# (`json/json-schema-v*` and `protobuf-v*`), so picking one is a decision rather
+# than a no-op. See open-feature/community-tooling#125.
 [submodule "test-harness"]
 	path = test-harness
-	url = https://github.com/open-feature/test-harness.git
+	url = https://github.com/open-feature/flagd-testbed.git
+	branch = v3.8.2
 [submodule "spec"]
 	path = spec
 	url = https://github.com/open-feature/spec.git
+	branch = v0.9.0
 [submodule "schemas"]
 	path = schemas
 	url = https://github.com/open-feature/flagd-schemas.git
