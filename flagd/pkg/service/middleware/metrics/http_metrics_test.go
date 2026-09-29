@@ -231,3 +231,49 @@ func TestNewHttpMetric(t *testing.T) {
 		t.Errorf("Expected DisableMeasureSize to be configured with %v, got %v", disableMeasureSize, mdw.cfg.DisableMeasureSize)
 	}
 }
+
+func TestHandlerID(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      Config
+		path     string
+		expected string
+	}{
+		{
+			name:     "configured handler ID wins",
+			cfg:      Config{HandlerID: "/ofrep/v1/evaluate/flags/{key}", RoutePrefixes: []string{"/flagd.evaluation.v1.Service/"}},
+			path:     "/anything",
+			expected: "/ofrep/v1/evaluate/flags/{key}",
+		},
+		{
+			name:     "served route keeps its path",
+			cfg:      Config{RoutePrefixes: []string{"/flagd.evaluation.v1.Service/"}},
+			path:     "/flagd.evaluation.v1.Service/ResolveBoolean",
+			expected: "/flagd.evaluation.v1.Service/ResolveBoolean",
+		},
+		{
+			name:     "unserved route is folded",
+			cfg:      Config{RoutePrefixes: []string{"/flagd.evaluation.v1.Service/"}},
+			path:     "/not-a-route-12345",
+			expected: otherRoute,
+		},
+		{
+			name:     "no prefixes folds everything",
+			cfg:      Config{},
+			path:     "/flagd.evaluation.v1.Service/ResolveBoolean",
+			expected: otherRoute,
+		},
+	}
+
+	log := logger.NewLogger(nil, false)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.cfg.Logger = log
+			mdw := NewHTTPMetric(tt.cfg)
+			if got := mdw.handlerID(tt.path); got != tt.expected {
+				t.Errorf("Expected %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
