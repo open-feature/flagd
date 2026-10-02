@@ -37,8 +37,8 @@ type IMetricsRecorder interface {
 	HTTPResponseSize(ctx context.Context, sizeBytes int64, attrs []attribute.KeyValue)
 	InFlightRequestStart(ctx context.Context, attrs []attribute.KeyValue)
 	InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue)
-	RecordEvaluation(ctx context.Context, err error, reason, variant, key string)
-	Impressions(ctx context.Context, reason, variant, key string)
+	RecordEvaluation(ctx context.Context, err error, reason, variant, key, flagSetID string)
+	Impressions(ctx context.Context, reason, variant, key, flagSetID string)
 	// gRPC Sync metrics
 	SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue)
 	SyncServerStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
@@ -63,10 +63,10 @@ func (NoopMetricsRecorder) InFlightRequestStart(_ context.Context, _ []attribute
 func (NoopMetricsRecorder) InFlightRequestEnd(_ context.Context, _ []attribute.KeyValue) {
 }
 
-func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string) {
+func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _, _ string) {
 }
 
-func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
+func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _, _ string) {
 }
 
 func (NoopMetricsRecorder) SyncServerStreamStart(_ context.Context, _ []attribute.KeyValue) {
@@ -118,20 +118,22 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 	r.httpRequestsInflight.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
+func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key, flagSetID string) {
 	if err == nil {
-		r.Impressions(ctx, reason, variant, key)
+		r.Impressions(ctx, reason, variant, key, flagSetID)
 	}
-	r.Reasons(ctx, key, reason, err)
+	r.Reasons(ctx, key, reason, flagSetID, err)
 }
 
-func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
+func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key, flagSetID string) {
+	attrs := append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))
+	attrs = appendFlagSetID(attrs, flagSetID)
 	r.impressions.Add(ctx,
 		1,
-		metric.WithAttributes(append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))...))
+		metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string, err error) {
+func (r MetricsRecorder) Reasons(ctx context.Context, key, reason, flagSetID string, err error) {
 	attrs := []attribute.KeyValue{
 		semconv.FeatureFlagProviderName(ProviderName),
 		FeatureFlagReason(reason),
@@ -142,8 +144,16 @@ func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string,
 	} else {
 		attrs = append(attrs, ExceptionType(err.Error()))
 	}
+	attrs = appendFlagSetID(attrs, flagSetID)
 
 	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+func appendFlagSetID(attrs []attribute.KeyValue, flagSetID string) []attribute.KeyValue {
+	if flagSetID == "" {
+		return attrs
+	}
+	return append(attrs, semconv.FeatureFlagSetID(flagSetID))
 }
 
 func (r MetricsRecorder) SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue) {

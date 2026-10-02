@@ -149,7 +149,7 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Impressions(t.Context(), "reason", "variant", "key")
+					rec.Impressions(t.Context(), "reason", "variant", "key", "")
 				}
 			},
 			metricsLen: 1,
@@ -160,10 +160,10 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyA", "reason", nil)
+					rec.Reasons(t.Context(), "keyA", "reason", "", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyB", "error", fmt.Errorf("err not found"))
+					rec.Reasons(t.Context(), "keyB", "error", "", fmt.Errorf("err not found"))
 				}
 			},
 			metricsLen: 1,
@@ -174,13 +174,13 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key")
+					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key", "")
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key", "")
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key", "")
 				}
 			},
 			metricsLen: 2,
@@ -257,12 +257,61 @@ func TestNoopMetricsRecorderInFlightRequestEnd(t *testing.T) {
 
 func TestNoopMetricsRecorderRecordEvaluation(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.RecordEvaluation(t.Context(), nil, "", "", "")
+	no.RecordEvaluation(t.Context(), nil, "", "", "", "")
 }
 
 func TestNoopMetricsRecorderImpressions(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.Impressions(t.Context(), "", "", "")
+	no.Impressions(t.Context(), "", "", "", "")
+}
+
+func TestRecordEvaluationFlagSetID(t *testing.T) {
+	exp := metric.NewManualReader()
+	rec := NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), svcName)
+
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-a", "set-a")
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-b", "set-b")
+	rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "ERROR", "", "missing", "selected-set")
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "without-set", "")
+
+	var data metricdata.ResourceMetrics
+	require.NoError(t, exp.Collect(t.Context(), &data))
+	require.Len(t, data.ScopeMetrics, 1)
+
+	want := map[string]map[string]bool{
+		impressionMetric: {
+			"set-a": true,
+			"set-b": true,
+			"":      true,
+		},
+		reasonMetric: {
+			"set-a":        true,
+			"set-b":        true,
+			"selected-set": true,
+			"":             true,
+		},
+	}
+
+	for _, m := range data.ScopeMetrics[0].Metrics {
+		expected, ok := want[m.Name]
+		if !ok {
+			continue
+		}
+		sum, ok := m.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		got := make(map[string]bool, len(sum.DataPoints))
+		for _, point := range sum.DataPoints {
+			value, present := point.Attributes.Value(semconv.FeatureFlagSetIDKey)
+			if present {
+				got[value.AsString()] = true
+			} else {
+				got[""] = true
+			}
+		}
+		require.Equal(t, expected, got, m.Name)
+		delete(want, m.Name)
+	}
+	require.Empty(t, want)
 }
 
 func TestNoopMetricsRecorderSyncServerStreamStart(t *testing.T) {

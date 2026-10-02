@@ -8,6 +8,15 @@ import (
 // utils contain common utilities to help with telemetry
 
 const provider = "flagd"
+const flagSetIDMetadataKey = "flagSetId"
+
+func FlagSetIDFromMetadata(metadata map[string]any) string {
+	flagSetID, ok := metadata[flagSetIDMetadataKey].(string)
+	if !ok {
+		return ""
+	}
+	return flagSetID
+}
 
 // SemConvFeatureFlagAttributes is helper to derive semantic convention adhering feature flag attributes
 // refer - https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/
