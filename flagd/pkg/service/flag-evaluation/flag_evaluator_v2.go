@@ -267,7 +267,7 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	}
 
 	if metrics != nil {
-		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey)
+		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey, telemetry.FlagSetIDFromMetadata(metadata))
 	}
 
 	spanFromContext := trace.SpanFromContext(ctx)

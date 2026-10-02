@@ -91,7 +91,10 @@ func (s *FlagEvaluationService) ResolveAll(
 	span.SetAttributes(attribute.Int("feature_flag.count", len(resolutions)))
 	for _, resolved := range resolutions {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey)
+		s.metrics.RecordEvaluation(
+			ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey,
+			telemetry.FlagSetIDFromMetadata(resolved.Metadata),
+		)
 		switch v := resolved.Value.(type) {
 		case bool:
 			res.Flags[resolved.FlagKey] = &evalV1.AnyFlag{
