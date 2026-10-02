@@ -71,6 +71,7 @@ These metrics are recorded on every [flag evaluation](./specifications/protos.md
 - `feature_flag.result.variant` - The variant returned by the evaluation
 - `feature_flag.provider.name` - The feature flag provider name (always `flagd`)
 - `feature_flag.reason` - The evaluation reason (e.g. `STATIC`, `TARGETING_MATCH`, `ERROR`)
+- `feature_flag.set.id` - The flag set identifier, when a non-empty string identifier is available in the evaluation metadata. For bulk requests spanning multiple flag sets, each result is attributed to its own flag set. The attribute is omitted when the identifier is unknown.
 
 ### gRPC Sync Metrics
 

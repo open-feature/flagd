@@ -52,6 +52,7 @@ type recordedEvaluation struct {
 	reason    string
 	variant   string
 	flagKey   string
+	flagSetID string
 }
 
 type recordingMetricsRecorder struct {
@@ -59,7 +60,9 @@ type recordingMetricsRecorder struct {
 	evaluations []recordedEvaluation
 }
 
-func (r *recordingMetricsRecorder) RecordEvaluation(_ context.Context, err error, reason, variant, flagKey string) {
+func (r *recordingMetricsRecorder) RecordEvaluation(
+	_ context.Context, err error, reason, variant, flagKey, flagSetID string,
+) {
 	errorText := ""
 	if err != nil {
 		errorText = err.Error()
@@ -69,6 +72,7 @@ func (r *recordingMetricsRecorder) RecordEvaluation(_ context.Context, err error
 		reason:    reason,
 		variant:   variant,
 		flagKey:   flagKey,
+		flagSetID: flagSetID,
 	})
 }
 
@@ -447,22 +451,35 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 		expected   recordedEvaluation
 	}{
 		{
-			name:       "successful evaluation",
-			evaluation: successValue,
+			name: "successful evaluation",
+			evaluation: evaluator.AnyValue{
+				Value:    successValue.Value,
+				Variant:  successValue.Variant,
+				Reason:   successValue.Reason,
+				FlagKey:  successValue.FlagKey,
+				Metadata: model.Metadata{"flagSetId": "payments"},
+			},
 			expected: recordedEvaluation{
-				reason:  successValue.Reason,
-				variant: successValue.Variant,
-				flagKey: successValue.FlagKey,
+				reason:    successValue.Reason,
+				variant:   successValue.Variant,
+				flagKey:   successValue.FlagKey,
+				flagSetID: "payments",
 			},
 		},
 		{
-			name:       "failed evaluation",
-			evaluation: genericErrorValue,
+			name: "failed evaluation",
+			evaluation: evaluator.AnyValue{
+				Reason:   genericErrorValue.Reason,
+				FlagKey:  genericErrorValue.FlagKey,
+				Metadata: model.Metadata{"flagSetId": "selected-set"},
+				Error:    genericErrorValue.Error,
+			},
 			expected: recordedEvaluation{
 				errorText: genericErrorValue.Error.Error(),
 				reason:    genericErrorValue.Reason,
 				variant:   genericErrorValue.Variant,
 				flagKey:   genericErrorValue.FlagKey,
+				flagSetID: "selected-set",
 			},
 		},
 	}
@@ -488,7 +505,27 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 
 func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 	metrics := &recordingMetricsRecorder{}
-	evaluations := []evaluator.AnyValue{successValue, genericErrorValue, flagNotFoundValue}
+	evaluations := []evaluator.AnyValue{
+		{
+			Value:    successValue.Value,
+			Variant:  successValue.Variant,
+			Reason:   successValue.Reason,
+			FlagKey:  "flag-a",
+			Metadata: model.Metadata{"flagSetId": "set-a"},
+		},
+		{
+			Reason:   genericErrorValue.Reason,
+			FlagKey:  "flag-b",
+			Metadata: model.Metadata{"flagSetId": "set-b"},
+			Error:    genericErrorValue.Error,
+		},
+		{
+			Reason:   flagNotFoundValue.Reason,
+			FlagKey:  "flag-c",
+			Metadata: model.Metadata{"flagSetId": 42},
+			Error:    flagNotFoundValue.Error,
+		},
+	}
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(evaluations, model.Metadata{}, nil)
@@ -500,21 +537,23 @@ func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 
 	require.Equal(t, []recordedEvaluation{
 		{
-			reason:  successValue.Reason,
-			variant: successValue.Variant,
-			flagKey: successValue.FlagKey,
+			reason:    successValue.Reason,
+			variant:   successValue.Variant,
+			flagKey:   "flag-a",
+			flagSetID: "set-a",
 		},
 		{
 			errorText: genericErrorValue.Error.Error(),
 			reason:    genericErrorValue.Reason,
 			variant:   genericErrorValue.Variant,
-			flagKey:   genericErrorValue.FlagKey,
+			flagKey:   "flag-b",
+			flagSetID: "set-b",
 		},
 		{
 			errorText: flagNotFoundValue.Error.Error(),
 			reason:    flagNotFoundValue.Reason,
 			variant:   flagNotFoundValue.Variant,
-			flagKey:   flagNotFoundValue.FlagKey,
+			flagKey:   "flag-c",
 		},
 	}, metrics.evaluations)
 }

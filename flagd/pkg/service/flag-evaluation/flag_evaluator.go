@@ -89,7 +89,10 @@ func (s *OldFlagEvaluationService) ResolveAll(
 	span.SetAttributes(attribute.Int("feature_flag.count", len(values)))
 	for _, value := range values {
 		// register the impression and reason for each flag evaluated
-		s.metrics.RecordEvaluation(ctx, value.Error, value.Reason, value.Variant, value.FlagKey)
+		s.metrics.RecordEvaluation(
+			ctx, value.Error, value.Reason, value.Variant, value.FlagKey,
+			telemetry.FlagSetIDFromMetadata(value.Metadata),
+		)
 
 		switch v := value.Value.(type) {
 		case bool:
@@ -384,7 +387,7 @@ func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver
 	}
 
 	if metrics != nil {
-		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey)
+		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey, telemetry.FlagSetIDFromMetadata(metadata))
 	}
 
 	spanFromContext := trace.SpanFromContext(ctx)

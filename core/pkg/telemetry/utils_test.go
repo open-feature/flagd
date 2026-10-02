@@ -48,3 +48,23 @@ func TestSemConvFeatureFlagAttributes(t *testing.T) {
 		}
 	}
 }
+
+func TestFlagSetIDFromMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata map[string]any
+		want     string
+	}{
+		{name: "present", metadata: map[string]any{"flagSetId": "payments"}, want: "payments"},
+		{name: "missing", metadata: map[string]any{"source": "file"}},
+		{name: "empty", metadata: map[string]any{"flagSetId": ""}},
+		{name: "non-string", metadata: map[string]any{"flagSetId": 42}},
+		{name: "nil"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.want, FlagSetIDFromMetadata(test.metadata))
+		})
+	}
+}
