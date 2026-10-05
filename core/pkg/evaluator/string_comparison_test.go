@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -371,4 +372,40 @@ func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) 
 	}
 
 	runErrorFallbackTests(t, ctx, source, "string-op-error-fallback", tests)
+}
+
+// A targeting rule routinely references an optional attribute that a given
+// client did not send. jsonLogic resolves that to nil, which must be
+// distinguishable from an attribute of the wrong type so the two can be
+// reported at different severities.
+func Test_parseStringComparisonEvaluationData_absentProperty(t *testing.T) {
+	_, _, err := parseStringComparisonEvaluationData([]interface{}{nil, "prefix"})
+
+	assert.ErrorIs(t, err, errPropertyAbsent)
+}
+
+func Test_parseStringComparisonEvaluationData_wrongTypeIsNotAbsent(t *testing.T) {
+	_, _, err := parseStringComparisonEvaluationData([]interface{}{1, "prefix"})
+
+	assert.Error(t, err)
+	assert.NotErrorIs(t, err, errPropertyAbsent,
+		"a wrong-typed property is a misconfiguration and must not be treated as an absent one")
+}
+
+// Whatever the operands, the rule must simply fail to match rather than error
+// the evaluation.
+func TestStringComparisonEvaluation_absentPropertyDoesNotMatch(t *testing.T) {
+	sce := NewStringComparisonEvaluator(logger.NewLogger(nil, false))
+
+	assert.Nil(t, sce.StartsWithEvaluation([]interface{}{nil, "prefix"}, nil))
+	assert.Nil(t, sce.EndsWithEvaluation([]interface{}{nil, "suffix"}, nil))
+}
+
+func TestStringComparisonEvaluation_comparesStrings(t *testing.T) {
+	sce := NewStringComparisonEvaluator(logger.NewLogger(nil, false))
+
+	assert.Equal(t, true, sce.StartsWithEvaluation([]interface{}{"user@faas.com", "user@"}, nil))
+	assert.Equal(t, false, sce.StartsWithEvaluation([]interface{}{"user@faas.com", "admin@"}, nil))
+	assert.Equal(t, true, sce.EndsWithEvaluation([]interface{}{"user@faas.com", ".com"}, nil))
+	assert.Equal(t, false, sce.EndsWithEvaluation([]interface{}{"user@faas.com", ".org"}, nil))
 }
