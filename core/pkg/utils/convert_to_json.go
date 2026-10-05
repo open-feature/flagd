@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"mime"
 	"regexp"
@@ -37,6 +38,9 @@ func ConvertToJSON(data []byte, fileExtension string, mediaType string) (string,
 	case "json", "application/json":
 		return string(data), nil
 	default:
-		return "", fmt.Errorf("unsupported file format: '%s'", detectedType)
+		if !json.Valid(data) {
+			return "", fmt.Errorf("received invalid json with unsupported file format: %q", detectedType)
+		}
+		return string(data), nil
 	}
 }
