@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,6 +49,9 @@ type Sync struct {
 	logger        *logger.Logger
 	dynamicClient dynamic.Interface
 	informer      cache.SharedInformer
+
+	// SyncMetricsRecorder is the source-agnostic client-side sync-metrics recorder. Nil is safe.
+	SyncMetricsRecorder *syncmetrics.Recorder
 }
 
 func NewK8sSync(
@@ -68,6 +72,7 @@ func (k *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error 
 		return fmt.Errorf("unable to fetch flag configuration: %w", err)
 	}
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 	return nil
 }
 
@@ -105,6 +110,7 @@ func (k *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	}
 
 	dataSync <- sync.DataSync{FlagData: fetch, Source: k.URI}
+	k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 
 	k.logger.Debug(fmt.Sprintf("watching %s for changes", k.URI))
 
@@ -148,6 +154,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 				}
 
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 			case DefaultEventTypeModify:
 				k.logger.Debug("Configuration modified")
 				msg, err := k.fetch(ctx)
@@ -157,6 +164,7 @@ func (k *Sync) watcher(ctx context.Context, notifies chan INotify, dataSync chan
 				}
 
 				dataSync <- sync.DataSync{FlagData: msg, Source: k.URI}
+				k.SyncMetricsRecorder.RecordFlagConfigReceived(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 			case DefaultEventTypeDelete:
 				k.logger.Debug("configuration deleted")
 			case DefaultEventTypeReady:
