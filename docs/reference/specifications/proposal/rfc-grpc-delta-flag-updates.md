@@ -61,8 +61,8 @@ message SyncFlagsResponse {
   repeated FlagOp flag_ops = 4;
 
   // Strictly monotonically increasing revision for every message within a
-  // stream. The first message of a stream MAY start at any positive value
-  // (typically 1); every subsequent message MUST be exactly previous+1. The
+  // stream. The first message of a stream MAY start at 1; 
+  // every subsequent message MUST be exactly previous+1. The
   // client uses the revision to detect lost messages; on a gap, the client
   // reconnects to re-establish a fresh baseline. The server does NOT buffer
   // history or honor a since_revision parameter on the request.
@@ -109,7 +109,7 @@ message FlagOp {
 2. **Initial snapshot first.** For each successful `SyncFlags` RPC invocation,
    the server MUST send a full snapshot as the first response before sending
    any delta. For clients that advertised `supports_deltas=true`, this
-   baseline carries `revision=1`.
+   baseline may start with revision 1.
 
 3. **Reconnect re-establishes baseline.** Every reconnect gets a fresh initial
    snapshot and a fresh revision sequence. Deltas lost during a disconnect are
@@ -126,7 +126,7 @@ message FlagOp {
    unused. Servers MUST NOT populate both.
 
 7. **Revision stamping (opt-in clients only).** For clients that advertised
-   `supports_deltas=true`, every `SyncFlagsResponse` — snapshot or delta —
+   `supports_deltas=true`, every `SyncFlagsResponse`, snapshot or delta,
    carries a revision. Revisions are per-stream and strictly monotonic:
 
    `revision_{n+1} = revision_n + 1`
