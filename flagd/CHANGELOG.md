@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.1](https://github.com/open-feature/flagd/compare/flagd/v0.17.0...flagd/v0.17.1) (2026-10-06)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#2059](https://github.com/open-feature/flagd/issues/2059)) ([387c16b](https://github.com/open-feature/flagd/commit/387c16b5060f09f6ba88b2420b4074ad4fc0c122))
+
+
+### 🧹 Chore
+
+* **deps:** update opentelemetry-go monorepo ([#2081](https://github.com/open-feature/flagd/issues/2081)) ([b9c8b7e](https://github.com/open-feature/flagd/commit/b9c8b7e20a99e166059d2629395e73e1f643dbcf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.71.0 ([#2082](https://github.com/open-feature/flagd/issues/2082)) ([ad43dc4](https://github.com/open-feature/flagd/commit/ad43dc4bb624a313099552934af085e41e872dbf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.72.0 ([#2084](https://github.com/open-feature/flagd/issues/2084)) ([c8ff57a](https://github.com/open-feature/flagd/commit/c8ff57a106f442cccebe7f59a08725f94b1915e5))
+
 ## [0.17.0](https://github.com/open-feature/flagd/compare/flagd/v0.16.3...flagd/v0.17.0) (2026-09-25)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.11](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.10...flagd-proxy/v0.9.11) (2026-10-06)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#2059](https://github.com/open-feature/flagd/issues/2059)) ([387c16b](https://github.com/open-feature/flagd/commit/387c16b5060f09f6ba88b2420b4074ad4fc0c122))
+
+
+### 🧹 Chore
+
+* **deps:** update opentelemetry-go monorepo ([#2081](https://github.com/open-feature/flagd/issues/2081)) ([b9c8b7e](https://github.com/open-feature/flagd/commit/b9c8b7e20a99e166059d2629395e73e1f643dbcf))
+
 ## [0.9.10](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.9...flagd-proxy/v0.9.10) (2026-09-25)
 
 
