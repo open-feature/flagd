@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -137,8 +138,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: rachelEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		monicaEmail: {
@@ -147,8 +148,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: monicaEmail,
 			},
-			expectedVariant: yellowVariant,
-			expectedValue:   yellowHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		joeyEmail: {
@@ -167,8 +168,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				emailField: rossEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"rachel@faas.com with custom seed": {
@@ -187,8 +188,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "monica@faas.com",
 			},
-			expectedVariant: redVariant,
-			expectedValue:   redHex,
+			expectedVariant: yellowVariant,
+			expectedValue:   yellowHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"joey@faas.com with custom seed": {
@@ -197,8 +198,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "joey@faas.com",
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with custom seed": {
@@ -207,8 +208,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "ross@faas.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"ross@faas.com with different flag key": {
@@ -295,8 +296,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"email": "test4@faas.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: blueVariant,
+			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"fallback to default variant if no email provided": {
@@ -414,8 +415,8 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "foo@foo.com",
 			},
-			expectedVariant: greenVariant,
-			expectedValue:   greenHex,
+			expectedVariant: blueVariant,
+			expectedValue:   blueHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		"missing email - parser should ignore nil/missing custom variables and continue": {
@@ -438,9 +439,9 @@ func TestFractionalEvaluation(t *testing.T) {
 			context: map[string]any{
 				"targetingKey": "foo@foo.com",
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
-			expectedReason:  model.TargetingMatchReason,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
+			expectedReason:  model.DefaultReason,
 		},
 		"null targetingKey returns default variant": {
 			flags: []model.Flag{{
@@ -654,8 +655,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			context: map[string]any{
 				emailField: testAEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: redVariant,
+			expectedValue:   redHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 		testBEmail: {
@@ -684,8 +685,8 @@ func BenchmarkFractionalEvaluation(b *testing.B) {
 			context: map[string]any{
 				emailField: testDEmail,
 			},
-			expectedVariant: blueVariant,
-			expectedValue:   blueHex,
+			expectedVariant: greenVariant,
+			expectedValue:   greenHex,
 			expectedReason:  model.TargetingMatchReason,
 		},
 	}
@@ -1124,6 +1125,29 @@ func TestFractionalEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) {
 			assert.Equal(t, "fallback", value)
 			assert.Equal(t, "fallback", variant)
 			assert.Equal(t, model.DefaultReason, reason)
+		})
+	}
+}
+
+// whole floats in [-2^63, 2^64-1] encode as CBOR ints
+func TestEncodeDeterministicCBORInt64Boundaries(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    float64
+		expected string
+	}{
+		{"-2^63", -0x1p63, "3b7fffffffffffffff"},
+		{"largest float64 < 2^63", 0x1p63 - 1024, "1b7ffffffffffffc00"},
+		{"2^63", 0x1p63, "1b8000000000000000"},
+		{"1e19", 1e19, "1b8ac7230489e80000"},
+		{"largest float64 < 2^64", 0x1p64 - 2048, "1bfffffffffffff800"},
+		{"2^64 stays float", 0x1p64, "fa5f800000"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := encodeDeterministicCBOR(tt.value)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, hex.EncodeToString(got))
 		})
 	}
 }
