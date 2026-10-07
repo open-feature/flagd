@@ -148,7 +148,10 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
 	if h.metricsRecorder != nil {
-		h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+		h.metricsRecorder.RecordEvaluation(
+			ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
+			telemetry.FlagSetIDFromMetadata(evaluation.Metadata),
+		)
 	}
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
@@ -182,7 +185,10 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if h.metricsRecorder != nil {
 		for _, evaluation := range evaluations {
-			h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+			h.metricsRecorder.RecordEvaluation(
+				ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
+				telemetry.FlagSetIDFromMetadata(evaluation.Metadata),
+			)
 		}
 	}
 	if err != nil {
