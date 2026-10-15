@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.12](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.11...flagd-proxy/v0.9.12) (2026-10-15)
+
+
+### 🧹 Chore
+
+* bump golangci-lint to v2.14.0, fail lint on any module error ([109e3a0](https://github.com/open-feature/flagd/commit/109e3a04112eee309cc112de03f44ab81fd55187))
+
 ## [0.9.11](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.10...flagd-proxy/v0.9.11) (2026-10-06)
 
 
