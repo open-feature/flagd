@@ -9,10 +9,7 @@
       "package-name": "flagd",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default",
-      "extra-files": [
-        "snap/snapcraft.yaml"
-      ]
+      "versioning": "default"
     },
     "flagd-proxy": {
       "release-type": "go",
