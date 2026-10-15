@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.0](https://github.com/open-feature/flagd/compare/flagd/v0.17.1...flagd/v0.18.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011))
+
+### ✨ New Features
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011)) ([0e344d2](https://github.com/open-feature/flagd/commit/0e344d2d49c2ddbd8cc6908d2331a284aafb71b3))
+
+
+### 🧹 Chore
+
+* bump golangci-lint to v2.14.0, fail lint on any module error ([109e3a0](https://github.com/open-feature/flagd/commit/109e3a04112eee309cc112de03f44ab81fd55187))
+
 ## [0.17.1](https://github.com/open-feature/flagd/compare/flagd/v0.17.0...flagd/v0.17.1) (2026-10-06)
 
 
