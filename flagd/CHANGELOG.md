@@ -6,10 +6,16 @@
 ### ⚠ BREAKING CHANGES
 
 * bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011))
+  * allows bucketing on all attribute types, not just string (bool, numeric, object)
+  * uses CBOR for deterministic object hashing
+  * :warning: pseudorandom bucket assignment may change; be sure to update all flagd components to keep assignments consistent in all runtimes
 
 ### ✨ New Features
 
 * bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011)) ([0e344d2](https://github.com/open-feature/flagd/commit/0e344d2d49c2ddbd8cc6908d2331a284aafb71b3))
+  * allows bucketing on all attribute types, not just string (bool, numeric, object)
+  * uses CBOR for deterministic object hashing
+  * :warning: pseudorandom bucket assignment may change; be sure to update all flagd components to keep assignments consistent in all runtimes
 
 
 ### 🧹 Chore
