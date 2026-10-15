@@ -93,7 +93,7 @@ func NewOfrepService(
 	// the request-body limit is not applied to the stream. Everything else falls through to the
 	// existing OFREP handler.
 	mux := http.NewServeMux()
-	var evaluateHandler http.Handler = ofrepHandler
+	var evaluateHandler = ofrepHandler
 	if cfg.MaxRequestBodyBytes > 0 {
 		evaluateHandler = http.MaxBytesHandler(evaluateHandler, cfg.MaxRequestBodyBytes)
 	}
