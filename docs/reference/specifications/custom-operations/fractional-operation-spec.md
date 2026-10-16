@@ -5,19 +5,21 @@ where each bucket can be assigned a weight, representing how many requests will 
 variant.
 
 The distribution must be performed by using the value of a referenced property
-from the evaluation context to hash that value and map it to a value between [0, 100]. It is important to note
+from the evaluation context to hash that value and map it to a bucket within the sum of the weights. It is important to note
 that evaluations MUST be sticky, meaning that flag resolution requests containing the same value for the
 referenced property in their context MUST always resolve to the same variant. For calculating the hash value of the
 referenced evaluation context property, the [MurmurHash3](https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp)
-hash function should be used. This is to ensure that flag resolution requests yield the same result,
+hash function should be used, applied to the deterministic CBOR encoding of the bucketing value (see the [ADR](../../../architecture-decisions/fractional-non-string-rand-units.md) for details).
+This is to ensure that flag resolution requests yield the same result,
 regardless of which implementation of the in-process flagd provider is being used.
 
 The supplied array must contain at least two items, with the first item being an optional [json logic variable declaration](https://jsonlogic.com/operations.html#var)
-specifying the bucketing property to base the distribution of values on. If the bucketing property expression doesn't return a string, a concatenation of the
-`flagKey` and `targetingKey` are used: `{"cat": [{"var":"$flagd.flagKey"}, {"var":"targetingKey"}]}`.
+specifying the bucketing property to base the distribution of values on. The bucketing value can be a string, number, boolean, or object; a top-level array is interpreted as a distribution item, and null is an error.
+If the bucketing property expression is omitted, the bucketing value is the array `[flagKey, targetingKey]` (for example, `["color-palette-experiment", "user-123"]`); this is not equivalent to a concatenation of the two.
 The remaining items are `arrays`, each with at least one value, with the first being `string` item representing the name of the variant, and the
-second being an optional `float` item representing the relative weight for that variant.
-If no relative weight is specified explicitly, the weight for that variant must be set to `1` be default.
+second being an optional integer item (or JsonLogic expression resolving to one) representing the relative weight for that variant.
+If no relative weight is specified explicitly, the weight for that variant must be set to `1` by default.
+Non-integer weights are an error, negative weights are treated as `0`, and the sum of all weights must not exceed `2,147,483,647` (the maximum 32-bit signed integer).
 The `data` object can be an arbitrary
 JSON object. Below is an example of a targeting rule containing a `fractional`, with relative weights assigned to the variants:
 
