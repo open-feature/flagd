@@ -33,8 +33,9 @@ type capturingEvaluationMetrics struct {
 }
 
 func (m *capturingEvaluationMetrics) RecordEvaluation(
-	_ context.Context, err error, reason, variant, key, flagSetID string,
+	_ context.Context, err error, reason, variant, key string, metadata model.Metadata,
 ) {
+	flagSetID, _ := metadata["flagSetId"].(string)
 	m.evaluations = append(m.evaluations, capturedEvaluation{
 		err:       err,
 		reason:    reason,
@@ -71,7 +72,7 @@ func TestTypedSingleEvaluationRecordsFlagSetID(t *testing.T) {
 			wantID: "set-a",
 		},
 		{
-			name: "v2 selected lookup error",
+			name: "v2 selected lookup error passes metadata to recorder",
 			resolve: func(metrics telemetry.IMetricsRecorder) error {
 				return resolveV2(
 					t.Context(), logger.NewLogger(nil, false),

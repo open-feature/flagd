@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 const svcName = "mySvc"
@@ -149,7 +152,7 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Impressions(t.Context(), "reason", "variant", "key", "")
+					rec.Impressions(t.Context(), "reason", "variant", "key", nil)
 				}
 			},
 			metricsLen: 1,
@@ -160,10 +163,10 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyA", "reason", "", nil)
+					rec.Reasons(t.Context(), "keyA", "reason", nil, nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyB", "error", "", fmt.Errorf("err not found"))
+					rec.Reasons(t.Context(), "keyB", "error", nil, fmt.Errorf("err not found"))
 				}
 			},
 			metricsLen: 1,
@@ -174,13 +177,13 @@ func TestMetrics(t *testing.T) {
 				rs := resource.NewWithAttributes("testSchema")
 				rec := NewOTelRecorder(exp, rs, svcName)
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key", "")
+					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key", "")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key", "")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key", nil)
 				}
 			},
 			metricsLen: 2,
@@ -257,22 +260,29 @@ func TestNoopMetricsRecorderInFlightRequestEnd(t *testing.T) {
 
 func TestNoopMetricsRecorderRecordEvaluation(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.RecordEvaluation(t.Context(), nil, "", "", "", "")
+	no.RecordEvaluation(t.Context(), nil, "", "", "", nil)
 }
 
 func TestNoopMetricsRecorderImpressions(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	no.Impressions(t.Context(), "", "", "", "")
+	no.Impressions(t.Context(), "", "", "", nil)
 }
 
 func TestRecordEvaluationFlagSetID(t *testing.T) {
 	exp := metric.NewManualReader()
 	rec := NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), svcName)
 
-	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-a", "set-a")
-	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-b", "set-b")
-	rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "ERROR", "", "missing", "selected-set")
-	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "without-set", "")
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-a", model.Metadata{"flagSetId": "set-a"})
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-b", model.Metadata{"flagSetId": "set-b"})
+	rec.RecordEvaluation(
+		t.Context(), errors.New(model.FlagNotFoundErrorCode), "ERROR", "", "missing",
+		model.Metadata{"flagSetId": "caller-controlled"},
+	)
+	rec.RecordEvaluation(
+		t.Context(), errors.New(model.GeneralErrorCode), "ERROR", "", "found-error",
+		model.Metadata{"flagSetId": "configured-set"},
+	)
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "without-set", model.Metadata{"flagSetId": 42})
 
 	var data metricdata.ResourceMetrics
 	require.NoError(t, exp.Collect(t.Context(), &data))
@@ -285,10 +295,10 @@ func TestRecordEvaluationFlagSetID(t *testing.T) {
 			"":      true,
 		},
 		reasonMetric: {
-			"set-a":        true,
-			"set-b":        true,
-			"selected-set": true,
-			"":             true,
+			"set-a":          true,
+			"set-b":          true,
+			"configured-set": true,
+			"":               true,
 		},
 	}
 

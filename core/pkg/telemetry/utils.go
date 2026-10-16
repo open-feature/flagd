@@ -10,7 +10,7 @@ import (
 const provider = "flagd"
 const flagSetIDMetadataKey = "flagSetId"
 
-func FlagSetIDFromMetadata(metadata map[string]any) string {
+func flagSetIDFromMetadata(metadata map[string]any) string {
 	flagSetID, ok := metadata[flagSetIDMetadataKey].(string)
 	if !ok {
 		return ""

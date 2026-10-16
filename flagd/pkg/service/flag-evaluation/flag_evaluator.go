@@ -91,7 +91,7 @@ func (s *OldFlagEvaluationService) ResolveAll(
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(
 			ctx, value.Error, value.Reason, value.Variant, value.FlagKey,
-			telemetry.FlagSetIDFromMetadata(value.Metadata),
+			value.Metadata,
 		)
 
 		switch v := value.Value.(type) {
@@ -387,7 +387,7 @@ func resolve[T constraints](ctx context.Context, logger *logger.Logger, resolver
 	}
 
 	if metrics != nil {
-		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey, telemetry.FlagSetIDFromMetadata(metadata))
+		metrics.RecordEvaluation(ctx, evalErr, reason, variant, flagKey, metadata)
 	}
 
 	spanFromContext := trace.SpanFromContext(ctx)
