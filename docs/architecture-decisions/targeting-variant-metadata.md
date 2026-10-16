@@ -62,7 +62,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 
 In `evaluateVariant` (`core/pkg/evaluator/json.go`), the current unconditional quote-strip of the JsonLogic result gains a `resolve` case ahead of it:
 
-- `resolve` result: use its `variant` as the variant key; shallow-merge its `metadata` pairs into the returned metadata; if `reason` is present, use it in place of `TARGETING_MATCH`
+- `resolve` result: use its `variant` as the variant key; shallow-merge its `metadata` pairs into the returned metadata; if `reason` is present, use it in place of `TARGETING_MATCH` (a `null` or omitted `reason` keeps `TARGETING_MATCH`)
 - everything else → unchanged from today: `null` exits targeting to `defaultVariant`; strings, booleans, and numbers are quote-stripped into a variant key (so a boolean `true` still resolves the `"true"` variant, as `schemas/json/targeting.json` documents and the existing tests cover); a key absent from `variants` errors exactly as it does now
 
 Metadata merge precedence, lowest → highest, so more specific wins: flag-set metadata → flag metadata → **rule-returned metadata**.
