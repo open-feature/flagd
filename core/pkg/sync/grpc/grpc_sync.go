@@ -131,7 +131,7 @@ func (g *Sync) contextWithHeaders(ctx context.Context) context.Context {
 }
 
 func (g *Sync) ReSync(ctx context.Context, dataSync chan<- sync.DataSync) error {
-	res, err := g.client.FetchAllFlags(g.contextWithHeaders(ctx), &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	res, err := g.client.FetchAllFlags(g.contextWithHeaders(ctx), &v1.FetchAllFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // deprecated selector kept for backwards compat
 	if err != nil {
 		err = fmt.Errorf("error fetching all flags: %w", err)
 		g.Logger.Error(err.Error())
@@ -160,7 +160,7 @@ func (g *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 	// Initialize SyncFlags client. This fails if server connection establishment fails (ex:- grpc server offline)
 	g.Logger.Debug(fmt.Sprintf("initial stream connection to %s", g.URI))
-	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+	syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // deprecated selector kept for backwards compat
 	if err != nil {
 		return fmt.Errorf("unable to sync flags: %w", err)
 	}
@@ -225,7 +225,7 @@ func (g *Sync) connectWithRetry(
 
 		g.Logger.Warn(fmt.Sprintf("connection re-establishment attempt in-progress for grpc target: %s", g.URI))
 
-		syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector})
+		syncClient, err := g.client.SyncFlags(g.contextWithHeaders(ctx), &v1.SyncFlagsRequest{ProviderId: g.ProviderID, Selector: g.Selector}) //nolint:staticcheck // deprecated selector kept for backwards compat
 		if err != nil {
 			g.Logger.Debug(fmt.Sprintf("error opening service client: %s", err.Error()))
 			continue
