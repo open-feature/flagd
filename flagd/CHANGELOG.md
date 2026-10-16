@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/open-feature/flagd/compare/flagd/v0.18.0...flagd/v0.18.1) (2026-10-16)
+
+
+### 🧹 Chore
+
+* Update CHANGELOG with more details ([3f01794](https://github.com/open-feature/flagd/commit/3f017946657f1ee86be55db9f1d55e7d2d289a5d))
+
 ## [0.18.0](https://github.com/open-feature/flagd/compare/flagd/v0.17.1...flagd/v0.18.0) (2026-10-15)
 
 
