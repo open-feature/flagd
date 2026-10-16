@@ -211,7 +211,7 @@ func floodKeepalivePings(t *testing.T, addr string) bool {
 
 	// flood faster than any strict MinTime; grpc-go sends GOAWAY after >2 ping strikes
 	var pingData [8]byte
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		write(func() error { return framer.WritePing(false, pingData) })
 		select {
 		case got := <-enhanceYourCalm:
