@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -22,7 +23,14 @@ type Config struct {
 	GroupedStatus      bool
 	DisableMeasureSize bool
 	HandlerID          string
+	// RoutePrefixes are the paths this server actually serves. When HandlerID is empty, a
+	// request whose path is not one of these is recorded as "other" rather than as itself,
+	// so a caller cannot mint a new metric series per request path.
+	RoutePrefixes []string
 }
+
+// otherRoute is the handler ID used for requests that match none of the served routes.
+const otherRoute = "other"
 
 type Middleware struct {
 	cfg Config
@@ -43,6 +51,19 @@ func (cfg *Config) defaults() {
 	if cfg.MetricRecorder == nil {
 		cfg.MetricRecorder = &telemetry.NoopMetricsRecorder{}
 	}
+}
+
+// handlerID returns the configured ID, or the request path when the server serves it.
+func (m Middleware) handlerID(path string) string {
+	if m.cfg.HandlerID != "" {
+		return m.cfg.HandlerID
+	}
+	for _, prefix := range m.cfg.RoutePrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return path
+		}
+	}
+	return otherRoute
 }
 
 func (m Middleware) Measure(ctx context.Context, handlerID string, reporter Reporter, next func()) {
@@ -102,7 +123,7 @@ func (m Middleware) Handler(h http.Handler) http.Handler {
 			w: wi,
 			r: r,
 		}
-		m.Measure(r.Context(), m.cfg.HandlerID, reporter, func() {
+		m.Measure(r.Context(), m.handlerID(r.URL.Path), reporter, func() {
 			h.ServeHTTP(wi, r)
 		})
 	})
