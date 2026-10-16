@@ -64,7 +64,7 @@ func TestFlagSetIDFromMetadata(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			require.Equal(t, test.want, FlagSetIDFromMetadata(test.metadata))
+			require.Equal(t, test.want, flagSetIDFromMetadata(test.metadata))
 		})
 	}
 }

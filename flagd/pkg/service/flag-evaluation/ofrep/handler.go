@@ -150,7 +150,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	if h.metricsRecorder != nil {
 		h.metricsRecorder.RecordEvaluation(
 			ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
-			telemetry.FlagSetIDFromMetadata(evaluation.Metadata),
+			evaluation.Metadata,
 		)
 	}
 	if evaluation.Error != nil {
@@ -187,7 +187,7 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 		for _, evaluation := range evaluations {
 			h.metricsRecorder.RecordEvaluation(
 				ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
-				telemetry.FlagSetIDFromMetadata(evaluation.Metadata),
+				evaluation.Metadata,
 			)
 		}
 	}

@@ -61,8 +61,9 @@ type recordingMetricsRecorder struct {
 }
 
 func (r *recordingMetricsRecorder) RecordEvaluation(
-	_ context.Context, err error, reason, variant, flagKey, flagSetID string,
+	_ context.Context, err error, reason, variant, flagKey string, metadata model.Metadata,
 ) {
+	flagSetID, _ := metadata["flagSetId"].(string)
 	errorText := ""
 	if err != nil {
 		errorText = err.Error()

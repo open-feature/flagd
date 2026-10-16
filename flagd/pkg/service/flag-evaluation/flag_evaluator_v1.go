@@ -93,7 +93,7 @@ func (s *FlagEvaluationService) ResolveAll(
 		// register the impression and reason for each flag evaluated
 		s.metrics.RecordEvaluation(
 			ctx, resolved.Error, resolved.Reason, resolved.Variant, resolved.FlagKey,
-			telemetry.FlagSetIDFromMetadata(resolved.Metadata),
+			resolved.Metadata,
 		)
 		switch v := resolved.Value.(type) {
 		case bool:
