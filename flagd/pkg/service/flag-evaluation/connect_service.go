@@ -62,6 +62,36 @@ func (b bufSwitchHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	}
 }
 
+// evaluationMetricRoute keeps the route attribute bounded to registered RPC procedures.
+func evaluationMetricRoute(request *http.Request) string {
+	path := request.URL.Path
+	switch path {
+	case schemaConnectV1.ServiceResolveAllProcedure,
+		schemaConnectV1.ServiceResolveBooleanProcedure,
+		schemaConnectV1.ServiceResolveStringProcedure,
+		schemaConnectV1.ServiceResolveFloatProcedure,
+		schemaConnectV1.ServiceResolveIntProcedure,
+		schemaConnectV1.ServiceResolveObjectProcedure,
+		schemaConnectV1.ServiceEventStreamProcedure,
+		evaluationV1.ServiceResolveAllProcedure,
+		evaluationV1.ServiceResolveBooleanProcedure,
+		evaluationV1.ServiceResolveStringProcedure,
+		evaluationV1.ServiceResolveFloatProcedure,
+		evaluationV1.ServiceResolveIntProcedure,
+		evaluationV1.ServiceResolveObjectProcedure,
+		evaluationV1.ServiceEventStreamProcedure,
+		evaluationV2.ServiceResolveBooleanProcedure,
+		evaluationV2.ServiceResolveStringProcedure,
+		evaluationV2.ServiceResolveFloatProcedure,
+		evaluationV2.ServiceResolveIntProcedure,
+		evaluationV2.ServiceResolveObjectProcedure,
+		evaluationV2.ServiceEventStreamProcedure:
+		return path
+	default:
+		return "/"
+	}
+}
+
 type ConnectService struct {
 	logger                *logger.Logger
 	eval                  evaluator.IEvaluator
@@ -117,7 +147,7 @@ func (s *ConnectService) Notify(n service.Notification) {
 	s.eventingConfiguration.EmitToAll(n)
 }
 
-// nolint: funlen
+// Creates the evaluation service listener and sets up its handlers.
 func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listener, error) {
 	var lis net.Listener
 	var err error
@@ -131,7 +161,13 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 	if err != nil {
 		return nil, fmt.Errorf("error creating listener for flag evaluation service: %w", err)
 	}
+	s.setupHandler(svcConf)
+	return lis, nil
+}
 
+// Registers the legacy, v1, and v2 RPC handlers and middleware.
+// nolint: funlen
+func (s *ConnectService) setupHandler(svcConf service.Configuration) {
 	// register handler for old flag evaluation schema
 	// can be removed as a part of https://github.com/open-feature/flagd/issues/1088
 	fes := NewOldFlagEvaluationService(
@@ -199,10 +235,10 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 
 	// Add middlewares
 	metricsMiddleware := metricsmw.NewHTTPMetric(metricsmw.Config{
-		Service:        svcConf.ServiceName,
-		MetricRecorder: s.metrics,
-		Logger:         s.logger,
-		HandlerID:      "",
+		Service:              svcConf.ServiceName,
+		MetricRecorder:       s.metrics,
+		Logger:               s.logger,
+		HandlerIDFromRequest: evaluationMetricRoute,
 	})
 
 	s.AddMiddleware(metricsMiddleware)
@@ -214,8 +250,6 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		h2cMiddleware := h2cmw.New()
 		s.AddMiddleware(h2cMiddleware)
 	}
-
-	return lis, nil
 }
 
 func (s *ConnectService) AddMiddleware(mw middleware.IMiddleware) {
