@@ -11,8 +11,8 @@ The fractional operation is useful for A/B testing, general experimentation, and
 ```js
 // Factional evaluation property name used in a targeting rule
 "fractional": [
-  // Optional evaluation context property used to determine the split
-  // Note using `cat` and `$flagd.flagKey` is the suggested default to seed your hash value and prevent bucketing collisions
+  // Optional bucketing value; if omitted, [flagKey, targetingKey] is used
+  // Salting with `$flagd.flagKey` (here via `cat`) keeps assignments independent across flags
   {
     "cat": [
       { "var": "$flagd.flagKey" },
@@ -40,8 +40,8 @@ If not specified, the default weight for a variant is set to `1`, so an alternat
 ```js
 // Factional evaluation property name used in a targeting rule
 "fractional": [
-  // Evaluation context property used to determine the split
-  // Note using `cat` and `$flagd.flagKey` is the suggested default to seed your hash value and prevent bucketing collisions
+  // Optional bucketing value; if omitted, [flagKey, targetingKey] is used
+  // Salting with `$flagd.flagKey` (here via `cat`) keeps assignments independent across flags
   {
     "cat": [
       { "var": "$flagd.flagKey" },
@@ -66,10 +66,19 @@ The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-defini
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
 
 Assignment is deterministic (sticky) based on the expression supplied as the first parameter (`{ "cat": [{ "var": "$flagd.flagKey" }, { "var": "email" }]}`, in this case).
-The value retrieved by this expression is referred to as the "bucketing value" and must be a string.
-Other primitive types can be used by casting the value using `"cat"` operator.
-For example, a less deterministic distribution can be achieved using `{ "cat": [{ "var": "$flagd.timestamp" }]}`.
-The bucketing value expression can be omitted, in which case a concatenation of the `targetingKey` and the `flagKey` will be used.
+The value retrieved by this expression is referred to as the "bucketing value", and can be a string, number, boolean, or even an object (arrays and `null` are not supported).
+Every value is hashed consistently and deterministically, so the same value always lands in the same bucket, regardless of which flagd component or provider performs the evaluation (objects are hashed independently of their key order).
+For example, a numeric ID can be used directly with `{ "var": "userId" }`, without casting it to a string.
+The bucketing value expression can be omitted, in which case the bucketing value is the array `[flagKey, targetingKey]` (for example, `["color-palette-experiment", "user-123"]`).
+
+!!! warning "The default bucketing value can't be reproduced with an expression"
+
+    The default is not equivalent to any explicit expression, so switching between the default and an explicit bucketing expression, or renaming the flag, will reassign users.
+
+!!! tip "Hashing changed in flagd v0.18.0"
+
+    Bucketing on non-string values and the current hashing scheme were introduced in flagd v0.18.0 (see the [ADR](../../architecture-decisions/fractional-non-string-rand-units.md)).
+    Assignments may differ from earlier versions, so upgrade flagd and all providers together to keep variant assignment consistent.
 
 The `fractional` operation is a custom JsonLogic operation which deterministically selects a variant based on
 the defined distribution of each variant (as a relative weight).
@@ -138,7 +147,7 @@ will return variant `red` 50% of the time, `blue` 20% of the time & `green` 30% 
 Command:
 
 ```shell
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@bar.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@example.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:
@@ -150,7 +159,7 @@ Result:
 Command:
 
 ```shell
-curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "foo@test.com"}}' -H "Content-Type: application/json"
+curl -X POST "localhost:8013/flagd.evaluation.v1.Service/ResolveString" -d '{"flagKey":"headerColor","context":{"email": "bar@example.com"}}' -H "Content-Type: application/json"
 ```
 
 Result:
