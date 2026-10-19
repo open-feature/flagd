@@ -22,6 +22,8 @@ type Config struct {
 	GroupedStatus      bool
 	DisableMeasureSize bool
 	HandlerID          string
+	// HandlerIDFromRequest overrides HandlerID when provided.
+	HandlerIDFromRequest func(*http.Request) string
 }
 
 type Middleware struct {
@@ -102,7 +104,11 @@ func (m Middleware) Handler(h http.Handler) http.Handler {
 			w: wi,
 			r: r,
 		}
-		m.Measure(r.Context(), m.cfg.HandlerID, reporter, func() {
+		handlerID := m.cfg.HandlerID
+		if m.cfg.HandlerIDFromRequest != nil {
+			handlerID = m.cfg.HandlerIDFromRequest(r)
+		}
+		m.Measure(r.Context(), handlerID, reporter, func() {
 			h.ServeHTTP(wi, r)
 		})
 	})
