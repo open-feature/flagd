@@ -66,7 +66,7 @@ The `defaultVariant` is `red`, but it contains a [targeting rule](../flag-defini
 In this case, `25%` of the evaluations will receive `red`, `25%` will receive `blue`, and so on.
 
 Assignment is deterministic (sticky) based on the expression supplied as the first parameter (`{ "cat": [{ "var": "$flagd.flagKey" }, { "var": "email" }]}`, in this case).
-The value retrieved by this expression is referred to as the "bucketing value", and can be of any type: strings, numbers, booleans, and even objects.
+The value retrieved by this expression is referred to as the "bucketing value", and can be a string, number, boolean, or even an object (arrays and `null` are not supported).
 Every value is hashed consistently and deterministically, so the same value always lands in the same bucket, regardless of which flagd component or provider performs the evaluation (objects are hashed independently of their key order).
 For example, a numeric ID can be used directly with `{ "var": "userId" }`, without casting it to a string.
 The bucketing value expression can be omitted, in which case the bucketing value is the array `[flagKey, targetingKey]` (for example, `["color-palette-experiment", "user-123"]`).
