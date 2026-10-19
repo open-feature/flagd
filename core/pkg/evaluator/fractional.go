@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/twmb/murmur3"
 )
 
+var cborEncMode, _ = cbor.CoreDetEncOptions().EncMode()
+
 const maxWeightSum = math.MaxInt32 // 2,147,483,647
+
+// exclusive upper bound for uint64 normalization
+const twoPow64 = 0x1p64
 
 const FractionEvaluationName = "fractional"
 
@@ -42,7 +48,7 @@ func NewFractional(logger *logger.Logger) *Fractional {
 }
 
 func (fe *Fractional) Evaluate(values, data any) any {
-	valueToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data, fe.Logger)
+	bytesToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data, fe.Logger)
 	if err != nil {
 		fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
 		return nil
@@ -52,57 +58,134 @@ func (fe *Fractional) Evaluate(values, data any) any {
 		return nil
 	}
 
-	hashValue := uint32(murmur3.StringSum32(valueToDistribute))
+	hashValue := murmur3.Sum32(bytesToDistribute)
 	return distributeValue(hashValue, feDistributions)
 }
 
-func parseFractionalEvaluationData(values, data any, logger *logger.Logger) (string, *fractionalEvaluationDistribution, error) {
+func normalizeValue(val any) any {
+	switch v := val.(type) {
+	case float64:
+		if math.IsNaN(v) || math.IsInf(v, 0) {
+			return v
+		}
+		if v == math.Trunc(v) {
+			if v >= 0 && v < twoPow64 {
+				return uint64(v)
+			}
+			if v < 0 && v >= float64(math.MinInt64) {
+				return int64(v)
+			}
+		}
+		return v
+	case float32:
+		return normalizeValue(float64(v))
+	case int:
+		if v >= 0 {
+			return uint64(v)
+		}
+		return int64(v)
+	case int64:
+		if v >= 0 {
+			return uint64(v)
+		}
+		return v
+	case uint:
+		return uint64(v)
+	case uint32:
+		return uint64(v)
+	case uint64:
+		return v
+	case map[string]any:
+		res := make(map[string]any, len(v))
+		for k, item := range v {
+			res[k] = normalizeValue(item)
+		}
+		return res
+	case []any:
+		res := make([]any, len(v))
+		for i, item := range v {
+			res[i] = normalizeValue(item)
+		}
+		return res
+	default:
+		return v
+	}
+}
+
+func encodeDeterministicCBOR(val any) ([]byte, error) {
+	normalized := normalizeValue(val)
+	return cborEncMode.Marshal(normalized)
+}
+
+func parseFractionalEvaluationData(values, data any, logger *logger.Logger) ([]byte, *fractionalEvaluationDistribution, error) {
 	valuesArray, ok := values.([]any)
 	if !ok {
-		return "", nil, errors.New("fractional evaluation data is not an array")
+		return nil, nil, errors.New("fractional evaluation data is not an array")
 	}
 	if len(valuesArray) < 1 {
-		return "", nil, errors.New("fractional evaluation data must contain at least one distribution")
+		return nil, nil, errors.New("fractional evaluation data must contain at least one distribution")
 	}
 
 	dataMap, ok := data.(map[string]any)
 	if !ok {
-		return "", nil, errors.New("data isn't of type map[string]any")
+		return nil, nil, errors.New("data isn't of type map[string]any")
 	}
 
 	properties, _ := getFlagdProperties(dataMap)
 	flagKey := properties.FlagKey
 
-	bucketBy, ok := valuesArray[0].(string)
-	if ok {
+	// If first element evaluates to null/nil, report an error and return nil.
+	if valuesArray[0] == nil {
+		return nil, nil, fmt.Errorf("flag %q: first element of fractional evaluation data is null", flagKey)
+	}
+
+	// If first element is a non-array type, use it as explicit hashing input.
+	if _, isArray := valuesArray[0].([]any); !isArray {
+		hashingInput := valuesArray[0]
 		valuesArray = valuesArray[1:]
-	} else {
-		// check for nil here as custom property could be nil/missing
-		if valuesArray[0] == nil {
-			valuesArray = valuesArray[1:]
+
+		bytesToHash, err := encodeDeterministicCBOR(hashingInput)
+		if err != nil {
+			return nil, nil, fmt.Errorf("flag %q: failed to encode hashing input: %w", flagKey, err)
 		}
 
-		if dataMap[targetingKeyKey] == nil {
-			return "", nil, nil
-		}
-		targetingKey, ok := dataMap[targetingKeyKey].(string)
-		if !ok {
-			return "", nil, fmt.Errorf("flag %q: bucketing value not supplied and no targetingKey in context", flagKey)
+		feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger, flagKey)
+		if err != nil {
+			return nil, nil, err
 		}
 
-		if targetingKey == "" {
-			return "", nil, nil
-		}
+		return bytesToHash, feDistributions, nil
+	}
 
-		bucketBy = fmt.Sprintf("%s%s", properties.FlagKey, targetingKey)
+	// First element is an array ([]any), meaning no explicit hashing input was provided.
+	// We fall back to implicit targetingKey rules.
+	rawTargetingKey, exists := dataMap[targetingKeyKey]
+	if !exists || rawTargetingKey == nil {
+		return nil, nil, fmt.Errorf("flag %q: bucketing value not supplied and no targetingKey in context", flagKey)
+	}
+
+	targetingKey, isString := rawTargetingKey.(string)
+	if !isString {
+		return nil, nil, fmt.Errorf("flag %q: targetingKey is not a string", flagKey)
+	}
+
+	if targetingKey == "" {
+		return nil, nil, fmt.Errorf("flag %q: targetingKey is empty", flagKey)
+	}
+
+	// Build 2-element array [flagKey, targetingKey] and encode to CBOR.
+	implicitInput := []any{flagKey, targetingKey}
+	bytesToHash, err := encodeDeterministicCBOR(implicitInput)
+	if err != nil {
+		return nil, nil, fmt.Errorf("flag %q: failed to encode implicit targetingKey: %w", flagKey, err)
 	}
 
 	feDistributions, err := parseFractionalEvaluationDistributions(valuesArray, data, logger, flagKey)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 
-	return bucketBy, feDistributions, nil
+	return bytesToHash, feDistributions, nil
 }
 
 func parseFractionalEvaluationDistributions(values []any, data any, logger *logger.Logger, flagKey string) (*fractionalEvaluationDistribution, error) {

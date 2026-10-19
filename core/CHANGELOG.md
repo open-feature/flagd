@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.19.0](https://github.com/open-feature/flagd/compare/core/v0.18.1...core/v0.19.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011))
+
+### ✨ New Features
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011)) ([0e344d2](https://github.com/open-feature/flagd/commit/0e344d2d49c2ddbd8cc6908d2331a284aafb71b3))
+
+
+### 🧹 Chore
+
+* bump golangci-lint to v2.14.0, fail lint on any module error ([109e3a0](https://github.com/open-feature/flagd/commit/109e3a04112eee309cc112de03f44ab81fd55187))
+
+## [0.18.1](https://github.com/open-feature/flagd/compare/core/v0.18.0...core/v0.18.1) (2026-10-06)
+
+
+### 🧹 Chore
+
+* **deps:** update opentelemetry-go monorepo ([#2081](https://github.com/open-feature/flagd/issues/2081)) ([b9c8b7e](https://github.com/open-feature/flagd/commit/b9c8b7e20a99e166059d2629395e73e1f643dbcf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.71.0 ([#2082](https://github.com/open-feature/flagd/issues/2082)) ([ad43dc4](https://github.com/open-feature/flagd/commit/ad43dc4bb624a313099552934af085e41e872dbf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.72.0 ([#2084](https://github.com/open-feature/flagd/issues/2084)) ([c8ff57a](https://github.com/open-feature/flagd/commit/c8ff57a106f442cccebe7f59a08725f94b1915e5))
+
 ## [0.18.0](https://github.com/open-feature/flagd/compare/core/v0.17.0...core/v0.18.0) (2026-09-25)
 
 

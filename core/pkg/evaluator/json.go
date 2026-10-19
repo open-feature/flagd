@@ -73,7 +73,7 @@ func WithTracerProvider(tp trace.TracerProvider) JSONEvaluatorOption {
 	return func(je *JSON) {
 		tracer := tp.Tracer(jsonEvaluatorTracerName)
 		je.jsonEvalTracer = tracer
-		je.Resolver.tracer = tracer
+		je.tracer = tracer
 	}
 }
 
@@ -439,7 +439,7 @@ func setFlagdProperties(
 		context = map[string]any{}
 	}
 
-	newContext := maps.Clone(context)
+	newContext := maps.Clone(context) //nolint:govet // linter can't inline generics
 
 	if _, ok := newContext[flagdPropertiesKey]; ok {
 		log.Warn("overwriting $flagd properties in the context")

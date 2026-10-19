@@ -41,7 +41,7 @@ func (s syncHandler) SyncFlags(
 	req *connect.Request[syncv1.SyncFlagsRequest],
 	stream *connect.ServerStream[syncv1.SyncFlagsResponse],
 ) error {
-	return s.syncFlags(ctx, req.Header(), req.Msg.GetProviderId(), req.Msg.GetSelector(), stream)
+	return s.syncFlags(ctx, req.Header(), req.Msg.GetProviderId(), req.Msg.GetSelector(), stream) //nolint:staticcheck // deprecated selector kept for backwards compat
 }
 
 func (s syncHandler) syncFlags(
@@ -129,7 +129,7 @@ func (s syncHandler) syncFlags(
 func (s syncHandler) FetchAllFlags(ctx context.Context, req *connect.Request[syncv1.FetchAllFlagsRequest]) (
 	*connect.Response[syncv1.FetchAllFlagsResponse], error,
 ) {
-	expression := s.getSelectorExpression(req.Header(), req.Msg.GetSelector())
+	expression := s.getSelectorExpression(req.Header(), req.Msg.GetSelector()) //nolint:staticcheck // deprecated selector kept for backwards compat
 
 	flagsString, err := fetchAllFlags(ctx, s.store, expression)
 	if err != nil {

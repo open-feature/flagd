@@ -80,7 +80,7 @@ func (s *FlagEvaluationService) ResolveAll(
 	}
 	evaluationContext := mergeContexts(req.Msg.GetContext().AsMap(), s.contextValues, req.Header(), s.headerToContextKeyMappings)
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	resolutions, flagSetMetadata, err := s.eval.ResolveAllValues(ctx, reqID, evaluationContext)
 	if err != nil {
@@ -220,7 +220,7 @@ func (s *FlagEvaluationService) ResolveBoolean(
 		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	res := connect.NewResponse(&evalV1.ResolveBooleanResponse{})
 	err = resolve(
@@ -255,7 +255,7 @@ func (s *FlagEvaluationService) ResolveString(
 		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	res := connect.NewResponse(&evalV1.ResolveStringResponse{})
 	err = resolve(
@@ -290,7 +290,7 @@ func (s *FlagEvaluationService) ResolveInt(
 		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	res := connect.NewResponse(&evalV1.ResolveIntResponse{})
 	err = resolve(
@@ -325,7 +325,7 @@ func (s *FlagEvaluationService) ResolveFloat(
 		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	res := connect.NewResponse(&evalV1.ResolveFloatResponse{})
 	err = resolve(
@@ -360,7 +360,7 @@ func (s *FlagEvaluationService) ResolveObject(
 		return nil, recordSpanError(span, err)
 	}
 	ctx = context.WithValue(ctx, store.SelectorContextKey{}, selector)
-	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1")
+	ctx = context.WithValue(ctx, evaluator.ProtoVersionKey, "v1") //nolint:staticcheck // exported string key; changing type is breaking
 
 	res := connect.NewResponse(&evalV1.ResolveObjectResponse{})
 	err = resolve(
