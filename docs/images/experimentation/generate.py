@@ -92,15 +92,7 @@ svg("flat-ramp-reshuffle.svg", 170, "\n".join([
     axis(150, [0, 0.2, 0.6, 0.8, 0.9, 1]),
 ]), "Ramping a flat fractional moves test users into control")
 
-# 3. Flat ramp that keeps arms: all new users go to one arm
-svg("flat-ramp-one-arm.svg", 170, "\n".join([
-    band(0.2, 0.8, 30, 140, "every new user lands in test", 22),
-    bar(40, "before 80/10/10", [("excluded", 80), ("test", 10), ("control", 10)]),
-    bar(100, "after 20/70/10", [("excluded", 20), ("test", 70), ("control", 10)]),
-    axis(150, [0, 0.2, 0.8, 0.9, 1]),
-]), "Keeping arms stable in a flat fractional sends all new users to one arm")
-
-# 4. Gate + split: ramp the gate, the split never moves
+# 3. Gate + split: ramp the gate, the split never moves
 svg("nested-ramp.svg", 240, "\n".join([
     f"<text x='{X0}' y='18' font-size='12' font-weight='600' fill='{MUTED}'>gate — seed with -enrollment-gate-</text>",
     bar(40, "before 20/80", [("in", 20), ("out", 80)]),
@@ -112,7 +104,7 @@ svg("nested-ramp.svg", 240, "\n".join([
     f"<text x='{X0}' y='225' font-size='12' fill='{MUTED}'>One user, two independent positions. Ramping the gate never changes the arm.</text>",
 ]), "Gate and split use different seeds; ramping the gate leaves the split untouched")
 
-# 5. Same seed on both stages: control starves
+# 4. Same seed on both stages: control starves
 svg("nested-same-seed.svg", 190, "\n".join([
     band(0, 0.2, 18, 150, None),
     f"<text x='{x(0.1):.1f}' y='168' text-anchor='middle' font-size='12' fill='{MUTED}'>enrolled users</text>",
