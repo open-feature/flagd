@@ -10,7 +10,7 @@ This guide starts with the simple way to set one up, shows where it breaks, then
 Examples use `test`, `control` and `excluded` (users not in the experiment).
 These names are a convention, not something flagd requires.
 
-## The simple approach
+## The simple (but possibly faulty) approach
 
 One fractional with three arms.
 Here 20% of users are enrolled, split evenly between `test` and `control`:
@@ -43,8 +43,8 @@ With no bucketing expression, flagd hashes `[flagKey, targetingKey]`.
 Users without a `targetingKey` get `defaultVariant`.
 
 This works.
-Each user always gets the same arm, as long as the flag doesn't change.
-The problems start when it does.
+Each user always gets the same arm, but changing the weights may change the arm a given user is in.
+This is a problem if, for instance, you want to change how many users are in the experiment.
 
 ## How a user gets an arm
 
@@ -57,23 +57,12 @@ The user gets the slice their point falls in.
 The point never moves.
 The slices move whenever you change weights, add arms or reorder them.
 
-## Drawbacks of the simple approach
-
-### Growing the experiment moves users
+## Drawback: growing the experiment moves users
 
 To enroll 80%, the obvious edit is `20/40/40`.
 Every user who was in `test` is now in `control`.
 
 ![Ramping a flat fractional moves test users into control](../images/experimentation/flat-ramp-reshuffle.svg)
-
-### Keeping users in place skews intake
-
-You can keep existing users in place by giving all the new weight to the arm next to `excluded`: `20/70/10`.
-Then every newly enrolled user lands in `test`.
-
-![Keeping arms stable in a flat fractional sends all new users to one arm](../images/experimentation/flat-ramp-one-arm.svg)
-
-With one fractional, you have to choose between moving users and unbalanced intake.
 
 A flat split is fine if its weights never change.
 Otherwise, use the setup below.
@@ -105,8 +94,8 @@ The `in` slice grows, and the split never moves.
       "defaultVariant": "excluded",
       "targeting": {
         "if": [
-          { "!!": [{ "var": "targetingKey" }] },
-          { "if": [
+          { "and": [
+            { "!!": [{ "var": "targetingKey" }] },
             { "==": [
               { "fractional": [
                 { "cat": [
@@ -118,17 +107,16 @@ The `in` slice grows, and the split never moves.
                 ["out", 80]
               ] },
               "in"
+            ] }
+          ] },
+          { "fractional": [
+            { "cat": [
+              { "var": "$flagd.flagKey" },
+              "-arms-split-",
+              { "var": "targetingKey" }
             ] },
-            { "fractional": [
-              { "cat": [
-                { "var": "$flagd.flagKey" },
-                "-arms-split-",
-                { "var": "targetingKey" }
-              ] },
-              ["test", 1],
-              ["control", 1]
-            ] },
-            "excluded"
+            ["test", 1],
+            ["control", 1]
           ] }
         ]
       }
@@ -138,8 +126,9 @@ The `in` slice grows, and the split never moves.
 ```
 
 - Each stage needs its own seed, so each one uses an explicit `cat` expression instead of the default.
-- `cat` doesn't fail when `targetingKey` is missing: it returns a constant, so every user without a key would land in the same bucket. The `!!` guard sends them to `defaultVariant` instead.
+- `cat` doesn't fail when `targetingKey` is missing: it returns a constant, so every user without a key would land in the same bucket. The `!!` guard skips them.
 - `in` and `out` are not variants. They are only compared by `==`.
+- The `if` has no else. Users without a key and users gated `out` both get `defaultVariant`.
 - Ramping from 20% to 40% moves no one between arms, and new users split evenly.
 
 ### Use different seeds
@@ -157,6 +146,7 @@ Without it, every flag using the same seed buckets users identically.
 The split's weights, seed and arm order, and the gate's seed, are part of the experiment.
 Changing any of them reassigns users.
 To restart an experiment on purpose, change the seeds.
+Moving a running experiment from the simple flag to gate and split reassigns everyone, so do it when you start a new iteration.
 
 ### Ramping over time
 
@@ -171,24 +161,3 @@ Compute the gate weights from `$flagd.timestamp` to ramp enrollment without edit
 Enrollment grows from 0% on Jan 1, 2026 to 100% on Jan 15, 2026.
 Negative weights count as `0`, so before and after the window the gate is fully `out` or fully `in`.
 The split doesn't change, so no one moves between arms.
-
-## Reading the result
-
-A user can end up in `excluded` for two reasons:
-
-| Reason | Meaning |
-| --- | --- |
-| `DEFAULT` | Never bucketed: no bucketing key, or no targeting branch matched. |
-| `TARGETING_MATCH` | Bucketed, but gated `out`. |
-
-Use the reason, not only the variant, if you need to tell them apart.
-
-## Seeds and weights
-
-- Weights are relative integers: `[in, 1] [out, 4]` is the same as `[in, 20] [out, 80]`. Use a total that fits the precision you need: `[in, 3] [out, 997]` enrolls 0.3%. The total can go up to 2,147,483,647.
-- The default seed needs a string `targetingKey`. An explicit expression can also hash numbers, booleans and objects, e.g. `{ "var": "userId" }`.
-
-!!! warning "Explicit seed vs default"
-
-    No expression reproduces the default `[flagKey, targetingKey]`.
-    Moving a flag between the default and an explicit seed reassigns users.
