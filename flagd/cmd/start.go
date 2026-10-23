@@ -49,6 +49,7 @@ const (
 	contextValueFlagName       = "context-value"
 	headerToContextKeyFlagName = "context-from-header"
 	streamDeadlineFlagName     = "stream-deadline"
+	streamDeadlineGracefulFlag = "stream-deadline-graceful-close"
 	maxRequestBodyFlagName     = "max-request-body"
 	maxRequestHeaderFlagName   = "max-request-header"
 
@@ -109,6 +110,7 @@ func init() {
 	flags.StringToStringP(headerToContextKeyFlagName, "H", map[string]string{}, "add key-value pairs to map "+
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
+	flags.Bool(streamDeadlineGracefulFlag, false, "Close streams reaching the server-side deadline with an OK status instead of DEADLINE_EXCEEDED, so providers reconnect without reporting an error. Defaults to false.")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
 	flags.Bool(strictNumericRangeFlagName, false, "Rejects numeric flag values outside [-(2^53-1), 2^53-1] with TYPE_MISMATCH. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
@@ -144,6 +146,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(contextValueFlagName, flags.Lookup(contextValueFlagName))
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
+	_ = viper.BindPFlag(streamDeadlineGracefulFlag, flags.Lookup(streamDeadlineGracefulFlag))
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
 	_ = viper.BindPFlag(strictNumericRangeFlagName, flags.Lookup(strictNumericRangeFlagName))
 	_ = viper.BindPFlag(maxRequestBodyFlagName, flags.Lookup(maxRequestBodyFlagName))
@@ -262,6 +265,7 @@ var startCmd = &cobra.Command{
 			SyncServiceHTTPEnabled: viper.GetBool(syncHTTPFlagName),
 			SyncServiceSocketPath:  viper.GetString(syncSocketPathFlagName),
 			StreamDeadline:         viper.GetDuration(streamDeadlineFlagName),
+			StreamDeadlineGraceful: viper.GetBool(streamDeadlineGracefulFlag),
 			DisableSyncMetadata:    viper.GetBool(disableSyncMetadata),
 			StrictNumericRange:     viper.GetBool(strictNumericRangeFlagName),
 			//nolint:staticcheck // SA1019 no-ops, read so FromConfig can warn when they are set

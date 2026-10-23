@@ -36,6 +36,7 @@ type Configuration struct {
 	ContextValues              map[string]any
 	HeaderToContextKeyMappings map[string]string
 	StreamDeadline             time.Duration
+	StreamDeadlineGraceful     bool
 	MaxRequestHeaderBytes      int64
 	MaxRequestBodyBytes        int64
 

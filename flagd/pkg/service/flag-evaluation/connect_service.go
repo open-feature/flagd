@@ -200,6 +200,7 @@ func (s *ConnectService) setupHandler(svcConf service.Configuration) {
 		svcConf.HeaderToContextKeyMappings,
 		svcConf.StreamDeadline,
 	)
+	v1Fes.deadlineGraceful = svcConf.StreamDeadlineGraceful
 
 	_, v1Handler := evaluationV1.NewServiceHandler(v1Fes, append(svcConf.Options, marshalOpts)...)
 
@@ -213,6 +214,7 @@ func (s *ConnectService) setupHandler(svcConf service.Configuration) {
 		svcConf.HeaderToContextKeyMappings,
 		svcConf.StreamDeadline,
 	)
+	v2Fes.deadlineGraceful = svcConf.StreamDeadlineGraceful
 
 	_, v2Handler := evaluationV2.NewServiceHandler(v2Fes, append(svcConf.Options, marshalOpts)...)
 
