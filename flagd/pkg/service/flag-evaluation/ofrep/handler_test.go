@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -577,15 +578,21 @@ func newCompression(t *testing.T) middleware.IMiddleware {
 }
 
 func TestOfrepHTTPMetrics(t *testing.T) {
+	evalPath := "/ofrep/v1/evaluate/flags/" + flagKey
 	tests := []struct {
-		name         string
-		body         string
-		response     *evaluator.AnyValue
-		expectedCode string
+		name          string
+		method        string
+		path          string
+		body          string
+		response      *evaluator.AnyValue
+		expectedCode  string
+		expectedRoute string
 	}{
-		{name: "success", body: `{"context":{}}`, response: &successValue, expectedCode: "200"},
-		{name: "flag not found", body: `{"context":{}}`, response: &flagNotFoundValue, expectedCode: "404"},
-		{name: "invalid context", body: `{some invalid context}`, expectedCode: "400"},
+		{name: "success", path: evalPath, body: `{"context":{}}`, response: &successValue, expectedCode: "200", expectedRoute: singleEvaluation},
+		{name: "flag not found", path: evalPath, body: `{"context":{}}`, response: &flagNotFoundValue, expectedCode: "404", expectedRoute: singleEvaluation},
+		{name: "invalid context", path: evalPath, body: `{some invalid context}`, expectedCode: "400", expectedRoute: singleEvaluation},
+		{name: "unknown path", path: "/ofrep/v1/unknown", expectedCode: "404", expectedRoute: "/"},
+		{name: "method not allowed", method: http.MethodGet, path: evalPath, expectedCode: "405", expectedRoute: "/"},
 	}
 
 	for _, test := range tests {
@@ -602,14 +609,21 @@ func TestOfrepHTTPMetrics(t *testing.T) {
 			reader := metric.NewManualReader()
 			recorder := telemetry.NewOTelRecorder(reader, resource.NewWithAttributes("testSchema"), "flagd")
 			h := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, recorder, "flagd", SSEConfig{}, newCompression(t))
-			h.ServeHTTP(httptest.NewRecorder(),
-				httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, strings.NewReader(test.body)))
+			method := test.method
+			if method == "" {
+				method = http.MethodPost
+			}
+			response := httptest.NewRecorder()
+			h.ServeHTTP(response, httptest.NewRequest(method, test.path, strings.NewReader(test.body)))
+			require.Equal(t, test.expectedCode, strconv.Itoa(response.Code), "response status code")
 
 			scopes, points := requestDurationPoints(t, reader)
 			require.Equal(t, map[string]bool{"flagd": true}, scopes, "request should be recorded once, by flagd only")
 			require.Len(t, points, 1)
 			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
 			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
+			route, _ := points[0].Attributes.Value(semconv.HTTPRouteKey)
+			require.Equal(t, test.expectedRoute, route.AsString(), "recorded route")
 		})
 	}
 }
