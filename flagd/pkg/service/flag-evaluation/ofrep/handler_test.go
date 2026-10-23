@@ -612,6 +612,7 @@ func TestOfrepHTTPMetrics(t *testing.T) {
 			scopes, points := metricstest.RequestDurationPoints(t, reader)
 			require.Equal(t, map[string]bool{"flagd": true}, scopes, "request should be recorded once, by flagd only")
 			require.Len(t, points, 1)
+			require.Equal(t, uint64(1), points[0].Count, "request should be recorded once")
 			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
 			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
 			route, _ := points[0].Attributes.Value(semconv.HTTPRouteKey)

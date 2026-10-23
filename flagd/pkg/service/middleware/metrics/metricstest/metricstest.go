@@ -7,6 +7,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -16,8 +17,8 @@ import (
 func NewRecorder(t *testing.T, svcName string) (telemetry.IMetricsRecorder, metric.Reader) {
 	t.Helper()
 
-	prev := otel.GetMeterProvider()
-	t.Cleanup(func() { otel.SetMeterProvider(prev) })
+	// restore the noop
+	t.Cleanup(func() { otel.SetMeterProvider(noop.NewMeterProvider()) })
 
 	reader := metric.NewManualReader()
 	return telemetry.NewOTelRecorder(reader, resource.NewWithAttributes("testSchema"), svcName), reader
