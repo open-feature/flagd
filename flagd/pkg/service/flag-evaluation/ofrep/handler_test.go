@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -21,6 +22,11 @@ import (
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/mock/gomock"
 )
 
@@ -568,4 +574,62 @@ func newCompression(t *testing.T) middleware.IMiddleware {
 	require.NoError(t, err)
 
 	return compression
+}
+
+func TestOfrepHTTPMetrics(t *testing.T) {
+	tests := []struct {
+		name         string
+		body         string
+		response     *evaluator.AnyValue
+		expectedCode string
+	}{
+		{name: "success", body: `{"context":{}}`, response: &successValue, expectedCode: "200"},
+		{name: "flag not found", body: `{"context":{}}`, response: &flagNotFoundValue, expectedCode: "404"},
+		{name: "invalid context", body: `{some invalid context}`, expectedCode: "400"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			prev := otel.GetMeterProvider()
+			t.Cleanup(func() { otel.SetMeterProvider(prev) })
+
+			eval := mock.NewMockIEvaluator(gomock.NewController(t))
+			if test.response != nil {
+				eval.EXPECT().ResolveAsAnyValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(*test.response)
+			}
+
+			// the recorder also installs the global meter provider used by otelhttp
+			reader := metric.NewManualReader()
+			recorder := telemetry.NewOTelRecorder(reader, resource.NewWithAttributes("testSchema"), "flagd")
+			h := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, recorder, "flagd", SSEConfig{}, newCompression(t))
+			h.ServeHTTP(httptest.NewRecorder(),
+				httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, strings.NewReader(test.body)))
+
+			scopes, points := requestDurationPoints(t, reader)
+			require.Equal(t, map[string]bool{"flagd": true}, scopes, "request should be recorded once, by flagd only")
+			require.Len(t, points, 1)
+			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
+		})
+	}
+}
+
+// requestDurationPoints returns the scopes that recorded http.server.request.duration, and its data points.
+func requestDurationPoints(t *testing.T, reader metric.Reader) (map[string]bool, []metricdata.HistogramDataPoint[float64]) {
+	t.Helper()
+
+	var data metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &data))
+
+	scopes := map[string]bool{}
+	var points []metricdata.HistogramDataPoint[float64]
+	for _, sm := range data.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "http.server.request.duration" {
+				scopes[sm.Scope.Name] = true
+				points = append(points, m.Data.(metricdata.Histogram[float64]).DataPoints...)
+			}
+		}
+	}
+	return scopes, points
 }

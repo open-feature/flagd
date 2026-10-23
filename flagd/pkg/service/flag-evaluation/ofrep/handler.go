@@ -23,6 +23,7 @@ import (
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -110,7 +111,8 @@ func NewOfrepHandler(
 		}).Handler(compress(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation)))),
 	).Methods("POST")
 
-	return otelhttp.NewHandler(router, "flagd.ofrep")
+	// tracing only; metrics are recorded by metricsmw above
+	return otelhttp.NewHandler(router, "flagd.ofrep", otelhttp.WithMeterProvider(noop.NewMeterProvider()))
 }
 
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
