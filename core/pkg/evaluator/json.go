@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -256,6 +257,9 @@ func (je *Resolver) ResolveFloatValue(
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
 	value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+	if err == nil && math.Abs(value) > maxSafeInteger {
+		return 0, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
+	}
 	return
 }
 
@@ -272,8 +276,22 @@ func (je *Resolver) ResolveIntValue(ctx context.Context, reqID string, flagKey s
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	var val float64
 	val, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+	if err != nil {
+		return
+	}
+	if !isSafeInteger(val) {
+		return 0, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
+	}
 	value = int64(val)
 	return
+}
+
+// maxSafeInteger is 2^53-1, the largest integer exactly representable as a float64
+const maxSafeInteger = 1<<53 - 1
+
+// reports whether f converts to int64 without loss
+func isSafeInteger(f float64) bool {
+	return f == math.Trunc(f) && f >= -maxSafeInteger && f <= maxSafeInteger
 }
 
 func (je *Resolver) ResolveObjectValue(

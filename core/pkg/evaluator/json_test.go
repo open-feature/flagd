@@ -763,6 +763,57 @@ func TestResolveIntValue(t *testing.T) {
 	}
 }
 
+func TestResolveIntValueLossless(t *testing.T) {
+	const cfg = `{"flags":{
+		"integral-float":{"state":"ENABLED","variants":{"v":10.0},"defaultVariant":"v"},
+		"fractional":{"state":"ENABLED","variants":{"v":0.5},"defaultVariant":"v"},
+		"max-safe":{"state":"ENABLED","variants":{"v":9007199254740991},"defaultVariant":"v"},
+		"min-safe":{"state":"ENABLED","variants":{"v":-9007199254740991},"defaultVariant":"v"},
+		"over-max":{"state":"ENABLED","variants":{"v":9007199254740992},"defaultVariant":"v"},
+		"under-min":{"state":"ENABLED","variants":{"v":-9007199254740992},"defaultVariant":"v"}
+	}}`
+	tests := []struct {
+		flagKey  string
+		val      int64
+		mismatch bool
+	}{
+		{"integral-float", 10, false},
+		{"fractional", 0, true},
+		{"max-safe", 9007199254740991, false},
+		{"min-safe", -9007199254740991, false},
+		{"over-max", 0, true},
+		{"under-min", 0, true},
+	}
+	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+	if err := evaluator.SetState(sync.DataSync{FlagData: cfg, Source: "testSource"}); err != nil {
+		t.Fatalf("expected no error: %v", err)
+	}
+	for _, test := range tests {
+		t.Run(test.flagKey, func(t *testing.T) {
+			val, _, reason, _, err := evaluator.ResolveIntValue(context.TODO(), "req", test.flagKey, nil)
+			if test.mismatch {
+				assert.Equal(t, model.ErrorReason, reason)
+				assert.EqualError(t, err, model.TypeMismatchErrorCode)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, test.val, val)
+		})
+	}
+
+	// lossless widening to float
+	val, _, _, _, err := evaluator.ResolveFloatValue(context.TODO(), "req", "max-safe", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, float64(9007199254740991), val)
+
+	// out of safe range is rejected
+	for _, key := range []string{"over-max", "under-min"} {
+		_, _, reason, _, err := evaluator.ResolveFloatValue(context.TODO(), "req", key, nil)
+		assert.Equal(t, model.ErrorReason, reason)
+		assert.EqualError(t, err, model.TypeMismatchErrorCode)
+	}
+}
+
 func BenchmarkResolveIntValue(b *testing.B) {
 	tests := []struct {
 		flagKey   string
