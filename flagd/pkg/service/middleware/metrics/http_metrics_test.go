@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -52,6 +53,39 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 	}
 	if len(scopeMetrics.Metrics) != 3 {
 		t.Errorf("Expected 3 metrics, got %d", len(scopeMetrics.Metrics))
+	}
+}
+
+func TestMiddlewareRecordsStatusCode(t *testing.T) {
+	exp := metric.NewManualReader()
+	m := NewHTTPMetric(Config{
+		MetricRecorder: telemetry.NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), "mySvc"),
+		Service:        "mySvc",
+		Logger:         logger.NewLogger(nil, false),
+		HandlerID:      "id",
+	})
+	handler := m.Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}))
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+
+	var data metricdata.ResourceMetrics
+	if err := exp.Collect(context.TODO(), &data); err != nil {
+		t.Fatalf("Got %v", err)
+	}
+	for _, sm := range data.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			hist, ok := m.Data.(metricdata.Histogram[float64])
+			if !ok {
+				continue
+			}
+			for _, dp := range hist.DataPoints {
+				code, _ := dp.Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+				if code.AsString() != "405" {
+					t.Errorf("%s: status code %q, want %q", m.Name, code.AsString(), "405")
+				}
+			}
+		}
 	}
 }
 

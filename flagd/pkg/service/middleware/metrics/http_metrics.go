@@ -13,6 +13,7 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Config struct {
@@ -58,34 +59,39 @@ func (m Middleware) Measure(ctx context.Context, handlerID string, reporter Repo
 	// If we need to group the status code, it uses the
 	// first number of the status code because is the least
 	// required identification way.
-	var code string
-	if m.cfg.GroupedStatus {
-		code = fmt.Sprintf("%dxx", reporter.StatusCode()/100)
-	} else {
-		code = strconv.Itoa(reporter.StatusCode())
+	httpAttrs := func() []attribute.KeyValue {
+		var code string
+		if m.cfg.GroupedStatus {
+			code = fmt.Sprintf("%dxx", reporter.StatusCode()/100)
+		} else {
+			code = strconv.Itoa(reporter.StatusCode())
+		}
+		return m.cfg.MetricRecorder.HTTPAttributes(
+			m.cfg.Service,
+			hid,
+			reporter.Method(),
+			code,
+			reporter.Scheme(),
+		)
 	}
 
-	httpAttrs := m.cfg.MetricRecorder.HTTPAttributes(
-		m.cfg.Service,
-		hid,
-		reporter.Method(),
-		code,
-		reporter.Scheme(),
-	)
-
-	m.cfg.MetricRecorder.InFlightRequestStart(ctx, httpAttrs)
-	defer m.cfg.MetricRecorder.InFlightRequestEnd(ctx, httpAttrs)
+	// in-flight start and end must share attributes
+	inFlightAttrs := httpAttrs()
+	m.cfg.MetricRecorder.InFlightRequestStart(ctx, inFlightAttrs)
+	defer m.cfg.MetricRecorder.InFlightRequestEnd(ctx, inFlightAttrs)
 
 	// Start the timer and when finishing measure the duration.
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
+		// status code is only known after the handler has run
+		attrs := httpAttrs()
 
-		m.cfg.MetricRecorder.HTTPRequestDuration(ctx, duration, httpAttrs)
+		m.cfg.MetricRecorder.HTTPRequestDuration(ctx, duration, attrs)
 
 		// Measure size of response if required.
 		if !m.cfg.DisableMeasureSize {
-			m.cfg.MetricRecorder.HTTPResponseSize(ctx, reporter.BytesWritten(), httpAttrs)
+			m.cfg.MetricRecorder.HTTPResponseSize(ctx, reporter.BytesWritten(), attrs)
 		}
 	}()
 
@@ -148,6 +154,11 @@ type responseWriterInterceptor struct {
 	http.ResponseWriter
 	statusCode   int
 	bytesWritten int
+}
+
+func (w *responseWriterInterceptor) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
 }
 
 func (w *responseWriterInterceptor) Write(p []byte) (int, error) {
