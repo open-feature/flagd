@@ -42,7 +42,7 @@ const (
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	disableSyncMetadata        = "disable-sync-metadata"
-	strictNumericRangeFlagName = "strict-numeric-range"
+	strictNumericRangeFlagName = "strict-numeric-range" // TODO(#2101): remove
 	contextValueFlagName       = "context-value"
 	headerToContextKeyFlagName = "context-from-header"
 	streamDeadlineFlagName     = "stream-deadline"

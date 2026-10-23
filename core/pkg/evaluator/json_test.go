@@ -796,6 +796,7 @@ func TestResolveNumericCoercion(t *testing.T) {
 		{"huge", mismatch, mismatch, false},
 	}
 
+	// TODO(#2101): drop the non-strict pass and intDefault
 	for _, strict := range []bool{false, true} {
 		var opts []flagdEvaluator.JSONEvaluatorOption
 		if strict {

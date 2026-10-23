@@ -45,7 +45,7 @@ type Config struct {
 	SyncServiceSocketPath  string
 	StreamDeadline         time.Duration
 	DisableSyncMetadata    bool
-	StrictNumericRange     bool
+	StrictNumericRange     bool // TODO(#2101): remove
 
 	// Deprecated: no-op, retained so existing configurations keep working. See warnOnNoOpConfig.
 	KeepAliveMinTime time.Duration
@@ -132,6 +132,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// derive evaluator
 	var evalOpts []evaluator.JSONEvaluatorOption
+	// TODO(#2101): remove
 	if config.StrictNumericRange {
 		evalOpts = append(evalOpts, evaluator.WithStrictNumericRange())
 	}
