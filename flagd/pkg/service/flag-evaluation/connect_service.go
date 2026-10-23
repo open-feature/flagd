@@ -15,6 +15,9 @@ import (
 	evaluationV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v1/evaluationv1connect"
 	evaluationV2 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v2/evaluationv2connect"
 	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/schema/v1/schemav1connect"
+	evalV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v1"
+	evalV2 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/evaluation/v2"
+	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"github.com/open-feature/flagd/core/pkg/evaluator"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/service"
@@ -34,6 +37,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -62,34 +66,34 @@ func (b bufSwitchHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	}
 }
 
+// evaluationMetricRoutes holds every RPC procedure path of the served evaluation schemas.
+var evaluationMetricRoutes = buildEvaluationMetricRoutes(
+	schemaV1.File_schema_v1_schema_proto,
+	evalV1.File_flagd_evaluation_v1_evaluation_proto,
+	evalV2.File_flagd_evaluation_v2_evaluation_proto,
+)
+
+func buildEvaluationMetricRoutes(files ...protoreflect.FileDescriptor) map[string]struct{} {
+	routes := make(map[string]struct{})
+	for _, fd := range files {
+		services := fd.Services()
+		for i := 0; i < services.Len(); i++ {
+			svc := services.Get(i)
+			methods := svc.Methods()
+			for j := 0; j < methods.Len(); j++ {
+				routes["/"+string(svc.FullName())+"/"+string(methods.Get(j).Name())] = struct{}{}
+			}
+		}
+	}
+	return routes
+}
+
 // evaluationMetricRoute keeps the route attribute bounded to registered RPC procedures.
 func evaluationMetricRoute(request *http.Request) string {
-	path := request.URL.Path
-	switch path {
-	case schemaConnectV1.ServiceResolveAllProcedure,
-		schemaConnectV1.ServiceResolveBooleanProcedure,
-		schemaConnectV1.ServiceResolveStringProcedure,
-		schemaConnectV1.ServiceResolveFloatProcedure,
-		schemaConnectV1.ServiceResolveIntProcedure,
-		schemaConnectV1.ServiceResolveObjectProcedure,
-		schemaConnectV1.ServiceEventStreamProcedure,
-		evaluationV1.ServiceResolveAllProcedure,
-		evaluationV1.ServiceResolveBooleanProcedure,
-		evaluationV1.ServiceResolveStringProcedure,
-		evaluationV1.ServiceResolveFloatProcedure,
-		evaluationV1.ServiceResolveIntProcedure,
-		evaluationV1.ServiceResolveObjectProcedure,
-		evaluationV1.ServiceEventStreamProcedure,
-		evaluationV2.ServiceResolveBooleanProcedure,
-		evaluationV2.ServiceResolveStringProcedure,
-		evaluationV2.ServiceResolveFloatProcedure,
-		evaluationV2.ServiceResolveIntProcedure,
-		evaluationV2.ServiceResolveObjectProcedure,
-		evaluationV2.ServiceEventStreamProcedure:
-		return path
-	default:
-		return "/"
+	if _, ok := evaluationMetricRoutes[request.URL.Path]; ok {
+		return request.URL.Path
 	}
+	return "/"
 }
 
 type ConnectService struct {
