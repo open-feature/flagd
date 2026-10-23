@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	"connectrpc.com/connect"
@@ -1111,4 +1112,18 @@ func assertInvalidSelectorConnect(t *testing.T, cases []invalidSelectorCase) {
 			require.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
 		})
 	}
+}
+
+func TestDeadlineExceededResult(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+
+	t.Run("graceful closes the stream with OK", func(t *testing.T) {
+		require.NoError(t, deadlineExceededResult(log, time.Minute, true))
+	})
+
+	t.Run("non-graceful returns DEADLINE_EXCEEDED", func(t *testing.T) {
+		err := deadlineExceededResult(log, time.Minute, false)
+		require.Error(t, err)
+		require.Equal(t, connect.CodeDeadlineExceeded, connect.CodeOf(err))
+	})
 }

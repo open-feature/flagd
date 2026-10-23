@@ -358,6 +358,17 @@ func (s *OldFlagEvaluationService) ResolveObject(
 	return res, err
 }
 
+// deadlineExceededResult is the result of an event stream reaching its server-side deadline:
+// OK when graceful, so providers reconnect as for a completed stream, DEADLINE_EXCEEDED otherwise
+func deadlineExceededResult(log *logger.Logger, deadline time.Duration, graceful bool) error {
+	if graceful {
+		log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, closing stream gracefully", deadline.String()))
+		return nil
+	}
+	log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", deadline.String()))
+	return connect.NewError(connect.CodeDeadlineExceeded, fmt.Errorf("%s", "stream closed due to server-side timeout"))
+}
+
 func mergeContexts(reqCtx, configFlagsCtx map[string]any, headers http.Header, headerToContextKeyMappings map[string]string) map[string]any {
 	return MergeContextsAndHeaders(reqCtx, configFlagsCtx, headers, headerToContextKeyMappings)
 }
