@@ -2,7 +2,9 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"testing"
 	"time"
@@ -55,6 +57,7 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 					tc.socketPath,
 					ctx,
 					0,
+					false,
 					disableSyncMetadata,
 				)
 
@@ -166,9 +169,11 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 	testCases := []struct {
 		title    string
 		deadline time.Duration
+		graceful bool
 	}{
 		{title: "without deadline", deadline: 0},
 		{title: "with deadline", deadline: 2 * time.Second},
+		{title: "with graceful deadline", deadline: 2 * time.Second, graceful: true},
 	}
 
 	for _, tc := range testCases {
@@ -184,7 +189,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			defer cancelFunc()
 
-			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
+			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, tc.graceful, false)
 			if err != nil {
 				t.Fatal("error creating sync service")
 			}
@@ -232,10 +237,17 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 					// received data, continuing..
 					break
 				case err := <-errorChan:
+					if errors.Is(err, io.EOF) {
+						if !tc.graceful {
+							t.Fatal("stream closed with OK status even though graceful deadline was not configured.")
+						}
+						// expected graceful close due to deadline
+						return
+					}
 					st, _ := status.FromError(err)
 					if st.Code() == codes.DeadlineExceeded {
-						if tc.deadline == 0 {
-							t.Fatal("ran into deadline exceeded error even though no deadline was configured.")
+						if tc.deadline == 0 || tc.graceful {
+							t.Fatal("ran into deadline exceeded error even though no (non-graceful) deadline was configured.")
 						}
 						// expected error due to deadline
 						return
@@ -261,18 +273,20 @@ func createAndStartSyncService(
 	socketPath string,
 	ctx context.Context,
 	deadline time.Duration,
+	deadlineGraceful bool,
 	disableSyncMetadata bool,
 ) (*Service, chan interface{}, error) {
 	service, err := NewSyncService(SvcConfigurations{
-		Logger:              logger.NewLogger(nil, false),
-		Port:                uint16(port),
-		Sources:             sources,
-		Store:               store,
-		CertPath:            certPath,
-		KeyPath:             keyPath,
-		SocketPath:          socketPath,
-		StreamDeadline:      deadline,
-		DisableSyncMetadata: disableSyncMetadata,
+		Logger:                 logger.NewLogger(nil, false),
+		Port:                   uint16(port),
+		Sources:                sources,
+		Store:                  store,
+		CertPath:               certPath,
+		KeyPath:                keyPath,
+		SocketPath:             socketPath,
+		StreamDeadline:         deadline,
+		StreamDeadlineGraceful: deadlineGraceful,
+		DisableSyncMetadata:    disableSyncMetadata,
 	})
 	if err != nil {
 		return nil, nil, err
