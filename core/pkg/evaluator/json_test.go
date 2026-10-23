@@ -16,6 +16,8 @@ import (
 	"github.com/open-feature/flagd/core/pkg/store"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 const InvalidFlags = `{
@@ -760,6 +762,90 @@ func TestResolveIntValue(t *testing.T) {
 			assert.Equal(t, model.ErrorReason, reason)
 			assert.EqualError(t, err, test.errorCode)
 		}
+	}
+}
+
+func TestResolveNumericCoercion(t *testing.T) {
+	const cfg = `{"flags":{
+		"integral-float":{"state":"ENABLED","variants":{"v":10.0},"defaultVariant":"v"},
+		"fractional":{"state":"ENABLED","variants":{"v":0.5},"defaultVariant":"v"},
+		"max-safe":{"state":"ENABLED","variants":{"v":9007199254740991},"defaultVariant":"v"},
+		"min-safe":{"state":"ENABLED","variants":{"v":-9007199254740991},"defaultVariant":"v"},
+		"over-max":{"state":"ENABLED","variants":{"v":9007199254740992},"defaultVariant":"v"},
+		"under-min":{"state":"ENABLED","variants":{"v":-9007199254740992},"defaultVariant":"v"},
+		"over-int64":{"state":"ENABLED","variants":{"v":9223372036854775807},"defaultVariant":"v"},
+		"under-int64":{"state":"ENABLED","variants":{"v":-1e19},"defaultVariant":"v"},
+		"huge":{"state":"ENABLED","variants":{"v":1e300},"defaultVariant":"v"}
+	}}`
+	const mismatch = int64(-1)
+	tests := []struct {
+		flagKey     string
+		intDefault  int64
+		intStrict   int64
+		floatStrict bool
+	}{
+		{"integral-float", 10, 10, true},
+		{"fractional", mismatch, mismatch, true},
+		{"max-safe", 9007199254740991, 9007199254740991, true},
+		{"min-safe", -9007199254740991, -9007199254740991, true},
+		{"over-max", 9007199254740992, mismatch, false},
+		{"under-min", -9007199254740992, mismatch, false},
+		// rounds to 2^63 when parsed, so overflows int64
+		{"over-int64", mismatch, mismatch, false},
+		{"under-int64", mismatch, mismatch, false},
+		{"huge", mismatch, mismatch, false},
+	}
+
+	// TODO(#2101): drop the non-strict pass and intDefault
+	for _, strict := range []bool{false, true} {
+		var opts []flagdEvaluator.JSONEvaluatorOption
+		if strict {
+			opts = append(opts, flagdEvaluator.WithStrictNumericRange())
+		}
+		evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags(), opts...)
+		if err := evaluator.SetState(sync.DataSync{FlagData: cfg, Source: "testSource"}); err != nil {
+			t.Fatalf("expected no error: %v", err)
+		}
+		for _, test := range tests {
+			t.Run(fmt.Sprintf("%s/strict=%v", test.flagKey, strict), func(t *testing.T) {
+				want := test.intDefault
+				if strict {
+					want = test.intStrict
+				}
+				val, _, reason, _, err := evaluator.ResolveIntValue(context.TODO(), "req", test.flagKey, nil)
+				if want == mismatch {
+					assert.Equal(t, model.ErrorReason, reason)
+					assert.EqualError(t, err, model.TypeMismatchErrorCode)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, want, val)
+				}
+
+				_, _, reason, _, err = evaluator.ResolveFloatValue(context.TODO(), "req", test.flagKey, nil)
+				if strict && !test.floatStrict {
+					assert.Equal(t, model.ErrorReason, reason)
+					assert.EqualError(t, err, model.TypeMismatchErrorCode)
+				} else {
+					assert.NoError(t, err)
+				}
+			})
+		}
+	}
+}
+
+func TestUnsafeNumericVariantWarning(t *testing.T) {
+	const cfg = `{"flags":{
+		"safe":{"state":"ENABLED","variants":{"v":9007199254740991},"defaultVariant":"v"},
+		"unsafe":{"state":"ENABLED","variants":{"a":1,"b":9007199254740992},"defaultVariant":"a"}
+	}}`
+	core, logs := observer.New(zap.WarnLevel)
+	evaluator := flagdEvaluator.NewJSON(logger.NewLogger(zap.New(core), false), store.NewFlags())
+	if err := evaluator.SetState(sync.DataSync{FlagData: cfg, Source: "testSource"}); err != nil {
+		t.Fatalf("expected no error: %v", err)
+	}
+	warnings := logs.FilterMessageSnippet("outside [-(2^53-1), 2^53-1]").All()
+	if assert.Len(t, warnings, 1) {
+		assert.Contains(t, warnings[0].Message, "variant 'b' of flag 'unsafe'")
 	}
 }
 
