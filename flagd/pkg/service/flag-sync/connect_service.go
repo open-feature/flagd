@@ -11,6 +11,7 @@ import (
 	h2cmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/h2c"
 	metricsmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/metric/noop"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -66,7 +67,9 @@ func newConnectServer(
 
 // instrumentFlagsRoute wraps a flag configuration route, which the connect interceptor does not cover.
 func instrumentFlagsRoute(cfg SvcConfigurations, route string, handler http.Handler) http.Handler {
-	return otelhttp.NewHandler(httpMetrics(cfg, route).Handler(handler), "flagd.sync.http")
+	// tracing only; metrics are recorded by httpMetrics
+	return otelhttp.NewHandler(httpMetrics(cfg, route).Handler(handler), "flagd.sync.http",
+		otelhttp.WithMeterProvider(noop.NewMeterProvider()))
 }
 
 // httpMetrics pins the handler ID to the route; the URL path default would make a path-segment
