@@ -32,6 +32,7 @@ type FlagEvaluationServiceV2 struct {
 	contextValues              map[string]any
 	headerToContextKeyMappings map[string]string
 	deadline                   time.Duration
+	deadlineGraceful           bool
 }
 
 // NewFlagEvaluationServiceV2 creates a FlagEvaluationServiceV2 with provided parameters
@@ -125,6 +126,11 @@ func (s *FlagEvaluationServiceV2) EventStream(
 			}
 		case <-ctx.Done():
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				if s.deadlineGraceful {
+					// end the stream with OK, providers treat a completed stream as a routine reconnect
+					s.logger.Debug(fmt.Sprintf("server-side deadline of %s exceeded, closing stream gracefully", s.deadline.String()))
+					return nil
+				}
 				s.logger.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
 				return connect.NewError(connect.CodeDeadlineExceeded, fmt.Errorf("%s", "stream closed due to server-side timeout"))
 			}

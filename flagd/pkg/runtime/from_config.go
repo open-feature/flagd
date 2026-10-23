@@ -44,6 +44,7 @@ type Config struct {
 	SyncServiceHTTPEnabled bool
 	SyncServiceSocketPath  string
 	StreamDeadline         time.Duration
+	StreamDeadlineGraceful bool
 	DisableSyncMetadata    bool
 
 	// Deprecated: no-op, retained so existing configurations keep working. See warnOnNoOpConfig.
@@ -168,21 +169,22 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:                config.SyncServicePort,
-		Sources:             sources,
-		Store:               store,
-		ContextValues:       config.ContextValues,
-		KeyPath:             config.ServiceKeyPath,
-		CertPath:            config.ServiceCertPath,
-		SocketPath:          config.SyncServiceSocketPath,
-		HTTPEnabled:         config.SyncServiceHTTPEnabled,
-		ServiceName:         svcName,
-		CORS:                config.CORS,
-		Options:             options,
-		StreamDeadline:      config.StreamDeadline,
-		DisableSyncMetadata: config.DisableSyncMetadata,
-		MetricsRecorder:     recorder,
+		Logger:                 logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:                   config.SyncServicePort,
+		Sources:                sources,
+		Store:                  store,
+		ContextValues:          config.ContextValues,
+		KeyPath:                config.ServiceKeyPath,
+		CertPath:               config.ServiceCertPath,
+		SocketPath:             config.SyncServiceSocketPath,
+		HTTPEnabled:            config.SyncServiceHTTPEnabled,
+		ServiceName:            svcName,
+		CORS:                   config.CORS,
+		Options:                options,
+		StreamDeadline:         config.StreamDeadline,
+		StreamDeadlineGraceful: config.StreamDeadlineGraceful,
+		DisableSyncMetadata:    config.DisableSyncMetadata,
+		MetricsRecorder:        recorder,
 
 		MaxRequestHeaderBytes: config.MaxRequestHeaderBytes,
 		MaxRequestBodyBytes:   config.MaxRequestBodyBytes,
@@ -219,6 +221,7 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 			ContextValues:              config.ContextValues,
 			HeaderToContextKeyMappings: config.HeaderToContextKeyMappings,
 			StreamDeadline:             config.StreamDeadline,
+			StreamDeadlineGraceful:     config.StreamDeadlineGraceful,
 			MaxRequestBodyBytes:        config.MaxRequestBodyBytes,
 			MaxRequestHeaderBytes:      config.MaxRequestHeaderBytes,
 		},
