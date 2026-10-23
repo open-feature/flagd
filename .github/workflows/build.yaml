@@ -95,19 +95,22 @@ jobs:
       - name: The standard build must not claim FIPS
         run: |
           set -euo pipefail
-          ./bin/flagd version | grep -q 'build variant: standard'
-          ./bin/flagd version | grep -q 'FIPS 140-3 mode: disabled'
+          version_output=$(./bin/flagd version)
+          grep -q 'build variant: standard' <<<"$version_output"
+          grep -q 'FIPS 140-3 mode: disabled' <<<"$version_output"
           # The standard build must still run with FIPS mode forced off.
           GODEBUG=fips140=off ./bin/flagd version >/dev/null
 
       - name: The FIPS build must carry and require the certified module
         run: |
           set -euo pipefail
-          go version -m ./bin/flagd-fips | grep -q 'GOFIPS140=v1\.0\.0'
-          go version -m ./bin/flagd-fips | grep -q 'DefaultGODEBUG=fips140=on'
-          go version -m ./bin/flagd-fips | grep -q -- '-tags=fips140'
-          ./bin/flagd-fips version | grep -q 'build variant: fips'
-          ./bin/flagd-fips version | grep -q 'FIPS 140-3 mode: enabled'
+          build_info=$(go version -m ./bin/flagd-fips)
+          grep -q 'GOFIPS140=v1\.0\.0' <<<"$build_info"
+          grep -q 'DefaultGODEBUG=fips140=on' <<<"$build_info"
+          grep -q -- '-tags=fips140' <<<"$build_info"
+          version_output=$(./bin/flagd-fips version)
+          grep -q 'build variant: fips' <<<"$version_output"
+          grep -q 'FIPS 140-3 mode: enabled' <<<"$version_output"
           # Enforcement is unconditional: no flag can turn it off.
           if GODEBUG=fips140=off ./bin/flagd-fips start -f file:./config/samples/example_flags.flagd.json; then
             echo "::error::the FIPS build started with FIPS mode disabled"; exit 1
