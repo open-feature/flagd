@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/open-feature/flagd/compare/core/v0.19.0...core/v0.19.1) (2026-10-24)
+
+
+### ✨ New Features
+
+* add flag set ID to evaluation metrics ([#2078](https://github.com/open-feature/flagd/issues/2078)) ([10f2ca0](https://github.com/open-feature/flagd/commit/10f2ca00c67bf81499f67235f9cb3fc1c51d4ee4))
+* strict numeric range opt, TYPE_MISMATCH on precision loss ([#2100](https://github.com/open-feature/flagd/issues/2100)) ([5cf6fff](https://github.com/open-feature/flagd/commit/5cf6fff17b9ba3604f0c1ec77170d81eb02bbaed))
+
 ## [0.19.0](https://github.com/open-feature/flagd/compare/core/v0.18.1...core/v0.19.0) (2026-10-15)
 
 
