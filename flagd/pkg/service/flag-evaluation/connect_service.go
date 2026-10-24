@@ -148,7 +148,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		protojson.UnmarshalOptions{DiscardUnknown: true},
 	)
 
-	_, oldHandler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
+	oldPath, oldHandler := schemaConnectV1.NewServiceHandler(fes, append(svcConf.Options, marshalOpts)...)
 
 	// register handler for new flag evaluation schema (v1)
 
@@ -161,7 +161,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		svcConf.StreamDeadline,
 	)
 
-	_, v1Handler := evaluationV1.NewServiceHandler(v1Fes, append(svcConf.Options, marshalOpts)...)
+	v1Path, v1Handler := evaluationV1.NewServiceHandler(v1Fes, append(svcConf.Options, marshalOpts)...)
 
 	// register handler for evaluation v2 schema (with optional value and variant)
 
@@ -174,7 +174,7 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		svcConf.StreamDeadline,
 	)
 
-	_, v2Handler := evaluationV2.NewServiceHandler(v2Fes, append(svcConf.Options, marshalOpts)...)
+	v2Path, v2Handler := evaluationV2.NewServiceHandler(v2Fes, append(svcConf.Options, marshalOpts)...)
 
 	bs := bufSwitchHandler{
 		old: oldHandler,
@@ -203,6 +203,9 @@ func (s *ConnectService) setupServer(svcConf service.Configuration) (net.Listene
 		MetricRecorder: s.metrics,
 		Logger:         s.logger,
 		HandlerID:      "",
+		// Without this the http.route label is whatever path the caller sent, which is
+		// unbounded. flag-sync and ofrep pin their handler IDs for the same reason.
+		RoutePrefixes: []string{oldPath, v1Path, v2Path, "/healthz", "/readyz", "/metrics"},
 	})
 
 	s.AddMiddleware(metricsMiddleware)
