@@ -171,6 +171,11 @@ Result:
 Notice that rerunning either curl command will always return the same variant and value.
 The only way to get a different value is to change the email or update the `fractional` configuration.
 
+!!! warning "Changing weights reassigns users"
+
+    Changing weights, or adding, removing or reordering variants, moves users between variants.
+    For experiments you plan to grow, see [Running A/B Experiments](../../guides/experimentation.md).
+
 ## Nested Fractional Evaluation
 
 The `fractional` operation supports nested JSONLogic expressions within its arguments, enabling advanced use cases.
