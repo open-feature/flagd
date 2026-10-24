@@ -15,6 +15,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/service"
 	"github.com/open-feature/flagd/flagd-proxy/pkg/service/subscriptions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c" //nolint:staticcheck // deprecated package, still functionally correct
 	"golang.org/x/sync/errgroup"
@@ -129,7 +130,7 @@ func (s *Server) startServer() error {
 }
 
 func (s *Server) startMetricsServer() error {
-	s.Logger.Info(fmt.Sprintf("binding metrics to %d", s.config.ManagementPort))
+	s.Logger.Info("binding metrics", zap.Uint16("port", s.config.ManagementPort))
 
 	grpcServer := grpc.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
