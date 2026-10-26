@@ -145,7 +145,7 @@ flagd creates the following spans as part of a trace:
 flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup
 flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For example,
 
-`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
+`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri http://localhost:4317`
 
 ### Custom resource attributes
 
@@ -153,7 +153,7 @@ To attach custom resource attributes (e.g., environment name, deployment region)
 
 ```sh
 export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=staging,service.version=1.2.3"
-export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 flagd start --uri file:/flags.json --metrics-exporter otel
 ```
 

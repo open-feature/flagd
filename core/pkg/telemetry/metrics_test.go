@@ -3,6 +3,7 @@ package telemetry
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,6 +70,13 @@ func TestHTTPAttributes(t *testing.T) {
 				Method: "pOsT",
 			},
 			want: want("", "", "POST", ""),
+		},
+		{
+			name: "long method",
+			req: HTTPReqProperties{
+				Method: strings.Repeat("x", 1024),
+			},
+			want: want("", "", "_OTHER", ""),
 		},
 		{
 			name: "unknown method",
@@ -403,4 +411,12 @@ func TestGRPCSyncServerStreamDurationBuckets(t *testing.T) {
 		},
 		"Expected histogram buckets for long-lived sync streams (30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h)",
 	)
+}
+
+func TestStandardizeHTTPMethodLongMethodDoesNotAllocate(t *testing.T) {
+	method := strings.Repeat("x", 1024)
+	allocs := testing.AllocsPerRun(100, func() { _ = standardizeHTTPMethod(method) })
+	if allocs != 0 {
+		t.Errorf("expected no allocations, got %v", allocs)
+	}
 }

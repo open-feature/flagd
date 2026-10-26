@@ -87,8 +87,7 @@ var httpServerMetrics = map[string]bool{
 	"http.server.active_requests":    true,
 }
 
-// collectHTTPMetricLabelPairs asserts that each HTTP server metric in data exposes exactly the
-// (route, method) label pairs in want, and returns the set of matching metric names it observed.
+// collectHTTPMetricLabelPairs asserts each HTTP metric has exactly the want (route, method) pairs; returns names seen.
 func collectHTTPMetricLabelPairs(t *testing.T, data metricdata.ResourceMetrics, want map[[2]string]bool) map[string]bool {
 	t.Helper()
 
