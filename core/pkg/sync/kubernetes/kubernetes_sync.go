@@ -99,8 +99,31 @@ func (k *Sync) Init(_ context.Context) error {
 	)
 
 	k.informer = factory.ForResource(featureFlagResource).Informer()
+	if err := k.setWatchErrorHandler(); err != nil {
+		if k.logger != nil {
+			k.logger.Error(fmt.Sprintf("failed to set watch error handler: %s", err.Error()))
+		}
+	}
 
 	return nil
+}
+
+func (k *Sync) setWatchErrorHandler() error {
+	if k.informer == nil {
+		return nil
+	}
+	return k.informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
+		if k.logger != nil {
+			if err != nil {
+				k.logger.Error(fmt.Sprintf("kubernetes sync watch error: %s", err.Error()))
+			} else {
+				k.logger.Error("kubernetes sync watch error: unknown error")
+			}
+		}
+		if k.SyncMetricsRecorder != nil {
+			k.SyncMetricsRecorder.RecordSyncError(context.Background(), syncmetrics.SourceKubernetes, k.URI, "")
+		}
+	})
 }
 
 func (k *Sync) IsReady() bool {
@@ -226,6 +249,12 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	objectKey := types.NamespacedName{
 		Name:      k.crdName,
 		Namespace: k.namespace,
+	}
+
+	if err := k.setWatchErrorHandler(); err != nil {
+		if k.logger != nil {
+			k.logger.Error(fmt.Sprintf("failed to set watch error handler: %s", err.Error()))
+		}
 	}
 
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{

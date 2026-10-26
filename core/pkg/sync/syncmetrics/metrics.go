@@ -43,6 +43,7 @@ const meterName = "github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 const (
 	metricFlagConfigReceived              = "feature_flag.flagd.sync.client.flag_config.received"
 	metricFlagConfigLastReceivedTimestamp = "feature_flag.flagd.sync.client.flag_config.last_received_timestamp"
+	metricSyncError                       = "feature_flag.flagd.sync.client.error"
 )
 
 // Attribute keys. Two sets are emitted on every data point so existing dashboards keep
@@ -71,6 +72,7 @@ const (
 type Recorder struct {
 	flagConfigReceived    metric.Int64Counter
 	lastReceivedTimestamp metric.Int64Gauge
+	syncError             metric.Int64Counter
 }
 
 // NewRecorder builds a Recorder against the given MeterProvider. A nil MeterProvider falls
@@ -102,10 +104,16 @@ func NewRecorder(mp metric.MeterProvider) *Recorder {
 				"from a sync source. Query staleness as time() - <value>."),
 		metric.WithUnit("s"),
 	)
+	syncError, _ := m.Int64Counter(
+		metricSyncError,
+		metric.WithDescription(
+			"Total number of errors encountered while syncing from a sync source."),
+	)
 
 	return &Recorder{
 		flagConfigReceived:    received,
 		lastReceivedTimestamp: lastReceivedTs,
+		syncError:             syncError,
 	}
 }
 
@@ -127,6 +135,19 @@ func (r *Recorder) RecordFlagConfigReceived(ctx context.Context, sourceType, uri
 	if r.lastReceivedTimestamp != nil {
 		r.lastReceivedTimestamp.Record(ctx, time.Now().Unix(), attrs)
 	}
+}
+
+// RecordSyncError bumps the sync error counter for the given sync source.
+func (r *Recorder) RecordSyncError(ctx context.Context, sourceType, uri, selector string) {
+	if r == nil || r.syncError == nil {
+		return
+	}
+	r.syncError.Add(ctx, 1, attributes(sourceType, uri, selector))
+}
+
+// RecordWatchError records an error from a watch-based sync source.
+func (r *Recorder) RecordWatchError(ctx context.Context, sourceType, uri, selector string) {
+	r.RecordSyncError(ctx, sourceType, uri, selector)
 }
 
 // SanitizeURI strips userinfo, query, and fragment from a sync-source URI so
