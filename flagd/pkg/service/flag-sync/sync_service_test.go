@@ -36,129 +36,120 @@ func TestSyncServiceEndToEnd(t *testing.T) {
 		{title: "with unix socket connection", certPath: "", keyPath: "", clientCertPath: "", socketPath: "/tmp/flagd", tls: false, wantStartErr: false},
 	}
 
-	for _, disableSyncMetadata := range []bool{true, false} {
-		for _, tc := range testCases {
-			t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
-				// given
-				port := 18016
-				flagStore, sources := getSimpleFlagStore(t)
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("Testing Sync Service %s", tc.title), func(t *testing.T) {
+			// given
+			port := 18016
+			flagStore, sources := getSimpleFlagStore(t)
 
-				ctx, cancelFunc := context.WithCancel(context.Background())
-				defer cancelFunc()
+			ctx, cancelFunc := context.WithCancel(context.Background())
+			defer cancelFunc()
 
-				_, doneChan, err := createAndStartSyncService(
-					port,
-					sources,
-					flagStore,
-					tc.certPath,
-					tc.keyPath,
-					tc.socketPath,
-					ctx,
-					0,
-					disableSyncMetadata,
-				)
+			_, doneChan, err := createAndStartSyncService(
+				port,
+				sources,
+				flagStore,
+				tc.certPath,
+				tc.keyPath,
+				tc.socketPath,
+				ctx,
+				0,
+			)
 
-				if tc.wantStartErr {
-					if err == nil {
-						t.Fatal("expected error creating the service!")
-					}
-					return
-				} else if err != nil {
-					t.Fatal("unexpected error creating the service: %w", err)
-					return
+			if tc.wantStartErr {
+				if err == nil {
+					t.Fatal("expected error creating the service!")
 				}
+				return
+			} else if err != nil {
+				t.Fatal("unexpected error creating the service: %w", err)
+				return
+			}
 
-				// when - derive a client for sync service
-				serviceClient := getSyncClient(t, tc.clientCertPath, tc.socketPath, tc.tls, port, ctx)
+			// when - derive a client for sync service
+			serviceClient := getSyncClient(t, tc.clientCertPath, tc.socketPath, tc.tls, port, ctx)
 
-				// then
+			// then
 
-				// sync flags request
-				flags, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{})
+			// sync flags request
+			flags, err := serviceClient.SyncFlags(ctx, &v1.SyncFlagsRequest{})
+			if err != nil {
+				t.Fatal(fmt.Printf("error from sync request: %v", err))
+				return
+			}
+
+			syncRsp, err := flags.Recv()
+			if err != nil {
+				t.Fatal(fmt.Printf("stream error: %v", err))
+				return
+			}
+
+			if len(syncRsp.GetFlagConfiguration()) == 0 {
+				t.Error("expected non empty sync response, but got empty")
+			}
+
+			// checks sync context actually set
+			syncContext := syncRsp.GetSyncContext()
+			if syncContext == nil {
+				t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
+			}
+
+			// validate emits
+			dataReceived := make(chan interface{})
+			go func() {
+				_, err := flags.Recv()
 				if err != nil {
-					t.Fatal(fmt.Printf("error from sync request: %v", err))
 					return
 				}
 
-				syncRsp, err := flags.Recv()
-				if err != nil {
-					t.Fatal(fmt.Printf("stream error: %v", err))
-					return
-				}
+				dataReceived <- nil
+			}()
 
-				if len(syncRsp.GetFlagConfiguration()) == 0 {
-					t.Error("expected non empty sync response, but got empty")
-				}
+			// make a change
+			flagStore.Update(testSource1, testSource1Flags, model.Metadata{
+				"keyDuped": "value",
+				"keyA":     "valueA",
+			}, false)
 
-				// checks sync context actually set
-				syncContext := syncRsp.GetSyncContext()
-				if syncContext == nil {
-					t.Fatal("expected sync_context in SyncFlagsResponse, but got nil")
-				}
+			select {
+			case <-dataReceived:
+				break
+			case <-time.After(1 * time.Second):
+				t.Fatal("expected data but timeout waiting for sync")
+			}
 
-				// validate emits
-				dataReceived := make(chan interface{})
-				go func() {
-					_, err := flags.Recv()
-					if err != nil {
-						return
-					}
+			// fetch all flags
+			allRsp, err := serviceClient.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
+			if err != nil {
+				t.Fatal(fmt.Printf("fetch all error: %v", err))
+				return
+			}
 
-					dataReceived <- nil
-				}()
+			if allRsp.GetFlagConfiguration() != syncRsp.GetFlagConfiguration() {
+				t.Errorf("expected both sync and fetch all responses to be same, but got %s from sync & %s from fetch all",
+					syncRsp.GetFlagConfiguration(), allRsp.GetFlagConfiguration())
+			}
 
-				// make a change
-				flagStore.Update(testSource1, testSource1Flags, model.Metadata{
-					"keyDuped": "value",
-					"keyA":     "valueA",
-				}, false)
+			// metadata request returns unimplemented
+			_, err = serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
+			assert.Error(t, err)
+			st, ok := status.FromError(err)
+			assert.True(t, ok)
+			assert.Equal(t, codes.Unimplemented, st.Code())
 
-				select {
-				case <-dataReceived:
-					break
-				case <-time.After(1 * time.Second):
-					t.Fatal("expected data but timeout waiting for sync")
-				}
+			// validate shutdown from context cancellation
+			go func() {
+				cancelFunc()
+			}()
 
-				// fetch all flags
-				allRsp, err := serviceClient.FetchAllFlags(ctx, &v1.FetchAllFlagsRequest{})
-				if err != nil {
-					t.Fatal(fmt.Printf("fetch all error: %v", err))
-					return
-				}
-
-				if allRsp.GetFlagConfiguration() != syncRsp.GetFlagConfiguration() {
-					t.Errorf("expected both sync and fetch all responses to be same, but got %s from sync & %s from fetch all",
-						syncRsp.GetFlagConfiguration(), allRsp.GetFlagConfiguration())
-				}
-
-				// metadata request
-				metadataRsp, err := serviceClient.GetMetadata(ctx, &v1.GetMetadataRequest{})
-
-				if disableSyncMetadata {
-					if err == nil {
-						t.Fatal(fmt.Printf("getMetadata disabled, error should not be nil"))
-						return
-					}
-				} else {
-					asMap := metadataRsp.GetMetadata().AsMap()
-					assert.NotNil(t, asMap, "expected metadata to be non-nil")
-				}
-
-				// validate shutdown from context cancellation
-				go func() {
-					cancelFunc()
-				}()
-
-				select {
-				case <-doneChan:
-					// exit successful
-					return
-				case <-time.After(2 * time.Second):
-					t.Fatal("service did not exist within sufficient timeframe")
-				}
-			})
-		}
+			select {
+			case <-doneChan:
+				// exit successful
+				return
+			case <-time.After(2 * time.Second):
+				t.Fatal("service did not exist within sufficient timeframe")
+			}
+		})
 	}
 }
 
@@ -184,7 +175,7 @@ func TestSyncServiceDeadlineEndToEnd(t *testing.T) {
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			defer cancelFunc()
 
-			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline, false)
+			_, doneChan, err := createAndStartSyncService(port, sources, flagStore, certPath, keyPath, socketPath, ctx, tc.deadline)
 			if err != nil {
 				t.Fatal("error creating sync service")
 			}
@@ -261,18 +252,16 @@ func createAndStartSyncService(
 	socketPath string,
 	ctx context.Context,
 	deadline time.Duration,
-	disableSyncMetadata bool,
 ) (*Service, chan interface{}, error) {
 	service, err := NewSyncService(SvcConfigurations{
-		Logger:              logger.NewLogger(nil, false),
-		Port:                uint16(port),
-		Sources:             sources,
-		Store:               store,
-		CertPath:            certPath,
-		KeyPath:             keyPath,
-		SocketPath:          socketPath,
-		StreamDeadline:      deadline,
-		DisableSyncMetadata: disableSyncMetadata,
+		Logger:         logger.NewLogger(nil, false),
+		Port:           uint16(port),
+		Sources:        sources,
+		Store:          store,
+		CertPath:       certPath,
+		KeyPath:        keyPath,
+		SocketPath:     socketPath,
+		StreamDeadline: deadline,
 	})
 	if err != nil {
 		return nil, nil, err

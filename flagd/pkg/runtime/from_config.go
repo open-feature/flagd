@@ -44,8 +44,9 @@ type Config struct {
 	SyncServiceHTTPEnabled bool
 	SyncServiceSocketPath  string
 	StreamDeadline         time.Duration
-	DisableSyncMetadata    bool
-	StrictNumericRange     bool // TODO(#2101): remove
+	// Deprecated: no-op, retained so existing configurations keep working. See warnOnNoOpConfig.
+	DisableSyncMetadata bool
+	StrictNumericRange  bool // TODO(#2101): remove
 
 	// Deprecated: no-op, retained so existing configurations keep working. See warnOnNoOpConfig.
 	KeepAliveMinTime time.Duration
@@ -75,6 +76,11 @@ func warnOnNoOpConfig(logger *logger.Logger, config Config) {
 		logger.Warn("keep-alive-min-time and keep-alive-permit-without-stream are no-ops and will be " +
 			"removed in a later version. The flag sync server is served by connect over net/http, which " +
 			"imposes no minimum keepalive ping interval and always permits pings without an active stream.")
+	}
+	//nolint:staticcheck // SA1019 reading the no-op field is the point
+	if config.DisableSyncMetadata {
+		logger.Warn("disable-sync-metadata is a no-op and will be removed in a later version. " +
+			"The getMetadata endpoint has been removed.")
 	}
 }
 
@@ -174,21 +180,20 @@ func FromConfig(logger *logger.Logger, version string, config Config) (*Runtime,
 
 	// flag sync service
 	flagSyncService, err := flagsync.NewSyncService(flagsync.SvcConfigurations{
-		Logger:              logger.WithFields(zap.String("component", "FlagSyncService")),
-		Port:                config.SyncServicePort,
-		Sources:             sources,
-		Store:               store,
-		ContextValues:       config.ContextValues,
-		KeyPath:             config.ServiceKeyPath,
-		CertPath:            config.ServiceCertPath,
-		SocketPath:          config.SyncServiceSocketPath,
-		HTTPEnabled:         config.SyncServiceHTTPEnabled,
-		ServiceName:         svcName,
-		CORS:                config.CORS,
-		Options:             options,
-		StreamDeadline:      config.StreamDeadline,
-		DisableSyncMetadata: config.DisableSyncMetadata,
-		MetricsRecorder:     recorder,
+		Logger:          logger.WithFields(zap.String("component", "FlagSyncService")),
+		Port:            config.SyncServicePort,
+		Sources:         sources,
+		Store:           store,
+		ContextValues:   config.ContextValues,
+		KeyPath:         config.ServiceKeyPath,
+		CertPath:        config.ServiceCertPath,
+		SocketPath:      config.SyncServiceSocketPath,
+		HTTPEnabled:     config.SyncServiceHTTPEnabled,
+		ServiceName:     svcName,
+		CORS:            config.CORS,
+		Options:         options,
+		StreamDeadline:  config.StreamDeadline,
+		MetricsRecorder: recorder,
 
 		MaxRequestHeaderBytes: config.MaxRequestHeaderBytes,
 		MaxRequestBodyBytes:   config.MaxRequestBodyBytes,
