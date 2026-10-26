@@ -8,7 +8,7 @@ export const gradualRollout: Scenario = {
     "The 'on' weight increases as time passes (current timestamp minus start time).",
     "The 'off' weight decreases as time passes (end time minus current timestamp).",
     "This creates a smooth linear transition of users from 0% to 100% rollout over 30 seconds.",
-    "For example, user-1 will transition to true at ~t=+6s, while user-2 will transition at ~t=+13s",
+    "For example, user-a will transition to true at ~t=+10s, while user-b will transition at ~t=+23s.",
     "By t=+30s, all users will see the flag as true, no matter their targeting key.",
   ].join(" "),
   flagDefinition: () => {
@@ -46,7 +46,7 @@ export const gradualRollout: Scenario = {
   returnType: "boolean",
   context: () =>
     contextToPrettyJson({
-      targetingKey: "user-1",
+      targetingKey: "user-a",
     }),
   codeDefault: "false",
 };

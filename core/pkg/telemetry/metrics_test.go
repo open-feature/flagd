@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -12,16 +13,29 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 const svcName = "mySvc"
 
+// Verifies the metric attribute set, including method canonicalization.
 func TestHTTPAttributes(t *testing.T) {
 	type HTTPReqProperties struct {
 		Service string
 		ID      string
 		Method  string
 		Code    string
+	}
+
+	want := func(service, route, method, code string) []attribute.KeyValue {
+		return []attribute.KeyValue{
+			semconv.ServiceNameKey.String(service),
+			semconv.HTTPRouteKey.String(route),
+			semconv.HTTPRequestMethodKey.String(method),
+			semconv.HTTPResponseStatusCodeKey.String(code),
+			semconv.URLSchemeKey.String("http"),
+		}
 	}
 
 	tests := []struct {
@@ -37,13 +51,7 @@ func TestHTTPAttributes(t *testing.T) {
 				Method:  "",
 				Code:    "",
 			},
-			want: []attribute.KeyValue{
-				semconv.ServiceNameKey.String(""),
-				semconv.HTTPRouteKey.String(""),
-				semconv.HTTPRequestMethodKey.String(""),
-				semconv.HTTPResponseStatusCodeKey.String(""),
-				semconv.URLSchemeKey.String("http"),
-			},
+			want: want("", "", "_OTHER", ""),
 		},
 		{
 			name: "some values",
@@ -53,13 +61,21 @@ func TestHTTPAttributes(t *testing.T) {
 				Method:  "POST",
 				Code:    "300",
 			},
-			want: []attribute.KeyValue{
-				semconv.ServiceNameKey.String("myService"),
-				semconv.HTTPRouteKey.String("#123"),
-				semconv.HTTPRequestMethodKey.String("POST"),
-				semconv.HTTPResponseStatusCodeKey.String("300"),
-				semconv.URLSchemeKey.String("http"),
+			want: want("myService", "#123", "POST", "300"),
+		},
+		{
+			name: "mixed case standard method",
+			req: HTTPReqProperties{
+				Method: "pOsT",
 			},
+			want: want("", "", "POST", ""),
+		},
+		{
+			name: "unknown method",
+			req: HTTPReqProperties{
+				Method: "PROPFIND",
+			},
+			want: want("", "", "_OTHER", ""),
 		},
 		{
 			name: "special chars",
@@ -69,13 +85,7 @@ func TestHTTPAttributes(t *testing.T) {
 				Method:  "",
 				Code:    "",
 			},
-			want: []attribute.KeyValue{
-				semconv.ServiceNameKey.String("!@#$%^&*()_+|}{[];',./<>"),
-				semconv.HTTPRouteKey.String(""),
-				semconv.HTTPRequestMethodKey.String(""),
-				semconv.HTTPResponseStatusCodeKey.String(""),
-				semconv.URLSchemeKey.String("http"),
-			},
+			want: want("!@#$%^&*()_+|}{[];',./<>", "", "_OTHER", ""),
 		},
 	}
 	for _, tt := range tests {
@@ -103,6 +113,9 @@ func TestMetrics(t *testing.T) {
 	}
 	const n = 5
 	type MetricF func(t *testing.T, exp metric.Reader)
+	newRec := func(exp metric.Reader) *MetricsRecorder {
+		return NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), svcName)
+	}
 	tests := []struct {
 		name       string
 		metricFunc MetricF
@@ -111,8 +124,7 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "HTTPRequestDuration",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
 					rec.HTTPRequestDuration(t.Context(), 10, attrs)
 				}
@@ -122,8 +134,7 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "HTTPResponseSize",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
 					rec.HTTPResponseSize(t.Context(), 100, attrs)
 				}
@@ -133,8 +144,7 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "InFlightRequestStart",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				ctx := t.Context()
 				for i := 0; i < n; i++ {
 					rec.InFlightRequestStart(ctx, attrs)
@@ -146,10 +156,9 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "Impressions",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
-					rec.Impressions(t.Context(), "reason", "variant", "key")
+					rec.Impressions(t.Context(), "reason", "variant", "key", nil)
 				}
 			},
 			metricsLen: 1,
@@ -157,13 +166,12 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "Reasons",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyA", "reason", nil)
+					rec.Reasons(t.Context(), "keyA", "reason", nil, nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.Reasons(t.Context(), "keyB", "error", fmt.Errorf("err not found"))
+					rec.Reasons(t.Context(), "keyB", "error", nil, fmt.Errorf("err not found"))
 				}
 			},
 			metricsLen: 1,
@@ -171,16 +179,15 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "RecordEvaluations",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key")
+					rec.RecordEvaluation(t.Context(), nil, "reason", "variant", "key", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("general"), "error", "variant", "key", nil)
 				}
 				for i := 0; i < n; i++ {
-					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key")
+					rec.RecordEvaluation(t.Context(), fmt.Errorf("not found"), "error", "variant", "key", nil)
 				}
 			},
 			metricsLen: 2,
@@ -188,8 +195,7 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "SyncServerActiveStreams",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				ctx := t.Context()
 				for i := 0; i < n; i++ {
 					rec.SyncServerStreamStart(ctx, attrs)
@@ -201,8 +207,7 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "SyncServerStreamDuration",
 			metricFunc: func(t *testing.T, exp metric.Reader) {
-				rs := resource.NewWithAttributes("testSchema")
-				rec := NewOTelRecorder(exp, rs, svcName)
+				rec := newRec(exp)
 				for i := 0; i < n; i++ {
 					rec.SyncServerStreamDuration(t.Context(), 100*time.Millisecond, attrs)
 				}
@@ -234,50 +239,101 @@ func TestMetrics(t *testing.T) {
 }
 
 // some really simple tests just to make sure all methods are actually implemented and nothing panics
-func TestNoopMetricsRecorderHTTPAttributes(t *testing.T) {
+func TestNoopMetricsRecorder(t *testing.T) {
 	no := NoopMetricsRecorder{}
-	got := no.HTTPAttributes("", "", "", "", "")
-	require.Empty(t, got)
+
+	t.Run("HTTPAttributes", func(t *testing.T) {
+		got := no.HTTPAttributes("", "", "", "", "")
+		require.Empty(t, got)
+	})
+
+	t.Run("HTTPRequestDuration", func(t *testing.T) {
+		no.HTTPRequestDuration(t.Context(), 0, nil)
+	})
+
+	t.Run("InFlightRequestStart", func(t *testing.T) {
+		no.InFlightRequestStart(t.Context(), nil)
+	})
+
+	t.Run("InFlightRequestEnd", func(t *testing.T) {
+		no.InFlightRequestEnd(t.Context(), nil)
+	})
+
+	t.Run("RecordEvaluation", func(t *testing.T) {
+		no.RecordEvaluation(t.Context(), nil, "", "", "", nil)
+	})
+
+	t.Run("Impressions", func(t *testing.T) {
+		no.Impressions(t.Context(), "", "", "", nil)
+	})
+
+	t.Run("SyncServerStreamStart", func(t *testing.T) {
+		no.SyncServerStreamStart(t.Context(), nil)
+	})
+
+	t.Run("SyncServerStreamEnd", func(t *testing.T) {
+		no.SyncServerStreamEnd(t.Context(), nil)
+	})
+
+	t.Run("SyncServerStreamDuration", func(t *testing.T) {
+		no.SyncServerStreamDuration(t.Context(), 0, nil)
+	})
 }
 
-func TestNoopMetricsRecorderHTTPRequestDuration(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.HTTPRequestDuration(t.Context(), 0, nil)
-}
+func TestRecordEvaluationFlagSetID(t *testing.T) {
+	exp := metric.NewManualReader()
+	rec := NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), svcName)
 
-func TestNoopMetricsRecorderInFlightRequestStart(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.InFlightRequestStart(t.Context(), nil)
-}
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-a", model.Metadata{"flagSetId": "set-a"})
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "flag-b", model.Metadata{"flagSetId": "set-b"})
+	rec.RecordEvaluation(
+		t.Context(), errors.New(model.FlagNotFoundErrorCode), "ERROR", "", "missing",
+		model.Metadata{"flagSetId": "caller-controlled"},
+	)
+	rec.RecordEvaluation(
+		t.Context(), errors.New(model.GeneralErrorCode), "ERROR", "", "found-error",
+		model.Metadata{"flagSetId": "configured-set"},
+	)
+	rec.RecordEvaluation(t.Context(), nil, "STATIC", "on", "without-set", model.Metadata{"flagSetId": 42})
 
-func TestNoopMetricsRecorderInFlightRequestEnd(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.InFlightRequestEnd(t.Context(), nil)
-}
+	var data metricdata.ResourceMetrics
+	require.NoError(t, exp.Collect(t.Context(), &data))
+	require.Len(t, data.ScopeMetrics, 1)
 
-func TestNoopMetricsRecorderRecordEvaluation(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.RecordEvaluation(t.Context(), nil, "", "", "")
-}
+	want := map[string]map[string]bool{
+		impressionMetric: {
+			"set-a": true,
+			"set-b": true,
+			"":      true,
+		},
+		reasonMetric: {
+			"set-a":          true,
+			"set-b":          true,
+			"configured-set": true,
+			"":               true,
+		},
+	}
 
-func TestNoopMetricsRecorderImpressions(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.Impressions(t.Context(), "", "", "")
-}
-
-func TestNoopMetricsRecorderSyncServerStreamStart(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.SyncServerStreamStart(t.Context(), nil)
-}
-
-func TestNoopMetricsRecorderSyncServerStreamEnd(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.SyncServerStreamEnd(t.Context(), nil)
-}
-
-func TestNoopMetricsRecorderSyncServerStreamDuration(t *testing.T) {
-	no := NoopMetricsRecorder{}
-	no.SyncServerStreamDuration(t.Context(), 0, nil)
+	for _, m := range data.ScopeMetrics[0].Metrics {
+		expected, ok := want[m.Name]
+		if !ok {
+			continue
+		}
+		sum, ok := m.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		got := make(map[string]bool, len(sum.DataPoints))
+		for _, point := range sum.DataPoints {
+			value, present := point.Attributes.Value(semconv.FeatureFlagSetIDKey)
+			if present {
+				got[value.AsString()] = true
+			} else {
+				got[""] = true
+			}
+		}
+		require.Equal(t, expected, got, m.Name)
+		delete(want, m.Name)
+	}
+	require.Empty(t, want)
 }
 
 // testHistogramBuckets is a helper function that tests histogram bucket configuration

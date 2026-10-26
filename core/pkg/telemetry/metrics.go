@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +14,8 @@ import (
 	msdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 const (
@@ -37,8 +41,8 @@ type IMetricsRecorder interface {
 	HTTPResponseSize(ctx context.Context, sizeBytes int64, attrs []attribute.KeyValue)
 	InFlightRequestStart(ctx context.Context, attrs []attribute.KeyValue)
 	InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue)
-	RecordEvaluation(ctx context.Context, err error, reason, variant, key string)
-	Impressions(ctx context.Context, reason, variant, key string)
+	RecordEvaluation(ctx context.Context, err error, reason, variant, key string, metadata model.Metadata)
+	Impressions(ctx context.Context, reason, variant, key string, metadata model.Metadata)
 	// gRPC Sync metrics
 	SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue)
 	SyncServerStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
@@ -63,10 +67,10 @@ func (NoopMetricsRecorder) InFlightRequestStart(_ context.Context, _ []attribute
 func (NoopMetricsRecorder) InFlightRequestEnd(_ context.Context, _ []attribute.KeyValue) {
 }
 
-func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string) {
+func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string, _ model.Metadata) {
 }
 
-func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
+func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string, _ model.Metadata) {
 }
 
 func (NoopMetricsRecorder) SyncServerStreamStart(_ context.Context, _ []attribute.KeyValue) {
@@ -92,13 +96,26 @@ type MetricsRecorder struct {
 	syncStreamDuration metric.Float64Histogram
 }
 
+// Returns the standard http.server metric attribute set, with a standardized method.
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
 		semconv.HTTPRouteKey.String(url),
-		semconv.HTTPRequestMethodKey.String(method),
+		semconv.HTTPRequestMethodKey.String(standardizeHTTPMethod(method)),
 		semconv.HTTPResponseStatusCodeKey.String(code),
 		semconv.URLSchemeKey.String(scheme),
+	}
+}
+
+// Canonicalizes known HTTP methods and maps unknown ones to _OTHER.
+func standardizeHTTPMethod(method string) string {
+	method = strings.ToUpper(method)
+	switch method {
+	case http.MethodConnect, http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodOptions, http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace:
+		return method
+	default:
+		return "_OTHER"
 	}
 }
 
@@ -118,20 +135,24 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 	r.httpRequestsInflight.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
+func (r MetricsRecorder) RecordEvaluation(
+	ctx context.Context, err error, reason, variant, key string, metadata model.Metadata,
+) {
 	if err == nil {
-		r.Impressions(ctx, reason, variant, key)
+		r.Impressions(ctx, reason, variant, key, metadata)
 	}
-	r.Reasons(ctx, key, reason, err)
+	r.Reasons(ctx, key, reason, metadata, err)
 }
 
-func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
+func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string, metadata model.Metadata) {
+	attrs := append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))
+	attrs = appendFlagSetID(attrs, metadata)
 	r.impressions.Add(ctx,
 		1,
-		metric.WithAttributes(append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))...))
+		metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string, err error) {
+func (r MetricsRecorder) Reasons(ctx context.Context, key, reason string, metadata model.Metadata, err error) {
 	attrs := []attribute.KeyValue{
 		semconv.FeatureFlagProviderName(ProviderName),
 		FeatureFlagReason(reason),
@@ -142,8 +163,19 @@ func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string,
 	} else {
 		attrs = append(attrs, ExceptionType(err.Error()))
 	}
+	if err == nil || err.Error() != model.FlagNotFoundErrorCode {
+		attrs = appendFlagSetID(attrs, metadata)
+	}
 
 	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
+}
+
+func appendFlagSetID(attrs []attribute.KeyValue, metadata model.Metadata) []attribute.KeyValue {
+	flagSetID := flagSetIDFromMetadata(metadata)
+	if flagSetID == "" {
+		return attrs
+	}
+	return append(attrs, semconv.FeatureFlagSetID(flagSetID))
 }
 
 func (r MetricsRecorder) SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue) {
