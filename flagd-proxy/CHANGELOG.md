@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.13](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.12...flagd-proxy/v0.9.13) (2026-10-26)
+
+
+### 🧹 Chore
+
+* **deps:** update module golang.org/x/net to v0.61.0 ([#2097](https://github.com/open-feature/flagd/issues/2097)) ([21db5c3](https://github.com/open-feature/flagd/commit/21db5c3358c5b7e355edd905b4fe975b27cdfdb6))
+
 ## [0.9.12](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.11...flagd-proxy/v0.9.12) (2026-10-15)
 
 
