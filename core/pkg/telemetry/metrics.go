@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -94,13 +96,26 @@ type MetricsRecorder struct {
 	syncStreamDuration metric.Float64Histogram
 }
 
+// Returns the standard http.server metric attribute set, with a standardized method.
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
 		semconv.HTTPRouteKey.String(url),
-		semconv.HTTPRequestMethodKey.String(method),
+		semconv.HTTPRequestMethodKey.String(standardizeHTTPMethod(method)),
 		semconv.HTTPResponseStatusCodeKey.String(code),
 		semconv.URLSchemeKey.String(scheme),
+	}
+}
+
+// Canonicalizes known HTTP methods and maps unknown ones to _OTHER.
+func standardizeHTTPMethod(method string) string {
+	method = strings.ToUpper(method)
+	switch method {
+	case http.MethodConnect, http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodOptions, http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace:
+		return method
+	default:
+		return "_OTHER"
 	}
 }
 
