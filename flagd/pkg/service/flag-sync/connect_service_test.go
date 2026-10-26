@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -321,6 +322,45 @@ func TestInstrumentFlagsRouteMetrics(t *testing.T) {
 			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
 			_, hasHost := points[0].Attributes.Value(semconv.ServerAddressKey)
 			require.False(t, hasHost, "client-supplied Host must not become a metric label")
+		})
+	}
+}
+
+func TestFlagsRouteMetricsByMethod(t *testing.T) {
+	tests := []struct {
+		method       string
+		expectedCode int
+	}{
+		{method: http.MethodGet, expectedCode: http.StatusOK},
+		{method: http.MethodHead, expectedCode: http.StatusOK},
+		{method: http.MethodPost, expectedCode: http.StatusMethodNotAllowed},
+		{method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed},
+	}
+
+	for _, test := range tests {
+		t.Run(test.method, func(t *testing.T) {
+			recorder, reader := metricstest.NewRecorder(t, "flagd")
+			cfg := SvcConfigurations{
+				Logger:          logger.NewLogger(nil, false),
+				ServiceName:     "flagd",
+				MetricsRecorder: recorder,
+			}
+			flags := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+			server := newConnectServer(cfg, syncv1connect.UnimplementedFlagSyncServiceHandler{}, flags)
+
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, httptest.NewRequest(test.method, flagsPath, nil))
+			require.Equal(t, test.expectedCode, response.Code)
+			if test.expectedCode == http.StatusMethodNotAllowed {
+				require.Equal(t, "GET, HEAD", response.Header().Get("Allow"))
+			}
+
+			_, points := metricstest.RequestDurationPoints(t, reader)
+			require.Len(t, points, 1, "request should be recorded")
+			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+			require.Equal(t, strconv.Itoa(test.expectedCode), code.AsString())
+			route, _ := points[0].Attributes.Value(semconv.HTTPRouteKey)
+			require.Equal(t, flagsPath, route.AsString())
 		})
 	}
 }

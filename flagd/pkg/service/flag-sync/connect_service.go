@@ -42,8 +42,10 @@ func newConnectServer(
 	mux.Handle(connectPath, httpMetrics(cfg, connectPath).Handler(connectHandler))
 
 	if flagsHandler != nil {
-		// Registering "GET" gets 405s and HEAD for free.
+		// registering "GET" also serves HEAD
 		mux.Handle("GET "+flagsPath, instrumentFlagsRoute(cfg, flagsPath, flagsHandler))
+		// explicit 405 for other methods so they are recorded in metrics
+		mux.Handle(flagsPath, instrumentFlagsRoute(cfg, flagsPath, http.HandlerFunc(methodNotAllowed)))
 	}
 
 	var h http.Handler = mux
@@ -70,6 +72,11 @@ func instrumentFlagsRoute(cfg SvcConfigurations, route string, handler http.Hand
 	// tracing only; metrics are recorded by httpMetrics
 	return otelhttp.NewHandler(httpMetrics(cfg, route).Handler(handler), "flagd.sync.http",
 		otelhttp.WithMeterProvider(noop.NewMeterProvider()))
+}
+
+func methodNotAllowed(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Allow", "GET, HEAD")
+	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
 // httpMetrics pins the handler ID to the route; the URL path default would make a path-segment
