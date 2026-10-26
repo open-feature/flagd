@@ -24,6 +24,9 @@ import (
 	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics/metricstest"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/mock/gomock"
 )
@@ -619,4 +622,32 @@ func TestOfrepHTTPMetrics(t *testing.T) {
 			require.Equal(t, test.expectedRoute, route.AsString(), "recorded route")
 		})
 	}
+}
+
+func TestHandlerSetsFeatureFlagSpanAttributes(t *testing.T) {
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	previous := otel.GetTracerProvider()
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() { otel.SetTracerProvider(previous) })
+
+	eval := mock.NewMockIEvaluator(gomock.NewController(t))
+	eval.EXPECT().
+		ResolveAsAnyValue(gomock.Any(), gomock.Any(), flagKey, gomock.Any()).
+		Return(successValue)
+	handler := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, nil, "flagd", SSEConfig{}, newCompression(t))
+
+	request := httptest.NewRequest(http.MethodPost, "/ofrep/v1/evaluate/flags/"+flagKey, nil)
+	handler.ServeHTTP(httptest.NewRecorder(), request)
+
+	spans := recorder.Ended()
+	require.NotEmpty(t, spans)
+	attributes := map[string]string{}
+	for _, span := range spans {
+		for _, attribute := range span.Attributes() {
+			attributes[string(attribute.Key)] = attribute.Value.Emit()
+		}
+	}
+	require.Equal(t, flagKey, attributes["feature_flag.key"])
+	require.Equal(t, successValue.Variant, attributes["feature_flag.result.variant"])
 }
