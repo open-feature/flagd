@@ -57,22 +57,71 @@ func TestMiddlewareExposesMetrics(t *testing.T) {
 }
 
 func TestMiddlewareRecordsStatusCode(t *testing.T) {
-	exp := metric.NewManualReader()
-	m := NewHTTPMetric(Config{
-		MetricRecorder: telemetry.NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), "mySvc"),
-		Service:        "mySvc",
-		Logger:         logger.NewLogger(nil, false),
-		HandlerID:      "id",
-	})
-	handler := m.Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}))
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+	tests := []struct {
+		name         string
+		handler      http.HandlerFunc
+		expectedCode string
+	}{
+		{
+			name:         "implicit 200",
+			handler:      func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) },
+			expectedCode: "200",
+		},
+		{
+			name:         "400",
+			handler:      func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusBadRequest) },
+			expectedCode: "400",
+		},
+		{
+			name:         "404",
+			handler:      func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNotFound) },
+			expectedCode: "404",
+		},
+		{
+			name:         "405",
+			handler:      func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusMethodNotAllowed) },
+			expectedCode: "405",
+		},
+		{
+			name:         "500",
+			handler:      func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusInternalServerError) },
+			expectedCode: "500",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			exp := metric.NewManualReader()
+			m := NewHTTPMetric(Config{
+				MetricRecorder: telemetry.NewOTelRecorder(exp, resource.NewWithAttributes("testSchema"), "mySvc"),
+				Service:        "mySvc",
+				Logger:         logger.NewLogger(nil, false),
+				HandlerID:      "id",
+			})
+			m.Handler(test.handler).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+
+			codes := histogramStatusCodes(t, exp)
+			if len(codes) == 0 {
+				t.Fatal("no histogram data points recorded")
+			}
+			for name, code := range codes {
+				if code != test.expectedCode {
+					t.Errorf("%s: status code %q, want %q", name, code, test.expectedCode)
+				}
+			}
+		})
+	}
+}
+
+// histogramStatusCodes returns the status code label of each float histogram data point, by metric name.
+func histogramStatusCodes(t *testing.T, reader metric.Reader) map[string]string {
+	t.Helper()
 
 	var data metricdata.ResourceMetrics
-	if err := exp.Collect(context.TODO(), &data); err != nil {
+	if err := reader.Collect(context.TODO(), &data); err != nil {
 		t.Fatalf("Got %v", err)
 	}
+	codes := map[string]string{}
 	for _, sm := range data.ScopeMetrics {
 		for _, m := range sm.Metrics {
 			hist, ok := m.Data.(metricdata.Histogram[float64])
@@ -81,12 +130,11 @@ func TestMiddlewareRecordsStatusCode(t *testing.T) {
 			}
 			for _, dp := range hist.DataPoints {
 				code, _ := dp.Attributes.Value(semconv.HTTPResponseStatusCodeKey)
-				if code.AsString() != "405" {
-					t.Errorf("%s: status code %q, want %q", m.Name, code.AsString(), "405")
-				}
+				codes[m.Name] = code.AsString()
 			}
 		}
 	}
+	return codes
 }
 
 func TestMeasure(t *testing.T) {

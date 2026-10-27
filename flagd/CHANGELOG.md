@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.18.1](https://github.com/open-feature/flagd/compare/flagd/v0.18.0...flagd/v0.18.1) (2026-10-26)
+
+
+### 🐛 Bug Fixes
+
+* bound evaluation HTTP metric labels ([#2092](https://github.com/open-feature/flagd/issues/2092)) ([f2e7713](https://github.com/open-feature/flagd/commit/f2e7713ae4fe682cb8bdd2293ecf2ae1717d6b3a))
+* record OFREP and sync HTTP metrics once ([#2103](https://github.com/open-feature/flagd/issues/2103)) ([0a39a29](https://github.com/open-feature/flagd/commit/0a39a29144187fd6db3246fcc0ef16ad230801d3))
+
+
+### ✨ New Features
+
+* add flag set ID to evaluation metrics ([#2078](https://github.com/open-feature/flagd/issues/2078)) ([10f2ca0](https://github.com/open-feature/flagd/commit/10f2ca00c67bf81499f67235f9cb3fc1c51d4ee4))
+* strict numeric range opt, TYPE_MISMATCH on precision loss ([#2100](https://github.com/open-feature/flagd/issues/2100)) ([5cf6fff](https://github.com/open-feature/flagd/commit/5cf6fff17b9ba3604f0c1ec77170d81eb02bbaed))
+
+
+### 🧹 Chore
+
+* **deps:** update module golang.org/x/net to v0.61.0 ([#2097](https://github.com/open-feature/flagd/issues/2097)) ([21db5c3](https://github.com/open-feature/flagd/commit/21db5c3358c5b7e355edd905b4fe975b27cdfdb6))
+* Update CHANGELOG with more details ([3f01794](https://github.com/open-feature/flagd/commit/3f017946657f1ee86be55db9f1d55e7d2d289a5d))
+
 ## [0.18.0](https://github.com/open-feature/flagd/compare/flagd/v0.17.1...flagd/v0.18.0) (2026-10-15)
 
 

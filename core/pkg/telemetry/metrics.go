@@ -109,6 +109,10 @@ func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme strin
 
 // Canonicalizes known HTTP methods and maps unknown ones to _OTHER.
 func standardizeHTTPMethod(method string) string {
+	// standard methods are at most 7 bytes; skip ToUpper's copy for anything longer
+	if len(method) > len(http.MethodConnect) {
+		return "_OTHER"
+	}
 	method = strings.ToUpper(method)
 	switch method {
 	case http.MethodConnect, http.MethodDelete, http.MethodGet, http.MethodHead,
