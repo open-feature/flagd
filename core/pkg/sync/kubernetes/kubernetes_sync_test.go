@@ -1143,7 +1143,23 @@ func TestSync_WatchErrorFromInformer(t *testing.T) {
 	go k.informer.Run(ctx.Done())
 
 	require.Eventually(t, func() bool {
-		return observedLogs.Len() > 0
+		if observedLogs.Len() == 0 {
+			return false
+		}
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(context.Background(), &rm); err != nil {
+			return false
+		}
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				if m.Name == "feature_flag.flagd.sync.client.error" {
+					if data, ok := m.Data.(metricdata.Sum[int64]); ok && len(data.DataPoints) > 0 {
+						return data.DataPoints[0].Value > 0
+					}
+				}
+			}
+		}
+		return false
 	}, 5*time.Second, 50*time.Millisecond)
 
 	require.Contains(t, observedLogs.All()[0].Message, "kubernetes sync watch error: simulated watch error")
