@@ -8,6 +8,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/twmb/murmur3"
+	"go.uber.org/zap"
 )
 
 var cborEncMode, _ = cbor.CoreDetEncOptions().EncMode()
@@ -50,7 +51,7 @@ func NewFractional(logger *logger.Logger) *Fractional {
 func (fe *Fractional) Evaluate(values, data any) any {
 	bytesToDistribute, feDistributions, err := parseFractionalEvaluationData(values, data, fe.Logger)
 	if err != nil {
-		fe.Logger.Warn(fmt.Sprintf("parse fractional evaluation data: %v", err))
+		fe.Logger.Debug("parse fractional evaluation data", zap.Error(err))
 		return nil
 	}
 
@@ -254,7 +255,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 		// clamp negative weights to 0
 		if weight < 0 {
 			// negative weights can be the result of rollout calculations, so we log and clamp to 0 rather than returning an error
-			logger.Debug(fmt.Sprintf("flag %q: negative weight %d clamped to 0", flagKey, weight))
+			logger.Debug("negative weight clamped to 0", zap.String("flagKey", flagKey), zap.Int64("weight", int64(weight)))
 			weight = 0
 		}
 

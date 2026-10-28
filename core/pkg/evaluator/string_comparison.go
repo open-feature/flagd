@@ -2,10 +2,10 @@ package evaluator
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"go.uber.org/zap"
 )
 
 const (
@@ -13,11 +13,7 @@ const (
 	EndsWithEvaluationName   = "ends_with"
 )
 
-// errPropertyAbsent signals that the property operand resolved to nil, meaning
-// the evaluation context simply did not carry the attribute. Targeting rules
-// routinely reference optional attributes, so this is an ordinary condition
-// rather than a misconfiguration, and is reported separately from a genuine
-// type error so the two can be logged differently.
+// property operand resolved to nil; the eval context did not carry the attribute
 var errPropertyAbsent = errors.New(
 	"[start/end]s_with evaluation: property is absent from the evaluation context")
 
@@ -52,26 +48,14 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 	return sce.evaluate(StartsWithEvaluationName, values, strings.HasPrefix)
 }
 
-// evaluate applies cmp to the parsed operands, returning nil -- which jsonLogic
-// treats as falsy -- when they cannot be used.
-//
-// The logging severity here is deliberate. This runs on every evaluation of a
-// rule, so its volume tracks request rate rather than the number of bad rules,
-// and error level additionally attaches a stack trace to each occurrence. A rule
-// referencing an attribute that a client did not send would therefore emit tens
-// of log lines per evaluation, for a condition that is entirely normal. An
-// absent property is logged at debug; a genuinely malformed rule is logged at
-// warn, which still surfaces it but without the stack trace.
+// evaluate applies cmp to the parsed operands, returning nil (falsy) when they cannot be used.
+// Runs per evaluation and is driven by eval context, so failures are logged at debug only.
 func (sce *StringComparisonEvaluator) evaluate(
 	name string, values interface{}, cmp func(string, string) bool,
 ) interface{} {
 	propertyValue, target, err := parseStringComparisonEvaluationData(values)
 	if err != nil {
-		if errors.Is(err, errPropertyAbsent) {
-			sce.Logger.Debug(fmt.Sprintf("%s: %v", name, err))
-		} else {
-			sce.Logger.Warn(fmt.Sprintf("parse %s evaluation data: %v", name, err))
-		}
+		sce.Logger.Debug("string comparison evaluation skipped", zap.String("operator", name), zap.Error(err))
 		return nil
 	}
 	return cmp(propertyValue, target)
