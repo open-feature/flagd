@@ -61,8 +61,8 @@ func (sce *StringComparisonEvaluator) evaluate(
 	return cmp(propertyValue, target)
 }
 
-// EndsWithEvaluation checks if the given property ends with a certain prefix.
-// It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
+// EndsWithEvaluation checks if the given property ends with a certain suffix.
+// It returns 'true', if the value of the given property ends with the suffix, 'false' if not.
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
 //	{
