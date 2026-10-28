@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/open-feature/flagd/compare/flagd/v0.18.1...flagd/v0.18.2) (2026-10-28)
+
+
+### 🐛 Bug Fixes
+
+* bump flagd-schemas to v0.2.15 ([#2113](https://github.com/open-feature/flagd/issues/2113)) ([7c949bd](https://github.com/open-feature/flagd/commit/7c949bd8065429eddc8940f64dcdcb82e39c2eac))
+
 ## [0.18.1](https://github.com/open-feature/flagd/compare/flagd/v0.18.0...flagd/v0.18.1) (2026-10-26)
 
 
