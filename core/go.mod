@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-memdb v1.3.5
-	github.com/open-feature/flagd-schemas v0.2.13
+	github.com/open-feature/flagd-schemas v0.2.15
 	github.com/open-feature/open-feature-operator/api v0.2.47
 	github.com/prometheus/client_golang v1.24.1
 	github.com/robfig/cron/v3 v3.0.1
