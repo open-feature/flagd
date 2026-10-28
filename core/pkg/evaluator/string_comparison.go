@@ -48,8 +48,7 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 	return sce.evaluate(StartsWithEvaluationName, values, strings.HasPrefix)
 }
 
-// evaluate applies cmp to the parsed operands, returning nil (falsy) when they cannot be used.
-// Runs per evaluation and is driven by eval context, so failures are logged at debug only.
+// per-eval and context-driven, so failures log at debug only
 func (sce *StringComparisonEvaluator) evaluate(
 	name string, values interface{}, cmp func(string, string) bool,
 ) interface{} {
@@ -61,8 +60,7 @@ func (sce *StringComparisonEvaluator) evaluate(
 	return cmp(propertyValue, target)
 }
 
-// EndsWithEvaluation checks if the given property ends with a certain suffix.
-// It returns 'true', if the value of the given property ends with the suffix, 'false' if not.
+// EndsWithEvaluation checks if the given property ends with a suffix
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
 //	{
