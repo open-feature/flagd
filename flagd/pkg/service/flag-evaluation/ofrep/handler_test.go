@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -20,7 +22,9 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	"github.com/open-feature/flagd/flagd/pkg/service/middleware"
 	compressmw "github.com/open-feature/flagd/flagd/pkg/service/middleware/compress"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics/metricstest"
 	"github.com/stretchr/testify/require"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/mock/gomock"
 )
 
@@ -52,6 +56,7 @@ type recordedEvaluation struct {
 	reason    string
 	variant   string
 	flagKey   string
+	flagSetID string
 }
 
 type recordingMetricsRecorder struct {
@@ -59,7 +64,10 @@ type recordingMetricsRecorder struct {
 	evaluations []recordedEvaluation
 }
 
-func (r *recordingMetricsRecorder) RecordEvaluation(_ context.Context, err error, reason, variant, flagKey string) {
+func (r *recordingMetricsRecorder) RecordEvaluation(
+	_ context.Context, err error, reason, variant, flagKey string, metadata model.Metadata,
+) {
+	flagSetID, _ := metadata["flagSetId"].(string)
 	errorText := ""
 	if err != nil {
 		errorText = err.Error()
@@ -69,6 +77,7 @@ func (r *recordingMetricsRecorder) RecordEvaluation(_ context.Context, err error
 		reason:    reason,
 		variant:   variant,
 		flagKey:   flagKey,
+		flagSetID: flagSetID,
 	})
 }
 
@@ -447,22 +456,35 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 		expected   recordedEvaluation
 	}{
 		{
-			name:       "successful evaluation",
-			evaluation: successValue,
+			name: "successful evaluation",
+			evaluation: evaluator.AnyValue{
+				Value:    successValue.Value,
+				Variant:  successValue.Variant,
+				Reason:   successValue.Reason,
+				FlagKey:  successValue.FlagKey,
+				Metadata: model.Metadata{"flagSetId": "payments"},
+			},
 			expected: recordedEvaluation{
-				reason:  successValue.Reason,
-				variant: successValue.Variant,
-				flagKey: successValue.FlagKey,
+				reason:    successValue.Reason,
+				variant:   successValue.Variant,
+				flagKey:   successValue.FlagKey,
+				flagSetID: "payments",
 			},
 		},
 		{
-			name:       "failed evaluation",
-			evaluation: genericErrorValue,
+			name: "failed evaluation",
+			evaluation: evaluator.AnyValue{
+				Reason:   genericErrorValue.Reason,
+				FlagKey:  genericErrorValue.FlagKey,
+				Metadata: model.Metadata{"flagSetId": "selected-set"},
+				Error:    genericErrorValue.Error,
+			},
 			expected: recordedEvaluation{
 				errorText: genericErrorValue.Error.Error(),
 				reason:    genericErrorValue.Reason,
 				variant:   genericErrorValue.Variant,
 				flagKey:   genericErrorValue.FlagKey,
+				flagSetID: "selected-set",
 			},
 		},
 	}
@@ -488,7 +510,27 @@ func TestHandlerRecordsSingleEvaluationMetrics(t *testing.T) {
 
 func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 	metrics := &recordingMetricsRecorder{}
-	evaluations := []evaluator.AnyValue{successValue, genericErrorValue, flagNotFoundValue}
+	evaluations := []evaluator.AnyValue{
+		{
+			Value:    successValue.Value,
+			Variant:  successValue.Variant,
+			Reason:   successValue.Reason,
+			FlagKey:  "flag-a",
+			Metadata: model.Metadata{"flagSetId": "set-a"},
+		},
+		{
+			Reason:   genericErrorValue.Reason,
+			FlagKey:  "flag-b",
+			Metadata: model.Metadata{"flagSetId": "set-b"},
+			Error:    genericErrorValue.Error,
+		},
+		{
+			Reason:   flagNotFoundValue.Reason,
+			FlagKey:  "flag-c",
+			Metadata: model.Metadata{"flagSetId": 42},
+			Error:    flagNotFoundValue.Error,
+		},
+	}
 	eval := mock.NewMockIEvaluator(gomock.NewController(t))
 	eval.EXPECT().ResolveAllValues(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(evaluations, model.Metadata{}, nil)
@@ -500,21 +542,23 @@ func TestHandlerRecordsEachBulkEvaluationMetric(t *testing.T) {
 
 	require.Equal(t, []recordedEvaluation{
 		{
-			reason:  successValue.Reason,
-			variant: successValue.Variant,
-			flagKey: successValue.FlagKey,
+			reason:    successValue.Reason,
+			variant:   successValue.Variant,
+			flagKey:   "flag-a",
+			flagSetID: "set-a",
 		},
 		{
 			errorText: genericErrorValue.Error.Error(),
 			reason:    genericErrorValue.Reason,
 			variant:   genericErrorValue.Variant,
-			flagKey:   genericErrorValue.FlagKey,
+			flagKey:   "flag-b",
+			flagSetID: "set-b",
 		},
 		{
 			errorText: flagNotFoundValue.Error.Error(),
 			reason:    flagNotFoundValue.Reason,
 			variant:   flagNotFoundValue.Variant,
-			flagKey:   flagNotFoundValue.FlagKey,
+			flagKey:   "flag-c",
 		},
 	}, metrics.evaluations)
 }
@@ -528,4 +572,51 @@ func newCompression(t *testing.T) middleware.IMiddleware {
 	require.NoError(t, err)
 
 	return compression
+}
+
+func TestOfrepHTTPMetrics(t *testing.T) {
+	evalPath := "/ofrep/v1/evaluate/flags/" + flagKey
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		response      *evaluator.AnyValue
+		expectedCode  string
+		expectedRoute string
+	}{
+		{name: "success", path: evalPath, body: `{"context":{}}`, response: &successValue, expectedCode: "200", expectedRoute: singleEvaluation},
+		{name: "flag not found", path: evalPath, body: `{"context":{}}`, response: &flagNotFoundValue, expectedCode: "404", expectedRoute: singleEvaluation},
+		{name: "invalid context", path: evalPath, body: `{some invalid context}`, expectedCode: "400", expectedRoute: singleEvaluation},
+		{name: "unknown path", path: "/ofrep/v1/unknown", expectedCode: "404", expectedRoute: "/"},
+		{name: "method not allowed", method: http.MethodGet, path: evalPath, expectedCode: "405", expectedRoute: "/"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			eval := mock.NewMockIEvaluator(gomock.NewController(t))
+			if test.response != nil {
+				eval.EXPECT().ResolveAsAnyValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(*test.response)
+			}
+
+			recorder, reader := metricstest.NewRecorder(t, "flagd")
+			h := NewOfrepHandler(logger.NewLogger(nil, false), eval, nil, nil, recorder, "flagd", SSEConfig{}, newCompression(t))
+			method := test.method
+			if method == "" {
+				method = http.MethodPost
+			}
+			response := httptest.NewRecorder()
+			h.ServeHTTP(response, httptest.NewRequest(method, test.path, strings.NewReader(test.body)))
+			require.Equal(t, test.expectedCode, strconv.Itoa(response.Code), "response status code")
+
+			scopes, points := metricstest.RequestDurationPoints(t, reader)
+			require.Equal(t, map[string]bool{"flagd": true}, scopes, "request should be recorded once, by flagd only")
+			require.Len(t, points, 1)
+			require.Equal(t, uint64(1), points[0].Count, "request should be recorded once")
+			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
+			route, _ := points[0].Attributes.Value(semconv.HTTPRouteKey)
+			require.Equal(t, test.expectedRoute, route.AsString(), "recorded route")
+		})
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -67,13 +68,22 @@ func WithEvaluator(name string, evalFunc func(interface{}, interface{}) interfac
 	}
 }
 
+// WithStrictNumericRange rejects numeric variants outside [-(2^53-1), 2^53-1] with TYPE_MISMATCH.
+// Temporary: this will become the default behavior, after which the option will be removed.
+// TODO(#2101): remove
+func WithStrictNumericRange() JSONEvaluatorOption {
+	return func(je *JSON) {
+		je.strictNumericRange = true
+	}
+}
+
 // WithTracerProvider configures the evaluator (and its resolver) to create spans using the given TracerProvider
 // instead of the global one.
 func WithTracerProvider(tp trace.TracerProvider) JSONEvaluatorOption {
 	return func(je *JSON) {
 		tracer := tp.Tracer(jsonEvaluatorTracerName)
 		je.jsonEvalTracer = tracer
-		je.Resolver.tracer = tracer
+		je.tracer = tracer
 	}
 }
 
@@ -148,9 +158,10 @@ func (je *JSON) SetState(payload sync.DataSync) error {
 
 // Resolver implementation for flagd flags. This resolver should be kept reusable, hence must interact with interfaces.
 type Resolver struct {
-	store  store.IStore
-	Logger *logger.Logger
-	tracer trace.Tracer
+	store              store.IStore
+	Logger             *logger.Logger
+	tracer             trace.Tracer
+	strictNumericRange bool // TODO(#2101): remove
 }
 
 func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace.Tracer) Resolver {
@@ -256,6 +267,18 @@ func (je *Resolver) ResolveFloatValue(
 
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating float flag: %s", flagKey))
 	value, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+	if err != nil {
+		return
+	}
+
+	// TODO(#2101): remove this block
+	if !je.strictNumericRange {
+		return
+	}
+
+	if !isSafeRange(value) {
+		return 0, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
+	}
 	return
 }
 
@@ -272,8 +295,44 @@ func (je *Resolver) ResolveIntValue(ctx context.Context, reqID string, flagKey s
 	je.Logger.DebugWithID(reqID, fmt.Sprintf("evaluating int flag: %s", flagKey))
 	var val float64
 	val, variant, reason, metadata, err = resolve[float64](ctx, reqID, flagKey, context, je.evaluateVariant)
+	if err != nil {
+		return
+	}
+
+	// TODO(#2101): remove this block
+	if !je.strictNumericRange {
+		if !isInt64(val) {
+			return 0, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
+		}
+		value = int64(val)
+		return
+	}
+
+	if !isInteger(val) || !isSafeRange(val) {
+		return 0, variant, model.ErrorReason, metadata, errors.New(model.TypeMismatchErrorCode)
+	}
 	value = int64(val)
 	return
+}
+
+// maxSafeInteger is 2^53-1, the largest integer exactly representable as a float64
+const maxSafeInteger = 1<<53 - 1
+
+// reports whether f has no fractional part
+func isInteger(f float64) bool {
+	return f == math.Trunc(f)
+}
+
+// TODO(#2101): remove
+// reports whether f has no fractional part and fits in an int64
+func isInt64(f float64) bool {
+	// 2^63 is exact as a float64; MaxInt64 is not
+	return isInteger(f) && f >= math.MinInt64 && f < 1<<63
+}
+
+// reports whether f is within [-(2^53-1), 2^53-1]
+func isSafeRange(f float64) bool {
+	return math.Abs(f) <= maxSafeInteger
 }
 
 func (je *Resolver) ResolveObjectValue(
@@ -439,7 +498,7 @@ func setFlagdProperties(
 		context = map[string]any{}
 	}
 
-	newContext := maps.Clone(context)
+	newContext := maps.Clone(context) //nolint:govet // linter can't inline generics
 
 	if _, ok := newContext[flagdPropertiesKey]; ok {
 		log.Warn("overwriting $flagd properties in the context")
@@ -524,7 +583,22 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		}
 		definition.Flags = flags
 	}
+	je.warnUnsafeNumericVariants(definition)
 	return validateDefaultVariants(definition)
+}
+
+// warnUnsafeNumericVariants warns about numeric variants outside the safe range
+func (je *JSON) warnUnsafeNumericVariants(definition *Definition) {
+	for _, flag := range definition.Flags {
+		for name, v := range flag.Variants {
+			if f, ok := v.(float64); ok && !isSafeRange(f) {
+				// TODO(#2101): update message
+				je.Logger.Warn(fmt.Sprintf(
+					"variant '%s' of flag '%s' is outside [-(2^53-1), 2^53-1]; it may be inaccurate "+
+						"and is rejected in strict numeric range mode (the default in future versions)", name, flag.Key))
+			}
+		}
+	}
 }
 
 // validateDefaultVariants returns an error if any of the default variants aren't valid

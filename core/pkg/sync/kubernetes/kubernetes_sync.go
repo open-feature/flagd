@@ -14,6 +14,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -86,7 +87,16 @@ func (k *Sync) Init(_ context.Context) error {
 
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(k.dynamicClient, resyncPeriod, k.namespace, nil)
+	// Restrict the list/watch to the configured FeatureFlag so that every source only caches its own resource.
+	crdName := k.crdName
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(
+		k.dynamicClient,
+		resyncPeriod,
+		k.namespace,
+		func(options *metav1.ListOptions) {
+			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", crdName).String()
+		},
+	)
 
 	k.informer = factory.ForResource(featureFlagResource).Informer()
 

@@ -100,8 +100,8 @@ func (s *Server) Shutdown() {
 // keepalive policy so provider pings on the long-lived SyncFlags stream aren't rejected with GOAWAY ENHANCE_YOUR_CALM
 func keepAliveEnforcementPolicy(cfg service.Configuration) keepalive.EnforcementPolicy {
 	return keepalive.EnforcementPolicy{
-		MinTime:             cfg.KeepAliveMinTime,
-		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream,
+		MinTime:             cfg.KeepAliveMinTime,             //nolint:staticcheck // still honoured by the proxy's grpc server
+		PermitWithoutStream: cfg.KeepAlivePermitWithoutStream, //nolint:staticcheck // still honoured by the proxy's grpc server
 	}
 }
 

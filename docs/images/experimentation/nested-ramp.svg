@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 680 240' width='680' height='240' font-family='-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif' role='img'>
+<title>Gate and split use different seeds; ramping the gate leaves the split untouched</title>
+<text x='140' y='18' font-size='12' font-weight='600' fill='#8a8a99'>gate — seed with -enrollment-gate-</text>
+<text x='128' y='60.0' text-anchor='end' font-size='13' fill='#8a8a99'>before 20/80</text>
+<rect x='140.0' y='40' width='104.0' height='30' fill='#2f9e44'/>
+<text x='192.0' y='60.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>in</text>
+<rect x='244.0' y='40' width='416.0' height='30' fill='#868e96'/>
+<text x='452.0' y='60.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>out</text>
+<line x1='244.0' y1='40' x2='244.0' y2='70' stroke='#fff' stroke-width='2'/>
+<text x='128' y='110.0' text-anchor='end' font-size='13' fill='#8a8a99'>after 40/60</text>
+<rect x='140.0' y='90' width='208.0' height='30' fill='#2f9e44'/>
+<text x='244.0' y='110.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>in</text>
+<rect x='348.0' y='90' width='312.0' height='30' fill='#868e96'/>
+<text x='504.0' y='110.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>out</text>
+<line x1='348.0' y1='90' x2='348.0' y2='120' stroke='#fff' stroke-width='2'/>
+<path d='M196.4,30 L208.4,30 L202.4,38 Z' fill='#8a8a99'/>
+<path d='M196.4,80 L208.4,80 L202.4,88 Z' fill='#8a8a99'/>
+<text x='140' y='150' font-size='12' font-weight='600' fill='#8a8a99'>split — seed with -arms-split-, never edited</text>
+<text x='128' y='192.0' text-anchor='end' font-size='13' fill='#8a8a99'>1/1</text>
+<rect x='140.0' y='172' width='260.0' height='30' fill='#5d5dff'/>
+<text x='270.0' y='192.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>test</text>
+<rect x='400.0' y='172' width='260.0' height='30' fill='#d9480f'/>
+<text x='530.0' y='192.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>control</text>
+<line x1='400.0' y1='172' x2='400.0' y2='202' stroke='#fff' stroke-width='2'/>
+<path d='M503.2,162 L515.2,162 L509.2,170 Z' fill='#8a8a99'/>
+<text x='140' y='225' font-size='12' fill='#8a8a99'>One user, two independent positions. Ramping the gate never changes the arm.</text>
+</svg>

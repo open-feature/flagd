@@ -239,7 +239,8 @@ jobs:
             env CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build ${{ env.BUILD_ARGS }} -tags fips140 -o "$bin" ./${{ matrix.path }}/main.go
             # The toolchain adds fips140v1.0 only when GOFIPS140 is set, so both
             # tags together prove the binary built as the FIPS variant.
-            go version -m "$bin" | grep -q -- '-tags=fips140,fips140v1.0' \
+            build_info=$(go version -m "$bin")
+            grep -q -- '-tags=fips140,fips140v1.0' <<<"$build_info" \
               || { echo "::error::$bin is not a FIPS 140-3 build"; exit 1; }
             archive="${{ matrix.path }}-fips_${{ env.VERSION_NO_PREFIX }}_${label}"
             if [ "$format" = tar ]; then

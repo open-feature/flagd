@@ -23,6 +23,7 @@ import (
 	"github.com/rs/xid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -90,27 +91,33 @@ func NewOfrepHandler(
 	// uncompressed body.
 	compress := compression.Handler
 
-	router := mux.NewRouter()
-	router.Handle(singleEvaluation,
-		metricsmw.NewHTTPMetric(metricsmw.Config{
+	withMetrics := func(handlerID string, next http.Handler) http.Handler {
+		return metricsmw.NewHTTPMetric(metricsmw.Config{
 			Service:        serviceName,
 			MetricRecorder: metricsRecorder,
 			Logger:         logger,
-			HandlerID:      singleEvaluation,
-		}).Handler(compress(http.HandlerFunc(h.HandleFlagEvaluation))),
+			HandlerID:      handlerID,
+		}).Handler(next)
+	}
+
+	router := mux.NewRouter()
+	router.Handle(singleEvaluation,
+		withMetrics(singleEvaluation, compress(http.HandlerFunc(h.HandleFlagEvaluation))),
 	).Methods("POST")
 
 	// conditionalETag sits inside the metrics middleware so a 304 is recorded as a 304.
 	router.Handle(bulkEvaluation,
-		metricsmw.NewHTTPMetric(metricsmw.Config{
-			Service:        serviceName,
-			MetricRecorder: metricsRecorder,
-			Logger:         logger,
-			HandlerID:      bulkEvaluation,
-		}).Handler(compress(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation)))),
+		withMetrics(bulkEvaluation, compress(conditionalETag(h.configEtagDiffers, http.HandlerFunc(h.HandleBulkEvaluation)))),
 	).Methods("POST")
 
-	return otelhttp.NewHandler(router, "flagd.ofrep")
+	// record unmatched requests under a bounded route
+	router.NotFoundHandler = withMetrics("/", http.NotFoundHandler())
+	router.MethodNotAllowedHandler = withMetrics("/", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}))
+
+	// tracing only; metrics are recorded by metricsmw above
+	return otelhttp.NewHandler(router, "flagd.ofrep", otelhttp.WithMeterProvider(noop.NewMeterProvider()))
 }
 
 func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +155,10 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
 	if h.metricsRecorder != nil {
-		h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+		h.metricsRecorder.RecordEvaluation(
+			ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
+			evaluation.Metadata,
+		)
 	}
 	if evaluation.Error != nil {
 		status, evaluationError := ofrep.EvaluationErrorResponseFrom(evaluation)
@@ -182,7 +192,10 @@ func (h *handler) HandleBulkEvaluation(w http.ResponseWriter, r *http.Request) {
 	evaluations, metadata, err := h.evaluator.ResolveAllValues(ctx, requestID, evaluationContext)
 	if h.metricsRecorder != nil {
 		for _, evaluation := range evaluations {
-			h.metricsRecorder.RecordEvaluation(ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey)
+			h.metricsRecorder.RecordEvaluation(
+				ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,
+				evaluation.Metadata,
+			)
 		}
 	}
 	if err != nil {
