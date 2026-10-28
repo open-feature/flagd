@@ -2,16 +2,20 @@ package evaluator
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"go.uber.org/zap"
 )
 
 const (
 	StartsWithEvaluationName = "starts_with"
 	EndsWithEvaluationName   = "ends_with"
 )
+
+// property operand resolved to nil; the eval context did not carry the attribute
+var errPropertyAbsent = errors.New(
+	"[start/end]s_with evaluation: property is absent from the evaluation context")
 
 type StringComparisonEvaluator struct {
 	Logger *logger.Logger
@@ -41,16 +45,22 @@ func NewStringComparisonEvaluator(log *logger.Logger) *StringComparisonEvaluator
 // Note that the 'starts_with' evaluation rule must contain exactly two items, which both resolve to a
 // string value
 func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}) interface{} {
-	propertyValue, target, err := parseStringComparisonEvaluationData(values)
-	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse starts_with evaluation data: %v", err))
-		return nil
-	}
-	return strings.HasPrefix(propertyValue, target)
+	return sce.evaluate(StartsWithEvaluationName, values, strings.HasPrefix)
 }
 
-// EndsWithEvaluation checks if the given property ends with a certain prefix.
-// It returns 'true', if the value of the given property starts with the prefix, 'false' if not.
+// per-eval and context-driven, so failures log at debug only
+func (sce *StringComparisonEvaluator) evaluate(
+	name string, values interface{}, cmp func(string, string) bool,
+) interface{} {
+	propertyValue, target, err := parseStringComparisonEvaluationData(values)
+	if err != nil {
+		sce.Logger.Debug("string comparison evaluation skipped", zap.String("operator", name), zap.Error(err))
+		return nil
+	}
+	return cmp(propertyValue, target)
+}
+
+// EndsWithEvaluation checks if the given property ends with a suffix
 // As an example, it can be used in the following way inside an 'if' evaluation:
 //
 //	{
@@ -69,12 +79,7 @@ func (sce *StringComparisonEvaluator) StartsWithEvaluation(values, _ interface{}
 // Note that the 'ends_with'  evaluation rule must contain exactly two items, which both resolve to a
 // string value
 func (sce *StringComparisonEvaluator) EndsWithEvaluation(values, _ interface{}) interface{} {
-	propertyValue, target, err := parseStringComparisonEvaluationData(values)
-	if err != nil {
-		sce.Logger.Error(fmt.Sprintf("parse ends_with evaluation data: %v", err))
-		return nil
-	}
-	return strings.HasSuffix(propertyValue, target)
+	return sce.evaluate(EndsWithEvaluationName, values, strings.HasSuffix)
 }
 
 // parseStringComparisonEvaluationData tries to parse the input for the starts_with/ends_with evaluation.
@@ -109,6 +114,12 @@ func parseStringComparisonEvaluationData(values interface{}) (string, string, er
 
 	if len(parsed) != 2 {
 		return "", "", errors.New("[start/end]s_with evaluation must contain a value and a comparison target")
+	}
+
+	// jsonLogic resolves a `var` referencing a missing attribute to nil, so this
+	// distinguishes "the context did not carry it" from "it was the wrong type".
+	if parsed[0] == nil {
+		return "", "", errPropertyAbsent
 	}
 
 	property, ok := parsed[0].(string)

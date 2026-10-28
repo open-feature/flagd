@@ -372,3 +372,17 @@ func TestStringComparisonEvaluation_ErrorFallbackWhenUsedDirectly(t *testing.T) 
 
 	runErrorFallbackTests(t, ctx, source, "string-op-error-fallback", tests)
 }
+
+// sentinel lets the debug log say why the comparison was skipped
+func Test_parseStringComparisonEvaluationData_absentProperty(t *testing.T) {
+	_, _, err := parseStringComparisonEvaluationData([]interface{}{nil, "prefix"})
+
+	assert.ErrorIs(t, err, errPropertyAbsent)
+}
+
+func Test_parseStringComparisonEvaluationData_wrongTypeIsNotAbsent(t *testing.T) {
+	_, _, err := parseStringComparisonEvaluationData([]interface{}{1, "prefix"})
+
+	assert.Error(t, err)
+	assert.NotErrorIs(t, err, errPropertyAbsent)
+}
