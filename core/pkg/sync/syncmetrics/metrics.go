@@ -145,11 +145,6 @@ func (r *Recorder) RecordSyncError(ctx context.Context, sourceType, uri, selecto
 	r.syncError.Add(ctx, 1, attributes(sourceType, uri, selector))
 }
 
-// RecordWatchError records an error from a watch-based sync source.
-func (r *Recorder) RecordWatchError(ctx context.Context, sourceType, uri, selector string) {
-	r.RecordSyncError(ctx, sourceType, uri, selector)
-}
-
 // SanitizeURI strips userinfo, query, and fragment from a sync-source URI so
 // token- or credential-bearing URIs don't land as Prometheus attribute values.
 // Fails closed: any input url.Parse rejects returns "" rather than a partially

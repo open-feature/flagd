@@ -50,18 +50,16 @@ func TestNewRecorder_NilProviderIsSafe(t *testing.T) {
 	r := NewRecorder(nil)
 	require.NotNil(t, r)
 	// These must not panic even though nothing is being observed.
-	r.RecordFlagConfigReceived(context.Background(), SourceGRPC, testURI, testSelector)
-	r.RecordSyncError(context.Background(), SourceGRPC, testURI, testSelector)
-	r.RecordWatchError(context.Background(), SourceGRPC, testURI, testSelector)
+	r.RecordFlagConfigReceived(t.Context(), SourceGRPC, testURI, testSelector)
+	r.RecordSyncError(t.Context(), SourceGRPC, testURI, testSelector)
 }
 
 func TestRecorder_NilReceiverIsSafe(t *testing.T) {
 	var r *Recorder
 	// Callers that hold a *Recorder must be able to invoke record methods unconditionally
 	// even if the value was never constructed.
-	r.RecordFlagConfigReceived(context.Background(), SourceGRPC, testURI, testSelector)
-	r.RecordSyncError(context.Background(), SourceGRPC, testURI, testSelector)
-	r.RecordWatchError(context.Background(), SourceGRPC, testURI, testSelector)
+	r.RecordFlagConfigReceived(t.Context(), SourceGRPC, testURI, testSelector)
+	r.RecordSyncError(t.Context(), SourceGRPC, testURI, testSelector)
 }
 
 func TestRecordFlagConfigReceived_IncrementsCounterAndUpdatesTimestamp(t *testing.T) {
@@ -162,7 +160,7 @@ func TestRecordFlagConfigReceived_MultipleSourcesEmitDistinctSeries(t *testing.T
 
 func TestRecordSyncError_IncrementsCounterAndEmitsDualAttributes(t *testing.T) {
 	r, reader := newTestRecorder(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	r.RecordSyncError(ctx, SourceKubernetes, "my-ns/my-crd", "")
 	r.RecordSyncError(ctx, SourceKubernetes, "my-ns/my-crd", "")
@@ -181,21 +179,6 @@ func TestRecordSyncError_IncrementsCounterAndEmitsDualAttributes(t *testing.T) {
 	assertAttr(t, set, AttrLegacyProvider, SourceKubernetes)
 	assertAttr(t, set, AttrURI, "my-ns/my-crd")
 	assertAttr(t, set, AttrLegacyURI, "my-ns/my-crd")
-}
-
-func TestRecordWatchError_IncrementsCounter(t *testing.T) {
-	r, reader := newTestRecorder(t)
-	ctx := context.Background()
-
-	r.RecordWatchError(ctx, SourceKubernetes, "my-ns/my-crd", "")
-
-	rm := collect(t, reader)
-	counter := findMetric(rm, metricSyncError)
-	require.NotNil(t, counter, "expected metric %s", metricSyncError)
-	cSum, ok := counter.Data.(metricdata.Sum[int64])
-	require.True(t, ok)
-	require.Len(t, cSum.DataPoints, 1)
-	require.EqualValues(t, 1, cSum.DataPoints[0].Value)
 }
 
 // assertAttr fails the test if the attribute set doesn't contain the expected key/value.

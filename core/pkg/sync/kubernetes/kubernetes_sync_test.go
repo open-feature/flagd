@@ -984,8 +984,9 @@ func toUnstructured(t *testing.T, obj interface{}) *unstructured.Unstructured {
 type MockInformer struct {
 	cache.SharedInformer
 	fake.FakeDynamicClient
-	fakeStore         cache.FakeCustomStore
-	watchErrorHandler cache.WatchErrorHandler
+	fakeStore                    cache.FakeCustomStore
+	watchErrorHandler            cache.WatchErrorHandler
+	watchErrorHandlerWithContext cache.WatchErrorHandlerWithContext
 }
 
 func (m *MockInformer) GetStore() cache.Store {
@@ -994,6 +995,11 @@ func (m *MockInformer) GetStore() cache.Store {
 
 func (m *MockInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
 	m.watchErrorHandler = handler
+	return nil
+}
+
+func (m *MockInformer) SetWatchErrorHandlerWithContext(handler cache.WatchErrorHandlerWithContext) error {
+	m.watchErrorHandlerWithContext = handler
 	return nil
 }
 
@@ -1070,19 +1076,22 @@ func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
 	}
 
 	require.NoError(t, sync.setWatchErrorHandler())
-	require.NotNil(t, mockInformer.watchErrorHandler)
+	require.NotNil(t, mockInformer.watchErrorHandlerWithContext)
 
 	testErr := errors.New("forbidden: cannot watch featureflags")
-	mockInformer.watchErrorHandler(nil, testErr)
+	mockInformer.watchErrorHandlerWithContext(t.Context(), nil, testErr)
 
 	// Check log
 	logs := observedLogs.All()
 	require.Len(t, logs, 1)
-	require.Equal(t, "kubernetes sync watch error: forbidden: cannot watch featureflags", logs[0].Message)
+	require.Equal(t, "kubernetes sync watch error", logs[0].Message)
+	errField, ok := logs[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Equal(t, "forbidden: cannot watch featureflags", errField)
 
 	// Check metrics
 	var rm metricdata.ResourceMetrics
-	require.NoError(t, reader.Collect(context.Background(), &rm))
+	require.NoError(t, reader.Collect(t.Context(), &rm))
 	require.NotEmpty(t, rm.ScopeMetrics)
 	var foundMetric *metricdata.Metrics
 	for _, sm := range rm.ScopeMetrics {
@@ -1135,19 +1144,16 @@ func TestSync_WatchErrorFromInformer(t *testing.T) {
 		logger:              observedLogger,
 		SyncMetricsRecorder: recorder,
 	}
-	require.NoError(t, k.Init(context.TODO()))
+	require.NoError(t, k.Init(t.Context()))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go k.informer.Run(ctx.Done())
+	go k.informer.Run(t.Context().Done())
 
 	require.Eventually(t, func() bool {
 		if observedLogs.Len() == 0 {
 			return false
 		}
 		var rm metricdata.ResourceMetrics
-		if err := reader.Collect(context.Background(), &rm); err != nil {
+		if err := reader.Collect(t.Context(), &rm); err != nil {
 			return false
 		}
 		for _, sm := range rm.ScopeMetrics {
@@ -1162,10 +1168,13 @@ func TestSync_WatchErrorFromInformer(t *testing.T) {
 		return false
 	}, 5*time.Second, 50*time.Millisecond)
 
-	require.Contains(t, observedLogs.All()[0].Message, "kubernetes sync watch error: simulated watch error")
+	require.Equal(t, "kubernetes sync watch error", observedLogs.All()[0].Message)
+	errField, ok := observedLogs.All()[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Contains(t, errField, "simulated watch error")
 
 	var rm metricdata.ResourceMetrics
-	require.NoError(t, reader.Collect(context.Background(), &rm))
+	require.NoError(t, reader.Collect(t.Context(), &rm))
 	var foundMetric *metricdata.Metrics
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {

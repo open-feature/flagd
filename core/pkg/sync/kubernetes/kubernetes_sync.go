@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
@@ -100,9 +101,7 @@ func (k *Sync) Init(_ context.Context) error {
 
 	k.informer = factory.ForResource(featureFlagResource).Informer()
 	if err := k.setWatchErrorHandler(); err != nil {
-		if k.logger != nil {
-			k.logger.Error(fmt.Sprintf("failed to set watch error handler: %s", err.Error()))
-		}
+		k.logger.Error("failed to set watch error handler", zap.Error(err))
 	}
 
 	return nil
@@ -112,16 +111,10 @@ func (k *Sync) setWatchErrorHandler() error {
 	if k.informer == nil {
 		return nil
 	}
-	return k.informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
-		if k.logger != nil {
-			if err != nil {
-				k.logger.Error(fmt.Sprintf("kubernetes sync watch error: %s", err.Error()))
-			} else {
-				k.logger.Error("kubernetes sync watch error: unknown error")
-			}
-		}
+	return k.informer.SetWatchErrorHandlerWithContext(func(ctx context.Context, r *cache.Reflector, err error) {
+		k.logger.Error("kubernetes sync watch error", zap.Error(err))
 		if k.SyncMetricsRecorder != nil {
-			k.SyncMetricsRecorder.RecordSyncError(context.Background(), syncmetrics.SourceKubernetes, k.URI, "")
+			k.SyncMetricsRecorder.RecordSyncError(ctx, syncmetrics.SourceKubernetes, k.URI, "")
 		}
 	})
 }
@@ -249,12 +242,6 @@ func (k *Sync) notify(ctx context.Context, c chan<- INotify) {
 	objectKey := types.NamespacedName{
 		Name:      k.crdName,
 		Namespace: k.namespace,
-	}
-
-	if err := k.setWatchErrorHandler(); err != nil {
-		if k.logger != nil {
-			k.logger.Error(fmt.Sprintf("failed to set watch error handler: %s", err.Error()))
-		}
 	}
 
 	if _, err := k.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
