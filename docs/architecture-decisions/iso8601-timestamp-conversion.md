@@ -117,7 +117,11 @@ Other runtimes need to apply them explicitly: Go's `time.Date`, for example, doc
 
 The accepted profile is deliberately narrow so that each implementation can use a strict parser:
 
-- **All runtimes**: validate every field before constructing the time: month `01`–`12`, day within the month (including leap years), hour `00`–`23`, minute and second `00`–`59`, and an offset of at most `±23:59`. Alternatively, construct it and check that the components round-trip. Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02` and `24:00:00` becomes the next day, so without these checks `24:00:00`, `18:60:00` or `23:59:60` would be accepted instead of being evaluation errors.
+- **All runtimes**: validate every field before constructing the time: month `01`–`12`, day within the month (including leap years),
+  hour `00`–`23`, minute and second `00`–`59`, and an offset of at most `±23:59`.
+  Alternatively, construct it and check that the components round-trip.
+  Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02` and `24:00:00` becomes the next day,
+  so without these checks `24:00:00`, `18:60:00` or `23:59:60` would be accepted instead of being evaluation errors.
 - **Go**: a regular expression for the profile, then `time.Date` in the evaluation `*time.Location` (or the parsed fixed offset), after the calendar check above. Avoid `time.Parse` layouts with optional parts.
 - **Java**: `java.time` (`OffsetDateTime`, `LocalDateTime`, `LocalDate`), after validating the profile with a regular expression, as `DateTimeFormatter.ISO_*` accepts more than the profile.
 - **JavaScript**: a regular expression plus an offset computed from the evaluation timezone with `Intl.DateTimeFormat`; do **not** use `Date.parse`, whose handling of date-only and offset-less strings differs from the rules above. `Date.UTC` maps years `0`–`99` to `1900`–`1999`, so set the year with `setUTCFullYear` (e.g. on `new Date(0)`) instead of passing it to `Date.UTC`.
