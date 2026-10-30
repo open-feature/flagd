@@ -1,0 +1,19 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 680 190' width='680' height='190' font-family='-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif' role='img'>
+<title>With the same seed on gate and split, all enrolled users land in test</title>
+<rect x='140.0' y='18' width='104.0' height='132' fill='#8a8a99' fill-opacity='0.18' stroke='#8a8a99' stroke-dasharray='4 3'/>
+<text x='192.0' y='168' text-anchor='middle' font-size='12' fill='#8a8a99'>enrolled users</text>
+<text x='128' y='50.0' text-anchor='end' font-size='13' fill='#8a8a99'>gate 20/80</text>
+<rect x='140.0' y='30' width='104.0' height='30' fill='#2f9e44'/>
+<text x='192.0' y='50.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>in</text>
+<rect x='244.0' y='30' width='416.0' height='30' fill='#868e96'/>
+<text x='452.0' y='50.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>out</text>
+<line x1='244.0' y1='30' x2='244.0' y2='60' stroke='#fff' stroke-width='2'/>
+<text x='128' y='120.0' text-anchor='end' font-size='13' fill='#8a8a99'>split 1/1</text>
+<rect x='140.0' y='100' width='260.0' height='30' fill='#5d5dff'/>
+<text x='270.0' y='120.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>test</text>
+<rect x='400.0' y='100' width='260.0' height='30' fill='#d9480f'/>
+<text x='530.0' y='120.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>control</text>
+<line x1='400.0' y1='100' x2='400.0' y2='130' stroke='#fff' stroke-width='2'/>
+<text x='530.0' y='92' text-anchor='middle' font-size='12' fill='#8a8a99'>same seed = same position on both lines</text>
+<text x='530.0' y='168' text-anchor='middle' font-size='12' fill='#8a8a99'>control never receives anyone</text>
+</svg>
