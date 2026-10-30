@@ -79,9 +79,13 @@ Rules:
 
 - Separators are required (extended format): `YYYY-MM-DD`, `T`, `HH:MM[:SS[.fraction]]`, and an offset of `Z` or `±HH:MM`. `T` and `Z` may be lowercase, as RFC 3339 allows.
 - Week dates (`2026-W15-3`), ordinal dates (`2026-098`), basic format without separators, durations, intervals and reduced precision other than the forms above are **not** accepted.
-- Fractional seconds are truncated (not rounded), so the result is always an integer.
-- A number (integer) argument is returned unchanged, so rules can accept either form from context.
-- Anything else (invalid format, out-of-range fields such as month `13`, a leap second `23:59:60`, non-string non-number values) returns `null` and logs a warning, following the convention of the other custom operations. A `null` makes numeric comparisons false, so a malformed time never enables a flag by accident.
+- Years are `0001` to `9999`, and the date must exist in the calendar: `2026-02-30`, `2026-04-31` and `2025-02-29` are invalid, `2024-02-29` is valid.
+- A fraction has one or more digits, with no upper limit. It is discarded (truncated, not rounded), so its length never changes the result, and the result is always an integer.
+- Truncation drops the fractional part of the civil time before conversion, which is the same as rounding the instant down (towards negative infinity). Before 1970 this differs from truncating the numeric value towards zero: `1969-12-31T23:59:59.750Z` gives `-1`, not `0`.
+- An integer number argument is returned unchanged, so rules can accept either form from context. A number with a fractional part (such as `3.5`) is invalid.
+- Anything else (invalid format, out-of-range fields such as month `13`, a date that doesn't exist, a leap second `23:59:60`, a non-integer number, or a value that is neither a string nor a number) is an **evaluation error**, and a warning is logged.
+
+`to_timestamp` deliberately does not return `null` for invalid input, unlike the other custom operations. JSONLogic implementations convert `null` to `0` in numeric comparisons (the Go `jsonlogic` library used by flagd does), so `{ ">=": [{ "var": "$flagd.timestamp" }, { "to_timestamp": "not a date" }] }` would be true and a malformed time would enable a flag. As an evaluation error, the flag resolves the same way as for any other targeting rule that can't be evaluated, so a malformed time never enables a flag by accident.
 
 ### Evaluation Timezone
 
@@ -109,15 +113,16 @@ Other runtimes need to apply them explicitly: Go's `time.Date`, for example, doc
 
 The accepted profile is deliberately narrow so that each implementation can use a strict parser:
 
-- **Go**: a regular expression for the profile, then `time.Date` in the evaluation `*time.Location` (or the parsed fixed offset). Avoid `time.Parse` layouts with optional parts.
+- **All runtimes**: validate the calendar date (day within the month, including leap years) before constructing the time, or construct it and check that the components round-trip. Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02`.
+- **Go**: a regular expression for the profile, then `time.Date` in the evaluation `*time.Location` (or the parsed fixed offset), after the calendar check above. Avoid `time.Parse` layouts with optional parts.
 - **Java**: `java.time` (`OffsetDateTime`, `LocalDateTime`, `LocalDate`), after validating the profile with a regular expression, as `DateTimeFormatter.ISO_*` accepts more than the profile.
-- **JavaScript**: a regular expression plus `Date.UTC` and an offset computed from the evaluation timezone with `Intl.DateTimeFormat`; do **not** use `Date.parse`, whose handling of date-only and offset-less strings differs from the rules above.
+- **JavaScript**: a regular expression plus an offset computed from the evaluation timezone with `Intl.DateTimeFormat`; do **not** use `Date.parse`, whose handling of date-only and offset-less strings differs from the rules above. `Date.UTC` maps years `0`–`99` to `1900`–`1999`, so set the year with `setUTCFullYear` (e.g. on `new Date(0)`) instead of passing it to `Date.UTC`.
 - **Python**: a regular expression plus `datetime` and `zoneinfo`; do not rely on `datetime.fromisoformat`, which accepts different inputs across Python versions.
 - **.NET**: a regular expression plus `DateTimeOffset` and `TimeZoneInfo`, rather than culture-sensitive parsing.
 
 ### API Changes
 
-- `to_timestamp` is added to the targeting JSON schema in `flagd-schemas` as a custom operation taking a single string, number or JSONLogic expression (or a one-element array of these).
+- `to_timestamp` is added to the targeting JSON schema in `flagd-schemas` as a custom operation taking a single string, integer or JSONLogic expression (or a one-element array of these).
 - flagd and the in-process providers get the evaluation timezone option described above.
 - Documentation: a new page under `docs/reference/custom-operations/`, and a cross-reference from the `$flagd.timestamp` documentation.
 
@@ -125,11 +130,12 @@ The accepted profile is deliberately narrow so that each implementation can use 
 
 Shared test cases in the flagd testbed (Gherkin), so every implementation is checked against the same expectations:
 
-- each accepted form, with `Z`, positive and negative offsets, and fractional seconds;
+- each accepted form, with `Z`, positive and negative offsets, and fractional seconds, including a fraction longer than nine digits;
+- a time before 1970 with a fraction (`1969-12-31T23:59:59.750Z` gives `-1`) and the earliest year (`0001-01-01`);
 - date-only and offset-less inputs with the default (UTC) and an overridden timezone;
 - an ambiguous and a non-existent local time across a DST transition;
-- invalid inputs: wrong separators, week and ordinal dates, month `13`, `23:59:60`, empty string, non-string values; all yield `null`;
-- a number argument returned unchanged;
+- invalid inputs: wrong separators, week and ordinal dates, month `13`, dates that don't exist (`2026-02-30`, `2025-02-29`), `23:59:60`, empty string, a non-integer number, and values that are neither strings nor numbers; all are evaluation errors, and a rule comparing `$flagd.timestamp` with one of them does not match;
+- an integer argument returned unchanged;
 - composition with `$flagd.timestamp` and numeric operators.
 
 ### Consequences
