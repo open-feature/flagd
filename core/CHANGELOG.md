@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.3](https://github.com/open-feature/flagd/compare/core/v0.19.2...core/v0.19.3) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* debug logging for op errs, sample logging ([#2019](https://github.com/open-feature/flagd/issues/2019)) ([50d0f55](https://github.com/open-feature/flagd/commit/50d0f559adbd2318ffc2c2cc83ebf229ec034e70))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.6 [security] ([#2114](https://github.com/open-feature/flagd/issues/2114)) ([bf167aa](https://github.com/open-feature/flagd/commit/bf167aaa7686f78bcd206f8b76365d4babfb5a5d))
+
 ## [0.19.2](https://github.com/open-feature/flagd/compare/core/v0.19.1...core/v0.19.2) (2026-10-28)
 
 
