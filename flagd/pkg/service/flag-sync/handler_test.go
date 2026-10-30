@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -52,52 +53,46 @@ func TestSyncHandler_SyncFlags(t *testing.T) {
 		},
 	}
 
-	for _, disableSyncMetadata := range []bool{true, false} {
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				// Shared handler for testing both GetMetadata & SyncFlags methods
-				flagStore, err := store.NewStore(logger.NewLogger(nil, false), tt.sources)
-				require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagStore, err := store.NewStore(logger.NewLogger(nil, false), tt.sources)
+			require.NoError(t, err)
 
-				handler := syncHandler{
-					store:               flagStore,
-					contextValues:       tt.contextValues,
-					log:                 logger.NewLogger(nil, false),
-					disableSyncMetadata: disableSyncMetadata,
-					metricsRecorder:     &telemetry.NoopMetricsRecorder{},
-				}
+			handler := syncHandler{
+				store:           flagStore,
+				contextValues:   tt.contextValues,
+				log:             logger.NewLogger(nil, false),
+				metricsRecorder: &telemetry.NoopMetricsRecorder{},
+			}
 
-				// Test getting metadata from `GetMetadata` (deprecated)
-				// remove when `GetMetadata` is full removed and deprecated
-				metaResp, err := handler.GetMetadata(context.Background(), connect.NewRequest(&syncv1.GetMetadataRequest{}))
-				if !disableSyncMetadata {
-					require.NoError(t, err)
-					respMetadata := metaResp.Msg.GetMetadata().AsMap()
-					assert.Equal(t, tt.wantMetadata, respMetadata)
-				} else {
-					assert.NotNil(t, err)
-				}
+			// Test metadata from sync_context
+			stream := newMockSyncFlagsStream()
 
-				// Test metadata from sync_context
-				stream := newMockSyncFlagsStream()
+			go func() {
+				err := handler.syncFlags(context.Background(), nil, "", "", stream)
+				assert.NoError(t, err)
+			}()
 
-				go func() {
-					err := handler.syncFlags(context.Background(), nil, "", "", stream)
-					assert.NoError(t, err)
-				}()
-
-				select {
-				case <-stream.respReady:
-					syncResp := stream.GetLastResponse()
-					assert.NotNil(t, syncResp)
-					syncMetadata := syncResp.GetSyncContext().AsMap()
-					assert.Equal(t, tt.wantMetadata, syncMetadata)
-				case <-time.After(time.Second):
-					t.Fatal("timeout waiting for response")
-				}
-			})
-		}
+			select {
+			case <-stream.respReady:
+				syncResp := stream.GetLastResponse()
+				assert.NotNil(t, syncResp)
+				syncMetadata := syncResp.GetSyncContext().AsMap()
+				assert.Equal(t, tt.wantMetadata, syncMetadata)
+			case <-time.After(time.Second):
+				t.Fatal("timeout waiting for response")
+			}
+		})
 	}
+}
+
+func TestSyncHandler_GetMetadata_Unimplemented(t *testing.T) {
+	handler := syncHandler{}
+	_, err := handler.GetMetadata(context.Background(), connect.NewRequest(&syncv1.GetMetadataRequest{}))
+	require.Error(t, err)
+	var connectErr *connect.Error
+	require.True(t, errors.As(err, &connectErr))
+	assert.Equal(t, connect.CodeUnimplemented, connectErr.Code())
 }
 
 // mockSyncFlagsStream stands in for connect.ServerStream, which cannot be constructed in a test.

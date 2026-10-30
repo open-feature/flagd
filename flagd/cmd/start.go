@@ -106,7 +106,7 @@ func init() {
 	flags.StringToStringP(headerToContextKeyFlagName, "H", map[string]string{}, "add key-value pairs to map "+
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
-	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
+	flags.Bool(disableSyncMetadata, false, "No-op, accepted for compatibility. The getMetadata endpoint has been removed.")
 	flags.Bool(strictNumericRangeFlagName, false, "Rejects numeric flag values outside [-(2^53-1), 2^53-1] with TYPE_MISMATCH. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
@@ -242,8 +242,9 @@ var startCmd = &cobra.Command{
 			SyncServiceHTTPEnabled: viper.GetBool(syncHTTPFlagName),
 			SyncServiceSocketPath:  viper.GetString(syncSocketPathFlagName),
 			StreamDeadline:         viper.GetDuration(streamDeadlineFlagName),
-			DisableSyncMetadata:    viper.GetBool(disableSyncMetadata),
-			StrictNumericRange:     viper.GetBool(strictNumericRangeFlagName),
+			//nolint:staticcheck // SA1019 no-op, read so FromConfig can warn when it is set
+			DisableSyncMetadata: viper.GetBool(disableSyncMetadata),
+			StrictNumericRange:  viper.GetBool(strictNumericRangeFlagName),
 			//nolint:staticcheck // SA1019 no-ops, read so FromConfig can warn when they are set
 			KeepAliveMinTime: viper.GetDuration(keepAliveMinTimeFlagName),
 			//nolint:staticcheck // SA1019 see above

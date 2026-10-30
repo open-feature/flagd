@@ -14,7 +14,7 @@ flagd start [flags]
   -H, --context-from-header stringToString   add key-value pairs to map header values to context values, where key is Header name, value is context key (default [])
   -X, --context-value stringToString         add arbitrary key value pairs to the flag evaluation context (default [])
   -C, --cors-origin strings                  CORS allowed origins, * will allow all origins
-      --disable-sync-metadata                Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.
+      --disable-sync-metadata                No-op, accepted for compatibility. The getMetadata endpoint has been removed.
   -h, --help                                 help for start
       --keep-alive-min-time duration         No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which has no keepalive enforcement policy to configure and imposes no minimum ping interval. (default 30s)
       --keep-alive-permit-without-stream     No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which always permits keepalive pings without an active stream. (default true)
