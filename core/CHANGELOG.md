@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.2](https://github.com/open-feature/flagd/compare/core/v0.19.1...core/v0.19.2) (2026-10-28)
+
+
+### 🐛 Bug Fixes
+
+* bump flagd-schemas to v0.2.15 ([#2113](https://github.com/open-feature/flagd/issues/2113)) ([7c949bd](https://github.com/open-feature/flagd/commit/7c949bd8065429eddc8940f64dcdcb82e39c2eac))
+* **sync:** watch only the configured FeatureFlag in kubernetes sync ([#2095](https://github.com/open-feature/flagd/issues/2095)) ([1cf2e5d](https://github.com/open-feature/flagd/commit/1cf2e5d8ca8d2e04049a322e0cfda880452b50eb))
+
 ## [0.19.1](https://github.com/open-feature/flagd/compare/core/v0.19.0...core/v0.19.1) (2026-10-26)
 
 

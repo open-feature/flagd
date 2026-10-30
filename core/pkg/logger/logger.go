@@ -189,7 +189,15 @@ func NewZapLogger(level zapcore.Level, logFormat string) (*zap.Logger, error) {
 		},
 		DisableCaller: false,
 	}
-	l, err := cfg.Build()
+	// cap repeated lines, but keep full output when debugging
+	if level > zapcore.DebugLevel {
+		cfg.Sampling = &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		}
+	}
+	// stack traces at error level multiply log volume on hot paths
+	l, err := cfg.Build(zap.AddStacktrace(zapcore.DPanicLevel))
 	if err != nil {
 		return nil, fmt.Errorf("unable to build logger from config: %w", err)
 	}
