@@ -85,7 +85,11 @@ Rules:
 - An integer number argument is returned unchanged, so rules can accept either form from context. A number with a fractional part (such as `3.5`) is invalid.
 - Anything else (invalid format, out-of-range fields such as month `13`, a date that doesn't exist, a leap second `23:59:60`, a non-integer number, or a value that is neither a string nor a number) is an **evaluation error**, and a warning is logged.
 
-`to_timestamp` deliberately does not return `null` for invalid input, unlike the other custom operations. JSONLogic implementations convert `null` to `0` in numeric comparisons (the Go `jsonlogic` library used by flagd does), so `{ ">=": [{ "var": "$flagd.timestamp" }, { "to_timestamp": "not a date" }] }` would be true and a malformed time would enable a flag. As an evaluation error, the flag resolves the same way as for any other targeting rule that can't be evaluated, so a malformed time never enables a flag by accident.
+`to_timestamp` deliberately does not return `null` for invalid input, unlike the other custom operations.
+JSONLogic implementations convert `null` to `0` in numeric comparisons (the Go `jsonlogic` library used by flagd does),
+so `{ ">=": [{ "var": "$flagd.timestamp" }, { "to_timestamp": "not a date" }] }` would be true and a malformed time would enable a flag.
+As an evaluation error, the flag resolves the same way as for any other targeting rule that can't be evaluated,
+so a malformed time never enables a flag by accident.
 
 ### Evaluation Timezone
 
@@ -113,7 +117,7 @@ Other runtimes need to apply them explicitly: Go's `time.Date`, for example, doc
 
 The accepted profile is deliberately narrow so that each implementation can use a strict parser:
 
-- **All runtimes**: validate the calendar date (day within the month, including leap years) before constructing the time, or construct it and check that the components round-trip. Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02`.
+- **All runtimes**: validate every field before constructing the time: month `01`–`12`, day within the month (including leap years), hour `00`–`23`, minute and second `00`–`59`, and an offset of at most `±23:59`. Alternatively, construct it and check that the components round-trip. Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02` and `24:00:00` becomes the next day, so without these checks `24:00:00`, `18:60:00` or `23:59:60` would be accepted instead of being evaluation errors.
 - **Go**: a regular expression for the profile, then `time.Date` in the evaluation `*time.Location` (or the parsed fixed offset), after the calendar check above. Avoid `time.Parse` layouts with optional parts.
 - **Java**: `java.time` (`OffsetDateTime`, `LocalDateTime`, `LocalDate`), after validating the profile with a regular expression, as `DateTimeFormatter.ISO_*` accepts more than the profile.
 - **JavaScript**: a regular expression plus an offset computed from the evaluation timezone with `Intl.DateTimeFormat`; do **not** use `Date.parse`, whose handling of date-only and offset-less strings differs from the rules above. `Date.UTC` maps years `0`–`99` to `1900`–`1999`, so set the year with `setUTCFullYear` (e.g. on `new Date(0)`) instead of passing it to `Date.UTC`.
@@ -134,7 +138,7 @@ Shared test cases in the flagd testbed (Gherkin), so every implementation is che
 - a time before 1970 with a fraction (`1969-12-31T23:59:59.750Z` gives `-1`) and the earliest year (`0001-01-01`);
 - date-only and offset-less inputs with the default (UTC) and an overridden timezone;
 - an ambiguous and a non-existent local time across a DST transition;
-- invalid inputs: wrong separators, week and ordinal dates, month `13`, dates that don't exist (`2026-02-30`, `2025-02-29`), `23:59:60`, empty string, a non-integer number, and values that are neither strings nor numbers; all are evaluation errors, and a rule comparing `$flagd.timestamp` with one of them does not match;
+- invalid inputs: wrong separators, week and ordinal dates, month `13`, dates that don't exist (`2026-02-30`, `2025-02-29`), `24:00:00`, `18:60:00`, `23:59:60`, an offset of `+24:00`, empty string, a non-integer number, and values that are neither strings nor numbers; all are evaluation errors, and a rule comparing `$flagd.timestamp` with one of them does not match;
 - an integer argument returned unchanged;
 - composition with `$flagd.timestamp` and numeric operators.
 
