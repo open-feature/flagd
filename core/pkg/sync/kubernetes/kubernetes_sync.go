@@ -12,6 +12,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
@@ -99,8 +100,23 @@ func (k *Sync) Init(_ context.Context) error {
 	)
 
 	k.informer = factory.ForResource(featureFlagResource).Informer()
+	if err := k.setWatchErrorHandler(); err != nil {
+		k.logger.Error("failed to set watch error handler", zap.Error(err))
+	}
 
 	return nil
+}
+
+func (k *Sync) setWatchErrorHandler() error {
+	if k.informer == nil {
+		return nil
+	}
+	return k.informer.SetWatchErrorHandlerWithContext(func(ctx context.Context, r *cache.Reflector, err error) {
+		k.logger.Error("kubernetes sync watch error", zap.Error(err))
+		if k.SyncMetricsRecorder != nil {
+			k.SyncMetricsRecorder.RecordSyncError(ctx, syncmetrics.SourceKubernetes, k.URI, "")
+		}
+	})
 }
 
 func (k *Sync) IsReady() bool {
