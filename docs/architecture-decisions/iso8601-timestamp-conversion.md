@@ -77,7 +77,7 @@ To guarantee identical results across runtimes, `to_timestamp` accepts a defined
 
 Rules:
 
-- Separators are required (extended format): `YYYY-MM-DD`, `T`, `HH:MM[:SS[.fraction]]`, and an offset of `Z` or `±HH:MM`. `T` and `Z` may be lowercase, as RFC 3339 allows.
+- Separators are required (extended format): `YYYY-MM-DD`, `T`, `HH:MM[:SS[.fraction]]`, and an offset of `Z` or `±HH:MM` between `-14:00` and `+14:00`, the range real timezones use and .NET's `DateTimeOffset` accepts. `T` and `Z` may be lowercase, as RFC 3339 allows.
 - Week dates (`2026-W15-3`), ordinal dates (`2026-098`), basic format without separators, durations, intervals and reduced precision other than the forms above are **not** accepted.
 - Years are `0001` to `9999`, and the date must exist in the calendar: `2026-02-30`, `2026-04-31` and `2025-02-29` are invalid, `2024-02-29` is valid.
 - A fraction has one or more digits, with no upper limit. It is discarded (truncated, not rounded), so its length never changes the result, and the result is always an integer.
@@ -118,8 +118,9 @@ Other runtimes need to apply them explicitly: Go's `time.Date`, for example, doc
 The accepted profile is deliberately narrow so that each implementation can use a strict parser:
 
 - **All runtimes**: validate every field before constructing the time: month `01`–`12`, day within the month (including leap years),
-  hour `00`–`23`, minute and second `00`–`59`, and an offset of at most `±23:59`.
-  Alternatively, construct it and check that the components round-trip.
+  hour `00`–`23`, minute and second `00`–`59`, and an offset between `-14:00` and `+14:00`.
+  Alternatively, construct the date and time in UTC, before any timezone is applied, and check that its components round-trip.
+  A round-trip check after the evaluation timezone is applied would reject the forward shift required for non-existent local times.
   Most constructors normalize out-of-range values instead of rejecting them, e.g. `2026-02-30` becomes `2026-03-02` and `24:00:00` becomes the next day,
   so without these checks `24:00:00`, `18:60:00` or `23:59:60` would be accepted instead of being evaluation errors.
 - **Go**: a regular expression for the profile, then `time.Date` in the evaluation `*time.Location` (or the parsed fixed offset), after the calendar check above. Avoid `time.Parse` layouts with optional parts.
@@ -138,11 +139,11 @@ The accepted profile is deliberately narrow so that each implementation can use 
 
 Shared test cases in the flagd testbed (Gherkin), so every implementation is checked against the same expectations:
 
-- each accepted form, with `Z`, positive and negative offsets, and fractional seconds, including a fraction longer than nine digits;
+- each accepted form, with `Z`, positive and negative offsets (including the `+14:00` and `-14:00` boundaries), and fractional seconds, including a fraction longer than nine digits;
 - a time before 1970 with a fraction (`1969-12-31T23:59:59.750Z` gives `-1`) and the earliest year (`0001-01-01`);
 - date-only and offset-less inputs with the default (UTC) and an overridden timezone;
 - an ambiguous and a non-existent local time across a DST transition;
-- invalid inputs: wrong separators, week and ordinal dates, month `13`, dates that don't exist (`2026-02-30`, `2025-02-29`), `24:00:00`, `18:60:00`, `23:59:60`, an offset of `+24:00`, empty string, a non-integer number, and values that are neither strings nor numbers; all are evaluation errors, and a rule comparing `$flagd.timestamp` with one of them does not match;
+- invalid inputs: wrong separators, week and ordinal dates, month `13`, dates that don't exist (`2026-02-30`, `2025-02-29`), `24:00:00`, `18:60:00`, `23:59:60`, an offset of `+15:00`, empty string, a non-integer number, and values that are neither strings nor numbers; all are evaluation errors, and a rule comparing `$flagd.timestamp` with one of them does not match;
 - an integer argument returned unchanged;
 - composition with `$flagd.timestamp` and numeric operators.
 
