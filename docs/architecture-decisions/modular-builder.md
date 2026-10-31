@@ -2,7 +2,7 @@
 status: draft
 author: Simon Schrottner
 created: 2026-04-01
-updated: 2026-04-01
+updated: 2026-10-31
 ---
 
 # ADR: Modular flagd Builder
@@ -29,6 +29,11 @@ The `core/pkg/telemetry` package pulls in `go.opentelemetry.io/contrib/exporters
 While flagd has an `IMetricsRecorder` abstraction with a `NoopMetricsRecorder` fallback, other telemetry usage is hardcoded: the evaluator calls `otel.Tracer()` directly against the global OTel state, and service endpoints use `otelgrpc.NewServerHandler()`, `otelhttp.NewHandler()`, and `otelconnect.NewInterceptor()` without injection.
 This means even a minimal flagd build carries the full OTel SDK and exporter stack.
 
+`core` is not only consumed by the flagd binary.
+In-process providers embed the evaluator as a library: the Go flagd provider imports `core/pkg/evaluator`, `store`, `model` and the `sync` types, and builds its evaluator with `evaluator.NewJSON`.
+Because the evaluator traces through the global OTel state, an in-process provider emits evaluator spans whether the application wants them or not.
+In OpenFeature, observability belongs to hooks (for example the OpenTelemetry hooks in `go-sdk-contrib/hooks/open-telemetry`), so these spans duplicate what the hook records and cannot be turned off by the provider's user.
+
 The OpenTelemetry Collector project faced a nearly identical problem and solved it with the [OpenTelemetry Collector Builder](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder).
 It is a CLI tool that reads a YAML manifest specifying which components to include, generates Go source code from templates, and compiles a custom binary with only the selected dependencies.
 Each component is a separate Go module exposing a `NewFactory()` function.
@@ -42,6 +47,7 @@ This approach is proven at scale across hundreds of OTel Collector distributions
 * **User extensibility**: Users must be able to implement custom sync providers, service endpoints, evaluators, telemetry providers, or middleware in their own Go modules and include them in a flagd build without forking the project.
 * **Backward compatibility**: The current monolithic flagd binary must remain available as a "full" distribution. Existing users should not be forced to adopt the builder.
 * **Standard distributions**: The project must ship pre-configured distributions for common use cases (minimal, cloud, Kubernetes, full) so that most users never need to run the builder themselves.
+* **Embeddable evaluator**: The evaluator must be usable as a library by in-process providers, with no telemetry, transport or sync-implementation dependencies. It is the providers' single entry point into flagd; observability for embedded use comes from OpenFeature hooks, not from the evaluator.
 * **Clean interfaces**: Each component type (sync, evaluator, service, telemetry, middleware) must have a well-defined factory interface that all implementations — official and user-provided — implement.
 * **Standard Go tooling**: The build process must use standard Go modules and `go build`. No custom package managers, no dynamic linking, no Go plugins.
 
@@ -114,9 +120,8 @@ type ServiceDependencies struct {
 
 // core/pkg/evaluator/factory.go
 type EvaluatorDependencies struct {
-    Store     store.IStore
-    Logger    *logger.Logger
-    Telemetry telemetry.Provider
+    Store  store.IStore
+    Logger *logger.Logger
 }
 
 type EvaluatorFactory interface {
@@ -128,10 +133,14 @@ type EvaluatorFactory interface {
 type Provider interface {
     Tracer(name string) ITracer
     MetricsRecorder() IMetricsRecorder
-    GRPCServerOption() grpc.ServerOption      // e.g. otelgrpc stats handler
     HTTPMiddleware(name string) func(http.Handler) http.Handler  // e.g. otelhttp
-    ConnectInterceptor() connect.Interceptor  // e.g. otelconnect
     Shutdown(ctx context.Context) error
+}
+
+// service/flag-sync: transport-specific hooks are optional interfaces
+// declared by the service that needs them, so core never imports grpc or connect.
+type GRPCInstrumenter interface {
+    GRPCServerOption() grpc.ServerOption  // e.g. otelgrpc stats handler
 }
 
 type TelemetryFactory interface {
@@ -161,8 +170,13 @@ This ensures interfaces remain backward compatible as new dependencies are intro
 
 The `telemetry.Provider` interface is the key abstraction that decouples all components from specific observability implementations.
 Today, the evaluator calls `otel.Tracer()` directly and service endpoints use `otelgrpc`/`otelhttp`/`otelconnect` — all hardcoded.
-With this interface, components receive telemetry capabilities via injection.
+With this interface, services and middleware receive telemetry capabilities via injection.
 A `noop` implementation returns no-op tracers, no-op metrics recorders, and passthrough middleware — enabling truly zero-overhead builds when observability is not needed.
+Transport instrumentation (`otelgrpc`, `otelconnect`) stays out of `core`: a service declares an optional interface such as `GRPCInstrumenter`, `telemetry/otel` implements it, and the service type-asserts the provider at creation.
+
+The evaluator is deliberately not a telemetry consumer.
+It is the library that in-process providers embed, and for them observability is the job of OpenFeature hooks.
+If flagd wants evaluation spans, its services record them around their calls into the evaluator, where the request context already lives.
 
 Each component module exposes a `NewFactory()` function:
 
@@ -182,7 +196,7 @@ func NewFactory() sync.SyncFactory { ... }
 The monolithic `core` module is split so that each component is a separate Go module with its own `go.mod`:
 
 ```text
-core/                          # Interfaces only (lightweight)
+core/                          # Interfaces, model and sync data types (lightweight)
 sync/file/                     # depends on core + fsnotify
 sync/kubernetes/               # depends on core + k8s.io/client-go
 sync/http/                     # depends on core + net/http
@@ -190,7 +204,7 @@ sync/grpc/                     # depends on core + google.golang.org/grpc
 sync/gcs/                      # depends on core + gocloud.dev/blob/gcsblob
 sync/azblob/                   # depends on core + azure-sdk-for-go
 sync/s3/                       # depends on core + aws-sdk-go-v2
-evaluator/jsonlogic/           # depends on core + jsonlogic
+evaluator/jsonlogic/           # depends on core + jsonlogic; no telemetry or transport
 evaluator/wasm/                # depends on core + wazero
 service/flag-evaluation/       # depends on core + ConnectRPC
 service/ofrep/                 # depends on core + net/http
@@ -200,6 +214,9 @@ telemetry/noop/                # depends on core only (zero dependencies)
 ```
 
 Blob providers are split individually (not sharing a gocloud.dev base module) so users can include a single cloud provider without pulling all three SDKs.
+
+`evaluator/jsonlogic` (together with the in-memory store it evaluates against) is what in-process providers import.
+A provider depends on that module and on whichever sync modules it reuses (the Go provider uses `sync/file` and the gRPC credentials from `sync/grpc` today), and nothing else from flagd.
 
 ### Builder manifest
 
@@ -345,6 +362,7 @@ This approach has several advantages:
 ### Consequences
 
 * Good, because flagd binaries can be dramatically smaller (a file+http+ofrep+noop-telemetry build eliminates all cloud SDKs, Kubernetes client, gRPC, ConnectRPC, wazero, and the entire OTel SDK)
+* Good, because in-process providers embed an evaluator with no OTel, transport or cloud dependencies, and leave observability to OpenFeature hooks
 * Good, because users can extend flagd with custom sync providers, service endpoints, evaluators, and middleware without forking
 * Good, because the builder pattern is proven at scale by the OpenTelemetry Collector community
 * Good, because it uses standard Go modules and tooling — no custom package managers or dynamic linking
@@ -358,12 +376,13 @@ This approach has several advantages:
 ### Timeline
 
 1. ADR review and acceptance
-2. Factory interface design and implementation in core (including `telemetry.Provider`)
-3. Module split (sync providers, evaluators, service endpoints, telemetry, middleware)
-4. Runtime refactoring (dynamic service registry, injected telemetry)
-5. Builder CLI tool implementation
-6. Standard distribution manifests
-7. CI/CD pipeline updates, Dockerfile changes, documentation
+2. Remove tracing from the evaluator (independent of the module split; can land first)
+3. Factory interface design and implementation in core (including `telemetry.Provider`)
+4. Module split (sync providers, evaluators, service endpoints, telemetry, middleware)
+5. Runtime refactoring (dynamic service registry, injected telemetry)
+6. Builder CLI tool implementation
+7. Standard distribution manifests
+8. CI/CD pipeline updates, Dockerfile changes, documentation
 
 ### Open questions
 
@@ -371,7 +390,8 @@ This approach has several advantages:
 * **flagd-proxy**: Should `flagd-proxy` also be buildable via the builder, or does it remain as-is?
 * **Release versioning**: Should component modules version independently (like OTel contrib) or stay in lockstep with flagd releases?
 * **Community component registry**: Should there be a curated list or repository of community-contributed components (analogous to `opentelemetry-collector-contrib`)?
-* **Default service set**: Can a build have zero service endpoints (library/embedded mode), or should at least one always be required?
+* **Default service set**: Can a build have zero service endpoints, or should at least one always be required?
+Embedding does not need such a build: in-process providers import `evaluator/jsonlogic` directly.
 * **Configuration compatibility**: How does the builder interact with the existing `-f`/`--sources` CLI flags?
 The runtime needs to know which URI schemes are available from the selected sync factories.
 See the [CLI compatibility analysis](#cli-compatibility) below for the recommended approach.
