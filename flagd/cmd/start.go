@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -288,8 +289,15 @@ func getPort(flagName string) (uint16, error) {
 	if val == nil {
 		return 0, nil
 	}
-	if str, ok := val.(string); ok && strings.HasPrefix(str, "tcp://") {
-		return 0, fmt.Errorf("invalid port value for '%s': %q (this can be caused by Kubernetes service links, set enableServiceLinks: false on the pod)", flagName, str)
+	if str, ok := val.(string); ok {
+		if strings.HasPrefix(str, "tcp://") {
+			return 0, fmt.Errorf("invalid port value for '%s': %q (this can be caused by Kubernetes service links, set enableServiceLinks: false on the pod)", flagName, str)
+		}
+		p, err := strconv.ParseUint(str, 10, 16)
+		if err != nil {
+			return 0, fmt.Errorf("invalid port value for '%s': %w", flagName, err)
+		}
+		return uint16(p), nil
 	}
 	switch v := val.(type) {
 	case bool:

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -12,6 +13,8 @@ func Test_getPort(t *testing.T) {
 	viper.AutomaticEnv()
 	t.Cleanup(func() {
 		viper.Reset()
+		viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+		viper.SetEnvPrefix("FLAGD")
 		bindFlags(startCmd.Flags())
 	})
 
@@ -54,6 +57,14 @@ func Test_getPort(t *testing.T) {
 			envVar:      "FLAGD_PORT",
 			envVal:      "9000",
 			expected:    9000,
+			expectError: false,
+		},
+		{
+			name:        "leading zero decimal port resolves as base 10",
+			flagName:    portFlagName,
+			envVar:      "FLAGD_PORT",
+			envVal:      "010000",
+			expected:    10000,
 			expectError: false,
 		},
 		{
