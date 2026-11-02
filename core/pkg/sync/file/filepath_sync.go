@@ -27,6 +27,8 @@ const (
 	reAddMaxAttempts = 6
 	// delay between re-add attempts
 	reAddBackoff = 200 * time.Millisecond
+	// delay between attempts to re-watch a deleted file, so it is picked up again once recreated
+	restoreWatchInterval = time.Second
 )
 
 type Watcher interface {
@@ -108,6 +110,14 @@ func (fs *Sync) setReady(val bool) {
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
+	// restoreC ticks while the watched file is deleted; a nil channel disables its select case
+	var restore *time.Ticker
+	var restoreC <-chan time.Time
+	defer func() {
+		if restore != nil {
+			restore.Stop()
+		}
+	}()
 	fs.Logger.Info(fmt.Sprintf("starting sync from %s", fs.URI))
 	fs.Logger.Debug(fmt.Sprintf("initial fetch from %s", fs.URI))
 	fs.sendDataSync(ctx, dataSync)
@@ -134,6 +144,10 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
 					fs.sendDataSync(ctx, dataSync)
+					if restoreC == nil {
+						restore = time.NewTicker(restoreWatchInterval)
+						restoreC = restore.C
+					}
 					continue
 				}
 
@@ -150,6 +164,14 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				}
 			}
 
+		case <-restoreC:
+			// the file is still missing until Add succeeds; keep retrying on the next tick
+			if fs.watcher.Add(fs.URI) == nil {
+				restore.Stop()
+				restoreC = nil
+				fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
+				fs.sendDataSync(ctx, dataSync)
+			}
 		case err, ok := <-fs.watcher.Errors():
 			if !ok {
 				fs.setReady(false)

@@ -409,3 +409,97 @@ func TestNewFileSync_PollIntervalMs(t *testing.T) {
 		t.Errorf("unexpected URI %q", fs.URI)
 	}
 }
+
+// startSync runs Init and Sync on uri; cleanup cancels the sync and waits for Sync to return
+func startSync(t *testing.T, uri string) <-chan sync.DataSync {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	fs := &Sync{URI: uri, Logger: logger.NewLogger(nil, false), Mux: &msync.RWMutex{}}
+	if err := fs.Init(ctx); err != nil {
+		cancel()
+		t.Fatalf("init sync: %v", err)
+	}
+	dataSyncChan := make(chan sync.DataSync, 16)
+	done := make(chan error, 1)
+	go func() { done <- fs.Sync(ctx, dataSyncChan) }()
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("sync returned error: %v", err)
+		}
+	})
+	return dataSyncChan
+}
+
+// waitForFlagData drains dataSyncChan until want arrives or timeout elapses
+func waitForFlagData(t *testing.T, dataSyncChan <-chan sync.DataSync, want string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.After(timeout)
+	for {
+		select {
+		case data := <-dataSyncChan:
+			if data.FlagData == want {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("timed out after %s waiting for flag data %q", timeout, want)
+		}
+	}
+}
+
+// a file deleted for longer than the re-add window and then recreated at the same path must still be synced
+func TestSync_FileRestoredAfterDelete(t *testing.T) {
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan := startSync(t, uri)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	deleteFile(t, dir, fetchFileName)
+	waitForFlagData(t, dataSyncChan, defaultState, 5*time.Second)
+	time.Sleep(reAddMaxAttempts*reAddBackoff + 500*time.Millisecond)
+
+	if err := os.WriteFile(uri, []byte("restored content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "restored content", 5*time.Second)
+}
+
+// kubelet updates a mounted ConfigMap by atomically swapping the ..data symlink to a new directory
+func TestSync_KubeletConfigMapSwap(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite := func(path, content string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustSymlink := func(target, link string) {
+		t.Helper()
+		if err := os.Symlink(target, link); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	mustWrite(filepath.Join(dir, "..v1", fetchFileName), "configmap v1")
+	mustSymlink("..v1", filepath.Join(dir, "..data"))
+	mustSymlink(filepath.Join("..data", fetchFileName), filepath.Join(dir, fetchFileName))
+
+	dataSyncChan := startSync(t, filepath.Join(dir, fetchFileName))
+	waitForFlagData(t, dataSyncChan, "configmap v1", 5*time.Second)
+
+	mustWrite(filepath.Join(dir, "..v2", fetchFileName), "configmap v2")
+	mustSymlink("..v2", filepath.Join(dir, "..data_tmp"))
+	if err := os.Rename(filepath.Join(dir, "..data_tmp"), filepath.Join(dir, "..data")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(dir, "..v1")); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "configmap v2", 5*time.Second)
+}
