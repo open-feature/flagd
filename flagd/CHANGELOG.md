@@ -1,5 +1,110 @@
 # Changelog
 
+## [0.18.2](https://github.com/open-feature/flagd/compare/flagd/v0.18.1...flagd/v0.18.2) (2026-10-28)
+
+
+### 🐛 Bug Fixes
+
+* bump flagd-schemas to v0.2.15 ([#2113](https://github.com/open-feature/flagd/issues/2113)) ([7c949bd](https://github.com/open-feature/flagd/commit/7c949bd8065429eddc8940f64dcdcb82e39c2eac))
+
+## [0.18.1](https://github.com/open-feature/flagd/compare/flagd/v0.18.0...flagd/v0.18.1) (2026-10-26)
+
+
+### 🐛 Bug Fixes
+
+* bound evaluation HTTP metric labels ([#2092](https://github.com/open-feature/flagd/issues/2092)) ([f2e7713](https://github.com/open-feature/flagd/commit/f2e7713ae4fe682cb8bdd2293ecf2ae1717d6b3a))
+* record OFREP and sync HTTP metrics once ([#2103](https://github.com/open-feature/flagd/issues/2103)) ([0a39a29](https://github.com/open-feature/flagd/commit/0a39a29144187fd6db3246fcc0ef16ad230801d3))
+
+
+### ✨ New Features
+
+* add flag set ID to evaluation metrics ([#2078](https://github.com/open-feature/flagd/issues/2078)) ([10f2ca0](https://github.com/open-feature/flagd/commit/10f2ca00c67bf81499f67235f9cb3fc1c51d4ee4))
+* strict numeric range opt, TYPE_MISMATCH on precision loss ([#2100](https://github.com/open-feature/flagd/issues/2100)) ([5cf6fff](https://github.com/open-feature/flagd/commit/5cf6fff17b9ba3604f0c1ec77170d81eb02bbaed))
+
+
+### 🧹 Chore
+
+* **deps:** update module golang.org/x/net to v0.61.0 ([#2097](https://github.com/open-feature/flagd/issues/2097)) ([21db5c3](https://github.com/open-feature/flagd/commit/21db5c3358c5b7e355edd905b4fe975b27cdfdb6))
+* Update CHANGELOG with more details ([3f01794](https://github.com/open-feature/flagd/commit/3f017946657f1ee86be55db9f1d55e7d2d289a5d))
+
+## [0.18.0](https://github.com/open-feature/flagd/compare/flagd/v0.17.1...flagd/v0.18.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011))
+  * allows bucketing on all attribute types, not just string (bool, numeric, object)
+  * uses CBOR for deterministic object hashing
+  * :warning: pseudorandom bucket assignment may change; be sure to update all flagd components to keep assignments consistent in all runtimes
+
+### ✨ New Features
+
+* bucket on any context type; (fractional re-assignment) ([#2011](https://github.com/open-feature/flagd/issues/2011)) ([0e344d2](https://github.com/open-feature/flagd/commit/0e344d2d49c2ddbd8cc6908d2331a284aafb71b3))
+  * allows bucketing on all attribute types, not just string (bool, numeric, object)
+  * uses CBOR for deterministic object hashing
+  * :warning: pseudorandom bucket assignment may change; be sure to update all flagd components to keep assignments consistent in all runtimes
+
+
+### 🧹 Chore
+
+* bump golangci-lint to v2.14.0, fail lint on any module error ([109e3a0](https://github.com/open-feature/flagd/commit/109e3a04112eee309cc112de03f44ab81fd55187))
+
+## [0.17.1](https://github.com/open-feature/flagd/compare/flagd/v0.17.0...flagd/v0.17.1) (2026-10-06)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#2059](https://github.com/open-feature/flagd/issues/2059)) ([387c16b](https://github.com/open-feature/flagd/commit/387c16b5060f09f6ba88b2420b4074ad4fc0c122))
+
+
+### 🧹 Chore
+
+* **deps:** update opentelemetry-go monorepo ([#2081](https://github.com/open-feature/flagd/issues/2081)) ([b9c8b7e](https://github.com/open-feature/flagd/commit/b9c8b7e20a99e166059d2629395e73e1f643dbcf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.71.0 ([#2082](https://github.com/open-feature/flagd/issues/2082)) ([ad43dc4](https://github.com/open-feature/flagd/commit/ad43dc4bb624a313099552934af085e41e872dbf))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.72.0 ([#2084](https://github.com/open-feature/flagd/issues/2084)) ([c8ff57a](https://github.com/open-feature/flagd/commit/c8ff57a106f442cccebe7f59a08725f94b1915e5))
+
+## [0.17.0](https://github.com/open-feature/flagd/compare/flagd/v0.16.3...flagd/v0.17.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sync:** server-side sync metrics renamed (client metrics added alongside):   feature_flag.flagd.sync.active_streams  -> feature_flag.flagd.sync.server.active_streams   feature_flag.flagd.sync.stream.duration -> feature_flag.flagd.sync.server.stream.duration
+
+### 🐛 Bug Fixes
+
+* **security:** update module go.opentelemetry.io/otel/sdk to v1.45.0 [security] ([#2056](https://github.com/open-feature/flagd/issues/2056)) ([904232a](https://github.com/open-feature/flagd/commit/904232a03b89f55a632aea35733777e98f678382))
+* wait for flag state before reporting ready ([#2050](https://github.com/open-feature/flagd/issues/2050)) ([1c517f5](https://github.com/open-feature/flagd/commit/1c517f5772c1f3e55f2546afed47afeb715969fb))
+
+
+### ✨ New Features
+
+* gzip compression for OFREP evaluation responses ([#2071](https://github.com/open-feature/flagd/issues/2071)) ([d0cc7fc](https://github.com/open-feature/flagd/commit/d0cc7fca44d2526eb7a1c0b53a39098d8acf091b))
+* **sync:** instrument the outbound sync channel (flagd as client) ([#2051](https://github.com/open-feature/flagd/issues/2051)) ([ad63aad](https://github.com/open-feature/flagd/commit/ad63aad303abc1f78f62765e01a6dd216c50dbad))
+
+
+### 🧹 Chore
+
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to e2e927e ([#2068](https://github.com/open-feature/flagd/issues/2068)) ([8554906](https://github.com/open-feature/flagd/commit/8554906b04ba2ceedfa2ab3f8203945bb022b655))
+
+## [0.16.3](https://github.com/open-feature/flagd/compare/flagd/v0.16.2...flagd/v0.16.3) (2026-09-10)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.83.1 [security] ([#2043](https://github.com/open-feature/flagd/issues/2043)) ([e17886a](https://github.com/open-feature/flagd/commit/e17886a01f1960b4d36e3d79ea7474f129abb2b7))
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+* HTTP fetch equivalent of the gRPC FetchAllFlags ([#2037](https://github.com/open-feature/flagd/issues/2037)) ([48be8de](https://github.com/open-feature/flagd/commit/48be8de6209e15fe8a8aa7c57ff93ea770ec74cd))
+* SSE support for OFREP endpoints ([#2012](https://github.com/open-feature/flagd/issues/2012)) ([aa042fe](https://github.com/open-feature/flagd/commit/aa042fe42669710364c40e6a1c29093baa3cf863))
+
+
+### 🧹 Chore
+
+* OFREP ETag response based on full response body. ([#2036](https://github.com/open-feature/flagd/issues/2036)) ([2911ec1](https://github.com/open-feature/flagd/commit/2911ec189c962c2669d8d7c1c7d88e07f4c0e5ae))
+
 ## [0.16.2](https://github.com/open-feature/flagd/compare/flagd/v0.16.1...flagd/v0.16.2) (2026-08-14)
 
 

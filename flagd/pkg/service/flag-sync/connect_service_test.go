@@ -6,7 +6,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -16,8 +18,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/store"
+	"github.com/open-feature/flagd/flagd/pkg/service/middleware/metrics/metricstest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -283,4 +287,80 @@ func TestConnectService_InitialSyncGateWarnsOnce(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	require.Equal(t, 1, logs.FilterMessageSnippet("timeout while waiting for all sync sources").Len(),
 		"initial-sync timeout warned more than once")
+}
+
+func TestInstrumentFlagsRouteMetrics(t *testing.T) {
+	tests := []struct {
+		name         string
+		status       int
+		expectedCode string
+	}{
+		{name: "success", status: http.StatusOK, expectedCode: "200"},
+		{name: "not found", status: http.StatusNotFound, expectedCode: "404"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			recorder, reader := metricstest.NewRecorder(t, "flagd")
+			cfg := SvcConfigurations{
+				Logger:          logger.NewLogger(nil, false),
+				ServiceName:     "flagd",
+				MetricsRecorder: recorder,
+			}
+			h := instrumentFlagsRoute(cfg, flagsPath, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(test.status)
+			}))
+			req := httptest.NewRequest(http.MethodGet, flagsPath, nil)
+			req.Host = "attacker.example:9999"
+			h.ServeHTTP(httptest.NewRecorder(), req)
+
+			scopes, points := metricstest.RequestDurationPoints(t, reader)
+			require.Equal(t, map[string]bool{"flagd": true}, scopes, "request should be recorded once, by flagd only")
+			require.Len(t, points, 1)
+			require.Equal(t, uint64(1), points[0].Count, "request should be recorded once")
+			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+			require.Equal(t, test.expectedCode, code.AsString(), "recorded status code")
+			_, hasHost := points[0].Attributes.Value(semconv.ServerAddressKey)
+			require.False(t, hasHost, "client-supplied Host must not become a metric label")
+		})
+	}
+}
+
+func TestFlagsRouteMetricsByMethod(t *testing.T) {
+	tests := []struct {
+		method       string
+		expectedCode int
+	}{
+		{method: http.MethodGet, expectedCode: http.StatusOK},
+		{method: http.MethodHead, expectedCode: http.StatusOK},
+		{method: http.MethodPost, expectedCode: http.StatusMethodNotAllowed},
+		{method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed},
+	}
+
+	for _, test := range tests {
+		t.Run(test.method, func(t *testing.T) {
+			recorder, reader := metricstest.NewRecorder(t, "flagd")
+			cfg := SvcConfigurations{
+				Logger:          logger.NewLogger(nil, false),
+				ServiceName:     "flagd",
+				MetricsRecorder: recorder,
+			}
+			flags := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+			server := newConnectServer(cfg, syncv1connect.UnimplementedFlagSyncServiceHandler{}, flags)
+
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, httptest.NewRequest(test.method, flagsPath, nil))
+			require.Equal(t, test.expectedCode, response.Code)
+			if test.expectedCode == http.StatusMethodNotAllowed {
+				require.Equal(t, "GET, HEAD", response.Header().Get("Allow"))
+			}
+
+			_, points := metricstest.RequestDurationPoints(t, reader)
+			require.Len(t, points, 1, "request should be recorded")
+			code, _ := points[0].Attributes.Value(semconv.HTTPResponseStatusCodeKey)
+			require.Equal(t, strconv.Itoa(test.expectedCode), code.AsString())
+			route, _ := points[0].Attributes.Value(semconv.HTTPRouteKey)
+			require.Equal(t, flagsPath, route.AsString())
+		})
+	}
 }

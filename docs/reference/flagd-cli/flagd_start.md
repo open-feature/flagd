@@ -38,6 +38,7 @@ flagd start [flags]
   -d, --socket-path string                   Flagd unix socket path. With grpc the evaluations service will become available on this address. With http(s) the grpc-gateway proxy will use this address internally.
   -s, --sources string                       JSON representation of an array of SourceConfig objects. Required fields: uri (string) and provider (string). Optional source-specific fields are also available, see https://flagd.dev/reference/sync-configuration/#source-configuration
       --stream-deadline duration             Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).
+      --strict-numeric-range                 Rejects numeric flag values outside [-(2^53-1), 2^53-1] with TYPE_MISMATCH. Defaults to false, but will default to true in later versions.
       --sync-http-enabled                    Serve the flag configuration document over HTTP at /v1/flags on the sync port. Defaults to true. (default true)
   -g, --sync-port int32                      Flag sync service port, serving gRPC, gRPC-Web and Connect (default 8015)
   -e, --sync-socket-path string              Flagd sync service socket path. With grpc the sync service will be available on this address.

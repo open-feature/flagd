@@ -1,0 +1,23 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 680 110' width='680' height='110' font-family='-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif' role='img'>
+<title>Each user hashes to a fixed point; arms are slices in list order</title>
+<text x='128' y='60.0' text-anchor='end' font-size='13' fill='#8a8a99'>weights 80/10/10</text>
+<rect x='140.0' y='40' width='416.0' height='30' fill='#868e96'/>
+<text x='348.0' y='60.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>excluded</text>
+<rect x='556.0' y='40' width='52.0' height='30' fill='#5d5dff'/>
+<text x='582.0' y='60.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>test</text>
+<rect x='608.0' y='40' width='52.0' height='30' fill='#d9480f'/>
+<text x='634.0' y='60.0' text-anchor='middle' font-size='13' font-weight='600' fill='#fff'>control</text>
+<line x1='556.0' y1='40' x2='556.0' y2='70' stroke='#fff' stroke-width='2'/>
+<line x1='608.0' y1='40' x2='608.0' y2='70' stroke='#fff' stroke-width='2'/>
+<path d='M570.8,30 L582.8,30 L576.8,38 Z' fill='#8a8a99'/>
+<text x='576.8' y='25' text-anchor='middle' font-size='12' fill='#8a8a99'>a user</text>
+<line x1='140' y1='80' x2='660' y2='80' stroke='#8a8a99'/>
+<line x1='140.0' y1='80' x2='140.0' y2='84' stroke='#8a8a99'/>
+<text x='140.0' y='97' text-anchor='middle' font-size='11' fill='#8a8a99'>0</text>
+<line x1='556.0' y1='80' x2='556.0' y2='84' stroke='#8a8a99'/>
+<text x='556.0' y='97' text-anchor='middle' font-size='11' fill='#8a8a99'>0.8</text>
+<line x1='608.0' y1='80' x2='608.0' y2='84' stroke='#8a8a99'/>
+<text x='608.0' y='97' text-anchor='middle' font-size='11' fill='#8a8a99'>0.9</text>
+<line x1='660.0' y1='80' x2='660.0' y2='84' stroke='#8a8a99'/>
+<text x='660.0' y='97' text-anchor='middle' font-size='11' fill='#8a8a99'>1</text>
+</svg>

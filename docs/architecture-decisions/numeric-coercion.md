@@ -1,6 +1,6 @@
 ---
 # Valid statuses: draft | proposed | rejected | accepted | superseded
-status: draft
+status: accepted
 author: Todd Baert (@toddbaert)
 created: 2026-06-08
 updated: 2026-06-08
@@ -56,16 +56,17 @@ A numeric variant is returnable through a numeric accessor when the conversion i
 Otherwise the evaluator returns `TYPE_MISMATCH`.
 
 flagd additionally caps numeric flag values at the IEEE-754 safe-integer range, `[-(2^53 - 1), 2^53 - 1]`.
-Variants whose absolute value exceeds this range are considered invalid per the JSON schema (we'll add this limit there).
+Variants whose absolute value exceeds this range are invalid per the JSON schema (we'll add this limit there).
+Implementations that reject invalid configurations (e.g. strict schema validation) surface this as `PARSE_ERROR`; otherwise the evaluator returns `TYPE_MISMATCH` for the offending flag only.
 
 | Variant kind                                                          | Fetched as Integer                                                 | Fetched as Float                                                   |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
 | int, fits the resolver's max                                          | value                                                              | value (widened)                                                    |
 | int, exceeds the resolver's max but within 2^53-1                     | `TYPE_MISMATCH`                                                    | value (widened)                                                    |
-| int, exceeds 2^53-1                                                   | rejected at load (or `PARSE_ERROR` at evaluation if not validated) | rejected at load (or `PARSE_ERROR` at evaluation if not validated) |
+| int, exceeds 2^53-1                                                   | `TYPE_MISMATCH`                                                    | `TYPE_MISMATCH`                                                    |
 | float, whole-valued and within the resolver's int range (e.g. `10.0`) | value (e.g. `10`)                                                  | value                                                              |
 | float, fractional, magnitude within 2^53-1                            | `TYPE_MISMATCH`                                                    | value                                                              |
-| float, magnitude exceeds 2^53-1 (e.g. `1e16`)                         | rejected at load (or `PARSE_ERROR` at evaluation if not validated) | rejected at load (or `PARSE_ERROR` at evaluation if not validated) |
+| float, magnitude exceeds 2^53-1 (e.g. `1e16`)                         | `TYPE_MISMATCH`                                                    | `TYPE_MISMATCH`                                                    |
 
 The contract applies identically across all interfaces (gRPC, OFREP, and in-process evaluation).
 "Numeric resolver in use" means the accessor the caller invoked: a 32-bit `Integer` accessor caps at `int32` max, a `Long` accessor (e.g. forthcoming Java `getLong`, .NET `Int64`) caps at `int64` max, a `Float` accessor caps at the safe-integer range.
@@ -77,7 +78,7 @@ The alternative (permitting larger values and documenting precision loss past 2^
 
 The cap is enforced for the benefit of the configuration author rather than the application author.
 Consider a product manager defining a per-customer storage quota in bytes through a flag UI: they aren't writing code in any specific language, and they shouldn't have to know that the same value will be handled correctly by some consuming services and silently mishandled by others.
-**A hard cap surfaced in configuration validation gives them a predictable boundary that holds across every flagd-backed consumer;** the cap is high enough (2^53-1 ≈ 9 PB in bytes, or any millisecond timestamp through the year 287396) to comfortably cover the cases that motivate large numeric flags in practice.
+**A hard cap surfaced in configuration validation and enforced at evaluation gives them a predictable boundary that holds across every flagd-backed consumer;** the cap is high enough (2^53-1 ≈ 9 PB in bytes, or any millisecond timestamp through the year 287396) to comfortably cover the cases that motivate large numeric flags in practice.
 This is a deliberate trade-off against language-level expressiveness.
 
 ## Consequences
@@ -87,7 +88,7 @@ The motivating bugs (`3.14` quietly becoming `3`, `9000000000` quietly becoming 
 
 The cost is that this is a breaking change in two ways.
 Go and Java users who currently rely on permissive coercion will see `TYPE_MISMATCH` where they previously got truncated values.
-Operators with flag definitions containing values outside `[-(2^53 - 1), 2^53 - 1]` will see those flags fail validation; today such values either work (Go, Python) or fail unpredictably (Java, .NET).
+Operators with flag definitions containing values outside `[-(2^53 - 1), 2^53 - 1]` will see those flags fail validation, and return `TYPE_MISMATCH` (or `PARSE_ERROR` where invalid configurations are rejected); today such values either work (Go, Python) or fail unpredictably (Java, .NET).
 Both changes are detectable; neither silently alters returned values.
 
 A side effect is that the rule requires evaluators to inspect the value, not only the parsed type, when servicing a cross-type request.

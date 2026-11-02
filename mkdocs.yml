@@ -83,6 +83,7 @@ nav:
   - 'Architecture': 'architecture.md'
   - 'Guides':
     - 'Migrating to Flag Sets': 'guides/migrating-to-flag-sets.md'
+    - 'Running A/B Experiments': 'guides/experimentation.md'
   - 'OpenFeature Providers':
     - 'providers/index.md'
     - 'Go': 'providers/go.md'

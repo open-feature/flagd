@@ -19,6 +19,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
@@ -650,6 +651,38 @@ func TestInit(t *testing.T) {
 			t.Errorf("The Sync should not be ready")
 		}
 	})
+}
+
+func TestInit_informerWatchesOnlyConfiguredResource(t *testing.T) {
+	const name = "myFF"
+	const ns = "myNS"
+
+	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+	)
+	selectors := make(chan string, 4)
+	fakeClient.PrependReactor("list", "featureflags", func(action testing2.Action) (bool, runtime.Object, error) {
+		selectors <- action.(testing2.ListAction).GetListRestrictions().Fields.String()
+		return false, nil, nil
+	})
+
+	k := Sync{
+		URI:           fmt.Sprintf("%s/%s", ns, name),
+		dynamicClient: fakeClient,
+	}
+	require.NoError(t, k.Init(context.TODO()))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go k.informer.Run(ctx.Done())
+
+	select {
+	case got := <-selectors:
+		require.Equal(t, "metadata.name="+name, got)
+	case <-time.After(5 * time.Second):
+		t.Fatal("informer did not list FeatureFlags")
+	}
 }
 
 func TestSync_ReSync(t *testing.T) {

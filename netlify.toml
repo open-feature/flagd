@@ -1,7 +1,8 @@
 [build]
   publish = "site"
   # https://docs.netlify.com/configure-builds/ignore-builds/
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml requirements.txt ./docs/"
+  # always build if there's no usable cache (CACHED_COMMIT_REF == COMMIT_REF)
+  ignore = "[ \"$CACHED_COMMIT_REF\" != \"$COMMIT_REF\" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF netlify.toml mkdocs.yml requirements.txt ./docs/"
   command = "mkdocs build"
 
 [[headers]]

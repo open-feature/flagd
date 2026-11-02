@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	msync "sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/open-feature/flagd/core/pkg/evaluator"
@@ -26,6 +27,11 @@ type Runtime struct {
 	EvaluationService service.IFlagEvaluationService
 	ServiceConfig     service.Configuration
 	Syncs             []sync.ISync
+
+	// sourceReadiness records whether each configured source has successfully updated the evaluator.
+	sourceReadiness map[string]bool
+	// initialized is set once every configured source has successfully updated the evaluator.
+	initialized atomic.Bool
 
 	mu msync.Mutex
 }
@@ -113,13 +119,16 @@ func (r *Runtime) Start() error {
 }
 
 func (r *Runtime) isReady() bool {
-	// if all providers can watch for flag changes, we are ready.
-	for _, p := range r.Syncs {
-		if !p.IsReady() {
-			return false
+	if r.initialized.Load() {
+		// if all providers can watch for flag changes, we are ready.
+		for _, p := range r.Syncs {
+			if !p.IsReady() {
+				return false
+			}
 		}
+		return true
 	}
-	return true
+	return false
 }
 
 // updateAndEmit helps to update state, notify changes and trigger sync updates
@@ -131,6 +140,20 @@ func (r *Runtime) updateAndEmit(payload sync.DataSync) {
 	if err != nil {
 		r.Logger.Error(fmt.Sprintf("error setting state: %v", err))
 		return
+	}
+
+	if !r.initialized.Load() {
+		if _, configured := r.sourceReadiness[payload.Source]; configured {
+			r.sourceReadiness[payload.Source] = true
+		}
+
+		allReady := true
+		for _, ready := range r.sourceReadiness {
+			allReady = allReady && ready
+		}
+		if allReady {
+			r.initialized.Store(true)
+		}
 	}
 	r.SyncService.Emit(payload.Source)
 }

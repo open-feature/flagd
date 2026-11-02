@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.9.13](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.12...flagd-proxy/v0.9.13) (2026-10-26)
+
+
+### 🧹 Chore
+
+* **deps:** update module golang.org/x/net to v0.61.0 ([#2097](https://github.com/open-feature/flagd/issues/2097)) ([21db5c3](https://github.com/open-feature/flagd/commit/21db5c3358c5b7e355edd905b4fe975b27cdfdb6))
+
+## [0.9.12](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.11...flagd-proxy/v0.9.12) (2026-10-15)
+
+
+### 🧹 Chore
+
+* bump golangci-lint to v2.14.0, fail lint on any module error ([109e3a0](https://github.com/open-feature/flagd/commit/109e3a04112eee309cc112de03f44ab81fd55187))
+
+## [0.9.11](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.10...flagd-proxy/v0.9.11) (2026-10-06)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates [security] ([#2059](https://github.com/open-feature/flagd/issues/2059)) ([387c16b](https://github.com/open-feature/flagd/commit/387c16b5060f09f6ba88b2420b4074ad4fc0c122))
+
+
+### 🧹 Chore
+
+* **deps:** update opentelemetry-go monorepo ([#2081](https://github.com/open-feature/flagd/issues/2081)) ([b9c8b7e](https://github.com/open-feature/flagd/commit/b9c8b7e20a99e166059d2629395e73e1f643dbcf))
+
+## [0.9.10](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.9...flagd-proxy/v0.9.10) (2026-09-25)
+
+
+### 🧹 Chore
+
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to e2e927e ([#2068](https://github.com/open-feature/flagd/issues/2068)) ([8554906](https://github.com/open-feature/flagd/commit/8554906b04ba2ceedfa2ab3f8203945bb022b655))
+
+## [0.9.9](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.8...flagd-proxy/v0.9.9) (2026-09-10)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update module google.golang.org/grpc to v1.83.1 [security] ([#2043](https://github.com/open-feature/flagd/issues/2043)) ([e17886a](https://github.com/open-feature/flagd/commit/e17886a01f1960b4d36e3d79ea7474f129abb2b7))
+
+
+### ✨ New Features
+
+* Create additional FIPS 140-3 mode ([#2039](https://github.com/open-feature/flagd/issues/2039)) ([22128a1](https://github.com/open-feature/flagd/commit/22128a1519d7e603fa6402eb9264ccf390ff23a8))
+
+
+### 🧹 Chore
+
+* resolve open dependabot security alerts ([#2040](https://github.com/open-feature/flagd/issues/2040)) ([98ff80f](https://github.com/open-feature/flagd/commit/98ff80f4faa4b0f4fa56625810ac8f25c80d09e8))
+
 ## [0.9.8](https://github.com/open-feature/flagd/compare/flagd-proxy/v0.9.7...flagd-proxy/v0.9.8) (2026-08-14)
 
 

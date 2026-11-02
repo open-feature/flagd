@@ -6,6 +6,7 @@ export const steppedRollout: Scenario = {
     'In this scenario, we have a feature flag with the key "stepped-rollout-feature" with multiple variants for illustrative purposes.',
     "This flag has a targeting rule defined that enables the flag for a percentage of users based on the release phase.",
     'The "targetingKey" ensures that the user always sees the same results during each phase of the rollout process.',
+    'For example, "sessionId-12346" is not enabled in phase 1, but is enabled from phase 2 (~t=+10s) onward.',
   ].join(" "),
   flagDefinition: () => {
     const phase1 = Math.floor(Date.now() / 1000) + 5;
@@ -63,7 +64,7 @@ export const steppedRollout: Scenario = {
   returnType: "boolean",
   context: () =>
     contextToPrettyJson({
-      targetingKey: "sessionId-12345",
+      targetingKey: "sessionId-12346",
     }),
   codeDefault: "false",
 };

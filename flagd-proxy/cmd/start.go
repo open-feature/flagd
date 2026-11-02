@@ -84,8 +84,8 @@ var startCmd = &cobra.Command{
 			Port:           viper.GetUint16(portFlagName),
 			ManagementPort: viper.GetUint16(managementPortFlagName),
 
-			KeepAliveMinTime:             viper.GetDuration(keepAliveMinTimeFlagName),
-			KeepAlivePermitWithoutStream: viper.GetBool(keepAlivePermitWithoutStreamFlagName),
+			KeepAliveMinTime:             viper.GetDuration(keepAliveMinTimeFlagName),         //nolint:staticcheck // still honoured by the proxy's grpc server
+			KeepAlivePermitWithoutStream: viper.GetBool(keepAlivePermitWithoutStreamFlagName), //nolint:staticcheck // still honoured by the proxy's grpc server
 		}
 
 		errChan := make(chan error, 1)
