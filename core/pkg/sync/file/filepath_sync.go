@@ -210,10 +210,15 @@ func (fs *Sync) handleChmod(ctx context.Context, dataSync chan<- sync.DataSync, 
 	}
 }
 
-// restoreWatch adds the watch for fs.URI and reports whether it succeeded. A failure is warned about once
+// restoreWatch replaces the watch for fs.URI and reports whether it succeeded. A failure is warned about once
 // per outage; warned resets on success.
 func (fs *Sync) restoreWatch(warned *bool) bool {
-	if err := fs.watcher.Add(fs.URI); err != nil {
+	// drop any watch still on a replaced file that is held open, so repeated replacements do not leak inotify watches
+	err := fs.watcher.Remove(fs.URI)
+	if err == nil || errors.Is(err, fsnotify.ErrNonExistentWatch) {
+		err = fs.watcher.Add(fs.URI)
+	}
+	if err != nil {
 		if !*warned {
 			fs.Logger.Warn(fmt.Sprintf("unable to restore watch for %s, retrying: %s", fs.URI, err.Error()))
 			*warned = true

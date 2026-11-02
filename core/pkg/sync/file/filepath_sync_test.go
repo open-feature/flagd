@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	msync "sync"
 	"testing"
 	"time"
@@ -311,6 +312,7 @@ type reAddMockWatcher struct {
 	addFailUntil int
 	addErr       error
 	addCalls     int
+	removeErr    error
 	watchList    []string
 }
 
@@ -325,7 +327,7 @@ func (m *reAddMockWatcher) Add(name string) error {
 	return nil
 }
 
-func (m *reAddMockWatcher) Remove(string) error         { return nil }
+func (m *reAddMockWatcher) Remove(string) error         { return m.removeErr }
 func (m *reAddMockWatcher) WatchList() []string         { return m.watchList }
 func (m *reAddMockWatcher) Events() chan fsnotify.Event { return make(chan fsnotify.Event) }
 func (m *reAddMockWatcher) Errors() chan error          { return make(chan error) }
@@ -658,4 +660,86 @@ func TestSync_AtomicReplaceWhileOldFileHeldOpen(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitForFlagData(t, dataSyncChan, "updated content", 5*time.Second)
+}
+
+// inotifyWatchCount counts the inotify watches held by this process, or returns -1 where /proc is unavailable
+func inotifyWatchCount(t *testing.T) int {
+	t.Helper()
+	paths, err := filepath.Glob("/proc/self/fdinfo/*")
+	if err != nil || len(paths) == 0 {
+		return -1
+	}
+	n := 0
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		n += strings.Count(string(data), "inotify wd:")
+	}
+	return n
+}
+
+// not parallel, so no other test adds or drops inotify watches while this one counts them
+func TestSync_RepeatedReplaceWhileHeldOpenDoesNotLeakWatches(t *testing.T) {
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, _ := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+	before := inotifyWatchCount(t)
+	if before < 0 {
+		t.Skip("inotify watch count needs linux /proc")
+	}
+
+	for i := 0; i < 3; i++ {
+		held, err := os.Open(uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer held.Close()
+		content := fmt.Sprintf("replacement %d", i)
+		tmp := filepath.Join(dir, "replacement.json")
+		if err := os.WriteFile(tmp, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Rename(tmp, uri); err != nil {
+			t.Fatal(err)
+		}
+		waitForFlagData(t, dataSyncChan, content, 5*time.Second)
+	}
+
+	if after := inotifyWatchCount(t); after != before {
+		t.Errorf("expected %d inotify watches after replacing the held-open file, got %d", before, after)
+	}
+}
+
+func TestRestoreWatch_RemoveErrors(t *testing.T) {
+	tests := map[string]struct {
+		removeErr error
+		wantOK    bool
+		wantAdds  int
+	}{
+		"watch present":      {removeErr: nil, wantOK: true, wantAdds: 1},
+		"watch already gone": {removeErr: fmt.Errorf("fsnotify: %w", fsnotify.ErrNonExistentWatch), wantOK: true, wantAdds: 1},
+		"remove fails":       {removeErr: errors.New("remove failed"), wantOK: false, wantAdds: 0},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mw := &reAddMockWatcher{removeErr: tt.removeErr}
+			fs := newReAddSync(mw)
+			warned := false
+			if ok := fs.restoreWatch(&warned); ok != tt.wantOK {
+				t.Errorf("expected restoreWatch to return %t, got %t", tt.wantOK, ok)
+			}
+			if mw.addCalls != tt.wantAdds {
+				t.Errorf("expected %d Add calls, got %d", tt.wantAdds, mw.addCalls)
+			}
+			if warned == tt.wantOK {
+				t.Errorf("expected warned %t, got %t", !tt.wantOK, warned)
+			}
+		})
+	}
 }
