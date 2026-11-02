@@ -114,6 +114,8 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	restore := time.NewTicker(restoreWatchInterval)
 	restore.Stop()
 	defer restore.Stop()
+	// restoreWarned limits the restore Add failure warning to once per outage
+	restoreWarned := false
 	fs.Logger.Info(fmt.Sprintf("starting sync from %s", fs.URI))
 	fs.Logger.Debug(fmt.Sprintf("initial fetch from %s", fs.URI))
 	fs.sendDataSync(ctx, dataSync)
@@ -148,6 +150,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 					continue
 				}
 				restore.Stop()
+				restoreWarned = false
 
 				// Counterintuitively, remove events are the only meaningful ones seen in K8s.
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
@@ -166,11 +169,17 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 
 		case <-restore.C:
 			// the file is still missing until Add succeeds; keep retrying on the next tick
-			if fs.watcher.Add(fs.URI) == nil {
-				restore.Stop()
-				fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
-				fs.sendDataSync(ctx, dataSync)
+			if err := fs.watcher.Add(fs.URI); err != nil {
+				if !restoreWarned {
+					fs.Logger.Warn(fmt.Sprintf("unable to restore watch for %s, retrying: %s", fs.URI, err.Error()))
+					restoreWarned = true
+				}
+				continue
 			}
+			restore.Stop()
+			restoreWarned = false
+			fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
+			fs.sendDataSync(ctx, dataSync)
 		case err, ok := <-fs.watcher.Errors():
 			if !ok {
 				fs.setReady(false)
