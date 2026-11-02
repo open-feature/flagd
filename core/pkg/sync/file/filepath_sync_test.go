@@ -503,3 +503,29 @@ func TestSync_KubeletConfigMapSwap(t *testing.T) {
 	}
 	waitForFlagData(t, dataSyncChan, "configmap v2", 5*time.Second)
 }
+
+// on linux the remove event is withheld while another process holds the deleted file open
+func TestSync_FileRestoredWhileDeletedFileHeldOpen(t *testing.T) {
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan := startSync(t, uri)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	held, err := os.Open(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+
+	deleteFile(t, dir, fetchFileName)
+	waitForFlagData(t, dataSyncChan, defaultState, 5*time.Second)
+	time.Sleep(reAddMaxAttempts*reAddBackoff + 500*time.Millisecond)
+
+	if err := os.WriteFile(uri, []byte("restored content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "restored content", 5*time.Second)
+}

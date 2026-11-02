@@ -110,14 +110,10 @@ func (fs *Sync) setReady(val bool) {
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
-	// restoreC ticks while the watched file is deleted; a nil channel disables its select case
-	var restore *time.Ticker
-	var restoreC <-chan time.Time
-	defer func() {
-		if restore != nil {
-			restore.Stop()
-		}
-	}()
+	// restore ticks only while the watched file is deleted: Reset arms it, Stop disarms it
+	restore := time.NewTicker(restoreWatchInterval)
+	restore.Stop()
+	defer restore.Stop()
 	fs.Logger.Info(fmt.Sprintf("starting sync from %s", fs.URI))
 	fs.Logger.Debug(fmt.Sprintf("initial fetch from %s", fs.URI))
 	fs.sendDataSync(ctx, dataSync)
@@ -140,16 +136,18 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				// Updates cause a remove event, we need to re-add the watcher in this case.
 				// a non-atomic replace (delete then recreate) leaves the file briefly absent; retry so we don't drop the watch
 				err := fs.reAddWatcher(ctx)
+				if ctx.Err() != nil {
+					fs.Logger.Debug("exiting file watcher")
+					return nil
+				}
 				if err != nil {
 					// the watcher could not be re-added, so the file must have been deleted
 					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
 					fs.sendDataSync(ctx, dataSync)
-					if restoreC == nil {
-						restore = time.NewTicker(restoreWatchInterval)
-						restoreC = restore.C
-					}
+					restore.Reset(restoreWatchInterval)
 					continue
 				}
+				restore.Stop()
 
 				// Counterintuitively, remove events are the only meaningful ones seen in K8s.
 				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
@@ -161,14 +159,15 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
 					fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
 					fs.sendDataSync(ctx, dataSync)
+					// the remove event may never arrive while another process holds the file open
+					restore.Reset(restoreWatchInterval)
 				}
 			}
 
-		case <-restoreC:
+		case <-restore.C:
 			// the file is still missing until Add succeeds; keep retrying on the next tick
 			if fs.watcher.Add(fs.URI) == nil {
 				restore.Stop()
-				restoreC = nil
 				fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
 				fs.sendDataSync(ctx, dataSync)
 			}
