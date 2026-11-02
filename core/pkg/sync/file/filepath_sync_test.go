@@ -626,3 +626,36 @@ func TestSync_FileRestoredWhileDeletedFileHeldOpen(t *testing.T) {
 	}
 	waitForFlagData(t, dataSyncChan, "restored content", 5*time.Second)
 }
+
+func TestSync_AtomicReplaceWhileOldFileHeldOpen(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, _ := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	// while the old file is held open linux reports only a chmod, and the replacement already exists at the path
+	held, err := os.Open(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+
+	tmp := filepath.Join(dir, "replacement.json")
+	if err := os.WriteFile(tmp, []byte("replaced content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(tmp, uri); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "replaced content", 5*time.Second)
+
+	// the watch must now follow the replacement, not the old file
+	if err := os.WriteFile(uri, []byte("updated content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "updated content", 5*time.Second)
+}
