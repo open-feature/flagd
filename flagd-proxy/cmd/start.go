@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -95,7 +94,7 @@ var startCmd = &cobra.Command{
 			}
 		}()
 
-		logger.Info(fmt.Sprintf("listening for connections on %d", cfg.Port))
+		logger.Info("listening for connections", zap.Uint16("port", cfg.Port))
 
 		defer func() {
 			logger.Info("Shutting down server...")
