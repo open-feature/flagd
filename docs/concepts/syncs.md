@@ -149,21 +149,3 @@ When `flagd` is started with the command defined above, `source-B` takes priorit
 Using the above example, if a flag key is duplicated across all 3 sources, then the definition from `source-C` would be the only one stored in the merged state.
 
 ![flag merge 2](../images/flag-merge-2.svg)
-
-### State Resync Events
-
-Given the above example, the `source-A` and `source-B` 'versions' of flag definition the `foo` have been discarded, so if a delete event in `source-C` results in the removal of the `foo`flag, there will no longer be any reference of `foo` in flagd's store.
-
-As a result of this flagd will return `FLAG_NOT_FOUND` errors, and the OpenFeature SDK will always return the default value.
-
-To prevent flagd falling out of sync with its flag sources during delete events, resync events are used.
-When a delete event results in a flag definition being removed from the merged state, the full set of definition is requested from all flag sources, and the merged state is rebuilt.
-As a result, the value of the `foo` flag from `source-B` will be stored in the merged state, preventing flagd from returning `FLAG_NOT_FOUND` errors.
-
-![flag merge 3](../images/flag-merge-3.svg)
-
-In the example above, a delete event results in a resync event being fired, as `source-C` has deleted its 'version' of the `foo`, this results in a new merge state being formed from the remaining definition.
-
-![flag merge 4](../images/flag-merge-4.svg)
-
-Resync events may lead to further resync events if the returned flag definition result in further delete events, however the state will eventually be resolved correctly.
