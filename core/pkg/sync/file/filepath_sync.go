@@ -27,6 +27,8 @@ const (
 	reAddMaxAttempts = 6
 	// delay between re-add attempts
 	reAddBackoff = 200 * time.Millisecond
+	// delay between attempts to re-watch a deleted file, so it is picked up again once recreated
+	restoreWatchInterval = time.Second
 )
 
 type Watcher interface {
@@ -108,6 +110,12 @@ func (fs *Sync) setReady(val bool) {
 //nolint:funlen
 func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 	defer fs.watcher.Close()
+	// restore ticks only while the watched file is deleted: Reset arms it, Stop disarms it
+	restore := time.NewTicker(restoreWatchInterval)
+	restore.Stop()
+	defer restore.Stop()
+	// restoreWarned limits the restore Add failure warning to once per outage
+	restoreWarned := false
 	fs.Logger.Info(fmt.Sprintf("starting sync from %s", fs.URI))
 	fs.Logger.Debug(fmt.Sprintf("initial fetch from %s", fs.URI))
 	fs.sendDataSync(ctx, dataSync)
@@ -126,30 +134,22 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				fs.sendDataSync(ctx, dataSync)
 			case event.Has(fsnotify.Remove):
-				// K8s exposes config maps as symlinks.
-				// Updates cause a remove event, we need to re-add the watcher in this case.
-				// a non-atomic replace (delete then recreate) leaves the file briefly absent; retry so we don't drop the watch
-				err := fs.reAddWatcher(ctx)
-				if err != nil {
-					// the watcher could not be re-added, so the file must have been deleted
-					fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
-					fs.sendDataSync(ctx, dataSync)
-					continue
+				fs.handleRemove(ctx, dataSync, restore, &restoreWarned)
+				if ctx.Err() != nil {
+					fs.Logger.Debug("exiting file watcher")
+					return nil
 				}
-
-				// Counterintuitively, remove events are the only meaningful ones seen in K8s.
-				// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
-				// At the point the remove event is fired, we have our new data, so we can send it down the channel.
-				fs.sendDataSync(ctx, dataSync)
 			case event.Has(fsnotify.Chmod):
-				// on linux the REMOVE event will not fire until all file descriptors are closed, this cannot happen
-				// while the file is being watched, os.Stat is used here to infer deletion
-				if _, err := os.Stat(fs.URI); errors.Is(err, os.ErrNotExist) {
-					fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
-					fs.sendDataSync(ctx, dataSync)
-				}
+				fs.handleChmod(ctx, dataSync, restore, &restoreWarned)
 			}
 
+		case <-restore.C:
+			// the file is still missing until Add succeeds; keep retrying on the next tick
+			if fs.restoreWatch(&restoreWarned) {
+				restore.Stop()
+				fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
+				fs.sendDataSync(ctx, dataSync)
+			}
 		case err, ok := <-fs.watcher.Errors():
 			if !ok {
 				fs.setReady(false)
@@ -162,6 +162,71 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			return nil
 		}
 	}
+}
+
+// handleRemove re-adds the watch after a remove event and syncs. It sends nothing once ctx is cancelled.
+func (fs *Sync) handleRemove(ctx context.Context, dataSync chan<- sync.DataSync, restore *time.Ticker, warned *bool) {
+	// K8s exposes config maps as symlinks.
+	// Updates cause a remove event, we need to re-add the watcher in this case.
+	// a non-atomic replace (delete then recreate) leaves the file briefly absent; retry so we don't drop the watch
+	err := fs.reAddWatcher(ctx)
+	switch {
+	case ctx.Err() != nil:
+		return
+	case err != nil:
+		// the watcher could not be re-added, so the file must have been deleted
+		fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
+		fs.sendDataSync(ctx, dataSync)
+		restore.Reset(restoreWatchInterval)
+		return
+	}
+	restore.Stop()
+	*warned = false
+
+	// Counterintuitively, remove events are the only meaningful ones seen in K8s.
+	// K8s handles mounted ConfigMap updates by modifying symbolic links, which is an atomic operation.
+	// At the point the remove event is fired, we have our new data, so we can send it down the channel.
+	fs.sendDataSync(ctx, dataSync)
+}
+
+// handleChmod infers deletion or replacement from a chmod event. On linux the REMOVE event will not fire
+// until all file descriptors are closed, so os.Stat is used to tell what is now at the path.
+func (fs *Sync) handleChmod(ctx context.Context, dataSync chan<- sync.DataSync, restore *time.Ticker, warned *bool) {
+	_, err := os.Stat(fs.URI)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
+		fs.sendDataSync(ctx, dataSync)
+		// the remove event may never arrive while another process holds the file open
+		restore.Reset(restoreWatchInterval)
+	case err == nil:
+		// a replacement may already be at the path while the old file is held open; watch the file that is there now
+		if !fs.restoreWatch(warned) {
+			restore.Reset(restoreWatchInterval)
+			return
+		}
+		restore.Stop()
+		fs.sendDataSync(ctx, dataSync)
+	}
+}
+
+// restoreWatch replaces the watch for fs.URI and reports whether it succeeded. A failure is warned about once
+// per outage; warned resets on success.
+func (fs *Sync) restoreWatch(warned *bool) bool {
+	// drop any watch still on a replaced file that is held open, so repeated replacements do not leak inotify watches
+	err := fs.watcher.Remove(fs.URI)
+	if err == nil || errors.Is(err, fsnotify.ErrNonExistentWatch) {
+		err = fs.watcher.Add(fs.URI)
+	}
+	if err != nil {
+		if !*warned {
+			fs.Logger.Warn(fmt.Sprintf("unable to restore watch for %s, retrying: %s", fs.URI, err.Error()))
+			*warned = true
+		}
+		return false
+	}
+	*warned = false
+	return true
 }
 
 // reAddWatcher retries watcher.Add with backoff; returns the last Add error, or ctx.Err() if cancelled

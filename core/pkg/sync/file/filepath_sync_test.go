@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	msync "sync"
 	"testing"
 	"time"
@@ -15,6 +16,9 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 const (
@@ -308,6 +312,7 @@ type reAddMockWatcher struct {
 	addFailUntil int
 	addErr       error
 	addCalls     int
+	removeErr    error
 	watchList    []string
 }
 
@@ -322,7 +327,7 @@ func (m *reAddMockWatcher) Add(name string) error {
 	return nil
 }
 
-func (m *reAddMockWatcher) Remove(string) error         { return nil }
+func (m *reAddMockWatcher) Remove(string) error         { return m.removeErr }
 func (m *reAddMockWatcher) WatchList() []string         { return m.watchList }
 func (m *reAddMockWatcher) Events() chan fsnotify.Event { return make(chan fsnotify.Event) }
 func (m *reAddMockWatcher) Errors() chan error          { return make(chan error) }
@@ -407,5 +412,334 @@ func TestNewFileSync_PollIntervalMs(t *testing.T) {
 	}
 	if fs.URI != "/tmp/flags.json" {
 		t.Errorf("unexpected URI %q", fs.URI)
+	}
+}
+
+// startSync runs Init and Sync on uri and returns the emitted data and the sync's logs;
+// cleanup cancels the sync and requires Sync to return promptly
+func startSync(t *testing.T, uri, watchType string) (<-chan sync.DataSync, *observer.ObservedLogs) {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	core, logs := observer.New(zapcore.InfoLevel)
+	fs := &Sync{
+		URI:            uri,
+		Logger:         logger.NewLogger(zap.New(core), false),
+		Mux:            &msync.RWMutex{},
+		watchType:      watchType,
+		pollIntervalMs: 50,
+	}
+	if err := fs.Init(ctx); err != nil {
+		cancel()
+		t.Fatalf("init sync: %v", err)
+	}
+	dataSyncChan := make(chan sync.DataSync, 16)
+	done := make(chan error, 1)
+	go func() { done <- fs.Sync(ctx, dataSyncChan) }()
+	t.Cleanup(func() {
+		cancel()
+		// well inside the re-add window, so a cancel during the retry must not wait it out
+		select {
+		case err := <-done:
+			if err != nil {
+				t.Errorf("sync returned error: %v", err)
+			}
+		case <-time.After(reAddMaxAttempts * reAddBackoff / 2):
+			t.Error("sync did not return promptly after cancel")
+			<-done
+		}
+	})
+	return dataSyncChan, logs
+}
+
+// waitForFlagData drains dataSyncChan until want arrives or timeout elapses
+func waitForFlagData(t *testing.T, dataSyncChan <-chan sync.DataSync, want string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.After(timeout)
+	for {
+		select {
+		case data := <-dataSyncChan:
+			if data.FlagData == want {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("timed out after %s waiting for flag data %q", timeout, want)
+		}
+	}
+}
+
+// waitForLog waits until at least n log messages contain snippet
+func waitForLog(t *testing.T, logs *observer.ObservedLogs, snippet string, n int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for logs.FilterMessageSnippet(snippet).Len() < n {
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out after %s waiting for %d log(s) containing %q", timeout, n, snippet)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// a file deleted for longer than the re-add window and then recreated at the same path must still be synced, on every outage
+func TestSync_FileRestoredAfterDelete(t *testing.T) {
+	t.Parallel()
+	for _, watchType := range []string{FSNOTIFY, FILEINFO} {
+		t.Run(watchType, func(t *testing.T) {
+			t.Parallel()
+			dir := t.TempDir()
+			createFile(t, dir)
+			writeToFile(t, dir, fetchFileContents)
+			uri := filepath.Join(dir, fetchFileName)
+
+			dataSyncChan, logs := startSync(t, uri, watchType)
+			waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+			for cycle := 1; cycle <= 2; cycle++ {
+				deleteFile(t, dir, fetchFileName)
+				waitForFlagData(t, dataSyncChan, defaultState, 5*time.Second)
+				// the re-add retry has given up, so only the restore ticker can pick the file up again
+				waitForLog(t, logs, "error restoring watcher, file may have been deleted", cycle, 5*time.Second)
+
+				content := fmt.Sprintf("restored content %d", cycle)
+				if err := os.WriteFile(uri, []byte(content), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				waitForFlagData(t, dataSyncChan, content, 5*time.Second)
+			}
+		})
+	}
+}
+
+// while the file stays missing the failing restore attempts are warned about once, and cancel still returns promptly
+func TestSync_FileMissingWarnsOnce(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+
+	dataSyncChan, logs := startSync(t, filepath.Join(dir, fetchFileName), FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	deleteFile(t, dir, fetchFileName)
+	waitForLog(t, logs, "unable to restore watch", 1, 5*time.Second)
+	// let at least one more restore attempt fail
+	time.Sleep(restoreWatchInterval * 3 / 2)
+	if n := logs.FilterMessageSnippet("unable to restore watch").Len(); n != 1 {
+		t.Errorf("expected 1 restore warning per outage, got %d", n)
+	}
+}
+
+// cancelling while the re-add retry is in progress returns without waiting out the retry
+func TestSync_CancelDuringReAdd(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+
+	dataSyncChan, logs := startSync(t, filepath.Join(dir, fetchFileName), FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	deleteFile(t, dir, fetchFileName)
+	waitForLog(t, logs, fsnotify.Remove.String(), 1, 5*time.Second)
+}
+
+// a non-atomic replace (delete then recreate) inside the re-add window is picked up by the retry
+func TestSync_QuickReplaceWithinReAddWindow(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, logs := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	deleteFile(t, dir, fetchFileName)
+	if err := os.WriteFile(uri, []byte("replaced content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "replaced content", 5*time.Second)
+	if n := logs.FilterMessageSnippet("error restoring watcher").Len(); n != 0 {
+		t.Errorf("expected the re-add retry to succeed, but it gave up %d time(s)", n)
+	}
+}
+
+// kubelet updates a mounted ConfigMap by atomically swapping the ..data symlink to a new directory
+func TestSync_KubeletConfigMapSwap(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	mustWrite := func(path, content string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustSymlink := func(target, link string) {
+		t.Helper()
+		if err := os.Symlink(target, link); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	mustWrite(filepath.Join(dir, "..v1", fetchFileName), "configmap v1")
+	mustSymlink("..v1", filepath.Join(dir, "..data"))
+	mustSymlink(filepath.Join("..data", fetchFileName), filepath.Join(dir, fetchFileName))
+
+	dataSyncChan, _ := startSync(t, filepath.Join(dir, fetchFileName), FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, "configmap v1", 5*time.Second)
+
+	mustWrite(filepath.Join(dir, "..v2", fetchFileName), "configmap v2")
+	mustSymlink("..v2", filepath.Join(dir, "..data_tmp"))
+	if err := os.Rename(filepath.Join(dir, "..data_tmp"), filepath.Join(dir, "..data")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(dir, "..v1")); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "configmap v2", 5*time.Second)
+}
+
+// on linux the remove event is withheld while another process holds the deleted file open
+func TestSync_FileRestoredWhileDeletedFileHeldOpen(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, logs := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	held, err := os.Open(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+
+	deleteFile(t, dir, fetchFileName)
+	waitForFlagData(t, dataSyncChan, defaultState, 5*time.Second)
+	// the deletion was seen (via chmod on linux, via the given-up re-add elsewhere), so the restore ticker is armed
+	waitForLog(t, logs, "deleted", 1, 5*time.Second)
+
+	if err := os.WriteFile(uri, []byte("restored content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "restored content", 5*time.Second)
+}
+
+func TestSync_AtomicReplaceWhileOldFileHeldOpen(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, _ := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+
+	// while the old file is held open linux reports only a chmod, and the replacement already exists at the path
+	held, err := os.Open(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+
+	tmp := filepath.Join(dir, "replacement.json")
+	if err := os.WriteFile(tmp, []byte("replaced content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(tmp, uri); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "replaced content", 5*time.Second)
+
+	// the watch must now follow the replacement, not the old file
+	if err := os.WriteFile(uri, []byte("updated content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForFlagData(t, dataSyncChan, "updated content", 5*time.Second)
+}
+
+// inotifyWatchCount counts the inotify watches held by this process, or returns -1 where /proc is unavailable
+func inotifyWatchCount(t *testing.T) int {
+	t.Helper()
+	paths, err := filepath.Glob("/proc/self/fdinfo/*")
+	if err != nil || len(paths) == 0 {
+		return -1
+	}
+	n := 0
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		n += strings.Count(string(data), "inotify wd:")
+	}
+	return n
+}
+
+// not parallel, so no other test adds or drops inotify watches while this one counts them
+func TestSync_RepeatedReplaceWhileHeldOpenDoesNotLeakWatches(t *testing.T) {
+	dir := t.TempDir()
+	createFile(t, dir)
+	writeToFile(t, dir, fetchFileContents)
+	uri := filepath.Join(dir, fetchFileName)
+
+	dataSyncChan, _ := startSync(t, uri, FSNOTIFY)
+	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
+	before := inotifyWatchCount(t)
+	if before < 0 {
+		t.Skip("inotify watch count needs linux /proc")
+	}
+
+	for i := 0; i < 3; i++ {
+		held, err := os.Open(uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer held.Close()
+		content := fmt.Sprintf("replacement %d", i)
+		tmp := filepath.Join(dir, "replacement.json")
+		if err := os.WriteFile(tmp, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Rename(tmp, uri); err != nil {
+			t.Fatal(err)
+		}
+		waitForFlagData(t, dataSyncChan, content, 5*time.Second)
+	}
+
+	if after := inotifyWatchCount(t); after != before {
+		t.Errorf("expected %d inotify watches after replacing the held-open file, got %d", before, after)
+	}
+}
+
+func TestRestoreWatch_RemoveErrors(t *testing.T) {
+	tests := map[string]struct {
+		removeErr error
+		wantOK    bool
+		wantAdds  int
+	}{
+		"watch present":      {removeErr: nil, wantOK: true, wantAdds: 1},
+		"watch already gone": {removeErr: fmt.Errorf("fsnotify: %w", fsnotify.ErrNonExistentWatch), wantOK: true, wantAdds: 1},
+		"remove fails":       {removeErr: errors.New("remove failed"), wantOK: false, wantAdds: 0},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mw := &reAddMockWatcher{removeErr: tt.removeErr}
+			fs := newReAddSync(mw)
+			warned := false
+			if ok := fs.restoreWatch(&warned); ok != tt.wantOK {
+				t.Errorf("expected restoreWatch to return %t, got %t", tt.wantOK, ok)
+			}
+			if mw.addCalls != tt.wantAdds {
+				t.Errorf("expected %d Add calls, got %d", tt.wantAdds, mw.addCalls)
+			}
+			if warned == tt.wantOK {
+				t.Errorf("expected warned %t, got %t", !tt.wantOK, warned)
+			}
+		})
 	}
 }
