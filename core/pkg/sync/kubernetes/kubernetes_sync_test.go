@@ -13,14 +13,20 @@ import (
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 	"github.com/stretchr/testify/require"
+	msdk "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -978,11 +984,23 @@ func toUnstructured(t *testing.T, obj interface{}) *unstructured.Unstructured {
 type MockInformer struct {
 	cache.SharedInformer
 	fake.FakeDynamicClient
-	fakeStore cache.FakeCustomStore
+	fakeStore                    cache.FakeCustomStore
+	watchErrorHandler            cache.WatchErrorHandler
+	watchErrorHandlerWithContext cache.WatchErrorHandlerWithContext
 }
 
 func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
+}
+
+func (m *MockInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	m.watchErrorHandler = handler
+	return nil
+}
+
+func (m *MockInformer) SetWatchErrorHandlerWithContext(handler cache.WatchErrorHandlerWithContext) error {
+	m.watchErrorHandlerWithContext = handler
+	return nil
 }
 
 func TestMarshallFeatureFlagSpec(t *testing.T) {
@@ -1035,4 +1053,137 @@ func TestMarshallFeatureFlagSpec_metadata(t *testing.T) {
 			}
 		}
 	}`, res)
+}
+
+func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
+	reader := msdk.NewManualReader()
+	mp := msdk.NewMeterProvider(msdk.WithReader(reader))
+	recorder := syncmetrics.NewRecorder(mp)
+
+	observedZapCore, observedLogs := observer.New(zap.ErrorLevel)
+	observedLogger := logger.NewLogger(zap.New(observedZapCore), false)
+
+	const name = "myFF"
+	const ns = "myNS"
+	const uri = ns + "/" + name
+
+	mockInformer := &MockInformer{}
+	sync := &Sync{
+		URI:                 uri,
+		logger:              observedLogger,
+		SyncMetricsRecorder: recorder,
+		informer:            mockInformer,
+	}
+
+	require.NoError(t, sync.setWatchErrorHandler())
+	require.NotNil(t, mockInformer.watchErrorHandlerWithContext)
+
+	testErr := errors.New("forbidden: cannot watch featureflags")
+	mockInformer.watchErrorHandlerWithContext(t.Context(), nil, testErr)
+
+	// Check log
+	logs := observedLogs.All()
+	require.Len(t, logs, 1)
+	require.Equal(t, "kubernetes sync watch error", logs[0].Message)
+	errField, ok := logs[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Equal(t, "forbidden: cannot watch featureflags", errField)
+
+	// Check metrics
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &rm))
+	require.NotEmpty(t, rm.ScopeMetrics)
+	var foundMetric *metricdata.Metrics
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "feature_flag.flagd.sync.client.error" {
+				metricCopy := m
+				foundMetric = &metricCopy
+				break
+			}
+		}
+	}
+	require.NotNil(t, foundMetric, "expected metric feature_flag.flagd.sync.client.error")
+	data := foundMetric.Data.(metricdata.Sum[int64])
+	require.Len(t, data.DataPoints, 1)
+	require.EqualValues(t, 1, data.DataPoints[0].Value)
+
+	// Check attributes
+	attrs := data.DataPoints[0].Attributes
+	val, ok := attrs.Value("feature_flag.flagd.sync.type")
+	require.True(t, ok)
+	require.Equal(t, "kubernetes", val.AsString())
+
+	val, ok = attrs.Value("feature_flag.flagd.sync.uri")
+	require.True(t, ok)
+	require.Equal(t, uri, val.AsString())
+}
+
+func TestSync_WatchErrorFromInformer(t *testing.T) {
+	reader := msdk.NewManualReader()
+	mp := msdk.NewMeterProvider(msdk.WithReader(reader))
+	recorder := syncmetrics.NewRecorder(mp)
+
+	observedZapCore, observedLogs := observer.New(zap.ErrorLevel)
+	observedLogger := logger.NewLogger(zap.New(observedZapCore), false)
+
+	const name = "myFF"
+	const ns = "myNS"
+
+	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+	)
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		return true, nil, errors.New("simulated watch error")
+	})
+
+	k := Sync{
+		URI:                 fmt.Sprintf("%s/%s", ns, name),
+		dynamicClient:       fakeClient,
+		logger:              observedLogger,
+		SyncMetricsRecorder: recorder,
+	}
+	require.NoError(t, k.Init(t.Context()))
+
+	go k.informer.Run(t.Context().Done())
+
+	require.Eventually(t, func() bool {
+		if observedLogs.Len() == 0 {
+			return false
+		}
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(t.Context(), &rm); err != nil {
+			return false
+		}
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				if m.Name == "feature_flag.flagd.sync.client.error" {
+					if data, ok := m.Data.(metricdata.Sum[int64]); ok && len(data.DataPoints) > 0 {
+						return data.DataPoints[0].Value > 0
+					}
+				}
+			}
+		}
+		return false
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Equal(t, "kubernetes sync watch error", observedLogs.All()[0].Message)
+	errField, ok := observedLogs.All()[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Contains(t, errField, "simulated watch error")
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &rm))
+	var foundMetric *metricdata.Metrics
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "feature_flag.flagd.sync.client.error" {
+				metricCopy := m
+				foundMetric = &metricCopy
+				break
+			}
+		}
+	}
+	require.NotNil(t, foundMetric, "expected metric feature_flag.flagd.sync.client.error")
 }
