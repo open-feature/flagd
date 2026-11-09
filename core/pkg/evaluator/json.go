@@ -170,6 +170,7 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
 	jsonlogic.AddOperator(EndsWithEvaluationName, NewStringComparisonEvaluator(logger).EndsWithEvaluation)
 	jsonlogic.AddOperator(SemVerEvaluationName, NewSemVerComparison(logger).SemVerEvaluation)
+	jsonlogic.AddOperator(ResolveEvaluationName, NewResolveEvaluator(logger).Evaluate)
 
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
@@ -466,6 +467,12 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
 		}
 
+		if variant, reason, metadata, err, handled := je.applyResolveResult(
+			reqID, flagKey, flag, metadata, trimmed,
+		); handled {
+			return variant, flag.Variants, reason, metadata, err
+		}
+
 		// strip whitespace and quotes from the variant
 		variant = strings.ReplaceAll(trimmed, "\"", "")
 
@@ -584,6 +591,9 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		definition.Flags = flags
 	}
 	je.warnUnsafeNumericVariants(definition)
+	if err := validateResolveOperators(definition); err != nil {
+		return err
+	}
 	return validateDefaultVariants(definition)
 }
 
