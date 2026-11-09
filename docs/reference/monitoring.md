@@ -71,6 +71,7 @@ These metrics are recorded on every [flag evaluation](./specifications/protos.md
 - `feature_flag.result.variant` - The variant returned by the evaluation
 - `feature_flag.provider.name` - The feature flag provider name (always `flagd`)
 - `feature_flag.reason` - The evaluation reason (e.g. `STATIC`, `TARGETING_MATCH`, `ERROR`)
+- `feature_flag.set.id` - The flag set identifier, when a non-empty string identifier is available in the evaluation metadata. For bulk requests spanning multiple flag sets, each result is attributed to its own flag set. The attribute is omitted when the identifier is unknown or the result is `FLAG_NOT_FOUND`, because that error's metadata can originate from a caller-supplied selector.
 
 ### gRPC Sync Metrics
 
@@ -95,14 +96,41 @@ flagd uses the [OpenTelemetry Semantic Conventions for RPC](https://pkg.go.dev/g
 
 #### Custom sync metrics
 
-- `feature_flag.flagd.sync.active_streams` - Measures the number of currently active gRPC sync streaming connections
-- `feature_flag.flagd.sync.stream.duration` - Measures the duration of gRPC sync streaming connections (seconds). Histogram buckets: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h.
+flagd can act as both a sync **server** (accepting SDK streams) and a sync **client** (pulling flag configs from an upstream source). Metrics are split along that axis.
+
+##### Server-side (SDK clients streaming into flagd)
+
+- `feature_flag.flagd.sync.server.active_streams` - Number of currently active gRPC sync streaming connections open against this flagd.
+- `feature_flag.flagd.sync.server.stream.duration` - Duration of gRPC sync streaming connections (seconds). Histogram buckets: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h.
 
 **Attributes:**
 
 - `selector` - The selector expression used by the sync stream, when specified in the request
 - `provider_id` - The provider ID of the connecting client, when specified in the request
 - `reason` - Stream exit reason: `normal_close`, `deadline_exceeded`, `client_disconnect`, or `error` (on `stream.duration` only)
+
+##### Client-side (flagd streaming out from an upstream source)
+
+Recorded on every sync provider (`grpc`, `http`, `file`, `kubernetes`, `blob`) except where noted.
+
+- `feature_flag.flagd.sync.client.flag_config.received` - Total number of flag-configuration payloads received from a sync source and handed off downstream. Does not imply the evaluator successfully applied the payload to its store.
+- `feature_flag.flagd.sync.client.flag_config.last_received_timestamp` - Unix timestamp (seconds) of the most recent flag-configuration payload received. Query staleness as `time() - <value>`.
+- `feature_flag.flagd.sync.client.stream.active` (gRPC only) - 1 while a SyncFlags stream is open, 0 when disconnected.
+- `feature_flag.flagd.sync.client.stream.reconnects` (gRPC only) - Total number of successful sync stream reconnections after an initial failure. Steady growth indicates upstream flapping.
+
+**Attributes (dual set, emitted on every data point):**
+
+Legacy keys (kept for back-compat during the transition):
+
+- `flagd.sync.provider` - sync source type (`grpc`, `http`, `file`, `kubernetes`, `blob`)
+- `flagd.sync.uri` - the source URI. Sanitized before emission: userinfo, query string, and fragment are stripped so `?token=…`, S3/GCS signed-URL params, and `user:pass@` do not land in metric attribute values.
+- `flagd.sync.selector` - the selector, when non-empty
+
+OTel-aligned keys (recommended for new dashboards):
+
+- `feature_flag.flagd.sync.type` - same as `flagd.sync.provider`
+- `feature_flag.flagd.sync.uri` - same as `flagd.sync.uri` (also sanitized)
+- `feature_flag.flagd.sync.selector` - same as `flagd.sync.selector`
 
 ## Traces
 
@@ -117,7 +145,7 @@ flagd creates the following spans as part of a trace:
 flagd can be configured to connect to [OTEL collector](https://opentelemetry.io/docs/collector/). This requires startup
 flag `metrics-exporter` to be `otel` and a valid `otel-collector-uri`. For example,
 
-`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri localhost:4317`
+`flagd start --uri file:/flags.json --metrics-exporter otel --otel-collector-uri http://localhost:4317`
 
 ### Custom resource attributes
 
@@ -125,7 +153,7 @@ To attach custom resource attributes (e.g., environment name, deployment region)
 
 ```sh
 export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=staging,service.version=1.2.3"
-export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 flagd start --uri file:/flags.json --metrics-exporter otel
 ```
 

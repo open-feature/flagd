@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +14,8 @@ import (
 	msdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
+
+	"github.com/open-feature/flagd/core/pkg/model"
 )
 
 const (
@@ -27,8 +31,8 @@ const (
 	impressionMetric          = featureFlagPrefix + ProviderName + ".impression"
 	reasonMetric              = featureFlagPrefix + ProviderName + ".result.reason"
 
-	syncActiveStreamsMetric  = featureFlagPrefix + ProviderName + ".sync.active_streams"
-	syncStreamDurationMetric = featureFlagPrefix + ProviderName + ".sync.stream.duration"
+	syncServerActiveStreamsMetric  = featureFlagPrefix + ProviderName + ".sync.server.active_streams"
+	syncServerStreamDurationMetric = featureFlagPrefix + ProviderName + ".sync.server.stream.duration"
 )
 
 type IMetricsRecorder interface {
@@ -37,12 +41,12 @@ type IMetricsRecorder interface {
 	HTTPResponseSize(ctx context.Context, sizeBytes int64, attrs []attribute.KeyValue)
 	InFlightRequestStart(ctx context.Context, attrs []attribute.KeyValue)
 	InFlightRequestEnd(ctx context.Context, attrs []attribute.KeyValue)
-	RecordEvaluation(ctx context.Context, err error, reason, variant, key string)
-	Impressions(ctx context.Context, reason, variant, key string)
+	RecordEvaluation(ctx context.Context, err error, reason, variant, key string, metadata model.Metadata)
+	Impressions(ctx context.Context, reason, variant, key string, metadata model.Metadata)
 	// gRPC Sync metrics
-	SyncStreamStart(ctx context.Context, attrs []attribute.KeyValue)
-	SyncStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
-	SyncStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
+	SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue)
+	SyncServerStreamEnd(ctx context.Context, attrs []attribute.KeyValue)
+	SyncServerStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue)
 }
 
 type NoopMetricsRecorder struct{}
@@ -63,21 +67,21 @@ func (NoopMetricsRecorder) InFlightRequestStart(_ context.Context, _ []attribute
 func (NoopMetricsRecorder) InFlightRequestEnd(_ context.Context, _ []attribute.KeyValue) {
 }
 
-func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string) {
+func (NoopMetricsRecorder) RecordEvaluation(_ context.Context, _ error, _, _, _ string, _ model.Metadata) {
 }
 
-func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string) {
+func (NoopMetricsRecorder) Impressions(_ context.Context, _, _, _ string, _ model.Metadata) {
 }
 
-func (NoopMetricsRecorder) SyncStreamStart(_ context.Context, _ []attribute.KeyValue) {
+func (NoopMetricsRecorder) SyncServerStreamStart(_ context.Context, _ []attribute.KeyValue) {
 	// No-op implementation: intentionally does nothing
 }
 
-func (NoopMetricsRecorder) SyncStreamEnd(_ context.Context, _ []attribute.KeyValue) {
+func (NoopMetricsRecorder) SyncServerStreamEnd(_ context.Context, _ []attribute.KeyValue) {
 	// No-op implementation: intentionally does nothing
 }
 
-func (NoopMetricsRecorder) SyncStreamDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
+func (NoopMetricsRecorder) SyncServerStreamDuration(_ context.Context, _ time.Duration, _ []attribute.KeyValue) {
 	// No-op implementation: intentionally does nothing
 }
 
@@ -92,13 +96,30 @@ type MetricsRecorder struct {
 	syncStreamDuration metric.Float64Histogram
 }
 
+// Returns the standard http.server metric attribute set, with a standardized method.
 func (r MetricsRecorder) HTTPAttributes(svcName, url, method, code, scheme string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		semconv.ServiceNameKey.String(svcName),
 		semconv.HTTPRouteKey.String(url),
-		semconv.HTTPRequestMethodKey.String(method),
+		semconv.HTTPRequestMethodKey.String(standardizeHTTPMethod(method)),
 		semconv.HTTPResponseStatusCodeKey.String(code),
 		semconv.URLSchemeKey.String(scheme),
+	}
+}
+
+// Canonicalizes known HTTP methods and maps unknown ones to _OTHER.
+func standardizeHTTPMethod(method string) string {
+	// standard methods are at most 7 bytes; skip ToUpper's copy for anything longer
+	if len(method) > len(http.MethodConnect) {
+		return "_OTHER"
+	}
+	method = strings.ToUpper(method)
+	switch method {
+	case http.MethodConnect, http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodOptions, http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace:
+		return method
+	default:
+		return "_OTHER"
 	}
 }
 
@@ -118,20 +139,24 @@ func (r MetricsRecorder) InFlightRequestEnd(ctx context.Context, attrs []attribu
 	r.httpRequestsInflight.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) RecordEvaluation(ctx context.Context, err error, reason, variant, key string) {
+func (r MetricsRecorder) RecordEvaluation(
+	ctx context.Context, err error, reason, variant, key string, metadata model.Metadata,
+) {
 	if err == nil {
-		r.Impressions(ctx, reason, variant, key)
+		r.Impressions(ctx, reason, variant, key, metadata)
 	}
-	r.Reasons(ctx, key, reason, err)
+	r.Reasons(ctx, key, reason, metadata, err)
 }
 
-func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string) {
+func (r MetricsRecorder) Impressions(ctx context.Context, reason, variant, key string, metadata model.Metadata) {
+	attrs := append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))
+	attrs = appendFlagSetID(attrs, metadata)
 	r.impressions.Add(ctx,
 		1,
-		metric.WithAttributes(append(SemConvFeatureFlagAttributes(key, variant), FeatureFlagReason(reason))...))
+		metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string, err error) {
+func (r MetricsRecorder) Reasons(ctx context.Context, key, reason string, metadata model.Metadata, err error) {
 	attrs := []attribute.KeyValue{
 		semconv.FeatureFlagProviderName(ProviderName),
 		FeatureFlagReason(reason),
@@ -142,19 +167,30 @@ func (r MetricsRecorder) Reasons(ctx context.Context, key string, reason string,
 	} else {
 		attrs = append(attrs, ExceptionType(err.Error()))
 	}
+	if err == nil || err.Error() != model.FlagNotFoundErrorCode {
+		attrs = appendFlagSetID(attrs, metadata)
+	}
 
 	r.reasons.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) SyncStreamStart(ctx context.Context, attrs []attribute.KeyValue) {
+func appendFlagSetID(attrs []attribute.KeyValue, metadata model.Metadata) []attribute.KeyValue {
+	flagSetID := flagSetIDFromMetadata(metadata)
+	if flagSetID == "" {
+		return attrs
+	}
+	return append(attrs, semconv.FeatureFlagSetID(flagSetID))
+}
+
+func (r MetricsRecorder) SyncServerStreamStart(ctx context.Context, attrs []attribute.KeyValue) {
 	r.syncActiveStreams.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) SyncStreamEnd(ctx context.Context, attrs []attribute.KeyValue) {
+func (r MetricsRecorder) SyncServerStreamEnd(ctx context.Context, attrs []attribute.KeyValue) {
 	r.syncActiveStreams.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
-func (r MetricsRecorder) SyncStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue) {
+func (r MetricsRecorder) SyncServerStreamDuration(ctx context.Context, duration time.Duration, attrs []attribute.KeyValue) {
 	r.syncStreamDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
@@ -192,7 +228,7 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 		// for response size we want 8 exponential bucket starting from 100 Bytes
 		msdk.WithView(getDurationView(serviceName, httpResponseSizeMetric, prometheus.ExponentialBuckets(100, 10, 8))),
 		// for gRPC sync stream duration: 30s, 1min, 2min, 5min, 8min, 10min, 20min, 30min, 1h, 3h
-		msdk.WithView(getDurationView(serviceName, syncStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
+		msdk.WithView(getDurationView(serviceName, syncServerStreamDurationMetric, []float64{30, 60, 120, 300, 480, 600, 1200, 1800, 3600, 10800})),
 		// set entity producing telemetry
 		msdk.WithResource(resource),
 		// limit metric attribute cardinality to prevent unbounded memory growth from
@@ -236,12 +272,12 @@ func NewOTelRecorder(exporter msdk.Reader, resource *resource.Resource, serviceN
 
 	// gRPC Sync metrics
 	syncActiveStreams, _ := meter.Int64UpDownCounter(
-		syncActiveStreamsMetric,
+		syncServerActiveStreamsMetric,
 		metric.WithDescription("Measures the number of currently active gRPC sync streaming connections."),
 		metric.WithUnit("{stream}"),
 	)
 	syncStreamDuration, _ := meter.Float64Histogram(
-		syncStreamDurationMetric,
+		syncServerStreamDurationMetric,
 		metric.WithDescription("Measures the duration of gRPC sync streaming connections."),
 		metric.WithUnit("s"),
 	)

@@ -6,12 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	evaluationV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v1/evaluationv1connect"
+	evaluationV2 "buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/evaluation/v2/evaluationv2connect"
+	schemaConnectV1 "buf.build/gen/go/open-feature/flagd/connectrpc/go/schema/v1/schemav1connect"
 	schemaGrpcV1 "buf.build/gen/go/open-feature/flagd/grpc/go/schema/v1/schemav1grpc"
 	schemaV1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/schema/v1"
 	mock "github.com/open-feature/flagd/core/pkg/evaluator/mock"
@@ -22,8 +26,11 @@ import (
 	"github.com/open-feature/flagd/core/pkg/telemetry"
 	middlewaremock "github.com/open-feature/flagd/flagd/pkg/service/middleware/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -31,6 +38,96 @@ import (
 )
 
 const resolveAllURLFmt = "http://localhost:%d/flagd.evaluation.v1.Service/ResolveAll"
+
+// Verifies bounded (route, method) labels on HTTP server metrics.
+func TestConnectServiceHTTPMetricLabels(t *testing.T) {
+	reader := metric.NewManualReader()
+	recorder := telemetry.NewOTelRecorder(reader, resource.NewWithAttributes("testSchema"), "testSvc")
+	svc := NewConnectService(logger.NewLogger(nil, false), nil, nil, recorder)
+	svc.setupHandler(iservice.Configuration{ServiceName: "testSvc"})
+
+	requests := []struct {
+		method string
+		path   string
+		status int
+	}{
+		{method: http.MethodGet, path: schemaConnectV1.ServiceResolveAllProcedure},
+		{method: http.MethodGet, path: evaluationV1.ServiceResolveBooleanProcedure},
+		{method: "PROPFIND", path: evaluationV2.ServiceResolveStringProcedure},
+		{method: http.MethodGet, path: "/unregistered/first", status: http.StatusNotFound},
+		{method: http.MethodGet, path: evaluationV1.ServiceResolveBooleanProcedure + "/extra", status: http.StatusNotFound},
+		{method: "PROPFIND", path: "/unregistered/second", status: http.StatusNotFound},
+		{method: "CUSTOM", path: "/unregistered/third", status: http.StatusNotFound},
+	}
+	for _, req := range requests {
+		response := httptest.NewRecorder()
+		svc.server.Handler.ServeHTTP(response, httptest.NewRequest(req.method, req.path, nil))
+		if req.status != 0 {
+			require.Equal(t, req.status, response.Code, "%s %s", req.method, req.path)
+		}
+	}
+
+	var data metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &data))
+	want := map[[2]string]bool{
+		{schemaConnectV1.ServiceResolveAllProcedure, http.MethodGet}:  true,
+		{evaluationV1.ServiceResolveBooleanProcedure, http.MethodGet}: true,
+		{evaluationV2.ServiceResolveStringProcedure, "_OTHER"}:        true,
+		{"/", http.MethodGet}: true,
+		{"/", "_OTHER"}:       true,
+	}
+	seen := collectHTTPMetricLabelPairs(t, data, want)
+	require.Len(t, seen, 3)
+}
+
+// httpServerMetrics are the OTel HTTP server metric names emitted by the recorder.
+var httpServerMetrics = map[string]bool{
+	"http.server.request.duration":   true,
+	"http.server.response.body.size": true,
+	"http.server.active_requests":    true,
+}
+
+// collectHTTPMetricLabelPairs asserts each HTTP metric has exactly the want (route, method) pairs; returns names seen.
+func collectHTTPMetricLabelPairs(t *testing.T, data metricdata.ResourceMetrics, want map[[2]string]bool) map[string]bool {
+	t.Helper()
+
+	seen := make(map[string]bool)
+	for _, scope := range data.ScopeMetrics {
+		for _, m := range scope.Metrics {
+			if !httpServerMetrics[m.Name] {
+				continue
+			}
+			require.Equal(t, want, metricRouteMethodPairs(t, m), m.Name)
+			seen[m.Name] = true
+		}
+	}
+	return seen
+}
+
+// metricRouteMethodPairs returns the set of (route, method) label pairs on the metric's data points.
+func metricRouteMethodPairs(t *testing.T, m metricdata.Metrics) map[[2]string]bool {
+	t.Helper()
+
+	got := make(map[[2]string]bool)
+	collect := func(attrs attribute.Set) {
+		route, _ := attrs.Value(semconv.HTTPRouteKey)
+		method, _ := attrs.Value(semconv.HTTPRequestMethodKey)
+		got[[2]string{route.AsString(), method.AsString()}] = true
+	}
+	switch points := m.Data.(type) {
+	case metricdata.Histogram[float64]:
+		for _, point := range points.DataPoints {
+			collect(point.Attributes)
+		}
+	case metricdata.Sum[int64]:
+		for _, point := range points.DataPoints {
+			collect(point.Attributes)
+		}
+	default:
+		t.Fatalf("unexpected data type for %s: %T", m.Name, m.Data)
+	}
+	return got
+}
 
 func TestConnectServiceUnixConnection(t *testing.T) {
 	type evalFields struct {

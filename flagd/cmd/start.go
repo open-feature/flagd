@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	syncbuilder "github.com/open-feature/flagd/core/pkg/sync/builder"
 	"github.com/open-feature/flagd/flagd/pkg/runtime"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -42,6 +45,7 @@ const (
 	syncSocketPathFlagName     = "sync-socket-path"
 	uriFlagName                = "uri"
 	disableSyncMetadata        = "disable-sync-metadata"
+	strictNumericRangeFlagName = "strict-numeric-range" // TODO(#2101): remove
 	contextValueFlagName       = "context-value"
 	headerToContextKeyFlagName = "context-from-header"
 	streamDeadlineFlagName     = "stream-deadline"
@@ -106,6 +110,7 @@ func init() {
 		"header values to context values, where key is Header name, value is context key")
 	flags.Duration(streamDeadlineFlagName, 0, "Set a server-side deadline for flagd sync and event streams (default 0, means no deadline).")
 	flags.Bool(disableSyncMetadata, false, "Disables the getMetadata endpoint of the sync service. Defaults to false, but will default to true in later versions.")
+	flags.Bool(strictNumericRangeFlagName, false, "Rejects numeric flag values outside [-(2^53-1), 2^53-1] with TYPE_MISMATCH. Defaults to false, but will default to true in later versions.")
 	flags.Int64P(maxRequestBodyFlagName, "B", 1_000_000, "Maximum allowed request body size in bytes. Requests exceeding this are rejected with HTTP 413 (OFREP) or 429 (connect). Set to 0 to disable. WARNING: disabling this limit may allow memory exhaustion from oversized requests.")
 	flags.Int64P(maxRequestHeaderFlagName, "R", 1_000_000, "Maximum allowed request header size in bytes. Requests exceeding this are rejected with HTTP 431. Set to 0 to use Go's built-in default (1 MiB). WARNING: setting a very large or zero value may allow memory exhaustion from oversized headers.")
 	flags.Duration(keepAliveMinTimeFlagName, runtime.KeepAliveMinTimeDefault, "No-op, accepted for compatibility. The flag sync server is served by connect over net/http, which has no keepalive enforcement policy to configure and imposes no minimum ping interval.")
@@ -140,6 +145,7 @@ func bindFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag(headerToContextKeyFlagName, flags.Lookup(headerToContextKeyFlagName))
 	_ = viper.BindPFlag(streamDeadlineFlagName, flags.Lookup(streamDeadlineFlagName))
 	_ = viper.BindPFlag(disableSyncMetadata, flags.Lookup(disableSyncMetadata))
+	_ = viper.BindPFlag(strictNumericRangeFlagName, flags.Lookup(strictNumericRangeFlagName))
 	_ = viper.BindPFlag(maxRequestBodyFlagName, flags.Lookup(maxRequestBodyFlagName))
 	_ = viper.BindPFlag(maxRequestHeaderFlagName, flags.Lookup(maxRequestHeaderFlagName))
 	_ = viper.BindPFlag(keepAliveMinTimeFlagName, flags.Lookup(keepAliveMinTimeFlagName))
@@ -217,12 +223,29 @@ var startCmd = &cobra.Command{
 			rtLogger.Info(fmt.Sprintf("request header limit set to %d bytes", maxRequestHeaderBytes))
 		}
 
+		managementPort, err := getPort(managementPortFlagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ofrepPort, err := getPort(ofrepPortFlagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		servicePort, err := getPort(portFlagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		syncPort, err := getPort(syncPortFlagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// Build Runtime -----------------------------------------------------------
 		rt, err := runtime.FromConfig(logger, Version, runtime.Config{
 			CORS:                   viper.GetStringSlice(corsFlagName),
 			MetricExporter:         viper.GetString(metricsExporter),
-			ManagementPort:         viper.GetUint16(managementPortFlagName),
-			OfrepServicePort:       viper.GetUint16(ofrepPortFlagName),
+			ManagementPort:         managementPort,
+			OfrepServicePort:       ofrepPort,
 			OfrepSSEEnabled:        viper.GetBool(ofrepSSEEnabledFlagName),
 			OfrepSSEInactivityDel:  viper.GetInt(ofrepSSEInactivityFlagName),
 			OfrepSSEPublicURL:      viper.GetString(ofrepSSEPublicURLFlagName),
@@ -233,13 +256,14 @@ var startCmd = &cobra.Command{
 			OtelCAPath:             viper.GetString(otelCAPathFlagName),
 			ServiceCertPath:        viper.GetString(serverCertPathFlagName),
 			ServiceKeyPath:         viper.GetString(serverKeyPathFlagName),
-			ServicePort:            viper.GetUint16(portFlagName),
+			ServicePort:            servicePort,
 			ServiceSocketPath:      viper.GetString(socketPathFlagName),
-			SyncServicePort:        viper.GetUint16(syncPortFlagName),
+			SyncServicePort:        syncPort,
 			SyncServiceHTTPEnabled: viper.GetBool(syncHTTPFlagName),
 			SyncServiceSocketPath:  viper.GetString(syncSocketPathFlagName),
 			StreamDeadline:         viper.GetDuration(streamDeadlineFlagName),
 			DisableSyncMetadata:    viper.GetBool(disableSyncMetadata),
+			StrictNumericRange:     viper.GetBool(strictNumericRangeFlagName),
 			//nolint:staticcheck // SA1019 no-ops, read so FromConfig can warn when they are set
 			KeepAliveMinTime: viper.GetDuration(keepAliveMinTimeFlagName),
 			//nolint:staticcheck // SA1019 see above
@@ -258,4 +282,41 @@ var startCmd = &cobra.Command{
 			rtLogger.Fatal(err.Error())
 		}
 	},
+}
+
+func getPort(flagName string) (uint16, error) {
+	val := viper.Get(flagName)
+	if val == nil {
+		return 0, nil
+	}
+	if str, ok := val.(string); ok {
+		if strings.HasPrefix(str, "tcp://") {
+			return 0, fmt.Errorf("invalid port value for '%s': %q (this can be caused by Kubernetes service links, set enableServiceLinks: false on the pod)", flagName, str)
+		}
+		p, err := strconv.ParseUint(str, 10, 16)
+		if err != nil {
+			return 0, fmt.Errorf("invalid port value for '%s': %w", flagName, err)
+		}
+		return uint16(p), nil
+	}
+	switch v := val.(type) {
+	case bool:
+		return 0, fmt.Errorf("invalid port value for '%s': must be an integer", flagName)
+	case float32:
+		if math.Trunc(float64(v)) != float64(v) {
+			return 0, fmt.Errorf("invalid port value for '%s': must be an integer", flagName)
+		}
+	case float64:
+		if math.Trunc(v) != v {
+			return 0, fmt.Errorf("invalid port value for '%s': must be an integer", flagName)
+		}
+	}
+	p, err := cast.ToUint16E(val)
+	if err != nil {
+		return 0, fmt.Errorf("invalid port value for '%s': %w", flagName, err)
+	}
+	if i, err := cast.ToInt64E(val); err == nil && (i < 0 || i > math.MaxUint16) {
+		return 0, fmt.Errorf("invalid port value for '%s': value out of range", flagName)
+	}
+	return p, nil
 }

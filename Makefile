@@ -107,11 +107,11 @@ uninstall:
 	rm /etc/systemd/system/flagd.service
 	rm -f $(DESTDIR)$(PREFIX)/bin/flagd
 lint:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
-	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run $(module)/...;)
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+	rc=0; $(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run $(module)/... || rc=1;) exit $$rc
 lint-fix:
-	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
-	$(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --fix $(module)/...;)
+	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+	rc=0; $(foreach module, $(ALL_GO_MOD_DIRS), ${GOPATH}/bin/golangci-lint run --fix $(module)/... || rc=1;) exit $$rc
 install-mockgen:
 	go install go.uber.org/mock/mockgen@v0.4.0
 mockgen: install-mockgen
