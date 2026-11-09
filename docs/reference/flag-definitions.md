@@ -392,11 +392,13 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 | `starts_with`                      | Attribute starts with the specified value           | string                                       | Logic: `#!json { "starts_with" : [ "192.168.0.1", "192.168"] }`<br>Result: `true`<br><br>Logic: `#!json { "starts_with" : [ "10.0.0.1", "192.168"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md).                      |
 | `ends_with`                        | Attribute ends with the specified value             | string                                       | Logic: `#!json { "ends_with" : [ "noreply@example.com", "@example.com"] }`<br>Result: `true`<br><br>Logic: `#!json { ends_with" : [ "noreply@example.com", "@test.com"] }`<br>Result: `false`<br>Additional documentation can be found [here](./custom-operations/string-comparison-operation.md). |
 | `sem_ver`                          | Attribute matches a semantic versioning condition   | string (valid [semver](https://semver.org/)) | Logic: `#!json {"sem_ver": ["1.1.2", ">=", "1.0.0"]}`<br>Result: `true`<br><br>Additional documentation can be found [here](./custom-operations/semver-operation.md).                                                                                                                              |
+| `resolve`                          | Ends targeting with a variant, optional reason, and metadata | string variant; reason string or null; metadata pairs of string, number, or boolean | Logic: `#!json {"resolve": ["on", "SPLIT_RANDOM", [["details", "us-10pct-rollout"]]]}`<br>Result: variant `on`, reason `SPLIT_RANDOM`, metadata `details`<br><br>Additional documentation can be found [here](./custom-operations/resolve-operation.md). |
 
 !!! info "Error handling in custom operations"
 
     flagd's custom operations return `null` on invalid or unexpected inputs, consistent with how built-in JsonLogic operations represent no-value returns, for example how `var` treats missing keys.
     When used inside an `if`, `null` is falsy, so evaluation falls through to the else branch rather than producing a false positive match.
+    `resolve` is the exception: it is only valid in a terminal position, and flagd rejects the flag when that configuration is loaded.
 
 #### Targeting key
 

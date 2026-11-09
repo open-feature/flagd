@@ -1,0 +1,76 @@
+---
+description: flagd resolve custom operation
+---
+
+# Resolve Operation
+
+`resolve` ends a targeting rule with a variant, and optionally a custom reason and metadata for the branch that fired.
+
+`"red"` and `{ "resolve": ["red"] }` select the same variant.
+
+A missing or null reason keeps `TARGETING_MATCH`.
+
+Metadata is a shallow list of `[key, value]` pairs.
+
+Values are strings, numbers, or booleans.
+
+Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
+
+`resolve` is terminal.
+
+It is valid as the whole targeting rule, or as a result of `if` / `?:`.
+
+flagd rejects a flag at load time when `resolve` appears anywhere else, including inside `==`, `cat`, or an `if` condition.
+
+Arguments may be computed with other operators, such as `var` or `cat`.
+
+Older flagd binaries do not know this operator.
+
+Upgrade flagd before a configuration starts using `resolve`.
+
+```json
+{
+  "resolve": [
+    "on",
+    "SPLIT_RANDOM",
+    [["details", "us-10pct-rollout"]]
+  ]
+}
+```
+
+## Example
+
+```json
+{
+  "flags": {
+    "acceptable-feature-stability": {
+      "state": "ENABLED",
+      "defaultVariant": "ga",
+      "variants": {
+        "alpha": "alpha",
+        "beta": "beta",
+        "ga": "ga"
+      },
+      "targeting": {
+        "if": [
+          { "===": [{ "var": "customerId" }, "customer-A"] },
+          {
+            "resolve": [
+              "alpha",
+              "TARGETING_MATCH",
+              [["details", "explicit allowlist for enterprise pilot"]]
+            ]
+          },
+          { "in": [{ "var": "customerId" }, ["customer-B1", "customer-B2"]] },
+          { "resolve": ["beta", "TARGETING_MATCH"] },
+          { "resolve": ["ga", "FALLTHROUGH"] }
+        ]
+      }
+    }
+  }
+}
+```
+
+The `alpha` and `beta` branches both say why they matched.
+
+The final branch selects `ga` with reason `FALLTHROUGH`.

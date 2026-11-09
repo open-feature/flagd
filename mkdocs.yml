@@ -108,6 +108,7 @@ nav:
       - 'Definition Overview': 'reference/flag-definitions.md'
       - 'Custom Operations':
         - 'Fractional': 'reference/custom-operations/fractional-operation.md'
+        - 'Resolve': 'reference/custom-operations/resolve-operation.md'
         - 'Semantic Version': 'reference/custom-operations/semver-operation.md'
         - 'String Comparison': 'reference/custom-operations/string-comparison-operation.md'
       - 'Schema': 'reference/schema.md'
