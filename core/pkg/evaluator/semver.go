@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
+	"go.uber.org/zap"
 	"golang.org/x/mod/semver"
 )
 
@@ -84,12 +85,12 @@ func NewSemVerComparison(log *logger.Logger) *SemVerComparison {
 func (je *SemVerComparison) SemVerEvaluation(values, _ interface{}) interface{} {
 	actualVersion, targetVersion, operator, err := parseSemverEvaluationData(values)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("parse sem_ver evaluation data: %v", err))
+		je.Logger.Debug("parse sem_ver evaluation data", zap.Error(err))
 		return nil
 	}
 	res, err := operator.compare(actualVersion, targetVersion)
 	if err != nil {
-		je.Logger.Error(fmt.Sprintf("sem_ver evaluation: %v", err))
+		je.Logger.Debug("sem_ver evaluation", zap.Error(err))
 		return nil
 	}
 	return res

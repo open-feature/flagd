@@ -501,7 +501,7 @@ func setFlagdProperties(
 	newContext := maps.Clone(context) //nolint:govet // linter can't inline generics
 
 	if _, ok := newContext[flagdPropertiesKey]; ok {
-		log.Warn("overwriting $flagd properties in the context")
+		log.Debug("overwriting $flagd properties in the context")
 	}
 
 	newContext[flagdPropertiesKey] = properties
