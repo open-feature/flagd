@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.19.0](https://github.com/open-feature/flagd/compare/flagd/v0.18.2...flagd/v0.19.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cmd:** validate port is numeric and valid uint16 ([#2107](https://github.com/open-feature/flagd/issues/2107))
+
+### 🐛 Bug Fixes
+
+* **cmd:** validate port is numeric and valid uint16 ([#2107](https://github.com/open-feature/flagd/issues/2107)) ([3fa8064](https://github.com/open-feature/flagd/commit/3fa8064e2105b7e41f360f74695e8dbcca5c9513))
+* **security:** update module github.com/go-jose/go-jose/v4 to v4.1.6 [security] ([#2114](https://github.com/open-feature/flagd/issues/2114)) ([bf167aa](https://github.com/open-feature/flagd/commit/bf167aaa7686f78bcd206f8b76365d4babfb5a5d))
+
+
+### 🧹 Chore
+
+* **deps:** update module github.com/open-feature/flagd/core to v0.19.2 ([#2123](https://github.com/open-feature/flagd/issues/2123)) ([24aa327](https://github.com/open-feature/flagd/commit/24aa32716155cbdee645d0da76b0a3c25e18b31f))
+
 ## [0.18.2](https://github.com/open-feature/flagd/compare/flagd/v0.18.1...flagd/v0.18.2) (2026-10-28)
 
 
