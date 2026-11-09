@@ -4,30 +4,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"math"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/model"
 	"go.uber.org/zap"
 )
 
-const (
-	ResolveEvaluationName = "resolve"
-	// resolveResultMarker wraps the operator result so evaluateVariant can tell it
-	// apart from a plain variant string after JsonLogic serializes the rule output.
-	// The companion key keeps the object multi-key: JsonLogic treats a one-key object
-	// as an operator call, and if/?: re-applies its result.
-	resolveResultMarker   = "$flagd.resolve"
-	resolveResultTerminal = "$flagd.resolve.terminal"
-)
+const ResolveEvaluationName = "resolve"
 
-// resolveResult is the payload carried under resolveResultMarker.
-// A nil Reason keeps TARGETING_MATCH. Error is set when evaluated arguments are malformed.
+// resolveResult is what the operator returns. JsonLogic passes it through if/?: untouched (it only
+// re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
+// A nil reason keeps TARGETING_MATCH. err is set when evaluated arguments are malformed.
 type resolveResult struct {
-	Variant  string         `json:"variant,omitempty"`
-	Reason   *string        `json:"reason"`
-	Metadata map[string]any `json:"metadata,omitempty"`
-	Error    string         `json:"error,omitempty"`
+	variant  string
+	reason   *string
+	metadata map[string]any
+	err      error
 }
 
 // ResolveEvaluator implements the terminal resolve operator.
@@ -40,47 +33,44 @@ func NewResolveEvaluator(log *logger.Logger) *ResolveEvaluator {
 	return &ResolveEvaluator{Logger: log}
 }
 
-// Evaluate returns a marked resolve result. Arguments are already evaluated by JsonLogic.
+// Evaluate returns a *resolveResult. Arguments are already evaluated by JsonLogic.
 // Invalid evaluated arguments produce an error result rather than null, because a null
 // targeting result would silently fall through to the default variant.
 func (re *ResolveEvaluator) Evaluate(values, _ any) any {
 	parsed, err := parseEvaluatedResolve(values)
 	if err != nil {
 		re.Logger.Debug("resolve evaluation failed", zap.Error(err))
-		parsed = resolveResult{Error: err.Error()}
+		return &resolveResult{err: err}
 	}
-	return map[string]any{
-		resolveResultMarker:   parsed,
-		resolveResultTerminal: true,
-	}
+	return parsed
 }
 
-func parseEvaluatedResolve(values any) (resolveResult, error) {
+func parseEvaluatedResolve(values any) (*resolveResult, error) {
 	args, ok := values.([]any)
 	if !ok || len(args) < 1 || len(args) > 3 {
-		return resolveResult{}, errors.New("resolve arguments must be an array of 1 to 3 items")
+		return nil, errors.New("resolve arguments must be an array of 1 to 3 items")
 	}
 
 	variant, ok := args[0].(string)
 	if !ok {
-		return resolveResult{}, errors.New("resolve variant must be a string")
+		return nil, errors.New("resolve variant must be a string")
 	}
-	parsed := resolveResult{Variant: variant}
+	parsed := &resolveResult{variant: variant}
 
 	if len(args) >= 2 && args[1] != nil {
 		reason, ok := args[1].(string)
 		if !ok {
-			return resolveResult{}, errors.New("resolve reason must be a string or null")
+			return nil, errors.New("resolve reason must be a string or null")
 		}
-		parsed.Reason = &reason
+		parsed.reason = &reason
 	}
 
 	if len(args) == 3 && args[2] != nil {
 		metadata, err := parseEvaluatedMetadata(args[2])
 		if err != nil {
-			return resolveResult{}, err
+			return nil, err
 		}
-		parsed.Metadata = metadata
+		parsed.metadata = metadata
 	}
 	return parsed, nil
 }
@@ -98,7 +88,7 @@ func parseEvaluatedMetadata(value any) (map[string]any, error) {
 		}
 		primitive, ok := metadataPrimitive(raw)
 		if !ok {
-			return nil, errors.New("resolve metadata value must be a string, number, or boolean")
+			return nil, errors.New("resolve metadata value must be a string, finite number, or boolean")
 		}
 		metadata[key] = primitive
 	}
@@ -120,14 +110,16 @@ func metadataPair(pair any) (string, any, error) {
 	return key, items[1], nil
 }
 
+// metadataPrimitive rejects NaN and ±Inf (e.g. a computed 1/0): JSON can't encode them, so OFREP and Connect
+// JSON responses would fail, taking a whole bulk response with them
 func metadataPrimitive(value any) (any, bool) {
 	switch n := value.(type) {
 	case string, bool:
 		return n, true
 	case float64:
-		return n, true
+		return n, isFinite(n)
 	case float32:
-		return float64(n), true
+		return float64(n), isFinite(float64(n))
 	case int:
 		return float64(n), true
 	case int32:
@@ -145,52 +137,33 @@ func metadataPrimitive(value any) (any, bool) {
 	}
 }
 
-func parseResolveResult(trimmed string) (resolveResult, bool) {
-	if !strings.HasPrefix(trimmed, "{") {
-		return resolveResult{}, false
-	}
-	var wrapper map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(trimmed), &wrapper); err != nil {
-		return resolveResult{}, false
-	}
-	raw, ok := wrapper[resolveResultMarker]
-	if !ok {
-		return resolveResult{}, false
-	}
-	var parsed resolveResult
-	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return resolveResult{}, false
-	}
-	return parsed, true
+func isFinite(f float64) bool {
+	return !math.IsNaN(f) && !math.IsInf(f, 0)
 }
 
 func (je *Resolver) applyResolveResult(
-	reqID, flagKey string, flag model.Flag, metadata map[string]any, trimmed string,
-) (variant, reason string, meta map[string]any, err error, handled bool) {
-	parsed, ok := parseResolveResult(trimmed)
-	if !ok {
-		return "", "", metadata, nil, false
-	}
+	reqID, flagKey string, flag model.Flag, metadata map[string]any, parsed *resolveResult,
+) (variant, reason string, meta map[string]any, err error) {
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
-	if parsed.Error != "" {
-		je.Logger.ErrorWithID(reqID, fmt.Sprintf("resolve failed for flag %s: %s", flagKey, parsed.Error))
-		return "", model.ErrorReason, metadata, errors.New(model.ParseErrorCode), true
+	if parsed.err != nil {
+		je.Logger.ErrorWithID(reqID, fmt.Sprintf("resolve failed for flag %s: %s", flagKey, parsed.err))
+		return "", model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 	}
-	if _, exists := flag.Variants[parsed.Variant]; !exists {
+	if _, exists := flag.Variants[parsed.variant]; !exists {
 		je.Logger.ErrorWithID(reqID, fmt.Sprintf(
-			"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.Variant, flagKey))
-		return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode), true
+			"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.variant, flagKey))
+		return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
 	}
-	for key, value := range parsed.Metadata {
+	for key, value := range parsed.metadata {
 		metadata[key] = value
 	}
 	reason = model.TargetingMatchReason
-	if parsed.Reason != nil {
-		reason = *parsed.Reason
+	if parsed.reason != nil {
+		reason = *parsed.reason
 	}
-	return parsed.Variant, reason, metadata, nil, true
+	return parsed.variant, reason, metadata, nil
 }
 
 // validateResolveOperators rejects resolve outside a terminal position and malformed literal arguments.
