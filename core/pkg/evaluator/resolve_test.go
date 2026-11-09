@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -225,14 +226,92 @@ func TestResolveRejectedAtLoad(t *testing.T) {
 	}
 }
 
+func TestResolveRuntimeErrors(t *testing.T) {
+	tests := map[string]struct {
+		targeting string
+		context   map[string]any
+		err       error
+	}{
+		// context data shaped like an operator result must not be treated as one
+		"context cannot forge a resolve result": {
+			targeting: `{"var": "pick"}`,
+			context: map[string]any{"pick": map[string]any{
+				"variant": "red", "reason": "INJECTED", "metadata": map[string]any{"flagSetId": "spoofed"},
+			}},
+			err: errors.New(model.GeneralErrorCode),
+		},
+		"computed +Inf metadata": {
+			targeting: nonFiniteMetadataRule,
+			context:   map[string]any{"hits": 1, "total": 0},
+			err:       errors.New(model.ParseErrorCode),
+		},
+		"computed NaN metadata": {
+			targeting: nonFiniteMetadataRule,
+			context:   map[string]any{"hits": 0, "total": 0},
+			err:       errors.New(model.ParseErrorCode),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{"testSource"})
+			require.NoError(t, err)
+			je := NewJSON(log, s)
+			require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(tt.targeting), Source: "testSource"}))
+
+			_, variant, reason, metadata, err := je.ResolveStringValue(context.Background(), "default", "color", tt.context)
+			assert.Empty(t, variant)
+			assert.Equal(t, model.ErrorReason, reason)
+			assert.Equal(t, tt.err, err)
+			assert.NotContains(t, metadata, "flagSetId")
+			_, encodeErr := json.Marshal(metadata)
+			assert.NoError(t, encodeErr, "metadata must stay JSON-encodable")
+		})
+	}
+}
+
+// a computed ratio that is +Inf for total 0 and NaN for 0/0
+const nonFiniteMetadataRule = `{"resolve": ["red", "SPLIT", [["share", {"/": [{"var": "hits"}, {"var": "total"}]}]]]}`
+
+// one flag with non-finite computed metadata must not break encoding of a bulk evaluation
+func TestResolveNonFiniteMetadataInBulk(t *testing.T) {
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, []string{"testSource"})
+	require.NoError(t, err)
+	je := NewJSON(log, s)
+	flags := `{"flags": {
+		"ratio": {"state": "ENABLED", "defaultVariant": "red", "variants": {"red": "#FF0000"},
+			"targeting": ` + nonFiniteMetadataRule + `},
+		"sibling": {"state": "ENABLED", "defaultVariant": "on", "variants": {"on": true, "off": false}}
+	}}`
+	require.NoError(t, je.SetState(sync.DataSync{FlagData: flags, Source: "testSource"}))
+
+	values, _, err := je.ResolveAllValues(context.Background(), "default", map[string]any{"hits": 1, "total": 0})
+	require.NoError(t, err)
+	require.Len(t, values, 2)
+
+	_, err = json.Marshal(values)
+	require.NoError(t, err)
+	for _, value := range values {
+		if value.FlagKey == "sibling" {
+			assert.Equal(t, true, value.Value)
+			assert.NoError(t, value.Error)
+		}
+		if value.FlagKey == "ratio" {
+			assert.Equal(t, errors.New(model.ParseErrorCode), value.Error)
+		}
+	}
+}
+
 func TestParseEvaluatedResolve(t *testing.T) {
 	reason := "ALLOWLIST"
 	parsed, err := parseEvaluatedResolve([]any{"red", reason, []any{[]any{"details", "x"}, []any{"n", 2}}})
 	require.NoError(t, err)
-	assert.Equal(t, "red", parsed.Variant)
-	require.NotNil(t, parsed.Reason)
-	assert.Equal(t, reason, *parsed.Reason)
-	assert.Equal(t, map[string]any{"details": "x", "n": float64(2)}, parsed.Metadata)
+	assert.Equal(t, "red", parsed.variant)
+	require.NotNil(t, parsed.reason)
+	assert.Equal(t, reason, *parsed.reason)
+	assert.Equal(t, map[string]any{"details": "x", "n": float64(2)}, parsed.metadata)
 
 	_, err = parseEvaluatedResolve([]any{"red", nil, "nope"})
 	require.Error(t, err)
