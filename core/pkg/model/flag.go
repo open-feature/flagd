@@ -17,6 +17,8 @@ type Flag struct {
 	Targeting      json.RawMessage `json:"targeting,omitempty"`
 	Source         string          `json:"source"`
 	Metadata       Metadata        `json:"metadata,omitempty"`
+	// Invalid is set at load when the targeting cannot be evaluated; evaluating the flag returns PARSE_ERROR
+	Invalid string `json:"-"`
 }
 
 type Evaluators struct {

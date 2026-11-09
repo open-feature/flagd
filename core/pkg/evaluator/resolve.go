@@ -166,23 +166,29 @@ func (je *Resolver) applyResolveResult(
 	return parsed.variant, reason, metadata, nil
 }
 
-// validateResolveOperators rejects resolve outside a terminal position and malformed literal arguments.
+// markInvalidResolveFlags marks flags that use resolve outside a terminal position or with malformed literal
+// arguments. Only the offending flag is invalid; the rest of the payload still loads.
 // Terminal means the operator is the whole targeting rule, or a result branch of if / ?: whose own
 // result is terminal. Its value must reach the resolver unchanged.
-func validateResolveOperators(definition *Definition) error {
-	for _, flag := range definition.Flags {
-		if len(flag.Targeting) == 0 || string(flag.Targeting) == "null" {
-			continue
-		}
-		var node any
-		if err := json.Unmarshal(flag.Targeting, &node); err != nil {
-			return fmt.Errorf("flag %q: invalid targeting: %w", flag.Key, err)
-		}
-		if err := walkResolve(node, true, flag.Key); err != nil {
-			return err
+func (je *JSON) markInvalidResolveFlags(definition *Definition) {
+	for i := range definition.Flags {
+		flag := &definition.Flags[i]
+		if err := validateResolveTargeting(*flag); err != nil {
+			flag.Invalid = err.Error()
+			je.Logger.Warn(fmt.Sprintf("%s; evaluating the flag returns %s", err, model.ParseErrorCode))
 		}
 	}
-	return nil
+}
+
+func validateResolveTargeting(flag model.Flag) error {
+	if len(flag.Targeting) == 0 || string(flag.Targeting) == "null" {
+		return nil
+	}
+	var node any
+	if err := json.Unmarshal(flag.Targeting, &node); err != nil {
+		return fmt.Errorf("flag %q: invalid targeting: %w", flag.Key, err)
+	}
+	return walkResolve(node, true, flag.Key)
 }
 
 func walkResolve(node any, terminal bool, flagKey string) error {
