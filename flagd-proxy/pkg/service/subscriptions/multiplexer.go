@@ -2,16 +2,16 @@ package subscriptions
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	sourceSync "github.com/open-feature/flagd/core/pkg/sync"
+	"go.uber.org/zap"
 )
 
 // multiplexer distributes updates for a target to all of its subscribers
 type multiplexer struct {
-	subs       map[interface{}]storedChannels
+	subs       map[any]storedChannels
 	dataSync   chan sourceSync.DataSync
 	cancelFunc context.CancelFunc
 	syncRef    sourceSync.ISync
@@ -26,7 +26,7 @@ func (h *multiplexer) broadcastError(logger *logger.Logger, err error) {
 		case ec.errChan <- err:
 			continue
 		default:
-			logger.Error(fmt.Sprintf("unable to write error to channel for key %p", k))
+			logger.Error("unable to write error to channel", zap.Any("key", k))
 		}
 	}
 }
@@ -39,7 +39,7 @@ func (h *multiplexer) broadcastData(logger *logger.Logger, data sourceSync.DataS
 		case ds.dataSync <- data:
 			continue
 		default:
-			logger.Error(fmt.Sprintf("unable to write data to channel for key %p", k))
+			logger.Error("unable to write data to channel", zap.Any("key", k))
 		}
 	}
 }
