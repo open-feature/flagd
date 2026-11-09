@@ -20,7 +20,9 @@ Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
 
 It is valid as the whole targeting rule, or as a result of `if` / `?:`.
 
-flagd rejects a flag at load time when `resolve` appears anywhere else, including inside `==`, `cat`, or an `if` condition.
+flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, or an `if` condition, or when its literal arguments are malformed.
+
+Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same configuration still load.
 
 Arguments may be computed with other operators, such as `var` or `cat`.
 

@@ -181,47 +181,50 @@ func TestResolveEvaluation(t *testing.T) {
 	}
 }
 
-func TestResolveRejectedAtLoad(t *testing.T) {
-	tests := map[string]string{
-		"inside equality":       `{"==": [{"resolve": ["red"]}, "red"]}`,
-		"inside cat":            `{"cat": [{"resolve": ["red"]}, "x"]}`,
-		"if condition":          `{"if": [{"resolve": ["red"]}, "red", "blue"]}`,
-		"consumed by outer if":  `{"if": [{"if": [true, {"resolve": ["red"]}, "blue"]}, "red", "blue"]}`,
-		"inside fractional":     `{"fractional": ["key", [{"resolve": ["red"]}, 1], ["blue", 1]]}`,
-		"nested in resolve arg": `{"resolve": [{"resolve": ["red"]}]}`,
-		"result array":          `{"if": [true, [{"resolve": ["red"]}], "blue"]}`,
-		"no arguments":          `{"resolve": []}`,
-		"too many arguments":    `{"resolve": ["red", "ALLOWLIST", [], "extra"]}`,
-		"non-string variant":    `{"resolve": [true]}`,
-		"non-string reason":     `{"resolve": ["red", 1]}`,
-		"metadata object":       `{"resolve": ["red", null, {"details": "x"}]}`,
-		"short pair":            `{"resolve": ["red", null, [["details"]]]}`,
-		"non-primitive value":   `{"resolve": ["red", null, [["details", {"nested": true}]]]}`,
-		"non-string key":        `{"resolve": ["red", null, [[1, "x"]]]}`,
-		"inlined bad evaluator": "",
+func TestResolveInvalidFlagAtLoad(t *testing.T) {
+	tests := map[string]struct {
+		targeting  string
+		evaluators string
+	}{
+		"inside equality":       {targeting: `{"==": [{"resolve": ["red"]}, "red"]}`},
+		"inside cat":            {targeting: `{"cat": [{"resolve": ["red"]}, "x"]}`},
+		"if condition":          {targeting: `{"if": [{"resolve": ["red"]}, "red", "blue"]}`},
+		"consumed by outer if":  {targeting: `{"if": [{"if": [true, {"resolve": ["red"]}, "blue"]}, "red", "blue"]}`},
+		"inside fractional":     {targeting: `{"fractional": ["key", [{"resolve": ["red"]}, 1], ["blue", 1]]}`},
+		"nested in resolve arg": {targeting: `{"resolve": [{"resolve": ["red"]}]}`},
+		"result array":          {targeting: `{"if": [true, [{"resolve": ["red"]}], "blue"]}`},
+		"no arguments":          {targeting: `{"resolve": []}`},
+		"too many arguments":    {targeting: `{"resolve": ["red", "ALLOWLIST", [], "extra"]}`},
+		"non-string variant":    {targeting: `{"resolve": [true]}`},
+		"non-string reason":     {targeting: `{"resolve": ["red", 1]}`},
+		"metadata object":       {targeting: `{"resolve": ["red", null, {"details": "x"}]}`},
+		"short pair":            {targeting: `{"resolve": ["red", null, [["details"]]]}`},
+		"non-primitive value":   {targeting: `{"resolve": ["red", null, [["details", {"nested": true}]]]}`},
+		"non-string key":        {targeting: `{"resolve": ["red", null, [[1, "x"]]]}`},
+		"inlined bad evaluator": {
+			targeting:  `{"==": [{"$ref": "bad"}, "red"]}`,
+			evaluators: `{"bad": {"resolve": ["red"]}}`,
+		},
 	}
 
-	for name, targeting := range tests {
+	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			flags := resolveFlag(targeting)
-			if name == "inlined bad evaluator" {
-				flags = `{
-					"flags": {
-						"color": {
-							"state": "ENABLED",
-							"defaultVariant": "yellow",
-							"variants": {"red": "#FF0000", "yellow": "#FFFF00"},
-							"targeting": {"==": [{"$ref": "bad"}, "red"]}
-						}
-					},
-					"$evaluators": {"bad": {"resolve": ["red"]}}
-				}`
-			}
 			log := logger.NewLogger(nil, false)
-			je := NewJSON(log, store.NewFlags())
-			err := je.SetState(sync.DataSync{FlagData: flags, Source: "testSource"})
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "color")
+			s, err := store.NewStore(log, []string{"testSource"})
+			require.NoError(t, err)
+			je := NewJSON(log, s)
+			flags := resolveFlagWithSibling(tt.targeting, tt.evaluators)
+			require.NoError(t, je.SetState(sync.DataSync{FlagData: flags, Source: "testSource"}))
+
+			_, _, reason, _, err := je.ResolveStringValue(context.Background(), "default", "color", nil)
+			assert.Equal(t, model.ErrorReason, reason)
+			assert.Equal(t, errors.New(model.ParseErrorCode), err)
+
+			// the rest of the payload still loads
+			value, _, reason, _, err := je.ResolveBooleanValue(context.Background(), "default", "sibling", nil)
+			require.NoError(t, err)
+			assert.True(t, value)
+			assert.Equal(t, model.StaticReason, reason)
 		})
 	}
 }
@@ -317,10 +320,29 @@ func TestParseEvaluatedResolve(t *testing.T) {
 	require.Error(t, err)
 }
 
-func resolveFlag(targeting string) string {
-	if targeting == "" {
-		targeting = "null"
+func resolveFlagWithSibling(targeting, evaluators string) string {
+	if evaluators == "" {
+		evaluators = "{}"
 	}
+	return `{
+		"flags": {
+			"color": {
+				"state": "ENABLED",
+				"defaultVariant": "yellow",
+				"variants": {"red": "#FF0000", "blue": "#0000FF", "yellow": "#FFFF00"},
+				"targeting": ` + targeting + `
+			},
+			"sibling": {
+				"state": "ENABLED",
+				"defaultVariant": "on",
+				"variants": {"on": true, "off": false}
+			}
+		},
+		"$evaluators": ` + evaluators + `
+	}`
+}
+
+func resolveFlag(targeting string) string {
 	return `{
 		"flags": {
 			"color": {
