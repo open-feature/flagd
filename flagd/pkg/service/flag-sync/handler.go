@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"buf.build/gen/go/open-feature/flagd/connectrpc/go/flagd/sync/v1/syncv1connect"
 	syncv1 "buf.build/gen/go/open-feature/flagd/protocolbuffers/go/flagd/sync/v1"
 	"connectrpc.com/connect"
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -22,12 +23,12 @@ import (
 
 // syncHandler implements the sync contract
 type syncHandler struct {
-	store               store.IStore
-	log                 *logger.Logger
-	contextValues       map[string]any
-	deadline            time.Duration
-	disableSyncMetadata bool
-	metricsRecorder     telemetry.IMetricsRecorder
+	syncv1connect.UnimplementedFlagSyncServiceHandler
+	store           store.IStore
+	log             *logger.Logger
+	contextValues   map[string]any
+	deadline        time.Duration
+	metricsRecorder telemetry.IMetricsRecorder
 }
 
 // syncFlagsSender is the subset of connect.ServerStream used here; it has no exported constructor,
@@ -139,33 +140,6 @@ func (s syncHandler) FetchAllFlags(ctx context.Context, req *connect.Request[syn
 	return connect.NewResponse(&syncv1.FetchAllFlagsResponse{
 		FlagConfiguration: string(flagsString),
 	}), nil
-}
-
-// Deprecated - GetMetadata is deprecated and will be removed in a future release.
-// Use the sync_context field in syncv1.SyncFlagsResponse, providing same info.
-//
-//nolint:staticcheck // SA1019 temporarily suppress deprecation warning
-func (s syncHandler) GetMetadata(_ context.Context, _ *connect.Request[syncv1.GetMetadataRequest]) (
-	*connect.Response[syncv1.GetMetadataResponse], error,
-) {
-	if s.disableSyncMetadata {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("metadata endpoint disabled"))
-	}
-	metadataSrc := make(map[string]any)
-	for k, v := range s.contextValues {
-		metadataSrc[k] = v
-	}
-
-	metadata, err := structpb.NewStruct(metadataSrc)
-	if err != nil {
-		s.log.Warn(fmt.Sprintf("error from struct creation: %v", err))
-		return nil, fmt.Errorf("error constructing metadata response")
-	}
-
-	return connect.NewResponse(&syncv1.GetMetadataResponse{
-			Metadata: metadata,
-		}),
-		nil
 }
 
 // connectError maps a fetch failure onto a status; both selector failures are InvalidArgument.
