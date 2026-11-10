@@ -151,7 +151,9 @@ func (je *Resolver) applyResolveResult(
 		je.Logger.ErrorWithID(reqID, fmt.Sprintf("resolve failed for flag %s: %s", flagKey, parsed.err))
 		return "", model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 	}
-	if _, exists := flag.Variants[parsed.variant]; !exists {
+	// variant keys are non-empty, and an empty variant is how flagd marks its own fallback and disabled
+	// results, so an empty one is always missing
+	if _, exists := flag.Variants[parsed.variant]; !exists || parsed.variant == "" {
 		je.Logger.ErrorWithID(reqID, fmt.Sprintf(
 			"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.variant, flagKey))
 		return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
