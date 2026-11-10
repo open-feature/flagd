@@ -373,12 +373,13 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
-	if reason == model.FallbackReason {
+	// flagd's own fallback and disabled results carry no variant; a resolve rule may use these reasons too
+	if reason == model.FallbackReason && variant == "" {
 		var zero T
 		return zero, variant, model.FallbackReason, metadata, nil
 	}
 
-	if reason == model.DisabledReason {
+	if reason == model.DisabledReason && variant == "" {
 		var zero T
 		return zero, "", model.DisabledReason, metadata, nil
 	}

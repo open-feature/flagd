@@ -10,6 +10,8 @@ description: flagd resolve custom operation
 
 A missing or null reason keeps `TARGETING_MATCH`.
 
+The reason is free-form: any string is passed through as the evaluation reason, including flagd's own reasons such as `FALLBACK` or `DISABLED`.
+
 Metadata is a shallow list of `[key, value]` pairs.
 
 Values are strings, numbers, or booleans.

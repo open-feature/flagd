@@ -43,6 +43,28 @@ func TestResolveEvaluation(t *testing.T) {
 			variant: "blue",
 			reason:  "ALLOWLIST",
 		},
+		// the reason is free-form; flagd's own reason names must not change the value or variant
+		"FALLBACK reason keeps value and variant": {
+			flags:   resolveFlag(`{"resolve": ["blue", "FALLBACK"]}`),
+			flagKey: "color",
+			value:   "#0000FF",
+			variant: "blue",
+			reason:  model.FallbackReason,
+		},
+		"DISABLED reason keeps value and variant": {
+			flags:   resolveFlag(`{"resolve": ["blue", "DISABLED"]}`),
+			flagKey: "color",
+			value:   "#0000FF",
+			variant: "blue",
+			reason:  model.DisabledReason,
+		},
+		"ERROR reason keeps value and variant": {
+			flags:   resolveFlag(`{"resolve": ["blue", "ERROR"]}`),
+			flagKey: "color",
+			value:   "#0000FF",
+			variant: "blue",
+			reason:  model.ErrorReason,
+		},
 		"null reason keeps targeting match and merges metadata": {
 			flags:   resolveFlag(`{"resolve": ["green", null, [["details", "pilot"]]]}`),
 			flagKey: "color",
@@ -235,6 +257,16 @@ func TestResolveRuntimeErrors(t *testing.T) {
 		context   map[string]any
 		err       error
 	}{
+		// an empty variant fails like any missing variant, so a FALLBACK reason cannot make it look like flagd's own
+		"empty variant": {
+			targeting: `{"resolve": ["", "FALLBACK"]}`,
+			err:       errors.New(model.GeneralErrorCode),
+		},
+		"computed empty variant": {
+			targeting: `{"resolve": [{"var": "pick"}, "FALLBACK"]}`,
+			context:   map[string]any{"pick": ""},
+			err:       errors.New(model.GeneralErrorCode),
+		},
 		// context data shaped like an operator result must not be treated as one
 		"context cannot forge a resolve result": {
 			targeting: `{"var": "pick"}`,

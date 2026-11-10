@@ -442,3 +442,28 @@ func TestZeroValuesAreMarshaled(t *testing.T) {
 		})
 	}
 }
+
+// a resolve rule may return flagd's own reason names; with a variant set, the result is returned as-is
+func TestSuccessResultRuleReasonWithVariant(t *testing.T) {
+	for _, reason := range []string{model.FallbackReason, model.DisabledReason} {
+		t.Run(reason, func(t *testing.T) {
+			success := SuccessResponseFrom(evaluator.AnyValue{
+				Value:    "#0000FF",
+				Variant:  "blue",
+				Reason:   reason,
+				FlagKey:  "color",
+				Metadata: map[string]interface{}{},
+			})
+
+			if success.Value != "#0000FF" {
+				t.Errorf("expected value #0000FF, got %v", success.Value)
+			}
+			if success.Variant != "blue" {
+				t.Errorf("expected variant blue, got %v", success.Variant)
+			}
+			if success.Reason != reason {
+				t.Errorf("expected reason %v, got %v", reason, success.Reason)
+			}
+		})
+	}
+}
