@@ -1152,20 +1152,60 @@ func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
 	require.EqualValues(t, 1, dp.Value)
 }
 
-func TestSync_WatchErrorFromInformer(t *testing.T) {
-	const uri = "myNS/myFF"
-
-	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+func newFakeFeatureFlagClient() *fake.FakeDynamicClient {
+	return fake.NewSimpleDynamicClientWithCustomListKinds(
 		runtime.NewScheme(),
 		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
 	)
+}
+
+func newRegisteredFakeWatcher(t *testing.T) *watch.FakeWatcher {
+	t.Helper()
+	w := watch.NewFake()
+	t.Cleanup(w.Stop)
+	return w
+}
+
+func waitSignal(t *testing.T, ch <-chan struct{}, desc string) {
+	t.Helper()
+	select {
+	case <-ch:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timed out waiting for %s", desc)
+	}
+}
+
+func startInformerWithWatchSteps(
+	t *testing.T,
+	uri string,
+	steps ...func() (watch.Interface, error),
+) (*Sync, *observer.ObservedLogs, *msdk.ManualReader) {
+	t.Helper()
+	fakeClient := newFakeFeatureFlagClient()
+	var watchCalls atomic.Int32
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		idx := int(watchCalls.Add(1))
+		if idx <= len(steps) {
+			w, err := steps[idx-1]()
+			return true, w, err
+		}
+		return true, newRegisteredFakeWatcher(t), nil
+	})
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+	require.NoError(t, k.Init(t.Context()))
+	go k.informer.Run(t.Context().Done())
+	return k, observedLogs, reader
+}
+
+func TestSync_WatchErrorFromInformer(t *testing.T) {
+	const uri = "myNS/myFF"
+	fakeClient := newFakeFeatureFlagClient()
 	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
 		return true, nil, errors.New("simulated watch error")
 	})
 
 	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
 	require.NoError(t, k.Init(t.Context()))
-
 	go k.informer.Run(t.Context().Done())
 
 	assertSyncErrorRecorded(t, observedLogs, reader, uri, "simulated watch error")
@@ -1173,38 +1213,15 @@ func TestSync_WatchErrorFromInformer(t *testing.T) {
 
 func TestSync_WatchErrorEventOnEstablishedStream(t *testing.T) {
 	const uri = "myNS/myFF"
-
-	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
-		runtime.NewScheme(),
-		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
-	)
-
-	firstWatcher := watch.NewFake()
-	t.Cleanup(firstWatcher.Stop)
+	firstWatcher := newRegisteredFakeWatcher(t)
 	watchStarted := make(chan struct{})
-	var watchCalls atomic.Int32
 
-	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
-		if watchCalls.Add(1) == 1 {
-			close(watchStarted)
-			return true, firstWatcher, nil
-		}
-		w := watch.NewFake()
-		t.Cleanup(w.Stop)
-		return true, w, nil
+	k, observedLogs, reader := startInformerWithWatchSteps(t, uri, func() (watch.Interface, error) {
+		close(watchStarted)
+		return firstWatcher, nil
 	})
-
-	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
-	require.NoError(t, k.Init(t.Context()))
-
-	go k.informer.Run(t.Context().Done())
 	require.True(t, cache.WaitForCacheSync(t.Context().Done(), k.informer.HasSynced))
-
-	select {
-	case <-watchStarted:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for watch to start")
-	}
+	waitSignal(t, watchStarted, "watch to start")
 
 	firstWatcher.Error(&v1.Status{
 		Status:  v1.StatusFailure,
@@ -1219,58 +1236,32 @@ func TestSync_WatchErrorEventOnEstablishedStream(t *testing.T) {
 
 func TestSync_WatchExpiredEventDoesNotRecordError(t *testing.T) {
 	const uri = "myNS/myFF"
-
-	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
-		runtime.NewScheme(),
-		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
-	)
-
-	firstWatcher := watch.NewFake()
-	secondWatcher := watch.NewFake()
-	t.Cleanup(firstWatcher.Stop)
-	t.Cleanup(secondWatcher.Stop)
+	firstWatcher := newRegisteredFakeWatcher(t)
+	secondWatcher := newRegisteredFakeWatcher(t)
 	firstStarted := make(chan struct{})
 	secondStarted := make(chan struct{})
-	var watchCalls atomic.Int32
 
-	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
-		switch watchCalls.Add(1) {
-		case 1:
+	_, observedLogs, reader := startInformerWithWatchSteps(
+		t,
+		uri,
+		func() (watch.Interface, error) {
 			close(firstStarted)
-			return true, firstWatcher, nil
-		case 2:
+			return firstWatcher, nil
+		},
+		func() (watch.Interface, error) {
 			close(secondStarted)
-			return true, secondWatcher, nil
-		default:
-			w := watch.NewFake()
-			t.Cleanup(w.Stop)
-			return true, w, nil
-		}
-	})
+			return secondWatcher, nil
+		},
+	)
 
-	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
-	require.NoError(t, k.Init(t.Context()))
-
-	go k.informer.Run(t.Context().Done())
-
-	select {
-	case <-firstStarted:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for first watch")
-	}
-
+	waitSignal(t, firstStarted, "first watch")
 	firstWatcher.Error(&v1.Status{
 		Status:  v1.StatusFailure,
 		Code:    http.StatusGone,
 		Reason:  v1.StatusReasonExpired,
 		Message: "too old resource version",
 	})
-
-	select {
-	case <-secondStarted:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for reflector to re-establish watch after 410 Expired")
-	}
+	waitSignal(t, secondStarted, "reflector to re-establish watch after 410 Expired")
 
 	require.Empty(t, observedLogs.All())
 	_, ok := collectSyncErrorDataPoint(t.Context(), reader)
@@ -1298,41 +1289,22 @@ func TestSync_RetriedWatchRequestErrorLogsAndRecordsMetrics(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			const uri = "myNS/myFF"
-			fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
-				runtime.NewScheme(),
-				map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+			firstWatcher := newRegisteredFakeWatcher(t)
+			firstStarted := make(chan struct{})
+
+			_, observedLogs, reader := startInformerWithWatchSteps(
+				t,
+				uri,
+				func() (watch.Interface, error) {
+					close(firstStarted)
+					return firstWatcher, nil
+				},
+				func() (watch.Interface, error) {
+					return nil, tc.watchErr
+				},
 			)
 
-			firstWatcher := watch.NewFake()
-			t.Cleanup(firstWatcher.Stop)
-			firstStarted := make(chan struct{})
-			var watchCalls atomic.Int32
-
-			fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
-				switch watchCalls.Add(1) {
-				case 1:
-					close(firstStarted)
-					return true, firstWatcher, nil
-				case 2:
-					return true, nil, tc.watchErr
-				default:
-					w := watch.NewFake()
-					t.Cleanup(w.Stop)
-					return true, w, nil
-				}
-			})
-
-			k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
-			require.NoError(t, k.Init(t.Context()))
-
-			go k.informer.Run(t.Context().Done())
-
-			select {
-			case <-firstStarted:
-			case <-time.After(5 * time.Second):
-				t.Fatal("timed out waiting for initial watch")
-			}
-
+			waitSignal(t, firstStarted, "initial watch")
 			// End the established stream cleanly so Reflector attempts a replacement Watch request.
 			firstWatcher.Stop()
 
