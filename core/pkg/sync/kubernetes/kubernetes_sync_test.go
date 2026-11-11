@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 	stdsync "sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1055,7 +1057,12 @@ func TestMarshallFeatureFlagSpec_metadata(t *testing.T) {
 	}`, res)
 }
 
-func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
+func newWatchErrorTestSync(
+	t *testing.T,
+	dynamicClient dynamic.Interface,
+	uri string,
+) (*Sync, *observer.ObservedLogs, *msdk.ManualReader) {
+	t.Helper()
 	reader := msdk.NewManualReader()
 	mp := msdk.NewMeterProvider(msdk.WithReader(reader))
 	recorder := syncmetrics.NewRecorder(mp)
@@ -1063,17 +1070,74 @@ func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
 	observedZapCore, observedLogs := observer.New(zap.ErrorLevel)
 	observedLogger := logger.NewLogger(zap.New(observedZapCore), false)
 
-	const name = "myFF"
-	const ns = "myNS"
-	const uri = ns + "/" + name
-
-	mockInformer := &MockInformer{}
-	sync := &Sync{
+	s := &Sync{
 		URI:                 uri,
+		dynamicClient:       dynamicClient,
 		logger:              observedLogger,
 		SyncMetricsRecorder: recorder,
-		informer:            mockInformer,
 	}
+	return s, observedLogs, reader
+}
+
+func collectSyncErrorDataPoint(ctx context.Context, reader *msdk.ManualReader) (*metricdata.DataPoint[int64], bool) {
+	var rm metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &rm); err != nil {
+		return nil, false
+	}
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != "feature_flag.flagd.sync.client.error" {
+				continue
+			}
+			data, ok := m.Data.(metricdata.Sum[int64])
+			if ok && len(data.DataPoints) > 0 {
+				dp := data.DataPoints[0]
+				return &dp, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func assertSyncErrorRecorded(
+	t *testing.T,
+	observedLogs *observer.ObservedLogs,
+	reader *msdk.ManualReader,
+	wantURI string,
+	wantErrSubstr string,
+) *metricdata.DataPoint[int64] {
+	t.Helper()
+	var dp *metricdata.DataPoint[int64]
+	require.Eventually(t, func() bool {
+		if observedLogs.Len() == 0 {
+			return false
+		}
+		var ok bool
+		dp, ok = collectSyncErrorDataPoint(t.Context(), reader)
+		return ok && dp.Value > 0
+	}, 5*time.Second, 50*time.Millisecond)
+
+	logs := observedLogs.All()
+	require.Equal(t, "kubernetes sync watch error", logs[0].Message)
+	errField, ok := logs[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Contains(t, fmt.Sprint(errField), wantErrSubstr)
+
+	val, ok := dp.Attributes.Value("feature_flag.flagd.sync.type")
+	require.True(t, ok)
+	require.Equal(t, "kubernetes", val.AsString())
+
+	val, ok = dp.Attributes.Value("feature_flag.flagd.sync.uri")
+	require.True(t, ok)
+	require.Equal(t, wantURI, val.AsString())
+	return dp
+}
+
+func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
+	const uri = "myNS/myFF"
+	mockInformer := &MockInformer{}
+	sync, observedLogs, reader := newWatchErrorTestSync(t, nil, uri)
+	sync.informer = mockInformer
 
 	require.NoError(t, sync.setWatchErrorHandler())
 	require.NotNil(t, mockInformer.watchErrorHandlerWithContext)
@@ -1081,54 +1145,13 @@ func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
 	testErr := errors.New("forbidden: cannot watch featureflags")
 	mockInformer.watchErrorHandlerWithContext(t.Context(), nil, testErr)
 
-	// Check log
-	logs := observedLogs.All()
-	require.Len(t, logs, 1)
-	require.Equal(t, "kubernetes sync watch error", logs[0].Message)
-	errField, ok := logs[0].ContextMap()["error"]
-	require.True(t, ok)
-	require.Equal(t, "forbidden: cannot watch featureflags", errField)
-
-	// Check metrics
-	var rm metricdata.ResourceMetrics
-	require.NoError(t, reader.Collect(t.Context(), &rm))
-	require.NotEmpty(t, rm.ScopeMetrics)
-	var foundMetric *metricdata.Metrics
-	for _, sm := range rm.ScopeMetrics {
-		for _, m := range sm.Metrics {
-			if m.Name == "feature_flag.flagd.sync.client.error" {
-				metricCopy := m
-				foundMetric = &metricCopy
-				break
-			}
-		}
-	}
-	require.NotNil(t, foundMetric, "expected metric feature_flag.flagd.sync.client.error")
-	data := foundMetric.Data.(metricdata.Sum[int64])
-	require.Len(t, data.DataPoints, 1)
-	require.EqualValues(t, 1, data.DataPoints[0].Value)
-
-	// Check attributes
-	attrs := data.DataPoints[0].Attributes
-	val, ok := attrs.Value("feature_flag.flagd.sync.type")
-	require.True(t, ok)
-	require.Equal(t, "kubernetes", val.AsString())
-
-	val, ok = attrs.Value("feature_flag.flagd.sync.uri")
-	require.True(t, ok)
-	require.Equal(t, uri, val.AsString())
+	require.Len(t, observedLogs.All(), 1)
+	dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, "forbidden: cannot watch featureflags")
+	require.EqualValues(t, 1, dp.Value)
 }
 
 func TestSync_WatchErrorFromInformer(t *testing.T) {
-	reader := msdk.NewManualReader()
-	mp := msdk.NewMeterProvider(msdk.WithReader(reader))
-	recorder := syncmetrics.NewRecorder(mp)
-
-	observedZapCore, observedLogs := observer.New(zap.ErrorLevel)
-	observedLogger := logger.NewLogger(zap.New(observedZapCore), false)
-
-	const name = "myFF"
-	const ns = "myNS"
+	const uri = "myNS/myFF"
 
 	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
 		runtime.NewScheme(),
@@ -1138,52 +1161,116 @@ func TestSync_WatchErrorFromInformer(t *testing.T) {
 		return true, nil, errors.New("simulated watch error")
 	})
 
-	k := Sync{
-		URI:                 fmt.Sprintf("%s/%s", ns, name),
-		dynamicClient:       fakeClient,
-		logger:              observedLogger,
-		SyncMetricsRecorder: recorder,
-	}
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
 	require.NoError(t, k.Init(t.Context()))
 
 	go k.informer.Run(t.Context().Done())
 
-	require.Eventually(t, func() bool {
-		if observedLogs.Len() == 0 {
-			return false
-		}
-		var rm metricdata.ResourceMetrics
-		if err := reader.Collect(t.Context(), &rm); err != nil {
-			return false
-		}
-		for _, sm := range rm.ScopeMetrics {
-			for _, m := range sm.Metrics {
-				if m.Name == "feature_flag.flagd.sync.client.error" {
-					if data, ok := m.Data.(metricdata.Sum[int64]); ok && len(data.DataPoints) > 0 {
-						return data.DataPoints[0].Value > 0
-					}
-				}
-			}
-		}
-		return false
-	}, 5*time.Second, 50*time.Millisecond)
+	assertSyncErrorRecorded(t, observedLogs, reader, uri, "simulated watch error")
+}
 
-	require.Equal(t, "kubernetes sync watch error", observedLogs.All()[0].Message)
-	errField, ok := observedLogs.All()[0].ContextMap()["error"]
-	require.True(t, ok)
-	require.Contains(t, errField, "simulated watch error")
+func TestSync_WatchErrorEventOnEstablishedStream(t *testing.T) {
+	const uri = "myNS/myFF"
 
-	var rm metricdata.ResourceMetrics
-	require.NoError(t, reader.Collect(t.Context(), &rm))
-	var foundMetric *metricdata.Metrics
-	for _, sm := range rm.ScopeMetrics {
-		for _, m := range sm.Metrics {
-			if m.Name == "feature_flag.flagd.sync.client.error" {
-				metricCopy := m
-				foundMetric = &metricCopy
-				break
-			}
+	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+	)
+
+	firstWatcher := watch.NewFake()
+	t.Cleanup(firstWatcher.Stop)
+	watchStarted := make(chan struct{})
+	var watchCalls atomic.Int32
+
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		if watchCalls.Add(1) == 1 {
+			close(watchStarted)
+			return true, firstWatcher, nil
 		}
+		w := watch.NewFake()
+		t.Cleanup(w.Stop)
+		return true, w, nil
+	})
+
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+	require.NoError(t, k.Init(t.Context()))
+
+	go k.informer.Run(t.Context().Done())
+	require.True(t, cache.WaitForCacheSync(t.Context().Done(), k.informer.HasSynced))
+
+	select {
+	case <-watchStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for watch to start")
 	}
-	require.NotNil(t, foundMetric, "expected metric feature_flag.flagd.sync.client.error")
+
+	firstWatcher.Error(&v1.Status{
+		Status:  v1.StatusFailure,
+		Code:    http.StatusForbidden,
+		Reason:  v1.StatusReasonForbidden,
+		Message: "forbidden: rbac revoked",
+	})
+
+	dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, "forbidden: rbac revoked")
+	require.EqualValues(t, 1, dp.Value)
+}
+
+func TestSync_WatchExpiredEventDoesNotRecordError(t *testing.T) {
+	const uri = "myNS/myFF"
+
+	fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+	)
+
+	firstWatcher := watch.NewFake()
+	secondWatcher := watch.NewFake()
+	t.Cleanup(firstWatcher.Stop)
+	t.Cleanup(secondWatcher.Stop)
+	firstStarted := make(chan struct{})
+	secondStarted := make(chan struct{})
+	var watchCalls atomic.Int32
+
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		switch watchCalls.Add(1) {
+		case 1:
+			close(firstStarted)
+			return true, firstWatcher, nil
+		case 2:
+			close(secondStarted)
+			return true, secondWatcher, nil
+		default:
+			w := watch.NewFake()
+			t.Cleanup(w.Stop)
+			return true, w, nil
+		}
+	})
+
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+	require.NoError(t, k.Init(t.Context()))
+
+	go k.informer.Run(t.Context().Done())
+
+	select {
+	case <-firstStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for first watch")
+	}
+
+	firstWatcher.Error(&v1.Status{
+		Status:  v1.StatusFailure,
+		Code:    http.StatusGone,
+		Reason:  v1.StatusReasonExpired,
+		Message: "too old resource version",
+	})
+
+	select {
+	case <-secondStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for reflector to re-establish watch after 410 Expired")
+	}
+
+	require.Empty(t, observedLogs.All())
+	_, ok := collectSyncErrorDataPoint(t.Context(), reader)
+	require.False(t, ok, "410 Expired watch event must not increment sync error metric")
 }
