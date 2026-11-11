@@ -10,6 +10,7 @@ import (
 	"strings"
 	stdsync "sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -1273,4 +1275,82 @@ func TestSync_WatchExpiredEventDoesNotRecordError(t *testing.T) {
 	require.Empty(t, observedLogs.All())
 	_, ok := collectSyncErrorDataPoint(t.Context(), reader)
 	require.False(t, ok, "410 Expired watch event must not increment sync error metric")
+}
+
+func TestSync_RetriedWatchRequestErrorLogsAndRecordsMetrics(t *testing.T) {
+	cases := []struct {
+		name       string
+		watchErr   error
+		wantSubstr string
+	}{
+		{
+			name:       "http 429 too many requests",
+			watchErr:   apierrors.NewTooManyRequests("rate limited", 1),
+			wantSubstr: "rate limited",
+		},
+		{
+			name:       "connection refused",
+			watchErr:   fmt.Errorf("dial tcp 127.0.0.1:6443: %w", syscall.ECONNREFUSED),
+			wantSubstr: syscall.ECONNREFUSED.Error(),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			const uri = "myNS/myFF"
+			fakeClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+				runtime.NewScheme(),
+				map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+			)
+
+			firstWatcher := watch.NewFake()
+			t.Cleanup(firstWatcher.Stop)
+			firstStarted := make(chan struct{})
+			var watchCalls atomic.Int32
+
+			fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+				switch watchCalls.Add(1) {
+				case 1:
+					close(firstStarted)
+					return true, firstWatcher, nil
+				case 2:
+					return true, nil, tc.watchErr
+				default:
+					w := watch.NewFake()
+					t.Cleanup(w.Stop)
+					return true, w, nil
+				}
+			})
+
+			k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+			require.NoError(t, k.Init(t.Context()))
+
+			go k.informer.Run(t.Context().Done())
+
+			select {
+			case <-firstStarted:
+			case <-time.After(5 * time.Second):
+				t.Fatal("timed out waiting for initial watch")
+			}
+
+			// End the established stream cleanly so Reflector attempts a replacement Watch request.
+			firstWatcher.Stop()
+
+			dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, tc.wantSubstr)
+			require.EqualValues(t, 1, dp.Value)
+		})
+	}
+}
+
+func TestWrapWatchWithErrorHandler_SkipsNonRetriableError(t *testing.T) {
+	called := false
+	sentinel := errors.New("non-retriable watch failure")
+
+	w, err := wrapWatchWithErrorHandler(t.Context(), nil, sentinel, func(context.Context, error) {
+		called = true
+	})
+
+	require.Nil(t, w)
+	require.ErrorIs(t, err, sentinel)
+	require.False(t, called, "non-retriable Watch error should fall through to SetWatchErrorHandlerWithContext")
 }

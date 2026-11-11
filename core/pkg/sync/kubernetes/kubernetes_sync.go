@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	utilnet "k8s.io/apimachinery/pkg/util/net"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
@@ -186,8 +187,17 @@ func wrapWatchWithErrorHandler(
 	err error,
 	onError func(context.Context, error),
 ) (watch.Interface, error) {
-	if err != nil || w == nil {
+	if err != nil {
+		// client-go Reflector.watch backs off and retries connection refused and HTTP 429
+		// errors in-loop without invoking WatchErrorHandler; surface those here while
+		// leaving non-retriable errors to SetWatchErrorHandlerWithContext to avoid double-counting.
+		if utilnet.IsConnectionRefused(err) || apierrors.IsTooManyRequests(err) {
+			onError(ctx, err)
+		}
 		return w, err
+	}
+	if w == nil {
+		return nil, nil
 	}
 	return newErrorReportingWatch(ctx, w, onError), nil
 }
