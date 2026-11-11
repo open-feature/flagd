@@ -3,7 +3,9 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	msync "sync"
 	"sync/atomic"
@@ -12,12 +14,17 @@ import (
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
+	"go.uber.org/zap"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	utilnet "k8s.io/apimachinery/pkg/util/net"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -88,9 +95,18 @@ func (k *Sync) Init(_ context.Context) error {
 	// The created informer will not do resyncs if the given defaultEventHandlerResyncPeriod is zero.
 	// For more details on resync implications refer to tools/cache/shared_informer.go
 	// Restrict the list/watch to the configured FeatureFlag so that every source only caches its own resource.
+	// Wrap the dynamic client so watch.Error events emitted on an established watch stream are also
+	// observed; client-go's Reflector handles those in-loop and returns nil instead of invoking WatchErrorHandler.
 	crdName := k.crdName
+	informerClient := k.dynamicClient
+	if informerClient != nil {
+		informerClient = &watchErrorDynamicClient{
+			Interface: informerClient,
+			onError:   k.recordWatchError,
+		}
+	}
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(
-		k.dynamicClient,
+		informerClient,
 		resyncPeriod,
 		k.namespace,
 		func(options *metav1.ListOptions) {
@@ -99,8 +115,150 @@ func (k *Sync) Init(_ context.Context) error {
 	)
 
 	k.informer = factory.ForResource(featureFlagResource).Informer()
+	if err := k.setWatchErrorHandler(); err != nil {
+		k.logger.Error("failed to set watch error handler", zap.Error(err))
+	}
 
 	return nil
+}
+
+func (k *Sync) setWatchErrorHandler() error {
+	if k.informer == nil {
+		return nil
+	}
+	return k.informer.SetWatchErrorHandlerWithContext(func(ctx context.Context, _ *cache.Reflector, err error) {
+		k.recordWatchError(ctx, err)
+	})
+}
+
+func (k *Sync) recordWatchError(ctx context.Context, err error) {
+	if errors.Is(err, io.EOF) || apierrors.IsResourceExpired(err) || apierrors.IsGone(err) {
+		k.logger.Debug("kubernetes sync watch closed", zap.Error(err))
+		return
+	}
+	k.logger.Error("kubernetes sync watch error", zap.Error(err))
+	if k.SyncMetricsRecorder != nil {
+		k.SyncMetricsRecorder.RecordSyncError(ctx, syncmetrics.SourceKubernetes, k.URI, "")
+	}
+}
+
+type watchErrorDynamicClient struct {
+	dynamic.Interface
+	onError func(context.Context, error)
+}
+
+func (c *watchErrorDynamicClient) Resource(resource schema.GroupVersionResource) dynamic.NamespaceableResourceInterface {
+	return &watchErrorResourceClient{
+		NamespaceableResourceInterface: c.Interface.Resource(resource),
+		onError:                        c.onError,
+	}
+}
+
+type watchErrorResourceClient struct {
+	dynamic.NamespaceableResourceInterface
+	onError func(context.Context, error)
+}
+
+func (c *watchErrorResourceClient) Namespace(ns string) dynamic.ResourceInterface {
+	return &watchErrorNamespacedClient{
+		ResourceInterface: c.NamespaceableResourceInterface.Namespace(ns),
+		onError:           c.onError,
+	}
+}
+
+func (c *watchErrorResourceClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+	w, err := c.NamespaceableResourceInterface.Watch(ctx, opts)
+	return wrapWatchWithErrorHandler(ctx, w, err, c.onError)
+}
+
+type watchErrorNamespacedClient struct {
+	dynamic.ResourceInterface
+	onError func(context.Context, error)
+}
+
+func (c *watchErrorNamespacedClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+	w, err := c.ResourceInterface.Watch(ctx, opts)
+	return wrapWatchWithErrorHandler(ctx, w, err, c.onError)
+}
+
+func wrapWatchWithErrorHandler(
+	ctx context.Context,
+	w watch.Interface,
+	err error,
+	onError func(context.Context, error),
+) (watch.Interface, error) {
+	if err != nil {
+		// client-go Reflector.watch backs off and retries connection refused and HTTP 429
+		// errors in-loop without invoking WatchErrorHandler; surface those here while
+		// leaving non-retriable errors to SetWatchErrorHandlerWithContext to avoid double-counting.
+		if utilnet.IsConnectionRefused(err) || apierrors.IsTooManyRequests(err) {
+			onError(ctx, err)
+		}
+		return w, err
+	}
+	if w == nil {
+		return nil, nil
+	}
+	return newErrorReportingWatch(ctx, w, onError), nil
+}
+
+type errorReportingWatch struct {
+	delegate watch.Interface
+	out      chan watch.Event
+	done     chan struct{}
+	stopOnce msync.Once
+}
+
+func newErrorReportingWatch(
+	ctx context.Context,
+	delegate watch.Interface,
+	onError func(context.Context, error),
+) watch.Interface {
+	ew := &errorReportingWatch{
+		delegate: delegate,
+		out:      make(chan watch.Event),
+		done:     make(chan struct{}),
+	}
+	go ew.forward(ctx, onError)
+	return ew
+}
+
+func (w *errorReportingWatch) forward(ctx context.Context, onError func(context.Context, error)) {
+	defer close(w.out)
+	in := w.delegate.ResultChan()
+	for {
+		select {
+		case <-w.done:
+			return
+		case <-ctx.Done():
+			return
+		case event, ok := <-in:
+			if !ok {
+				return
+			}
+			if event.Type == watch.Error {
+				onError(ctx, apierrors.FromObject(event.Object))
+			}
+			select {
+			case w.out <- event:
+			case <-w.done:
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (w *errorReportingWatch) Stop() {
+	w.stopOnce.Do(func() {
+		close(w.done)
+		w.delegate.Stop()
+	})
+}
+
+func (w *errorReportingWatch) ResultChan() <-chan watch.Event {
+	return w.out
 }
 
 func (k *Sync) IsReady() bool {

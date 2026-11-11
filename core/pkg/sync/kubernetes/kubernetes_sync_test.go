@@ -5,22 +5,32 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 	stdsync "sync"
+	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
 	"github.com/open-feature/flagd/core/pkg/sync"
+	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/open-feature-operator/api/core/v1beta1"
 	"github.com/stretchr/testify/require"
+	msdk "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -978,11 +988,23 @@ func toUnstructured(t *testing.T, obj interface{}) *unstructured.Unstructured {
 type MockInformer struct {
 	cache.SharedInformer
 	fake.FakeDynamicClient
-	fakeStore cache.FakeCustomStore
+	fakeStore                    cache.FakeCustomStore
+	watchErrorHandler            cache.WatchErrorHandler
+	watchErrorHandlerWithContext cache.WatchErrorHandlerWithContext
 }
 
 func (m *MockInformer) GetStore() cache.Store {
 	return &m.fakeStore
+}
+
+func (m *MockInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	m.watchErrorHandler = handler
+	return nil
+}
+
+func (m *MockInformer) SetWatchErrorHandlerWithContext(handler cache.WatchErrorHandlerWithContext) error {
+	m.watchErrorHandlerWithContext = handler
+	return nil
 }
 
 func TestMarshallFeatureFlagSpec(t *testing.T) {
@@ -1035,4 +1057,272 @@ func TestMarshallFeatureFlagSpec_metadata(t *testing.T) {
 			}
 		}
 	}`, res)
+}
+
+func newWatchErrorTestSync(
+	t *testing.T,
+	dynamicClient dynamic.Interface,
+	uri string,
+) (*Sync, *observer.ObservedLogs, *msdk.ManualReader) {
+	t.Helper()
+	reader := msdk.NewManualReader()
+	mp := msdk.NewMeterProvider(msdk.WithReader(reader))
+	recorder := syncmetrics.NewRecorder(mp)
+
+	observedZapCore, observedLogs := observer.New(zap.ErrorLevel)
+	observedLogger := logger.NewLogger(zap.New(observedZapCore), false)
+
+	s := &Sync{
+		URI:                 uri,
+		dynamicClient:       dynamicClient,
+		logger:              observedLogger,
+		SyncMetricsRecorder: recorder,
+	}
+	return s, observedLogs, reader
+}
+
+func collectSyncErrorDataPoint(ctx context.Context, reader *msdk.ManualReader) (*metricdata.DataPoint[int64], bool) {
+	var rm metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &rm); err != nil {
+		return nil, false
+	}
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != "feature_flag.flagd.sync.client.error" {
+				continue
+			}
+			data, ok := m.Data.(metricdata.Sum[int64])
+			if ok && len(data.DataPoints) > 0 {
+				dp := data.DataPoints[0]
+				return &dp, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func assertSyncErrorRecorded(
+	t *testing.T,
+	observedLogs *observer.ObservedLogs,
+	reader *msdk.ManualReader,
+	wantURI string,
+	wantErrSubstr string,
+) *metricdata.DataPoint[int64] {
+	t.Helper()
+	var dp *metricdata.DataPoint[int64]
+	require.Eventually(t, func() bool {
+		if observedLogs.Len() == 0 {
+			return false
+		}
+		var ok bool
+		dp, ok = collectSyncErrorDataPoint(t.Context(), reader)
+		return ok && dp.Value > 0
+	}, 5*time.Second, 50*time.Millisecond)
+
+	logs := observedLogs.All()
+	require.Equal(t, "kubernetes sync watch error", logs[0].Message)
+	errField, ok := logs[0].ContextMap()["error"]
+	require.True(t, ok)
+	require.Contains(t, fmt.Sprint(errField), wantErrSubstr)
+
+	val, ok := dp.Attributes.Value("feature_flag.flagd.sync.type")
+	require.True(t, ok)
+	require.Equal(t, "kubernetes", val.AsString())
+
+	val, ok = dp.Attributes.Value("feature_flag.flagd.sync.uri")
+	require.True(t, ok)
+	require.Equal(t, wantURI, val.AsString())
+	return dp
+}
+
+func TestSync_WatchErrorHandler_LogsAndRecordsMetrics(t *testing.T) {
+	const uri = "myNS/myFF"
+	mockInformer := &MockInformer{}
+	sync, observedLogs, reader := newWatchErrorTestSync(t, nil, uri)
+	sync.informer = mockInformer
+
+	require.NoError(t, sync.setWatchErrorHandler())
+	require.NotNil(t, mockInformer.watchErrorHandlerWithContext)
+
+	testErr := errors.New("forbidden: cannot watch featureflags")
+	mockInformer.watchErrorHandlerWithContext(t.Context(), nil, testErr)
+
+	require.Len(t, observedLogs.All(), 1)
+	dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, "forbidden: cannot watch featureflags")
+	require.EqualValues(t, 1, dp.Value)
+}
+
+func newFakeFeatureFlagClient() *fake.FakeDynamicClient {
+	return fake.NewSimpleDynamicClientWithCustomListKinds(
+		runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{featureFlagResource: "FeatureFlagList"},
+	)
+}
+
+func newRegisteredFakeWatcher(t *testing.T) *watch.FakeWatcher {
+	t.Helper()
+	w := watch.NewFake()
+	t.Cleanup(w.Stop)
+	return w
+}
+
+func waitSignal(t *testing.T, ch <-chan struct{}, desc string) {
+	t.Helper()
+	select {
+	case <-ch:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timed out waiting for %s", desc)
+	}
+}
+
+func startInformerWithWatchSteps(
+	t *testing.T,
+	uri string,
+	steps ...func() (watch.Interface, error),
+) (*Sync, *observer.ObservedLogs, *msdk.ManualReader) {
+	t.Helper()
+	fakeClient := newFakeFeatureFlagClient()
+	var watchCalls atomic.Int32
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		idx := int(watchCalls.Add(1))
+		if idx <= len(steps) {
+			w, err := steps[idx-1]()
+			return true, w, err
+		}
+		return true, newRegisteredFakeWatcher(t), nil
+	})
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+	require.NoError(t, k.Init(t.Context()))
+	go k.informer.Run(t.Context().Done())
+	return k, observedLogs, reader
+}
+
+func TestSync_WatchErrorFromInformer(t *testing.T) {
+	const uri = "myNS/myFF"
+	fakeClient := newFakeFeatureFlagClient()
+	fakeClient.PrependWatchReactor("featureflags", func(action testing2.Action) (bool, watch.Interface, error) {
+		return true, nil, errors.New("simulated watch error")
+	})
+
+	k, observedLogs, reader := newWatchErrorTestSync(t, fakeClient, uri)
+	require.NoError(t, k.Init(t.Context()))
+	go k.informer.Run(t.Context().Done())
+
+	assertSyncErrorRecorded(t, observedLogs, reader, uri, "simulated watch error")
+}
+
+func TestSync_WatchErrorEventOnEstablishedStream(t *testing.T) {
+	const uri = "myNS/myFF"
+	firstWatcher := newRegisteredFakeWatcher(t)
+	watchStarted := make(chan struct{})
+
+	k, observedLogs, reader := startInformerWithWatchSteps(t, uri, func() (watch.Interface, error) {
+		close(watchStarted)
+		return firstWatcher, nil
+	})
+	require.True(t, cache.WaitForCacheSync(t.Context().Done(), k.informer.HasSynced))
+	waitSignal(t, watchStarted, "watch to start")
+
+	firstWatcher.Error(&v1.Status{
+		Status:  v1.StatusFailure,
+		Code:    http.StatusForbidden,
+		Reason:  v1.StatusReasonForbidden,
+		Message: "forbidden: rbac revoked",
+	})
+
+	dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, "forbidden: rbac revoked")
+	require.EqualValues(t, 1, dp.Value)
+}
+
+func TestSync_WatchExpiredEventDoesNotRecordError(t *testing.T) {
+	const uri = "myNS/myFF"
+	firstWatcher := newRegisteredFakeWatcher(t)
+	secondWatcher := newRegisteredFakeWatcher(t)
+	firstStarted := make(chan struct{})
+	secondStarted := make(chan struct{})
+
+	_, observedLogs, reader := startInformerWithWatchSteps(
+		t,
+		uri,
+		func() (watch.Interface, error) {
+			close(firstStarted)
+			return firstWatcher, nil
+		},
+		func() (watch.Interface, error) {
+			close(secondStarted)
+			return secondWatcher, nil
+		},
+	)
+
+	waitSignal(t, firstStarted, "first watch")
+	firstWatcher.Error(&v1.Status{
+		Status:  v1.StatusFailure,
+		Code:    http.StatusGone,
+		Reason:  v1.StatusReasonExpired,
+		Message: "too old resource version",
+	})
+	waitSignal(t, secondStarted, "reflector to re-establish watch after 410 Expired")
+
+	require.Empty(t, observedLogs.All())
+	_, ok := collectSyncErrorDataPoint(t.Context(), reader)
+	require.False(t, ok, "410 Expired watch event must not increment sync error metric")
+}
+
+func TestSync_RetriedWatchRequestErrorLogsAndRecordsMetrics(t *testing.T) {
+	cases := []struct {
+		name       string
+		watchErr   error
+		wantSubstr string
+	}{
+		{
+			name:       "http 429 too many requests",
+			watchErr:   apierrors.NewTooManyRequests("rate limited", 1),
+			wantSubstr: "rate limited",
+		},
+		{
+			name:       "connection refused",
+			watchErr:   fmt.Errorf("dial tcp 127.0.0.1:6443: %w", syscall.ECONNREFUSED),
+			wantSubstr: syscall.ECONNREFUSED.Error(),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			const uri = "myNS/myFF"
+			firstWatcher := newRegisteredFakeWatcher(t)
+			firstStarted := make(chan struct{})
+
+			_, observedLogs, reader := startInformerWithWatchSteps(
+				t,
+				uri,
+				func() (watch.Interface, error) {
+					close(firstStarted)
+					return firstWatcher, nil
+				},
+				func() (watch.Interface, error) {
+					return nil, tc.watchErr
+				},
+			)
+
+			waitSignal(t, firstStarted, "initial watch")
+			// End the established stream cleanly so Reflector attempts a replacement Watch request.
+			firstWatcher.Stop()
+
+			dp := assertSyncErrorRecorded(t, observedLogs, reader, uri, tc.wantSubstr)
+			require.EqualValues(t, 1, dp.Value)
+		})
+	}
+}
+
+func TestWrapWatchWithErrorHandler_SkipsNonRetriableError(t *testing.T) {
+	called := false
+	sentinel := errors.New("non-retriable watch failure")
+
+	w, err := wrapWatchWithErrorHandler(t.Context(), nil, sentinel, func(context.Context, error) {
+		called = true
+	})
+
+	require.Nil(t, w)
+	require.ErrorIs(t, err, sentinel)
+	require.False(t, called, "non-retriable Watch error should fall through to SetWatchErrorHandlerWithContext")
 }
