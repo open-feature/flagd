@@ -157,13 +157,6 @@ func TestResolveEvaluation(t *testing.T) {
 			reason:  model.ErrorReason,
 			err:     errors.New(model.GeneralErrorCode),
 		},
-		"computed non-string variant is a parse error": {
-			flags:   resolveFlag(`{"resolve": [{"var": "pick"}]}`),
-			flagKey: "color",
-			context: map[string]any{"pick": 1},
-			reason:  model.ErrorReason,
-			err:     errors.New(model.ParseErrorCode),
-		},
 		"shared evaluator inlines a terminal resolve": {
 			flags: `{
 				"flags": {
@@ -275,16 +268,6 @@ func TestResolveRuntimeErrors(t *testing.T) {
 			}},
 			err: errors.New(model.GeneralErrorCode),
 		},
-		"computed +Inf metadata": {
-			targeting: nonFiniteMetadataRule,
-			context:   map[string]any{"hits": 1, "total": 0},
-			err:       errors.New(model.ParseErrorCode),
-		},
-		"computed NaN metadata": {
-			targeting: nonFiniteMetadataRule,
-			context:   map[string]any{"hits": 0, "total": 0},
-			err:       errors.New(model.ParseErrorCode),
-		},
 	}
 
 	for name, tt := range tests {
@@ -302,6 +285,43 @@ func TestResolveRuntimeErrors(t *testing.T) {
 			assert.NotContains(t, metadata, "flagSetId")
 			_, encodeErr := json.Marshal(metadata)
 			assert.NoError(t, encodeErr, "metadata must stay JSON-encodable")
+		})
+	}
+}
+
+// malformed computed arguments return null like the other custom operators, so the default variant is selected
+func TestResolveMalformedComputedArguments(t *testing.T) {
+	tests := map[string]struct {
+		targeting string
+		context   map[string]any
+	}{
+		"null variant":       {targeting: `{"resolve": [{"var": "pick"}]}`},
+		"non-string variant": {targeting: `{"resolve": [{"var": "pick"}]}`, context: map[string]any{"pick": 1}},
+		"non-string reason":  {targeting: `{"resolve": ["red", {"var": "why"}]}`, context: map[string]any{"why": 1}},
+		"non-primitive metadata": {
+			targeting: `{"resolve": ["red", null, [["details", {"var": "obj"}]]]}`,
+			context:   map[string]any{"obj": map[string]any{"a": 1}},
+		},
+		"inside an if result": {targeting: `{"if": [true, {"resolve": [{"var": "pick"}]}, "blue"]}`},
+		"+Inf metadata":       {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 1, "total": 0}},
+		"NaN metadata":        {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 0, "total": 0}},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{"testSource"})
+			require.NoError(t, err)
+			je := NewJSON(log, s)
+			require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(tt.targeting), Source: "testSource"}))
+
+			value, variant, reason, metadata, err := je.ResolveStringValue(context.Background(), "default", "color", tt.context)
+			require.NoError(t, err)
+			assert.Equal(t, "#FFFF00", value)
+			assert.Equal(t, "yellow", variant)
+			assert.Equal(t, model.DefaultReason, reason)
+			assert.NotContains(t, metadata, "share")
+			assert.NotContains(t, metadata, "details")
 		})
 	}
 }
@@ -334,7 +354,9 @@ func TestResolveNonFiniteMetadataInBulk(t *testing.T) {
 			assert.NoError(t, value.Error)
 		}
 		if value.FlagKey == "ratio" {
-			assert.Equal(t, errors.New(model.ParseErrorCode), value.Error)
+			assert.NoError(t, value.Error)
+			assert.Equal(t, model.DefaultReason, value.Reason)
+			assert.NotContains(t, value.Metadata, "share")
 		}
 	}
 }

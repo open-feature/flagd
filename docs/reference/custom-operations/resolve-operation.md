@@ -28,6 +28,8 @@ Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same config
 
 Arguments may be computed with other operators, such as `var` or `cat`.
 
+When a computed argument is malformed, such as a variant that is not a string or a metadata number that is `NaN` or infinite, `resolve` returns null like the other custom operations, and the flag falls back to its default variant.
+
 Older flagd binaries do not know this operator.
 
 Upgrade flagd before a configuration starts using `resolve`.
