@@ -15,12 +15,11 @@ const ResolveEvaluationName = "resolve"
 
 // resolveResult is what the operator returns. JsonLogic passes it through if/?: untouched (it only
 // re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
-// A nil reason keeps TARGETING_MATCH. err is set when evaluated arguments are malformed.
+// A nil reason keeps TARGETING_MATCH.
 type resolveResult struct {
 	variant  string
 	reason   *string
 	metadata map[string]any
-	err      error
 }
 
 // ResolveEvaluator implements the terminal resolve operator.
@@ -34,13 +33,13 @@ func NewResolveEvaluator(log *logger.Logger) *ResolveEvaluator {
 }
 
 // Evaluate returns a *resolveResult. Arguments are already evaluated by JsonLogic.
-// Invalid evaluated arguments produce an error result rather than null, because a null
-// targeting result would silently fall through to the default variant.
+// Malformed evaluated arguments return null, like the other custom operators, so the flag falls back to its
+// default variant.
 func (re *ResolveEvaluator) Evaluate(values, _ any) any {
 	parsed, err := parseEvaluatedResolve(values)
 	if err != nil {
 		re.Logger.Debug("resolve evaluation failed", zap.Error(err))
-		return &resolveResult{err: err}
+		return nil
 	}
 	return parsed
 }
@@ -110,8 +109,8 @@ func metadataPair(pair any) (string, any, error) {
 	return key, items[1], nil
 }
 
-// metadataPrimitive rejects NaN and ±Inf (e.g. a computed 1/0): JSON can't encode them, so OFREP and Connect
-// JSON responses would fail, taking a whole bulk response with them
+// metadataPrimitive rejects NaN and ±Inf (e.g. a computed 1/0): JSON can't encode them, so returning them would
+// fail OFREP and Connect JSON responses, taking a whole bulk response with them
 func metadataPrimitive(value any) (any, bool) {
 	switch n := value.(type) {
 	case string, bool:
@@ -146,10 +145,6 @@ func (je *Resolver) applyResolveResult(
 ) (variant, reason string, meta map[string]any, err error) {
 	if metadata == nil {
 		metadata = map[string]any{}
-	}
-	if parsed.err != nil {
-		je.Logger.ErrorWithID(reqID, fmt.Sprintf("resolve failed for flag %s: %s", flagKey, parsed.err))
-		return "", model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 	}
 	// variant keys are non-empty, and an empty variant is how flagd marks its own fallback and disabled
 	// results, so an empty one is always missing
