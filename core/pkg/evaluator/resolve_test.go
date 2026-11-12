@@ -17,6 +17,15 @@ import (
 func TestResolveEvaluation(t *testing.T) {
 	const source = "testSource"
 	ctx := context.Background()
+	nestedBranches := resolveFlag(`{
+		"if": [
+			{"==": [{"var": "id"}, "a"]},
+			{"resolve": ["red", "ALLOWLIST", [["details", "customer-a"]]]},
+			{"==": [{"var": "id"}, "b"]},
+			{"resolve": ["red", "SPLIT", [["details", "customer-b"]]]},
+			{"resolve": ["blue", "FALLTHROUGH", [["details", "else"]]]}
+		]
+	}`)
 
 	tests := map[string]struct {
 		flags    string
@@ -97,22 +106,33 @@ func TestResolveEvaluation(t *testing.T) {
 				"onlyRule": true,
 			},
 		},
-		"nested if branches stay distinguishable": {
-			flags: resolveFlag(`{
-				"if": [
-					{"==": [{"var": "id"}, "a"]},
-					{"resolve": ["red", "ALLOWLIST", [["details", "customer-a"]]]},
-					{"==": [{"var": "id"}, "b"]},
-					{"resolve": ["red", "SPLIT", [["details", "customer-b"]]]},
-					{"resolve": ["blue", "FALLTHROUGH", [["details", "else"]]]}
-				]
-			}`),
+		// the first two branches serve the same variant, so only the reason and details tell them apart
+		"nested if first branch": {
+			flags:   nestedBranches,
+			flagKey: "color",
+			context: map[string]any{"id": "a"},
+			value:   "#FF0000",
+			variant: "red",
+			reason:  "ALLOWLIST",
+			meta:    map[string]any{"details": "customer-a"},
+		},
+		"nested if second branch": {
+			flags:   nestedBranches,
 			flagKey: "color",
 			context: map[string]any{"id": "b"},
 			value:   "#FF0000",
 			variant: "red",
 			reason:  "SPLIT",
 			meta:    map[string]any{"details": "customer-b"},
+		},
+		"nested if else branch": {
+			flags:   nestedBranches,
+			flagKey: "color",
+			context: map[string]any{"id": "z"},
+			value:   "#0000FF",
+			variant: "blue",
+			reason:  "FALLTHROUGH",
+			meta:    map[string]any{"details": "else"},
 		},
 		"ternary result is terminal": {
 			flags: resolveFlag(`{
