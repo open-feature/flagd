@@ -22,9 +22,13 @@ Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
 
 It is valid as the whole targeting rule, or as a result of `if` / `?:`.
 
-flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, or an `if` condition, or when its literal arguments are malformed.
+flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, an `if` condition, or a `fractional` bucket, or when its literal arguments are malformed.
 
 Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same configuration still load.
+
+`fractional` buckets can't carry a reason or metadata yet.
+
+To tag a split, compare the `fractional` result in an `if` condition and use `resolve` in its branches, as in the [example below](#fractional-split).
 
 Arguments may be computed with other operators, such as `var` or `cat`.
 
@@ -80,3 +84,22 @@ Upgrade flagd before a configuration starts using `resolve`.
 The `alpha` and `beta` branches both say why they matched.
 
 The final branch selects `ga` with reason `FALLTHROUGH`.
+
+## Fractional split
+
+```json
+{
+  "if": [
+    {
+      "==": [
+        { "fractional": [{ "var": "targetingKey" }, ["on", 10], ["off", 90]] },
+        "on"
+      ]
+    },
+    { "resolve": ["on", "SPLIT_RANDOM", [["details", "10pct-rollout"]]] },
+    { "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "holdback"]]] }
+  ]
+}
+```
+
+Both buckets of the split now report which one fired.
