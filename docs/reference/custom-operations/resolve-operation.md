@@ -30,7 +30,9 @@ Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same config
 
 To tag a split, compare the `fractional` result in an `if` condition and use `resolve` in its branches, as in the [example below](#fractional-split).
 
-Arguments may be computed with other operators, such as `var` or `cat`.
+The variant, the reason, and metadata values may be computed with other operators, such as `var` or `cat`.
+
+The metadata list, its pairs, and their keys must be literal.
 
 When a computed argument is malformed, such as a variant that is not a string or a metadata number that is `NaN` or infinite, `resolve` returns null like the other custom operations, and the flag falls back to its default variant.
 

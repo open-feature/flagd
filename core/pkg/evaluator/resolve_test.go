@@ -236,6 +236,11 @@ func TestResolveInvalidFlagAtLoad(t *testing.T) {
 		"short pair":            {targeting: `{"resolve": ["red", null, [["details"]]]}`},
 		"non-primitive value":   {targeting: `{"resolve": ["red", null, [["details", {"nested": true}]]]}`},
 		"non-string key":        {targeting: `{"resolve": ["red", null, [[1, "x"]]]}`},
+		// the targeting schema only lets metadata values be computed
+		"computed metadata": {targeting: `{"resolve": ["red", null, {"var": "meta"}]}`},
+		"computed pair":     {targeting: `{"resolve": ["red", null, [{"var": "pair"}]]}`},
+		"computed key":      {targeting: `{"resolve": ["red", null, [[{"var": "key"}, "x"]]]}`},
+		"extra operator":    {targeting: `{"resolve": ["red"], "if": [true, "red"]}`},
 		"inlined bad evaluator": {
 			targeting:  `{"==": [{"$ref": "bad"}, "red"]}`,
 			evaluators: `{"bad": {"resolve": ["red"]}}`,
