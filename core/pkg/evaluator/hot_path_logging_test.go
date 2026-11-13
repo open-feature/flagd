@@ -51,6 +51,14 @@ func TestHotPathLoggingIsDebugOnly(t *testing.T) {
 			targeting: `{"fractional": [["on", 50], ["off", 50]]}`,
 			context:   map[string]any{"targetingKey": ""},
 		},
+		"resolve absent variant property": {
+			targeting: `{"resolve": [{"var": "variant"}]}`,
+			context:   map[string]any{},
+		},
+		"resolve non-finite metadata": {
+			targeting: `{"resolve": ["on", null, [["share", {"/": [{"var": "hits"}, 0]}]]]}`,
+			context:   map[string]any{"hits": 1},
+		},
 		"$flagd in context": {
 			targeting: `{"if": [{"==": [{"var": "email"}, "abc"]}, "on", "off"]}`,
 			context:   map[string]any{"$flagd": map[string]any{"flagKey": "spoofed"}},
