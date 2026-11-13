@@ -204,6 +204,9 @@ func walkResolve(node any, terminal bool, flagKey string) error {
 		return nil
 	}
 	if len(rule) != 1 {
+		if _, ok := rule[ResolveEvaluationName]; ok {
+			return fmt.Errorf("flag %q: resolve must be the only key in its object", flagKey)
+		}
 		for _, value := range rule {
 			if err := walkResolve(value, false, flagKey); err != nil {
 				return err
@@ -287,21 +290,13 @@ func validateResolveReason(node any, flagKey string) error {
 	return fmt.Errorf("flag %q: resolve reason must be a string or null", flagKey)
 }
 
+// validateResolveMetadata follows the targeting schema: the pairs and their keys are literal, only values may be computed
 func validateResolveMetadata(node any, flagKey string) error {
-	if isJSONLogicRule(node) {
-		return walkResolve(node, false, flagKey)
-	}
 	pairs, ok := node.([]any)
 	if !ok {
 		return fmt.Errorf("flag %q: resolve metadata must be an array of [key, value] pairs", flagKey)
 	}
 	for _, pair := range pairs {
-		if isJSONLogicRule(pair) {
-			if err := walkResolve(pair, false, flagKey); err != nil {
-				return err
-			}
-			continue
-		}
 		if err := validateMetadataPair(pair, flagKey); err != nil {
 			return err
 		}
@@ -314,20 +309,10 @@ func validateMetadataPair(pair any, flagKey string) error {
 	if !ok || len(items) != 2 {
 		return fmt.Errorf("flag %q: resolve metadata pair must be a [key, value] array", flagKey)
 	}
-	if err := validateMetadataKey(items[0], flagKey); err != nil {
-		return err
+	if _, ok := items[0].(string); !ok {
+		return fmt.Errorf("flag %q: resolve metadata key must be a string", flagKey)
 	}
 	return validateMetadataValue(items[1], flagKey)
-}
-
-func validateMetadataKey(node any, flagKey string) error {
-	if isJSONLogicRule(node) {
-		return walkResolve(node, false, flagKey)
-	}
-	if _, ok := node.(string); ok {
-		return nil
-	}
-	return fmt.Errorf("flag %q: resolve metadata key must be a string", flagKey)
 }
 
 func validateMetadataValue(node any, flagKey string) error {
