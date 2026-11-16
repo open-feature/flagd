@@ -498,6 +498,9 @@ func TestSync_FileRestoredAfterDelete(t *testing.T) {
 				waitForFlagData(t, dataSyncChan, defaultState, 5*time.Second)
 				// the re-add retry has given up, so only the restore ticker can pick the file up again
 				waitForLog(t, logs, "error restoring watcher, file may have been deleted", cycle, 5*time.Second)
+				if got := logs.FilterMessageSnippet("error restoring watcher").All()[cycle-1].ContextMap()["uri"]; got != uri {
+					t.Errorf("expected uri field %q, got %v", uri, got)
+				}
 
 				content := fmt.Sprintf("restored content %d", cycle)
 				if err := os.WriteFile(uri, []byte(content), 0o644); err != nil {
@@ -516,11 +519,15 @@ func TestSync_FileMissingWarnsOnce(t *testing.T) {
 	createFile(t, dir)
 	writeToFile(t, dir, fetchFileContents)
 
-	dataSyncChan, logs := startSync(t, filepath.Join(dir, fetchFileName), FSNOTIFY)
+	uri := filepath.Join(dir, fetchFileName)
+	dataSyncChan, logs := startSync(t, uri, FSNOTIFY)
 	waitForFlagData(t, dataSyncChan, fetchFileContents, 5*time.Second)
 
 	deleteFile(t, dir, fetchFileName)
 	waitForLog(t, logs, "unable to restore watch", 1, 5*time.Second)
+	if got := logs.FilterMessageSnippet("unable to restore watch").All()[0].ContextMap()["uri"]; got != uri {
+		t.Errorf("expected uri field %q, got %v", uri, got)
+	}
 	// let at least one more restore attempt fail
 	time.Sleep(restoreWatchInterval * 3 / 2)
 	if n := logs.FilterMessageSnippet("unable to restore watch").Len(); n != 1 {
