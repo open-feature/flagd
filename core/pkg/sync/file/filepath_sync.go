@@ -15,6 +15,7 @@ import (
 	"github.com/open-feature/flagd/core/pkg/sync"
 	"github.com/open-feature/flagd/core/pkg/sync/syncmetrics"
 	"github.com/open-feature/flagd/core/pkg/utils"
+	"go.uber.org/zap"
 )
 
 const (
@@ -147,7 +148,7 @@ func (fs *Sync) Sync(ctx context.Context, dataSync chan<- sync.DataSync) error {
 			// the file is still missing until Add succeeds; keep retrying on the next tick
 			if fs.restoreWatch(&restoreWarned) {
 				restore.Stop()
-				fs.Logger.Info(fmt.Sprintf("watch restored for %s", fs.URI))
+				fs.Logger.Info("watch restored", zap.String("uri", fs.URI))
 				fs.sendDataSync(ctx, dataSync)
 			}
 		case err, ok := <-fs.watcher.Errors():
@@ -175,7 +176,7 @@ func (fs *Sync) handleRemove(ctx context.Context, dataSync chan<- sync.DataSync,
 		return
 	case err != nil:
 		// the watcher could not be re-added, so the file must have been deleted
-		fs.Logger.Error(fmt.Sprintf("error restoring watcher, file may have been deleted: %s", err.Error()))
+		fs.Logger.Error("error restoring watcher, file may have been deleted", zap.String("uri", fs.URI), zap.Error(err))
 		fs.sendDataSync(ctx, dataSync)
 		restore.Reset(restoreWatchInterval)
 		return
@@ -195,7 +196,7 @@ func (fs *Sync) handleChmod(ctx context.Context, dataSync chan<- sync.DataSync, 
 	_, err := os.Stat(fs.URI)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
-		fs.Logger.Error(fmt.Sprintf("file has been deleted: %s", err.Error()))
+		fs.Logger.Error("file has been deleted", zap.String("uri", fs.URI), zap.Error(err))
 		fs.sendDataSync(ctx, dataSync)
 		// the remove event may never arrive while another process holds the file open
 		restore.Reset(restoreWatchInterval)
@@ -220,7 +221,7 @@ func (fs *Sync) restoreWatch(warned *bool) bool {
 	}
 	if err != nil {
 		if !*warned {
-			fs.Logger.Warn(fmt.Sprintf("unable to restore watch for %s, retrying: %s", fs.URI, err.Error()))
+			fs.Logger.Warn("unable to restore watch, retrying", zap.String("uri", fs.URI), zap.Error(err))
 			*warned = true
 		}
 		return false
