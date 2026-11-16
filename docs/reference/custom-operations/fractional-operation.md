@@ -95,6 +95,7 @@ This value should typically be something that remains consistent for the duratio
 The seed is typically the flagKey so that experiments running across different flags are statistically independent, however, you can also specify another seed to either align or further decouple your allocations across different feature flags or use-cases.
 The other elements in the array are nested arrays with the first element representing a variant and the second being the relative weight for this option.
 There is no limit to the number of elements.
+A variant can also be a [`resolve`](./resolve-operation.md) operation, so each bucket can carry its own reason and metadata.
 
 > [!NOTE]
 > Previous versions of the `fractional` operation used percentage-based weights that had to sum to 100 and were limited to 1% precision.

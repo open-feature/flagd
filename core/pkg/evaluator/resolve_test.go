@@ -155,6 +155,36 @@ func TestResolveEvaluation(t *testing.T) {
 			variant: "green",
 			reason:  "ALLOWLIST",
 		},
+		// a fixed bucketing value and zero weights pick the bucket deterministically
+		"fractional bucket variant is terminal": {
+			flags: resolveFlag(`{"fractional": ["key",
+				[{"resolve": ["red", "SPLIT", [["details", "treatment"]]]}, 1],
+				[{"resolve": ["blue", "SPLIT", [["details", "holdback"]]]}, 0]
+			]}`),
+			flagKey: "color",
+			value:   "#FF0000",
+			variant: "red",
+			reason:  "SPLIT",
+			meta:    map[string]any{"details": "treatment"},
+		},
+		"fractional mixes plain and resolve buckets": {
+			flags:   resolveFlag(`{"fractional": ["key", [{"resolve": ["red", "SPLIT"]}, 0], ["blue", 1]]}`),
+			flagKey: "color",
+			value:   "#0000FF",
+			variant: "blue",
+			reason:  model.TargetingMatchReason,
+		},
+		"fractional in an if result": {
+			flags: resolveFlag(`{"if": [true,
+				{"fractional": ["key", [{"resolve": ["green", "SPLIT", [["details", "treatment"]]]}, 1]]},
+				"blue"
+			]}`),
+			flagKey: "color",
+			value:   "#00FF00",
+			variant: "green",
+			reason:  "SPLIT",
+			meta:    map[string]any{"details": "treatment"},
+		},
 		"computed variant reason and details": {
 			flags: resolveFlag(`{
 				"resolve": [
@@ -228,21 +258,24 @@ func TestResolveInvalidFlagAtLoad(t *testing.T) {
 		targeting  string
 		evaluators string
 	}{
-		"inside equality":       {targeting: `{"==": [{"resolve": ["red"]}, "red"]}`},
-		"inside cat":            {targeting: `{"cat": [{"resolve": ["red"]}, "x"]}`},
-		"if condition":          {targeting: `{"if": [{"resolve": ["red"]}, "red", "blue"]}`},
-		"consumed by outer if":  {targeting: `{"if": [{"if": [true, {"resolve": ["red"]}, "blue"]}, "red", "blue"]}`},
-		"inside fractional":     {targeting: `{"fractional": ["key", [{"resolve": ["red"]}, 1], ["blue", 1]]}`},
-		"nested in resolve arg": {targeting: `{"resolve": [{"resolve": ["red"]}]}`},
-		"result array":          {targeting: `{"if": [true, [{"resolve": ["red"]}], "blue"]}`},
-		"no arguments":          {targeting: `{"resolve": []}`},
-		"too many arguments":    {targeting: `{"resolve": ["red", "ALLOWLIST", [], "extra"]}`},
-		"non-string variant":    {targeting: `{"resolve": [true]}`},
-		"non-string reason":     {targeting: `{"resolve": ["red", 1]}`},
-		"metadata object":       {targeting: `{"resolve": ["red", null, {"details": "x"}]}`},
-		"short pair":            {targeting: `{"resolve": ["red", null, [["details"]]]}`},
-		"non-primitive value":   {targeting: `{"resolve": ["red", null, [["details", {"nested": true}]]]}`},
-		"non-string key":        {targeting: `{"resolve": ["red", null, [[1, "x"]]]}`},
+		"inside equality":            {targeting: `{"==": [{"resolve": ["red"]}, "red"]}`},
+		"inside cat":                 {targeting: `{"cat": [{"resolve": ["red"]}, "x"]}`},
+		"if condition":               {targeting: `{"if": [{"resolve": ["red"]}, "red", "blue"]}`},
+		"consumed by outer if":       {targeting: `{"if": [{"if": [true, {"resolve": ["red"]}, "blue"]}, "red", "blue"]}`},
+		"fractional bucketing value": {targeting: `{"fractional": [{"resolve": ["red"]}, ["red", 1]]}`},
+		"fractional weight":          {targeting: `{"fractional": ["key", ["red", {"resolve": ["red"]}]]}`},
+		"consumed fractional":        {targeting: `{"==": [{"fractional": ["key", [{"resolve": ["red"]}, 1]]}, "red"]}`},
+		"fractional as if condition": {targeting: `{"if": [{"fractional": ["key", [{"resolve": ["red"]}, 1]]}, "red", "blue"]}`},
+		"nested in resolve arg":      {targeting: `{"resolve": [{"resolve": ["red"]}]}`},
+		"result array":               {targeting: `{"if": [true, [{"resolve": ["red"]}], "blue"]}`},
+		"no arguments":               {targeting: `{"resolve": []}`},
+		"too many arguments":         {targeting: `{"resolve": ["red", "ALLOWLIST", [], "extra"]}`},
+		"non-string variant":         {targeting: `{"resolve": [true]}`},
+		"non-string reason":          {targeting: `{"resolve": ["red", 1]}`},
+		"metadata object":            {targeting: `{"resolve": ["red", null, {"details": "x"}]}`},
+		"short pair":                 {targeting: `{"resolve": ["red", null, [["details"]]]}`},
+		"non-primitive value":        {targeting: `{"resolve": ["red", null, [["details", {"nested": true}]]]}`},
+		"non-string key":             {targeting: `{"resolve": ["red", null, [[1, "x"]]]}`},
 		// the targeting schema only lets metadata values be computed
 		"computed metadata": {targeting: `{"resolve": ["red", null, {"var": "meta"}]}`},
 		"computed pair":     {targeting: `{"resolve": ["red", null, [{"var": "pair"}]]}`},
@@ -335,8 +368,11 @@ func TestResolveMalformedComputedArguments(t *testing.T) {
 			context:   map[string]any{"obj": map[string]any{"a": 1}},
 		},
 		"inside an if result": {targeting: `{"if": [true, {"resolve": [{"var": "pick"}]}, "blue"]}`},
-		"+Inf metadata":       {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 1, "total": 0}},
-		"NaN metadata":        {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 0, "total": 0}},
+		"inside a fractional bucket": {
+			targeting: `{"fractional": ["key", [{"resolve": [{"var": "pick"}]}, 1], ["blue", 0]]}`,
+		},
+		"+Inf metadata": {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 1, "total": 0}},
+		"NaN metadata":  {targeting: nonFiniteMetadataRule, context: map[string]any{"hits": 0, "total": 0}},
 	}
 
 	for name, tt := range tests {

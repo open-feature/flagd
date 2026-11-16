@@ -3,7 +3,7 @@
 status: accepted
 author: Parth Suthar
 created: 2026-07-30
-updated: 2026-10-16
+updated: 2026-11-16
 ---
 
 # Per-evaluation metadata from targeting rules
@@ -56,7 +56,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 - **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. Values are restricted to `string | number | boolean`, matching flag and flag-set metadata.
 - **`details`**: a well-known metadata key: free-text explanation of why this branch fired.
 
-`resolve` is **terminal**: it is only valid as the whole targeting rule, or as a result branch of `if` / `?:` (recursively). Implementations reject it anywhere else when the flag is loaded, so its result always passes through to the resolver unchanged.
+`resolve` is **terminal**: it is only valid as the whole targeting rule, as a result branch of `if` / `?:`, or as the variant of a `fractional` bucket (recursively). Implementations reject it anywhere else when the flag is loaded, so its result always passes through to the resolver unchanged.
 
 ### Evaluator changes
 
@@ -144,7 +144,7 @@ Each branch tags the evaluation with the rule that fired:
 
 ### Example — nested `if` with a fractional split
 
-`fractional` returns a plain string (`"on"` or `"off"`), and both are truthy under JsonLogic — so it can't be used directly as an `if` condition; wrapping it in `==` against a target bucket label makes it a real boolean:
+A `fractional` bucket's variant is a terminal position too, so each bucket can carry its own reason and metadata. The bucket a user lands in depends only on the bucketing value and the weights, so wrapping a variant in `resolve` doesn't move anyone:
 
 ```json
 {
@@ -152,21 +152,10 @@ Each branch tags the evaluation with the rule that fired:
     "if": [
       { "==": [{ "var": "locale" }, "en-US"] },
       {
-        "if": [
-          {
-            "==": [
-              {
-                "fractional": [
-                  { "var": "targetingKey" },
-                  ["on", 10],
-                  ["off", 90]
-                ]
-              },
-              "on"
-            ]
-          },
-          { "resolve": ["on", "SPLIT_RANDOM", [["details", "us-10pct-rollout"]]] },
-          { "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "us-holdback"]]] }
+        "fractional": [
+          { "var": "targetingKey" },
+          [{ "resolve": ["on", "SPLIT_RANDOM", [["details", "us-10pct-rollout"]]] }, 10],
+          [{ "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "us-holdback"]]] }, 90]
         ]
       },
       { "resolve": ["off", "FALLTHROUGH", [["details", "non-us-off"]]] }
@@ -238,4 +227,3 @@ Those scenarios run across the gRPC, OFREP, and in-process paths that `test/inte
 ## Open questions
 
 - **Config version.** Proposal: bump the targeting/flags schema to `v0.1` and gate the new terminus on it, leaving `v0` untouched for existing fleets. Sequencing of the hosted schema at `flagd.dev` is covered in the migration warning above.
-- **Fractional buckets.** `fractional` returns a variant string directly, so it can't tag the picked bucket with metadata without a separate operator extension (e.g. an optional third element per weight tuple). Proposal: defer — ship the base `resolve` operator first. Nesting metadata into fractional is meaningfully more complicated and shouldn't block this.

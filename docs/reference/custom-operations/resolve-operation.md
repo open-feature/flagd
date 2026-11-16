@@ -20,15 +20,11 @@ Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
 
 `resolve` is terminal.
 
-It is valid as the whole targeting rule, or as a result of `if` / `?:`.
+It is valid as the whole targeting rule, as a result of `if` / `?:`, or as the variant of a `fractional` bucket, as in the [example below](#fractional-split).
 
-flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, an `if` condition, or a `fractional` bucket, or when its literal arguments are malformed.
+flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, an `if` condition, or the bucketing value or weight of `fractional`, or when its literal arguments are malformed.
 
 Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same configuration still load.
-
-`fractional` buckets can't carry a reason or metadata yet.
-
-To tag a split, compare the `fractional` result in an `if` condition and use `resolve` in its branches, as in the [example below](#fractional-split).
 
 The variant, the reason, and metadata values may be computed with other operators, such as `var` or `cat`.
 
@@ -91,17 +87,13 @@ The final branch selects `ga` with reason `FALLTHROUGH`.
 
 ```json
 {
-  "if": [
-    {
-      "==": [
-        { "fractional": [{ "var": "targetingKey" }, ["on", 10], ["off", 90]] },
-        "on"
-      ]
-    },
-    { "resolve": ["on", "SPLIT_RANDOM", [["details", "10pct-rollout"]]] },
-    { "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "holdback"]]] }
+  "fractional": [
+    [{ "resolve": ["on", "SPLIT", [["details", "treatment"]]] }, 10],
+    [{ "resolve": ["off", "SPLIT", [["details", "holdback"]]] }, 90]
   ]
 }
 ```
 
-Both buckets of the split now report which one fired.
+Each bucket reports which one fired.
+
+Wrapping a bucket's variant in `resolve` does not change which bucket a user lands in.
