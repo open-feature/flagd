@@ -237,8 +237,8 @@ func walkConditional(args any, parentTerminal bool, flagKey string) error {
 	for i, clause := range clauses {
 		terminal := false
 		// if/?: results are the then-branches (odd indexes) and, when the length is odd, the final else.
-		// A single clause is only a condition: a falsy value becomes null, so it is not terminal.
-		if length > 1 && (i%2 == 1 || (length%2 == 1 && i == length-1)) {
+		// A single clause is that else: JsonLogic returns it as the result.
+		if i%2 == 1 || (length%2 == 1 && i == length-1) {
 			terminal = parentTerminal
 		}
 		if err := walkResolve(clause, terminal, flagKey); err != nil {

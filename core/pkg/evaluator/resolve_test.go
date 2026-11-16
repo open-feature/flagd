@@ -148,6 +148,13 @@ func TestResolveEvaluation(t *testing.T) {
 			variant: "yellow",
 			reason:  "FALLTHROUGH",
 		},
+		"single if clause is terminal": {
+			flags:   resolveFlag(`{"if": [{"resolve": ["green", "ALLOWLIST"]}]}`),
+			flagKey: "color",
+			value:   "#00FF00",
+			variant: "green",
+			reason:  "ALLOWLIST",
+		},
 		"computed variant reason and details": {
 			flags: resolveFlag(`{
 				"resolve": [
