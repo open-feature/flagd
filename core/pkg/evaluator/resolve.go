@@ -165,8 +165,8 @@ func (je *Resolver) applyResolveResult(
 
 // markInvalidResolveFlags marks flags that use resolve outside a terminal position or with malformed literal
 // arguments. Only the offending flag is invalid; the rest of the payload still loads.
-// Terminal means the operator is the whole targeting rule, or a result branch of if / ?: whose own
-// result is terminal. Its value must reach the resolver unchanged.
+// Terminal means the operator is the whole targeting rule, or a result branch of if / ?: or a fractional bucket
+// variant whose own result is terminal. Its value must reach the resolver unchanged.
 func (je *JSON) markInvalidResolveFlags(definition *Definition) {
 	for i := range definition.Flags {
 		flag := &definition.Flags[i]
@@ -218,14 +218,43 @@ func walkResolve(node any, terminal bool, flagKey string) error {
 	operator, args := onlyRuleEntry(rule)
 	if operator == ResolveEvaluationName {
 		if !terminal {
-			return fmt.Errorf("flag %q: resolve is only valid as the targeting result or an if/?: result", flagKey)
+			return fmt.Errorf(
+				"flag %q: resolve is only valid as the targeting result, an if/?: result, or a fractional bucket variant",
+				flagKey)
 		}
 		return validateResolveArguments(args, flagKey)
 	}
 	if operator == "if" || operator == "?:" {
 		return walkConditional(args, terminal, flagKey)
 	}
+	if operator == FractionEvaluationName {
+		return walkFractional(args, terminal, flagKey)
+	}
 	return walkResolve(args, false, flagKey)
+}
+
+// walkFractional treats each bucket's variant as a result. The bucketing value and the weights are consumed.
+func walkFractional(args any, parentTerminal bool, flagKey string) error {
+	items, ok := args.([]any)
+	if !ok {
+		return walkResolve(args, false, flagKey)
+	}
+	for _, item := range items {
+		bucket, isBucket := item.([]any)
+		if !isBucket || len(bucket) == 0 {
+			if err := walkResolve(item, false, flagKey); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := walkResolve(bucket[0], parentTerminal, flagKey); err != nil {
+			return err
+		}
+		if err := walkResolve(bucket[1:], false, flagKey); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func walkConditional(args any, parentTerminal bool, flagKey string) error {
