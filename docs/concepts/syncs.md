@@ -150,20 +150,20 @@ Using the above example, if a flag key is duplicated across all 3 sources, then 
 
 ![flag merge 2](../images/flag-merge-2.svg)
 
-### State Resync Events
+### Duplicate flags across sources
 
-Given the above example, the `source-A` and `source-B` 'versions' of flag definition the `foo` have been discarded, so if a delete event in `source-C` results in the removal of the `foo`flag, there will no longer be any reference of `foo` in flagd's store.
+Given the above example, the `source-A` and `source-B` 'versions' of the `foo` flag definition have been discarded.
+flagd stores a single definition per flag set ID and flag key, so lower priority duplicates are not retained alongside the winning one.
 
-As a result of this flagd will return `FLAG_NOT_FOUND` errors, and the OpenFeature SDK will always return the default value.
+This matters when a flag is deleted.
+If `source-C` removes its definition of `foo`, that definition is removed from the store and no definition of `foo` remains.
+flagd does not fall back to the definition from `source-B`, and does not rebuild the merged state from the remaining sources.
+Evaluations of `foo` then result in `FLAG_NOT_FOUND` errors, and the OpenFeature SDK returns the default value.
 
-To prevent flagd falling out of sync with its flag sources during delete events, resync events are used.
-When a delete event results in a flag definition being removed from the merged state, the full set of definition is requested from all flag sources, and the merged state is rebuilt.
-As a result, the value of the `foo` flag from `source-B` will be stored in the merged state, preventing flagd from returning `FLAG_NOT_FOUND` errors.
+!!! note
 
-![flag merge 3](../images/flag-merge-3.svg)
+    Earlier versions of flagd emitted a state resync event in this situation, re-requesting the full flag definition from every source so that the `source-B` definition could take over.
+    That behavior was removed when flag storage moved to keying flags by flag set ID and key, and flagd no longer reconciles the same flag across multiple sources.
 
-In the example above, a delete event results in a resync event being fired, as `source-C` has deleted its 'version' of the `foo`, this results in a new merge state being formed from the remaining definition.
-
-![flag merge 4](../images/flag-merge-4.svg)
-
-Resync events may lead to further resync events if the returned flag definition result in further delete events, however the state will eventually be resolved correctly.
+For this reason, the same flag, identified by its flag set ID and flag key, must not be supplied by more than one source.
+Flags that do not set a `flagSetId` all belong to the same implicit flag set, so duplicating a flag key across sources without flag sets collides in exactly the same way.
