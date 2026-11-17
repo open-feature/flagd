@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - release/0.15.x
 
 env:
   # Stringified list of items that should be published
@@ -27,7 +27,7 @@ jobs:
         with:
           command: manifest
           token: ${{secrets.GITHUB_TOKEN}}
-          default-branch: main
+          default-branch: release/0.15.x
           signoff: "OpenFeature Bot <109696520+openfeaturebot@users.noreply.github.com>"
       - name: Dump Release Please Output
         env:
@@ -113,7 +113,6 @@ jobs:
           sbom: true
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:latest
             ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ matrix.path }}:${{ env.VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
