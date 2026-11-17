@@ -7,7 +7,7 @@ require (
 	buf.build/gen/go/open-feature/flagd/protocolbuffers/go v1.36.11-20260217192757-1388a552fc3c.1
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/otelconnect v0.7.2
-	github.com/diegoholiveira/jsonlogic/v3 v3.9.1
+	github.com/diegoholiveira/jsonlogic/v3 v3.10.2
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/google/go-cmp v0.7.0
