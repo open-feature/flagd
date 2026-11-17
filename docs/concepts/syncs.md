@@ -60,7 +60,7 @@ See [sync source](../reference/sync-configuration.md#source-configuration) confi
 
 The Kubernetes sync provider allows flagd to connect to a Kubernetes cluster and evaluate flags against a specified
 FeatureFlag resource as defined within
-the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/apis/core/v1beta1/featureflag_types.go)
+the [open-feature-operator](https://github.com/open-feature/open-feature-operator/blob/main/api/core/v1beta1/featureflag_types.go)
 spec.
 This configuration is best used in conjunction with the [OpenFeature Operator](https://github.com/open-feature/open-feature-operator).
 
