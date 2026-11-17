@@ -421,12 +421,6 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		return "", nil, model.DisabledReason, metadata, nil
 	}
 
-	if flag.Invalid != "" {
-		// already warned at load, so per-evaluation logging stays at debug
-		je.Logger.DebugWithID(reqID, fmt.Sprintf("flag %s is invalid: %s", flagKey, flag.Invalid))
-		return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
-	}
-
 	// get the targeting logic, if any
 	targeting := flag.Targeting
 
@@ -614,7 +608,6 @@ func (je *JSON) configToFlagDefinition(config string, definition *Definition) er
 		definition.Flags = flags
 	}
 	je.warnUnsafeNumericVariants(definition)
-	je.markInvalidResolveFlags(definition)
 	return validateDefaultVariants(definition)
 }
 

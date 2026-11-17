@@ -253,62 +253,6 @@ func TestResolveEvaluation(t *testing.T) {
 	}
 }
 
-func TestResolveInvalidFlagAtLoad(t *testing.T) {
-	tests := map[string]struct {
-		targeting  string
-		evaluators string
-	}{
-		"inside equality":            {targeting: `{"==": [{"resolve": ["red"]}, "red"]}`},
-		"inside cat":                 {targeting: `{"cat": [{"resolve": ["red"]}, "x"]}`},
-		"if condition":               {targeting: `{"if": [{"resolve": ["red"]}, "red", "blue"]}`},
-		"consumed by outer if":       {targeting: `{"if": [{"if": [true, {"resolve": ["red"]}, "blue"]}, "red", "blue"]}`},
-		"fractional bucketing value": {targeting: `{"fractional": [{"resolve": ["red"]}, ["red", 1]]}`},
-		"fractional weight":          {targeting: `{"fractional": ["key", ["red", {"resolve": ["red"]}]]}`},
-		"consumed fractional":        {targeting: `{"==": [{"fractional": ["key", [{"resolve": ["red"]}, 1]]}, "red"]}`},
-		"fractional as if condition": {targeting: `{"if": [{"fractional": ["key", [{"resolve": ["red"]}, 1]]}, "red", "blue"]}`},
-		"nested in resolve arg":      {targeting: `{"resolve": [{"resolve": ["red"]}]}`},
-		"result array":               {targeting: `{"if": [true, [{"resolve": ["red"]}], "blue"]}`},
-		"no arguments":               {targeting: `{"resolve": []}`},
-		"too many arguments":         {targeting: `{"resolve": ["red", "ALLOWLIST", [], "extra"]}`},
-		"non-string variant":         {targeting: `{"resolve": [true]}`},
-		"non-string reason":          {targeting: `{"resolve": ["red", 1]}`},
-		"metadata object":            {targeting: `{"resolve": ["red", null, {"details": "x"}]}`},
-		"short pair":                 {targeting: `{"resolve": ["red", null, [["details"]]]}`},
-		"non-primitive value":        {targeting: `{"resolve": ["red", null, [["details", {"nested": true}]]]}`},
-		"non-string key":             {targeting: `{"resolve": ["red", null, [[1, "x"]]]}`},
-		// the targeting schema only lets metadata values be computed
-		"computed metadata": {targeting: `{"resolve": ["red", null, {"var": "meta"}]}`},
-		"computed pair":     {targeting: `{"resolve": ["red", null, [{"var": "pair"}]]}`},
-		"computed key":      {targeting: `{"resolve": ["red", null, [[{"var": "key"}, "x"]]]}`},
-		"extra operator":    {targeting: `{"resolve": ["red"], "if": [true, "red"]}`},
-		"inlined bad evaluator": {
-			targeting:  `{"==": [{"$ref": "bad"}, "red"]}`,
-			evaluators: `{"bad": {"resolve": ["red"]}}`,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			log := logger.NewLogger(nil, false)
-			s, err := store.NewStore(log, []string{"testSource"})
-			require.NoError(t, err)
-			je := NewJSON(log, s)
-			flags := resolveFlagWithSibling(tt.targeting, tt.evaluators)
-			require.NoError(t, je.SetState(sync.DataSync{FlagData: flags, Source: "testSource"}))
-
-			_, _, reason, _, err := je.ResolveStringValue(context.Background(), "default", "color", nil)
-			assert.Equal(t, model.ErrorReason, reason)
-			assert.Equal(t, errors.New(model.ParseErrorCode), err)
-
-			// the rest of the payload still loads
-			value, _, reason, _, err := je.ResolveBooleanValue(context.Background(), "default", "sibling", nil)
-			require.NoError(t, err)
-			assert.True(t, value)
-			assert.Equal(t, model.StaticReason, reason)
-		})
-	}
-}
-
 func TestResolveRuntimeErrors(t *testing.T) {
 	tests := map[string]struct {
 		targeting string
@@ -440,28 +384,6 @@ func TestParseEvaluatedResolve(t *testing.T) {
 
 	_, err = parseEvaluatedResolve([]any{"red", nil, "nope"})
 	require.Error(t, err)
-}
-
-func resolveFlagWithSibling(targeting, evaluators string) string {
-	if evaluators == "" {
-		evaluators = "{}"
-	}
-	return `{
-		"flags": {
-			"color": {
-				"state": "ENABLED",
-				"defaultVariant": "yellow",
-				"variants": {"red": "#FF0000", "blue": "#0000FF", "yellow": "#FFFF00"},
-				"targeting": ` + targeting + `
-			},
-			"sibling": {
-				"state": "ENABLED",
-				"defaultVariant": "on",
-				"variants": {"on": true, "off": false}
-			}
-		},
-		"$evaluators": ` + evaluators + `
-	}`
 }
 
 func resolveFlag(targeting string) string {
