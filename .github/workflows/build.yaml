@@ -5,12 +5,14 @@ on:
     branches:
       - feature/workflows
       - main
+      - release/0.15.x
     paths-ignore:
       - "README.md"
       - "docs/**"
   pull_request:
     branches:
       - main
+      - release/0.15.x
     paths-ignore:
       - "README.md"
       - "docs/**"
