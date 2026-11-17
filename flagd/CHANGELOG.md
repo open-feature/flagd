@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.8](https://github.com/open-feature/flagd/compare/flagd/v0.15.7...flagd/v0.15.8) (2026-11-17)
+
+
+### 🐛 Bug Fixes
+
+* **security:** bump jsonlogic to v3.10.2 (GHSA-mw4w-7w23-cg45) ([#2131](https://github.com/open-feature/flagd/issues/2131)) ([1b6a8e2](https://github.com/open-feature/flagd/commit/1b6a8e2c0c30b06816e07c58786650c1c540f054))
+
 ## [0.15.7](https://github.com/open-feature/flagd/compare/flagd/v0.15.6...flagd/v0.15.7) (2026-05-29)
 
 
