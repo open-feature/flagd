@@ -466,8 +466,11 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
 		}
 
-		// strip whitespace and quotes from the variant
-		variant = strings.ReplaceAll(trimmed, "\"", "")
+		// decode string results, so escaped characters (for example "\u0026" for "&") match the variant name;
+		// for other results (such as booleans), strip whitespace and quotes from the variant
+		if json.Unmarshal([]byte(trimmed), &variant) != nil {
+			variant = strings.ReplaceAll(trimmed, "\"", "")
+		}
 
 		// if this is a valid variant, return it
 		if _, ok := flag.Variants[variant]; ok {
