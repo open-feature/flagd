@@ -56,7 +56,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 - **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. Values are restricted to `string | number | boolean`, matching flag and flag-set metadata.
 - **`details`**: a well-known metadata key: free-text explanation of why this branch fired.
 
-`resolve` is **terminal**: it is only valid as the whole targeting rule, as a result branch of `if` / `?:`, or as the variant of a `fractional` bucket (recursively). Implementations reject it anywhere else when the flag is loaded, so its result always passes through to the resolver unchanged.
+`resolve` is **terminal**: it is only valid as the whole targeting rule, as a result branch of `if` / `?:`, or as the variant of a `fractional` bucket (recursively). The targeting schema rejects it anywhere else, so its result always passes through to the resolver unchanged; like any other configuration that doesn't conform to the schema, misplaced `resolve` is undefined behavior.
 
 ### Evaluator changes
 

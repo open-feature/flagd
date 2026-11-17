@@ -22,9 +22,9 @@ Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
 
 It is valid as the whole targeting rule, as a result of `if` / `?:`, or as the variant of a `fractional` bucket, as in the [example below](#fractional-split).
 
-flagd marks a flag invalid at load time when `resolve` appears anywhere else, including inside `==`, `cat`, an `if` condition, or the bucketing value or weight of `fractional`, or when its literal arguments are malformed.
+The [targeting schema](../schema.md) rejects `resolve` anywhere else, such as inside `==`, `cat`, or the bucketing value or weight of `fractional`, and rejects malformed literal arguments.
 
-Evaluating an invalid flag returns `PARSE_ERROR`. Other flags in the same configuration still load.
+Like any other configuration that doesn't conform to the schema, flagd logs a warning at load, and the evaluation result is undefined.
 
 The variant, the reason, and metadata values may be computed with other operators, such as `var` or `cat`.
 

@@ -398,7 +398,7 @@ Consistent with built-in JsonLogic operators, flagd's custom operators return fa
 
     flagd's custom operations return `null` on invalid or unexpected inputs, consistent with how built-in JsonLogic operations represent no-value returns, for example how `var` treats missing keys.
     When used inside an `if`, `null` is falsy, so evaluation falls through to the else branch rather than producing a false positive match.
-    `resolve` is the exception: it is only valid in a terminal position. flagd marks a flag that misuses it invalid at load, and evaluating that flag returns `PARSE_ERROR`.
+    `resolve` is the exception: it is only valid in a terminal position, which the targeting schema enforces.
 
 #### Targeting key
 
