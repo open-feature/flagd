@@ -200,6 +200,21 @@ func TestResolveEvaluation(t *testing.T) {
 			reason:  "ALLOWLIST",
 			meta:    map[string]any{"details": "us-10pct"},
 		},
+		"boolean variant is coerced like a plain result": {
+			flags:   coercedKeysFlag(`{"resolve": [true, "BETA"]}`),
+			flagKey: "coerced",
+			value:   "#00FF00",
+			variant: "true",
+			reason:  "BETA",
+		},
+		"computed number variant is coerced like a plain result": {
+			flags:   coercedKeysFlag(`{"resolve": [{"var": "pick"}]}`),
+			flagKey: "coerced",
+			context: map[string]any{"pick": 1},
+			value:   "#0000FF",
+			variant: "1",
+			reason:  model.TargetingMatchReason,
+		},
 		"numeric and boolean metadata": {
 			flags:   resolveFlag(`{"resolve": ["red", "SPLIT", [["percent", 10], ["enabled", false]]]}`),
 			flagKey: "color",
@@ -304,9 +319,12 @@ func TestResolveMalformedComputedArguments(t *testing.T) {
 		targeting string
 		context   map[string]any
 	}{
-		"null variant":       {targeting: `{"resolve": [{"var": "pick"}]}`},
-		"non-string variant": {targeting: `{"resolve": [{"var": "pick"}]}`, context: map[string]any{"pick": 1}},
-		"non-string reason":  {targeting: `{"resolve": ["red", {"var": "why"}]}`, context: map[string]any{"why": 1}},
+		"null variant": {targeting: `{"resolve": [{"var": "pick"}]}`},
+		"object variant": {
+			targeting: `{"resolve": [{"var": "pick"}]}`,
+			context:   map[string]any{"pick": map[string]any{"a": 1}},
+		},
+		"non-string reason": {targeting: `{"resolve": ["red", {"var": "why"}]}`, context: map[string]any{"why": 1}},
 		"non-primitive metadata": {
 			targeting: `{"resolve": ["red", null, [["details", {"var": "obj"}]]]}`,
 			context:   map[string]any{"obj": map[string]any{"a": 1}},
@@ -398,6 +416,20 @@ func resolveFlag(targeting string) string {
 					"green": "#00FF00",
 					"yellow": "#FFFF00"
 				},
+				"targeting": ` + targeting + `
+			}
+		}
+	}`
+}
+
+// coercedKeysFlag has variants named "true", "false" and "1", which only a coerced variant can select
+func coercedKeysFlag(targeting string) string {
+	return `{
+		"flags": {
+			"coerced": {
+				"state": "ENABLED",
+				"defaultVariant": "false",
+				"variants": {"true": "#00FF00", "false": "#FF0000", "1": "#0000FF"},
 				"targeting": ` + targeting + `
 			}
 		}
