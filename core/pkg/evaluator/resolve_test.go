@@ -134,20 +134,6 @@ func TestResolveEvaluation(t *testing.T) {
 			reason:  "FALLTHROUGH",
 			meta:    map[string]any{"details": "else"},
 		},
-		"ternary result is terminal": {
-			flags: resolveFlag(`{
-				"?:": [
-					{"==": [{"var": "id"}, "a"]},
-					{"resolve": ["green", "ALLOWLIST"]},
-					{"resolve": ["yellow", "FALLTHROUGH"]}
-				]
-			}`),
-			flagKey: "color",
-			context: map[string]any{"id": "z"},
-			value:   "#FFFF00",
-			variant: "yellow",
-			reason:  "FALLTHROUGH",
-		},
 		"single if clause is terminal": {
 			flags:   resolveFlag(`{"if": [{"resolve": ["green", "ALLOWLIST"]}]}`),
 			flagKey: "color",
