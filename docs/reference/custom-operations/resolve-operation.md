@@ -28,9 +28,7 @@ The [targeting schema](../schema.md) rejects `resolve` anywhere else, such as in
 
 Like any other configuration that doesn't conform to the schema, flagd logs a warning at load, and the evaluation result is undefined.
 
-The variant, the reason, and metadata values may be computed with other operators, such as `var` or `cat`.
-
-The metadata list, its pairs, and their keys must be literal.
+Every argument may be computed with other operators, such as `var` or `cat`: the variant, the reason, and the metadata list, its pairs, their keys, and their values.
 
 When a computed argument is malformed, such as an object variant or a metadata number that is `NaN` or infinite, `resolve` returns null like the other custom operations, and the flag falls back to its default variant.
 
