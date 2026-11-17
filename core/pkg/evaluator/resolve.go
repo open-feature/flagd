@@ -13,7 +13,7 @@ import (
 
 const ResolveEvaluationName = "resolve"
 
-// resolveResult is what the operator returns. JsonLogic passes it through if/?: untouched (it only
+// resolveResult is what the operator returns. JsonLogic passes it through if untouched (it only
 // re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
 // A nil reason keeps TARGETING_MATCH.
 type resolveResult struct {

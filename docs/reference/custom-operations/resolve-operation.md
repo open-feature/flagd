@@ -22,7 +22,7 @@ Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
 
 `resolve` is terminal.
 
-It is valid as the whole targeting rule, as a result of `if` / `?:`, or as the variant of a `fractional` bucket, as in the [example below](#fractional-split).
+It is valid as the whole targeting rule, as a result of `if`, or as the variant of a `fractional` bucket, as in the [example below](#fractional-split).
 
 The [targeting schema](../schema.md) rejects `resolve` anywhere else, such as inside `==`, `cat`, or the bucketing value or weight of `fractional`, and rejects malformed literal arguments.
 
