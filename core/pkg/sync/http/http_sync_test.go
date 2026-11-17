@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	stdsync "sync"
 	"testing"
@@ -441,6 +442,67 @@ func TestHTTPSync_CustomHeaders(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestHTTPSync_AuthHeaderPath(t *testing.T) {
+	headerFile := filepath.Join(t.TempDir(), "auth-header")
+	require.NoError(t, os.WriteFile(headerFile, []byte("Bearer from-file\n"), 0o600))
+
+	var gotAuth []string
+	ctrl := gomock.NewController(t)
+	mockClient := syncmock.NewMockClient(ctrl)
+	mockClient.EXPECT().Do(gomock.Any()).DoAndReturn(func(req *http.Request) (*http.Response, error) {
+		gotAuth = append(gotAuth, req.Header.Get("Authorization"))
+		return &http.Response{
+			Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}}),
+			Body:       io.NopCloser(strings.NewReader("{}")),
+			StatusCode: http.StatusOK,
+		}, nil
+	}).Times(2)
+
+	httpSync := Sync{
+		uri:            "http://localhost",
+		client:         mockClient,
+		authHeader:     "Bearer inline",
+		authHeaderPath: headerFile,
+		logger:         logger.NewLogger(nil, false),
+	}
+
+	_, err := httpSync.Fetch(context.Background())
+	require.NoError(t, err)
+
+	// A rotated secret is picked up on the next request
+	require.NoError(t, os.WriteFile(headerFile, []byte("Bearer rotated"), 0o600))
+	_, err = httpSync.Fetch(context.Background())
+	require.NoError(t, err)
+
+	require.Equal(t, []string{"Bearer from-file", "Bearer rotated"}, gotAuth)
+}
+
+func TestHTTPSync_AuthHeaderPathMissingFile(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockClient := syncmock.NewMockClient(ctrl)
+	mockClient.EXPECT().Do(gomock.Any()).Times(0)
+
+	httpSync := Sync{
+		uri:            "http://localhost",
+		client:         mockClient,
+		authHeaderPath: filepath.Join(t.TempDir(), "missing"),
+		logger:         logger.NewLogger(nil, false),
+	}
+
+	_, err := httpSync.Fetch(context.Background())
+	require.ErrorContains(t, err, "error reading authHeaderPath")
+}
+
+func TestNewHTTP_PassesAuthHeaderPath(t *testing.T) {
+	config := sync.SourceConfig{
+		URI:            "http://localhost",
+		Provider:       "http",
+		AuthHeaderPath: "/etc/secrets/auth-header",
+	}
+	httpSync := NewHTTP(config, logger.NewLogger(nil, false), nil, 5)
+	require.Equal(t, "/etc/secrets/auth-header", httpSync.authHeaderPath)
 }
 
 func TestHTTPSync_Resync(t *testing.T) {

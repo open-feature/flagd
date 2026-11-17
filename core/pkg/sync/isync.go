@@ -45,15 +45,18 @@ type SourceConfig struct {
 	URI      string `json:"uri"`
 	Provider string `json:"provider"`
 
-	AuthHeader   string `json:"authHeader,omitempty"`
-	CertPath     string `json:"certPath,omitempty"`
-	TLS          bool   `json:"tls,omitempty"`
-	ProviderID   string `json:"providerID,omitempty"`
-	Selector     string `json:"selector,omitempty"`
-	Interval     uint32 `json:"interval,omitempty"`
-	IntervalSeed string `json:"intervalSeed,omitempty"`
-	MaxMsgSize   int    `json:"maxMsgSize,omitempty"`
-	TimeoutS     int    `json:"timeoutS,omitempty"`
+	AuthHeader string `json:"authHeader,omitempty"`
+	// AuthHeaderPath is a file containing the Authorization header value. It is read on every request,
+	// so a rotated secret is picked up without a restart. When set, AuthHeader is ignored.
+	AuthHeaderPath string `json:"authHeaderPath,omitempty"`
+	CertPath       string `json:"certPath,omitempty"`
+	TLS            bool   `json:"tls,omitempty"`
+	ProviderID     string `json:"providerID,omitempty"`
+	Selector       string `json:"selector,omitempty"`
+	Interval       uint32 `json:"interval,omitempty"`
+	IntervalSeed   string `json:"intervalSeed,omitempty"`
+	MaxMsgSize     int    `json:"maxMsgSize,omitempty"`
+	TimeoutS       int    `json:"timeoutS,omitempty"`
 
 	// IncrementalUpdates opts this source into per-flagSetId scoped deletion.
 	// When false (default), each update replaces all flags for the source.
