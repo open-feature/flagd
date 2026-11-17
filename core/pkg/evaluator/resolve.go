@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -49,9 +50,9 @@ func parseEvaluatedResolve(values any) (*resolveResult, error) {
 		return nil, errors.New("resolve arguments must be an array of 1 to 3 items")
 	}
 
-	variant, ok := args[0].(string)
-	if !ok {
-		return nil, errors.New("resolve variant must be a string")
+	variant, err := resolveVariantKey(args[0])
+	if err != nil {
+		return nil, err
 	}
 	parsed := &resolveResult{variant: variant}
 
@@ -71,6 +72,23 @@ func parseEvaluatedResolve(values any) (*resolveResult, error) {
 		parsed.metadata = metadata
 	}
 	return parsed, nil
+}
+
+// resolveVariantKey coerces the variant like a plain targeting result: booleans become "true"/"false", and numbers
+// take their JSON form (unofficially, as for plain results)
+func resolveVariantKey(value any) (string, error) {
+	switch v := value.(type) {
+	case string:
+		return v, nil
+	case bool, float64, float32, int, int32, int64, uint, uint32, uint64:
+		encoded, err := json.Marshal(v)
+		if err != nil {
+			return "", fmt.Errorf("resolve variant %v has no variant key: %w", v, err)
+		}
+		return string(encoded), nil
+	default:
+		return "", errors.New("resolve variant must be a string, boolean, or number")
+	}
 }
 
 func parseEvaluatedMetadata(value any) (map[string]any, error) {

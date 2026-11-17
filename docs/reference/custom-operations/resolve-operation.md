@@ -8,6 +8,8 @@ description: flagd resolve custom operation
 
 `"red"` and `{ "resolve": ["red"] }` select the same variant.
 
+The variant is coerced like a plain targeting result: booleans become `"true"` or `"false"`, and the behavior of numbers is not defined.
+
 A missing or null reason keeps `TARGETING_MATCH`.
 
 The reason is free-form: any string is passed through as the evaluation reason, including flagd's own reasons such as `FALLBACK` or `DISABLED`.
@@ -30,7 +32,7 @@ The variant, the reason, and metadata values may be computed with other operator
 
 The metadata list, its pairs, and their keys must be literal.
 
-When a computed argument is malformed, such as a variant that is not a string or a metadata number that is `NaN` or infinite, `resolve` returns null like the other custom operations, and the flag falls back to its default variant.
+When a computed argument is malformed, such as an object variant or a metadata number that is `NaN` or infinite, `resolve` returns null like the other custom operations, and the flag falls back to its default variant.
 
 Older flagd binaries do not know this operator.
 

@@ -51,7 +51,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 
 ### Arguments
 
-- **`variant`** (1st): string. The only **required** argument, and the exact equivalent of the plain-string return: `"red"` and `{ "resolve": ["red"] }` are interchangeable terminals selecting the variant `red`.
+- **`variant`** (1st): string. The only **required** argument, and the exact equivalent of the plain-string return: `"red"` and `{ "resolve": ["red"] }` are interchangeable terminals selecting the variant `red`. Like a plain-string return, a boolean is coerced to `"true"`/`"false"`; the behavior of numbers is not defined.
 - **`reason`** (2nd): string or `null`, optional. Free-form, operator-defined; overrides the top-level evaluation `reason` for this branch. The schema does not constrain it to an enum (see [Narrowing the coarse `reason`](#narrowing-the-coarse-reason)).
 - **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. Values are restricted to `string | number | boolean`, matching flag and flag-set metadata.
 - **`details`**: a well-known metadata key: free-text explanation of why this branch fired.
