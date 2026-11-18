@@ -169,7 +169,9 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
 	jsonlogic.AddOperator(EndsWithEvaluationName, NewStringComparisonEvaluator(logger).EndsWithEvaluation)
 	jsonlogic.AddOperator(SemVerEvaluationName, NewSemVerComparison(logger).SemVerEvaluation)
-	jsonlogic.AddOperator(ResolveEvaluationName, NewResolveEvaluator(logger).Evaluate)
+	resolveEvaluator := NewResolveEvaluator(logger)
+	jsonlogic.AddOperator(resolveOperatorName, resolveEvaluator.Evaluate)
+	jsonlogic.AddOperator(ResolveEvaluationName, resolveEvaluator.rejectFromContext)
 
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
@@ -510,7 +512,9 @@ func applyTargeting(rule, data []byte) (any, error) {
 	if err := json.Unmarshal(data, &parsedData); err != nil {
 		return nil, err
 	}
-	return jsonlogic.ApplyInterface(parsedRule, parsedData)
+	// parsedData comes from json.Unmarshal, so it cannot hold resolveOperatorName; only the rule's own resolve
+	// calls reach the operator
+	return jsonlogic.ApplyInterface(bindResolveOperator(parsedRule), parsedData)
 }
 
 func setFlagdProperties(

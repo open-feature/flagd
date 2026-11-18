@@ -13,6 +13,12 @@ import (
 
 const ResolveEvaluationName = "resolve"
 
+// resolveOperatorName is the operator the rule's own resolve calls are bound to before evaluation.
+// JsonLogic re-applies a map that some operators (if, ?:, reduce...) get back from a branch, so a context value like
+// {"resolve": [...]} is dispatched as an operator call. The invalid UTF-8 byte keeps that from reaching this
+// operator: json.Unmarshal replaces it with U+FFFD, so no decoded context key can equal this name.
+const resolveOperatorName = ResolveEvaluationName + "\xff"
+
 // resolveResult is what the operator returns. JsonLogic passes it through if untouched (it only
 // re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
 // A nil reason keeps TARGETING_MATCH.
@@ -42,6 +48,33 @@ func (re *ResolveEvaluator) Evaluate(values, _ any) any {
 		return nil
 	}
 	return parsed
+}
+
+// rejectFromContext handles "resolve" calls that are left after bindResolveOperator, which can only come from
+// context data. It returns null, so the flag falls back to its default variant.
+func (re *ResolveEvaluator) rejectFromContext(_, _ any) any {
+	re.Logger.Debug("ignoring resolve operator supplied by evaluation context")
+	return nil
+}
+
+// bindResolveOperator renames the rule's resolve calls (single-key maps, as JsonLogic treats larger maps as
+// literals) to resolveOperatorName, in place. Call it only on a freshly decoded rule, never on context data.
+func bindResolveOperator(rule any) any {
+	switch node := rule.(type) {
+	case map[string]any:
+		if args, ok := node[ResolveEvaluationName]; ok && len(node) == 1 {
+			delete(node, ResolveEvaluationName)
+			node[resolveOperatorName] = args
+		}
+		for _, value := range node {
+			bindResolveOperator(value)
+		}
+	case []any:
+		for _, item := range node {
+			bindResolveOperator(item)
+		}
+	}
+	return rule
 }
 
 func parseEvaluatedResolve(values any) (*resolveResult, error) {
