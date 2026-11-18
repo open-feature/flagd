@@ -326,9 +326,10 @@ func TestResolveRuntimeErrors(t *testing.T) {
 	}
 }
 
-// jsonlogic re-applies a map that some operators (if, ?:...) get back from a branch, so a single-key
-// context map like {"resolve": [...]} gets dispatched as an operator. It must not reach the real resolve
-// operator: the flag falls back to its default variant, without the context's reason or metadata.
+// a single-key context map like {"resolve": [...]} returned from a branch must never reach the real resolve
+// operator. jsonlogic before v3.10.2 re-applies such maps as operator calls (the flag then falls back to its
+// default variant); later versions return them as values (an invalid variant). Either way the context's variant,
+// reason and metadata must not come through.
 func TestResolveContextCannotInvokeResolve(t *testing.T) {
 	injected := map[string]any{"pick": map[string]any{
 		"resolve": []any{"red", "INJECTED", []any{[]any{"flagSetId", "spoofed"}}},
@@ -349,10 +350,9 @@ func TestResolveContextCannotInvokeResolve(t *testing.T) {
 			je := NewJSON(log, s)
 			require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(targeting), Source: "testSource"}))
 
-			_, variant, reason, metadata, err := je.ResolveStringValue(context.Background(), "default", "color", injected)
-			require.NoError(t, err)
-			assert.Equal(t, "yellow", variant)
-			assert.Equal(t, model.DefaultReason, reason)
+			_, variant, reason, metadata, _ := je.ResolveStringValue(context.Background(), "default", "color", injected)
+			assert.NotEqual(t, "red", variant)
+			assert.NotEqual(t, "INJECTED", reason)
 			assert.NotContains(t, metadata, "flagSetId")
 		})
 	}
