@@ -326,6 +326,38 @@ func TestResolveRuntimeErrors(t *testing.T) {
 	}
 }
 
+// jsonlogic re-applies a map that some operators (if, ?:...) get back from a branch, so a single-key
+// context map like {"resolve": [...]} gets dispatched as an operator. It must not reach the real resolve
+// operator: the flag falls back to its default variant, without the context's reason or metadata.
+func TestResolveContextCannotInvokeResolve(t *testing.T) {
+	injected := map[string]any{"pick": map[string]any{
+		"resolve": []any{"red", "INJECTED", []any{[]any{"flagSetId", "spoofed"}}},
+	}}
+
+	tests := map[string]string{
+		"nested if":      `{"if": [true, {"var": "pick"}, "blue"]}`,
+		"nested if else": `{"if": [false, "blue", {"var": "pick"}]}`,
+		"nested ?:":      `{"?:": [true, {"var": "pick"}, "blue"]}`,
+		"inside resolve": `{"resolve": [{"if": [true, {"var": "pick"}, "blue"]}]}`,
+	}
+
+	for name, targeting := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{"testSource"})
+			require.NoError(t, err)
+			je := NewJSON(log, s)
+			require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(targeting), Source: "testSource"}))
+
+			_, variant, reason, metadata, err := je.ResolveStringValue(context.Background(), "default", "color", injected)
+			require.NoError(t, err)
+			assert.Equal(t, "yellow", variant)
+			assert.Equal(t, model.DefaultReason, reason)
+			assert.NotContains(t, metadata, "flagSetId")
+		})
+	}
+}
+
 // malformed computed arguments return null like the other custom operators, so the default variant is selected
 func TestResolveMalformedComputedArguments(t *testing.T) {
 	tests := map[string]struct {
