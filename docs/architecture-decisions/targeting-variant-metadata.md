@@ -3,7 +3,7 @@
 status: accepted
 author: Parth Suthar
 created: 2026-07-30
-updated: 2026-10-16
+updated: 2026-11-18
 ---
 
 # Per-evaluation metadata from targeting rules
@@ -29,20 +29,54 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
     "type": "array",
     "minItems": 1,
     "maxItems": 3,
-    "prefixItems": [
-      { "type": "string" },
-      { "type": ["string", "null"] },
+    "items": [
       {
-        "type": "array",
-        "items": {
-          "type": "array",
-          "prefixItems": [
-            { "type": "string" },
-            { "type": ["string", "number", "boolean"] }
-          ],
-          "minItems": 2,
-          "maxItems": 2
-        }
+        "description": "Variant: string, or boolean coerced to \"true\"/\"false\". Literal numbers and null are rejected. A computed rule is also accepted; it is coerced like a plain targeting result.",
+        "oneOf": [
+          { "type": "string" },
+          { "type": "boolean" },
+          { "$ref": "#/definitions/anyRule" }
+        ]
+      },
+      {
+        "description": "Reason: string, null, or a computed rule. A null or omitted reason keeps TARGETING_MATCH.",
+        "oneOf": [
+          { "type": ["string", "null"] },
+          { "$ref": "#/definitions/anyRule" }
+        ]
+      },
+      {
+        "description": "Metadata: [key, value] pairs. The list, each pair, each key, and each value may also be a computed rule. flagSetId and version are reserved for flag-set metadata.",
+        "oneOf": [
+          { "$ref": "#/definitions/anyRule" },
+          {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "$ref": "#/definitions/anyRule" },
+                {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": [
+                    {
+                      "oneOf": [
+                        { "type": "string", "not": { "enum": ["flagSetId", "version"] } },
+                        { "$ref": "#/definitions/anyRule" }
+                      ]
+                    },
+                    {
+                      "oneOf": [
+                        { "type": ["string", "number", "boolean"] },
+                        { "$ref": "#/definitions/anyRule" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
       }
     ]
   }
@@ -51,29 +85,30 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 
 ### Arguments
 
-- **`variant`** (1st): string. The only **required** argument, and the exact equivalent of the plain-string return: `"red"` and `{ "resolve": ["red"] }` are interchangeable terminals selecting the variant `red`.
-- **`reason`** (2nd): string or `null`, optional. Free-form, operator-defined; overrides the top-level evaluation `reason` for this branch. The schema does not constrain it to an enum (see [Narrowing the coarse `reason`](#narrowing-the-coarse-reason)).
-- **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. Values are restricted to `string | number | boolean`, matching flag and flag-set metadata.
+- **`variant`** (1st): a literal string; a literal boolean, coerced to `"true"` or `"false"`; or a computed expression. The only **required** argument, and the exact equivalent of the plain-string return: `"red"` and `{ "resolve": ["red"] }` are interchangeable terminals selecting the variant `red`. Literal numbers and `null` are rejected. Computed variants are coerced like plain targeting results: booleans become `"true"`/`"false"`, and the behavior of numbers is not defined.
+- **`reason`** (2nd): string, `null`, or a computed expression, optional. Free-form, operator-defined; overrides the top-level evaluation `reason` for this branch. A `null` or omitted `reason` keeps `TARGETING_MATCH`. The schema does not constrain it to an enum (see [Narrowing the coarse `reason`](#narrowing-the-coarse-reason)).
+- **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. The whole list, each pair, each key, and each value may also be a computed expression. Literal values are `string | number | boolean`, matching flag and flag-set metadata. `flagSetId` and `version` are reserved for flag-set metadata and cannot be overridden by rules; the schema rejects them as literal keys, and computed keys that happen to match are not checked by the schema.
 - **`details`**: a well-known metadata key: free-text explanation of why this branch fired.
 
-`resolve` is **terminal**: it is only valid as the whole targeting rule, or as a result branch of `if` / `?:` (recursively). Implementations reject it anywhere else when the flag is loaded, so its result always passes through to the resolver unchanged.
+`resolve` is **terminal**: it is only valid as the whole targeting rule; the result branches of `if` (recursively); and `fractional` bucket variants, in both the shorthand and the bucketing-value form. Every bucket variant is evaluated, and the selected one is returned.
+
+"Rejected at load time" means the schema check, the same as for any other invalid rule — a warning today, and a hard failure under the strict mode proposed in flagd#2112. The schema enforces terminality through separate `terminalIfRule` and `terminalFractionalRule` definitions reachable only from terminal positions, and by restricting the first `if` argument (always a condition) to plain args.
+What the schema cannot enforce: `resolve` as a later else-if condition (positions 2, 4, … in a chained `if`), and `resolve` reached through `$ref` shared evaluators. Those cases are undefined behavior.
 
 ### Evaluator changes
 
 In `evaluateVariant` (`core/pkg/evaluator/json.go`), the current unconditional quote-strip of the JsonLogic result gains a `resolve` case ahead of it:
 
-- `resolve` result: use its `variant` as the variant key; shallow-merge its `metadata` pairs into the returned metadata; if `reason` is present, use it in place of `TARGETING_MATCH` (a `null` or omitted `reason` keeps `TARGETING_MATCH`)
+- `resolve` result: use its `variant` as the variant key (booleans are coerced to `"true"`/`"false"` officially; numbers are coerced like plain terminals, behavior not defined); shallow-merge its `metadata` pairs into the returned metadata; if `reason` is present and non-null, use it in place of `TARGETING_MATCH` (a `null` or omitted `reason` keeps `TARGETING_MATCH`)
 - everything else → unchanged from today: `null` exits targeting to `defaultVariant`; strings, booleans, and numbers are quote-stripped into a variant key (so a boolean `true` still resolves the `"true"` variant, as `schemas/json/targeting.json` documents and the existing tests cover); a key absent from `variants` errors exactly as it does now
 
-Metadata merge precedence, lowest → highest, so more specific wins: flag-set metadata → flag metadata → **rule-returned metadata**.
+Metadata merge precedence, lowest → highest, so more specific wins: flag-set metadata → flag metadata → **rule-returned metadata**. The reserved keys (`flagSetId`, `version`) are the exception: the schema rejects them as literal rule metadata keys, so they come from flag-set metadata (computed keys are not checked).
 
-!!! warning "Breaking change to the config schema"
+!!! warning "Forward compatibility"
 
-    Existing configs keep working on a new binary, but the reverse does not hold: a config using `resolve`, evaluated by an older flagd binary, fails with an unknown-operator error.
+    Existing configs keep working on a new binary, but the reverse does not hold: a config using `resolve`, evaluated by an older flagd binary, fails with an unknown-operator error. flagd has to be upgraded fleet-wide before any config starts using `resolve`. This needs an explicit migration note in the release.
 
-    There's no schema/feature version negotiation today, so the config schema version has to gate it: operators on an older binary must stay on the older schema version, and flagd has to be upgraded fleet-wide before any config starts using `resolve`. This needs a schema version bump and a migration note in the release.
-
-    Gating on the schema version is sufficient on its own — providers and flagd embed a snapshot of the schema in each version, so an older release rejects `resolve` at validation time rather than misbehaving at evaluation time.
+    flagd-schemas is pre-1.0, so `resolve` merges into the `v0` schema without a version bump; flagd core decides which schema version it uses by pinning the embedded snapshot it ships with.
 
     **Hold the hosted schema back.** `https://flagd.dev/schema/v0/flags.json` is what editors and IDE tooling resolve against. Do not publish `resolve` there until it has landed in flagd and a few providers — otherwise editors will happily autocomplete a construct most of the fleet cannot evaluate.
 
@@ -142,9 +177,9 @@ Each branch tags the evaluation with the rule that fired:
 }
 ```
 
-### Example — nested `if` with a fractional split
+### Example — `if` with a fractional split
 
-`fractional` returns a plain string (`"on"` or `"off"`), and both are truthy under JsonLogic — so it can't be used directly as an `if` condition; wrapping it in `==` against a target bucket label makes it a real boolean:
+`resolve` is valid as a `fractional` bucket variant, so each bucket can carry its own reason and metadata directly:
 
 ```json
 {
@@ -152,21 +187,10 @@ Each branch tags the evaluation with the rule that fired:
     "if": [
       { "==": [{ "var": "locale" }, "en-US"] },
       {
-        "if": [
-          {
-            "==": [
-              {
-                "fractional": [
-                  { "var": "targetingKey" },
-                  ["on", 10],
-                  ["off", 90]
-                ]
-              },
-              "on"
-            ]
-          },
-          { "resolve": ["on", "SPLIT_RANDOM", [["details", "us-10pct-rollout"]]] },
-          { "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "us-holdback"]]] }
+        "fractional": [
+          { "var": "targetingKey" },
+          [{ "resolve": ["on", "SPLIT_RANDOM", [["details", "us-10pct-rollout"]]] }, 10],
+          [{ "resolve": ["off", "SPLIT_FALLTHROUGH", [["details", "us-holdback"]]] }, 90]
         ]
       },
       { "resolve": ["off", "FALLTHROUGH", [["details", "non-us-off"]]] }
@@ -232,10 +256,9 @@ Those scenarios run across the gRPC, OFREP, and in-process paths that `test/inte
 - **Good** — direct answer to "which branch fired" without overloading the variant key; no wire-format changes. `flagMetadata` is already emitted on OpenFeature evaluation events and picked up by SDK hooks (OpenTelemetry, logging, custom exporters), so anything reading it — OTel spans, A/B dashboards, debug logs — picks up rule-level attribution automatically.
 - **Good** — backwards compatible for existing configs: string, boolean, number, and null returns are byte-for-byte unchanged on an upgraded flagd binary.
 - **Good** — no OpenFeature spec change required. `reason` is already a first-class spec field, and `details` rides `flagMetadata`, so no SDK gains a new resolution field.
-- **Bad** — not forward compatible: a config using `resolve`, evaluated by an older flagd binary, fails with an unknown-operator error. No schema/feature version negotiation exists today, so rollouts must upgrade flagd before configs start using `resolve`. Needs an explicit migration note.
+- **Bad** — not forward compatible: a config using `resolve`, evaluated by an older flagd binary, fails with an unknown-operator error. Rollouts must upgrade flagd before configs start using `resolve`. Needs an explicit migration note in the release. No schema version bump is needed — flagd-schemas is pre-1.0 and `resolve` merges into the existing `v0` schema; flagd core pins the snapshot it embeds.
 - **Bad** — automatic telemetry attribution requires the separate `RecordEvaluation` work called out in Background; without it, rule ids ride `flagMetadata` for SDK-side hooks but don't reach flagd's own OTel metrics.
 
 ## Open questions
 
-- **Config version.** Proposal: bump the targeting/flags schema to `v0.1` and gate the new terminus on it, leaving `v0` untouched for existing fleets. Sequencing of the hosted schema at `flagd.dev` is covered in the migration warning above.
-- **Fractional buckets.** `fractional` returns a variant string directly, so it can't tag the picked bucket with metadata without a separate operator extension (e.g. an optional third element per weight tuple). Proposal: defer — ship the base `resolve` operator first. Nesting metadata into fractional is meaningfully more complicated and shouldn't block this.
+None outstanding. Schema version bump and fractional bucket support were both resolved during schema review (flagd-schemas#238, flagd#2127): no version bump is needed (pre-1.0), and `resolve` is now valid as a `fractional` bucket variant.
