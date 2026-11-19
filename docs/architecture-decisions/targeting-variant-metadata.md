@@ -92,7 +92,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 
 `resolve` is **terminal**: it is only valid as the whole targeting rule; the result branches of `if` (recursively); and `fractional` bucket variants, in both the shorthand and the bucketing-value form. Every bucket variant is evaluated, and the selected one is returned.
 
-"Rejected at load time" means the schema check, the same as for any other invalid rule — a warning today, and a hard failure under the strict mode proposed in flagd#2112. The schema enforces terminality through separate `terminalIfRule` and `terminalFractionalRule` definitions reachable only from terminal positions, and by restricting the first `if` argument (always a condition) to plain args.
+The `resolve` operation is validated the same way as others: via JSON schema at load time only.  The schema enforces terminality through separate `terminalIfRule` and `terminalFractionalRule` definitions reachable only from terminal positions, and by restricting the first `if` argument (always a condition) to plain args.
 What the schema cannot enforce: `resolve` as a later else-if condition (positions 2, 4, … in a chained `if`), and `resolve` reached through `$ref` shared evaluators. Those cases are undefined behavior.
 
 ### Evaluator changes
@@ -102,7 +102,7 @@ In `evaluateVariant` (`core/pkg/evaluator/json.go`), the current unconditional q
 - `resolve` result: use its `variant` as the variant key (booleans are coerced to `"true"`/`"false"` officially; numbers are coerced like plain terminals, behavior not defined); shallow-merge its `metadata` pairs into the returned metadata; if `reason` is present and non-null, use it in place of `TARGETING_MATCH` (a `null` or omitted `reason` keeps `TARGETING_MATCH`)
 - everything else → unchanged from today: `null` exits targeting to `defaultVariant`; strings, booleans, and numbers are quote-stripped into a variant key (so a boolean `true` still resolves the `"true"` variant, as `schemas/json/targeting.json` documents and the existing tests cover); a key absent from `variants` errors exactly as it does now
 
-Metadata merge precedence, lowest → highest, so more specific wins: flag-set metadata → flag metadata → **rule-returned metadata**. The reserved keys (`flagSetId`, `version`) are the exception: the schema rejects them as literal rule metadata keys, so they come from flag-set metadata (computed keys are not checked).
+Metadata merge precedence, lowest > highest, so more specific wins: flag-set metadata < flag metadata < **rule-returned metadata**. The reserved keys (`flagSetId`, `version`) are the exception: the schema rejects them as literal rule metadata keys, so they come from flag-set metadata (computed keys are not checked).
 
 !!! warning "Forward compatibility"
 
