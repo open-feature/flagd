@@ -242,6 +242,23 @@ func TestResolveEvaluation(t *testing.T) {
 			reason:  model.ErrorReason,
 			err:     errors.New(model.GeneralErrorCode),
 		},
+		// a multi-key object is literal data to JsonLogic, so a "resolve" key nested in it must not be bound
+		"literal data keeps a nested resolve key": {
+			flags: resolveFlag(`{
+				"if": [
+					{"some": [
+						[{"payload": {"resolve": "eu"}, "tag": 1}],
+						{"==": [{"var": "payload.resolve"}, "eu"]}
+					]},
+					{"resolve": ["red", "EU"]},
+					"blue"
+				]
+			}`),
+			flagKey: "color",
+			value:   "#FF0000",
+			variant: "red",
+			reason:  "EU",
+		},
 		"shared evaluator inlines a terminal resolve": {
 			flags: `{
 				"flags": {
