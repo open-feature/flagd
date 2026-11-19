@@ -57,12 +57,16 @@ func (re *ResolveEvaluator) rejectFromContext(_, _ any) any {
 	return nil
 }
 
-// bindResolveOperator renames the rule's resolve calls (single-key maps, as JsonLogic treats larger maps as
-// literals) to resolveOperatorName, in place. Call it only on a freshly decoded rule, never on context data.
+// bindResolveOperator renames the rule's resolve calls to resolveOperatorName, in place. Only single-key maps are
+// operator calls; JsonLogic returns larger maps as literal data without evaluating them, so their contents are left
+// unchanged. Call it only on a freshly decoded rule, never on context data.
 func bindResolveOperator(rule any) any {
 	switch node := rule.(type) {
 	case map[string]any:
-		if args, ok := node[ResolveEvaluationName]; ok && len(node) == 1 {
+		if len(node) != 1 {
+			return rule
+		}
+		if args, ok := node[ResolveEvaluationName]; ok {
 			delete(node, ResolveEvaluationName)
 			node[resolveOperatorName] = args
 		}
