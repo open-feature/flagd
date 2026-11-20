@@ -124,6 +124,36 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 	}
 }
 
+// TestFlagEvaluationServiceV2_RuleReasonWithVariant tests that a resolve rule may return flagd's own
+// reason names: with a variant set, the result is returned as-is instead of as a fallback or disabled flag.
+func TestFlagEvaluationServiceV2_RuleReasonWithVariant(t *testing.T) {
+	for _, reason := range []string{model.FallbackReason, model.DisabledReason} {
+		t.Run(reason, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			eval := mock.NewMockIEvaluator(ctrl)
+			metrics, _ := getMetricReader()
+			s := NewFlagEvaluationServiceV2(
+				logger.NewLogger(nil, false), eval, &eventingConfiguration{},
+				metrics, nil, nil, 0,
+			)
+			eval.EXPECT().ResolveBooleanValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
+				true, "on", reason, metadata, nil,
+			)
+
+			got, err := s.ResolveBoolean(context.Background(), connect.NewRequest(&evalV2.ResolveBooleanRequest{
+				FlagKey: "flag", Context: &structpb.Struct{},
+			}))
+
+			require.NoError(t, err)
+			require.NotNil(t, got.Msg.Value)
+			require.True(t, *got.Msg.Value)
+			require.NotNil(t, got.Msg.Variant)
+			require.Equal(t, "on", *got.Msg.Variant)
+			require.Equal(t, reason, got.Msg.Reason)
+		})
+	}
+}
+
 func TestInvalidSelector_FlagEvaluationServiceV2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	eval := mock.NewMockIEvaluator(ctrl)
