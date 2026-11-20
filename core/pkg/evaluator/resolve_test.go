@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -293,6 +294,64 @@ func TestResolveEvaluation(t *testing.T) {
 			assert.Equal(t, tt.err, err)
 			for key, want := range tt.meta {
 				assert.Equal(t, want, metadata[key])
+			}
+		})
+	}
+}
+
+// flagSetId and version belong to flag set metadata, so rule metadata can't override or add them, literal or computed
+func TestResolveReservedMetadataKeys(t *testing.T) {
+	const withSetMetadata = `{
+		"metadata": {"flagSetId": "set", "version": "1"},
+		"flags": {
+			"color": {
+				"state": "ENABLED",
+				"defaultVariant": "yellow",
+				"variants": {"red": "#FF0000", "yellow": "#FFFF00"},
+				"targeting": %s
+			}
+		}
+	}`
+	literal := `{"resolve": ["red", null, [["flagSetId", "rule"], ["version", "rule"], ["details", "rule"]]]}`
+	computed := `{"resolve": ["red", null, [
+		[{"cat": ["flagSet", "Id"]}, "rule"], [{"var": "key"}, "rule"], ["details", "rule"]
+	]]}`
+
+	tests := map[string]struct {
+		flags string
+		want  map[string]any
+	}{
+		"literal keys keep flag set values": {
+			flags: fmt.Sprintf(withSetMetadata, literal),
+			want:  map[string]any{"flagSetId": "set", "version": "1"},
+		},
+		"computed keys keep flag set values": {
+			flags: fmt.Sprintf(withSetMetadata, computed),
+			want:  map[string]any{"flagSetId": "set", "version": "1"},
+		},
+		"literal keys are not added":  {flags: resolveFlag(literal)},
+		"computed keys are not added": {flags: resolveFlag(computed)},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			log := logger.NewLogger(nil, false)
+			s, err := store.NewStore(log, []string{"testSource"})
+			require.NoError(t, err)
+			je := NewJSON(log, s)
+			require.NoError(t, je.SetState(sync.DataSync{FlagData: tt.flags, Source: "testSource"}))
+
+			_, variant, _, metadata, err := je.ResolveStringValue(
+				context.Background(), "default", "color", map[string]any{"key": "version"})
+			require.NoError(t, err)
+			assert.Equal(t, "red", variant)
+			assert.Equal(t, "rule", metadata["details"])
+			for _, key := range []string{"flagSetId", "version"} {
+				if want, ok := tt.want[key]; ok {
+					assert.Equal(t, want, metadata[key])
+				} else {
+					assert.NotContains(t, metadata, key)
+				}
 			}
 		})
 	}

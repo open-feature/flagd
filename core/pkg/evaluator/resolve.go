@@ -19,6 +19,10 @@ const ResolveEvaluationName = "resolve"
 // operator: json.Unmarshal replaces it with U+FFFD, so no decoded context key can equal this name.
 const resolveOperatorName = ResolveEvaluationName + "\xff"
 
+// reservedMetadataKeys belong to flag set metadata. The schema rejects them as literal rule metadata keys; this
+// also skips computed ones.
+var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
+
 // resolveResult is what the operator returns. JsonLogic passes it through if untouched (it only
 // re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
 // A nil reason keeps TARGETING_MATCH.
@@ -208,6 +212,10 @@ func (je *Resolver) applyResolveResult(
 		return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
 	}
 	for key, value := range parsed.metadata {
+		if _, reserved := reservedMetadataKeys[key]; reserved {
+			je.Logger.DebugWithID(reqID, fmt.Sprintf("ignoring reserved resolve metadata key: %s", key))
+			continue
+		}
 		metadata[key] = value
 	}
 	reason = model.TargetingMatchReason
