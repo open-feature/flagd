@@ -18,7 +18,9 @@ Metadata is a shallow list of `[key, value]` pairs.
 
 Values are strings, numbers, or booleans.
 
-Rule metadata overwrites flag metadata, which overwrites flag-set metadata.
+Rule metadata overwrites flag metadata, which overwrites flag set metadata.
+
+`flagSetId` and `version` are reserved for flag set metadata and can't be overridden.
 
 `resolve` is terminal.
 
