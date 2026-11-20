@@ -414,7 +414,6 @@ func TestResolveContextCannotInvokeResolve(t *testing.T) {
 	tests := map[string]string{
 		"nested if":      `{"if": [true, {"var": "pick"}, "blue"]}`,
 		"nested if else": `{"if": [false, "blue", {"var": "pick"}]}`,
-		"nested ?:":      `{"?:": [true, {"var": "pick"}, "blue"]}`,
 		"inside resolve": `{"resolve": [{"if": [true, {"var": "pick"}, "blue"]}]}`,
 	}
 

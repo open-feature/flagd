@@ -14,7 +14,7 @@ import (
 const ResolveEvaluationName = "resolve"
 
 // resolveOperatorName is the operator the rule's own resolve calls are bound to before evaluation.
-// JsonLogic re-applies a map that some operators (if, ?:, reduce...) get back from a branch, so a context value like
+// JsonLogic re-applies a map that some operators (if, reduce...) get back from a branch, so a context value like
 // {"resolve": [...]} is dispatched as an operator call. The invalid UTF-8 byte keeps that from reaching this
 // operator: json.Unmarshal replaces it with U+FFFD, so no decoded context key can equal this name.
 const resolveOperatorName = ResolveEvaluationName + "\xff"
