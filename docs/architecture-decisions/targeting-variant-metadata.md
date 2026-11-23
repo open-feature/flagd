@@ -39,10 +39,15 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
         ]
       },
       {
-        "description": "Reason: string, null, or a computed rule. A null or omitted reason keeps TARGETING_MATCH. ERROR, DISABLED, and DEFAULT are reserved for flagd's own evaluation flow.",
+        "description": "Reason: string, null, or a computed rule. A null or omitted reason keeps TARGETING_MATCH. Reasons other than TARGETING_MATCH and SPLIT that are defined by OpenFeature or flagd are reserved.",
         "oneOf": [
-          { "type": "string", "not": { "enum": ["ERROR", "DISABLED", "DEFAULT"] } },
           { "type": "null" },
+          {
+            "type": "string",
+            "not": {
+              "enum": ["ERROR", "DISABLED", "DEFAULT", "FALLBACK", "STATIC", "CACHED", "STALE", "UNKNOWN"]
+            }
+          },
           { "$ref": "#/definitions/anyRule" }
         ]
       },
@@ -88,7 +93,7 @@ Add a `resolve` operator to `schemas/json/targeting.json`, alongside `fractional
 
 - **`variant`** (1st): a literal string; a literal boolean, coerced to `"true"` or `"false"`; or a computed expression. The only **required** argument, and the exact equivalent of the plain-string return: `"red"` and `{ "resolve": ["red"] }` are interchangeable terminals selecting the variant `red`. Literal numbers and `null` are rejected. Computed variants are coerced like plain targeting results: booleans become `"true"`/`"false"`, and the behavior of numbers is not defined.
 - **`reason`** (2nd): string, `null`, or a computed expression, optional. Free-form, operator-defined; overrides the top-level evaluation `reason` for this branch. A `null` or omitted `reason` keeps `TARGETING_MATCH`. The schema does not constrain it to an enum (see [Narrowing the coarse `reason`](#narrowing-the-coarse-reason)).
-  `ERROR`, `DISABLED`, and `DEFAULT` are reserved (see [Reserved reasons](#reserved-reasons)): the schema rejects them as literal reasons, and computed reasons that happen to match are not checked by the schema.
+  Reasons defined by OpenFeature or flagd, other than `TARGETING_MATCH` and `SPLIT`, are reserved (see [Reserved reasons](#reserved-reasons)): the schema rejects them as literal reasons, and computed reasons that happen to match are not checked by the schema.
 - **`metadata`** (3rd): array of `[key, value]` pairs, optional, shallow. The whole list, each pair, each key, and each value may also be a computed expression. Literal values are `string | number | boolean`, matching flag and flag-set metadata. `flagSetId` and `version` are reserved for flag-set metadata and cannot be overridden by rules; the schema rejects them as literal keys, and computed keys that happen to match are not checked by the schema.
 - **`details`**: a well-known metadata key: free-text explanation of why this branch fired.
 
@@ -222,13 +227,24 @@ Seeing these reasons instead of a bare `SPLIT` allows for much richer telemetry 
 
 #### Reserved reasons
 
-`ERROR`, `DISABLED`, and `DEFAULT` are reserved and cannot be returned by a rule. Each one says something about the evaluation as a whole that a matched targeting branch cannot truthfully claim:
+Every reason defined by OpenFeature or flagd is reserved, except `TARGETING_MATCH` and `SPLIT`, which describe rule-driven results and so remain valid for a rule to return.
+Each reserved reason says something about the evaluation as a whole that a matched targeting branch cannot truthfully claim.
+
+Set by flagd's own evaluation flow:
 
 - `ERROR` means the evaluation failed and is paired with an `errorCode`; a rule that resolved a variant did not fail.
 - `DISABLED` means the flag is disabled, which flagd decides before targeting runs.
 - `DEFAULT` means targeting did not pick a variant and `defaultVariant` was served.
+- `STATIC` means the flag has no targeting, so no rule ran.
+- `FALLBACK` means the flag has no `defaultVariant` and the caller's code default was used.
 
-Hooks, telemetry sinks, and the evaluation-details data models in other language SDKs and providers branch on these values (for example, treating `ERROR` as a failed evaluation and looking for an `errorCode`). Letting a rule emit them would make a successful targeting match look like a failure, a disabled flag, or a default fallback to every consumer downstream.
+Set by providers and SDKs, not by the flag config:
+
+- `CACHED` means the value was served from a provider cache.
+- `STALE` means the value may be out of date.
+- `UNKNOWN` means the reason could not be determined.
+
+Hooks, telemetry sinks, and the evaluation-details data models in other language SDKs and providers branch on these values (for example, treating `ERROR` as a failed evaluation and looking for an `errorCode`, or `CACHED` as a cache hit). Letting a rule emit them would make a successful targeting match look like a failure, a disabled flag, a default fallback, or a cached result to every consumer downstream.
 Like the reserved metadata keys, they are rejected by the schema as literals only; a computed reason that evaluates to one of them is undefined behavior.
 
 Other patterns the free-form field unlocks inside a single `TARGETING_MATCH`:
