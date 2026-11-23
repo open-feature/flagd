@@ -45,7 +45,7 @@ require (
 	github.com/cucumber/godog v0.16.0 // indirect
 	github.com/cucumber/messages/go/v34 v34.2.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
-	github.com/diegoholiveira/jsonlogic/v3 v3.9.1 // indirect
+	github.com/diegoholiveira/jsonlogic/v3 v3.10.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/buildx v0.35.0 // indirect
 	github.com/docker/cli v29.6.1+incompatible // indirect
