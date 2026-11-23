@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -170,6 +169,7 @@ func NewResolver(store store.IStore, logger *logger.Logger, jsonEvalTracer trace
 	jsonlogic.AddOperator(StartsWithEvaluationName, NewStringComparisonEvaluator(logger).StartsWithEvaluation)
 	jsonlogic.AddOperator(EndsWithEvaluationName, NewStringComparisonEvaluator(logger).EndsWithEvaluation)
 	jsonlogic.AddOperator(SemVerEvaluationName, NewSemVerComparison(logger).SemVerEvaluation)
+	jsonlogic.AddOperator(ResolveEvaluationName, NewResolveEvaluator(logger).Evaluate)
 
 	return Resolver{store: store, Logger: logger, tracer: jsonEvalTracer}
 }
@@ -442,16 +442,27 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ErrorReason)
 		}
 
-		var result bytes.Buffer
 		// evaluate JsonLogic rules to determine the variant
-		err = jsonlogic.Apply(bytes.NewReader(targetingBytes), bytes.NewReader(b), &result)
+		output, err := applyTargeting(targetingBytes, b)
+		if err != nil {
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying targeting rules: %s", err))
+			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
+		}
+
+		// the rule ended in resolve
+		if resolved, ok := output.(*resolveResult); ok {
+			variant, reason, metadata, err := je.applyResolveResult(reqID, flagKey, flag, metadata, resolved)
+			return variant, flag.Variants, reason, metadata, err
+		}
+
+		result, err := json.Marshal(output)
 		if err != nil {
 			je.Logger.ErrorWithID(reqID, fmt.Sprintf("error applying targeting rules: %s", err))
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
 		// check if string is "null" before we strip quotes, so we can differentiate between JSON null and "null"
-		trimmed := strings.TrimSpace(result.String())
+		trimmed := strings.TrimSpace(string(result))
 
 		if trimmed == "null" {
 			if flag.DefaultVariant == "" {
@@ -487,6 +498,18 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
+}
+
+// applyTargeting is jsonlogic.Apply without the final encode, so operators can return Go values
+func applyTargeting(rule, data []byte) (any, error) {
+	var parsedRule, parsedData any
+	if err := json.Unmarshal(rule, &parsedRule); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(data, &parsedData); err != nil {
+		return nil, err
+	}
+	return jsonlogic.ApplyInterface(parsedRule, parsedData)
 }
 
 func setFlagdProperties(

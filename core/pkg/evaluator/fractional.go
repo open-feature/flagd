@@ -32,7 +32,7 @@ type fractionalEvaluationDistribution struct {
 }
 
 type fractionalEvaluationVariant struct {
-	variant any // string, bool, number or nil
+	variant any // string, bool, number, nil or *resolveResult
 	weight  int32
 }
 
@@ -211,8 +211,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 			return nil, fmt.Errorf("flag %q: distribution element needs at least one element", flagKey)
 		}
 
-		// JSONLogic pre-evaluates all arguments before they reach fractional.
-		// Pre-evaluated operators become primitive values (strings, numbers, etc.), never map[string]any nodes.
+		// arguments are pre-evaluated, so variants are primitives or a resolve result, never map[string]any
 		var variant any
 		switch v := distributionArray[0].(type) {
 		case string:
@@ -223,8 +222,11 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 			variant = v
 		case nil:
 			variant = nil
+		case *resolveResult:
+			variant = v
 		default:
-			return nil, fmt.Errorf("flag %q: first element of distribution element must be a string, bool, number, or nil", flagKey)
+			return nil, fmt.Errorf(
+				"flag %q: first element of distribution element must be a string, bool, number, nil, or resolve", flagKey)
 		}
 
 		weight := int64(1)
