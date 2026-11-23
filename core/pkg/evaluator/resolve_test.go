@@ -140,6 +140,28 @@ func TestResolveEvaluation(t *testing.T) {
 			reason:  "SPLIT",
 			meta:    map[string]any{"details": "treatment"},
 		},
+		// the shorthand form buckets on the targetingKey; weights still pick the bucket deterministically
+		"shorthand fractional bucket variant is terminal": {
+			flags: resolveFlag(`{"fractional": [
+				[{"resolve": ["red", "SPLIT", [["details", "a"]]]}, 1],
+				[{"resolve": ["blue", "SPLIT"]}, 0]
+			]}`),
+			flagKey: "color",
+			context: map[string]any{"targetingKey": "user-1"},
+			value:   "#FF0000",
+			variant: "red",
+			reason:  "SPLIT",
+			meta:    map[string]any{"details": "a"},
+		},
+		"shorthand fractional single bucket": {
+			flags:   resolveFlag(`{"fractional": [[{"resolve": ["red", "SPLIT", [["details", "a"]]]}, 1]]}`),
+			flagKey: "color",
+			context: map[string]any{"targetingKey": "user-1"},
+			value:   "#FF0000",
+			variant: "red",
+			reason:  "SPLIT",
+			meta:    map[string]any{"details": "a"},
+		},
 		"fractional mixes plain and resolve buckets": {
 			flags:   resolveFlag(`{"fractional": ["key", [{"resolve": ["red", "SPLIT"]}, 0], ["blue", 1]]}`),
 			flagKey: "color",
