@@ -12,7 +12,9 @@ The variant is coerced like a plain targeting result: booleans become `"true"` o
 
 A missing or null reason keeps `TARGETING_MATCH`.
 
-The reason is free-form: any string is passed through as the evaluation reason, including flagd's own reasons such as `FALLBACK` or `DISABLED`.
+The reason is free-form, except `ERROR`, `DISABLED` and `DEFAULT`, which are reserved for flagd's own evaluation flow (see the [ADR](../../architecture-decisions/targeting-variant-metadata.md)).
+
+The [targeting schema](../schema.md) rejects them as literals, and at runtime they're ignored, so the evaluation keeps `TARGETING_MATCH`.
 
 Metadata is a shallow list of `[key, value]` pairs.
 

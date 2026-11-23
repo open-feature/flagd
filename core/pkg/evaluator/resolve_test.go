@@ -53,27 +53,13 @@ func TestResolveEvaluation(t *testing.T) {
 			variant: "blue",
 			reason:  "ALLOWLIST",
 		},
-		// the reason is free-form; flagd's own reason names must not change the value or variant
+		// the reason is free-form apart from the reserved ones; FALLBACK must not change the value or variant
 		"FALLBACK reason keeps value and variant": {
 			flags:   resolveFlag(`{"resolve": ["blue", "FALLBACK"]}`),
 			flagKey: "color",
 			value:   "#0000FF",
 			variant: "blue",
 			reason:  model.FallbackReason,
-		},
-		"DISABLED reason keeps value and variant": {
-			flags:   resolveFlag(`{"resolve": ["blue", "DISABLED"]}`),
-			flagKey: "color",
-			value:   "#0000FF",
-			variant: "blue",
-			reason:  model.DisabledReason,
-		},
-		"ERROR reason keeps value and variant": {
-			flags:   resolveFlag(`{"resolve": ["blue", "ERROR"]}`),
-			flagKey: "color",
-			value:   "#0000FF",
-			variant: "blue",
-			reason:  model.ErrorReason,
 		},
 		"null reason keeps targeting match and merges metadata": {
 			flags:   resolveFlag(`{"resolve": ["green", null, [["details", "pilot"]]]}`),
@@ -354,6 +340,39 @@ func TestResolveReservedMetadataKeys(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// ERROR, DISABLED and DEFAULT belong to flagd's own evaluation flow, so a rule's reserved reason, literal or
+// computed, is ignored: the evaluation keeps TARGETING_MATCH, the variant and the metadata
+func TestResolveReservedReasons(t *testing.T) {
+	rules := map[string]string{
+		"literal":  `{"resolve": ["blue", %q, [["details", "rule"]]]}`,
+		"computed": `{"resolve": ["blue", {"var": "reason"}, [["details", "rule"]]]}`,
+	}
+
+	for _, reserved := range []string{model.ErrorReason, model.DisabledReason, model.DefaultReason} {
+		for form, rule := range rules {
+			t.Run(form+" "+reserved, func(t *testing.T) {
+				log := logger.NewLogger(nil, false)
+				s, err := store.NewStore(log, []string{"testSource"})
+				require.NoError(t, err)
+				je := NewJSON(log, s)
+				targeting := rule
+				if form == "literal" {
+					targeting = fmt.Sprintf(rule, reserved)
+				}
+				require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(targeting), Source: "testSource"}))
+
+				value, variant, reason, metadata, err := je.ResolveStringValue(
+					context.Background(), "default", "color", map[string]any{"reason": reserved})
+				require.NoError(t, err)
+				assert.Equal(t, "#0000FF", value)
+				assert.Equal(t, "blue", variant)
+				assert.Equal(t, model.TargetingMatchReason, reason)
+				assert.Equal(t, "rule", metadata["details"])
+			})
+		}
 	}
 }
 

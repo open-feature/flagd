@@ -23,6 +23,10 @@ const resolveOperatorName = ResolveEvaluationName + "\xff"
 // also skips computed ones.
 var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
 
+// reservedReasons belong to flagd's own evaluation flow. The schema rejects them as literal resolve reasons; this
+// also ignores computed ones, so the evaluation keeps TARGETING_MATCH.
+var reservedReasons = map[string]struct{}{model.ErrorReason: {}, model.DisabledReason: {}, model.DefaultReason: {}}
+
 // resolveResult is what the operator returns. JsonLogic passes it through if untouched (it only
 // re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
 // A nil reason keeps TARGETING_MATCH.
@@ -220,7 +224,11 @@ func (je *Resolver) applyResolveResult(
 	}
 	reason = model.TargetingMatchReason
 	if parsed.reason != nil {
-		reason = *parsed.reason
+		if _, reserved := reservedReasons[*parsed.reason]; reserved {
+			je.Logger.DebugWithID(reqID, fmt.Sprintf("ignoring reserved resolve reason: %s", *parsed.reason))
+		} else {
+			reason = *parsed.reason
+		}
 	}
 	return parsed.variant, reason, metadata, nil
 }
