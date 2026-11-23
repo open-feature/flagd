@@ -16,13 +16,16 @@ const ResolveEvaluationName = "resolve"
 // reservedMetadataKeys belong to flag set metadata; skipped even when computed
 var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
 
-// reservedReasons belong to flagd's own evaluation flow; ignored even when computed
+// reservedReasons are OpenFeature and flagd reasons a rule can't truthfully return; ignored even when computed
 var reservedReasons = map[string]struct{}{
 	model.ErrorReason:    {},
 	model.DisabledReason: {},
 	model.DefaultReason:  {},
 	model.FallbackReason: {},
 	model.StaticReason:   {},
+	model.UnknownReason:  {},
+	"CACHED":             {},
+	"STALE":              {},
 }
 
 // resolveResult is returned by the resolve operator

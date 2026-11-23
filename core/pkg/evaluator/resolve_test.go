@@ -366,6 +366,7 @@ func TestResolveReservedReasons(t *testing.T) {
 
 	for _, reserved := range []string{
 		model.ErrorReason, model.DisabledReason, model.DefaultReason, model.FallbackReason, model.StaticReason,
+		model.UnknownReason, "CACHED", "STALE",
 	} {
 		for form, rule := range rules {
 			t.Run(form+" "+reserved, func(t *testing.T) {
