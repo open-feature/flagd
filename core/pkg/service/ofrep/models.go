@@ -78,8 +78,7 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 }
 
 func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
-	// if reason is fallback, we want to omit the value and variant from the response, and set reason to default.
-	// flagd's own fallback and disabled results carry no variant; a resolve rule may use these reasons too
+	// if reason is fallback, we want to omit the value and variant from the response, and set reason to default
 	if result.Reason == model.FallbackReason && result.Variant == "" {
 		return EvaluationSuccess{
 			Value:    nil, // not marshalled due to omitempty

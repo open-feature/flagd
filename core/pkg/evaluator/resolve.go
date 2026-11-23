@@ -13,17 +13,13 @@ import (
 
 const ResolveEvaluationName = "resolve"
 
-// reservedMetadataKeys belong to flag set metadata. The schema rejects them as literal rule metadata keys; this
-// also skips computed ones.
+// reservedMetadataKeys belong to flag set metadata; skipped even when computed
 var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
 
-// reservedReasons belong to flagd's own evaluation flow. The schema rejects them as literal resolve reasons; this
-// also ignores computed ones, so the evaluation keeps TARGETING_MATCH.
+// reservedReasons belong to flagd's own evaluation flow; ignored even when computed
 var reservedReasons = map[string]struct{}{model.ErrorReason: {}, model.DisabledReason: {}, model.DefaultReason: {}}
 
-// resolveResult is what the operator returns. JsonLogic passes it through if untouched (it only
-// re-applies maps), and since no JSON input decodes to it, context data cannot forge one.
-// A nil reason keeps TARGETING_MATCH.
+// resolveResult is returned by the resolve operator
 type resolveResult struct {
 	variant  string
 	reason   *string
@@ -31,7 +27,6 @@ type resolveResult struct {
 }
 
 // ResolveEvaluator implements the terminal resolve operator.
-// It selects a variant and optionally overrides the evaluation reason and metadata.
 type ResolveEvaluator struct {
 	Logger *logger.Logger
 }
@@ -40,9 +35,7 @@ func NewResolveEvaluator(log *logger.Logger) *ResolveEvaluator {
 	return &ResolveEvaluator{Logger: log}
 }
 
-// Evaluate returns a *resolveResult. Arguments are already evaluated by JsonLogic.
-// Malformed evaluated arguments return null, like the other custom operators, so the flag falls back to its
-// default variant.
+// Evaluate returns a *resolveResult, or null for malformed arguments, like other custom operators.
 func (re *ResolveEvaluator) Evaluate(values, _ any) any {
 	parsed, err := parseEvaluatedResolve(values)
 	if err != nil {
@@ -82,8 +75,7 @@ func parseEvaluatedResolve(values any) (*resolveResult, error) {
 	return parsed, nil
 }
 
-// resolveVariantKey coerces the variant like a plain targeting result: booleans become "true"/"false", and numbers
-// take their JSON form (unofficially, as for plain results)
+// resolveVariantKey coerces the variant like a plain targeting result
 func resolveVariantKey(value any) (string, error) {
 	switch v := value.(type) {
 	case string:
@@ -134,8 +126,7 @@ func metadataPair(pair any) (string, any, error) {
 	return key, items[1], nil
 }
 
-// metadataPrimitive rejects NaN and ±Inf (e.g. a computed 1/0): JSON can't encode them, so returning them would
-// fail OFREP and Connect JSON responses, taking a whole bulk response with them
+// NaN and Inf are rejected since JSON can't encode them
 func metadataPrimitive(value any) (any, bool) {
 	switch n := value.(type) {
 	case string, bool:
@@ -171,8 +162,7 @@ func (je *Resolver) applyResolveResult(
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
-	// variant keys are non-empty, and an empty variant is how flagd marks its own fallback and disabled
-	// results, so an empty one is always missing
+	// an empty variant marks flagd's own fallback and disabled results
 	if _, exists := flag.Variants[parsed.variant]; !exists || parsed.variant == "" {
 		je.Logger.ErrorWithID(reqID, fmt.Sprintf(
 			"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.variant, flagKey))

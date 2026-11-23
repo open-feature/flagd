@@ -211,9 +211,7 @@ func parseFractionalEvaluationDistributions(values []any, data any, logger *logg
 			return nil, fmt.Errorf("flag %q: distribution element needs at least one element", flagKey)
 		}
 
-		// JSONLogic pre-evaluates all arguments before they reach fractional.
-		// Pre-evaluated operators become primitive values (strings, numbers, etc.) or a resolve result,
-		// never map[string]any nodes.
+		// arguments are pre-evaluated, so variants are primitives or a resolve result, never map[string]any
 		var variant any
 		switch v := distributionArray[0].(type) {
 		case string:

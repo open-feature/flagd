@@ -365,8 +365,7 @@ func TestResolveReservedMetadataKeys(t *testing.T) {
 	}
 }
 
-// ERROR, DISABLED and DEFAULT belong to flagd's own evaluation flow, so a rule's reserved reason, literal or
-// computed, is ignored: the evaluation keeps TARGETING_MATCH, the variant and the metadata
+// reserved reasons are ignored; TARGETING_MATCH, the variant and metadata are kept
 func TestResolveReservedReasons(t *testing.T) {
 	rules := map[string]string{
 		"literal":  `{"resolve": ["blue", %q, [["details", "rule"]]]}`,
@@ -443,10 +442,7 @@ func TestResolveRuntimeErrors(t *testing.T) {
 	}
 }
 
-// a single-key context map like {"resolve": [...]} returned from a branch must never reach the real resolve
-// operator. jsonlogic before v3.10.2 re-applies such maps as operator calls (the flag then falls back to its
-// default variant); later versions return them as values (an invalid variant). Either way the context's variant,
-// reason and metadata must not come through.
+// context like {"resolve": [...]} must never invoke the operator (GHSA-mw4w-7w23-cg45)
 func TestResolveContextCannotInvokeResolve(t *testing.T) {
 	injected := map[string]any{"pick": map[string]any{
 		"resolve": []any{"red", "INJECTED", []any{[]any{"flagSetId", "spoofed"}}},

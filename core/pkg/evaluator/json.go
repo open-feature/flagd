@@ -450,7 +450,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.ParseErrorCode)
 		}
 
-		// a Go value no JSON input can produce, so context data cannot forge it
+		// the rule ended in resolve
 		if resolved, ok := output.(*resolveResult); ok {
 			variant, reason, metadata, err := je.applyResolveResult(reqID, flagKey, flag, metadata, resolved)
 			return variant, flag.Variants, reason, metadata, err

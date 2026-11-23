@@ -124,8 +124,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 	}
 }
 
-// TestFlagEvaluationServiceV2_RuleReasonWithVariant tests that a resolve rule may return flagd's own
-// reason names: with a variant set, the result is returned as-is instead of as a fallback or disabled flag.
+// TestFlagEvaluationServiceV2_RuleReasonWithVariant tests that a rule reason with a variant is returned as-is
 func TestFlagEvaluationServiceV2_RuleReasonWithVariant(t *testing.T) {
 	for _, reason := range []string{model.FallbackReason, model.DisabledReason} {
 		t.Run(reason, func(t *testing.T) {
