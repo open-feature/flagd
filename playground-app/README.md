@@ -10,7 +10,7 @@ This tool is particularly useful for developers and testers who are working with
 
 To get started with the development of the flagd playground, you'll need to have Node.js installed on your machine.
 
-1. Install [Node.js](https://nodejs.org/en/download/) version 22 or newer.
+1. Install [Node.js](https://nodejs.org/en/download/) version 22.13 or newer (Node 23 is not supported).
 1. From the root of the project, run `make playground-dev`.
 1. Open your browser and navigate to [http://localhost:5173/](http://localhost:5173/);
 
