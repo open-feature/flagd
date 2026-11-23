@@ -79,7 +79,7 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 
 func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
 	// if reason is fallback, we want to omit the value and variant from the response, and set reason to default
-	if result.Reason == model.FallbackReason && result.Variant == "" {
+	if result.Reason == model.FallbackReason {
 		return EvaluationSuccess{
 			Value:    nil, // not marshalled due to omitempty
 			Key:      result.FlagKey,
@@ -89,7 +89,7 @@ func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
 		}
 	}
 	// if reason is disabled, we want to omit the value and variant from the response
-	if result.Reason == model.DisabledReason && result.Variant == "" {
+	if result.Reason == model.DisabledReason {
 		return EvaluationSuccess{
 			Value:    nil, // not marshalled due to omitempty
 			Key:      result.FlagKey,

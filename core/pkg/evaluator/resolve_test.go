@@ -53,14 +53,6 @@ func TestResolveEvaluation(t *testing.T) {
 			variant: "blue",
 			reason:  "ALLOWLIST",
 		},
-		// the reason is free-form apart from the reserved ones; FALLBACK must not change the value or variant
-		"FALLBACK reason keeps value and variant": {
-			flags:   resolveFlag(`{"resolve": ["blue", "FALLBACK"]}`),
-			flagKey: "color",
-			value:   "#0000FF",
-			variant: "blue",
-			reason:  model.FallbackReason,
-		},
 		"null reason keeps targeting match and merges metadata": {
 			flags:   resolveFlag(`{"resolve": ["green", null, [["details", "pilot"]]]}`),
 			flagKey: "color",
@@ -372,7 +364,9 @@ func TestResolveReservedReasons(t *testing.T) {
 		"computed": `{"resolve": ["blue", {"var": "reason"}, [["details", "rule"]]]}`,
 	}
 
-	for _, reserved := range []string{model.ErrorReason, model.DisabledReason, model.DefaultReason} {
+	for _, reserved := range []string{
+		model.ErrorReason, model.DisabledReason, model.DefaultReason, model.FallbackReason, model.StaticReason,
+	} {
 		for form, rule := range rules {
 			t.Run(form+" "+reserved, func(t *testing.T) {
 				log := logger.NewLogger(nil, false)

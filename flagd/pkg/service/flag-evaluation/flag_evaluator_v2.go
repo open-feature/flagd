@@ -273,14 +273,13 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	// flagd's own fallback and disabled results carry no variant; a resolve rule may use these reasons too
-	switch {
-	case reason == model.FallbackReason && variant == "":
+	switch reason {
+	case model.FallbackReason:
 		if err := setReasonOnlyV2(resp, model.DefaultReason, metadata); err != nil {
 			logger.ErrorWithID(reqID, err.Error())
 			return fmt.Errorf("error setting fallback response: %w", err)
 		}
-	case reason == model.DisabledReason && variant == "":
+	case model.DisabledReason:
 		if err := setReasonOnlyV2(resp, model.DisabledReason, metadata); err != nil {
 			logger.ErrorWithID(reqID, err.Error())
 			return fmt.Errorf("error setting disabled response: %w", err)

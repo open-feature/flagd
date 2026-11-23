@@ -17,7 +17,13 @@ const ResolveEvaluationName = "resolve"
 var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
 
 // reservedReasons belong to flagd's own evaluation flow; ignored even when computed
-var reservedReasons = map[string]struct{}{model.ErrorReason: {}, model.DisabledReason: {}, model.DefaultReason: {}}
+var reservedReasons = map[string]struct{}{
+	model.ErrorReason:    {},
+	model.DisabledReason: {},
+	model.DefaultReason:  {},
+	model.FallbackReason: {},
+	model.StaticReason:   {},
+}
 
 // resolveResult is returned by the resolve operator
 type resolveResult struct {
