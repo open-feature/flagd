@@ -4,6 +4,11 @@ description: flagd resolve custom operation
 
 # Resolve Operation
 
+!!! tip "Introduced in flagd v0.19.1"
+
+    `resolve` was introduced in flagd v0.19.1 (see the [ADR](../../architecture-decisions/targeting-variant-metadata.md)).
+    Upgrade flagd and all in-process providers before using it in a configuration.
+
 `resolve` ends a targeting rule with a variant, and optionally a custom reason and metadata for the branch that fired.
 
 `"red"` and `{ "resolve": ["red"] }` select the same variant.
