@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -1495,6 +1496,35 @@ func TestState_Evaluator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestState_EvaluatorExpansionLimitLeavesExistingStateIntact(t *testing.T) {
+	flagStore := store.NewFlags()
+	jsonEvaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), flagStore)
+	require.NoError(t, jsonEvaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"}))
+
+	largeValue := strings.Repeat("x", 2*1024*1024)
+	oversizedConfig := fmt.Sprintf(`{
+		"flags": {
+			"newFlag": {
+				"state": "ENABLED",
+				"variants": {"on": true, "off": false},
+				"defaultVariant": "on",
+				"targeting": {
+					"if": [{"$ref": "large"}, {"$ref": "large"}, {"$ref": "large"}, "on", "off"]
+				}
+			}
+		},
+		"$evaluators": {"large": %q}
+	}`, largeValue)
+
+	err := jsonEvaluator.SetState(sync.DataSync{FlagData: oversizedConfig, Source: "testSource"})
+	require.ErrorContains(t, err, "expanded config exceeds maximum size")
+
+	flags, _, err := flagStore.GetAll(context.Background(), nil)
+	require.NoError(t, err)
+	require.Len(t, flags, 1)
+	require.Equal(t, "validFlag", flags[0].Key)
 }
 
 func normalizeJSON(jsonData []byte) (interface{}, error) {

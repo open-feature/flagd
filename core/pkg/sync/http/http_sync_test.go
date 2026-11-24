@@ -366,6 +366,28 @@ func TestHTTPSync_Fetch(t *testing.T) {
 	}
 }
 
+func TestHTTPSync_MaxResponseSize(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockClient := syncmock.NewMockClient(ctrl)
+	mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{
+		Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}, "ETag": {"new-etag"}}),
+		Body:       io.NopCloser(strings.NewReader(`{"flags":{}}`)),
+		StatusCode: http.StatusOK,
+	}, nil)
+
+	httpSync := Sync{
+		uri:             "http://localhost",
+		client:          mockClient,
+		logger:          logger.NewLogger(nil, false),
+		maxResponseSize: 10,
+		eTag:            "old-etag",
+	}
+
+	_, err := httpSync.Fetch(context.Background())
+	require.ErrorContains(t, err, "response body exceeds configured maximum size")
+	require.Equal(t, "old-etag", httpSync.eTag, "failed updates must not change the ETag")
+}
+
 func TestNewHTTP_PassesHeaders(t *testing.T) {
 	headers := map[string]string{"x-custom": "value"}
 	config := sync.SourceConfig{
@@ -375,6 +397,17 @@ func TestNewHTTP_PassesHeaders(t *testing.T) {
 	}
 	httpSync := NewHTTP(config, logger.NewLogger(nil, false), nil, 5)
 	require.Equal(t, map[string]string{"X-Custom": "value"}, httpSync.headers)
+}
+
+func TestNewHTTP_PassesMaxResponseSize(t *testing.T) {
+	config := sync.SourceConfig{
+		URI:             "http://localhost",
+		Provider:        "http",
+		MaxResponseSize: 123,
+	}
+
+	httpSync := NewHTTP(config, logger.NewLogger(nil, false), nil, 5)
+	require.Equal(t, 123, httpSync.maxResponseSize)
 }
 
 func TestHTTPSync_CustomHeaders(t *testing.T) {
