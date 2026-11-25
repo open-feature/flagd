@@ -46,8 +46,7 @@ type SourceConfig struct {
 	Provider string `json:"provider"`
 
 	AuthHeader string `json:"authHeader,omitempty"`
-	// AuthHeaderPath is a file containing the Authorization header value. It is read on every request,
-	// so a rotated secret is picked up without a restart. When set, AuthHeader is ignored.
+	// AuthHeaderPath is a file with the Authorization header value; takes precedence over AuthHeader
 	AuthHeaderPath string `json:"authHeaderPath,omitempty"`
 	CertPath       string `json:"certPath,omitempty"`
 	TLS            bool   `json:"tls,omitempty"`

@@ -326,9 +326,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 	}
 }
 
-// getAuthHeader returns the Authorization header value, reading it from authHeaderPath when set.
-// The file is read on every request so that a rotated secret, e.g. a Kubernetes Secret mounted
-// as a volume, is used without restarting flagd.
+// getAuthHeader reads authHeaderPath on every request so rotated secrets are picked up
 func (hs *Sync) getAuthHeader() (string, error) {
 	if hs.authHeaderPath == "" {
 		return hs.authHeader, nil
@@ -337,6 +335,6 @@ func (hs *Sync) getAuthHeader() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error reading authHeaderPath %s: %w", hs.authHeaderPath, err)
 	}
-	// Mounted secrets and files written with echo often end with a newline
+	// mounted secrets often end with a newline
 	return strings.TrimSpace(string(value)), nil
 }

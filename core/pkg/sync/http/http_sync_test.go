@@ -471,7 +471,7 @@ func TestHTTPSync_AuthHeaderPath(t *testing.T) {
 	_, err := httpSync.Fetch(context.Background())
 	require.NoError(t, err)
 
-	// A rotated secret is picked up on the next request
+	// rotated secret is picked up on the next request
 	require.NoError(t, os.WriteFile(headerFile, []byte("Bearer rotated"), 0o600))
 	_, err = httpSync.Fetch(context.Background())
 	require.NoError(t, err)
