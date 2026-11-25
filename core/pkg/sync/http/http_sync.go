@@ -305,12 +305,17 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 		canonicalHeaders[http.CanonicalHeaderKey(k)] = v
 	}
 
+	syncLogger := logger.WithFields(
+		zap.String("component", "sync"),
+		zap.String("sync", "http"),
+	)
+	if config.AuthHeader != "" && config.AuthHeaderPath != "" {
+		syncLogger.Warn(fmt.Sprintf("both authHeader and authHeaderPath are set for %s, authHeader is ignored", config.URI))
+	}
+
 	return &Sync{
-		uri: config.URI,
-		logger: logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "http"),
-		),
+		uri:             config.URI,
+		logger:          syncLogger,
 		authHeader:      config.AuthHeader,
 		authHeaderPath:  config.AuthHeaderPath,
 		headers:         canonicalHeaders,
