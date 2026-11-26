@@ -102,8 +102,9 @@ What the schema cannot enforce: `resolve` as a later else-if condition (position
 
 In `evaluateVariant` (`core/pkg/evaluator/json.go`), the current unconditional quote-strip of the JsonLogic result gains a `resolve` case ahead of it:
 
-- `resolve` result: evaluate exactly as the equivalent plain return of its `variant` would (a string selects that variant, with booleans coerced to `"true"`/`"false"` officially and numbers coerced like plain terminals, behavior not defined; `null` falls back to `defaultVariant`, or the caller's code default if there is none), on every surface (gRPC v1 and v2, OFREP, in-process; single and bulk).
-  Then shallow-merge its `metadata` pairs into the returned metadata, and if `reason` is non-null, use it in place of the reason that return would report (`TARGETING_MATCH` for a variant, `DEFAULT` for `null`, with or without a `defaultVariant`)
+- `resolve` result: evaluate exactly as the equivalent plain return of its `variant` would (a string selects that variant, with booleans coerced to `"true"`/`"false"` officially and numbers coerced like plain terminals, behavior not defined; `null` falls back to `defaultVariant`, or the caller's code default if there is none), on every supported surface (gRPC v2, OFREP, in-process; single and bulk).
+  Then shallow-merge its `metadata` pairs into the returned metadata, and if `reason` is non-null, use it in place of the reason that return would report (`TARGETING_MATCH` for a variant, `DEFAULT` for `null`, with or without a `defaultVariant`).
+  gRPC v1 (deprecated) can't represent an absent value: without a `defaultVariant`, a single evaluation keeps returning `FLAG_NOT_FOUND`, and bulk skips the flag, as today.
 - everything else → unchanged from today: `null` exits targeting to `defaultVariant`; strings, booleans, and numbers are quote-stripped into a variant key (so a boolean `true` still resolves the `"true"` variant, as `schemas/json/targeting.json` documents and the existing tests cover); a key absent from `variants` errors exactly as it does now
 
 `reason` never drives evaluation logic: whether a value is returned depends only on the variant, and whether an evaluation failed depends only on the presence of an `errorCode`. A rule-returned `ERROR` without an `errorCode` is a successful evaluation. Reasons are auxiliary data.
