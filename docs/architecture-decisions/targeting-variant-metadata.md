@@ -106,6 +106,8 @@ In `evaluateVariant` (`core/pkg/evaluator/json.go`), the current unconditional q
   Then shallow-merge its `metadata` pairs into the returned metadata, and if `reason` is non-null, use it in place of the reason that return would report (`TARGETING_MATCH` for a variant, `DEFAULT` for `null`)
 - everything else → unchanged from today: `null` exits targeting to `defaultVariant`; strings, booleans, and numbers are quote-stripped into a variant key (so a boolean `true` still resolves the `"true"` variant, as `schemas/json/targeting.json` documents and the existing tests cover); a key absent from `variants` errors exactly as it does now
 
+`reason` never drives evaluation logic: whether a value is returned depends only on the variant, and whether an evaluation failed depends only on the presence of an `errorCode`. A rule-returned `ERROR` without an `errorCode` is a successful evaluation. Reasons are auxiliary data.
+
 Metadata merge precedence, lowest > highest, so more specific wins: flag-set metadata < flag metadata < **rule-returned metadata**. The reserved keys (`flagSetId`, `version`) are the exception: the schema rejects them as literal rule metadata keys, so they come from the existing flag evaluation flow.
 
 !!! warning "Forward compatibility"
@@ -281,7 +283,8 @@ Beyond Go unit tests in `core/pkg/evaluator`, the flagd gherkin suite gets exten
 
 - the reason rule: with no reason, `resolve` reports exactly what the equivalent plain return reports (`TARGETING_MATCH` for a variant, `DEFAULT` for `null`); with a reason, that reason replaces it
 - a `null` variant, with and without a `defaultVariant`: the same fallback as a plain `null`
-- a rule-returned `DISABLED` with a `null` variant, matching a disabled flag, in both single and bulk evaluation
+- a `null` variant with a custom reason (e.g. `OFF_BY_POLICY`) on a flag without a `defaultVariant`: no value or variant (the caller's code default), and the custom reason, across RPC, OFREP and in-process
+- a rule-returned `DISABLED`: with a `null` variant, matching a disabled flag, in both single and bulk evaluation; with a selected variant, that variant is served
 - a rule-returned `ERROR`: passed through as the reason, with no error code, and the variant served
 
 Those scenarios run across the gRPC, OFREP, and in-process paths that `test/integration` already exercises, which keeps every provider honest about the new shape rather than testing it only inside flagd.
