@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,21 +17,10 @@ const ResolveEvaluationName = "resolve"
 // reservedMetadataKeys belong to flag set metadata; skipped even when computed
 var reservedMetadataKeys = map[string]struct{}{"flagSetId": {}, "version": {}}
 
-// reservedReasons are OpenFeature and flagd reasons a rule can't truthfully return; ignored even when computed
-var reservedReasons = map[string]struct{}{
-	model.ErrorReason:    {},
-	model.DisabledReason: {},
-	model.DefaultReason:  {},
-	model.FallbackReason: {},
-	model.StaticReason:   {},
-	model.UnknownReason:  {},
-	"CACHED":             {},
-	"STALE":              {},
-}
-
 // resolveResult is returned by the resolve operator
 type resolveResult struct {
 	variant  string
+	null     bool // a null variant falls back like a plain null result
 	reason   *string
 	metadata map[string]any
 }
@@ -60,11 +50,14 @@ func parseEvaluatedResolve(values any) (*resolveResult, error) {
 		return nil, errors.New("resolve arguments must be an array of 1 to 3 items")
 	}
 
-	variant, err := resolveVariantKey(args[0])
-	if err != nil {
-		return nil, err
+	parsed := &resolveResult{null: args[0] == nil}
+	if !parsed.null {
+		variant, err := resolveVariantKey(args[0])
+		if err != nil {
+			return nil, err
+		}
+		parsed.variant = variant
 	}
-	parsed := &resolveResult{variant: variant}
 
 	if len(args) >= 2 && args[1] != nil {
 		reason, ok := args[1].(string)
@@ -166,16 +159,24 @@ func isFinite(f float64) bool {
 }
 
 func (je *Resolver) applyResolveResult(
-	reqID, flagKey string, flag model.Flag, metadata map[string]any, parsed *resolveResult,
+	ctx context.Context, reqID, flagKey string, flag model.Flag, metadata map[string]any, parsed *resolveResult,
 ) (variant, reason string, meta map[string]any, err error) {
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
-	// an empty variant marks flagd's own fallback and disabled results
-	if _, exists := flag.Variants[parsed.variant]; !exists || parsed.variant == "" {
-		je.Logger.ErrorWithID(reqID, fmt.Sprintf(
-			"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.variant, flagKey))
-		return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
+	if parsed.null {
+		variant, reason, err = nullResult(ctx, flag)
+		if err != nil {
+			return variant, reason, metadata, err
+		}
+	} else {
+		// an empty variant means no variant, so it's never a valid key
+		if _, exists := flag.Variants[parsed.variant]; !exists || parsed.variant == "" {
+			je.Logger.ErrorWithID(reqID, fmt.Sprintf(
+				"invalid or missing variant: %s for flagKey: %s, variant is not valid", parsed.variant, flagKey))
+			return "", model.ErrorReason, metadata, errors.New(model.GeneralErrorCode)
+		}
+		variant, reason = parsed.variant, model.TargetingMatchReason
 	}
 	for key, value := range parsed.metadata {
 		if _, reserved := reservedMetadataKeys[key]; reserved {
@@ -184,13 +185,8 @@ func (je *Resolver) applyResolveResult(
 		}
 		metadata[key] = value
 	}
-	reason = model.TargetingMatchReason
 	if parsed.reason != nil {
-		if _, reserved := reservedReasons[*parsed.reason]; reserved {
-			je.Logger.DebugWithID(reqID, fmt.Sprintf("ignoring reserved resolve reason: %s", *parsed.reason))
-		} else {
-			reason = *parsed.reason
-		}
+		reason = *parsed.reason
 	}
-	return parsed.variant, reason, metadata, nil
+	return variant, reason, metadata, nil
 }

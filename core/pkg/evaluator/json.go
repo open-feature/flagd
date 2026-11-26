@@ -373,14 +373,10 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
-	if reason == model.FallbackReason {
+	// no variant means no value
+	if variant == "" {
 		var zero T
-		return zero, variant, model.FallbackReason, metadata, nil
-	}
-
-	if reason == model.DisabledReason {
-		var zero T
-		return zero, "", model.DisabledReason, metadata, nil
+		return zero, "", reason, metadata, nil
 	}
 
 	var ok bool
@@ -451,7 +447,7 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 
 		// the rule ended in resolve
 		if resolved, ok := output.(*resolveResult); ok {
-			variant, reason, metadata, err := je.applyResolveResult(reqID, flagKey, flag, metadata, resolved)
+			variant, reason, metadata, err := je.applyResolveResult(ctx, reqID, flagKey, flag, metadata, resolved)
 			return variant, flag.Variants, reason, metadata, err
 		}
 
@@ -465,16 +461,8 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 		trimmed := strings.TrimSpace(string(result))
 
 		if trimmed == "null" {
-			if flag.DefaultVariant == "" {
-				if ctx.Value(ProtoVersionKey) != nil {
-					// old proto version behavior
-					return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
-				}
-
-				return "", flag.Variants, model.FallbackReason, metadata, nil
-			}
-
-			return flag.DefaultVariant, flag.Variants, model.DefaultReason, metadata, nil
+			variant, reason, err := nullResult(ctx, flag)
+			return variant, flag.Variants, reason, metadata, err
 		}
 
 		// strip whitespace and quotes from the variant
@@ -494,10 +482,22 @@ func (je *Resolver) evaluateVariant(ctx context.Context, reqID string, flagKey s
 			// old proto version behavior
 			return "", flag.Variants, model.ErrorReason, metadata, errors.New(model.FlagNotFoundErrorCode)
 		}
-		return "", flag.Variants, model.FallbackReason, metadata, nil
+		return "", flag.Variants, model.DefaultReason, metadata, nil
 	}
 
 	return flag.DefaultVariant, flag.Variants, model.StaticReason, metadata, nil
+}
+
+// nullResult is the outcome of a null targeting result: defaultVariant, or no variant if there is none
+func nullResult(ctx context.Context, flag model.Flag) (variant, reason string, err error) {
+	if flag.DefaultVariant == "" {
+		if ctx.Value(ProtoVersionKey) != nil {
+			// old proto version behavior
+			return "", model.ErrorReason, errors.New(model.FlagNotFoundErrorCode)
+		}
+		return "", model.DefaultReason, nil
+	}
+	return flag.DefaultVariant, model.DefaultReason, nil
 }
 
 // applyTargeting is jsonlogic.Apply without the final encode, so operators can return Go values

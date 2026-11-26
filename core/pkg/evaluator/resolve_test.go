@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/open-feature/flagd/core/pkg/logger"
@@ -358,38 +359,97 @@ func TestResolveReservedMetadataKeys(t *testing.T) {
 }
 
 // reserved reasons are ignored; TARGETING_MATCH, the variant and metadata are kept
-func TestResolveReservedReasons(t *testing.T) {
-	rules := map[string]string{
-		"literal":  `{"resolve": ["blue", %q, [["details", "rule"]]]}`,
-		"computed": `{"resolve": ["blue", {"var": "reason"}, [["details", "rule"]]]}`,
-	}
-
-	for _, reserved := range []string{
-		model.ErrorReason, model.DisabledReason, model.DefaultReason, model.FallbackReason, model.StaticReason,
+// a rule-returned reason is auxiliary: it replaces the reported reason but never changes the outcome
+func TestResolveStandardReasonsPassThrough(t *testing.T) {
+	for _, reason := range []string{
+		model.ErrorReason, model.DisabledReason, model.DefaultReason, "FALLBACK", model.StaticReason,
 		model.UnknownReason, "CACHED", "STALE",
 	} {
-		for form, rule := range rules {
-			t.Run(form+" "+reserved, func(t *testing.T) {
-				log := logger.NewLogger(nil, false)
-				s, err := store.NewStore(log, []string{"testSource"})
-				require.NoError(t, err)
-				je := NewJSON(log, s)
-				targeting := rule
-				if form == "literal" {
-					targeting = fmt.Sprintf(rule, reserved)
-				}
-				require.NoError(t, je.SetState(sync.DataSync{FlagData: resolveFlag(targeting), Source: "testSource"}))
+		t.Run(reason, func(t *testing.T) {
+			je := resolveEvaluator(t, resolveFlag(`{"resolve": ["blue", {"var": "reason"}, [["details", "rule"]]]}`))
 
-				value, variant, reason, metadata, err := je.ResolveStringValue(
-					context.Background(), "default", "color", map[string]any{"reason": reserved})
-				require.NoError(t, err)
-				assert.Equal(t, "#0000FF", value)
-				assert.Equal(t, "blue", variant)
-				assert.Equal(t, model.TargetingMatchReason, reason)
-				assert.Equal(t, "rule", metadata["details"])
-			})
-		}
+			value, variant, got, metadata, err := je.ResolveStringValue(
+				context.Background(), "default", "color", map[string]any{"reason": reason})
+			require.NoError(t, err)
+			assert.Equal(t, "#0000FF", value)
+			assert.Equal(t, "blue", variant)
+			assert.Equal(t, reason, got)
+			assert.Equal(t, "rule", metadata["details"])
+		})
 	}
+}
+
+// a null variant falls back exactly like a plain null, and a non-null reason replaces the reported one
+func TestResolveNullVariant(t *testing.T) {
+	tests := map[string]struct {
+		flags   string
+		variant string
+		value   string
+		reason  string
+		details any
+	}{
+		"plain null with defaultVariant": {
+			flags: resolveFlag(`null`), variant: "yellow", value: "#FFFF00", reason: model.DefaultReason,
+		},
+		"null variant with defaultVariant": {
+			flags: resolveFlag(`{"resolve": [null]}`), variant: "yellow", value: "#FFFF00", reason: model.DefaultReason,
+		},
+		"null variant with defaultVariant and reason": {
+			flags:   resolveFlag(`{"resolve": [null, "OFF_BY_POLICY", [["details", "rule"]]]}`),
+			variant: "yellow", value: "#FFFF00", reason: "OFF_BY_POLICY", details: "rule",
+		},
+		"plain null without defaultVariant": {
+			flags: noDefaultFlag(`null`), value: "default", reason: model.DefaultReason,
+		},
+		"null variant without defaultVariant": {
+			flags: noDefaultFlag(`{"resolve": [null]}`), value: "default", reason: model.DefaultReason,
+		},
+		"null variant without defaultVariant and reason": {
+			flags: noDefaultFlag(`{"resolve": [null, "OFF_BY_POLICY", [["details", "rule"]]]}`),
+			value: "default", reason: "OFF_BY_POLICY", details: "rule",
+		},
+		"disabled with overrides, not overridden": {
+			flags: noDefaultFlag(`{"if": [{"in": [{"var": "targetingKey"}, ["alice"]]}, "red", {"resolve": [null, "DISABLED"]}]}`),
+			value: "default", reason: model.DisabledReason,
+		},
+		"selected variant with DISABLED reason": {
+			flags: resolveFlag(`{"resolve": ["red", "DISABLED"]}`), variant: "red", value: "#FF0000", reason: model.DisabledReason,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			je := resolveEvaluator(t, tt.flags)
+
+			value, variant, reason, metadata, err := je.ResolveStringValue(
+				context.Background(), "default", "color", map[string]any{"targetingKey": "bob"})
+			require.NoError(t, err)
+			if tt.variant == "" {
+				// no variant means no value; the caller's default is used
+				assert.Empty(t, value)
+			} else {
+				assert.Equal(t, tt.value, value)
+			}
+			assert.Equal(t, tt.variant, variant)
+			assert.Equal(t, tt.reason, reason)
+			assert.Equal(t, tt.details, metadata["details"])
+		})
+	}
+}
+
+func resolveEvaluator(t *testing.T, flags string) *JSON {
+	t.Helper()
+	log := logger.NewLogger(nil, false)
+	s, err := store.NewStore(log, []string{"testSource"})
+	require.NoError(t, err)
+	je := NewJSON(log, s)
+	require.NoError(t, je.SetState(sync.DataSync{FlagData: flags, Source: "testSource"}))
+	return je
+}
+
+// noDefaultFlag is resolveFlag without a defaultVariant
+func noDefaultFlag(targeting string) string {
+	return strings.Replace(resolveFlag(targeting), `"defaultVariant": "yellow",`, "", 1)
 }
 
 func TestResolveRuntimeErrors(t *testing.T) {
