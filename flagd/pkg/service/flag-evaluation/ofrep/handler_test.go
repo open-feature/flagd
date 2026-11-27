@@ -159,7 +159,7 @@ func Test_handler_HandleFlagEvaluation(t *testing.T) {
 			mockAnyResponse: &evaluator.AnyValue{
 				Value:    false, // code default (no defaultVariant)
 				Variant:  "",
-				Reason:   model.FallbackReason,
+				Reason:   model.DefaultReason,
 				FlagKey:  "featureNoDefault",
 				Metadata: nil,
 				Error:    nil,
@@ -276,7 +276,7 @@ func Test_handler_HandleBulkEvaluation(t *testing.T) {
 				{
 					Value:    false, // code default (no defaultVariant)
 					Variant:  "",
-					Reason:   model.FallbackReason,
+					Reason:   model.DefaultReason,
 					FlagKey:  "featureNoDefault",
 					Metadata: map[string]interface{}{},
 					Error:    nil,

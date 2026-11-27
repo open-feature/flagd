@@ -15,11 +15,11 @@ description: flagd resolve custom operation
 
 The variant is coerced like a plain targeting result: booleans become `"true"` or `"false"`, and the behavior of numbers is not defined.
 
-A missing or null reason keeps `TARGETING_MATCH`.
+A `null` variant falls back like a plain `null` result: to `defaultVariant`, or to the caller's code default if there is none.
 
-The reason is free-form, except `ERROR`, `DISABLED`, `DEFAULT`, `FALLBACK`, `STATIC`, `UNKNOWN`, `CACHED` and `STALE`, which are reserved (see the [ADR](../../architecture-decisions/targeting-variant-metadata.md)).
+The reason is free-form, and replaces the reason the equivalent plain result would report (`TARGETING_MATCH` for a variant, `DEFAULT` for `null`); a missing or null reason keeps it.
 
-The [targeting schema](../schema.md) rejects them as literals, and at runtime they're ignored, so the evaluation keeps `TARGETING_MATCH`.
+Standard reasons such as `DISABLED` are passed through like any other; they never change the outcome, so use them sensibly.
 
 Metadata is a shallow list of `[key, value]` pairs.
 

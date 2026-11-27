@@ -31,6 +31,26 @@ type fallbackResult struct {
 // with nil value and variant, signaling the provider to use the code default.
 // note: V2 signals fallback via SetReasonOnly (V1 uses an error instead);
 // other V2 behaviors are covered in flag_evaluator_v1_test.go.
+// an empty variant omits the value whatever the reason, so a rule's custom reason still defers to the code default
+func TestFlagEvaluationServiceV2_NoVariantCustomReason(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	eval := mock.NewMockIEvaluator(ctrl)
+	metrics, _ := getMetricReader()
+	s := NewFlagEvaluationServiceV2(logger.NewLogger(nil, false), eval, &eventingConfiguration{}, metrics, nil, nil, 0)
+	eval.EXPECT().ResolveStringValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
+		"", "", "OFF_BY_POLICY", metadata, nil,
+	)
+
+	got, err := s.ResolveString(context.Background(), connect.NewRequest(&evalV2.ResolveStringRequest{
+		FlagKey: "flag", Context: &structpb.Struct{},
+	}))
+
+	require.NoError(t, err)
+	require.Nil(t, got.Msg.Value)
+	require.Nil(t, got.Msg.Variant)
+	require.Equal(t, "OFF_BY_POLICY", got.Msg.Reason)
+}
+
 func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 	tests := []struct {
 		name string
@@ -41,7 +61,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			name: "boolean",
 			run: func(eval *mock.MockIEvaluator, s *FlagEvaluationServiceV2) (fallbackResult, error) {
 				eval.EXPECT().ResolveBooleanValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
-					false, "", model.FallbackReason, metadata, nil,
+					false, "", model.DefaultReason, metadata, nil,
 				)
 				got, err := s.ResolveBoolean(context.Background(), connect.NewRequest(&evalV2.ResolveBooleanRequest{
 					FlagKey: "flag", Context: &structpb.Struct{},
@@ -53,7 +73,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			name: "string",
 			run: func(eval *mock.MockIEvaluator, s *FlagEvaluationServiceV2) (fallbackResult, error) {
 				eval.EXPECT().ResolveStringValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
-					"", "", model.FallbackReason, metadata, nil,
+					"", "", model.DefaultReason, metadata, nil,
 				)
 				got, err := s.ResolveString(context.Background(), connect.NewRequest(&evalV2.ResolveStringRequest{
 					FlagKey: "flag", Context: &structpb.Struct{},
@@ -65,7 +85,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			name: "int",
 			run: func(eval *mock.MockIEvaluator, s *FlagEvaluationServiceV2) (fallbackResult, error) {
 				eval.EXPECT().ResolveIntValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
-					int64(0), "", model.FallbackReason, metadata, nil,
+					int64(0), "", model.DefaultReason, metadata, nil,
 				)
 				got, err := s.ResolveInt(context.Background(), connect.NewRequest(&evalV2.ResolveIntRequest{
 					FlagKey: "flag", Context: &structpb.Struct{},
@@ -77,7 +97,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			name: "float",
 			run: func(eval *mock.MockIEvaluator, s *FlagEvaluationServiceV2) (fallbackResult, error) {
 				eval.EXPECT().ResolveFloatValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
-					float64(0), "", model.FallbackReason, metadata, nil,
+					float64(0), "", model.DefaultReason, metadata, nil,
 				)
 				got, err := s.ResolveFloat(context.Background(), connect.NewRequest(&evalV2.ResolveFloatRequest{
 					FlagKey: "flag", Context: &structpb.Struct{},
@@ -89,7 +109,7 @@ func TestFlagEvaluationServiceV2_Fallback(t *testing.T) {
 			name: "object",
 			run: func(eval *mock.MockIEvaluator, s *FlagEvaluationServiceV2) (fallbackResult, error) {
 				eval.EXPECT().ResolveObjectValue(gomock.Any(), gomock.Any(), "flag", gomock.Any()).Return(
-					nil, "", model.FallbackReason, metadata, nil,
+					nil, "", model.DefaultReason, metadata, nil,
 				)
 				got, err := s.ResolveObject(context.Background(), connect.NewRequest(&evalV2.ResolveObjectRequest{
 					FlagKey: "flag", Context: &structpb.Struct{},

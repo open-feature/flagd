@@ -1031,10 +1031,10 @@ func TestResolve_DefaultVariant(t *testing.T) {
 		reason    string
 		errorCode string
 	}{
-		{NullDefault, ValidFlag, nil, model.FallbackReason, ""},
-		{UndefinedDefault, ValidFlag, nil, model.FallbackReason, ""},
-		{NullDefaultWithTargetting, ValidFlag, nil, model.FallbackReason, ""},
-		{UndefinedDefaultWithTargetting, ValidFlag, nil, model.FallbackReason, ""},
+		{NullDefault, ValidFlag, nil, model.DefaultReason, ""},
+		{UndefinedDefault, ValidFlag, nil, model.DefaultReason, ""},
+		{NullDefaultWithTargetting, ValidFlag, nil, model.DefaultReason, ""},
+		{UndefinedDefaultWithTargetting, ValidFlag, nil, model.DefaultReason, ""},
 	}
 
 	for _, test := range tests {
@@ -1048,7 +1048,7 @@ func TestResolve_DefaultVariant(t *testing.T) {
 
 			anyResult := evaluator.ResolveAsAnyValue(context.TODO(), "", test.flagKey, test.context)
 
-			assert.Equal(t, model.FallbackReason, anyResult.Reason)
+			assert.Equal(t, model.DefaultReason, anyResult.Reason)
 			// for code defaults, there should be no error
 			assert.NoError(t, anyResult.Error)
 		})

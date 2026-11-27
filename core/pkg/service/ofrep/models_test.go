@@ -50,7 +50,7 @@ func TestSuccessResultCodeDefault(t *testing.T) {
 	value := evaluator.AnyValue{
 		Value:    false, // zero value for boolean
 		Variant:  "",    // empty variant
-		Reason:   model.FallbackReason,
+		Reason:   model.DefaultReason,
 		FlagKey:  "noDefaultFlag",
 		Metadata: map[string]interface{}{},
 	}
@@ -212,7 +212,7 @@ func TestBulkEvaluationResponse(t *testing.T) {
 				{
 					Value:    false, // code default (no defaultVariant set)
 					Variant:  "",
-					Reason:   model.FallbackReason,
+					Reason:   model.DefaultReason,
 					FlagKey:  "featureNoDefault",
 					Metadata: map[string]interface{}{},
 				},
@@ -408,7 +408,7 @@ func TestZeroValuesAreMarshaled(t *testing.T) {
 			}
 
 			if test.value == nil {
-				anyValue.Reason = model.FallbackReason
+				anyValue.Reason = model.DefaultReason
 			}
 
 			success := SuccessResponseFrom(anyValue)
@@ -440,5 +440,22 @@ func TestZeroValuesAreMarshaled(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// an empty variant omits the value whatever the reason
+func TestSuccessResponseNoVariantCustomReason(t *testing.T) {
+	success := SuccessResponseFrom(evaluator.AnyValue{
+		Value: "", Variant: "", Reason: "OFF_BY_POLICY", FlagKey: "color", Metadata: map[string]interface{}{},
+	})
+
+	if success.Value != nil {
+		t.Errorf("expected no value, got %v", success.Value)
+	}
+	if success.Variant != "" {
+		t.Errorf("expected no variant, got %v", success.Variant)
+	}
+	if success.Reason != "OFF_BY_POLICY" {
+		t.Errorf("expected reason OFF_BY_POLICY, got %v", success.Reason)
 	}
 }
