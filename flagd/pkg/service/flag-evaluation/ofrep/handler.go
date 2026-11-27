@@ -154,6 +154,7 @@ func (h *handler) HandleFlagEvaluation(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithValue(r.Context(), store.SelectorContextKey{}, selector)
 
 	evaluation := h.evaluator.ResolveAsAnyValue(ctx, requestID, flagKey, evaluationContext)
+	trace.SpanFromContext(ctx).SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, evaluation.Variant)...)
 	if h.metricsRecorder != nil {
 		h.metricsRecorder.RecordEvaluation(
 			ctx, evaluation.Error, evaluation.Reason, evaluation.Variant, evaluation.FlagKey,

@@ -10,6 +10,7 @@ import (
 	parseUrl "net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -36,6 +37,19 @@ type Sync struct {
 	eTag            string
 	timeoutS        time.Duration
 	maxResponseSize int
+	uri         string
+	client      Client
+	poller      polling.Poller
+	lastBodySHA string
+	logger      *logger.Logger
+	authHeader  string
+	// authHeaderPath, when set, takes precedence over authHeader
+	authHeaderPath string
+	headers        map[string]string
+	interval       uint32
+	ready          atomic.Bool
+	eTag           string
+	timeoutS       time.Duration
 
 	oauthCredential *oauthCredentialHandler
 
@@ -187,8 +201,12 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Accept", "application/yaml")
 
-	if hs.authHeader != "" {
-		req.Header.Set("Authorization", hs.authHeader)
+	authHeader, err := hs.getAuthHeader()
+	if err != nil {
+		return "", false, err
+	}
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
 	}
 
 	if hs.eTag != "" && !fetchAll {
@@ -305,13 +323,19 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 		canonicalHeaders[http.CanonicalHeaderKey(k)] = v
 	}
 
+	syncLogger := logger.WithFields(
+		zap.String("component", "sync"),
+		zap.String("sync", "http"),
+	)
+	if config.AuthHeader != "" && config.AuthHeaderPath != "" {
+		syncLogger.Warn(fmt.Sprintf("both authHeader and authHeaderPath are set for %s, authHeader is ignored", config.URI))
+	}
+
 	return &Sync{
-		uri: config.URI,
-		logger: logger.WithFields(
-			zap.String("component", "sync"),
-			zap.String("sync", "http"),
-		),
+		uri:             config.URI,
+		logger:          syncLogger,
 		authHeader:      config.AuthHeader,
+		authHeaderPath:  config.AuthHeaderPath,
 		headers:         canonicalHeaders,
 		interval:        interval,
 		maxResponseSize: config.MaxResponseSize,
@@ -319,4 +343,17 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 		oauthCredential: oauthCredential,
 		timeoutS:        time.Duration(config.TimeoutS),
 	}
+}
+
+// getAuthHeader reads authHeaderPath on every request so rotated secrets are picked up
+func (hs *Sync) getAuthHeader() (string, error) {
+	if hs.authHeaderPath == "" {
+		return hs.authHeader, nil
+	}
+	value, err := os.ReadFile(hs.authHeaderPath)
+	if err != nil {
+		return "", fmt.Errorf("error reading authHeaderPath %s: %w", hs.authHeaderPath, err)
+	}
+	// mounted secrets often end with a newline
+	return strings.TrimSpace(string(value)), nil
 }
