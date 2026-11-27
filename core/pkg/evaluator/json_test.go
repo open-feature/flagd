@@ -1804,4 +1804,48 @@ func TestTargetingVariantBehavior(t *testing.T) {
 			t.Fatal("did not map to stringified boolean")
 		}
 	})
+
+	t.Run("match variant names with JSON-escaped characters", func(t *testing.T) {
+		evaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), store.NewFlags())
+
+		err := evaluator.SetState(sync.DataSync{Source: "testSource", FlagData: `{
+			"flags": {
+				"special-variants": {
+					"state": "ENABLED",
+					"variants": {
+						"off": "off",
+						"R&D": "rd",
+						"<beta>": "beta",
+						"back\\slash": "backslash",
+						"quote\"d": "quoted"
+					},
+					"defaultVariant": "off",
+					"targeting": {
+						"var": "variant"
+					}
+				}
+			}
+		}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tests := map[string]string{
+			"R&D":        "rd",
+			"<beta>":     "beta",
+			`back\slash`: "backslash",
+			`quote"d`:    "quoted",
+		}
+		for wantVariant, wantValue := range tests {
+			value, variant, reason, _, err := evaluator.ResolveStringValue(
+				context.Background(), "default", "special-variants", map[string]any{"variant": wantVariant})
+			if err != nil {
+				t.Errorf("variant %q: unexpected error: %v", wantVariant, err)
+				continue
+			}
+			if value != wantValue || variant != wantVariant || reason != model.TargetingMatchReason {
+				t.Errorf("variant %q: got value %q, variant %q, reason %q", wantVariant, value, variant, reason)
+			}
+		}
+	})
 }
