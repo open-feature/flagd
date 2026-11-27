@@ -828,6 +828,7 @@ type serverPayload struct {
 
 // bufferedServer - a mock grpc service backed by buffered connection
 type bufferedServer struct {
+	syncv1grpc.UnimplementedFlagSyncServiceServer
 	listener              *bufconn.Listener
 	mockResponses         []serverPayload
 	fetchAllFlagsResponse *v1.FetchAllFlagsResponse
@@ -852,10 +853,6 @@ func (b *bufferedServer) SyncFlags(_ *v1.SyncFlagsRequest, stream syncv1grpc.Fla
 
 func (b *bufferedServer) FetchAllFlags(_ context.Context, _ *v1.FetchAllFlagsRequest) (*v1.FetchAllFlagsResponse, error) {
 	return b.fetchAllFlagsResponse, b.fetchAllFlagsError
-}
-
-func (b *bufferedServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
-	return &v1.GetMetadataResponse{}, nil
 }
 
 func Test_contextWithHeaders(t *testing.T) {
@@ -993,10 +990,6 @@ func (s *headerCapturingServer) SyncFlags(_ *v1.SyncFlagsRequest, _ syncv1grpc.F
 	return nil
 }
 
-func (s *headerCapturingServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
-	return &v1.GetMetadataResponse{}, nil
-}
-
 // requestCapturingServer captures the incoming FetchAllFlagsRequest
 type requestCapturingServer struct {
 	syncv1grpc.UnimplementedFlagSyncServiceServer
@@ -1011,8 +1004,4 @@ func (s *requestCapturingServer) FetchAllFlags(_ context.Context, req *v1.FetchA
 
 func (s *requestCapturingServer) SyncFlags(_ *v1.SyncFlagsRequest, _ syncv1grpc.FlagSyncService_SyncFlagsServer) error {
 	return nil
-}
-
-func (s *requestCapturingServer) GetMetadata(_ context.Context, _ *v1.GetMetadataRequest) (*v1.GetMetadataResponse, error) {
-	return &v1.GetMetadataResponse{}, nil
 }

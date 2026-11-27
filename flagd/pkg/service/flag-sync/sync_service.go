@@ -30,17 +30,16 @@ type ISyncService interface {
 }
 
 type SvcConfigurations struct {
-	Logger              *logger.Logger
-	Port                uint16
-	Sources             []string
-	Store               store.IStore
-	ContextValues       map[string]any
-	CertPath            string
-	KeyPath             string
-	SocketPath          string
-	StreamDeadline      time.Duration
-	DisableSyncMetadata bool
-	MetricsRecorder     telemetry.IMetricsRecorder
+	Logger          *logger.Logger
+	Port            uint16
+	Sources         []string
+	Store           store.IStore
+	ContextValues   map[string]any
+	CertPath        string
+	KeyPath         string
+	SocketPath      string
+	StreamDeadline  time.Duration
+	MetricsRecorder telemetry.IMetricsRecorder
 
 	HTTPEnabled           bool
 	ServiceName           string
@@ -92,12 +91,11 @@ func NewSyncService(cfg SvcConfigurations) (*Service, error) {
 	}
 
 	server := newConnectServer(cfg, syncHandler{
-		store:               cfg.Store,
-		log:                 l,
-		contextValues:       cfg.ContextValues,
-		deadline:            cfg.StreamDeadline,
-		disableSyncMetadata: cfg.DisableSyncMetadata,
-		metricsRecorder:     cfg.MetricsRecorder,
+		store:           cfg.Store,
+		log:             l,
+		contextValues:   cfg.ContextValues,
+		deadline:        cfg.StreamDeadline,
+		metricsRecorder: cfg.MetricsRecorder,
 	}, flagsHandler)
 
 	// Loaded here rather than in ServeTLS so a bad path fails at construction.
