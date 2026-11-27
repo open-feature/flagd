@@ -122,6 +122,8 @@ Metadata merge precedence, lowest > highest, so more specific wins: flag-set met
 Why an operator with array arguments rather than a returned object: JsonLogic engines disagree on objects. Some return a multi-key object as data (Go, Python, .NET), others reject it (JS, Rust, and Java outside `if` results), and C++ applies only its first key. A single-key object as an operator call, and arrays of primitives as arguments, behave the same in every engine flagd implementations use.
 Metadata is an array of pairs for the same reason: an object argument fails to parse in Java, JS, and Rust.
 
+`resolve` is the only operator whose result is a signal to the evaluator rather than a JSON value. Implementations carry it through JsonLogic's data channel, so they must give it something context data can't have (e.g. a private type), or context data could imitate it.
+
 ### Example — a full flag config
 
 ```jsonc
