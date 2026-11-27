@@ -36,6 +36,21 @@ func buildHeaders(m map[string][]string) http.Header {
 
 type readinessHTTPClient struct{}
 
+type countingReadCloser struct {
+	reader    io.Reader
+	bytesRead int
+}
+
+func (r *countingReadCloser) Read(p []byte) (int, error) {
+	n, err := r.reader.Read(p)
+	r.bytesRead += n
+	return n, err
+}
+
+func (r *countingReadCloser) Close() error {
+	return nil
+}
+
 func (readinessHTTPClient) Do(*http.Request) (*http.Response, error) {
 	return &http.Response{
 		Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}}),
@@ -369,9 +384,10 @@ func TestHTTPSync_Fetch(t *testing.T) {
 func TestHTTPSync_MaxResponseSize(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockClient := syncmock.NewMockClient(ctrl)
+	body := &countingReadCloser{reader: strings.NewReader(`{"flags":{}}` + strings.Repeat("x", 100))}
 	mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{
 		Header:     buildHeaders(map[string][]string{"Content-Type": {"application/json"}, "ETag": {"new-etag"}}),
-		Body:       io.NopCloser(strings.NewReader(`{"flags":{}}`)),
+		Body:       body,
 		StatusCode: http.StatusOK,
 	}, nil)
 
@@ -386,6 +402,7 @@ func TestHTTPSync_MaxResponseSize(t *testing.T) {
 	_, err := httpSync.Fetch(context.Background())
 	require.ErrorContains(t, err, "response body exceeds configured maximum size")
 	require.Equal(t, "old-etag", httpSync.eTag, "failed updates must not change the ETag")
+	require.LessOrEqual(t, body.bytesRead, 11)
 }
 
 func TestNewHTTP_PassesHeaders(t *testing.T) {
