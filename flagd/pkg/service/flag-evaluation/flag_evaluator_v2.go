@@ -273,7 +273,7 @@ func resolveV2[T constraints](ctx context.Context, logger *logger.Logger, resolv
 	spanFromContext := trace.SpanFromContext(ctx)
 	spanFromContext.SetAttributes(telemetry.SemConvFeatureFlagAttributes(flagKey, variant)...)
 
-	// no variant means no value, whatever the reason
+	// no variant means no value (code default); reasons only affect telemetry and side effects such as caching
 	switch {
 	case evalErr == nil && variant == "":
 		if err := setReasonOnlyV2(resp, reason, metadata); err != nil {

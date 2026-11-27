@@ -373,7 +373,7 @@ func resolve[T constraints](ctx context.Context, reqID string, key string, conte
 		return value, variant, reason, metadata, err
 	}
 
-	// no variant means no value
+	// no variant means no value (code default); reasons only affect telemetry and side effects such as caching
 	if variant == "" {
 		var zero T
 		return zero, "", reason, metadata, nil

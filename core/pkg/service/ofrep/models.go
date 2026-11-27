@@ -78,7 +78,7 @@ func BulkEvaluationResponseFrom(resolutions []evaluator.AnyValue, metadata model
 }
 
 func SuccessResponseFrom(result evaluator.AnyValue) EvaluationSuccess {
-	// no variant means no value, whatever the reason
+	// no variant means no value (code default); reasons only affect telemetry and side effects such as caching
 	if result.Variant == "" {
 		return EvaluationSuccess{
 			Value:    nil, // not marshalled due to omitempty
