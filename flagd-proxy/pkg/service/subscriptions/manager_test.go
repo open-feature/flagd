@@ -81,7 +81,7 @@ func newSyncHandler() (*multiplexer, string) {
 
 	return &multiplexer{
 		dataSync: coreDataSyncChan,
-		subs: map[interface{}]storedChannels{
+		subs: map[any]storedChannels{
 			key: {
 				errChan:  errChan,
 				dataSync: dataSyncChan,
@@ -153,8 +153,7 @@ func Test_watchResource(t *testing.T) {
 }
 
 func Test_watchResource_initFail(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
@@ -191,8 +190,7 @@ func Test_watchResource_initFail(t *testing.T) {
 }
 
 func Test_watchResource_SyncFromURIFail(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
@@ -286,8 +284,7 @@ func Test_watchResource_SyncHandlerDoesNotExist(_ *testing.T) {
 }
 
 func Test_watchResource_Cleanup(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 
@@ -300,7 +297,7 @@ func Test_watchResource_Cleanup(t *testing.T) {
 	target := "test-target"
 
 	syncHandler, _ := newSyncHandler()
-	syncHandler.subs = map[interface{}]storedChannels{}
+	syncHandler.subs = map[any]storedChannels{}
 	doneChan := make(chan struct{}, 1)
 	syncHandler.cancelFunc = func() {
 		doneChan <- struct{}{}
@@ -357,8 +354,7 @@ func Test_FetchAllFlags(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 			syncMock := newMockSync()
 			syncMock.resyncData = tt.mockData
@@ -411,8 +407,7 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 
 			syncMock := newMockSync()
@@ -450,8 +445,7 @@ func Test_registerSubscriptionResyncPath(t *testing.T) {
 }
 
 func Test_syncMetrics(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	syncStore := NewManager(ctx, logger.NewLogger(nil, false))
 	syncMock := newMockSync()
 	syncStore.syncBuilder = &syncBuilderMock{
