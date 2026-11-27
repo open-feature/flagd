@@ -26,6 +26,7 @@ type syncHandler struct {
 	log                 *logger.Logger
 	contextValues       map[string]any
 	deadline            time.Duration
+	deadlineGraceful    bool
 	disableSyncMetadata bool
 	metricsRecorder     telemetry.IMetricsRecorder
 }
@@ -115,8 +116,13 @@ func (s syncHandler) syncFlags(
 			}
 		case <-ctx.Done():
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
 				exitReason = "deadline_exceeded"
+				if s.deadlineGraceful {
+					// end the stream with OK, providers treat a completed stream as a routine reconnect
+					s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, closing stream gracefully", s.deadline.String()))
+					return nil
+				}
+				s.log.Debug(fmt.Sprintf("server-side deadline of %s exceeded, exiting stream request with grpc error code 4", s.deadline.String()))
 				return connect.NewError(connect.CodeDeadlineExceeded, errors.New("stream closed due to server-side timeout"))
 			}
 			s.log.Debug("context complete and exiting stream request")
