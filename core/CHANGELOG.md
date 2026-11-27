@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.4](https://github.com/open-feature/flagd/compare/core/v0.19.3...core/v0.19.4) (2026-11-27)
+
+
+### ✨ New Features
+
+* add resolve operator support ([#2127](https://github.com/open-feature/flagd/issues/2127)) ([66d0faf](https://github.com/open-feature/flagd/commit/66d0fafb80ce2eb9b83302e2c0a7de1dc94cb375))
+* **sync:** read the http sync auth header from a file ([#2128](https://github.com/open-feature/flagd/issues/2128)) ([eac0b9e](https://github.com/open-feature/flagd/commit/eac0b9ef246bdd03604b9fcb1a56179ffa160c2d))
+
 ## [0.19.3](https://github.com/open-feature/flagd/compare/core/v0.19.2...core/v0.19.3) (2026-11-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/open-feature/flagd/compare/flagd/v0.19.0...flagd/v0.19.1) (2026-11-27)
+
+
+### ✨ New Features
+
+* **ofrep:** set feature flag attributes on the evaluation span ([#2106](https://github.com/open-feature/flagd/issues/2106)) ([026170b](https://github.com/open-feature/flagd/commit/026170b6d70261ebe1d3b332fa9be5236b92600e))
+
 ## [0.19.0](https://github.com/open-feature/flagd/compare/flagd/v0.18.2...flagd/v0.19.0) (2026-11-17)
 
 
