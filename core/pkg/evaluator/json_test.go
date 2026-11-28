@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -1492,6 +1493,76 @@ func TestState_Evaluator(t *testing.T) {
 				expectedFlag.Targeting = nil
 
 				assert.Equal(t, expectedFlag, v)
+			}
+		})
+	}
+}
+
+func TestState_EvaluatorExpansionLimitLeavesExistingStateIntact(t *testing.T) {
+	largeValue := strings.Repeat("x", 1024*1024)
+	largeBranchingConfig := fmt.Sprintf(`{
+		"flags": {"newFlag": {
+			"state": "ENABLED", "variants": {"on": true, "off": false}, "defaultVariant": "on",
+			"targeting": {"and": [{"$ref": "branch"}, {"$ref": "branch"}]}
+		}},
+		"$evaluators": {
+			"large": %q,
+			"branch": {"or": [{"$ref": "large"}, {"$ref": "large"}]}
+		}
+	}`, largeValue)
+
+	tests := map[string]struct {
+		config       string
+		wantErr      string
+		wantExisting bool
+		wantNewFlag  bool
+	}{
+		"self-referencing evaluator": {
+			config:       `{"flags":{"newFlag":{"state":"ENABLED","variants":{"on":true},"defaultVariant":"on","targeting":{"$ref":"self"}}},"$evaluators":{"self":{"$ref":"self"}}}`,
+			wantErr:      "circular evaluator reference \"self\"",
+			wantExisting: true,
+		},
+		"indirectly circular evaluators": {
+			config:       `{"flags":{"newFlag":{"state":"ENABLED","variants":{"on":true},"defaultVariant":"on","targeting":{"$ref":"one"}}},"$evaluators":{"one":{"$ref":"two"},"two":{"$ref":"one"}}}`,
+			wantErr:      "circular evaluator reference",
+			wantExisting: true,
+		},
+		"sibling references reuse an evaluator": {
+			config:      `{"flags":{"newFlag":{"state":"ENABLED","variants":{"on":true},"defaultVariant":"on","targeting":{"or":[{"$ref":"rule"},{"$ref":"rule"}]}}},"$evaluators":{"rule":{"==":[{"var":"color"},"blue"]}}}`,
+			wantNewFlag: true,
+		},
+		"branching references exceed the expansion limit": {
+			config:       largeBranchingConfig,
+			wantErr:      "expanded config exceeds maximum size",
+			wantExisting: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			flagStore := store.NewFlags()
+			jsonEvaluator := flagdEvaluator.NewJSON(logger.NewLogger(nil, false), flagStore)
+			require.NoError(t, jsonEvaluator.SetState(sync.DataSync{FlagData: ValidFlags, Source: "testSource"}))
+
+			err := jsonEvaluator.SetState(sync.DataSync{FlagData: tt.config, Source: "testSource"})
+			if tt.wantErr != "" {
+				require.ErrorContains(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+
+			flags, _, err := flagStore.GetAll(context.Background(), nil)
+			require.NoError(t, err)
+			require.Len(t, flags, 1)
+			keys := make(map[string]struct{}, len(flags))
+			for _, flag := range flags {
+				keys[flag.Key] = struct{}{}
+			}
+			_, existingFlagPresent := keys["validFlag"]
+			require.Equal(t, tt.wantExisting, existingFlagPresent)
+			if tt.wantNewFlag {
+				_, newFlagPresent := keys["newFlag"]
+				require.True(t, newFlagPresent)
 			}
 		})
 	}

@@ -32,12 +32,13 @@ type Sync struct {
 	logger      *logger.Logger
 	authHeader  string
 	// authHeaderPath, when set, takes precedence over authHeader
-	authHeaderPath string
-	headers        map[string]string
-	interval       uint32
-	ready          atomic.Bool
-	eTag           string
-	timeoutS       time.Duration
+	authHeaderPath  string
+	headers         map[string]string
+	interval        uint32
+	ready           atomic.Bool
+	eTag            string
+	timeoutS        time.Duration
+	maxResponseSize int
 
 	oauthCredential *oauthCredentialHandler
 
@@ -225,13 +226,16 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 		return "", false, fmt.Errorf("error fetching from url %s: %s", hs.uri, resp.Status)
 	}
 
-	if resp.Header.Get("ETag") != "" {
-		hs.eTag = resp.Header.Get("ETag")
+	bodyReader := io.Reader(resp.Body)
+	if hs.maxResponseSize > 0 {
+		bodyReader = io.LimitReader(resp.Body, int64(hs.maxResponseSize)+1)
 	}
-
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(bodyReader)
 	if err != nil {
 		return "", false, fmt.Errorf("unable to read body to bytes: %w", err)
+	}
+	if hs.maxResponseSize > 0 && len(body) > hs.maxResponseSize {
+		return "", false, fmt.Errorf("response body exceeds configured maximum size of %d bytes", hs.maxResponseSize)
 	}
 
 	json, err := utils.ConvertToJSON(body, getFileExtensions(hs.uri), resp.Header.Get("Content-Type"))
@@ -241,6 +245,9 @@ func (hs *Sync) fetchBody(ctx context.Context, fetchAll bool) (string, bool, err
 
 	if json != "" {
 		hs.lastBodySHA = utils.GenerateSha([]byte(json))
+	}
+	if resp.Header.Get("ETag") != "" {
+		hs.eTag = resp.Header.Get("ETag")
 	}
 
 	return json, false, nil
@@ -320,6 +327,7 @@ func NewHTTP(config sync.SourceConfig, logger *logger.Logger, poller polling.Pol
 		authHeaderPath:  config.AuthHeaderPath,
 		headers:         canonicalHeaders,
 		interval:        interval,
+		maxResponseSize: config.MaxResponseSize,
 		poller:          poller,
 		oauthCredential: oauthCredential,
 		timeoutS:        time.Duration(config.TimeoutS),

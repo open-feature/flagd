@@ -33,6 +33,7 @@ const (
 	Disabled                = "DISABLED"
 	ProtoVersionKey         = "__flagd.protoVersion__" // used to mark if the request is coming from an older proto source, which has different fallback behavior
 	jsonEvaluatorTracerName = "jsonEvaluator"
+	maxExpandedConfigSize   = 4 * 1024 * 1024 // defaulted to 4 MB, same as the default MaxMsgSize for gRPC
 )
 
 func addSchemaResource(compiler *jsonschema.Compiler, url string, schemaData string) error {
@@ -642,7 +643,12 @@ func validateDefaultVariants(flags *Definition) error {
 	return nil
 }
 
+// transposeEvaluators expands evaluator references into the flag configuration.
 func transposeEvaluators(state string) (string, error) {
+	if len(state) > maxExpandedConfigSize {
+		return "", fmt.Errorf("config exceeds maximum size of %d bytes", maxExpandedConfigSize)
+	}
+
 	var evaluators Evaluators
 	if err := json.Unmarshal([]byte(state), &evaluators); err != nil {
 		return "", fmt.Errorf("unmarshal: %w", err)
@@ -653,26 +659,84 @@ func transposeEvaluators(state string) (string, error) {
 	if err := json.Unmarshal([]byte(state), &raw); err != nil {
 		return "", fmt.Errorf("normalize: %w", err)
 	}
-	normalizedBytes, err := json.Marshal(raw)
+
+	// track active references to prevent cycles and account for expansion growth
+	resolving := make(map[string]bool, len(evaluators.Evaluators))
+	expandedSize := len(state)
+	var expand func(any) (any, error)
+
+	expand = func(value any) (any, error) {
+		switch value := value.(type) {
+		case []any:
+			for i, item := range value {
+				expanded, err := expand(item)
+				if err != nil {
+					return nil, err
+				}
+				value[i] = expanded
+			}
+		case map[string]any:
+			if len(value) == 1 {
+				if ref, ok := value["$ref"].(string); ok {
+					evalRaw, exists := evaluators.Evaluators[ref]
+					if !exists {
+						return value, nil
+					}
+
+					if resolving[ref] {
+						return nil, fmt.Errorf("circular evaluator reference %q", ref)
+					}
+
+					if len(evalRaw) < 3 {
+						return nil, errors.New("evaluator object is empty")
+					}
+
+					// reject repeated references before building an oversized tree.
+					if expandedSize > maxExpandedConfigSize-len(evalRaw) {
+						return nil, fmt.Errorf("expanded config exceeds maximum size of %d bytes", maxExpandedConfigSize)
+					}
+
+					expandedSize += len(evalRaw)
+					var evaluator interface{}
+					if err := json.Unmarshal(evalRaw, &evaluator); err != nil {
+						return nil, fmt.Errorf("unmarshal evaluator %q: %w", ref, err)
+					}
+
+					resolving[ref] = true
+					expanded, err := expand(evaluator)
+					delete(resolving, ref) // delete even if expand fails to avoid leaving a dangling reference
+					if err != nil {
+						return nil, err
+					}
+
+					return expanded, nil
+				}
+			}
+			for key, item := range value {
+				expanded, err := expand(item)
+				if err != nil {
+					return nil, err
+				}
+				value[key] = expanded
+			}
+		}
+		return value, nil
+	}
+
+	// expand references and serialize the result for the existing parser
+	expanded, err := expand(raw)
 	if err != nil {
-		return "", fmt.Errorf("normalize marshal: %w", err)
-	}
-	result := string(normalizedBytes)
-
-	for evalName, evalRaw := range evaluators.Evaluators {
-		marshalledEval, err := evalRaw.MarshalJSON()
-		if err != nil {
-			return "", fmt.Errorf("marshal evaluator: %w", err)
-		}
-
-		evalValue := string(marshalledEval)
-		if len(evalValue) < 3 {
-			return "", errors.New("evaluator object is empty")
-		}
-
-		refPattern := `{"$ref":"` + evalName + `"}`
-		result = strings.ReplaceAll(result, refPattern, evalValue)
+		return "", fmt.Errorf("expand evaluators: %w", err)
 	}
 
-	return result, nil
+	result, err := json.Marshal(expanded)
+	if err != nil {
+		return "", fmt.Errorf("marshal expanded config: %w", err)
+	}
+
+	if len(result) > maxExpandedConfigSize {
+		return "", fmt.Errorf("expanded config exceeds maximum size of %d bytes", maxExpandedConfigSize)
+	}
+
+	return string(result), nil
 }
