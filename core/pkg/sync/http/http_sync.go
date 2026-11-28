@@ -25,18 +25,6 @@ import (
 )
 
 type Sync struct {
-	uri             string
-	client          Client
-	poller          polling.Poller
-	lastBodySHA     string
-	logger          *logger.Logger
-	authHeader      string
-	headers         map[string]string
-	interval        uint32
-	ready           atomic.Bool
-	eTag            string
-	timeoutS        time.Duration
-	maxResponseSize int
 	uri         string
 	client      Client
 	poller      polling.Poller
@@ -44,12 +32,13 @@ type Sync struct {
 	logger      *logger.Logger
 	authHeader  string
 	// authHeaderPath, when set, takes precedence over authHeader
-	authHeaderPath string
-	headers        map[string]string
-	interval       uint32
-	ready          atomic.Bool
-	eTag           string
-	timeoutS       time.Duration
+	authHeaderPath  string
+	headers         map[string]string
+	interval        uint32
+	ready           atomic.Bool
+	eTag            string
+	timeoutS        time.Duration
+	maxResponseSize int
 
 	oauthCredential *oauthCredentialHandler
 
